@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconStateBuilderAltair
     extends AbstractBeaconStateBuilder<
@@ -45,7 +46,7 @@ public class BeaconStateBuilderAltair
   }
 
   @Override
-  protected BeaconStateAltair getEmptyState() {
+  protected BeaconStateAltair getEmptyState(final SchemaDefinitions schemaDefinitions) {
     return BeaconStateSchemaAltair.create(spec.getConfig()).createEmpty();
   }
 

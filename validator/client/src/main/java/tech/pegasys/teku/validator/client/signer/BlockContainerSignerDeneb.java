@@ -30,7 +30,7 @@ import tech.pegasys.teku.validator.client.Validator;
 
 public class BlockContainerSignerDeneb implements BlockContainerSigner {
 
-  private final Spec spec;
+  protected final Spec spec;
 
   public BlockContainerSignerDeneb(final Spec spec) {
     this.spec = spec;
@@ -82,6 +82,8 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
 
   private SignedBlockContentsSchema getSignedBlockContentsSchema(final UInt64 slot) {
     return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getSignedBlockContentsSchema();
+        .getSignedBlockContentsSchema()
+        .toVersionDeneb()
+        .orElseThrow();
   }
 }

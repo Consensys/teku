@@ -14,7 +14,9 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED;
+import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_INCLUSION_LIST;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
+import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_INCLUSION_LIST;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
 import java.util.Collections;
@@ -29,10 +31,12 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetInclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewInclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
@@ -114,6 +118,11 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV3(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV3(executionEngineClient, spec));
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
+    methods.put(
+        ENGINE_GET_INCLUSION_LIST,
+        new EngineGetInclusionListV1(
+            executionEngineClient, spec.forMilestone(SpecMilestone.ELECTRA)));
+    methods.put(ENGINE_NEW_INCLUSION_LIST, new EngineNewInclusionListV1(executionEngineClient));
 
     return methods;
   }

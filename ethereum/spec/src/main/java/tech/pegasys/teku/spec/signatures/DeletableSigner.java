@@ -22,9 +22,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionListWithSignedSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -108,6 +111,25 @@ public class DeletableSigner implements Signer {
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
     return sign(() -> delegate.signValidatorRegistration(validatorRegistration));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionListWithSignedSummary(
+      final UInt64 slot,
+      final InclusionListWithSignedSummary inclusionListWithSignedSummary,
+      final ForkInfo forkInfo) {
+    return sign(
+        () ->
+            delegate.signInclusionListWithSignedSummary(
+                slot, inclusionListWithSignedSummary, forkInfo));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionListSummary(
+      final UInt64 slot,
+      final SszList<SszByteVector> inclusionListSummary,
+      final ForkInfo forkInfo) {
+    return sign(() -> delegate.signInclusionListSummary(slot, inclusionListSummary, forkInfo));
   }
 
   @Override

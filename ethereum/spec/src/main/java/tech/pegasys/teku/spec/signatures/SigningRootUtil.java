@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.signatures;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -22,6 +24,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionListWithSignedSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -111,5 +114,19 @@ public class SigningRootUtil {
     final MiscHelpers miscHelpers = spec.getGenesisSpec().miscHelpers();
     final Bytes32 domain = miscHelpers.computeDomain(Domain.APPLICATION_BUILDER);
     return miscHelpers.computeSigningRoot(validatorRegistration, domain);
+  }
+
+  public Bytes signingRootForInclusionListWithSignedSummary(
+      final InclusionListWithSignedSummary inclusionListWithSignedSummary) {
+    final MiscHelpers miscHelpers = spec.getGenesisSpec().miscHelpers();
+    final Bytes32 domain = miscHelpers.computeDomain(Domain.DOMAIN_INCLUSION_LIST_SUMMARY);
+    return miscHelpers.computeSigningRoot(inclusionListWithSignedSummary, domain);
+  }
+
+  public Bytes signingRootForInclusionListSummary(
+      final SszList<SszByteVector> inclusionListSummary) {
+    final MiscHelpers miscHelpers = spec.getGenesisSpec().miscHelpers();
+    final Bytes32 domain = miscHelpers.computeDomain(Domain.DOMAIN_INCLUSION_LIST_SUMMARY);
+    return miscHelpers.computeSigningRoot(inclusionListSummary, domain);
   }
 }

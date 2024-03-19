@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.metrics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -25,14 +26,18 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListConfigurationV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -159,6 +164,29 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
         payloadAttributes.isPresent()
             ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V3_METHOD
             : FORKCHOICE_UPDATED_V3_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<InclusionListStatusV1>> newInclusionListV1(
+      final List<Bytes20> inclusionListSummary,
+      final List<Bytes> inclusionListTransactions,
+      final Bytes32 parentBeaconBlockRoot,
+      final InclusionListConfigurationV1 inclusionListConfiguration) {
+    return countRequest(
+        () ->
+            delegate.newInclusionListV1(
+                inclusionListSummary,
+                inclusionListTransactions,
+                parentBeaconBlockRoot,
+                inclusionListConfiguration),
+        NEW_PAYLOAD_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(
+      final InclusionListConfigurationV1 inclusionListConfiguration) {
+    return countRequest(
+        () -> delegate.getInclusionListV1(inclusionListConfiguration), GET_PAYLOAD_METHOD);
   }
 
   @Override

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
@@ -25,8 +26,16 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb {
   private ExecutionPayloadSchemaElectra schema;
 
+  protected SignedInclusionListSummary previousInclusionListSummary;
+
   public ExecutionPayloadBuilderElectra schema(final ExecutionPayloadSchemaElectra schema) {
     this.schema = schema;
+    return this;
+  }
+
+  public ExecutionPayloadBuilderElectra previousInclusionListSummary(
+      final Supplier<SignedInclusionListSummary> previousInclusionListSummarySupplier) {
+    this.previousInclusionListSummary = previousInclusionListSummarySupplier.get();
     return this;
   }
 
@@ -38,6 +47,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   @Override
   protected void validate() {
     super.validate();
+    checkNotNull(previousInclusionListSummary, "previousInclusionListSummary must be specified");
   }
 
   @Override
@@ -63,6 +73,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
         SszUInt64.of(blobGasUsed),
-        SszUInt64.of(excessBlobGas));
+        SszUInt64.of(excessBlobGas),
+        previousInclusionListSummary);
   }
 }

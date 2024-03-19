@@ -98,6 +98,7 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchema,
       final String containerName) {
     return new BlindedBeaconBlockBodySchemaElectraImpl(
         containerName,
@@ -125,9 +126,7 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
-            new ExecutionPayloadHeaderSchemaElectra(specConfig)),
+        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD_HEADER, executionPayloadHeaderSchema),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(

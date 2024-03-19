@@ -55,5 +55,8 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
+  ExecutionPayloadHeaderBuilder previousInclusionListSummaryRoot(
+      Supplier<Bytes32> previousInclusionListSummaryRootSupplier);
+
   ExecutionPayloadHeader build();
 }

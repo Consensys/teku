@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
@@ -41,20 +42,30 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 
 public class BeaconStateSchemaElectra
     extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
+  public static final int PREVIOUS_PROPOSER_INDEX_INDEX = 28;
 
   @VisibleForTesting
-  BeaconStateSchemaElectra(final SpecConfig specConfig) {
-    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaElectra(
+      final SpecConfig specConfig,
+      final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra) {
+    super(
+        "BeaconStateElectra",
+        getUniqueFields(specConfig, executionPayloadSchemaElectra),
+        specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  private static List<SszField> getUniqueFields(
+      final SpecConfig specConfig,
+      final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaElectra(SpecConfigElectra.required(specConfig)));
+            () ->
+                new ExecutionPayloadHeaderSchemaElectra(
+                    SpecConfigElectra.required(specConfig), executionPayloadSchemaElectra));
     final SszField nextWithdrawalIndexField =
         new SszField(
             NEXT_WITHDRAWAL_INDEX,
@@ -73,13 +84,20 @@ public class BeaconStateSchemaElectra
             () ->
                 SszListSchema.create(
                     historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
+
+    final SszField previousProposerIndexField =
+        new SszField(
+            PREVIOUS_PROPOSER_INDEX_INDEX,
+            BeaconStateFields.PREVIOUS_PROPOSER_INDEX,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(
                 latestExecutionPayloadHeaderField,
                 nextWithdrawalIndexField,
                 nextWithdrawalValidatorIndexField,
-                historicalSummariesField))
+                historicalSummariesField,
+                previousProposerIndexField))
         .toList();
   }
 
@@ -115,8 +133,10 @@ public class BeaconStateSchemaElectra
     return new MutableBeaconStateElectraImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaElectra create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaElectra(specConfig);
+  public static BeaconStateSchemaElectra create(
+      final SpecConfig specConfig,
+      final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra) {
+    return new BeaconStateSchemaElectra(specConfig, executionPayloadSchemaElectra);
   }
 
   public static BeaconStateSchemaElectra required(final BeaconStateSchema<?, ?> schema) {

@@ -152,6 +152,12 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
     return this;
   }
 
+  @Override
+  public ExecutionPayloadHeaderBuilder previousInclusionListSummaryRoot(
+      Supplier<Bytes32> previousInclusionListSummaryRootSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }

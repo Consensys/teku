@@ -24,16 +24,19 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final UInt64 electraForkEpoch;
 
   private final int maxDepositReceiptsPerPayload;
+  private final int maxTransactionPerInclusionList;
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
       final Bytes4 electraForkVersion,
       final UInt64 electraForkEpoch,
-      final int maxDepositReceiptsPerPayload) {
+      final int maxDepositReceiptsPerPayload,
+      final int maxTransactionPerInclusionList) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
     this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
+    this.maxTransactionPerInclusionList = maxTransactionPerInclusionList;
   }
 
   @Override
@@ -49,6 +52,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   @Override
   public int getMaxDepositReceiptsPerPayload() {
     return maxDepositReceiptsPerPayload;
+  }
+
+  @Override
+  public int getMaxTransactionPerInclusionList() {
+    return maxTransactionPerInclusionList;
   }
 
   @Override

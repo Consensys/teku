@@ -39,13 +39,17 @@ public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner 
     // Not needed for all milestones
     final Supplier<BlockContainerSignerDeneb> blockContainerSignerDeneb =
         Suppliers.memoize(() -> new BlockContainerSignerDeneb(spec));
+    final Supplier<BlockContainerSignerElectra> blockContainerSignerElectra =
+        Suppliers.memoize(() -> new BlockContainerSignerElectra(spec));
 
     // Populate forks signers
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+                registeredSigners.put(milestone, blockContainerSignerElectra.get());
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredSigners.put(milestone, blockContainerSignerDeneb.get());
               } else {
                 registeredSigners.put(milestone, blockContainerSignerPhase0);

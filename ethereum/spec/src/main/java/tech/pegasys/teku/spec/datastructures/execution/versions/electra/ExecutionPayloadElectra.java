@@ -30,6 +30,8 @@ public interface ExecutionPayloadElectra extends ExecutionPayload, ExecutionPayl
                         + payload.getClass().getSimpleName()));
   }
 
+  SignedInclusionListSummary getPreviousInclusionListSummary();
+
   @Override
   default Optional<ExecutionPayloadElectra> toVersionElectra() {
     return Optional.of(this);

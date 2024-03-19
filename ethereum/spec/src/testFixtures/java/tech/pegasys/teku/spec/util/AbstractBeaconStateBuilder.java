@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractBeaconStateBuilder<
@@ -78,13 +79,13 @@ public abstract class AbstractBeaconStateBuilder<
     initDefaults();
   }
 
-  protected abstract TState getEmptyState();
+  protected abstract TState getEmptyState(SchemaDefinitions schemaDefinitions);
 
   protected abstract void setUniqueFields(TStateMutable state);
 
   public TState build() {
     return (TState)
-        getEmptyState()
+        getEmptyState(spec.getSchemaDefinitions())
             .updated(
                 state -> {
                   state.setGenesisTime(genesisTime);

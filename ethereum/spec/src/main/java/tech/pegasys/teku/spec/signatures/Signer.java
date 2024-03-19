@@ -18,9 +18,12 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionListWithSignedSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -55,6 +58,14 @@ public interface Signer {
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signValidatorRegistration(ValidatorRegistration validatorRegistration);
+
+  SafeFuture<BLSSignature> signInclusionListWithSignedSummary(
+      UInt64 slot,
+      InclusionListWithSignedSummary inclusionListWithSignedSummary,
+      ForkInfo forkInfo);
+
+  SafeFuture<BLSSignature> signInclusionListSummary(
+      UInt64 slot, SszList<SszByteVector> inclusionListSummary, ForkInfo forkInfo);
 
   default boolean isLocal() {
     return getSigningServiceUrl().isEmpty();

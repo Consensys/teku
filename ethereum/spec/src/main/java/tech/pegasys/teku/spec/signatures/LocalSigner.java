@@ -23,10 +23,13 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionListWithSignedSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -120,6 +123,24 @@ public class LocalSigner implements Signer {
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
     return sign(signingRootUtil.signingRootForValidatorRegistration(validatorRegistration));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionListWithSignedSummary(
+      final UInt64 slot,
+      final InclusionListWithSignedSummary inclusionListWithSignedSummary,
+      final ForkInfo forkInfo) {
+    return sign(
+        signingRootUtil.signingRootForInclusionListWithSignedSummary(
+            inclusionListWithSignedSummary));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionListSummary(
+      final UInt64 slot,
+      final SszList<SszByteVector> inclusionListSummary,
+      final ForkInfo forkInfo) {
+    return sign(signingRootUtil.signingRootForInclusionListSummary(inclusionListSummary));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

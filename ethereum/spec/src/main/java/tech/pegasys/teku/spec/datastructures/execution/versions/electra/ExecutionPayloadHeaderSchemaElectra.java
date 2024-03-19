@@ -26,6 +26,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PREV_RANDAO;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.RECEIPTS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.SIGNED_INCLUSION_LIST_SUMMARY_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.STATE_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
@@ -36,7 +37,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -51,7 +52,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderSchemaElectra
-    extends ContainerSchema17<
+    extends ContainerSchema18<
         ExecutionPayloadHeaderElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -69,13 +70,16 @@ public class ExecutionPayloadHeaderSchemaElectra
         SszBytes32,
         SszBytes32,
         SszUInt64,
-        SszUInt64>
+        SszUInt64,
+        SszBytes32>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderElectraImpl> {
 
   private final ExecutionPayloadHeaderElectraImpl defaultExecutionPayloadHeader;
   private final ExecutionPayloadHeaderElectraImpl executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadHeaderSchemaElectra(final SpecConfigElectra specConfig) {
+  public ExecutionPayloadHeaderSchemaElectra(
+      final SpecConfigElectra specConfig,
+      final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra) {
     super(
         "ExecutionPayloadHeaderElectra",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -94,10 +98,11 @@ public class ExecutionPayloadHeaderSchemaElectra
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(SIGNED_INCLUSION_LIST_SUMMARY_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
     final ExecutionPayloadElectraImpl defaultExecutionPayload =
-        new ExecutionPayloadSchemaElectra(specConfig).getDefault();
+        executionPayloadSchemaElectra.getDefault();
 
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
@@ -162,6 +167,7 @@ public class ExecutionPayloadHeaderSchemaElectra
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
         SszUInt64.of(executionPayload.getBlobGasUsed()),
-        SszUInt64.of(executionPayload.getExcessBlobGas()));
+        SszUInt64.of(executionPayload.getExcessBlobGas()),
+        SszBytes32.of(executionPayload.getPreviousInclusionListSummary().hashTreeRoot()));
   }
 }

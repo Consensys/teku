@@ -26,6 +26,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PARENT_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.PREV_RANDAO;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.RECEIPTS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.SIGNED_INCLUSION_LIST_SUMMARY;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.STATE_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -56,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaElectra
-    extends ContainerSchema17<
+    extends ContainerSchema18<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -74,12 +75,15 @@ public class ExecutionPayloadSchemaElectra
         SszList<Transaction>,
         SszList<Withdrawal>,
         SszUInt64,
-        SszUInt64>
+        SszUInt64,
+        SignedInclusionListSummary>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
   private final ExecutionPayloadElectraImpl defaultExecutionPayload;
 
-  public ExecutionPayloadSchemaElectra(final SpecConfigElectra specConfig) {
+  public ExecutionPayloadSchemaElectra(
+      final SpecConfigElectra specConfig,
+      final SignedInclusionListSummarySchema signedInclusionListSummarySchema) {
     super(
         "ExecutionPayloadElectra",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -103,7 +107,8 @@ public class ExecutionPayloadSchemaElectra
             WITHDRAWALS,
             SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(SIGNED_INCLUSION_LIST_SUMMARY, signedInclusionListSummarySchema));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 

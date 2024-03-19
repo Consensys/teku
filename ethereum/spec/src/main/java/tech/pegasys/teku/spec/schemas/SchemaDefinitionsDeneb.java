@@ -248,11 +248,11 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return blobSidecarSchema;
   }
 
-  public BlockContentsSchema getBlockContentsSchema() {
+  public BlockContainerSchema<? extends BlockContainer> getBlockContentsSchema() {
     return blockContentsSchema;
   }
 
-  public SignedBlockContentsSchema getSignedBlockContentsSchema() {
+  public SignedBlockContainerSchema<? extends SignedBlockContainer> getSignedBlockContentsSchema() {
     return signedBlockContentsSchema;
   }
 

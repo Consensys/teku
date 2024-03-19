@@ -2390,6 +2390,8 @@ public final class DataStructureUtil {
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
+        .toVersionDeneb()
+        .orElseThrow()
         .create(signedBeaconBlock, kzgProofs, blobs);
   }
 
@@ -2403,6 +2405,8 @@ public final class DataStructureUtil {
             blobKzgCommitmentsSchema.createFromBlobsBundle(blobsBundle));
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
+        .toVersionDeneb()
+        .orElseThrow()
         .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 
@@ -2418,6 +2422,8 @@ public final class DataStructureUtil {
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
+        .toVersionDeneb()
+        .orElseThrow()
         .create(beaconBlock, kzgProofs, blobs);
   }
 
