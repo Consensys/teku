@@ -48,9 +48,9 @@ public class DepositReceiptsUtil {
   }
 
   public List<DepositReceipt> generateDepositReceipts(final BeaconState state) {
-    final int validatorsInState = state.getValidators().size();
+    final int nextDepositReceiptIndex = state.getValidators().size() + 1;
     return IntStream.range(0, getNumberOfDepositReceiptsToGenerate())
-        .mapToObj(i -> createDepositReceipt(state.getSlot(), validatorsInState + i))
+        .mapToObj(i -> createDepositReceipt(state.getSlot(), nextDepositReceiptIndex + i))
         .toList();
   }
 

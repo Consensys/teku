@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -33,6 +34,7 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return state
         .getEth1DepositIndex()
+        .plus(UInt64.ONE)
         .equals(BeaconStateElectra.required(state).getDepositReceiptsStartIndex());
   }
 }

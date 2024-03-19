@@ -331,7 +331,8 @@ public class Eth1DataCacheTest {
         state -> {
           final UInt64 eth1DepositIndex = dataStructureUtil.randomUInt64();
           state.setEth1DepositIndex(eth1DepositIndex);
-          MutableBeaconStateElectra.required(state).setDepositReceiptsStartIndex(eth1DepositIndex);
+          MutableBeaconStateElectra.required(state)
+              .setDepositReceiptsStartIndex(eth1DepositIndex.plus(1));
         });
   }
 
