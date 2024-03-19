@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_RECEIPTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -56,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaElectra
-    extends ContainerSchema17<
+    extends ContainerSchema18<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -74,7 +75,8 @@ public class ExecutionPayloadSchemaElectra
         SszList<Transaction>,
         SszList<Withdrawal>,
         SszUInt64,
-        SszUInt64>
+        SszUInt64,
+        SszList<DepositReceipt>>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
   private final ExecutionPayloadElectraImpl defaultExecutionPayload;
@@ -103,7 +105,11 @@ public class ExecutionPayloadSchemaElectra
             WITHDRAWALS,
             SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(
+            DEPOSIT_RECEIPTS,
+            SszListSchema.create(
+                DepositReceipt.SSZ_SCHEMA, specConfig.getMaxDepositReceiptsPerPayload())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -127,15 +133,25 @@ public class ExecutionPayloadSchemaElectra
     return getWithdrawalSchema();
   }
 
+  @Override
+  public DepositReceiptSchema getDepositReceiptSchemaRequired() {
+    return getDepositReceiptSchema();
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
+  }
+
+  public DepositReceiptSchema getDepositReceiptSchema() {
+    return (DepositReceiptSchema) getDepositReceiptsSchema().getElementSchema();
   }
 
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
+        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS)));
   }
 
   @Override
@@ -164,5 +180,10 @@ public class ExecutionPayloadSchemaElectra
   @SuppressWarnings("unchecked")
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getChildSchema(getFieldIndex(WITHDRAWALS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<DepositReceipt, ?> getDepositReceiptsSchema() {
+    return (SszListSchema<DepositReceipt, ?>) getChildSchema(getFieldIndex(DEPOSIT_RECEIPTS));
   }
 }
