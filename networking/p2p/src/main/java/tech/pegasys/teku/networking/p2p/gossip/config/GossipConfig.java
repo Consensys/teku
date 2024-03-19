@@ -32,7 +32,7 @@ public class GossipConfig {
   private static final int DEFAULT_ADVERTISE = 3;
   private static final int DEFAULT_HISTORY = 6;
   static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
-  // In Deneb, attestations are valid for up to 2 full epochs, so TTL is 65 slots
+  // After EIP-7045, attestations are valid for up to 2 full epochs, so TTL is 65 slots
   // 1115 * HEARTBEAT = 1115 * 0.7 / 12 = 65.125
   static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(1115);
 
