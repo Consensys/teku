@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 class GossipConfigTest {
   @Test
   void shouldUseCorrectSeenTtl() {
-    // Should be heartbeat interval * 566
-    assertThat(GossipConfig.DEFAULT_SEEN_TTL.toMillis()).isEqualTo(700 * 566);
+    // Should be heartbeat interval * 1115
+    assertThat(GossipConfig.DEFAULT_SEEN_TTL.toMillis()).isEqualTo(700 * 1115);
   }
 }
