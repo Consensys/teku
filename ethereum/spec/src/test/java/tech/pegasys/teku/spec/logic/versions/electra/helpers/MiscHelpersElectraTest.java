@@ -48,9 +48,10 @@ public class MiscHelpersElectraTest {
         BeaconStateElectra.required(preState)
             .updated(
                 mutableState -> {
-                  mutableState.setEth1DepositIndex(UInt64.valueOf(32));
+                  final UInt64 eth1DepositIndex = dataStructureUtil.randomUInt64();
+                  mutableState.setEth1DepositIndex(eth1DepositIndex);
                   MutableBeaconStateElectra.required(mutableState)
-                      .setDepositReceiptsStartIndex(UInt64.valueOf(33));
+                      .setDepositReceiptsStartIndex(eth1DepositIndex);
                 });
 
     assertThat(miscHelpersElectra.isFormerDepositMechanismDisabled(state)).isTrue();
@@ -64,7 +65,7 @@ public class MiscHelpersElectraTest {
         BeaconStateElectra.required(preState)
             .updated(
                 mutableState -> {
-                  mutableState.setEth1DepositIndex(UInt64.valueOf(32));
+                  mutableState.setEth1DepositIndex(UInt64.valueOf(64));
                   MutableBeaconStateElectra.required(mutableState)
                       .setDepositReceiptsStartIndex(
                           SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX);

@@ -74,8 +74,8 @@ public class DepositProvider
   private boolean inSync = false;
 
   public DepositProvider(
-      MetricsSystem metricsSystem,
-      RecentChainData recentChainData,
+      final MetricsSystem metricsSystem,
+      final RecentChainData recentChainData,
       final Eth1DataCache eth1DataCache,
       final StorageUpdateChannel storageUpdateChannel,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,

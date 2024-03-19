@@ -33,7 +33,6 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return state
         .getEth1DepositIndex()
-        .plus(1)
         .equals(BeaconStateElectra.required(state).getDepositReceiptsStartIndex());
   }
 }
