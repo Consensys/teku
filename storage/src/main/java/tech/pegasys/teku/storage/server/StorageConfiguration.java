@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 public class StorageConfiguration {
 
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
-
+  public static final int DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS = 120;
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
@@ -59,6 +59,8 @@ public class StorageConfiguration {
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
 
+  private final int stateRebuildTimeoutSeconds;
+
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
       final StateStorageMode dataStorageMode,
@@ -70,6 +72,7 @@ public class StorageConfiguration {
       final int blockPruningLimit,
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
+      int stateRebuildTimeoutSeconds,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -81,6 +84,7 @@ public class StorageConfiguration {
     this.blockPruningLimit = blockPruningLimit;
     this.blobsPruningInterval = blobsPruningInterval;
     this.blobsPruningLimit = blobsPruningLimit;
+    this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
     this.spec = spec;
   }
 
@@ -94,6 +98,10 @@ public class StorageConfiguration {
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
+  }
+
+  public int getStateRebuildTimeoutSeconds() {
+    return stateRebuildTimeoutSeconds;
   }
 
   public long getDataStorageFrequency() {
@@ -146,6 +154,7 @@ public class StorageConfiguration {
     private int blockPruningLimit = DEFAULT_BLOCK_PRUNING_LIMIT;
     private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
+    private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
 
     private Builder() {}
 
@@ -251,6 +260,7 @@ public class StorageConfiguration {
           blockPruningLimit,
           blobsPruningInterval,
           blobsPruningLimit,
+          stateRebuildTimeoutSeconds,
           spec);
     }
 
@@ -284,6 +294,15 @@ public class StorageConfiguration {
       } catch (final IOException ex) {
         throw new UncheckedIOException("Failed to read storage mode from file", ex);
       }
+    }
+
+    public Builder stateRebuildTimeoutSeconds(int stateRebuildTimeoutSeconds) {
+      if (stateRebuildTimeoutSeconds < 10 || stateRebuildTimeoutSeconds > 300) {
+        LOG.warn("State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below 1, will allow the value to exceed 300.", stateRebuildTimeoutSeconds);
+      }
+      this.stateRebuildTimeoutSeconds = Math.max(stateRebuildTimeoutSeconds, 1);
+      LOG.debug("stateRebuildTimeoutSeconds = {}", stateRebuildTimeoutSeconds);
+      return this;
     }
   }
 

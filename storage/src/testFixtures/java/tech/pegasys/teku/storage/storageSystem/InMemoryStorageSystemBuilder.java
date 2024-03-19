@@ -42,6 +42,8 @@ public class InMemoryStorageSystemBuilder {
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
 
+  private int stateRebuildTimeoutSeconds = 120;
+
   private Spec spec = TestSpecFactory.createMinimalPhase0();
 
   // Internal variables
@@ -101,7 +103,8 @@ public class InMemoryStorageSystemBuilder {
         storeConfig,
         new SystemTimeProvider(),
         spec,
-        ChainBuilder.create(spec, validatorKeys));
+        ChainBuilder.create(spec, validatorKeys),
+        stateRebuildTimeoutSeconds);
   }
 
   public InMemoryStorageSystemBuilder specProvider(final Spec spec) {
@@ -145,6 +148,12 @@ public class InMemoryStorageSystemBuilder {
 
   public InMemoryStorageSystemBuilder stateStorageFrequency(final long stateStorageFrequency) {
     this.stateStorageFrequency = stateStorageFrequency;
+    return this;
+  }
+
+  public InMemoryStorageSystemBuilder stateRebuildTimeoutSeconds(
+      final int stateRebuildTimeoutSeconds) {
+    this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
     return this;
   }
 

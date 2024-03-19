@@ -44,7 +44,7 @@ class FinalizedStateCacheTest {
   private final Database database = mock(Database.class);
   // We don't use soft references in unit tests to avoid intermittency
   private final FinalizedStateCache cache =
-      new FinalizedStateCache(spec, database, MAXIMUM_CACHE_SIZE, false);
+      new FinalizedStateCache(spec, database, MAXIMUM_CACHE_SIZE, false, 120);
 
   @BeforeEach
   public void setUp() {

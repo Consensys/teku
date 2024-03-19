@@ -45,6 +45,8 @@ public class FileBackedStorageSystemBuilder {
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
 
+  private int stateRebuildTimeoutSeconds = 120;
+
   private FileBackedStorageSystemBuilder() {}
 
   public static FileBackedStorageSystemBuilder create() {
@@ -62,7 +64,8 @@ public class FileBackedStorageSystemBuilder {
         storeConfig,
         new SystemTimeProvider(),
         spec,
-        ChainBuilder.create(spec));
+        ChainBuilder.create(spec),
+        stateRebuildTimeoutSeconds);
   }
 
   private Database buildDatabase() {
@@ -135,6 +138,12 @@ public class FileBackedStorageSystemBuilder {
   public FileBackedStorageSystemBuilder storageMode(final StateStorageMode storageMode) {
     checkNotNull(storageMode);
     this.storageMode = storageMode;
+    return this;
+  }
+
+  public FileBackedStorageSystemBuilder stateRebuildTimeoutSeconds(
+      final int stateRebuildTimeoutSeconds) {
+    this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
     return this;
   }
 
