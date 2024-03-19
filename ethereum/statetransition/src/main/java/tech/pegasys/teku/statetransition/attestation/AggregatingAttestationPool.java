@@ -68,7 +68,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
    * <p>A limit of 40,000 attestations is enough for 3 slots worth at 400,000 validators which gives
    * a sane upper limit while still being above the typical 10-20k pool size seen on MainNet.
    */
-  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 40_000;
+  /**
+   * With 1.2 million active validators, we'd expect around 37_500 attestations per slot 3 slots
+   * worth of attestations by the logic above is almost 120_000, which is quite large.
+   */
+  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 120_000;
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
