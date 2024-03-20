@@ -33,10 +33,12 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
 public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   public final List<DepositReceiptV1> depositReceipts;
+  public final List<ExitV1> exits;
 
   public ExecutionPayloadV4(
       @JsonProperty("parentHash") Bytes32 parentHash,
@@ -56,7 +58,8 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
       @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
       @JsonProperty("blobGasUsed") UInt64 blobGasUsed,
       @JsonProperty("excessBlobGas") UInt64 excessBlobGas,
-      @JsonProperty("depositReceipts") List<DepositReceiptV1> depositReceipts) {
+      @JsonProperty("depositReceipts") List<DepositReceiptV1> depositReceipts,
+      @JsonProperty("exits") List<ExitV1> exits) {
     super(
         parentHash,
         feeRecipient,
@@ -76,6 +79,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         blobGasUsed,
         excessBlobGas);
     this.depositReceipts = depositReceipts;
+    this.exits = exits;
   }
 
   public static ExecutionPayloadV4 fromInternalExecutionPayload(
@@ -101,7 +105,8 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getBlobGasUsed).orElse(null),
         executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getExcessBlobGas).orElse(null),
         getDepositReceipts(
-            executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getDepositReceipts)));
+            executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getDepositReceipts)),
+        getExits(executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getExits)));
   }
 
   @Override
@@ -109,15 +114,17 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final ExecutionPayloadBuilder builder) {
     return super.applyToBuilder(executionPayloadSchema, builder)
-        .blobGasUsed(() -> checkNotNull(blobGasUsed, "blobGasUsed not provided when required"))
-        .excessBlobGas(
-            () -> checkNotNull(excessBlobGas, "excessBlobGas not provided when required"))
         .depositReceipts(
             () ->
                 checkNotNull(depositReceipts, "depositReceipts not provided when required").stream()
                     .map(
                         depositReceiptV1 ->
                             createInternalDepositReceipt(depositReceiptV1, executionPayloadSchema))
+                    .toList())
+        .exits(
+            () ->
+                checkNotNull(exits, "exits not provided when required").stream()
+                    .map(exitV1 -> createInternalExit(exitV1, executionPayloadSchema))
                     .toList());
   }
 
@@ -131,6 +138,13 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
             depositReceiptV1.amount,
             BLSSignature.fromBytesCompressed(depositReceiptV1.signature),
             depositReceiptV1.index);
+  }
+
+  private ExecutionLayerExit createInternalExit(
+      final ExitV1 exitV1, ExecutionPayloadSchema<?> executionPayloadSchema) {
+    return executionPayloadSchema
+        .getExecutionLayerExitSchemaRequired()
+        .create(exitV1.sourceAddress, BLSPublicKey.fromBytesCompressed(exitV1.validatorPublicKey));
   }
 
   public static List<DepositReceiptV1> getDepositReceipts(
@@ -151,5 +165,19 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
               depositReceipt.getIndex()));
     }
     return depositReceipts;
+  }
+
+  public static List<ExitV1> getExits(final Optional<SszList<ExecutionLayerExit>> maybeExits) {
+    if (maybeExits.isEmpty()) {
+      return List.of();
+    }
+
+    final List<ExitV1> exits = new ArrayList<>();
+
+    for (ExecutionLayerExit exit : maybeExits.get()) {
+      exits.add(
+          new ExitV1(exit.getSourceAddress(), exit.getValidatorPublicKey().toBytesCompressed()));
+    }
+    return exits;
   }
 }
