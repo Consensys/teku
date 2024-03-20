@@ -104,7 +104,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       updateSize(1);
     }
     // Always keep the latest slot attestations so we don't discard everything
-    long currentSize = getSize();
+    int currentSize = getSize();
     while (dataHashBySlot.size() > 1 && currentSize > maximumAttestationCount) {
       LOG.trace("Attestation cache at {} exceeds {}, ", currentSize, maximumAttestationCount);
       final UInt64 firstSlotToKeep = dataHashBySlot.firstKey().plus(1);
