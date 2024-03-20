@@ -485,16 +485,16 @@ public class TekuBeaconNode extends TekuNode {
         MINUTES);
   }
 
-  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBlock> consumer) {
+  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBlock> assertions) {
     LOG.debug("Wait for a block satisfying certain assertions");
 
     waitFor(
         () -> {
           final Optional<SignedBlock> block = fetchHeadBlock();
           assertThat(block).isPresent();
-          assertThat(block.get()).satisfies(consumer);
+          assertThat(block.get()).satisfies(assertions);
         },
-        5,
+        1,
         MINUTES);
   }
 
