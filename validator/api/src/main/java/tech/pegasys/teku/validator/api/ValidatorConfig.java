@@ -61,7 +61,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
   public static final ClientGraffitiAppendFormat DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT =
-      ClientGraffitiAppendFormat.AUTO_END;
+      ClientGraffitiAppendFormat.AUTO;
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
   public static final boolean DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;

@@ -59,16 +59,12 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-graffiti-client-append-format"},
       paramLabel = "<STRING>",
+      showDefaultValue = Visibility.ALWAYS,
       description =
           """
                           Appends CL and EL clients information separated with a space to user's graffiti on the Beacon Node.
-                          AUTO modes tries to provide complete version information if there is enough space for it.
-                          To disable use NONE. Available options:
-                            AUTO_END: (default) Clients info is appended after user's graffiti if any.
-                            AUTO_START: Clients info is added before user's graffiti.
-                            NAME_END: Only clients names are appended after user's graffiti. Good when you don't want to disclose clients versions.
-                            NAME_START: Clients names are added before user's graffiti.
-                            NONE: Clients information is not added to the graffiti.
+                          AUTO mode tries to provide complete version information if there is enough space for it.
+                          NAME adds only CL and EL name, to disable use NONE. (Valid values: ${COMPLETION-CANDIDATES})
                           """,
       arity = "1")
   private ClientGraffitiAppendFormat clientGraffitiAppendFormat =

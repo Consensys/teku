@@ -82,33 +82,19 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
       final int userGraffitiLength = calculateGraffitiLength(userGraffiti);
 
       return switch (clientGraffitiAppendFormat) {
-        case AUTO_END -> {
+        case AUTO -> {
           final int clientInfoLength = Bytes32.SIZE - 1 - userGraffitiLength;
           yield joinNonEmpty(
               SPACE,
               extractGraffiti(userGraffiti, userGraffitiLength),
               formatClientInfo(clientInfoLength));
         }
-        case AUTO_START -> {
-          final int clientInfoLength = Bytes32.SIZE - 1 - userGraffitiLength;
-          yield joinNonEmpty(
-              SPACE,
-              formatClientInfo(clientInfoLength),
-              extractGraffiti(userGraffiti, userGraffitiLength));
-        }
-        case NAME_END -> {
+        case NAME -> {
           final int clientInfoLength = Integer.min(Bytes32.SIZE - 1 - userGraffitiLength, 4);
           yield joinNonEmpty(
               SPACE,
               extractGraffiti(userGraffiti, userGraffitiLength),
               formatClientInfo(clientInfoLength));
-        }
-        case NAME_START -> {
-          final int clientInfoLength = Integer.min(Bytes32.SIZE - 1 - userGraffitiLength, 4);
-          yield joinNonEmpty(
-              SPACE,
-              formatClientInfo(clientInfoLength),
-              extractGraffiti(userGraffiti, userGraffitiLength));
         }
         case NONE -> userGraffiti.orElse(Bytes32.ZERO);
       };

@@ -251,8 +251,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--validators-graffiti-client-append-format=NAME_END")
             .validatorClient()
             .getValidatorConfig();
-    assertThat(config.getClientGraffitiAppendFormat())
-        .isEqualTo(ClientGraffitiAppendFormat.NAME_END);
+    assertThat(config.getClientGraffitiAppendFormat()).isEqualTo(ClientGraffitiAppendFormat.NAME);
   }
 
   @Test

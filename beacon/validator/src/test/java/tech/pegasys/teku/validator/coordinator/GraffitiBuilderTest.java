@@ -14,10 +14,8 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.AUTO_END;
-import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.AUTO_START;
-import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.NAME_END;
-import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.NAME_START;
+import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.AUTO;
+import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.NAME;
 import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.NONE;
 
 import java.nio.charset.StandardCharsets;
@@ -33,19 +31,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.validator.api.Bytes32Parser;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
 public class GraffitiBuilderTest {
-  private ClientGraffitiAppendFormat clientGraffitiAppendFormat = AUTO_END;
+  private ClientGraffitiAppendFormat clientGraffitiAppendFormat = AUTO;
   private Optional<Bytes32> userGraffiti = Optional.empty();
   private GraffitiBuilder graffitiBuilder =
       new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
 
   private static final ClientVersion TEKU_CLIENT_VERSION =
-      VersionProvider.createTekuClientVersion();
+      new GraffitiBuilder(NONE, Optional.empty()).getConsensusClientVersion();
   private static final ClientVersion BESU_CLIENT_VERSION =
       new ClientVersion("BU", "Besu", "23.4.1", Bytes4.fromHexString("abcdef12"));
 
@@ -58,7 +55,7 @@ public class GraffitiBuilderTest {
 
   @BeforeEach
   public void setup() {
-    this.clientGraffitiAppendFormat = AUTO_END;
+    this.clientGraffitiAppendFormat = AUTO;
     this.userGraffiti = Optional.empty();
     this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
   }
@@ -323,14 +320,14 @@ public class GraffitiBuilderTest {
   private static Stream<Arguments> getBuildGraffitiFixtures() {
     return Stream.of(
         Arguments.of(
-            AUTO_END,
+            AUTO,
             Optional.empty(),
             TEKU_CLIENT_VERSION.code()
                 + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString()),
         Arguments.of(
-            AUTO_END,
+            AUTO,
             Optional.of("small"),
             "small "
                 + TEKU_CLIENT_VERSION.code()
@@ -338,7 +335,7 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString()),
         Arguments.of(
-            AUTO_END,
+            AUTO,
             Optional.of(UTF_8_GRAFFITI_4),
             UTF_8_GRAFFITI_4
                 + " "
@@ -347,7 +344,7 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString()),
         Arguments.of(
-            AUTO_END,
+            AUTO,
             Optional.of(ASCII_GRAFFITI_20),
             ASCII_GRAFFITI_20
                 + " "
@@ -356,66 +353,19 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)),
         Arguments.of(
-            AUTO_START,
-            Optional.empty(),
-            TEKU_CLIENT_VERSION.code()
-                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()
-                + BESU_CLIENT_VERSION.code()
-                + BESU_CLIENT_VERSION.commit().toUnprefixedHexString()),
+            NAME, Optional.empty(), TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(
-            AUTO_START,
-            Optional.of("small"),
-            TEKU_CLIENT_VERSION.code()
-                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()
-                + BESU_CLIENT_VERSION.code()
-                + BESU_CLIENT_VERSION.commit().toUnprefixedHexString()
-                + " small"),
-        Arguments.of(
-            AUTO_START,
-            Optional.of(UTF_8_GRAFFITI_4),
-            TEKU_CLIENT_VERSION.code()
-                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()
-                + BESU_CLIENT_VERSION.code()
-                + BESU_CLIENT_VERSION.commit().toUnprefixedHexString()
-                + " "
-                + UTF_8_GRAFFITI_4),
-        Arguments.of(
-            AUTO_START,
-            Optional.of(ASCII_GRAFFITI_20),
-            TEKU_CLIENT_VERSION.code()
-                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)
-                + BESU_CLIENT_VERSION.code()
-                + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)
-                + " "
-                + ASCII_GRAFFITI_20),
-        Arguments.of(
-            NAME_END, Optional.empty(), TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
-        Arguments.of(
-            NAME_END,
+            NAME,
             Optional.of("small"),
             "small " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(
-            NAME_END,
+            NAME,
             Optional.of(UTF_8_GRAFFITI_4),
             UTF_8_GRAFFITI_4 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(
-            NAME_END,
+            NAME,
             Optional.of(ASCII_GRAFFITI_20),
             ASCII_GRAFFITI_20 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
-        Arguments.of(
-            NAME_START, Optional.empty(), TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
-        Arguments.of(
-            NAME_START,
-            Optional.of("small"),
-            TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code() + " small"),
-        Arguments.of(
-            NAME_START,
-            Optional.of(UTF_8_GRAFFITI_4),
-            TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code() + " " + UTF_8_GRAFFITI_4),
-        Arguments.of(
-            NAME_START,
-            Optional.of(ASCII_GRAFFITI_20),
-            TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code() + " " + ASCII_GRAFFITI_20),
         Arguments.of(NONE, Optional.empty(), ""),
         Arguments.of(NONE, Optional.of("small"), "small"),
         Arguments.of(NONE, Optional.of(UTF_8_GRAFFITI_4), UTF_8_GRAFFITI_4),
