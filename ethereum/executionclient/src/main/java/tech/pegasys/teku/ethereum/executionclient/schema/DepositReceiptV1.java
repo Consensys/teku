@@ -50,7 +50,7 @@ public class DepositReceiptV1 {
 
   public DepositReceiptV1(
       @JsonProperty("pubkey") final Bytes48 pubkey,
-      @JsonProperty("withdrawal_credentials") final Bytes32 withdrawalCredentials,
+      @JsonProperty("withdrawalCredentials") final Bytes32 withdrawalCredentials,
       @JsonProperty("amount") final UInt64 amount,
       @JsonProperty("signature") final Bytes signature,
       @JsonProperty("index") final UInt64 index) {
