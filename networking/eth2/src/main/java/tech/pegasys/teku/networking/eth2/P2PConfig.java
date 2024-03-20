@@ -30,7 +30,7 @@ public class P2PConfig {
 
   public static final int DEFAULT_PEER_RATE_LIMIT = 500;
 
-  public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = false;
+  public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = true;
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
