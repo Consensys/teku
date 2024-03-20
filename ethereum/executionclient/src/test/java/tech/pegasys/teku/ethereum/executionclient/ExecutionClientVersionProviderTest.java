@@ -64,7 +64,7 @@ public class ExecutionClientVersionProviderTest {
   }
 
   @Test
-  public void updatesExecutionClientVersionElIsAvailableAfterBeingUnavailable() {
+  public void updatesExecutionClientVersionWhenElIsAvailableAfterBeingUnavailable() {
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
             executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);

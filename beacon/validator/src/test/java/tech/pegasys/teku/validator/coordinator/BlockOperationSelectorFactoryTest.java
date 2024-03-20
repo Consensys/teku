@@ -177,7 +177,7 @@ class BlockOperationSelectorFactoryTest {
       new CapturingBeaconBlockBodyBuilder(false);
 
   private final GraffitiBuilder graffitiBuilder =
-      new GraffitiBuilder(ClientGraffitiAppendFormat.NONE, Optional.empty());
+      new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED, Optional.empty());
 
   private final BlockOperationSelectorFactory factory =
       new BlockOperationSelectorFactory(

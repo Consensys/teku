@@ -34,8 +34,8 @@ import tech.pegasys.teku.validator.api.Bytes32Parser;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
 /**
- * Builds graffiti from user's graffiti input and CL/EL client info according to the
- * clientGraffitiAppendFormat configuration.
+ * Generates graffiti by combining user-supplied graffiti with information from CL/EL clients,
+ * according to the clientGraffitiAppendFormat configuration.
  */
 public class GraffitiBuilder implements ExecutionClientVersionChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -73,8 +73,9 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   @Override
   public void onExecutionClientVersion(final ClientVersion executionClientVersion) {
     this.executionClientVersion.set(executionClientVersion);
-    final Optional<Bytes32> graffiti = Optional.of(buildGraffiti(defaultUserGraffiti));
-    EVENT_LOG.logDefaultGraffiti(extractGraffiti(graffiti, calculateGraffitiLength(graffiti)));
+    final Optional<Bytes32> defaultGraffiti = Optional.of(buildGraffiti(defaultUserGraffiti));
+    EVENT_LOG.logDefaultGraffiti(
+        extractGraffiti(defaultGraffiti, calculateGraffitiLength(defaultGraffiti)));
   }
 
   public Bytes32 buildGraffiti(final Optional<Bytes32> userGraffiti) {
@@ -87,16 +88,16 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
           yield joinNonEmpty(
               SPACE,
               extractGraffiti(userGraffiti, userGraffitiLength),
-              formatClientInfo(clientInfoLength));
+              formatClientsInfo(clientInfoLength));
         }
-        case NAME -> {
+        case CLIENT_NAMES -> {
           final int clientInfoLength = Integer.min(Bytes32.SIZE - 1 - userGraffitiLength, 4);
           yield joinNonEmpty(
               SPACE,
               extractGraffiti(userGraffiti, userGraffitiLength),
-              formatClientInfo(clientInfoLength));
+              formatClientsInfo(clientInfoLength));
         }
-        case NONE -> userGraffiti.orElse(Bytes32.ZERO);
+        case DISABLED -> userGraffiti.orElse(Bytes32.ZERO);
       };
     } catch (final Exception ex) {
       LOG.error("Unexpected error when preparing block graffiti", ex);
@@ -126,7 +127,7 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   }
 
   @VisibleForTesting
-  protected String formatClientInfo(final int length) {
+  protected String formatClientsInfo(final int length) {
     final String safeConsensusCode = extractClientCodeSafely(consensusClientVersion);
     final String safeExecutionCode = extractClientCodeSafely(executionClientVersion.get());
     // LH1be52536BU0f91a674

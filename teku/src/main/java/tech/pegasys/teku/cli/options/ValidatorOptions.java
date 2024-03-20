@@ -61,11 +61,8 @@ public class ValidatorOptions {
       paramLabel = "<STRING>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          """
-                          Appends CL and EL clients information separated with a space to user's graffiti on the Beacon Node.
-                          AUTO mode tries to provide complete version information if there is enough space for it.
-                          NAME adds only CL and EL name, to disable use NONE. (Valid values: ${COMPLETION-CANDIDATES})
-                          """,
+          "Appends CL and EL clients information with a space to user's graffiti "
+              + "when producing a block on the Beacon Node. (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
   private ClientGraffitiAppendFormat clientGraffitiAppendFormat =
       ValidatorConfig.DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT;

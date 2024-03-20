@@ -14,12 +14,12 @@
 package tech.pegasys.teku.validator.api;
 
 public enum ClientGraffitiAppendFormat {
-  // Appends comprehensive client info if there is a space for it. Reduces verbosity when needed.
-  // Client info is separated with a space after user's graffiti if any.
+  // Appends comprehensive clients information if there is a space for it.
+  // Reduces verbosity with less space or completely skips adding clients information.
+  // Clients info is separated with a space after user's graffiti if any.
   AUTO,
-  // Prepends comprehensive client info with a space before user's graffiti if there is a room for
-  // it.
-  NAME,
-  // Client information is not appended to the graffiti.
-  NONE;
+  // Appends client name codes if there is a space for it.
+  CLIENT_NAMES,
+  // Clients information is not appended to the graffiti.
+  DISABLED;
 }
