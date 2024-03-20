@@ -586,7 +586,8 @@ public final class DataStructureUtil {
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64)
-                    .depositReceiptsRoot(this::randomBytes32));
+                    .depositReceiptsRoot(this::randomBytes32)
+                    .exitsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
