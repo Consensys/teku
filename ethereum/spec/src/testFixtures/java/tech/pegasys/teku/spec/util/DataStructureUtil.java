@@ -123,6 +123,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -143,7 +144,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.operations.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -197,6 +197,7 @@ public final class DataStructureUtil {
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
+  private static final int MAX_EP_RANDOM_EXITS = 16;
 
   private final Spec spec;
 
@@ -696,7 +697,8 @@ public final class DataStructureUtil {
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
-                      .depositReceipts(this::randomExecutionPayloadDepositReceipts);
+                      .depositReceipts(this::randomExecutionPayloadDepositReceipts)
+                      .exits(this::randomExecutionPayloadExits);
               postRandomModifications.accept(executionPayloadBuilder);
             });
   }
@@ -724,6 +726,12 @@ public final class DataStructureUtil {
   public List<DepositReceipt> randomExecutionPayloadDepositReceipts() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_RECEIPTS))
         .mapToObj(__ -> randomDepositReceipt())
+        .collect(toList());
+  }
+
+  public List<ExecutionLayerExit> randomExecutionPayloadExits() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_EXITS))
+        .mapToObj(__ -> randomExecutionLayerExit())
         .collect(toList());
   }
 

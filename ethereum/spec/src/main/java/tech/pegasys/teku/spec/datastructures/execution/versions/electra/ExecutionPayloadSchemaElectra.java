@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_RECEIPTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXITS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -38,7 +39,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -57,7 +58,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaElectra
-    extends ContainerSchema18<
+    extends ContainerSchema19<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -76,7 +77,8 @@ public class ExecutionPayloadSchemaElectra
         SszList<Withdrawal>,
         SszUInt64,
         SszUInt64,
-        SszList<DepositReceipt>>
+        SszList<DepositReceipt>,
+        SszList<ExecutionLayerExit>>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
   private final ExecutionPayloadElectraImpl defaultExecutionPayload;
@@ -109,7 +111,11 @@ public class ExecutionPayloadSchemaElectra
         namedSchema(
             DEPOSIT_RECEIPTS,
             SszListSchema.create(
-                DepositReceipt.SSZ_SCHEMA, specConfig.getMaxDepositReceiptsPerPayload())));
+                DepositReceipt.SSZ_SCHEMA, specConfig.getMaxDepositReceiptsPerPayload())),
+        namedSchema(
+            EXITS,
+            SszListSchema.create(
+                ExecutionLayerExit.SSZ_SCHEMA, specConfig.getMaxExecutionLayerExits())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -138,6 +144,11 @@ public class ExecutionPayloadSchemaElectra
     return getDepositReceiptSchema();
   }
 
+  @Override
+  public ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired() {
+    return getExecutionLayerExitSchema();
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }
@@ -146,12 +157,17 @@ public class ExecutionPayloadSchemaElectra
     return (DepositReceiptSchema) getDepositReceiptsSchema().getElementSchema();
   }
 
+  public ExecutionLayerExitSchema getExecutionLayerExitSchema() {
+    return (ExecutionLayerExitSchema) getExecutionLayerExitsSchema().getElementSchema();
+  }
+
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
-        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS)));
+        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS)),
+        getChildGeneralizedIndex(getFieldIndex(EXITS)));
   }
 
   @Override
@@ -185,5 +201,10 @@ public class ExecutionPayloadSchemaElectra
   @SuppressWarnings("unchecked")
   public SszListSchema<DepositReceipt, ?> getDepositReceiptsSchema() {
     return (SszListSchema<DepositReceipt, ?>) getChildSchema(getFieldIndex(DEPOSIT_RECEIPTS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<ExecutionLayerExit, ?> getExecutionLayerExitsSchema() {
+    return (SszListSchema<ExecutionLayerExit, ?>) getChildSchema(getFieldIndex(EXITS));
   }
 }

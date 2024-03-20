@@ -16,7 +16,7 @@ package tech.pegasys.teku.api.schema.electra;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.operations.ExecutionLayerExitSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 
 public class ExecutionLayerExit {
 
@@ -34,14 +34,14 @@ public class ExecutionLayerExit {
   }
 
   public ExecutionLayerExit(
-      final tech.pegasys.teku.spec.datastructures.operations.ExecutionLayerExit
+      final tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit
           executionLayerExit) {
     this.sourceAddress =
         Eth1Address.fromBytes(executionLayerExit.getSourceAddress().getWrappedBytes());
     this.validatorPublicKey = executionLayerExit.getValidatorPublicKey();
   }
 
-  public final tech.pegasys.teku.spec.datastructures.operations.ExecutionLayerExit
+  public final tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit
       asInternalExecutionLayerExit(final ExecutionLayerExitSchema schema) {
     return schema.create(sourceAddress, validatorPublicKey);
   }

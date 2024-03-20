@@ -40,9 +40,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.operations.ExecutionLayerExitSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -78,7 +79,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
     this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
-    this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
 
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
     this.executionPayloadHeaderSchemaElectra =
@@ -124,7 +124,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
 
-    this.executionLayerExitSchema = new ExecutionLayerExitSchema();
+    this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
+    this.executionLayerExitSchema = ExecutionLayerExit.SSZ_SCHEMA;
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {

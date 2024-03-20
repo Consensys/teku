@@ -33,6 +33,9 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
   @JsonProperty("deposit_receipts")
   public final List<DepositReceipt> depositReceipts;
 
+  @JsonProperty("exits")
+  public final List<ExecutionLayerExit> exits;
+
   @JsonCreator
   public ExecutionPayloadElectra(
       @JsonProperty("parent_hash") final Bytes32 parentHash,
@@ -52,7 +55,8 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
-      @JsonProperty("deposit_receipts") final List<DepositReceipt> depositReceipts) {
+      @JsonProperty("deposit_receipts") final List<DepositReceipt> depositReceipts,
+      @JsonProperty("exits") final List<ExecutionLayerExit> exits) {
     super(
         parentHash,
         feeRecipient,
@@ -72,6 +76,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         blobGasUsed,
         excessBlobGas);
     this.depositReceipts = depositReceipts;
+    this.exits = exits;
   }
 
   public ExecutionPayloadElectra(
@@ -80,6 +85,10 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
     this.depositReceipts =
         executionPayload.toVersionElectra().orElseThrow().getDepositReceipts().stream()
             .map(DepositReceipt::new)
+            .toList();
+    this.exits =
+        executionPayload.toVersionElectra().orElseThrow().getExits().stream()
+            .map(ExecutionLayerExit::new)
             .toList();
   }
 
@@ -95,6 +104,14 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
                         depositReceipt ->
                             depositReceipt.asInternalDepositReceipt(
                                 executionPayloadSchema.getDepositReceiptSchemaRequired()))
+                    .toList())
+        .exits(
+            () ->
+                exits.stream()
+                    .map(
+                        exit ->
+                            exit.asInternalExecutionLayerExit(
+                                executionPayloadSchema.getExecutionLayerExitSchemaRequired()))
                     .toList());
   }
 
