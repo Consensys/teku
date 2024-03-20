@@ -101,7 +101,7 @@ public class GraffitiBuilderTest {
     assertThat(graffitiBuilder.buildGraffiti(Optional.of(graffiti))).isEqualTo(graffiti);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest(name = "format={0}, userGraffiti={1}")
   @MethodSource("getBuildGraffitiFixtures")
   public void buildGraffiti_shouldProvideCorrectOutput(
       final ClientGraffitiAppendFormat clientGraffitiAppendFormat,
@@ -123,12 +123,16 @@ public class GraffitiBuilderTest {
   }
 
   @Test
-  public void extractGraffiti_shouldReturnCorrectGraffiti() {
+  public void extractGraffiti_shouldReturnEmptyString() {
     assertThat(graffitiBuilder.extractGraffiti(Optional.empty(), 0)).isEqualTo("");
     assertThat(
             graffitiBuilder.extractGraffiti(
                 Optional.of(Bytes32Parser.toBytes32(asciiGraffiti0)), 0))
         .isEqualTo("");
+  }
+
+  @Test
+  public void extractGraffiti_shouldReturnAsciiString() {
     assertThat(
             graffitiBuilder.extractGraffiti(
                 Optional.of(Bytes32Parser.toBytes32(ASCII_GRAFFITI_20)), 20))
@@ -141,6 +145,10 @@ public class GraffitiBuilderTest {
             graffitiBuilder.extractGraffiti(
                 Optional.of(Bytes32Parser.toBytes32(asciiGraffiti32)), 16))
         .isEqualTo(asciiGraffiti32.substring(0, 16));
+  }
+
+  @Test
+  public void extractGraffiti_shouldReturnUtf8String() {
     assertThat(
             graffitiBuilder.extractGraffiti(
                 Optional.of(Bytes32Parser.toBytes32(UTF_8_GRAFFITI_4)), 4))
@@ -156,12 +164,16 @@ public class GraffitiBuilderTest {
   }
 
   @Test
-  public void calculateGraffitiLength_shouldReturnCorrectLength() {
+  public void calculateGraffitiLength_shouldHandleEmptyString() {
     assertThat(graffitiBuilder.calculateGraffitiLength(Optional.empty())).isEqualTo(0);
     assertThat(
             graffitiBuilder.calculateGraffitiLength(
                 Optional.of(Bytes32Parser.toBytes32(asciiGraffiti0))))
         .isEqualTo(0);
+  }
+
+  @Test
+  public void calculateGraffitiLength_shouldHandleAsciiString() {
     assertThat(
             graffitiBuilder.calculateGraffitiLength(
                 Optional.of(Bytes32Parser.toBytes32(ASCII_GRAFFITI_20))))
@@ -170,6 +182,10 @@ public class GraffitiBuilderTest {
             graffitiBuilder.calculateGraffitiLength(
                 Optional.of(Bytes32Parser.toBytes32(asciiGraffiti32))))
         .isEqualTo(32);
+  }
+
+  @Test
+  public void calculateGraffitiLength_shouldHandleUtf8String() {
     assertThat(
             graffitiBuilder.calculateGraffitiLength(
                 Optional.of(Bytes32Parser.toBytes32(UTF_8_GRAFFITI_4))))
@@ -181,9 +197,15 @@ public class GraffitiBuilderTest {
   }
 
   @Test
-  public void join_shouldJoinStringsSkippingEmpty() {
+  public void joinNonEmpty_shouldJoin() {
     assertThat(graffitiBuilder.joinNonEmpty("", "aa", "bb", "cc"))
         .isEqualTo(Bytes32Parser.toBytes32("aabbcc"));
+    assertThat(graffitiBuilder.joinNonEmpty(" ", "aa", "bb", "cc"))
+        .isEqualTo(Bytes32Parser.toBytes32("aa bb cc"));
+  }
+
+  @Test
+  public void joinNonEmpty_shouldJoinSkippingEmpty() {
     assertThat(graffitiBuilder.joinNonEmpty(" ", "aa", "", "cc"))
         .isEqualTo(Bytes32Parser.toBytes32("aa cc"));
     assertThat(graffitiBuilder.joinNonEmpty(" ", "", "bb", "cc"))
@@ -192,7 +214,7 @@ public class GraffitiBuilderTest {
   }
 
   @Test
-  public void formatClientInfo_shouldFitInDesiredLength() {
+  public void formatClientInfo_shouldRenderClientNamesAndFullCommit() {
     graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
 
     // 20: LH1be52536BU0f91a674
@@ -210,6 +232,11 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString())
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(20));
+  }
+
+  @Test
+  public void formatClientInfo_shouldRenderClientNamesAndHalfCommit() {
+    graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
 
     // 12: LH1be5BU0f91
     assertThat(graffitiBuilder.formatClientInfo(19))
@@ -226,6 +253,11 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 4))
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(12));
+  }
+
+  @Test
+  public void formatClientInfo_shouldRenderClientNamesAnd1stCommitByte() {
+    graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
 
     // 8: LH1bBU0f
     assertThat(graffitiBuilder.formatClientInfo(11))
@@ -242,6 +274,11 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2))
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(8));
+  }
+
+  @Test
+  public void formatClientInfo_shouldRenderClientNames() {
+    graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
 
     // 4: LHBU
     assertThat(graffitiBuilder.formatClientInfo(7))
@@ -250,6 +287,11 @@ public class GraffitiBuilderTest {
     assertThat(graffitiBuilder.formatClientInfo(4))
         .isEqualTo(TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code())
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(4));
+  }
+
+  @Test
+  public void formatClientInfo_shouldSkipClientsInfoWhenNotEnoughSpace() {
+    graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
 
     // Empty
     assertThat(graffitiBuilder.formatClientInfo(3))
@@ -263,9 +305,10 @@ public class GraffitiBuilderTest {
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(0));
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest(name = "code={0}")
   @MethodSource("getClientCodes")
-  public void formatClientInfo_shouldHandleBadCode(final String code, final String expectedCode) {
+  public void formatClientInfo_shouldHandleBadCodeOnClientNamesAndFullCommit(
+      final String code, final String expectedCode) {
     graffitiBuilder.onExecutionClientVersion(
         new ClientVersion(
             code,
@@ -281,6 +324,18 @@ public class GraffitiBuilderTest {
                 + expectedCode
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString())
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(20));
+  }
+
+  @ParameterizedTest(name = "code={0}")
+  @MethodSource("getClientCodes")
+  public void formatClientInfo_shouldHandleBadCodeOnClientNamesAndHalfCommit(
+      final String code, final String expectedCode) {
+    graffitiBuilder.onExecutionClientVersion(
+        new ClientVersion(
+            code,
+            BESU_CLIENT_VERSION.name(),
+            BESU_CLIENT_VERSION.version(),
+            BESU_CLIENT_VERSION.commit()));
 
     // 12: LH1be5BU0f91
     assertThat(graffitiBuilder.formatClientInfo(12))
@@ -290,6 +345,18 @@ public class GraffitiBuilderTest {
                 + expectedCode
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 4))
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(12));
+  }
+
+  @ParameterizedTest(name = "code={0}")
+  @MethodSource("getClientCodes")
+  public void formatClientInfo_shouldHandleBadCodeOnClientNamesAnd1stCommitByte(
+      final String code, final String expectedCode) {
+    graffitiBuilder.onExecutionClientVersion(
+        new ClientVersion(
+            code,
+            BESU_CLIENT_VERSION.name(),
+            BESU_CLIENT_VERSION.version(),
+            BESU_CLIENT_VERSION.commit()));
 
     // 8: LH1bBU0f
     assertThat(graffitiBuilder.formatClientInfo(8))
@@ -299,6 +366,18 @@ public class GraffitiBuilderTest {
                 + expectedCode
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2))
         .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(8));
+  }
+
+  @ParameterizedTest(name = "code={0}")
+  @MethodSource("getClientCodes")
+  public void formatClientInfo_shouldHandleBadCodeOnClientNames(
+      final String code, final String expectedCode) {
+    graffitiBuilder.onExecutionClientVersion(
+        new ClientVersion(
+            code,
+            BESU_CLIENT_VERSION.name(),
+            BESU_CLIENT_VERSION.version(),
+            BESU_CLIENT_VERSION.commit()));
 
     // 4: LHBU
     assertThat(graffitiBuilder.formatClientInfo(4))
