@@ -270,7 +270,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .transactions(transactions)
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
-                        .excessBlobGas(() -> UInt64.ZERO));
+                        .excessBlobGas(() -> UInt64.ZERO)
+                        .depositReceipts(List::of)
+                        .exits(List::of));
 
     // we assume all blocks are produced locally
     lastValidBlock =
