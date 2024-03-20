@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX;
+
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 
@@ -31,7 +35,7 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
   static void describeCustomElectraFields(
       MoreObjects.ToStringHelper stringBuilder, BeaconStateDeneb state) {
     BeaconStateDeneb.describeCustomDenebFields(stringBuilder, state);
-    // no new fields
+    stringBuilder.add("deposit_receipts_start_index", state.getNextWithdrawalIndex());
   }
 
   @Override
@@ -48,5 +52,10 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
   @Override
   default Optional<BeaconStateElectra> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  default UInt64 getDepositReceiptsStartIndex() {
+    final int index = getSchema().getFieldIndex(DEPOSIT_RECEIPTS_START_INDEX);
+    return ((SszUInt64) get(index)).get();
   }
 }

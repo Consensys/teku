@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 
 public class BeaconStateSchemaElectra
     extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
+  public static final int DEPOSIT_RECEIPTS_START_INDEX = 28;
 
   @VisibleForTesting
   BeaconStateSchemaElectra(final SpecConfig specConfig) {
@@ -73,13 +74,19 @@ public class BeaconStateSchemaElectra
             () ->
                 SszListSchema.create(
                     historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
+    final SszField depositReceiptsStartIndexField =
+        new SszField(
+            DEPOSIT_RECEIPTS_START_INDEX,
+            BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(
                 latestExecutionPayloadHeaderField,
                 nextWithdrawalIndexField,
                 nextWithdrawalValidatorIndexField,
-                historicalSummariesField))
+                historicalSummariesField,
+                depositReceiptsStartIndexField))
         .toList();
   }
 
