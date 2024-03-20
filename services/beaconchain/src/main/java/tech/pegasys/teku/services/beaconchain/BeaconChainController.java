@@ -879,13 +879,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
-    final ExecutionClientVersionProvider executionClientVersionProvider =
-        new ExecutionClientVersionProvider(
-            executionLayer, eventChannels.getPublisher(ExecutionClientVersionChannel.class));
     final GraffitiBuilder graffitiBuilder =
         new GraffitiBuilder(
             beaconConfig.validatorConfig().getClientGraffitiAppendFormat(),
             beaconConfig.validatorConfig().getGraffitiProvider().get());
+    final ExecutionClientVersionProvider executionClientVersionProvider =
+        new ExecutionClientVersionProvider(
+            executionLayer,
+            eventChannels.getPublisher(ExecutionClientVersionChannel.class),
+            graffitiBuilder.getConsensusClientVersion());
     eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final BlockOperationSelectorFactory operationSelector =
         new BlockOperationSelectorFactory(

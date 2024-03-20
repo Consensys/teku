@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
-import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
@@ -41,10 +40,11 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
 
   public ExecutionClientVersionProvider(
       final ExecutionLayerChannel executionLayerChannel,
-      final ExecutionClientVersionChannel executionClientVersionChannel) {
+      final ExecutionClientVersionChannel executionClientVersionChannel,
+      final ClientVersion consensusClientVersion) {
     this.executionLayerChannel = executionLayerChannel;
     this.executionClientVersionChannel = executionClientVersionChannel;
-    this.consensusClientVersion = VersionProvider.createTekuClientVersion();
+    this.consensusClientVersion = consensusClientVersion;
     // update client info on initialization
     updateClientInfo();
   }

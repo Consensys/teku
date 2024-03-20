@@ -47,14 +47,16 @@ public class ExecutionClientVersionProviderTest {
     when(executionLayerChannel.engineGetClientVersion(any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
-    new ExecutionClientVersionProvider(executionLayerChannel, publishChannel);
+    new ExecutionClientVersionProvider(
+        executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);
     verify(publishChannel, never()).onExecutionClientVersion(any());
   }
 
   @Test
   public void doesNotTryToUpdateExecutionClientVersionIfElHasNotBeenUnavailable() {
     final ExecutionClientVersionProvider executionClientVersionProvider =
-        new ExecutionClientVersionProvider(executionLayerChannel, publishChannel);
+        new ExecutionClientVersionProvider(
+            executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);
 
     executionClientVersionProvider.onAvailabilityUpdated(true);
     // EL called only one time
@@ -64,7 +66,8 @@ public class ExecutionClientVersionProviderTest {
   @Test
   public void updatesExecutionClientVersionElIsAvailableAfterBeingUnavailable() {
     final ExecutionClientVersionProvider executionClientVersionProvider =
-        new ExecutionClientVersionProvider(executionLayerChannel, publishChannel);
+        new ExecutionClientVersionProvider(
+            executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);
 
     verify(publishChannel).onExecutionClientVersion(executionClientVersion);
 

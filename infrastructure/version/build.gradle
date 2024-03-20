@@ -16,6 +16,5 @@ tasks.withType(JavaCompile).configureEach {
 
 
 dependencies {
-  implementation project(':ethereum:spec')
   implementation 'org.apache.commons:commons-lang3'
 }

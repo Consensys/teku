@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.validator.api.Bytes32Parser;
@@ -50,9 +51,23 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
       final ClientGraffitiAppendFormat clientGraffitiAppendFormat,
       final Optional<Bytes32> defaultUserGraffiti) {
     this.clientGraffitiAppendFormat = clientGraffitiAppendFormat;
-    this.consensusClientVersion = VersionProvider.createTekuClientVersion();
+    this.consensusClientVersion = createTekuClientVersion();
     this.executionClientVersion = new AtomicReference<>(ClientVersion.UNKNOWN);
     this.defaultUserGraffiti = defaultUserGraffiti;
+  }
+
+  private ClientVersion createTekuClientVersion() {
+    return new ClientVersion(
+        ClientVersion.TEKU_CLIENT_CODE,
+        VersionProvider.CLIENT_IDENTITY,
+        VersionProvider.IMPLEMENTATION_VERSION,
+        VersionProvider.COMMIT_HASH
+            .map(commitHash -> Bytes4.fromHexString(commitHash.substring(0, 8)))
+            .orElse(Bytes4.ZERO));
+  }
+
+  public ClientVersion getConsensusClientVersion() {
+    return consensusClientVersion;
   }
 
   @Override
