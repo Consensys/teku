@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -48,11 +50,10 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
  * included.
  */
 public class AggregatingAttestationPool implements SlotEventsChannel {
-  /**
-   * Duration to retain attestations. Attestations older than 32 slots are not rewarded for
-   * inclusion so no point in retaining them.
-   */
-  static final long ATTESTATION_RETENTION_SLOTS = 32;
+  private static final Logger LOG = LogManager.getLogger();
+
+  /** The valid attestation retention period is 64 slots in deneb */
+  static final long ATTESTATION_RETENTION_SLOTS = 64;
 
   /**
    * Default maximum number of attestations to store in the pool.
@@ -69,6 +70,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
    * should be an adequately large cache to store current attestations plus some old ones that may
    * not have been included so that we have plenty to choose if block building based on an expected
    * 1.2 million validators.
+   *
+   * <p>Strictly to cache all attestations for a full 2 epochs is significantly larger than this
+   * cache.
    */
   public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 120_000;
 
@@ -100,9 +104,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       updateSize(1);
     }
     // Always keep the latest slot attestations so we don't discard everything
-    while (dataHashBySlot.size() > 1 && size.get() > maximumAttestationCount) {
+    long currentSize = getSize();
+    while (dataHashBySlot.size() > 1 && currentSize > maximumAttestationCount) {
+      LOG.trace("Attestation cache at {} exceeds {}, ", currentSize, maximumAttestationCount);
       final UInt64 firstSlotToKeep = dataHashBySlot.firstKey().plus(1);
       removeAttestationsPriorToSlot(firstSlotToKeep);
+      currentSize = getSize();
     }
   }
 
@@ -136,6 +143,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               attestationGroupByDataHash.remove(key);
               updateSize(-removed);
             });
+    if (!dataHashesToRemove.isEmpty()) {
+      LOG.trace(
+          "firstValidAttestationSlot: {}, removing: {}",
+          () -> firstValidAttestationSlot,
+          dataHashesToRemove::size);
+    }
     dataHashesToRemove.clear();
   }
 
