@@ -130,11 +130,14 @@ public abstract class AbstractTypeDefRequest {
   protected <T> Optional<T> postOctetStream(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
+      final Map<String, String> headers,
       final byte[] objectBytes,
       final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    final Request.Builder builder = requestBuilder();
+    headers.forEach(builder::addHeader);
     final Request request =
-        requestBuilder()
+        builder
             .url(httpUrlBuilder.build())
             .post(RequestBody.create(objectBytes, OCTET_STREAM))
             .build();
