@@ -383,11 +383,11 @@ class Eth1DepositManagerTest {
   }
 
   @Test
-  void shouldStartFromSnapshotFileWhenProvided() {
+  void shouldIgnoreSnapshotFileWhenDBSavedVersionProvided() {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
 
-    // DepositTreeSnapshot from file will be used to start from
+    // This one will be ignored as DB already has a saved version
     final DepositTreeSnapshot depositTreeSnapshotFromFile =
         dataStructureUtil.randomDepositTreeSnapshot(
             deposits.longValue(), UInt64.valueOf(lastBlockNumber));
@@ -395,10 +395,11 @@ class Eth1DepositManagerTest {
         .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
-    // This one will be ignored
+    // DepositTreeSnapshot from DB will be used to start from
+    final UInt64 dbDepositCount = deposits.plus(50);
+    final UInt64 dbBlockHeight = UInt64.valueOf(lastBlockNumber).plus(500);
     final DepositTreeSnapshot depositTreeSnapshotFromDb =
-        dataStructureUtil.randomDepositTreeSnapshot(
-            deposits.plus(50).longValue(), UInt64.valueOf(lastBlockNumber).plus(500));
+        dataStructureUtil.randomDepositTreeSnapshot(dbDepositCount.longValue(), dbBlockHeight);
     when(depositSnapshotStorageLoader.loadDepositSnapshot())
         .thenReturn(
             SafeFuture.completedFuture(
@@ -407,10 +408,10 @@ class Eth1DepositManagerTest {
     manager.start();
     notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     verify(eth1DepositStorageChannel, never()).replayDepositEvents();
-    verify(eth1EventsChannel).setLatestPublishedDeposit(deposits.decrement());
+    verify(eth1EventsChannel).setLatestPublishedDeposit(dbDepositCount.decrement());
     inOrder
         .verify(depositProcessingController)
-        .startSubscription(lastBlockNumber.add(BigInteger.ONE));
+        .startSubscription(dbBlockHeight.bigIntegerValue().add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
     assertNoUncaughtExceptions();
   }
