@@ -123,6 +123,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -196,6 +197,7 @@ public final class DataStructureUtil {
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
+  private static final int MAX_EP_RANDOM_EXITS = 16;
 
   private final Spec spec;
 
@@ -584,7 +586,8 @@ public final class DataStructureUtil {
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64)
-                    .depositReceiptsRoot(this::randomBytes32));
+                    .depositReceiptsRoot(this::randomBytes32)
+                    .exitsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -695,7 +698,8 @@ public final class DataStructureUtil {
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
-                      .depositReceipts(this::randomExecutionPayloadDepositReceipts);
+                      .depositReceipts(this::randomExecutionPayloadDepositReceipts)
+                      .exits(this::randomExecutionPayloadExits);
               postRandomModifications.accept(executionPayloadBuilder);
             });
   }
@@ -723,6 +727,12 @@ public final class DataStructureUtil {
   public List<DepositReceipt> randomExecutionPayloadDepositReceipts() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_RECEIPTS))
         .mapToObj(__ -> randomDepositReceipt())
+        .collect(toList());
+  }
+
+  public List<ExecutionLayerExit> randomExecutionPayloadExits() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_EXITS))
+        .mapToObj(__ -> randomExecutionLayerExit())
         .collect(toList());
   }
 
@@ -2571,6 +2581,12 @@ public final class DataStructureUtil {
     }
 
     return rewardAndPenaltyDeltas;
+  }
+
+  public ExecutionLayerExit randomExecutionLayerExit() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerExitSchema()
+        .create(randomEth1Address(), randomPublicKey());
   }
 
   public UInt64 randomBlobSidecarIndex() {
