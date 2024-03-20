@@ -20,3 +20,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Increased the attestation cache capacity to allow teku a bigger pool of attestations when block building.
 
 ### Bug Fixes
+- Fix incompatibility between Teku validator client and Lighthouse beacon nodes [#8117](https://github.com/Consensys/teku/pull/8117)
