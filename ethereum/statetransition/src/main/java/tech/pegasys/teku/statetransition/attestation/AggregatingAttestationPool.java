@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -48,27 +50,31 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
  * included.
  */
 public class AggregatingAttestationPool implements SlotEventsChannel {
-  /**
-   * Duration to retain attestations. Attestations older than 32 slots are not rewarded for
-   * inclusion so no point in retaining them.
-   */
-  static final long ATTESTATION_RETENTION_SLOTS = 32;
+  private static final Logger LOG = LogManager.getLogger();
+
+  /** The valid attestation retention period is 64 slots in deneb */
+  static final long ATTESTATION_RETENTION_SLOTS = 64;
 
   /**
-   * Default maximum number of attestations to store in the pool. Even with 400,000 validators we'd
-   * expect just 12,500 attestations per slot. It's very unlikely we'll be able to include more than
-   * a few slots worth of attestations into any block we produce so may as well prune them.
+   * Default maximum number of attestations to store in the pool.
    *
-   * <p>In fact even with perfect aggregation, there are 64 committees per slot and a maximum of 128
-   * attestations per block, so we can only possibly include 2 full slots worth of attestations. If
-   * the prior slots weren't entirely missed the majority of attestations should have been included
-   * in those blocks, and we'll have room to store older attestations to fill any space we have
-   * remaining.
+   * <p>With 1.2 million active validators, we'd expect around 37_500 attestations per slot; so 3
+   * slots worth of attestations is almost 120_000.
    *
-   * <p>A limit of 40,000 attestations is enough for 3 slots worth at 400,000 validators which gives
-   * a sane upper limit while still being above the typical 10-20k pool size seen on MainNet.
+   * <p>128 attestations perfectly packed at a 1.2 million validator set would be 1_200_000 / 32 /
+   * 64 bits, about 584 bits per aggregate. 128 of those is 74752 attestations if perfectly packed.
+   * Technically if we did have to cache 2 full slots of information, that would be roughly 150k
+   * cache size.
+   *
+   * <p>Because the real world exists, it's fair to expect that it's not all perfect, and 120k
+   * should be an adequately large cache to store current attestations plus some old ones that may
+   * not have been included so that we have plenty to choose if block building based on an expected
+   * 1.2 million validators.
+   *
+   * <p>Strictly to cache all attestations for a full 2 epochs is significantly larger than this
+   * cache.
    */
-  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 40_000;
+  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 120_000;
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
@@ -98,9 +104,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       updateSize(1);
     }
     // Always keep the latest slot attestations so we don't discard everything
-    while (dataHashBySlot.size() > 1 && size.get() > maximumAttestationCount) {
+    int currentSize = getSize();
+    while (dataHashBySlot.size() > 1 && currentSize > maximumAttestationCount) {
+      LOG.trace("Attestation cache at {} exceeds {}, ", currentSize, maximumAttestationCount);
       final UInt64 firstSlotToKeep = dataHashBySlot.firstKey().plus(1);
       removeAttestationsPriorToSlot(firstSlotToKeep);
+      currentSize = getSize();
     }
   }
 
@@ -134,6 +143,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               attestationGroupByDataHash.remove(key);
               updateSize(-removed);
             });
+    if (!dataHashesToRemove.isEmpty()) {
+      LOG.trace(
+          "firstValidAttestationSlot: {}, removing: {}",
+          () -> firstValidAttestationSlot,
+          dataHashesToRemove::size);
+    }
     dataHashesToRemove.clear();
   }
 

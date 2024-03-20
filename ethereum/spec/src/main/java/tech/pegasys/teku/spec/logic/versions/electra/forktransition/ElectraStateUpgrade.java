@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.forktransition;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -88,7 +89,9 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                                   .transactionsRoot(denebHeader.getTransactionsRoot())
                                   .withdrawalsRoot(denebHeader::getWithdrawalsRoot)
                                   .blobGasUsed(denebHeader::getBlobGasUsed)
-                                  .excessBlobGas(denebHeader::getExcessBlobGas));
+                                  .excessBlobGas(denebHeader::getExcessBlobGas)
+                                  .depositReceiptsRoot(() -> Bytes32.ZERO)
+                                  .exitsRoot(() -> Bytes32.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 
@@ -96,6 +99,8 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                   preStateDeneb.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateDeneb.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateDeneb.getHistoricalSummaries());
+              state.setDepositReceiptsStartIndex(
+                  SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX);
             });
   }
 }

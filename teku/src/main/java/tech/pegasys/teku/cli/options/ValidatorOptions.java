@@ -158,12 +158,11 @@ public class ValidatorOptions {
       ValidatorConfig.DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
 
   @Option(
-      names = {"--Xvalidator-is-local-slashing-protection-synchronized-enabled"},
+      names = {"--validator-is-local-slashing-protection-synchronized-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Restrict local signing to a single operation at a time.",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
-      hidden = true,
       fallbackValue = "true")
   private boolean isLocalSlashingProtectionSynchronizedEnabled =
       DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;

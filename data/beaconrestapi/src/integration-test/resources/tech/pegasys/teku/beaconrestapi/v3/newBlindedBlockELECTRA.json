@@ -1,8 +1,8 @@
 {
   "version": "electra",
   "execution_payload_blinded": true,
-  "execution_payload_value": "50756583220288449835724789919752990744036228048165053817930899246206127260481",
-  "consensus_block_value": "24799950324699182119107049583125116496986047597328004586475399986067975839137",
+  "execution_payload_value": "42104374537666016842731412608176468386512470599052556672967227278486679620790",
+  "consensus_block_value": "50756583220288449835724789919752990744036228048165053817930899246206127260481",
   "data": {
     "slot": "1",
     "proposer_index": "4666673844721362956",
@@ -214,145 +214,144 @@
         "transactions_root": "0xa415263e48d5a8a8ba3b4e9caf0e3028abbb6a65922580447af6fcc869b40d2a",
         "withdrawals_root": "0xe5ca603e08e1eff7259e45ea6bb662256d9d74b1724ee8feb0ea59f6e2ebe3be",
         "blob_gas_used": "4476638188903342311",
-        "excess_blob_gas": "4521255257228650249"
+        "excess_blob_gas": "4521255257228650249",
+        "deposit_receipts_root": "0xc7dab83ea972daeec7b1385f04b22e210f708323c38b84160159653a163f259e",
+        "exits_root": "0x8e77ca3ec98f3c20e7e802dd8917f1b9fc66866da0310ae878d59ae1871cfffd"
       },
       "bls_to_execution_changes": [
         {
           "message": {
-            "validator_index": "573888",
-            "from_bls_pubkey": "0xb8343e90edaecc9df1223293465ec067b3c9804f43e25817d27f1f4785bc5f554462032370781d9c65ab27bcc3d21415",
-            "to_execution_address": "0xdafbb23e48beb933bcf49f8ad83a43ee157382b5"
+            "validator_index": "958637",
+            "from_bls_pubkey": "0x89ca6fbbaafb3c27a42f70699f42e3f79d3b7681b103e5b393042efa90512aa9e590fccb0b654a5c1590bbe675aa584e",
+            "to_execution_address": "0x4dc28f3e0884f5d07b860b8fce6fbebc3b857c21"
           },
-          "signature": "0xa519e1354ad927358404a58bdc19113e5fd97d5cc19943888e22105ee943ca216a14898283fc3712500ba767de00022905e4198939b44a5f5a43fa0c87252969c56a26345135572101b257f87245a5e42fb2407a0ee67a6c2d039bf908b9aa8b"
+          "signature": "0xa207b627176533d6fc3670d6c4a48afff107ef6bf9d7520b0f77162bf7df5505aa3a17c08ee53067daad827b75ef333015a61a81b421ec8888ff31dc50994121420862d11926782bf6983aab5f6f39c17264a77943dd6618d85444c56d469c19"
         },
         {
           "message": {
-            "validator_index": "189139",
-            "from_bls_pubkey": "0xa9ddce0cab5b51d3d2c710396b85e3fd7a87f1738fb5cfd5a7b25dbb483c167a80e785cb4ca7250c14a60cc282b1d9b8",
-            "to_execution_address": "0x9946783e88b272e45092a83c1c9310f154917869"
+            "validator_index": "2034892",
+            "from_bls_pubkey": "0xb384518c8bde1118e66c725854a5919c4a5c0453e8eb822fed707aa5c636e6e2a2aa56c95966817ec67ebadf6c77b44a",
+            "to_execution_address": "0x7304843e481bb45a660cdae57581e756478b7a45"
           },
-          "signature": "0x8edfb3b9ed80067d0626019a1be330bac43c7ecd813f7ce781d0e6e34fb583803e9d2b047ad3294d6d3a54d020c68231085f7d9085d0afefb047def063a4698277e66d4a560f4b5bbd16586976f0bcf90177c00abd4a1b4cbd0ac393e5b904b5"
+          "signature": "0xaf85c50db6dad8c04b9a22611e3174fdc57a3cfe255164e0361897353984556c3e7b91b040ec3b59cc29d774aaacf4b204e4e1960b9dd5bf9b72f8c3e09bdd64753a65084567c10b229784fe46be3de016c8add60d84c970943d221882294028"
         },
         {
           "message": {
-            "validator_index": "2357271",
-            "from_bls_pubkey": "0xa287d120292890ab1aa49bae1e3cd88bb160b5640f18c64f1aabae5990616e53099fe61698c3b812e2bc2ae6b6965960",
-            "to_execution_address": "0x09988f43d11dcf2aa7811c9997eb4119e8f153ce"
+            "validator_index": "2742020",
+            "from_bls_pubkey": "0xb2bffd7d93c4b1e46b3f4511f97de3ac70e2f9b2e3428b26ad7864d9f71bbca34904c81dbcc1dc2ffd1c02bfa016b096",
+            "to_execution_address": "0x7b5e6c4391e30ac86613889d8c20bde70e044e3a"
           },
-          "signature": "0x8ca190827c66ff26c1fa594eae169b7efbd84c9456304f2194df7b0c204b0a29ac53034c9b20e4977b8e8b46d6b246da03a9337d3bf5e6f7ac941407a2a3437d7e2c0dcacda29b7623141833e02b4b12350ccaf8b27dbf96b3c520078f49efe2"
+          "signature": "0xa2a6993708f79d7b3db30c3968aaf4b706400145cf70fded02b06d54922e54a4c1db14d63860cc632d0b2a8c15efc5280bc57ceed454838f2a0848e03e610e130309d8012aa5eddc1fa84b509fc8178a685baaa0413ec58709e738aae430491d"
         },
         {
           "message": {
-            "validator_index": "1972522",
-            "from_bls_pubkey": "0x8db8ee645b614f990839e4d98fdbf921263bb62cd917fb4eff9084dff23d7cc453f6cc645ad8b869aa9d31a6b9560630",
-            "to_execution_address": "0xc8e25443111288db3b1f254bdb430f1c27104a82"
+            "validator_index": "818276",
+            "from_bls_pubkey": "0x94e2d4cf94fb757578c496885af2075c26e2483eeffa6e894ac791f7c1945b0fbf9a6f7860736db93e03d511c4b08516",
+            "to_execution_address": "0xa2a06043d17ac951519956f43432e6811a0a4c5e"
           },
-          "signature": "0xb0c3172e9bab8d04faa5d27f9818c36ad61a71b114f5bd9dbe77306be3edef2bcb56c215511ba76145006daec95f24be0f1f0dd24377cf7b440b5cdc7d0b520d6b64c539eaacaf14875d49c293af5974751bb0ce2daafde3bd01e097a466e75f"
+          "signature": "0xa8b4b8e92e67565ec430f2fdda94ed0f6f06d8cb302770191d614b795d194e4728c11e72162f25e04d0f7dda1dcd54da0d8a7c39e71e945873168ffa294da70dd1acbc1902a2fb1598267df5d277a0f95592967ea222ab0706571001c315eb2b"
         },
         {
           "message": {
-            "validator_index": "48778",
-            "from_bls_pubkey": "0x8ba697cdd6f8c34a1fb96a4c88f03360d19515ccc4e1ea24aa5e80075d821059806a0047e6bbf5d908d312d1902aff5d",
-            "to_execution_address": "0xee24494351a9466526a5f3a1825538b6331648a6"
+            "validator_index": "433527",
+            "from_bls_pubkey": "0xa5041469fc5f6a944fda64e7ab422c1479ab9d0de12a2f3ac7292dfe368408cbc6d2b0ff519b521427da731e7378806e",
+            "to_execution_address": "0xfdc8e14312fb98663ed87639047022e291c761d2"
           },
-          "signature": "0x87fadfd11bc5612e06c59d576c91599bc21095531fcc27a177967de7b521c377ee7a2b10d0fadf38779089929cfe136518757803c369b4ce94873e28d7d9cdf54c31a53ed86b07f76ea6104ee65d76de02267a4b736c949785ef233cbb73ad4a"
+          "signature": "0xb66c9d2c80f5a12930f0899b9ff3d1a6a37e0f9edb279ced767eca8ef0380227681b15bd3850a00a383491ed1d8e869310f10edea2b912278e1e2ec1cfaaba8c0981af2e40fd233a9fd2f67ec56540c66e062212ee2781593a4714914e15cb52"
         },
         {
           "message": {
-            "validator_index": "2820011",
-            "from_bls_pubkey": "0xa32a5f28ae7d36f888820160335232fc42ef994b4f93acf6a8659762b2ec52ca79354cc07c73a229b529bfcebc705eff",
-            "to_execution_address": "0x4a4dca439229167a13e413e752937416aad35d1a"
+            "validator_index": "1665765",
+            "from_bls_pubkey": "0x9105e2e35c7861d3fee37cb3bf07e8fdf3e0911d251cb11b956d4edbbd62a951c7ac9854677ce19a7748a503c307028c",
+            "to_execution_address": "0x240bd643529257f0285e4590ab814b7c9dcd5ff6"
           },
-          "signature": "0xa2089742415bdf32fa2dde853661a095ac24d273413687ae04fabb99ae2982700bcdb885d239e32543ffb95763a43e690cb1bf3a33df40d24e12c46d150e9c59dd63f960dec39712dabf74c08a55ba1bcb6db664ff9d5b2261da353e4374466c"
+          "signature": "0xb3b0b28bedcc6e28d433c2a577204a9f7ecfc2fd4e3067ddcb65caebf7fd32d0389dd1db836600b0ee19a2ac8b6d0a660788a42abfde02bd5bddfdbe8cdde83a890ce69ee178ea314cfd9c06e5507ffe5cc4a685004f955219fcbbbec6fdd144"
         },
         {
           "message": {
-            "validator_index": "896267",
-            "from_bls_pubkey": "0xb679b4b686530827b2a201eb2b18454e9a5758d7257737b29bb215b9f354c2ff57e912b19d4a051556187aa24c97371b",
-            "to_execution_address": "0x708fbe43d1c0d403fd69e23dfaa49db0b6d95b3e"
+            "validator_index": "1281016",
+            "from_bls_pubkey": "0xaae4f1779eb7e006a9d0195e39af1f14a05b017a4a351ee1f3c22929929fb510cae4ba8e01b6d2444a66e388e655d92c",
+            "to_execution_address": "0xe3559b43918610a1bdfb4d42efd9187fdceb55aa"
           },
-          "signature": "0x8da9cee45a3046b209da332512a6b4e4d7c89768f55998eb79ee236b4fb1fbcea87e0bba7b05d19ea7b8c5ea6dc0081e17a7ad0ec41566a0c6d9e127b87691e1d5b823fd178069e3f30091dcdbb44c36408656941755177c45bc976bf270289d"
+          "signature": "0xa3acdd589f44c5b4201ae54cd119add73b60bcaca91f9e5d028669dd9b52f3ce15c20bb0ec39ff9ddfe96d5c1ce979c10376d36f4840a04cd90ed9d4348fa4a53f0f00e35bfab055a102ce3b6306255ffba3ef9ce7e1548048139d574478ebbf"
         },
         {
           "message": {
-            "validator_index": "511518",
-            "from_bls_pubkey": "0x83b8c61b63de768821cbd82ee3c67c81bb848163d6af0186ffe1ca3936d283bb4cab886f3fbc7f6336fec3da8d542c76",
-            "to_execution_address": "0x92fcc742102977503966d35cb217fc55bd583232"
+            "validator_index": "2201289",
+            "from_bls_pubkey": "0x842bb38ef27bafce4e8aa9abd3e31286da4d36eb87ff6a2fc4de272e4878230a7ac7a723bf3f76101ab2c2a642550eff",
+            "to_execution_address": "0x6cbad342d091b8c64ee004060b06d3bbb052340e"
           },
-          "signature": "0x8c90298abaed4b5124cff46e41c9a4ed2b2baa0d2089add6b64c70dc7547f1a83bed76aba1fac6d36605beea72734b490b7b98994c7c65fdb436286b0df898731f6ad536e5a603da85ec8cc4488b94dc8c61e11363d1cc18733382dca51c7008"
+          "signature": "0xabd643eedb5dfcc8f2db27bcfd59f6359517cec81ab4d5ff08bd5fd246ba120883c047e0cffc1d215104169a335628180df5779f128772f899546fd260328d4a4368a044c3e2037f4284624728dc94e05467b1559aad3077cf9557bf62fc56e2"
         },
         {
           "message": {
-            "validator_index": "1431791",
-            "from_bls_pubkey": "0xa532ee397fdd9e388888d90f712e13b085ad5043402debe1caf3dabbb514ed0d06f7c897e4e2795fd018cd672bfa8948",
-            "to_execution_address": "0xb83ebc4250c035da23eca1b3592925f0c95e3056"
+            "validator_index": "1816540",
+            "from_bls_pubkey": "0x990cf4f3bf6ede0aaef3010026465f98f381860535ce007b87879afbf2c955c13d07d7c2d91e22fddd8ef5531f8bd22c",
+            "to_execution_address": "0x2b0599420f867177e37d0db84f5ea0beef702ac2"
           },
-          "signature": "0x8fb8cb9373db269dd2a05fe0a07484db022a95b06c03807426a352499fcb65c55f8c388fd4cddbdd9936d5fe5ac5898e0d8b58ae09a73bdc7e584fe9940d3aa967607a0c4a1ad1ce5ccc0ad83f63a273e140ae0510f709cd0c214b645d68e3f4"
+          "signature": "0xac8ebc3beb6cfc97c27f286e0d2e582707cbcb972d0898a41831b2d1393a684ce54ce54dc9128dc3988930ae4d92b4ed0a51b2bf639d8fd8e62e40ceac222362d9bb67f9d1b8419f3123dac1bb2e4e0cccb5c7c0985c83bd0501ed610935aa96"
         },
         {
           "message": {
-            "validator_index": "1047042",
-            "from_bls_pubkey": "0xb7d85608c3cf919ee72c0481283b468c2825850f6f6028c000cb19bff464556973909667d0353582d673e1049795f20c",
-            "to_execution_address": "0x778981428fb4ee8ab889aa659e81f2f2087d260a"
+            "validator_index": "2892795",
+            "from_bls_pubkey": "0xa0695f8f6f65e3d8401e144eb382eaed73f9ec56be6de71dadb917af79a08ff7b74967dd4f4766ed77f7bc2fc01cfa38",
+            "to_execution_address": "0x51478d424f1d3001cd03dc0ef66fc958fb7628e6"
           },
-          "signature": "0xa1079cff71763f60894927a0ac68cfff88642e5ec4e11d1f63ce7d7b15f2567842c80c0238a0f6e4d38ac2a9d09787c50c87daba460e05a0336332f1d37b65fed7526c5eb51a84d3a0169d09ddaf271d13710d22469e8dffde8859d50a2dd0a1"
+          "signature": "0xa18c2c70d886e11a592393a7bef6fb3a515100e1436763854eb96fca9c031a959e4c105be367a10ea87c3d1a8bce821303470a1d6053cd89139bbd86fd7bbdd3e377b331884bedb0f9b10eafcb3272561fc5d71b96b219d7fe3aacd6e1558c97"
         },
         {
           "message": {
-            "validator_index": "2279280",
-            "from_bls_pubkey": "0xa46cb4c6f51759dd36e897cf8f5f8a774dbb5968defec8bcd85b9ec0f3d873a6569fabde6c6cf3fa5dc77e910bc39938",
-            "to_execution_address": "0x3aa93143d0d7c378fbb0904fd1788aea4c2244ee"
+            "validator_index": "2664029",
+            "from_bls_pubkey": "0x97e268878248299c9e4d2c86957935d6cddb83900dbb6d4e52a935bcda58978f6fd33e0dc891cea14da0feafd5173762",
+            "to_execution_address": "0xad6f0e43909dff15ba42fc53c6ad05b972343e5a"
           },
-          "signature": "0x988ea703ce8fcbd5bc7811c49e1eede7061ce461966a9a52f03afdecb157f065a1993fd71ea29c6769121610fc9e3e190eff938fb8c2f77dcf5f511208ad23cf427c05dd207b6c6004ba2a1ee3b6a84949e39db4ef1ee254635d3527010f7794"
+          "signature": "0xa2010187045aa6d63130c7ff23464438af57c3e42eaa90823205936a94c47713b68bd93d3b6837947e277ece630a6d200d428979548f340f6f71ca33e8731e059a8c20f75d71d36caebbbf6fde28f37a919353dedb7b7c7e4dbcda553e5bbee5"
         },
         {
           "message": {
-            "validator_index": "1894531",
-            "from_bls_pubkey": "0xa18343c3306dae4ff3c78428069a4ae7876f0ad620219648b99b4bfaeea1d7898df50d508533e756f5903efbdf585076",
-            "to_execution_address": "0xf9f3f64210cc7c298f4e990115d157ed8b403aa2"
+            "validator_index": "740284",
+            "from_bls_pubkey": "0x8aec1b1f595063af33939f3c3322ad38d2e1de1b11fbc8a9d04235dc7fc9792e1c88e51452d337855d254a71f42816e8",
+            "to_execution_address": "0xd3b10243d034be9fa5c8caaa6ebf2e537e3a3c7e"
           },
-          "signature": "0xa120e4f3144799db31e7487d25cbe6d8724f0076f23fdd7ff1f00b24b304a93a97862a3ebecb5e1b91018a0496a3c4020004b5d49571f4b9a3faf0f9d8f1f067d7005b5600db18872732313acf1350e1bec278384f3e0fe28d43f00203ae10e7"
+          "signature": "0xa0ba14bb9ce5877d9f9d607da9b2fd2d629a1de42d6d3beb5a8f4c1661aa1d6863e01de14c548be8a9df222efc6373be1290581da81c76d71bfada1d07481d7b7de94290efd640aadca41d6b4d4f81091f4c459b454bd6e333eaa35c60faacf5"
         },
         {
           "message": {
-            "validator_index": "2970787",
-            "from_bls_pubkey": "0xb23734206f673528ad12bad1b7815a9db722d7a5afffdfac97e17d453fcd2616a804619bd9f8db50b9547a357b1f5813",
-            "to_execution_address": "0x2036eb4250633bb379d46758bce28087974638c6"
+            "validator_index": "355536",
+            "from_bls_pubkey": "0xa912f4ad989d87e777e45af7c265b430daf0b39345987506d4158cdee406847f294fc7745154eb52abf0934a5e1866ee",
+            "to_execution_address": "0xf51e0c420e9d60ece0c4bbc926328df885b91272"
           },
-          "signature": "0x8de01f498b48fd1df0c20529228b7e8616c7bfc35457d392404110e394db4c884dad325363be1f2a83ac383486cdea460e78e89a728ac9464f71dfbc685ac8be3fb9ecb21d67a6c105354c58bfb78f2adf7ee65f5a4d7fbe5989e522b52daccf"
+          "signature": "0xa7f77c7fc98b1c3a364dcac68b5cff112f7745e6dd41918ba56a6fa6945507e0ce245334e22d4581f49bda913baa2a6b1176b44d52168151b3aff9a625dcdebad1899747c42c4a43cf31f49124fc0d4543e4485592c243c5300b79214398b770"
         },
         {
           "message": {
-            "validator_index": "2430055",
-            "from_bls_pubkey": "0xb490d2df5759bb5115690df9aa805cddc1787b17fc3984ec400d03ccd5c6da6dbc54a724816ccf0c86b4b23e4daf0b17",
-            "to_execution_address": "0x42a3f4418ecbddffb5d058777555df2c9ec50eba"
+            "validator_index": "1275809",
+            "from_bls_pubkey": "0xa77e90361be2a534a386cb689d6d763a98bea5f23f325b553a762648668e4adb4991fb5f41ad7ece1578f082a5c01b5e",
+            "to_execution_address": "0x1c6100424e341f76cb4a8a20cd43b69291bf1096"
           },
-          "signature": "0x909ac7032213a33af76294ec19617f3fd9859bb22201e0502ae7187debe740c5cb0367ef03e944eab7fdc5ab23d303f916904a1ca5f7aadbcfbab89bdd82931dd7ff3e0efdd1135698f54774989ddd6d8ee07bebff863718c927072564a547bb"
+          "signature": "0xad188010cb0db88e067c2699030353a1c215ae9adf083916ee2069a805e0f2cd00c76db9250a859106dbbff4430b4dd114d6293c4b3c2e9cfd31f07949f04e53f63423a08b56d7247772d07959d5d92b17bd8c7c0b294b71d3db903d56509177"
         },
         {
           "message": {
-            "validator_index": "506311",
-            "from_bls_pubkey": "0xa2810855686190fded08fbafafc427d3540a58c2b391c0d05a71be7a4d1aff2b4ea501c8e4c1ebb79cb49f1991ada976",
-            "to_execution_address": "0x68e5e841ce629c89a05627ce1c6708c7aacb0cde"
+            "validator_index": "891060",
+            "from_bls_pubkey": "0xb4582d56f8ad9dcc77eb5413558e63a6b562e42534c579a85384e7d7d6ff8974ff933d05a444c1d2784945f4cd1c952e",
+            "to_execution_address": "0xdbabc5418e28d8265fe892d2129c8395d0dd064a"
           },
-          "signature": "0xa108770fd60463dfc982d8725440e47c54730329420bcf05a969e4937d06e468385b53c4a5f6c69e55a775f358fa0948171dedf3bb0ccc1679280251b7abe4cc644e10b46bcdaddd590951541bda68373c8a8dcbfb86d3cb97822a5dfc21f481"
+          "signature": "0xa7f07c5a20159b029b2dac119315a0d439c541e63b0d1f6d377fd2867e5559d6b6302eb609d5796fab97cbca121ddf400c840b9ffa60dbcd89c6d441f84aff2cca1f68fd9e258a969b0d511ad1d90c0c783dde3c093ee8cd56cf6f70a61fd77a"
         },
         {
           "message": {
-            "validator_index": "121562",
-            "from_bls_pubkey": "0x8deafeba9f0184ffa1f3d1422b9d97d6975fc4d5a21df265b48b6e831d6aee5a6236b3d5fb9e03cab1e0795f3dd45206",
-            "to_execution_address": "0xc40d6a420fe36b9e8d954713eca4442721892252"
+            "validator_index": "2123298",
+            "from_bls_pubkey": "0xa5849044acc283563bd9b40fe9b01a8c079093829fc3837cddf20a8f9c13e59629251481406f415c8e2df65285ddb41f",
+            "to_execution_address": "0x9ecb7542cf4bad14a20f79bc45931b8d1483242e"
           },
-          "signature": "0xb489851f8a8fd535ee14505b9ae32ab27cd8d5e637236f491f71bfc987316491ef3f1b7670378875580eb247993d82511128502ea093d108730e070bb8c5919b39e78893139b3f1a499e885b15d385073e227d6a4e85ba0413ab9e2481d0b8da"
+          "signature": "0x81df97c3071aac41af79494001a1c4404b5121776a71d6cbe3b8eef000e803f59edd2fff33331d2ea037faa919ddd6a115e09bead88d7c8f23368628f306e3a244f2ce0a54e4472d29e4b79eced6da3e5ab40177e96fa0d94d97f5e07d2e6e95"
         }
       ],
       "blob_kzg_commitments": [
-        "0xb1ec6f426f978c599752e0e7181c305a1b8623c06088b5480b9aad7fe5f419d6c81a8f6862abe50a5e8cadf8649d347c",
-        "0x109252428f11e9b162a1e4c03bc8965b3a951e9aef7381ebf01fff6828d9ae8bbeb86d42469047b0c205fd55488427fc",
         "0x23b34c422f5dc8f657e44bec0e51ab2840981d2ca63caaa51da14231033a661656d833a140f1279e0a1e40020f4c8be2",
         "0xea4f5e424f7a2a28771b166a93b66dc12d8f207683e22f77941d78d8741740768f79e18451ce86d434d576fdbaf45f2f",
-        "0xfd705842efc5096d6c5e7d95673f828e34921f0839ab5831c29ebba04e78f7002799a7e34b2f67c27bedb9a981bcc315",
-        "0x5d163b420f4066c536ad816e89ebe88f53a11ae2c99624d4a7240d8a925c8cb61d3786bd2f14c967df66090765a3b695"
+        "0xfd705842efc5096d6c5e7d95673f828e34921f0839ab5831c29ebba04e78f7002799a7e34b2f67c27bedb9a981bcc315"
       ]
     }
   }
