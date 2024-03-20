@@ -129,7 +129,8 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   }
 
   private DepositReceipt createInternalDepositReceipt(
-      final DepositReceiptV1 depositReceiptV1, ExecutionPayloadSchema<?> executionPayloadSchema) {
+      final DepositReceiptV1 depositReceiptV1,
+      final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
         .getDepositReceiptSchemaRequired()
         .create(
@@ -141,7 +142,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   }
 
   private ExecutionLayerExit createInternalExit(
-      final ExitV1 exitV1, ExecutionPayloadSchema<?> executionPayloadSchema) {
+      final ExitV1 exitV1, final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
         .getExecutionLayerExitSchemaRequired()
         .create(exitV1.sourceAddress, BLSPublicKey.fromBytesCompressed(exitV1.validatorPublicKey));
