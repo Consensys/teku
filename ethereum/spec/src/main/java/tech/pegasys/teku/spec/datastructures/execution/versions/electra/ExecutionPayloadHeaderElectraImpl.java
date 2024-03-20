@@ -19,8 +19,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container18;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container19;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionPayloadHeaderElectraImpl
-    extends Container18<
+    extends Container19<
         ExecutionPayloadHeaderElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -47,11 +47,12 @@ public class ExecutionPayloadHeaderElectraImpl
         SszBytes32,
         SszUInt64,
         SszUInt64,
+        SszBytes32,
         SszBytes32>
     implements ExecutionPayloadHeaderElectra {
 
   protected ExecutionPayloadHeaderElectraImpl(
-      ContainerSchema18<
+      ContainerSchema19<
               ExecutionPayloadHeaderElectraImpl,
               SszBytes32,
               SszByteVector,
@@ -70,6 +71,7 @@ public class ExecutionPayloadHeaderElectraImpl
               SszBytes32,
               SszUInt64,
               SszUInt64,
+              SszBytes32,
               SszBytes32>
           schema,
       TreeNode backingTree) {
@@ -95,7 +97,8 @@ public class ExecutionPayloadHeaderElectraImpl
       SszBytes32 withdrawalsRoot,
       SszUInt64 blobGasUsed,
       SszUInt64 excessBlobGas,
-      SszBytes32 depositReceiptsRoot) {
+      SszBytes32 depositReceiptsRoot,
+      SszBytes32 exitsRoot) {
     super(
         schema,
         parentHash,
@@ -115,7 +118,8 @@ public class ExecutionPayloadHeaderElectraImpl
         withdrawalsRoot,
         blobGasUsed,
         excessBlobGas,
-        depositReceiptsRoot);
+        depositReceiptsRoot,
+        exitsRoot);
   }
 
   @Override
@@ -226,5 +230,10 @@ public class ExecutionPayloadHeaderElectraImpl
   @Override
   public Bytes32 getDepositReceiptsRoot() {
     return getField17().get();
+  }
+
+  @Override
+  public Bytes32 getExitsRoot() {
+    return getField18().get();
   }
 }

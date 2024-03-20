@@ -21,6 +21,8 @@ public interface ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDen
 
   Bytes32 getDepositReceiptsRoot();
 
+  Bytes32 getExitsRoot();
+
   @Override
   default Optional<ExecutionPayloadHeaderElectra> toVersionElectra() {
     return Optional.of(this);

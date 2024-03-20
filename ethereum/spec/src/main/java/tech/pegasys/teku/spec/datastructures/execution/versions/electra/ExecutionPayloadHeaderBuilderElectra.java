@@ -29,6 +29,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   private ExecutionPayloadHeaderSchemaElectra schema;
 
   protected Bytes32 depositReceiptsRoot;
+  protected Bytes32 exitsRoot;
 
   public ExecutionPayloadHeaderBuilderElectra schema(
       final ExecutionPayloadHeaderSchemaElectra schema) {
@@ -44,6 +45,12 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   }
 
   @Override
+  public ExecutionPayloadHeaderBuilder exitsRoot(final Supplier<Bytes32> exitsRootSupplier) {
+    this.exitsRoot = exitsRootSupplier.get();
+    return this;
+  }
+
+  @Override
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }
@@ -52,6 +59,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   protected void validate() {
     super.validate();
     checkNotNull(depositReceiptsRoot, "depositReceiptsRoot must be specified");
+    checkNotNull(exitsRoot, "exitsRoot must be specified");
   }
 
   @Override
@@ -76,6 +84,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
         SszBytes32.of(withdrawalsRoot),
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas),
-        SszBytes32.of(depositReceiptsRoot));
+        SszBytes32.of(depositReceiptsRoot),
+        SszBytes32.of(exitsRoot));
   }
 }
