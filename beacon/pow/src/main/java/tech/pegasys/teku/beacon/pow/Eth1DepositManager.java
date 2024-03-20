@@ -118,31 +118,30 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
-    final LoadDepositSnapshotResult fileDepositSnapshotResult =
-        depositSnapshotFileLoader.loadDepositSnapshot();
-    if (fileDepositSnapshotResult.getDepositTreeSnapshot().isPresent()
-        && !takeBestDepositSnapshot) {
-      LOG.debug("Deposit snapshot from file is provided, using it");
-      return SafeFuture.completedFuture(fileDepositSnapshotResult);
-    }
-
-    if (takeBestDepositSnapshot) {
-      STATUS_LOG.loadingDepositSnapshotFromDb();
-      return depositSnapshotStorageLoader
-          .loadDepositSnapshot()
-          .thenApply(
-              storageDepositSnapshotResult -> {
-                if (storageDepositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
-                  final DepositTreeSnapshot storageSnapshot =
-                      storageDepositSnapshotResult.getDepositTreeSnapshot().get();
-                  STATUS_LOG.onDepositSnapshot(
-                      storageSnapshot.getDepositCount(), storageSnapshot.getExecutionBlockHash());
+    STATUS_LOG.loadingDepositSnapshotFromDb();
+    return depositSnapshotStorageLoader
+        .loadDepositSnapshot()
+        .thenApply(
+            storageDepositSnapshotResult -> {
+              if (storageDepositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
+                final DepositTreeSnapshot storageSnapshot =
+                    storageDepositSnapshotResult.getDepositTreeSnapshot().get();
+                STATUS_LOG.onDepositSnapshot(
+                    storageSnapshot.getDepositCount(), storageSnapshot.getExecutionBlockHash());
+                if (!takeBestDepositSnapshot) {
+                  return storageDepositSnapshotResult;
                 }
+              }
+
+              final LoadDepositSnapshotResult fileDepositSnapshotResult =
+                  depositSnapshotFileLoader.loadDepositSnapshot();
+              if (takeBestDepositSnapshot) {
                 return ObjectUtils.max(storageDepositSnapshotResult, fileDepositSnapshotResult);
-              });
-    } else {
-      return depositSnapshotStorageLoader.loadDepositSnapshot();
-    }
+              }
+
+              LOG.debug("Deposit snapshot from file is provided, using it");
+              return fileDepositSnapshotResult;
+            });
   }
 
   public void stop() {
