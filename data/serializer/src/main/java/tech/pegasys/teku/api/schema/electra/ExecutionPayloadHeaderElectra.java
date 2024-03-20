@@ -23,8 +23,12 @@ import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadHeaderDeneb;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
+
+  @JsonProperty("deposit_receipts_root")
+  public final Bytes32 depositReceiptsRoot;
 
   @JsonCreator
   public ExecutionPayloadHeaderElectra(
@@ -44,7 +48,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
       @JsonProperty("transactions_root") final Bytes32 transactionsRoot,
       @JsonProperty("withdrawals_root") final Bytes32 withdrawalsRoot,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
-      @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas) {
+      @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
+      @JsonProperty("deposit_receipts_root") final Bytes32 depositReceiptsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -63,6 +68,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         withdrawalsRoot,
         blobGasUsed,
         excessBlobGas);
+    this.depositReceiptsRoot = depositReceiptsRoot;
   }
 
   public ExecutionPayloadHeaderElectra(final ExecutionPayloadHeader executionPayloadHeader) {
@@ -84,6 +90,34 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow(),
         executionPayloadHeader.toVersionDeneb().orElseThrow().getBlobGasUsed(),
         executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessBlobGas());
+    this.depositReceiptsRoot =
+        executionPayloadHeader.toVersionElectra().orElseThrow().getDepositReceiptsRoot();
+  }
+
+  @Override
+  public ExecutionPayloadHeader asInternalExecutionPayloadHeader(
+      final ExecutionPayloadHeaderSchema<?> schema) {
+    return schema.createExecutionPayloadHeader(
+        payloadBuilder ->
+            payloadBuilder
+                .parentHash(parentHash)
+                .feeRecipient(feeRecipient)
+                .stateRoot(stateRoot)
+                .receiptsRoot(receiptsRoot)
+                .logsBloom(logsBloom)
+                .prevRandao(prevRandao)
+                .blockNumber(blockNumber)
+                .gasLimit(gasLimit)
+                .gasUsed(gasUsed)
+                .timestamp(timestamp)
+                .extraData(extraData)
+                .baseFeePerGas(baseFeePerGas)
+                .blockHash(blockHash)
+                .transactionsRoot(transactionsRoot)
+                .withdrawalsRoot(() -> withdrawalsRoot)
+                .blobGasUsed(() -> blobGasUsed)
+                .excessBlobGas(() -> excessBlobGas)
+                .depositReceiptsRoot(() -> depositReceiptsRoot));
   }
 
   @Override

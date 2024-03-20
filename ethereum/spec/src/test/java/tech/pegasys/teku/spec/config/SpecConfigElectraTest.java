@@ -81,7 +81,8 @@ public class SpecConfigElectraTest {
     return new SpecConfigElectraImpl(
         denebConfig,
         dataStructureUtil.randomBytes4(),
-        dataStructureUtil.randomUInt64(),
-        dataStructureUtil.randomPositiveInt()) {};
+        dataStructureUtil.randomUInt64(999_999),
+        dataStructureUtil.randomPositiveInt(16),
+        dataStructureUtil.randomPositiveInt(16)) {};
   }
 }
