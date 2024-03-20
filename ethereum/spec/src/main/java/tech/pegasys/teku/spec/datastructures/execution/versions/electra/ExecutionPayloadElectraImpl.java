@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container17;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container18;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadElectraImpl
-    extends Container17<
+    extends Container18<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -51,11 +51,12 @@ public class ExecutionPayloadElectraImpl
         SszList<Transaction>,
         SszList<Withdrawal>,
         SszUInt64,
-        SszUInt64>
+        SszUInt64,
+        SszList<DepositReceipt>>
     implements ExecutionPayloadElectra {
 
   public ExecutionPayloadElectraImpl(
-      ContainerSchema17<
+      ContainerSchema18<
               ExecutionPayloadElectraImpl,
               SszBytes32,
               SszByteVector,
@@ -73,7 +74,8 @@ public class ExecutionPayloadElectraImpl
               SszList<Transaction>,
               SszList<Withdrawal>,
               SszUInt64,
-              SszUInt64>
+              SszUInt64,
+              SszList<DepositReceipt>>
           schema,
       TreeNode backingNode) {
     super(schema, backingNode);
@@ -97,7 +99,8 @@ public class ExecutionPayloadElectraImpl
       SszList<Transaction> transactions,
       SszList<Withdrawal> withdrawals,
       SszUInt64 blobGasUsed,
-      SszUInt64 excessBlobGas) {
+      SszUInt64 excessBlobGas,
+      SszList<DepositReceipt> depositReceipts) {
     super(
         schema,
         parentHash,
@@ -116,7 +119,8 @@ public class ExecutionPayloadElectraImpl
         transactions,
         withdrawals,
         blobGasUsed,
-        excessBlobGas);
+        excessBlobGas,
+        depositReceipts);
   }
 
   @Override
@@ -225,7 +229,15 @@ public class ExecutionPayloadElectraImpl
   }
 
   @Override
+  public SszList<DepositReceipt> getDepositReceipts() {
+    return getField17();
+  }
+
+  @Override
   public List<TreeNode> getUnblindedTreeNodes() {
-    return List.of(getTransactions().getBackingNode(), getWithdrawals().getBackingNode());
+    return List.of(
+        getTransactions().getBackingNode(),
+        getWithdrawals().getBackingNode(),
+        getDepositReceipts().getBackingNode());
   }
 }

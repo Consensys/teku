@@ -54,6 +54,9 @@ public class BeaconStateElectra extends BeaconStateAltair {
   @JsonProperty("historical_summaries")
   public final List<HistoricalSummary> historicalSummaries;
 
+  @JsonProperty("deposit_receipts_start_index")
+  public final UInt64 depositReceiptsStartIndex;
+
   public BeaconStateElectra(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
       @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot,
@@ -83,7 +86,8 @@ public class BeaconStateElectra extends BeaconStateAltair {
           final ExecutionPayloadHeaderElectra latestExecutionPayloadHeader,
       @JsonProperty("next_withdrawal_index") final UInt64 nextWithdrawalIndex,
       @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex,
-      @JsonProperty("historical_summaries") final List<HistoricalSummary> historicalSummaries) {
+      @JsonProperty("historical_summaries") final List<HistoricalSummary> historicalSummaries,
+      @JsonProperty("deposit_receipts_start_index") final UInt64 depositReceiptsStartIndex) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -113,6 +117,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
     this.nextWithdrawalIndex = nextWithdrawalIndex;
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
     this.historicalSummaries = historicalSummaries;
+    this.depositReceiptsStartIndex = depositReceiptsStartIndex;
   }
 
   public BeaconStateElectra(final BeaconState beaconState) {
@@ -126,6 +131,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
     this.nextWithdrawalValidatorIndex = electra.getNextWithdrawalValidatorIndex();
     this.historicalSummaries =
         electra.getHistoricalSummaries().stream().map(HistoricalSummary::new).toList();
+    this.depositReceiptsStartIndex = electra.getDepositReceiptsStartIndex();
   }
 
   @Override
@@ -155,7 +161,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
       final MutableBeaconStateElectra state,
       final SyncCommitteeSchema syncCommitteeSchema,
       final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchema,
-      SszListSchema<
+      final SszListSchema<
               tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
           historicalSummariesSchema,
       final BeaconStateElectra instance) {
@@ -174,5 +180,6 @@ public class BeaconStateElectra extends BeaconStateAltair {
                 .map(
                     historicalSummary -> historicalSummary.asInternalHistoricalSummary(specVersion))
                 .toList()));
+    state.setDepositReceiptsStartIndex(instance.depositReceiptsStartIndex);
   }
 }
