@@ -36,10 +36,12 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdate
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -193,15 +195,16 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
 
   private static Stream<Arguments> electraMethods() {
     return Stream.of(
-        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV3.class),
-        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV3.class),
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
         arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
   @Test
   void getsCapabilities() {
     final Spec spec =
-        TestSpecFactory.createMinimalWithCapellaAndDenebForkEpoch(UInt64.ONE, UInt64.valueOf(2));
+        TestSpecFactory.createMinimalWithCapellaDenebAndElectraForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3));
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
         new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
@@ -218,6 +221,8 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_forkchoiceUpdatedV2",
             "engine_newPayloadV3",
             "engine_getPayloadV3",
-            "engine_forkchoiceUpdatedV3");
+            "engine_forkchoiceUpdatedV3",
+            "engine_newPayloadV4",
+            "engine_getPayloadV4");
   }
 }
