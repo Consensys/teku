@@ -120,7 +120,8 @@ public class ExecutionPayloadHeaderSchemaElectra
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)),
-        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS_ROOT)));
+        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS_ROOT)),
+        getChildGeneralizedIndex(getFieldIndex(EXITS_ROOT)));
   }
 
   @Override
