@@ -55,20 +55,22 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   static final long ATTESTATION_RETENTION_SLOTS = 32;
 
   /**
-   * Default maximum number of attestations to store in the pool. Even with 400,000 validators we'd
-   * expect just 12,500 attestations per slot. It's very unlikely we'll be able to include more than
-   * a few slots worth of attestations into any block we produce so may as well prune them.
+   * Default maximum number of attestations to store in the pool.
    *
-   * <p>In fact even with perfect aggregation, there are 64 committees per slot and a maximum of 128
-   * attestations per block, so we can only possibly include 2 full slots worth of attestations. If
-   * the prior slots weren't entirely missed the majority of attestations should have been included
-   * in those blocks, and we'll have room to store older attestations to fill any space we have
-   * remaining.
+   * <p>With 1.2 million active validators, we'd expect around 37_500 attestations per slot; so 3
+   * slots worth of attestations is almost 120_000.
    *
-   * <p>A limit of 40,000 attestations is enough for 3 slots worth at 400,000 validators which gives
-   * a sane upper limit while still being above the typical 10-20k pool size seen on MainNet.
+   * <p>128 attestations perfectly packed at a 1.2 million validator set would be 1_200_000 / 32 /
+   * 64 bits, about 584 bits per aggregate. 128 of those is 74752 attestations if perfectly packed.
+   * Technically if we did have to cache 2 full slots of information, that would be roughly 150k
+   * cache size.
+   *
+   * <p>Because the real world exists, it's fair to expect that it's not all perfect, and 120k
+   * should be an adequately large cache to store current attestations plus some old ones that may
+   * not have been included so that we have plenty to choose if block building based on an expected
+   * 1.2 million validators.
    */
-  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 40_000;
+  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 120_000;
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
