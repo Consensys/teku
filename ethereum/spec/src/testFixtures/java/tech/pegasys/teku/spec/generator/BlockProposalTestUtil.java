@@ -269,7 +269,8 @@ public class BlockProposalTestUtil {
                 .withdrawals(List::of)
                 .blobGasUsed(() -> UInt64.ZERO)
                 .excessBlobGas(() -> UInt64.ZERO)
-                .depositReceipts(List::of));
+                .depositReceipts(List::of)
+                .exits(List::of));
   }
 
   private Boolean isMergeTransitionComplete(final BeaconState state) {
