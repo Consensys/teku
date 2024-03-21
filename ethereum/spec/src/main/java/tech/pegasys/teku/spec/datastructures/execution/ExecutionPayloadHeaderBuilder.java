@@ -55,5 +55,9 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
+  ExecutionPayloadHeaderBuilder depositReceiptsRoot(Supplier<Bytes32> depositReceiptsRootSupplier);
+
+  ExecutionPayloadHeaderBuilder exitsRoot(Supplier<Bytes32> exitsRootSupplier);
+
   ExecutionPayloadHeader build();
 }

@@ -25,8 +25,16 @@ import tech.pegasys.teku.api.schema.capella.Withdrawal;
 import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements ExecutionPayload {
+
+  @JsonProperty("deposit_receipts")
+  public final List<DepositReceipt> depositReceipts;
+
+  @JsonProperty("exits")
+  public final List<ExecutionLayerExit> exits;
 
   @JsonCreator
   public ExecutionPayloadElectra(
@@ -46,7 +54,9 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       @JsonProperty("transactions") final List<Bytes> transactions,
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
-      @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas) {
+      @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
+      @JsonProperty("deposit_receipts") final List<DepositReceipt> depositReceipts,
+      @JsonProperty("exits") final List<ExecutionLayerExit> exits) {
     super(
         parentHash,
         feeRecipient,
@@ -65,11 +75,44 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         withdrawals,
         blobGasUsed,
         excessBlobGas);
+    this.depositReceipts = depositReceipts;
+    this.exits = exits;
   }
 
   public ExecutionPayloadElectra(
       final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
+    this.depositReceipts =
+        executionPayload.toVersionElectra().orElseThrow().getDepositReceipts().stream()
+            .map(DepositReceipt::new)
+            .toList();
+    this.exits =
+        executionPayload.toVersionElectra().orElseThrow().getExits().stream()
+            .map(ExecutionLayerExit::new)
+            .toList();
+  }
+
+  @Override
+  protected ExecutionPayloadBuilder applyToBuilder(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionPayloadBuilder builder) {
+    return super.applyToBuilder(executionPayloadSchema, builder)
+        .depositReceipts(
+            () ->
+                depositReceipts.stream()
+                    .map(
+                        depositReceipt ->
+                            depositReceipt.asInternalDepositReceipt(
+                                executionPayloadSchema.getDepositReceiptSchemaRequired()))
+                    .toList())
+        .exits(
+            () ->
+                exits.stream()
+                    .map(
+                        exit ->
+                            exit.asInternalExecutionLayerExit(
+                                executionPayloadSchema.getExecutionLayerExitSchemaRequired()))
+                    .toList());
   }
 
   @Override

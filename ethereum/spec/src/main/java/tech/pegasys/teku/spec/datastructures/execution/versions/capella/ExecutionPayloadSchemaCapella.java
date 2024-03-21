@@ -50,6 +50,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 
 public class ExecutionPayloadSchemaCapella
     extends ContainerSchema15<
@@ -117,6 +119,16 @@ public class ExecutionPayloadSchemaCapella
   @Override
   public WithdrawalSchema getWithdrawalSchemaRequired() {
     return getWithdrawalSchema();
+  }
+
+  @Override
+  public DepositReceiptSchema getDepositReceiptSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit receipt schema from capella");
+  }
+
+  @Override
+  public ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a exit schema from bellatrix");
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

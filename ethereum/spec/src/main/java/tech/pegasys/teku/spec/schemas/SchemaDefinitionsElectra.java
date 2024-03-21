@@ -38,6 +38,10 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -67,6 +71,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
+
+  private final DepositReceiptSchema depositReceiptSchema;
+
+  private final ExecutionLayerExitSchema executionLayerExitSchema;
 
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
@@ -115,6 +123,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             "BlobsBundleElectra", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
+
+    this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
+    this.executionLayerExitSchema = ExecutionLayerExit.SSZ_SCHEMA;
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
@@ -230,6 +241,14 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
     return executionPayloadAndBlobsBundleSchema;
+  }
+
+  public DepositReceiptSchema getDepositReceiptSchema() {
+    return depositReceiptSchema;
+  }
+
+  public ExecutionLayerExitSchema getExecutionLayerExitSchema() {
+    return executionLayerExitSchema;
   }
 
   @Override

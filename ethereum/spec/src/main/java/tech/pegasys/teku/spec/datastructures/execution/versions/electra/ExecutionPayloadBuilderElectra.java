@@ -15,18 +15,37 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.List;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadBuilderDeneb;
 
 public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb {
   private ExecutionPayloadSchemaElectra schema;
 
+  protected List<DepositReceipt> depositReceipts;
+  protected List<ExecutionLayerExit> exits;
+
   public ExecutionPayloadBuilderElectra schema(final ExecutionPayloadSchemaElectra schema) {
     this.schema = schema;
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadBuilder depositReceipts(
+      final Supplier<List<DepositReceipt>> depositReceiptsSupplier) {
+    this.depositReceipts = depositReceiptsSupplier.get();
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadBuilder exits(final Supplier<List<ExecutionLayerExit>> exitsSupplier) {
+    this.exits = exitsSupplier.get();
     return this;
   }
 
@@ -38,6 +57,8 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   @Override
   protected void validate() {
     super.validate();
+    checkNotNull(depositReceipts, "depositReceipts must be specified");
+    checkNotNull(exits, "exits must be specified");
   }
 
   @Override
@@ -63,6 +84,8 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
         SszUInt64.of(blobGasUsed),
-        SszUInt64.of(excessBlobGas));
+        SszUInt64.of(excessBlobGas),
+        schema.getDepositReceiptsSchema().createFromElements(depositReceipts),
+        schema.getExecutionLayerExitsSchema().createFromElements(exits));
   }
 }
