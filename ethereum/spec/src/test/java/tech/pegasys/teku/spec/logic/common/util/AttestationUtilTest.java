@@ -31,7 +31,6 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -43,13 +42,10 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
-import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.ALTAIR})
+@TestSpecContext(milestone = {SpecMilestone.PHASE0})
 class AttestationUtilTest {
 
   private final MiscHelpers miscHelpers = mock(MiscHelpers.class);
@@ -87,36 +83,6 @@ class AttestationUtilTest {
                 specVersion.getSchemaDefinitions(),
                 beaconStateAccessors,
                 miscHelpers);
-        break;
-      case ALTAIR:
-        attestationUtil =
-            new AttestationUtilAltair(
-                spec.getGenesisSpecConfig(),
-                specVersion.getSchemaDefinitions(),
-                beaconStateAccessors,
-                miscHelpers);
-        break;
-      default:
-        throw new UnsupportedOperationException("unsupported milestone");
-    }
-  }
-
-  @TestTemplate
-  void shouldCreateAttestationWorthinessChecker(final SpecContext specContext) {
-    when(miscHelpers.computeStartSlotAtEpoch(any())).thenReturn(UInt64.ONE);
-
-    switch (specContext.getSpecMilestone()) {
-      case PHASE0:
-        assertThat(
-                attestationUtil.createAttestationWorthinessChecker(
-                    dataStructureUtil.randomBeaconState(UInt64.ONE)))
-            .isEqualTo(AttestationWorthinessChecker.NOOP);
-        break;
-      case ALTAIR:
-        assertThat(
-                attestationUtil.createAttestationWorthinessChecker(
-                    dataStructureUtil.randomBeaconState(UInt64.ONE)))
-            .isInstanceOf(AttestationWorthinessCheckerAltair.class);
         break;
       default:
         throw new UnsupportedOperationException("unsupported milestone");

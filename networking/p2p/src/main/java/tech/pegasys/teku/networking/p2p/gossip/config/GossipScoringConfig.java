@@ -16,7 +16,9 @@ package tech.pegasys.teku.networking.p2p.gossip.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.DirectPeerManager;
 
 /** Gossip scoring config. Contains peer scoring and topic scoring configs. */
 public class GossipScoringConfig {
@@ -161,6 +163,13 @@ public class GossipScoringConfig {
     public Builder opportunisticGraftThreshold(final Double opportunisticGraftThreshold) {
       checkNotNull(opportunisticGraftThreshold);
       this.opportunisticGraftThreshold = opportunisticGraftThreshold;
+      return this;
+    }
+
+    public Builder directPeerManager(final DirectPeerManager directPeerManager) {
+      checkNotNull(directPeerManager);
+
+      this.peerScoringConfigBuilder.directPeerManager(Optional.of(directPeerManager));
       return this;
     }
   }

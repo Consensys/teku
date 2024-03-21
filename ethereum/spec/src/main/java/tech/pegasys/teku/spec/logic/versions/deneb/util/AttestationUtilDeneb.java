@@ -23,10 +23,10 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class AttestationUtilDeneb extends AttestationUtilAltair {
+public class AttestationUtilDeneb extends AttestationUtilPhase0 {
 
   public AttestationUtilDeneb(
       final SpecConfig specConfig,
