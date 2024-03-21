@@ -34,6 +34,8 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
       SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
   private final HistoricalBatchSchema historicalBatchSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
+  private final IndexedAttestationContainerSchema<IndexedAttestationContainer>
+      indexedAttestationContainerSchema;
   private final IndexedAttestationSchema indexedAttestationSchema;
   private final AttesterSlashingSchema attesterSlashingSchema;
   private final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
@@ -45,9 +47,9 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
     this.beaconBlocksByRootRequestMessageSchema =
         new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(specConfig);
     this.indexedAttestationSchema = new IndexedAttestationSchema(specConfig);
-    this.attesterSlashingSchema =
-        new AttesterSlashingSchema(
-            indexedAttestationSchema.castTypeToIndexedAttestationContainer());
+    this.indexedAttestationContainerSchema =
+        indexedAttestationSchema.castTypeToIndexedAttestationContainer();
+    this.attesterSlashingSchema = new AttesterSlashingSchema(indexedAttestationContainerSchema);
     this.attnetsENRFieldSchema = SszBitvectorSchema.create(specConfig.getAttestationSubnetCount());
   }
 
