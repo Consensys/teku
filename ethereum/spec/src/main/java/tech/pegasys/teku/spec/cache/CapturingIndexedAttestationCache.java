@@ -17,21 +17,23 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 
 public class CapturingIndexedAttestationCache implements IndexedAttestationCache {
-  private final Map<Attestation, IndexedAttestation> indexedAttestations = new HashMap<>();
+  private final Map<AttestationContainer, IndexedAttestationContainer> indexedAttestations =
+      new HashMap<>();
 
   CapturingIndexedAttestationCache() {}
 
   @Override
-  public IndexedAttestation computeIfAbsent(
-      final Attestation attestation, final Supplier<IndexedAttestation> attestationProvider) {
+  public IndexedAttestationContainer computeIfAbsent(
+      final AttestationContainer attestation,
+      final Supplier<IndexedAttestationContainer> attestationProvider) {
     return indexedAttestations.computeIfAbsent(attestation, __ -> attestationProvider.get());
   }
 
-  public Collection<IndexedAttestation> getIndexedAttestations() {
+  public Collection<IndexedAttestationContainer> getIndexedAttestations() {
     return indexedAttestations.values();
   }
 }

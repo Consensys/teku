@@ -74,7 +74,7 @@ public class AttestationValidator {
   private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
-    final int bitCount = attestation.getAggregationBits().orElseThrow().getBitCount();
+    final int bitCount = attestation.getAggregationBitsRequired().getBitCount();
     if (bitCount != 1) {
       return InternalValidationResult.reject("Attestation has %s bits set instead of 1", bitCount);
     }
@@ -152,11 +152,11 @@ public class AttestationValidator {
               // [REJECT] The number of aggregation bits matches the committee size
               final IntList committee =
                   spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
-              if (committee.size() != attestation.getAggregationBits().orElseThrow().size()) {
+              if (committee.size() != attestation.getAggregationBitsRequired().size()) {
                 return completedFuture(
                     InternalValidationResultWithState.reject(
                         "Aggregation bit size %s is greater than committee size %s",
-                        attestation.getAggregationBits().orElseThrow().size(), committee.size()));
+                        attestation.getAggregationBitsRequired().size(), committee.size()));
               }
 
               return spec.isValidIndexedAttestation(

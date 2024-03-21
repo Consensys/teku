@@ -37,9 +37,9 @@ public class Attestation {
 
   public Attestation(
       final tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
-    this.aggregation_bits = attestation.getAggregationBits().orElseThrow().sszSerialize();
+    this.aggregation_bits = attestation.getAggregationBitsRequired().sszSerialize();
     this.data = new AttestationData(attestation.getData());
-    this.signature = new BLSSignature(attestation.getAggregateSignature());
+    this.signature = new BLSSignature(attestation.getAggregateSignature().orElseThrow());
   }
 
   @JsonCreator

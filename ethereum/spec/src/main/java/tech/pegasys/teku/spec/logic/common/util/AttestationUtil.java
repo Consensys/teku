@@ -40,8 +40,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -97,19 +97,20 @@ public abstract class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
-  public IndexedAttestation getIndexedAttestation(
-      final BeaconState state, final Attestation attestation) {
+  public IndexedAttestationContainer getIndexedAttestation(
+      final BeaconState state, final AttestationContainer attestation) {
     final List<Integer> attestingIndices = getAttestingIndices(state, attestation);
 
     final IndexedAttestationSchema indexedAttestationSchema =
         schemaDefinitions.getIndexedAttestationSchema();
+    specConfig.getMaxCommitteesPerSlot();
     return indexedAttestationSchema.create(
         attestingIndices.stream()
             .sorted()
             .map(UInt64::valueOf)
             .collect(indexedAttestationSchema.getAttestingIndicesSchema().collectorUnboxed()),
         attestation.getData(),
-        attestation.getAggregateSignature());
+        attestation.getAggregateSignature().orElseThrow());
   }
 
   /**
@@ -130,7 +131,7 @@ public abstract class AttestationUtil {
   public IntStream streamAttestingIndices(
       final BeaconState state, final AttestationContainer attestation) {
     final AttestationData data = attestation.getData();
-    final SszBitlist aggregationBits = attestation.getAggregationBits().orElseThrow();
+    final SszBitlist aggregationBits = attestation.getAggregationBitsRequired();
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
@@ -173,7 +174,7 @@ public abstract class AttestationUtil {
     return SafeFuture.of(
             () -> {
               // getIndexedAttestation() throws, so wrap it in a future
-              final IndexedAttestation indexedAttestation =
+              final IndexedAttestationContainer indexedAttestation =
                   getIndexedAttestation(state, attestation.getAttestation());
               attestation.setIndexedAttestation(indexedAttestation);
               return indexedAttestation;
@@ -214,14 +215,16 @@ public abstract class AttestationUtil {
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
   public AttestationProcessingResult isValidIndexedAttestation(
-      final Fork fork, final BeaconState state, final IndexedAttestation indexedAttestation) {
+      final Fork fork,
+      final BeaconState state,
+      final IndexedAttestationContainer indexedAttestation) {
     return isValidIndexedAttestation(fork, state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork,
       final BeaconState state,
-      final IndexedAttestation indexedAttestation,
+      final IndexedAttestationContainer indexedAttestation,
       final BLSSignatureVerifier signatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
@@ -233,7 +236,7 @@ public abstract class AttestationUtil {
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       final Fork fork,
       final BeaconState state,
-      final IndexedAttestation indexedAttestation,
+      final IndexedAttestationContainer indexedAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
     final SszUInt64List indices = indexedAttestation.getAttestingIndices();
 

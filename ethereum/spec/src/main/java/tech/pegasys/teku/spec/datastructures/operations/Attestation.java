@@ -103,7 +103,8 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
     return getField1();
   }
 
-  public BLSSignature getAggregateSignature() {
-    return getField2().getSignature();
+  @Override
+  public Optional<BLSSignature> getAggregateSignature() {
+    return Optional.of(getField2().getSignature());
   }
 }

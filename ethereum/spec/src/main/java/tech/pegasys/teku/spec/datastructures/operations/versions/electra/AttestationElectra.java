@@ -75,8 +75,9 @@ public class AttestationElectra
     return getField2();
   }
 
-  public BLSSignature getAggregateSignature() {
-    return getField3().getSignature();
+  @Override
+  public Optional<BLSSignature> getAggregateSignature() {
+    return Optional.of(getField3().getSignature());
   }
 
   @Override

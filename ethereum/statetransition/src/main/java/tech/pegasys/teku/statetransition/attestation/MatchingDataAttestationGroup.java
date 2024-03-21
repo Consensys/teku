@@ -95,7 +95,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    */
   public boolean add(final ValidatableAttestation attestation) {
     if (includedValidators.isSuperSetOf(
-        attestation.getAttestation().getAggregationBits().orElseThrow())) {
+        attestation.getAttestation().getAggregationBitsRequired())) {
       // All attestation bits have already been included on chain
       return false;
     }
@@ -104,7 +104,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     }
     return attestationsByValidatorCount
         .computeIfAbsent(
-            attestation.getAttestation().getAggregationBits().orElseThrow().getBitCount(),
+            attestation.getAttestation().getAggregationBitsRequired().getBitCount(),
             count -> new HashSet<>())
         .add(attestation);
   }
@@ -150,7 +150,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * @param attestation the attestation to logically remove from the pool.
    */
   public int onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    final SszBitlist aggregationBits = attestation.getAggregationBits().orElseThrow();
+    final SszBitlist aggregationBits = attestation.getAggregationBitsRequired();
     // Record validators in attestation as seen in this slot
     // Important to do even if the attestation is redundant so we handle re-orgs correctly
     includedValidatorsBySlot.merge(slot, aggregationBits, SszBitlist::or);
@@ -170,7 +170,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
           iterator.hasNext(); ) {
         ValidatableAttestation candidate = iterator.next();
         if (includedValidators.isSuperSetOf(
-            candidate.getAttestation().getAggregationBits().orElseThrow())) {
+            candidate.getAttestation().getAggregationBitsRequired())) {
           iterator.remove();
           numRemoved++;
         }
@@ -217,7 +217,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
           .forEach(
               candidate -> {
                 final SszBitlist candidateAggregationBits =
-                    candidate.getAttestation().getAggregationBits().orElseThrow();
+                    candidate.getAttestation().getAggregationBitsRequired();
                 if (builder.canAggregate(candidate)) {
                   builder.aggregate(candidate);
                   includedValidators = includedValidators.or(candidateAggregationBits);
@@ -232,7 +232,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
           .filter(
               candidate ->
                   !includedValidators.isSuperSetOf(
-                      candidate.getAttestation().getAggregationBits().orElseThrow()));
+                      candidate.getAttestation().getAggregationBitsRequired()));
     }
   }
 }

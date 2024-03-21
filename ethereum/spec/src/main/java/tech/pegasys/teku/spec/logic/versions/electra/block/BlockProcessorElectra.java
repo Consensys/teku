@@ -362,8 +362,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     final UInt64 committeeCountPerSlot =
         beaconStateAccessors.getCommitteeCountPerSlot(
             state, attestation.getData().getTarget().getEpoch());
-    final SszList<SszBitlist> aggregationBits =
-        attestation.getAggregationBitsElectra().orElseThrow();
+    beaconStateAccessors.getCommitteeCountPerSlot(
+        state, attestation.getData().getTarget().getEpoch());
+    final SszList<SszBitlist> aggregationBits = attestation.getAggregationBitsElectraRequired();
     checkArgument(
         committeeIndices.size() == aggregationBits.size(),
         AttestationDataValidator.AttestationInvalidReason.COMMITTEE_INDICES_MISMATCH);

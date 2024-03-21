@@ -23,19 +23,21 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 
 public class AttesterSlashing
-    extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
+    extends Container2<AttesterSlashing, IndexedAttestationContainer, IndexedAttestationContainer> {
 
   public static class AttesterSlashingSchema
-      extends ContainerSchema2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
+      extends ContainerSchema2<
+          AttesterSlashing, IndexedAttestationContainer, IndexedAttestationContainer> {
 
-    public AttesterSlashingSchema(final IndexedAttestationSchema indexedAttestationSchema) {
+    public AttesterSlashingSchema(
+        final IndexedAttestationContainerSchema<IndexedAttestationContainer>
+            indexedAttestationContainerSchema) {
       super(
           "AttesterSlashing",
-          namedSchema("attestation_1", indexedAttestationSchema),
-          namedSchema("attestation_2", indexedAttestationSchema));
+          namedSchema("attestation_1", indexedAttestationContainerSchema),
+          namedSchema("attestation_2", indexedAttestationContainerSchema));
     }
 
     @Override
@@ -44,7 +46,8 @@ public class AttesterSlashing
     }
 
     public AttesterSlashing create(
-        final IndexedAttestation attestation1, final IndexedAttestation attestation2) {
+        final IndexedAttestationContainer attestation1,
+        final IndexedAttestationContainer attestation2) {
       return new AttesterSlashing(this, attestation1, attestation2);
     }
   }
@@ -65,8 +68,8 @@ public class AttesterSlashing
 
   private AttesterSlashing(
       final AttesterSlashingSchema schema,
-      final IndexedAttestation attestation1,
-      final IndexedAttestation attestation2) {
+      final IndexedAttestationContainer attestation1,
+      final IndexedAttestationContainer attestation2) {
     super(schema, attestation1, attestation2);
   }
 
@@ -79,11 +82,11 @@ public class AttesterSlashing
     return intersectingIndices.get();
   }
 
-  public IndexedAttestation getAttestation1() {
+  public IndexedAttestationContainer getAttestation1() {
     return getField0();
   }
 
-  public IndexedAttestation getAttestation2() {
+  public IndexedAttestationContainer getAttestation2() {
     return getField1();
   }
 }

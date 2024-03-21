@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -56,8 +56,8 @@ public class AttesterSlashingValidator
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
       final SlashedIndicesCaptor slashedIndicesCaptor) {
-    IndexedAttestation attestation1 = attesterSlashing.getAttestation1();
-    IndexedAttestation attestation2 = attesterSlashing.getAttestation2();
+    IndexedAttestationContainer attestation1 = attesterSlashing.getAttestation1();
+    IndexedAttestationContainer attestation2 = attesterSlashing.getAttestation2();
     return firstOf(
         () ->
             check(

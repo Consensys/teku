@@ -20,12 +20,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class IndexedAttestationElectraSchema
     extends ContainerSchema3<
-        IndexedAttestationElectra, SszUInt64List, AttestationData, SszSignature> {
+        IndexedAttestationElectra, SszUInt64List, AttestationData, SszSignature>
+    implements IndexedAttestationContainerSchema<IndexedAttestationElectra> {
 
   public IndexedAttestationElectraSchema(final SpecConfig config) {
     super(

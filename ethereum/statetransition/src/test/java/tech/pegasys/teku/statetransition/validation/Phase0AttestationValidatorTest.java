@@ -74,7 +74,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
   public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
-    final SszBitlist validAggregationBits = attestation.getAggregationBits().orElseThrow();
+    final SszBitlist validAggregationBits = attestation.getAggregationBitsRequired();
     SszBitlist invalidAggregationBits =
         validAggregationBits
             .getSchema()
@@ -82,7 +82,9 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
             .or(validAggregationBits);
     final Attestation invalidAttestation =
         attestationSchema.create(
-            invalidAggregationBits, attestation.getData(), attestation.getAggregateSignature());
+            invalidAggregationBits,
+            attestation.getData(),
+            attestation.getAggregateSignatureRequired());
     assertThat(validate(invalidAttestation).code()).isEqualTo(REJECT);
   }
 
@@ -247,7 +249,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                 ValidatableAttestation.fromNetwork(
                     spec,
                     attestationSchema.create(
-                        attestation.getAggregationBits().orElseThrow(),
+                        attestation.getAggregationBitsRequired(),
                         new AttestationData(
                             data.getSlot(),
                             spec.getCommitteeCountPerSlot(
@@ -255,7 +257,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                             data.getBeaconBlockRoot(),
                             data.getSource(),
                             data.getTarget()),
-                        attestation.getAggregateSignature()),
+                        attestation.getAggregateSignatureRequired()),
                     expectedSubnetId)))
         .matches(rejected("Committee index 2 is out of range"), "Rejected committee out of range");
   }
@@ -272,14 +274,14 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                 ValidatableAttestation.fromNetwork(
                     spec,
                     attestationSchema.create(
-                        attestation.getAggregationBits().orElseThrow(),
+                        attestation.getAggregationBitsRequired(),
                         new AttestationData(
                             data.getSlot(),
                             data.getIndex(),
                             data.getBeaconBlockRoot(),
                             data.getSource(),
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
-                        attestation.getAggregateSignature()),
+                        attestation.getAggregateSignatureRequired()),
                     expectedSubnetId)))
         .matches(rejected("is not from target epoch"), "Rejected with is not from target epoch");
   }
@@ -307,14 +309,14 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                 ValidatableAttestation.fromNetwork(
                     spec,
                     attestationSchema.create(
-                        attestation.getAggregationBits().orElseThrow(),
+                        attestation.getAggregationBitsRequired(),
                         new AttestationData(
                             data.getSlot(),
                             data.getIndex(),
                             data.getBeaconBlockRoot(),
                             data.getSource(),
                             checkpoint),
-                        attestation.getAggregateSignature()),
+                        attestation.getAggregateSignatureRequired()),
                     expectedSubnetId)))
         .matches(
             rejected("descend from target block"), "Rejected does not descend from target block");

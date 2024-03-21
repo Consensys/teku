@@ -29,10 +29,9 @@ public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attes
   private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(1, spec);
   private static final Attestation anAttestation = dataStructureUtil.randomAttestation();
 
-  private static final SszBitlist aggregation_bits =
-      anAttestation.getAggregationBits().orElseThrow();
+  private static final SszBitlist aggregation_bits = anAttestation.getAggregationBitsRequired();
   private static final AttestationData attestationData = anAttestation.getData();
-  private static final BLSSignature signature = anAttestation.getAggregateSignature();
+  private static final BLSSignature signature = anAttestation.getAggregateSignatureRequired();
 
   @Override
   protected Attestation createContainer() {

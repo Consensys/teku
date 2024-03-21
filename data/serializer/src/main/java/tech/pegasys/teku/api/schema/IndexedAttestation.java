@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 
 @SuppressWarnings("JavaCase")
 public class IndexedAttestation {
@@ -36,9 +37,7 @@ public class IndexedAttestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
-  public IndexedAttestation(
-      final tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
-          indexedAttestation) {
+  public IndexedAttestation(final IndexedAttestationContainer indexedAttestation) {
     this.attesting_indices = indexedAttestation.getAttestingIndices().streamUnboxed().toList();
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());

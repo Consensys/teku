@@ -85,9 +85,9 @@ class AggregateAttestationBuilderTest {
     final BLSSignature expectedSignature =
         BLS.aggregate(
             asList(
-                attestation1.getAttestation().getAggregateSignature(),
-                attestation2.getAttestation().getAggregateSignature(),
-                attestation3.getAttestation().getAggregateSignature()));
+                attestation1.getAttestation().getAggregateSignatureRequired(),
+                attestation2.getAttestation().getAggregateSignatureRequired(),
+                attestation3.getAttestation().getAggregateSignatureRequired()));
 
     assertThat(builder.buildAggregate())
         .isEqualTo(

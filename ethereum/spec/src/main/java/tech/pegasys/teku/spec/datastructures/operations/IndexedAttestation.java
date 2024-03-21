@@ -28,7 +28,8 @@ public class IndexedAttestation
     implements IndexedAttestationContainer {
 
   public static class IndexedAttestationSchema
-      extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
+      extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature>
+      implements IndexedAttestationContainerSchema<IndexedAttestation> {
 
     public IndexedAttestationSchema(final SpecConfig config) {
       super(
