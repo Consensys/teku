@@ -140,6 +140,12 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @Override
+  public SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>>
+      getDepositReceiptsSchemaRequired() {
+    return getDepositReceiptsSchema();
+  }
+
+  @Override
   public DepositReceiptSchema getDepositReceiptSchemaRequired() {
     return getDepositReceiptSchema();
   }

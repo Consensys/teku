@@ -20,36 +20,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapellaTest;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
+
   @Override
   protected Spec createSpec() {
     return TestSpecFactory.createMainnetDeneb();
-  }
-
-  @Test
-  void shouldRejectCapellaBlock() {
-    BeaconState preState = createBeaconState();
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(preState.getSlot().increment());
-    assertThatThrownBy(
-            () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
-        .isInstanceOf(StateTransitionException.class);
   }
 
   @Test

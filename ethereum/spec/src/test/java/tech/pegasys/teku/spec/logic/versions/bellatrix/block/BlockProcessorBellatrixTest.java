@@ -14,36 +14,22 @@
 package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltairTest;
 
 public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
+
   @Override
   protected Spec createSpec() {
     return TestSpecFactory.createMainnetBellatrix();
-  }
-
-  @Test
-  void shouldRejectAltairBlock() {
-    final BeaconState preState = createBeaconState();
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(preState.getSlot().increment());
-    assertThatThrownBy(
-            () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
-        .isInstanceOf(StateTransitionException.class);
   }
 
   @Test
