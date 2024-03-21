@@ -22,10 +22,8 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -39,11 +37,6 @@ public class AttestationUtilPhase0 extends AttestationUtil {
       final BeaconStateAccessors beaconStateAccessors,
       final MiscHelpers miscHelpers) {
     super(specConfig, schemaDefinitions, beaconStateAccessors, miscHelpers);
-  }
-
-  @Override
-  public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return AttestationWorthinessChecker.NOOP;
   }
 
   /**

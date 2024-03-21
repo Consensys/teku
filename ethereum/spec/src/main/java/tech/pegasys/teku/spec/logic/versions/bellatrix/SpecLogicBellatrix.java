@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.forktransition.BellatrixStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.Epo
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SpecLogicBellatrix extends AbstractSpecLogic {
@@ -111,7 +111,7 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+        new AttestationUtilPhase0(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorPhase0(config, miscHelpers, beaconStateAccessors);
     final OperationValidator operationValidator =
