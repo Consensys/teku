@@ -207,7 +207,7 @@ class BlockOperationSelectorFactoryTest {
 
   @BeforeEach
   void setUp() {
-    when(attestationPool.getAttestationsForBlock(any(), any(), any()))
+    when(attestationPool.getAttestationsForBlock(any(), any()))
         .thenReturn(
             beaconBlockSchemaSupplier.apply(UInt64.ZERO).getAttestationsSchema().getDefault());
     when(contributionValidator.validate(any())).thenReturn(SafeFuture.completedFuture(ACCEPT));

@@ -117,9 +117,7 @@ public class BlockOperationSelectorFactory {
 
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
-              blockSlotState,
-              new AttestationForkChecker(spec, blockSlotState),
-              spec.createAttestationWorthinessChecker(blockSlotState));
+              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();

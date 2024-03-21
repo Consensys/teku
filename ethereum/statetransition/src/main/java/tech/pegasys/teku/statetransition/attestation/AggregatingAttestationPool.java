@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -174,9 +173,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized SszList<Attestation> getAttestationsForBlock(
-      final BeaconState stateAtBlockSlot,
-      final AttestationForkChecker forkChecker,
-      final AttestationWorthinessChecker worthinessChecker) {
+      final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
@@ -198,7 +195,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
-        .filter(group -> worthinessChecker.areAttestationsWorthy(group.getAttestationData()))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestationsSchema.getMaxLength())
         .map(ValidatableAttestation::getAttestation)

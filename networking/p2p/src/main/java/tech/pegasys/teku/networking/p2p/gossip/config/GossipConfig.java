@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.time.Duration;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.DirectPeerManager;
 
 /**
  * Gossip options
@@ -32,8 +33,8 @@ public class GossipConfig {
   private static final int DEFAULT_ADVERTISE = 3;
   private static final int DEFAULT_HISTORY = 6;
   static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
-  // After EIP-7045, attestations are valid for up to 2 full epochs, so TTL is 65 slots
-  // 1115 * HEARTBEAT = 1115 * 0.7 / 12 = 65.125
+  // After EIP-7045, attestations are valid for up to 2 full epochs, so TTL is 65
+  // slots 1115 * HEARTBEAT = 1115 * 0.7 / 12 = 65.125
   static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(1115);
 
   private final int d;
@@ -213,6 +214,12 @@ public class GossipConfig {
         throw new InvalidConfigurationException(String.format("Invalid seenTTL: %s", seenTTL));
       }
       this.seenTTL = seenTTL;
+      return this;
+    }
+
+    public Builder directPeerManager(final DirectPeerManager directPeerManager) {
+      checkNotNull(directPeerManager);
+      this.scoringConfigBuilder.directPeerManager(directPeerManager);
       return this;
     }
   }

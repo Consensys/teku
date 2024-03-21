@@ -66,6 +66,7 @@ public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
     postOctetStream(
         ValidatorApiMethod.REGISTER_VALIDATOR,
         Collections.emptyMap(),
+        Collections.emptyMap(),
         ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA
             .sszSerialize(validatorRegistrations)
             .toArray(),
