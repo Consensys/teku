@@ -21,3 +21,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Set DEFAULT_BUILDER_BID_COMPARE_FACTOR to 90. This makes it necessary for external block builders to give at least 10% additional profit compared to a local build before being taken into consideration. If you would like to go back to the previous default, execute the client with --builder-bid-compare-factor=100
 
 ### Bug Fixes
+- Fix incompatibility between Teku validator client and Lighthouse beacon nodes [#8117](https://github.com/Consensys/teku/pull/8117)
