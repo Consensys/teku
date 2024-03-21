@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class SpecLogicElectra extends AbstractSpecLogic {
@@ -93,8 +94,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final SpecConfigElectra config, final SchemaDefinitionsElectra schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates(config);
-    final MiscHelpersDeneb miscHelpers =
-        new MiscHelpersDeneb(config, predicates, schemaDefinitions);
+    final MiscHelpersElectra miscHelpers =
+        new MiscHelpersElectra(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsDeneb beaconStateAccessors =
         new BeaconStateAccessorsDeneb(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =

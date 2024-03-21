@@ -934,6 +934,11 @@ public class Spec {
         .map(this::computeStartSlotAtEpoch);
   }
 
+  // Electra Utils
+  public boolean isFormerDepositMechanismDisabled(BeaconState state) {
+    return atState(state).miscHelpers().isFormerDepositMechanismDisabled(state);
+  }
+
   // Deneb private helpers
   private Optional<SpecConfigDeneb> getSpecConfigDeneb() {
     final SpecMilestone highestSupportedMilestone =

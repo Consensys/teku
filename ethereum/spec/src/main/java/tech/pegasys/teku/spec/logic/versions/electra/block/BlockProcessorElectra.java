@@ -107,7 +107,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final int expectedDepositCount =
           Math.min(
               specConfig.getMaxDeposits(),
-              state.getEth1DepositIndex().minus(eth1DepositIndexLimit).intValue());
+              eth1DepositIndexLimit.minus(state.getEth1DepositIndex()).intValue());
 
       checkArgument(
           body.getDeposits().size() == expectedDepositCount,

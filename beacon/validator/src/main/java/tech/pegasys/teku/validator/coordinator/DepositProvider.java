@@ -74,8 +74,8 @@ public class DepositProvider
   private boolean inSync = false;
 
   public DepositProvider(
-      MetricsSystem metricsSystem,
-      RecentChainData recentChainData,
+      final MetricsSystem metricsSystem,
+      final RecentChainData recentChainData,
       final Eth1DataCache eth1DataCache,
       final StorageUpdateChannel storageUpdateChannel,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
@@ -99,7 +99,7 @@ public class DepositProvider
   }
 
   @Override
-  public synchronized void onDepositsFromBlock(DepositsFromBlockEvent event) {
+  public synchronized void onDepositsFromBlock(final DepositsFromBlockEvent event) {
     event.getDeposits().stream()
         .map(depositUtil::convertDepositEventToOperationDeposit)
         .forEach(
@@ -171,7 +171,7 @@ public class DepositProvider
   }
 
   @Override
-  public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
+  public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
   @Override
   public void onSlot(final UInt64 slot) {
@@ -201,33 +201,58 @@ public class DepositProvider
         .ifExceptionGetsHereRaiseABug();
   }
 
-  public void onSyncingStatusChanged(boolean inSync) {
+  public void onSyncingStatusChanged(final boolean inSync) {
     this.inSync = inSync;
   }
 
-  public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
+  public synchronized SszList<Deposit> getDeposits(
+      final BeaconState state, final Eth1Data eth1Data) {
+    final long maxDeposits = spec.getMaxDeposits(state);
+    final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+    // no Eth1 deposits needed if already transitioned to the EIP-6110 mechanism
+    if (spec.isFormerDepositMechanismDisabled(state)) {
+      return depositsSchema.createFromElements(emptyList());
+    }
     final UInt64 eth1DepositCount;
     if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
       eth1DepositCount = eth1Data.getDepositCount();
     } else {
       eth1DepositCount = state.getEth1Data().getDepositCount();
     }
-
     final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
+
+    final UInt64 eth1PendingDepositCount =
+        state
+            .toVersionElectra()
+            .map(
+                stateElectra -> {
+                  // EIP-6110
+                  final UInt64 eth1DepositIndexLimit =
+                      eth1DepositCount.min(stateElectra.getDepositReceiptsStartIndex());
+                  if (eth1DepositIndex.isLessThan(eth1DepositIndexLimit)) {
+                    return eth1DepositIndexLimit.minus(eth1DepositIndex).min(maxDeposits);
+                  } else {
+                    return UInt64.ZERO;
+                  }
+                })
+            .orElseGet(
+                () -> {
+                  // Phase0
+                  return eth1DepositCount.minusMinZero(eth1DepositIndex).min(maxDeposits);
+                });
+
+    // No deposits to include
+    if (eth1PendingDepositCount.isZero()) {
+      return depositsSchema.createFromElements(emptyList());
+    }
 
     // We need to have all the deposits that can be included in the state available to ensure
     // the generated proofs are valid
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
-    final long maxDeposits = spec.getMaxDeposits(state);
-    final UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(spec.getMaxDeposits(state));
+    final UInt64 toDepositIndex = eth1DepositIndex.plus(eth1PendingDepositCount);
 
-    final UInt64 toDepositIndex =
-        latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)
-            ? eth1DepositCount
-            : latestDepositIndexWithMaxBlock;
-
-    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, maxDeposits);
+    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, depositsSchema);
   }
 
   protected synchronized List<DepositWithIndex> getAvailableDeposits() {
@@ -261,14 +286,12 @@ public class DepositProvider
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
    */
   private SszList<Deposit> getDepositsWithProof(
-      UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount, long maxDeposits) {
+      final UInt64 fromDepositIndex,
+      final UInt64 toDepositIndex,
+      final UInt64 eth1DepositCount,
+      final SszListSchema<Deposit, ?> depositsSchema) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
-    final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
     final SszBytes32VectorSchema<?> depositProofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
-    // No deposits to include so don't bother rewinding the merkle tree.
-    if (fromDepositIndex.equals(toDepositIndex)) {
-      return depositsSchema.createFromElements(emptyList());
-    }
     if (depositMerkleTree.getDepositCount() < eth1DepositCount.intValue()) {
       throw MissingDepositsException.missingRange(
           UInt64.valueOf(depositMerkleTree.getDepositCount()), eth1DepositCount);
