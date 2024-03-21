@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
@@ -36,7 +37,8 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
 
   private final ResponseHandler<Object> sszResponseHandler =
       new ResponseHandler<>()
-          .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedSszRequest);
+          .withHandler(
+              this::handleUnsupportedSszRequest, SC_UNSUPPORTED_MEDIA_TYPE, SC_BAD_REQUEST);
 
   private final Spec spec;
   private final AtomicBoolean preferSszBlockEncoding;
