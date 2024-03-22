@@ -21,8 +21,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
+import static tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool.MAX_CAPACITY;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -196,5 +199,23 @@ public class DataUnavailableBlockPoolTest {
 
     assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot10)).isFalse();
     assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot11)).isFalse();
+  }
+
+  @Test
+  void shouldDiscardOldestWhenFull() {
+    final List<SignedBeaconBlock> blocks =
+        IntStream.range(0, MAX_CAPACITY)
+            .mapToObj(dataStructureUtil::randomSignedBeaconBlock)
+            .toList();
+    blocks.forEach(dataUnavailableBlockPool::addDataUnavailableBlock);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blocks.get(0))).isTrue();
+
+    final SignedBeaconBlock newBlock = dataStructureUtil.randomSignedBeaconBlock();
+
+    dataUnavailableBlockPool.addDataUnavailableBlock(newBlock);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blocks.get(0))).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(newBlock)).isTrue();
   }
 }

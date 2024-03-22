@@ -38,13 +38,14 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
  * with UNKNOWN_BLOCK and will be tracked in the block pendingPool.
  */
 public class DataUnavailableBlockPool implements FinalizedCheckpointChannel {
+  public static int MAX_CAPACITY = 10;
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration WAIT_BEFORE_RETRY = Duration.ofSeconds(1);
 
   // this is a queue of chain tips
   private final Queue<SignedBeaconBlock> awaitingDataAvailabilityQueue =
-      new ArrayBlockingQueue<>(10);
+      new ArrayBlockingQueue<>(MAX_CAPACITY);
   private final Spec spec;
   private final BlockManager blockManager;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
@@ -72,9 +73,11 @@ public class DataUnavailableBlockPool implements FinalizedCheckpointChannel {
 
     boolean wasEmpty = awaitingDataAvailabilityQueue.isEmpty();
     if (!awaitingDataAvailabilityQueue.offer(block)) {
+      final SignedBeaconBlock oldestBlock = awaitingDataAvailabilityQueue.poll();
+      awaitingDataAvailabilityQueue.add(block);
       LOG.info(
           "Discarding block {} as data unavailable retry pool capacity exceeded",
-          block::toLogString);
+          oldestBlock::toLogString);
       return;
     }
     if (wasEmpty) {
