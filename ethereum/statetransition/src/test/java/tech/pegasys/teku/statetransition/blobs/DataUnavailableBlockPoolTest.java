@@ -45,7 +45,7 @@ public class DataUnavailableBlockPoolTest {
       mock(BlockBlobSidecarsTrackersPool.class);
 
   private final DataUnavailableBlockPool dataUnavailableBlockPool =
-      new DataUnavailableBlockPool(blockManager, blockBlobSidecarsTrackersPool, asyncRunner);
+      new DataUnavailableBlockPool(spec, blockManager, blockBlobSidecarsTrackersPool, asyncRunner);
 
   private final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock();
   private final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock();
@@ -172,5 +172,29 @@ public class DataUnavailableBlockPoolTest {
     asyncRunner.executeQueuedActions();
 
     verifyNoInteractions(blockManager);
+  }
+
+  @Test
+  void shouldPruneBlocksOlderThanFinalizedSlot() {
+    final SignedBeaconBlock blockAtSlot1 = dataStructureUtil.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock blockAtSlot2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final SignedBeaconBlock blockAtSlot10 = dataStructureUtil.randomSignedBeaconBlock(10);
+    final SignedBeaconBlock blockAtSlot11 = dataStructureUtil.randomSignedBeaconBlock(11);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot1);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot2);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot10);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot11);
+
+    dataUnavailableBlockPool.onNewFinalizedCheckpoint(dataStructureUtil.randomCheckpoint(1), false);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot1)).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot2)).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot10)).isTrue();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot11)).isTrue();
+
+    dataUnavailableBlockPool.onNewFinalizedCheckpoint(dataStructureUtil.randomCheckpoint(2), false);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot10)).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot11)).isFalse();
   }
 }
