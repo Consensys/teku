@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
  * with UNKNOWN_BLOCK and will be tracked in the block pendingPool.
  */
 public class DataUnavailableBlockPool implements FinalizedCheckpointChannel {
-  public static final int MAX_CAPACITY = 50;
+  public static final int MAX_CAPACITY = 10;
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration WAIT_BEFORE_RETRY = Duration.ofSeconds(1);
