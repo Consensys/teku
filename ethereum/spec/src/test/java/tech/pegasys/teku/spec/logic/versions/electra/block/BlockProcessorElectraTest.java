@@ -63,7 +63,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                 });
 
     final BeaconBlockBody body =
-        dataStructureUtil.randomFullBeaconBlockBody(
+        dataStructureUtil.randomBeaconBlockBody(
             // 20 - 13 = 7
             builder -> builder.deposits(dataStructureUtil.randomSszDeposits(7)));
 
@@ -91,7 +91,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                 });
 
     final BeaconBlockBody body =
-        dataStructureUtil.randomFullBeaconBlockBody(
+        dataStructureUtil.randomBeaconBlockBody(
             // 20 - 20 = 0
             modifier -> modifier.deposits(dataStructureUtil.randomSszDeposits(0)));
 
