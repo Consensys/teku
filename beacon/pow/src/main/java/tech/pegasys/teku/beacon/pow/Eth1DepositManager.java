@@ -48,6 +48,7 @@ public class Eth1DepositManager {
   private final DepositSnapshotFileLoader depositSnapshotFileLoader;
   private final DepositSnapshotStorageLoader depositSnapshotStorageLoader;
   private final boolean takeBestDepositSnapshot;
+  private final boolean customDepositSnapshotPathPresent;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
   private final Optional<UInt64> depositContractDeployBlock;
@@ -62,6 +63,7 @@ public class Eth1DepositManager {
       final DepositSnapshotFileLoader depositSnapshotFileLoader,
       final DepositSnapshotStorageLoader depositSnapshotStorageLoader,
       final boolean takeBestDepositSnapshot,
+      final boolean customDepositSnapshotPathPresent,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
       final Optional<UInt64> depositContractDeployBlock,
@@ -74,6 +76,7 @@ public class Eth1DepositManager {
     this.depositSnapshotFileLoader = depositSnapshotFileLoader;
     this.depositSnapshotStorageLoader = depositSnapshotStorageLoader;
     this.takeBestDepositSnapshot = takeBestDepositSnapshot;
+    this.customDepositSnapshotPathPresent = customDepositSnapshotPathPresent;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
     this.depositContractDeployBlock = depositContractDeployBlock;
@@ -118,6 +121,10 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
+    if (customDepositSnapshotPathPresent) {
+      return SafeFuture.completedFuture(depositSnapshotFileLoader.loadDepositSnapshot());
+    }
+
     STATUS_LOG.loadingDepositSnapshotFromDb();
     return depositSnapshotStorageLoader
         .loadDepositSnapshot()
