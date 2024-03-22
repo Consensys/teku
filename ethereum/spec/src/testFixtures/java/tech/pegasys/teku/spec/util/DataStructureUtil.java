@@ -2389,6 +2389,20 @@ public final class DataStructureUtil {
     return randomBlobsBundle(Optional.empty(), randomSlot());
   }
 
+  public SszList<SszKZGProof> randomSszKZGProofs(final int count) {
+    return randomSszList(
+        getDenebSchemaDefinitions(UInt64.ZERO).getBlobsBundleSchema().getProofsSchema(),
+        this::randomSszKZGProof,
+        count);
+  }
+
+  public SszList<Blob> randomSszBlobs(final int count) {
+    return randomSszList(
+        getDenebSchemaDefinitions(UInt64.ZERO).getBlobsBundleSchema().getBlobsSchema(),
+        this::randomBlob,
+        count);
+  }
+
   public BlobsBundle randomBlobsBundle(final int count) {
     return randomBlobsBundle(Optional.of(count), randomSlot());
   }
