@@ -473,7 +473,7 @@ public class BlockOperationSelectorFactory {
             "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
         checkState(
             blockCommitments.size() == blobs.size(),
-            "The number blobs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
       } else {
         blobs = blockContainer.getBlobs().orElseThrow();
         proofs = blockContainer.getKzgProofs().orElseThrow();

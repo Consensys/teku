@@ -853,7 +853,7 @@ class BlockOperationSelectorFactoryTest {
     assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "The number blobs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
   }
 
   @Test
