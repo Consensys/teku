@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.mockito.Mockito;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -419,6 +420,36 @@ class Eth1DepositManagerTest {
   }
 
   @Test
+  void shouldTakeSnapshotFileWhenDBSavedVersionNotProvided() {
+    final UInt64 depositsCount = UInt64.valueOf(100);
+    final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
+
+    // This one will be used as DB empty
+    final DepositTreeSnapshot depositTreeSnapshotFromFile =
+        dataStructureUtil.randomDepositTreeSnapshot(
+            depositsCount.longValue(), UInt64.valueOf(lastBlockNumber));
+    when(depositSnapshotFileLoader.loadDepositSnapshot())
+        .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    // DepositTreeSnapshot from DB empty
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
+        .thenReturn(SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY));
+
+    manager.start();
+    notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verify(depositSnapshotStorageLoader, Mockito.times(1)).loadDepositSnapshot();
+    verify(depositSnapshotFileLoader, Mockito.times(1)).loadDepositSnapshot();
+    verify(eth1DepositStorageChannel, never()).replayDepositEvents();
+    verify(eth1EventsChannel).setLatestPublishedDeposit(depositsCount.decrement());
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(lastBlockNumber.add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
   void shouldStartFromStorageSnapshotWhenProvided() {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
@@ -447,7 +478,7 @@ class Eth1DepositManagerTest {
   }
 
   @Test
-  void shouldStartFromBestSnapshotWhenOptionEnabled() {
+  void shouldIgnoreBestSnapshotCheckWhenDbStorageNotEmpty() {
     final Eth1DepositManager manager2 =
         new Eth1DepositManager(
             config,
@@ -493,6 +524,48 @@ class Eth1DepositManagerTest {
     inOrder
         .verify(depositProcessingController)
         .startSubscription(lastBlockNumberStorage.add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void shouldUseCustomDepositSnapshotPathWhenProvided() {
+    final Eth1DepositManager manager =
+        new Eth1DepositManager(
+            config,
+            eth1Provider,
+            asyncRunner,
+            eth1EventsChannel,
+            eth1DepositStorageChannel,
+            depositSnapshotFileLoader,
+            depositSnapshotStorageLoader,
+            false,
+            true,
+            depositProcessingController,
+            minimumGenesisTimeBlockFinder,
+            Optional.empty(),
+            eth1HeadTracker);
+
+    final UInt64 depositsCount = UInt64.valueOf(100);
+    final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
+
+    // Custom deposit snapshot path provided, so will be used
+    final DepositTreeSnapshot depositTreeSnapshotFromFile =
+        dataStructureUtil.randomDepositTreeSnapshot(
+            depositsCount.longValue(), UInt64.valueOf(lastBlockNumber));
+    when(depositSnapshotFileLoader.loadDepositSnapshot())
+        .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    manager.start();
+    notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verify(depositSnapshotStorageLoader, never()).loadDepositSnapshot();
+    verify(depositSnapshotFileLoader, Mockito.times(1)).loadDepositSnapshot();
+    verify(eth1DepositStorageChannel, never()).replayDepositEvents();
+    verify(eth1EventsChannel).setLatestPublishedDeposit(depositsCount.decrement());
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(lastBlockNumber.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
     assertNoUncaughtExceptions();
   }
