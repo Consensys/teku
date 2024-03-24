@@ -122,6 +122,7 @@ public class Eth1DepositManager {
 
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
     if (customDepositSnapshotPathPresent) {
+      LOG.debug("Custom deposit snapshot is provided, using it");
       return SafeFuture.completedFuture(depositSnapshotFileLoader.loadDepositSnapshot());
     }
 
