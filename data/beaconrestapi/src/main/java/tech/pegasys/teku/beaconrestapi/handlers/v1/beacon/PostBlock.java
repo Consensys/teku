@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
@@ -98,6 +99,9 @@ public class PostBlock extends AbstractPostBlock {
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedBlockContainerSchema),
             spec::deserializeSignedBlockContainer)
+        .header(
+            ETH_CONSENSUS_VERSION_TYPE.withDescription(
+                "Version of the block being submitted, if using SSZ encoding."))
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,

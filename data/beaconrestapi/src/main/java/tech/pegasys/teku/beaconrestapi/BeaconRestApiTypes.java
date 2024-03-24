@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
@@ -24,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COUNT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
@@ -71,6 +73,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -240,6 +243,9 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<BroadcastValidationParameter>
       PARAMETER_BROADCAST_VALIDATION =
           new ParameterMetadata<>(PARAM_BROADCAST_VALIDATION, BROADCAST_VALIDATION_VALUE);
+
+  public static final ParameterMetadata<SpecMilestone> ETH_CONSENSUS_VERSION_TYPE =
+      new ParameterMetadata<>(HEADER_CONSENSUS_VERSION, MILESTONE_TYPE);
 
   @SuppressWarnings("JavaCase")
   public enum BroadcastValidationParameter {
