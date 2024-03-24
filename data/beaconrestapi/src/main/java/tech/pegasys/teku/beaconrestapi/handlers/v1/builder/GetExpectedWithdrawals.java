@@ -62,8 +62,9 @@ public class GetExpectedWithdrawals extends RestApiEndpoint {
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("GetExpectedWithdrawals")
-            .summary("Get Expected Withdrawals")
+            .operationId("getNextWithdrawals")
+            .summary(
+                "Get the withdrawals that are to be included for the block built on the specified state.")
             .description(
                 "Get the withdrawals computed from the specified state, that will be included in the block \n"
                     + "    that gets built on the specified state.")

@@ -58,7 +58,7 @@ public class GetAttestationData extends RestApiEndpoint {
   public GetAttestationData(final ValidatorDataProvider provider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getAttestationData")
+            .operationId("produceAttestationData")
             .summary("Produce an AttestationData")
             .description("Requests that the beacon node produce an AttestationData.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)

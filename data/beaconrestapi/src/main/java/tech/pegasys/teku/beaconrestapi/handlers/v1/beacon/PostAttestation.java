@@ -48,8 +48,8 @@ public class PostAttestation extends RestApiEndpoint {
       final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postAttestation")
-            .summary("Submit signed attestations")
+            .operationId("submitPoolAttestations")
+            .summary("Submit Attestation objects to node")
             .description(
                 "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\n"
                     + "This endpoint does not protected against slashing.")

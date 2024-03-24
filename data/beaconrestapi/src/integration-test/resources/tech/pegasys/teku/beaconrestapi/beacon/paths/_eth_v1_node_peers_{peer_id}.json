@@ -1,7 +1,7 @@
 {
   "get" : {
     "tags" : [ "Node" ],
-    "operationId" : "getNodePeer",
+    "operationId" : "getPeer",
     "summary" : "Get node peer",
     "description" : "Retrieves data about the given peer.",
     "parameters" : [ {

@@ -107,8 +107,8 @@ public class GetPeers extends RestApiEndpoint {
   GetPeers(final NetworkDataProvider network) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getNodePeers")
-            .summary("Get node peers")
+            .operationId("getPeers")
+            .summary("Get node network peers")
             .description("Retrieves data about the node's network peers.")
             .tags(TAG_NODE)
             .response(SC_OK, "Request successful", PEERS_RESPONSE_TYPE)

@@ -46,8 +46,8 @@ public class GetForkSchedule extends RestApiEndpoint {
   GetForkSchedule(final ConfigProvider configProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getScheduledForks")
-            .summary("Get scheduled forks")
+            .operationId("getForkSchedule")
+            .summary("Get scheduled upcoming forks.")
             .description("Retrieve all scheduled upcoming forks this node is aware of.")
             .tags(TAG_CONFIG)
             .response(SC_OK, "Success", FORK_SCHEDULE_RESPONSE_TYPE)

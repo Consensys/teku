@@ -44,8 +44,8 @@ public class PostAttesterSlashing extends RestApiEndpoint {
   public PostAttesterSlashing(final NodeDataProvider provider, final Spec spec) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postAttesterSlashing")
-            .summary("Submit attester slashing object")
+            .operationId("submitPoolAttesterSlashings")
+            .summary("Submit AttesterSlashing object to node's pool")
             .description(
                 "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.")
             .tags(TAG_BEACON)

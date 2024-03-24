@@ -95,7 +95,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("getAttestationsRewards")
-            .summary("Get Attestations Rewards")
+            .summary("Get attestations rewards")
             .description(
                 "Retrieve attestation reward info for validators specified by array of public keys or validator index"
                     + ". If no array is provided, return reward info for every validator.")

@@ -67,8 +67,8 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
   public PostSyncCommitteeSubscriptions(final ValidatorDataProvider validatorDataProvider) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postSyncCommitteeSubscriptions")
-            .summary("Subscribe to a Sync committee subnet")
+            .operationId("prepareSyncCommitteeSubnets")
+            .summary("Subscribe to sync committee subnets")
             .description(
                 "Subscribe to a number of sync committee subnets\n\n"
                     + "Sync committees are not present in phase0, but are required for Altair networks.\n\n"

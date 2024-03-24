@@ -1,8 +1,8 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Validator Required Api" ],
-    "operationId" : "getStateSyncCommittees",
-    "summary" : "Get sync committees",
+    "tags" : [ "Beacon" ],
+    "operationId" : "getEpochSyncCommittees",
+    "summary" : "Get sync committees for a state.",
     "description" : "Retrieves the sync committees for the given state.",
     "parameters" : [ {
       "name" : "state_id",

@@ -75,7 +75,7 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("getSyncCommitteeRewards")
-            .summary("Get Sync Committee Rewards")
+            .summary("Get sync committee rewards")
             .description(
                 "Retrieves rewards info for sync committee members specified by array of public keys "
                     + "or validator index. If no array is provided, return reward info for every committee member.")

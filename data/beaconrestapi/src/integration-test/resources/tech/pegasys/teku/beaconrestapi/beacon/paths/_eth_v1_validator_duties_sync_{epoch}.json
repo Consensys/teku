@@ -1,7 +1,7 @@
 {
   "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "postSyncDuties",
+    "operationId" : "getSyncCommitteeDuties",
     "summary" : "Get sync committee duties",
     "description" : "Requests the beacon node to provide a set of sync committee duties",
     "parameters" : [ {

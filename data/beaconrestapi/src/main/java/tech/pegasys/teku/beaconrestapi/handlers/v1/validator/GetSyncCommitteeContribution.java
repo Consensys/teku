@@ -55,7 +55,7 @@ public class GetSyncCommitteeContribution extends RestApiEndpoint {
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getSyncCommitteeContribution")
+            .operationId("produceSyncCommitteeContribution")
             .summary("Produce a sync committee contribution")
             .description(
                 "Returns a `SyncCommitteeContribution` that is the aggregate of `SyncCommitteeMessage` "
