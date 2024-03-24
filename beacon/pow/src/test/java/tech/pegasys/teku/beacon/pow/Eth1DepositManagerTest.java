@@ -487,6 +487,7 @@ class Eth1DepositManagerTest {
 
     manager2.start();
     notifyHeadBlock(BigInteger.valueOf(3000), MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verify(depositSnapshotFileLoader, never()).loadDepositSnapshot();
     verify(eth1DepositStorageChannel, never()).replayDepositEvents();
     verify(eth1EventsChannel).setLatestPublishedDeposit(deposits.decrement());
     inOrder

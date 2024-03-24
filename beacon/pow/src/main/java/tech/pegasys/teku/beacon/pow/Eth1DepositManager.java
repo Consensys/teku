@@ -136,9 +136,7 @@ public class Eth1DepositManager {
                     storageDepositSnapshotResult.getDepositTreeSnapshot().get();
                 STATUS_LOG.onDepositSnapshot(
                     storageSnapshot.getDepositCount(), storageSnapshot.getExecutionBlockHash());
-                if (!takeBestDepositSnapshot) {
-                  return storageDepositSnapshotResult;
-                }
+                return storageDepositSnapshotResult;
               }
 
               final LoadDepositSnapshotResult fileDepositSnapshotResult =
