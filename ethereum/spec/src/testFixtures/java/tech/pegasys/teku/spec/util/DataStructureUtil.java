@@ -2054,12 +2054,12 @@ public final class DataStructureUtil {
   }
 
   public DepositReceipt randomDepositReceiptWithValidSignature(final UInt64 index) {
-    final BLSKeyPair validatorKeyPair = randomKeyPair();
+    final BLSKeyPair keyPair = randomKeyPair();
     final DepositMessage depositMessage =
-        new DepositMessage(validatorKeyPair.getPublicKey(), randomBytes32(), randomUInt64());
+        new DepositMessage(keyPair.getPublicKey(), randomBytes32(), randomUInt64());
     final Bytes32 domain = computeDepositDomain();
     final Bytes signingRoot = getSigningRoot(depositMessage, domain);
-    final BLSSignature signature = BLS.sign(validatorKeyPair.getSecretKey(), signingRoot);
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
     return getElectraSchemaDefinitions(randomSlot())
         .getDepositReceiptSchema()
         .create(
