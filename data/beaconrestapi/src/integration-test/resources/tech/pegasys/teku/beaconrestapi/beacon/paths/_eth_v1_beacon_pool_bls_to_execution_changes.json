@@ -1,7 +1,7 @@
 {
   "post" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "postBlsToExecutionChange",
+    "operationId" : "submitPoolBLSToExecutionChange",
     "summary" : "Submit SignedBLSToExecutionChange object to node's pool",
     "description" : "Submits SignedBLSToExecutionChange object to node's pool and if passes validation node MUST broadcast it to network.",
     "requestBody" : {
@@ -45,7 +45,7 @@
   },
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getBlsToExecutionChanges",
+    "operationId" : "getPoolBLSToExecutionChanges",
     "summary" : "Get SignedBLSToExecutionChange from operations pool",
     "description" : "Retrieves BLS to execution changes known by the node but not necessarily incorporated into any block",
     "parameters" : [ {

@@ -51,7 +51,7 @@ public class PostAttesterDuties extends RestApiEndpoint {
       final SyncDataProvider syncDataProvider, final ValidatorDataProvider validatorDataProvider) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postAttesterDuties")
+            .operationId("getAttesterDuties")
             .summary("Get attester duties")
             .description(
                 "Requests the beacon node to provide a set of attestation duties, "

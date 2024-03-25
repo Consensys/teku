@@ -53,7 +53,7 @@ public class GetDepositContract extends RestApiEndpoint {
       final Eth1Address depositContractAddress, final ConfigProvider configProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getDepositContractAddress")
+            .operationId("getDepositContract")
             .summary("Get deposit contract address")
             .description("Retrieve deposit contract address and genesis fork version.")
             .tags(TAG_CONFIG)

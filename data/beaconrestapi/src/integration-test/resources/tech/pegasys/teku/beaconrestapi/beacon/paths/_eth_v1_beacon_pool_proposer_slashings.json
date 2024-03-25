@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getProposerSlashings",
-    "summary" : "Get proposer slashings",
+    "operationId" : "getPoolProposerSlashings",
+    "summary" : "Get ProposerSlashings from operations pool",
     "description" : "Retrieves proposer slashings known by the node but not necessarily incorporated into any block.",
     "responses" : {
       "200" : {
@@ -39,8 +39,8 @@
   },
   "post" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "postProposerSlashing",
-    "summary" : "Submit proposer slashing object",
+    "operationId" : "submitPoolProposerSlashings",
+    "summary" : "Submit ProposerSlashing object to node's pool",
     "description" : "Submits proposer slashing object to node's pool and, if it passes validation, the node MUST broadcast it to network.",
     "requestBody" : {
       "content" : {

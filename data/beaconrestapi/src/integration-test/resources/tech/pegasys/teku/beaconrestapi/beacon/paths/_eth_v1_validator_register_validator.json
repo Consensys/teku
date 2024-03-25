@@ -1,8 +1,8 @@
 {
   "post" : {
-    "tags" : [ "Validator", "Validator Required Api" ],
+    "tags" : [ "Validator" ],
     "operationId" : "registerValidator",
-    "summary" : "Register validators with builder",
+    "summary" : "Provide beacon node with registrations for the given validators to the external builder network.",
     "description" : "Prepares the beacon node for engaging with external builders. The information must be sent by the beacon node to the builder network. It is expected that the validator client will send this information periodically to ensure the beacon node has correct and timely registration information to provide to builders. The validator client should not sign blinded beacon blocks that do not adhere to their latest fee recipient and gas limit preferences.",
     "requestBody" : {
       "content" : {

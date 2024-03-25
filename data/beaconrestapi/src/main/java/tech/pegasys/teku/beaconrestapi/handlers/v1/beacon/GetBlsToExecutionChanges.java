@@ -75,7 +75,7 @@ public class GetBlsToExecutionChanges extends RestApiEndpoint {
             .build();
 
     return EndpointMetadata.get(ROUTE)
-        .operationId("getBlsToExecutionChanges")
+        .operationId("getPoolBLSToExecutionChanges")
         .summary("Get SignedBLSToExecutionChange from operations pool")
         .description(
             "Retrieves BLS to execution changes known by the node but not necessarily incorporated into any block")
