@@ -363,6 +363,8 @@ class Eth1DepositManagerTest {
     final BigInteger headBlockNumber = BigInteger.valueOf(60);
     final BigInteger lastReplayedBlock = BigInteger.valueOf(70);
     final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(71);
+
+    // No deposit tree snapshot loaded, this will be used
     when(eth1DepositStorageChannel.replayDepositEvents())
         .thenReturn(
             SafeFuture.completedFuture(
