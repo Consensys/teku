@@ -193,7 +193,6 @@ public class P2PConfig {
       networkConfig.gossipConfig(
           builder -> {
             gossipConfigurator.configure(builder, eth2Context);
-            // https://github.com/ethereum/consensus-specs/pull/3627
             builder.seenTTL(
                 Duration.ofSeconds(
                     (long) specConfig.getSecondsPerSlot() * specConfig.getSlotsPerEpoch() * 2));
