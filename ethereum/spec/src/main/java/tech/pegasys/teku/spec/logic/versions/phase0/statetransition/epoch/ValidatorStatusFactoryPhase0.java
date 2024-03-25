@@ -96,7 +96,7 @@ public class ValidatorStatusFactoryPhase0 extends AbstractValidatorStatusFactory
 
               // Apply flags to attestingIndices
               attestationUtil
-                  .streamAttestingIndices(state, data, attestation.getAggregationBits())
+                  .streamAttestingIndices(state, attestation)
                   .mapToObj(statuses::get)
                   .forEach(updates::apply);
             });

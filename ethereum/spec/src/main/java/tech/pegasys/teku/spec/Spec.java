@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
@@ -868,8 +867,8 @@ public class Spec {
   }
 
   // Attestation helpers
-  public IntList getAttestingIndices(BeaconState state, AttestationData data, SszBitlist bits) {
-    return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
+  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+    return atState(state).getAttestationUtil().getAttestingIndices(state, attestation);
   }
 
   public AttestationData getGenericAttestationData(
