@@ -125,12 +125,27 @@ public class PowchainServiceTest {
         .thenReturn(Optional.empty());
     when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
         .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/bundled", true)));
+  }
+
+  @Test
+  public void shouldNotUseBundledDepositSnapshotPathWhenDepositSnapshotDisabled() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
 
   @Test
@@ -141,6 +156,7 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/checkpoint"));
     when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
         .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
@@ -150,6 +166,22 @@ public class PowchainServiceTest {
         List.of(
             new DepositSnapshotResource("/foo/checkpoint", false),
             new DepositSnapshotResource("/foo/bundled", true)));
+  }
+
+  @Test
+  public void shouldNotUseCheckpointSyncAndBundledDepositSnapshotPathWhenSnapshotDisabled() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getCheckpointSyncDepositSnapshotUrl())
+        .thenReturn(Optional.of("/foo/checkpoint"));
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
 
   @Test
