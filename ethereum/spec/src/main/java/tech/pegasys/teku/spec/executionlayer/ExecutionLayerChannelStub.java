@@ -61,9 +61,11 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
+import tech.pegasys.teku.spec.datastructures.util.DepositReceiptsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -73,6 +75,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final ClientVersion STUB_CLIENT_VERSION =
       new ClientVersion("SB", ExecutionLayerChannel.STUB_ENDPOINT_PREFIX, "0.0.0", Bytes4.ZERO);
 
+  private static final boolean GENERATE_DEPOSIT_RECEIPTS = false;
+
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final Map<Bytes32, PayloadStatus> knownPosBlocks = new ConcurrentHashMap<>();
@@ -81,6 +85,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
   private final BlobsUtil blobsUtil;
+  private final DepositReceiptsUtil depositReceiptsUtil;
   private final Random random = new Random();
 
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
@@ -122,6 +127,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       kzg = KZG.NOOP;
     }
     this.blobsUtil = new BlobsUtil(spec, kzg);
+    this.depositReceiptsUtil = new DepositReceiptsUtil(spec);
   }
 
   public ExecutionLayerChannelStub(
@@ -222,7 +228,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     if (!bellatrixActivationDetected) {
       LOG.info(
           "getPayload received before terminalBlock has been sent. Assuming transition already happened");
@@ -230,6 +236,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       // do the activation check to be able to respond to terminal block verification
       checkBellatrixActivation();
     }
+    final UInt64 slot = state.getSlot();
 
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
         spec.atSlot(slot).getSchemaDefinitions().toVersionBellatrix();
@@ -246,9 +253,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final List<Bytes> transactions = generateTransactions(slot, headAndAttrs);
 
     final ExecutionPayload executionPayload =
-        spec.atSlot(slot)
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
+        schemaDefinitionsBellatrix
             .orElseThrow()
             .getExecutionPayloadSchema()
             .createExecutionPayload(
@@ -271,7 +276,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
                         .excessBlobGas(() -> UInt64.ZERO)
-                        .depositReceipts(List::of)
+                        .depositReceipts(() -> generateDepositReceipts(state))
                         .exits(List::of));
 
     // we assume all blocks are produced locally
@@ -288,7 +293,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     LOG.info(
         "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
         executionPayloadContext.getPayloadId(),
-        slot,
+        state.getSlot(),
         executionPayload.getBlockHash());
 
     final GetPayloadResponse getPayloadResponse =
@@ -346,7 +351,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
-    return engineGetPayload(executionPayloadContext, slot)
+    return engineGetPayload(executionPayloadContext, state)
         .thenPeek(__ -> blockProductionPerformance.engineGetPayload())
         .thenApply(
             getPayloadResponse -> {
@@ -553,5 +558,19 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     headAndAttrs.currentBlobsBundle = Optional.of(blobsBundle);
 
     return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
+  }
+
+  private List<DepositReceipt> generateDepositReceipts(final BeaconState state) {
+    return spec.atSlot(state.getSlot())
+        .getConfig()
+        .toVersionElectra()
+        .map(
+            __ -> {
+              if (GENERATE_DEPOSIT_RECEIPTS) {
+                return depositReceiptsUtil.generateDepositReceipts(state);
+              }
+              return List.<DepositReceipt>of();
+            })
+        .orElse(List.of());
   }
 }

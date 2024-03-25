@@ -37,9 +37,9 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
   private final BuilderCircuitBreaker builderCircuitBreaker;
 
   public ExecutionLayerManagerStub(
-      Spec spec,
-      TimeProvider timeProvider,
-      boolean enableTransitionEmulation,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final boolean enableTransitionEmulation,
       final Optional<Bytes32> terminalBlockHashInTTDMode,
       final BuilderCircuitBreaker builderCircuitBreaker) {
     super(spec, timeProvider, enableTransitionEmulation, terminalBlockHashInTTDMode);
@@ -58,7 +58,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final SafeFuture<UInt256> payloadValueResult,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
-    boolean builderCircuitBreakerEngaged = builderCircuitBreaker.isEngaged(state);
+    final boolean builderCircuitBreakerEngaged = builderCircuitBreaker.isEngaged(state);
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreakerEngaged);
 
     return super.builderGetHeader(
@@ -70,9 +70,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
         .thenCompose(
             headerWithFallbackData -> {
               if (builderCircuitBreakerEngaged) {
-                return engineGetPayload(
-                        executionPayloadContext,
-                        executionPayloadContext.getPayloadBuildingAttributes().getProposalSlot())
+                return engineGetPayload(executionPayloadContext, state)
                     .thenApply(
                         payload ->
                             HeaderWithFallbackData.create(
