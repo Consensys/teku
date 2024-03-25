@@ -67,7 +67,7 @@ public class GetSyncing extends RestApiEndpoint {
       final ExecutionClientDataProvider executionClientDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getNodeSyncingStatus")
+            .operationId("getSyncingStatus")
             .summary("Get node syncing status")
             .description(
                 "Requests the beacon node to describe if it's currently syncing or not, "

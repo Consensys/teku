@@ -52,8 +52,8 @@ public class GetStateFork extends AbstractGetSimpleDataFromState {
   GetStateFork(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getSateFork")
-            .summary("Get state fork")
+            .operationId("getStateFork")
+            .summary("Get Fork object for requested state")
             .description("Returns Fork object for state with given 'state_id'.")
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .pathParam(PARAMETER_STATE_ID)

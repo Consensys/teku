@@ -44,8 +44,8 @@ public class GetHealth extends RestApiEndpoint {
   GetHealth(final SyncDataProvider syncProvider, final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("GetNodeHealth")
-            .summary("Get node health")
+            .operationId("getHealth")
+            .summary("Get health check")
             .description(
                 "Returns node health status in http status codes. Useful for load balancers.")
             .queryParam(SYNCING_PARAMETER)

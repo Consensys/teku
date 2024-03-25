@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getVoluntaryExits",
-    "summary" : "Get signed voluntary exits",
+    "operationId" : "getPoolVoluntaryExits",
+    "summary" : "Get SignedVoluntaryExit from operations pool",
     "description" : "Retrieves voluntary exits known by the node but not necessarily incorporated into any block.",
     "responses" : {
       "200" : {
@@ -39,8 +39,8 @@
   },
   "post" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "postVoluntaryExit",
-    "summary" : "Submit signed voluntary exit",
+    "operationId" : "submitPoolVoluntaryExit",
+    "summary" : "Submit SignedVoluntaryExit object to node's pool",
     "description" : "Submits signed voluntary exit object to node's pool and if it passes validation node MUST broadcast it to network.",
     "requestBody" : {
       "content" : {

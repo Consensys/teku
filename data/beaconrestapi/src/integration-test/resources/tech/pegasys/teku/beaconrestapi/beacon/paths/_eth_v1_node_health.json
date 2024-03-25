@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Node" ],
-    "operationId" : "GetNodeHealth",
-    "summary" : "Get node health",
+    "operationId" : "getHealth",
+    "summary" : "Get health check",
     "description" : "Returns node health status in http status codes. Useful for load balancers.",
     "parameters" : [ {
       "name" : "syncing_status",

@@ -52,6 +52,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
@@ -1520,20 +1521,20 @@ public final class DataStructureUtil {
   }
 
   public DepositMessage randomDepositMessage() {
-    final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
+    final BLSKeyPair keyPair = randomKeyPair();
     return randomDepositMessage(keyPair);
   }
 
   public DepositData randomDepositData() {
-    final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(nextSeed());
-    final DepositMessage proofOfPossessionData = randomDepositMessage(keyPair);
+    final BLSKeyPair keyPair = randomKeyPair();
+    final DepositMessage depositMessage = randomDepositMessage(keyPair);
 
-    final Bytes32 domain = computeDomain();
-    final Bytes signingRoot = getSigningRoot(proofOfPossessionData, domain);
+    final Bytes32 domain = computeDepositDomain();
+    final Bytes signingRoot = getSigningRoot(depositMessage, domain);
 
-    final BLSSignature proofOfPossession = BLS.sign(keyPair.getSecretKey(), signingRoot);
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
 
-    return new DepositData(proofOfPossessionData, proofOfPossession);
+    return new DepositData(depositMessage, signature);
   }
 
   public DepositWithIndex randomDepositWithIndex() {
@@ -2052,6 +2053,23 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
+  public DepositReceipt randomDepositReceiptWithValidSignature(final UInt64 index) {
+    final BLSKeyPair keyPair = randomKeyPair();
+    final DepositMessage depositMessage =
+        new DepositMessage(keyPair.getPublicKey(), randomBytes32(), randomUInt64());
+    final Bytes32 domain = computeDepositDomain();
+    final Bytes signingRoot = getSigningRoot(depositMessage, domain);
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
+    return getElectraSchemaDefinitions(randomSlot())
+        .getDepositReceiptSchema()
+        .create(
+            depositMessage.getPubkey(),
+            depositMessage.getWithdrawalCredentials(),
+            depositMessage.getAmount(),
+            signature,
+            index);
+  }
+
   public DepositReceipt randomDepositReceipt() {
     return getElectraSchemaDefinitions(randomSlot())
         .getDepositReceiptSchema()
@@ -2497,14 +2515,14 @@ public final class DataStructureUtil {
     return getConstant(SpecConfig::getMaxEffectiveBalance);
   }
 
-  private Bytes32 computeDomain() {
+  private Bytes32 computeDepositDomain() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     final Bytes4 domain = Domain.DEPOSIT;
     return genesisSpec.miscHelpers().computeDomain(domain);
   }
 
-  private Bytes getSigningRoot(final DepositMessage proofOfPossessionData, final Bytes32 domain) {
-    return spec.getGenesisSpec().miscHelpers().computeSigningRoot(proofOfPossessionData, domain);
+  private Bytes getSigningRoot(final Merkleizable object, final Bytes32 domain) {
+    return spec.getGenesisSpec().miscHelpers().computeSigningRoot(object, domain);
   }
 
   UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
