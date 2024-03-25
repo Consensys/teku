@@ -122,7 +122,6 @@ public class Eth1DepositManager {
       return SafeFuture.completedFuture(depositSnapshotFileLoader.loadDepositSnapshot());
     }
 
-    STATUS_LOG.loadingDepositSnapshotFromDb();
     return depositSnapshotStorageLoader
         .loadDepositSnapshot()
         .thenApply(
