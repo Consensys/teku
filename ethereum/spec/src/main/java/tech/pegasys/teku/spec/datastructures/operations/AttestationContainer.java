@@ -17,6 +17,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 
+/**
+ * Interface used to represent different types of attestations ({@link Attestation} and {@link
+ * tech.pegasys.teku.spec.datastructures.state.PendingAttestation})
+ */
 public interface AttestationContainer extends SszData, SszContainer {
 
   AttestationData getData();
