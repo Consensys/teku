@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Builder" ],
-    "operationId" : "GetExpectedWithdrawals",
-    "summary" : "Get Expected Withdrawals",
+    "operationId" : "getNextWithdrawals",
+    "summary" : "Get the withdrawals that are to be included for the block built on the specified state.",
     "description" : "Get the withdrawals computed from the specified state, that will be included in the block \n    that gets built on the specified state.",
     "parameters" : [ {
       "name" : "state_id",

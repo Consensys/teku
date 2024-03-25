@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Beacon", "Rewards"],
     "operationId" : "getBlockRewards",
-    "summary" : "Get Block Rewards",
+    "summary" : "Get block rewards",
     "description" : "Retrieve block reward info for a single block.",
     "parameters" : [ {
       "name" : "block_id",

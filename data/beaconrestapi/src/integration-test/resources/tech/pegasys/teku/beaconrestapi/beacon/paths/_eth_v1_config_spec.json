@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Config", "Validator Required Api" ],
     "operationId" : "getSpec",
-    "summary" : "Get spec params",
+    "summary" : "Get spec params.",
     "description" : "Retrieve specification configuration used on this node.",
     "responses" : {
       "200" : {

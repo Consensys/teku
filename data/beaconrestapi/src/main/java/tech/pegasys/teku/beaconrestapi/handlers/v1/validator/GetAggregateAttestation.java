@@ -52,8 +52,8 @@ public class GetAggregateAttestation extends RestApiEndpoint {
   public GetAggregateAttestation(final ValidatorDataProvider provider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getAggregateAttestation")
-            .summary("Get aggregated attestations")
+            .operationId("getAggregatedAttestation")
+            .summary("Get aggregated attestation")
             .description(
                 "Aggregates all attestations matching given attestation data root and slot.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)

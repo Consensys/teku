@@ -81,7 +81,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
       final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.get(ROUTE)
         .operationId("produceBlockV3")
-        .summary("Produce a new block, without signature")
+        .summary("Produce a new block, without signature.")
         .description(
             "Requests a beacon node to produce a valid block, which can then be signed by a validator. The\n"
                 + "returned block may be blinded or unblinded, depending on the current state of the network as\n"

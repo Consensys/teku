@@ -45,8 +45,8 @@ public class PostContributionAndProofs extends RestApiEndpoint {
       final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postContributionAndProofs")
-            .summary("Publish contribution and proofs")
+            .operationId("publishContributionAndProofs")
+            .summary("Publish multiple contribution and proofs")
             .description(
                 "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)

@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getAttesterSlashings",
-    "summary" : "Get Attester Slashings",
+    "operationId" : "getPoolAttesterSlashings",
+    "summary" : "Get AttesterSlashings from operations pool",
     "description" : "Retrieves attester slashings known by the node but not necessarily incorporated into any block.",
     "responses" : {
       "200" : {
@@ -39,8 +39,8 @@
   },
   "post" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "postAttesterSlashing",
-    "summary" : "Submit attester slashing object",
+    "operationId" : "submitPoolAttesterSlashings",
+    "summary" : "Submit AttesterSlashing object to node's pool",
     "description" : "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
     "requestBody" : {
       "content" : {

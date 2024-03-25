@@ -50,8 +50,8 @@ public class GetProposerSlashings extends RestApiEndpoint {
   GetProposerSlashings(final NodeDataProvider provider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getProposerSlashings")
-            .summary("Get proposer slashings")
+            .operationId("getPoolProposerSlashings")
+            .summary("Get ProposerSlashings from operations pool")
             .description(
                 "Retrieves proposer slashings known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
