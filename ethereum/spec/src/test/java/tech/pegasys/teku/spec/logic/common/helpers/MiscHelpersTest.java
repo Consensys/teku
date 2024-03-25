@@ -34,8 +34,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersTest {
@@ -232,9 +234,17 @@ class MiscHelpersTest {
   }
 
   @Test
-  public void isFormerDepositReceiptMechanismDisabled_returnsFalse() {
-    assertThat(miscHelpers.isFormerDepositMechanismDisabled(dataStructureUtil.randomBeaconState()))
-        .isFalse();
+  public void isFormerDepositReceiptMechanismDisabled_returnsFalseForAllForksPriorToElectra() {
+    SpecMilestone.getAllPriorMilestones(SpecMilestone.ELECTRA)
+        .forEach(
+            milestone -> {
+              final Spec spec = TestSpecFactory.create(milestone, Eth2Network.MINIMAL);
+              final MiscHelpers miscHelpers = spec.atSlot(UInt64.ZERO).miscHelpers();
+              assertThat(
+                      miscHelpers.isFormerDepositMechanismDisabled(
+                          dataStructureUtil.randomBeaconState()))
+                  .isFalse();
+            });
   }
 
   public static Stream<Arguments> getComputesSlotAtTimeArguments() {
