@@ -16,10 +16,19 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
 
 public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, BeaconStateElectra {
+  static MutableBeaconStateElectra required(final MutableBeaconState state) {
+    return state
+        .toMutableVersionElectra()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected an Electra state but got: " + state.getClass().getSimpleName()));
+  }
 
   @Override
   BeaconStateElectra commitChanges();
