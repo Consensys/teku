@@ -199,6 +199,8 @@ public class DepositProviderTest {
     final SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
 
     // the pending Eth1 deposits (deposit_receipt_start_index - eth1_deposit_index)
+    // we need to process eth1_deposit_index deposit (5) up to 16 (exclusive) so 11 is the
+    // expected size
     assertThat(deposits).hasSize(11);
     checkThatDepositProofIsValid(deposits);
   }

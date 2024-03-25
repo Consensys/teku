@@ -108,7 +108,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                         MutableBeaconStateElectra.required(mutableState)
                             .setDepositReceiptsStartIndex(
                                 SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX)));
-    final int numberOfValidators = preState.getValidators().size();
+    final int firstElectraDepositReceiptIndex = preState.getValidators().size();
 
     final SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>> depositReceiptsSchema =
         SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
@@ -120,7 +120,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             .mapToObj(
                 i ->
                     depositReceiptsUtil.createDepositReceipt(
-                        preState.getSlot(), UInt64.valueOf(numberOfValidators + i)))
+                        preState.getSlot(), UInt64.valueOf(firstElectraDepositReceiptIndex + i)))
             .toList();
 
     final BeaconStateElectra state =
@@ -133,9 +133,11 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                             depositReceiptsSchema.createFromElements(depositReceipts))));
 
     // verify deposit_receipts_start_index has been set
-    assertThat(state.getDepositReceiptsStartIndex()).isEqualTo(UInt64.valueOf(numberOfValidators));
+    assertThat(state.getDepositReceiptsStartIndex())
+        .isEqualTo(UInt64.valueOf(firstElectraDepositReceiptIndex));
     // verify validators have been added to the state
-    assertThat(state.getValidators().size()).isEqualTo(numberOfValidators + depositReceiptsCount);
+    assertThat(state.getValidators().size())
+        .isEqualTo(firstElectraDepositReceiptIndex + depositReceiptsCount);
   }
 
   private BlockProcessorElectra getBlockProcessor(final BeaconState state) {

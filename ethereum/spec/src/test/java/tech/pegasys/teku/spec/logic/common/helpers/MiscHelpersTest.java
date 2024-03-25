@@ -231,6 +231,12 @@ class MiscHelpersTest {
         });
   }
 
+  @Test
+  public void isFormerDepositReceiptMechanismDisabled_returnsFalse() {
+    assertThat(miscHelpers.isFormerDepositMechanismDisabled(dataStructureUtil.randomBeaconState()))
+        .isFalse();
+  }
+
   public static Stream<Arguments> getComputesSlotAtTimeArguments() {
     // 6 seconds per slot
     return Stream.of(
