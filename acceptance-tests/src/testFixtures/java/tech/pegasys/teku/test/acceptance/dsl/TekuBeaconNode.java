@@ -693,12 +693,7 @@ public class TekuBeaconNode extends TekuNode {
 
           Set<UInt64> attesterIndicesInAttestations =
               block.getMessage().getBody().attestations.stream()
-                  .map(
-                      a ->
-                          spec.getAttestingIndices(
-                              state,
-                              a.asInternalAttestation(spec).getData(),
-                              a.asInternalAttestation(spec).getAggregationBits()))
+                  .map(a -> spec.getAttestingIndices(state, a.asInternalAttestation(spec)))
                   .flatMap(Collection::stream)
                   .map(UInt64::valueOf)
                   .collect(toSet());
