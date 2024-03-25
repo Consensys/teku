@@ -136,7 +136,8 @@ public class Eth1DepositManager {
 
               final LoadDepositSnapshotResult fileDepositSnapshotResult =
                   depositSnapshotFileLoader.loadDepositSnapshot();
-              LOG.debug("Database deposit snapshot is not present, falling back to the file provided");
+              LOG.debug(
+                  "Database deposit snapshot is not present, falling back to the file provided");
               return fileDepositSnapshotResult;
             });
   }

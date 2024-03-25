@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
-import org.mockito.Mockito;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -439,8 +438,8 @@ class Eth1DepositManagerTest {
 
     manager.start();
     notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
-    verify(depositSnapshotStorageLoader, Mockito.times(1)).loadDepositSnapshot();
-    verify(depositSnapshotFileLoader, Mockito.times(1)).loadDepositSnapshot();
+    verify(depositSnapshotStorageLoader).loadDepositSnapshot();
+    verify(depositSnapshotFileLoader).loadDepositSnapshot();
     verify(eth1DepositStorageChannel, never()).replayDepositEvents();
     verify(eth1EventsChannel).setLatestPublishedDeposit(depositsCount.decrement());
     inOrder
@@ -509,7 +508,7 @@ class Eth1DepositManagerTest {
     manager.start();
     notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     verify(depositSnapshotStorageLoader, never()).loadDepositSnapshot();
-    verify(depositSnapshotFileLoader, Mockito.times(1)).loadDepositSnapshot();
+    verify(depositSnapshotFileLoader).loadDepositSnapshot();
     verify(eth1DepositStorageChannel, never()).replayDepositEvents();
     verify(eth1EventsChannel).setLatestPublishedDeposit(depositsCount.decrement());
     inOrder
