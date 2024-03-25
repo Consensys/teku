@@ -71,7 +71,6 @@ public class DepositSnapshotFileLoader {
         final DepositTreeSnapshot depositTreeSnapshot = loadFromUrl(depositSnapshotResourceUrl);
         // Validate
         DepositTree.fromSnapshot(depositTreeSnapshot);
-        STATUS_LOG.loadingDepositSnapshotFromFile(depositSnapshotResourceUrl);
         STATUS_LOG.onDepositSnapshot(
             depositTreeSnapshot.getDepositCount(), depositTreeSnapshot.getExecutionBlockHash());
         return LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshot));

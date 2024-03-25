@@ -522,10 +522,6 @@ public class StatusLogger {
         executionBlockHash);
   }
 
-  public void loadingDepositSnapshotFromFile(final String file) {
-    log.info("Loading deposit snapshot from {}", file);
-  }
-
   public void loadedDepositSnapshot(final long deposits, final Bytes32 executionBlockHash) {
     log.info(
         "Loaded deposits tree state from snapshot with {} deposits and {} execution block hash.",
