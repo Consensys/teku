@@ -22,6 +22,8 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
@@ -30,7 +32,7 @@ import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction
 public class BeaconNodeServiceController extends ServiceController {
 
   public BeaconNodeServiceController(
-      TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
+      final TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
     services.add(
         new StorageService(
@@ -44,18 +46,24 @@ public class BeaconNodeServiceController extends ServiceController {
     Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
-      ExecutionLayerService executionLayerService =
+      final ExecutionLayerService executionLayerService =
           ExecutionLayerService.create(serviceConfig, tekuConfig.executionLayer());
       services.add(executionLayerService);
       maybeExecutionWeb3jClientProvider = executionLayerService.getEngineWeb3jClientProvider();
     }
-    services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
+    final BeaconChainService beaconChainService =
+        new BeaconChainService(serviceConfig, tekuConfig.beaconChain());
+    services.add(beaconChainService);
     services.add(
         new NatService(
             tekuConfig.natConfiguration(),
             tekuConfig.network().getListenPort(),
             tekuConfig.discovery().isDiscoveryEnabled()));
-    powchainService(tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider)
+    powchainService(
+            tekuConfig,
+            serviceConfig,
+            maybeExecutionWeb3jClientProvider,
+            beaconChainService.getBeaconChainController().getRecentChainData())
         .ifPresent(services::add);
 
     final Optional<SlashingRiskAction> maybeValidatorSlashedAction =
@@ -74,12 +82,18 @@ public class BeaconNodeServiceController extends ServiceController {
   private Optional<PowchainService> powchainService(
       final TekuConfiguration tekuConfig,
       final ServiceConfig serviceConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
+      final RecentChainData recentChainData) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionWeb3jClientProvider.isEmpty())) {
       return Optional.empty();
     }
-
+    final BeaconState latestFinalizedState =
+        recentChainData.getStore().getLatestFinalized().getState();
+    // PowchainSerivce is not required when Eth1 polling has been disabled
+    if (tekuConfig.beaconChain().getSpec().isFormerDepositMechanismDisabled(latestFinalizedState)) {
+      return Optional.empty();
+    }
     return Optional.of(
         new PowchainService(
             serviceConfig, tekuConfig.powchain(), maybeExecutionWeb3jClientProvider));

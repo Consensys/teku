@@ -74,7 +74,7 @@ public class PowchainService extends Service {
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
 
-    AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
+    final AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     this.okHttpClient = createOkHttpClient();
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
@@ -128,7 +128,7 @@ public class PowchainService extends Service {
 
     final Eth1Provider eth1Provider = eth1Providers.getEth1Provider();
     final String depositContract = powConfig.getDepositContract().toHexString();
-    DepositEventsAccessor depositEventsAccessor =
+    final DepositEventsAccessor depositEventsAccessor =
         new DepositEventsAccessor(eth1Provider, depositContract);
 
     final ValidatingEth1EventsPublisher eth1EventsPublisher =
