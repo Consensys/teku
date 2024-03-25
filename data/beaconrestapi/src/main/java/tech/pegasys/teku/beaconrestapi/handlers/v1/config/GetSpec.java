@@ -42,7 +42,7 @@ public class GetSpec extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getSpec")
-            .summary("Get spec params")
+            .summary("Get spec params.")
             .description("Retrieve specification configuration used on this node.")
             .tags(TAG_CONFIG, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Success", GET_SPEC_RESPONSE_TYPE)

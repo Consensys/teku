@@ -68,8 +68,8 @@ public class GetNewBlock extends RestApiEndpoint {
   private static EndpointMetadata getEndpointMetaData(
       final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.get(ROUTE)
-        .operationId("getNewBlock")
-        .summary("Produce unsigned block")
+        .operationId("produceBlockV2")
+        .summary("Produce a new block, without signature.")
         .description(
             "Requests a beacon node to produce a valid block, which can then be signed by a validator.\n"
                 + "Metadata in the response indicates the type of block produced, and the supported types of block "

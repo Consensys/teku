@@ -43,8 +43,8 @@ public class PostVoluntaryExit extends RestApiEndpoint {
   public PostVoluntaryExit(final NodeDataProvider provider) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postVoluntaryExit")
-            .summary("Submit signed voluntary exit")
+            .operationId("submitPoolVoluntaryExit")
+            .summary("Submit SignedVoluntaryExit object to node's pool")
             .description(
                 "Submits signed voluntary exit object to node's pool and if it passes validation node MUST broadcast it to network.")
             .tags(TAG_BEACON)

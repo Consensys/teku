@@ -272,6 +272,13 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     totalBlobSidecars += (int) addedBlobs;
     sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
 
+    if (!blobSidecarsTracker.isCompleted()) {
+      LOG.error(
+          "Tracker for block {} is supposed to be completed but it is not. Missing blob sidecars: {}",
+          block.toLogString(),
+          blobSidecarsTracker.getMissingBlobSidecars().count());
+    }
+
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
       sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
     }

@@ -1,8 +1,8 @@
 {
   "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "postContributionAndProofs",
-    "summary" : "Publish contribution and proofs",
+    "operationId" : "publishContributionAndProofs",
+    "summary" : "Publish multiple contribution and proofs",
     "description" : "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.",
     "requestBody" : {
       "content" : {

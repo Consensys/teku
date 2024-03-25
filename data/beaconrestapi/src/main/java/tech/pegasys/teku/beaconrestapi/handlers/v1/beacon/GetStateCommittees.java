@@ -74,8 +74,8 @@ public class GetStateCommittees extends RestApiEndpoint {
   GetStateCommittees(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getStateCommittees")
-            .summary("Get committees at state")
+            .operationId("getEpochCommittees")
+            .summary("Get all committees for a state.")
             .description("Retrieves the committees for the given state.")
             .pathParam(PARAMETER_STATE_ID)
             .queryParam(EPOCH_PARAMETER)

@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -815,7 +816,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleIsNotConsistent() {
+  void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleCommitmentsRootIsNotConsistent() {
     final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
@@ -832,6 +833,48 @@ class BlockOperationSelectorFactoryTest {
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
+  }
+
+  @Test
+  void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleProofsIsNotConsistent() {
+    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
+
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
+    when(blobsBundle.getBlobs()).thenReturn(dataStructureUtil.randomSszBlobs(2));
+
+    prepareCachedBuilderPayload(
+        signedBlindedBeaconBlock.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        Optional.of(blobsBundle));
+
+    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
+  }
+
+  @Test
+  void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleBlobsIsNotConsistent() {
+    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
+
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
+    when(blobsBundle.getProofs()).thenReturn(dataStructureUtil.randomSszKZGProofs(2));
+
+    prepareCachedBuilderPayload(
+        signedBlindedBeaconBlock.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        Optional.of(blobsBundle));
+
+    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
   }
 
   @Test

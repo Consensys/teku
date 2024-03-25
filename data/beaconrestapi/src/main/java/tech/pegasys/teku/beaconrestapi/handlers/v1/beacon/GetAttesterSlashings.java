@@ -43,8 +43,8 @@ public class GetAttesterSlashings extends RestApiEndpoint {
   GetAttesterSlashings(final NodeDataProvider provider, Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getAttesterSlashings")
-            .summary("Get Attester Slashings")
+            .operationId("getPoolAttesterSlashings")
+            .summary("Get AttesterSlashings from operations pool")
             .description(
                 "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)

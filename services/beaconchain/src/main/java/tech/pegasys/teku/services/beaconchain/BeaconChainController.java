@@ -146,6 +146,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
+import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -598,9 +599,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initBlockBlobSidecarsTrackersPool() {
     LOG.debug("BeaconChainController.initBlockBlobSidecarsTrackersPool()");
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      blockBlobSidecarsTrackersPool =
+      final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
               spec, timeProvider, beaconAsyncRunner, recentChainData);
+      eventChannels.subscribe(FinalizedCheckpointChannel.class, pool);
+      blockBlobSidecarsTrackersPool = pool;
+
     } else {
       blockBlobSidecarsTrackersPool = BlockBlobSidecarsTrackersPool.NOOP;
     }
@@ -1204,8 +1208,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final DataUnavailableBlockPool dataUnavailableBlockPool =
           new DataUnavailableBlockPool(
-              blockManager, blockBlobSidecarsTrackersPool, beaconAsyncRunner);
+              spec, blockManager, blockBlobSidecarsTrackersPool, beaconAsyncRunner);
       blockManager.subscribeDataUnavailable(dataUnavailableBlockPool::addDataUnavailableBlock);
+
+      eventChannels.subscribe(FinalizedCheckpointChannel.class, dataUnavailableBlockPool);
 
       this.dataUnavailableBlockPool = Optional.of(dataUnavailableBlockPool);
     }

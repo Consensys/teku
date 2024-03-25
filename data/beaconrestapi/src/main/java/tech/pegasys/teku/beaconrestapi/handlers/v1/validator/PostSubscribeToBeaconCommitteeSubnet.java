@@ -76,8 +76,8 @@ public class PostSubscribeToBeaconCommitteeSubnet extends RestApiEndpoint {
   public PostSubscribeToBeaconCommitteeSubnet(final ValidatorDataProvider provider) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postSubscribeToBeaconCommitteeSubnet")
-            .summary("Subscribe to a committee subnet")
+            .operationId("prepareBeaconCommitteeSubnet")
+            .summary("Signal beacon node to prepare for a committee subnet")
             .description(
                 "After Beacon node receives this request, search using discv5 for peers related to this subnet and replace current peers with those ones if necessary If validator is_aggregator, beacon node must:\n"
                     + "- announce subnet topic subscription on gossipsub\n"

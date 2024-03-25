@@ -50,7 +50,7 @@ public class GetPeerById extends RestApiEndpoint {
   GetPeerById(final NetworkDataProvider network) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getNodePeer")
+            .operationId("getPeer")
             .summary("Get node peer")
             .description("Retrieves data about the given peer.")
             .pathParam(PEER_ID_PARAMETER)
