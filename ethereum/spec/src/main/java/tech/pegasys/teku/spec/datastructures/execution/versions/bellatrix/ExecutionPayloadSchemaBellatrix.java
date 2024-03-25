@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 
@@ -112,6 +113,12 @@ public class ExecutionPayloadSchemaBellatrix
   @Override
   public WithdrawalSchema getWithdrawalSchemaRequired() {
     throw new IllegalStateException("Attempted to get a withdrawal schema from bellatrix");
+  }
+
+  @Override
+  public SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>>
+      getDepositReceiptsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit receipts schema from bellatrix");
   }
 
   @Override

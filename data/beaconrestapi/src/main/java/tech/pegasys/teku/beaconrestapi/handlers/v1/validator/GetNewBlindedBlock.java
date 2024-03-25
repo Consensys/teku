@@ -68,7 +68,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
   private static EndpointMetadata getEndpointMetaData(
       final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.get(ROUTE)
-        .operationId("getNewBlindedBlock")
+        .operationId("produceBlindedBlock")
         .summary("Produce unsigned blinded block")
         .description(
             "Requests a beacon node to produce a valid blinded block, which can then be signed by a validator. "

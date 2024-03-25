@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "getAggregateAttestation",
-    "summary" : "Get aggregated attestations",
+    "operationId" : "getAggregatedAttestation",
+    "summary" : "Get aggregated attestation",
     "description" : "Aggregates all attestations matching given attestation data root and slot.",
     "parameters" : [ {
       "name" : "attestation_data_root",

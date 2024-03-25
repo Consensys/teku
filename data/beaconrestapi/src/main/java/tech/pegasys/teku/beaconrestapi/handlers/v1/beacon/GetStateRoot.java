@@ -48,7 +48,7 @@ public class GetStateRoot extends AbstractGetSimpleDataFromState {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getStateRoot")
-            .summary("Get state root")
+            .summary("Get state SSZ HashTreeRoot")
             .description(
                 "Calculates HashTreeRoot for state with given 'state_id'. If stateId is root, same value will be returned.")
             .tags(TAG_BEACON)

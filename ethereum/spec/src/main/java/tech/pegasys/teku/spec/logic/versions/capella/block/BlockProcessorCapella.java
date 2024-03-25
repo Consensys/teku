@@ -139,13 +139,15 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     super.processOperationsNoValidation(state, body, indexedAttestationCache);
 
-    processBlsToExecutionChangesNoValidation(
-        MutableBeaconStateCapella.required(state),
-        body.getOptionalBlsToExecutionChanges()
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "BlsToExecutionChanges was not found during block processing.")));
+    safelyProcess(
+        () ->
+            processBlsToExecutionChangesNoValidation(
+                MutableBeaconStateCapella.required(state),
+                body.getOptionalBlsToExecutionChanges()
+                    .orElseThrow(
+                        () ->
+                            new BlockProcessingException(
+                                "BlsToExecutionChanges was not found during block processing."))));
   }
 
   @Override

@@ -78,7 +78,7 @@ public class ExecutionLayerBlockProductionManagerImpl
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
           executionLayerChannel
-              .engineGetPayload(context, blockSlotState.getSlot())
+              .engineGetPayload(context, blockSlotState)
               .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
@@ -111,7 +111,7 @@ public class ExecutionLayerBlockProductionManagerImpl
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
           executionLayerChannel
-              .engineGetPayload(context, blockSlotState.getSlot())
+              .engineGetPayload(context, blockSlotState)
               .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);

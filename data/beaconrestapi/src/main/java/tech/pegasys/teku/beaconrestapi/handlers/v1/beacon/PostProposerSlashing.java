@@ -41,8 +41,8 @@ public class PostProposerSlashing extends RestApiEndpoint {
   public PostProposerSlashing(final NodeDataProvider provider) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postProposerSlashing")
-            .summary("Submit proposer slashing object")
+            .operationId("submitPoolProposerSlashings")
+            .summary("Submit ProposerSlashing object to node's pool")
             .description(
                 "Submits proposer slashing object to node's pool and, if it passes validation, the node MUST broadcast it to network.")
             .tags(TAG_BEACON)

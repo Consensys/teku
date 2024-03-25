@@ -374,6 +374,10 @@ public class MiscHelpers {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
+  public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
+    return false;
+  }
+
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
     return Optional.empty();
   }

@@ -66,7 +66,7 @@ public class GetBlockRewards extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getBlockRewards")
-            .summary("Get Block Rewards")
+            .summary("Get block rewards")
             .description("Retrieve block reward info for a single block.")
             .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(PARAMETER_BLOCK_ID)
