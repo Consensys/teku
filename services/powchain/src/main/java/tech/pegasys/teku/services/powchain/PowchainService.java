@@ -203,7 +203,7 @@ public class PowchainService extends Service {
     if (depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().isPresent()) {
       depositSnapshotFileLoaderBuilder.addRequiredResource(
           depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().get());
-    } else {
+    } else if (depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()) {
       depositTreeSnapshotConfiguration
           .getCheckpointSyncDepositSnapshotUrl()
           .ifPresent(depositSnapshotFileLoaderBuilder::addOptionalResource);
