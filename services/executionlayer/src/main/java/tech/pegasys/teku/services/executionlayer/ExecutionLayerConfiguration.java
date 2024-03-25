@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
@@ -35,7 +34,7 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
-  public static final UInt64 DEFAULT_BUILDER_BID_COMPARE_FACTOR = BUILDER_BOOST_FACTOR_MAX_PROFIT;
+  public static final UInt64 DEFAULT_BUILDER_BID_COMPARE_FACTOR = UInt64.valueOf(90);
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
   public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
   public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED = true;

@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -117,9 +118,7 @@ public class BlockOperationSelectorFactory {
 
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
-              blockSlotState,
-              new AttestationForkChecker(spec, blockSlotState),
-              spec.createAttestationWorthinessChecker(blockSlotState));
+              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
@@ -453,20 +452,28 @@ public class BlockOperationSelectorFactory {
 
       final SszList<Blob> blobs;
       final SszList<SszKZGProof> proofs;
+      final SszList<SszKZGCommitment> blockCommitments =
+          block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
       if (blockContainer.isBlinded()) {
         // need to use the builder BlobsBundle for the blinded flow, because the
         // blobs and the proofs wouldn't be part of the BlockContainer
         final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
             getCachedBuilderBlobsBundle(slot);
-        // consistency check because the BlobsBundle comes from an external source (a builder)
-        final SszList<SszKZGCommitment> blockCommitments =
-            block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
-        Preconditions.checkState(
-            blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
-            "Commitments in the builder BlobsBundle don't match the commitments in the block");
+
         blobs = blobsBundle.getBlobs();
         proofs = blobsBundle.getProofs();
+
+        // consistency check because the BlobsBundle comes from an external source (a builder)
+        checkState(
+            blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
+            "Commitments in the builder BlobsBundle don't match the commitments in the block");
+        checkState(
+            blockCommitments.size() == proofs.size(),
+            "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
+        checkState(
+            blockCommitments.size() == blobs.size(),
+            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
       } else {
         blobs = blockContainer.getBlobs().orElseThrow();
         proofs = blockContainer.getKzgProofs().orElseThrow();

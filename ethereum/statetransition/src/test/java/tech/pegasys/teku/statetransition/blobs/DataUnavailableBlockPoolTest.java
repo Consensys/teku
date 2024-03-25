@@ -21,8 +21,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
+import static tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool.MAX_CAPACITY;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -45,7 +48,7 @@ public class DataUnavailableBlockPoolTest {
       mock(BlockBlobSidecarsTrackersPool.class);
 
   private final DataUnavailableBlockPool dataUnavailableBlockPool =
-      new DataUnavailableBlockPool(blockManager, blockBlobSidecarsTrackersPool, asyncRunner);
+      new DataUnavailableBlockPool(spec, blockManager, blockBlobSidecarsTrackersPool, asyncRunner);
 
   private final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock();
   private final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock();
@@ -172,5 +175,47 @@ public class DataUnavailableBlockPoolTest {
     asyncRunner.executeQueuedActions();
 
     verifyNoInteractions(blockManager);
+  }
+
+  @Test
+  void shouldPruneBlocksOlderThanFinalizedSlot() {
+    final SignedBeaconBlock blockAtSlot1 = dataStructureUtil.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock blockAtSlot2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final SignedBeaconBlock blockAtSlot10 = dataStructureUtil.randomSignedBeaconBlock(10);
+    final SignedBeaconBlock blockAtSlot11 = dataStructureUtil.randomSignedBeaconBlock(11);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot1);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot2);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot10);
+    dataUnavailableBlockPool.addDataUnavailableBlock(blockAtSlot11);
+
+    dataUnavailableBlockPool.onNewFinalizedCheckpoint(dataStructureUtil.randomCheckpoint(1), false);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot1)).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot2)).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot10)).isTrue();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot11)).isTrue();
+
+    dataUnavailableBlockPool.onNewFinalizedCheckpoint(dataStructureUtil.randomCheckpoint(2), false);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot10)).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(blockAtSlot11)).isFalse();
+  }
+
+  @Test
+  void shouldDiscardOldestWhenFull() {
+    final List<SignedBeaconBlock> blocks =
+        IntStream.range(0, MAX_CAPACITY)
+            .mapToObj(dataStructureUtil::randomSignedBeaconBlock)
+            .toList();
+    blocks.forEach(dataUnavailableBlockPool::addDataUnavailableBlock);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blocks.get(0))).isTrue();
+
+    final SignedBeaconBlock newBlock = dataStructureUtil.randomSignedBeaconBlock();
+
+    dataUnavailableBlockPool.addDataUnavailableBlock(newBlock);
+
+    assertThat(dataUnavailableBlockPool.containsBlock(blocks.get(0))).isFalse();
+    assertThat(dataUnavailableBlockPool.containsBlock(newBlock)).isTrue();
   }
 }

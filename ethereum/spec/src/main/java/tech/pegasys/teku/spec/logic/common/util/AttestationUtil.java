@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public abstract class AttestationUtil {
@@ -294,9 +293,6 @@ public abstract class AttestationUtil {
     // Set attestation data
     return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);
   }
-
-  public abstract AttestationWorthinessChecker createAttestationWorthinessChecker(
-      BeaconState state);
 
   public abstract Optional<SlotInclusionGossipValidationResult>
       performSlotInclusionGossipValidation(
