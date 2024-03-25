@@ -229,11 +229,7 @@ public class DepositProvider
                   // EIP-6110
                   final UInt64 eth1DepositIndexLimit =
                       eth1DepositCount.min(stateElectra.getDepositReceiptsStartIndex());
-                  if (eth1DepositIndex.isLessThan(eth1DepositIndexLimit)) {
-                    return eth1DepositIndexLimit.minus(eth1DepositIndex).min(maxDeposits);
-                  } else {
-                    return UInt64.ZERO;
-                  }
+                  return eth1DepositIndexLimit.minusMinZero(eth1DepositIndex).min(maxDeposits);
                 })
             .orElseGet(
                 () -> {
