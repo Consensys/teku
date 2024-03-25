@@ -36,8 +36,8 @@ public class DepositReceiptsUtil {
   public DepositReceiptsUtil(final Spec spec) {
     this.spec = spec;
   }
-
-  public DepositReceipt createDepositReceipt(final UInt64 slot, final UInt64 index) {
+  
+  private DepositReceipt createDepositReceipt(final UInt64 slot, final UInt64 index) {
     final BLSKeyPair validatorKeyPair = BLSKeyPair.random(random);
     final BLSPublicKey publicKey = validatorKeyPair.getPublicKey();
     final UInt64 depositAmount = UInt64.THIRTY_TWO_ETH;

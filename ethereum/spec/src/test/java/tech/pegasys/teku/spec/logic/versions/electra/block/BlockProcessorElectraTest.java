@@ -30,13 +30,10 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositR
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.util.DepositReceiptsUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDenebTest;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 class BlockProcessorElectraTest extends BlockProcessorDenebTest {
-
-  protected DepositReceiptsUtil depositReceiptsUtil = new DepositReceiptsUtil(spec);
 
   @Override
   protected Spec createSpec() {
@@ -119,8 +116,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         IntStream.range(0, depositReceiptsCount)
             .mapToObj(
                 i ->
-                    depositReceiptsUtil.createDepositReceipt(
-                        preState.getSlot(), UInt64.valueOf(firstElectraDepositReceiptIndex + i)))
+                    dataStructureUtil.randomDepositReceiptWithValidSignature(
+                        UInt64.valueOf(firstElectraDepositReceiptIndex + i)))
             .toList();
 
     final BeaconStateElectra state =
