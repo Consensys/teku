@@ -13,6 +13,15 @@
         "example" : "consensus_and_equivocation",
         "format" : "string"
       }
+    }, {
+      "name" : "Eth-Consensus-Version",
+      "required" : true,
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the block being submitted."
+      }
     } ],
     "requestBody" : {
       "content" : {
