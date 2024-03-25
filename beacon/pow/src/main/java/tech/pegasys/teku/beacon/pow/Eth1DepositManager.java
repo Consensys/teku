@@ -21,7 +21,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.math.BigInteger;
 import java.util.Optional;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -47,7 +46,6 @@ public class Eth1DepositManager {
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private final DepositSnapshotFileLoader depositSnapshotFileLoader;
   private final DepositSnapshotStorageLoader depositSnapshotStorageLoader;
-  private final boolean takeBestDepositSnapshot;
   private final boolean customDepositSnapshotPathPresent;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
@@ -62,7 +60,6 @@ public class Eth1DepositManager {
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final DepositSnapshotFileLoader depositSnapshotFileLoader,
       final DepositSnapshotStorageLoader depositSnapshotStorageLoader,
-      final boolean takeBestDepositSnapshot,
       final boolean customDepositSnapshotPathPresent,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
@@ -75,7 +72,6 @@ public class Eth1DepositManager {
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.depositSnapshotFileLoader = depositSnapshotFileLoader;
     this.depositSnapshotStorageLoader = depositSnapshotStorageLoader;
-    this.takeBestDepositSnapshot = takeBestDepositSnapshot;
     this.customDepositSnapshotPathPresent = customDepositSnapshotPathPresent;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
@@ -141,10 +137,6 @@ public class Eth1DepositManager {
 
               final LoadDepositSnapshotResult fileDepositSnapshotResult =
                   depositSnapshotFileLoader.loadDepositSnapshot();
-              if (takeBestDepositSnapshot) {
-                return ObjectUtils.max(storageDepositSnapshotResult, fileDepositSnapshotResult);
-              }
-
               LOG.debug("Deposit snapshot from file is provided, using it");
               return fileDepositSnapshotResult;
             });
