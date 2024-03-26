@@ -117,7 +117,8 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldThrowBadRequestWhenInvalidSyncingStatus() {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    request.setOptionalQueryParameter(SYNCING_STATUS, "92");
+    final String syncingStatus = String.valueOf(dataStructureUtil.randomPositiveInt(99));
+    request.setOptionalQueryParameter(SYNCING_STATUS, syncingStatus);
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
