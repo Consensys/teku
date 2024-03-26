@@ -26,7 +26,7 @@
         "content" : { }
       },
       "400" : {
-        "description" : "The request could not be processed, check the response for more information.",
+        "description" : "Invalid syncing status code",
         "content" : {
           "application/json" : {
             "schema" : {
