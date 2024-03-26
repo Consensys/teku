@@ -15,12 +15,14 @@ package tech.pegasys.teku.services.powchain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.beacon.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import okhttp3.OkHttpClient;
@@ -53,30 +55,40 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
-public class PowchainService extends Service {
+public class PowchainService extends Service implements FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
+  private final Supplier<BeaconState> latestFinalizedState;
+  private final OkHttpClient okHttpClient;
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
   private final List<Web3j> web3js;
-  private final OkHttpClient okHttpClient;
   private final Eth1Providers eth1Providers;
 
   public PowchainService(
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
+      final Supplier<BeaconState> latestFinalizedState) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
+
+    this.spec = powConfig.getSpec();
+    this.latestFinalizedState = latestFinalizedState;
+    this.okHttpClient = createOkHttpClient();
 
     final AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
-    this.okHttpClient = createOkHttpClient();
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
     if (!powConfig.isEnabled()) {
       final ExecutionWeb3jClientProvider executionWeb3jClientProvider =
@@ -90,7 +102,7 @@ public class PowchainService extends Service {
 
       final Web3jEth1Provider web3jEth1Provider =
           new Web3jEth1Provider(
-              powConfig.getSpec().getGenesisSpecConfig(),
+              config,
               serviceConfig.getMetricsSystem(),
               executionWeb3jClientProvider.getEndpoint(),
               web3js.get(0),
@@ -195,6 +207,19 @@ public class PowchainService extends Service {
             headTracker);
   }
 
+  private OkHttpClient createOkHttpClient() {
+    final OkHttpClient.Builder builder =
+        new OkHttpClient.Builder()
+            // Increased read timeout allows ETH1 nodes time to process large log requests
+            .readTimeout(1, TimeUnit.MINUTES);
+    if (LOG.isTraceEnabled()) {
+      final HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
+      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+      builder.addInterceptor(logging);
+    }
+    return builder.build();
+  }
+
   private DepositSnapshotFileLoader createDepositSnapshotFileLoader(
       final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration) {
     final DepositSnapshotFileLoader.Builder depositSnapshotFileLoaderBuilder =
@@ -225,21 +250,12 @@ public class PowchainService extends Service {
     return Web3j.build(web3jService);
   }
 
-  private static OkHttpClient createOkHttpClient() {
-    final OkHttpClient.Builder builder =
-        new OkHttpClient.Builder()
-            // Increased read timeout allows ETH1 nodes time to process large log requests
-            .readTimeout(1, TimeUnit.MINUTES);
-    if (LOG.isTraceEnabled()) {
-      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
-      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-      builder.addInterceptor(logging);
-    }
-    return builder.build();
-  }
-
   @Override
   protected SafeFuture<?> doStart() {
+    if (spec.isFormerDepositMechanismDisabled(latestFinalizedState.get())) {
+      // no need to start services if Eth1 polling has already been disabled
+      return SafeFuture.COMPLETE;
+    }
     return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(headTracker::start),
         SafeFuture.fromRunnable(eth1DepositManager::start),
@@ -255,6 +271,25 @@ public class PowchainService extends Service {
                 web3js.stream().map(web3j -> web3j::shutdown))
             .map(SafeFuture::fromRunnable)
             .toArray(SafeFuture[]::new));
+  }
+
+  @Override
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
+    if (!isRunning()) {
+      return;
+    }
+    final BeaconState finalizedState = latestFinalizedState.get();
+    if (spec.isFormerDepositMechanismDisabled(finalizedState)) {
+      // stop Eth1 polling
+      doStop()
+          .finish(
+              () -> {
+                final UInt64 epoch = spec.computeEpochAtSlot(finalizedState.getSlot());
+                STATUS_LOG.eth1PollingHasBeenDisabled(epoch);
+              },
+              LOG::error);
+    }
   }
 
   @VisibleForTesting

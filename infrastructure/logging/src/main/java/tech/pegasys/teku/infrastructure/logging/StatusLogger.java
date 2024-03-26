@@ -134,6 +134,10 @@ public class StatusLogger {
         batchSize);
   }
 
+  public void eth1PollingHasBeenDisabled(final UInt64 epoch) {
+    log.info("Eth1 polling has been disabled at epoch {}", epoch);
+  }
+
   public void unexpectedFailure(final String description, final Throwable cause) {
     log.error("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
   }
@@ -148,18 +152,6 @@ public class StatusLogger {
 
   public void listeningForDiscv5(final String enr) {
     log.info("Local ENR: {}", enr);
-  }
-
-  public void blockCreationFailure(final Exception cause) {
-    log.error("Error during block creation", cause);
-  }
-
-  public void attestationFailure(final Throwable cause) {
-    log.error("Error during attestation creation", cause);
-  }
-
-  public void validatorDepositYamlKeyWriterFailure(final Path file) {
-    log.error("Error writing keys to {}", file.toString());
   }
 
   public void validatorDepositEncryptedKeystoreWriterFailure(
@@ -387,12 +379,6 @@ public class StatusLogger {
     log.info("ETH1 block satisfying minimum genesis time found");
   }
 
-  public void migratingDataDirectory(final Path dataPath) {
-    log.info(
-        "Migrating data directory layout under {} to separate beacon node and validator data",
-        dataPath.toAbsolutePath());
-  }
-
   public void beaconDataPathSet(final Path dataPath) {
     log.info("Storing beacon chain data in: {}", dataPath.toAbsolutePath());
   }
@@ -527,13 +513,6 @@ public class StatusLogger {
         "Loaded deposits tree state from snapshot with {} deposits and {} execution block hash.",
         deposits,
         executionBlockHash);
-  }
-
-  public void warnFlagDeprecation(final String oldFlag, final String newFlag) {
-    logWithColorIfLevelGreaterThanInfo(
-        Level.WARN,
-        String.format("Flag `%s` is deprecated, use `%s` instead", oldFlag, newFlag),
-        Color.YELLOW);
   }
 
   public void warnIgnoringWeakSubjectivityPeriod() {

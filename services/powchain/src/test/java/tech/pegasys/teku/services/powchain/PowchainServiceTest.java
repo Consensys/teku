@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,11 +40,13 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 
 public class PowchainServiceTest {
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final PowchainConfiguration powConfig = mock(PowchainConfiguration.class);
+  private final Supplier<BeaconState> latestFinalizedState = () -> mock(BeaconState.class);
   private final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
       mock(DepositTreeSnapshotConfiguration.class);
   private final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
@@ -72,7 +75,10 @@ public class PowchainServiceTest {
 
   @Test
   public void shouldFail_WhenNeitherEth1NorExecutionEndpoint() {
-    assertThatThrownBy(() -> new PowchainService(serviceConfig, powConfig, Optional.empty()))
+    assertThatThrownBy(
+            () ->
+                new PowchainService(
+                    serviceConfig, powConfig, Optional.empty(), latestFinalizedState))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -82,7 +88,10 @@ public class PowchainServiceTest {
     assertThatThrownBy(
             () ->
                 new PowchainService(
-                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)))
+                    serviceConfig,
+                    powConfig,
+                    Optional.of(engineWeb3jClientProvider),
+                    latestFinalizedState))
         .hasMessageContaining("not compatible with Websockets");
   }
 
@@ -102,7 +111,10 @@ public class PowchainServiceTest {
         .isThrownBy(
             () ->
                 new PowchainService(
-                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)));
+                    serviceConfig,
+                    powConfig,
+                    Optional.of(engineWeb3jClientProvider),
+                    latestFinalizedState));
   }
 
   @Test
@@ -113,7 +125,8 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/bundled"));
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
@@ -128,7 +141,8 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/bundled", true)));
@@ -159,7 +173,8 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService,
@@ -192,7 +207,8 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/checkpoint"));
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
@@ -206,7 +222,8 @@ public class PowchainServiceTest {
         .thenReturn(Optional.empty());
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
 
     assertThat(
             powchainService
