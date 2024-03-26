@@ -20,6 +20,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Increased the attestation cache capacity to allow Teku a bigger pool of attestations when block building.
 - Defaulted `--builder-bid-compare-factor` to 90. This makes it necessary for external block builders to give at least 10% additional profit compared to a local build before being taken into consideration. If you would like to go back to the previous default, set `--builder-bid-compare-factor` to 100.
 - Added `--p2p-direct-peers` command line option to configure explicit peers as per [Explicit Peering Agreements](https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/gossipsub-v1.1.md#explicit-peering-agreements) libp2p spec.
+- Increased the executor queue default maximum size to 40_000 (previously 20_000), and other queues to 10_000 (previously 5_000). If you have custom settings for these queues, check to ensure they're still required.
 
 ### Bug Fixes
 - Fix incompatibility between Teku validator client and Lighthouse beacon nodes [#8117](https://github.com/Consensys/teku/pull/8117)
