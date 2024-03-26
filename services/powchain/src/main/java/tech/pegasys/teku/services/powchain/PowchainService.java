@@ -282,7 +282,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
     final BeaconState finalizedState = latestFinalizedState.get();
     if (spec.isFormerDepositMechanismDisabled(finalizedState)) {
       // stop Eth1 polling
-      doStop()
+      stop()
           .finish(
               () -> {
                 final UInt64 epoch = spec.computeEpochAtSlot(finalizedState.getSlot());
