@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_CONTINUE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -28,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 
@@ -109,6 +111,17 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+  }
+
+  @Test
+  public void shouldThrowBadRequestWhenInvalidSyncingStatus() {
+    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    request.setOptionalQueryParameter(SYNCING_STATUS, "92");
+
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Invalid syncing status code");
   }
 
   @Test
