@@ -29,6 +29,8 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -113,12 +115,12 @@ public class GetHealthTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
   }
 
-  @Test
-  public void shouldThrowBadRequestWhenInvalidSyncingStatus() {
+  @ParameterizedTest(name = "syncingStatus: {0}")
+  @ValueSource(ints = {98, 600})
+  public void shouldThrowBadRequestWhenInvalidSyncingStatusOutsideBounds(final int syncingStatus) {
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    final String syncingStatus = String.valueOf(dataStructureUtil.randomPositiveInt(99));
-    request.setOptionalQueryParameter(SYNCING_STATUS, syncingStatus);
+    request.setOptionalQueryParameter(SYNCING_STATUS, String.valueOf(syncingStatus));
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
