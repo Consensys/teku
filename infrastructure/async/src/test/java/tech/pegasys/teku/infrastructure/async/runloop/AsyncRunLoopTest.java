@@ -118,6 +118,26 @@ class AsyncRunLoopTest {
   }
 
   @Test
+  void shouldNotAdvanceIfStopped() {
+    final Duration advanceDelay = Duration.ofSeconds(2);
+    when(logic.advance()).thenReturn(SafeFuture.COMPLETE);
+    when(logic.getDelayUntilNextAdvance()).thenReturn(advanceDelay);
+
+    runLoop.start();
+    verify(logic).init();
+    verify(logic, never()).advance();
+
+    advanceTime(advanceDelay);
+    verify(logic, times(1)).advance();
+
+    runLoop.stop();
+    advanceTime(advanceDelay);
+
+    // advance should have been invoked only once
+    verify(logic, times(1)).advance();
+  }
+
+  @Test
   void shouldRetryAfterDelayWhenAdvanceFails() {
     final Duration advanceDelay = Duration.ofSeconds(5);
     final Throwable error = new RuntimeException("Computer says no");

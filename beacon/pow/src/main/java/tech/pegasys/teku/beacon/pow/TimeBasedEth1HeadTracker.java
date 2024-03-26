@@ -41,8 +41,8 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
 
   private final Spec spec;
   private final TimeProvider timeProvider;
-  private final AsyncRunner asyncRunner;
   private final Eth1Provider eth1Provider;
+  private final AsyncRunLoop asyncRunLoop;
 
   private final ObservableValue<UInt64> headSubscription = new ObservableValue<>(true);
 
@@ -58,13 +58,29 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
       final Eth1Provider eth1Provider) {
     this.spec = spec;
     this.timeProvider = timeProvider;
-    this.asyncRunner = asyncRunner;
     this.eth1Provider = eth1Provider;
+    this.asyncRunLoop =
+        new AsyncRunLoop(this, asyncRunner, Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT);
   }
 
   @Override
   public void start() {
-    new AsyncRunLoop(this, asyncRunner, Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT).start();
+    asyncRunLoop.start();
+  }
+
+  @Override
+  public void stop() {
+    asyncRunLoop.stop();
+  }
+
+  @Override
+  public long subscribe(final ValueObserver<UInt64> subscriber) {
+    return headSubscription.subscribe(subscriber);
+  }
+
+  @Override
+  public void unsubscribe(final long subscriberId) {
+    headSubscription.unsubscribe(subscriberId);
   }
 
   @Override
@@ -105,6 +121,28 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
       return searchBackwards();
     } else {
       return stepForward();
+    }
+  }
+
+  @Override
+  public Duration getDelayUntilNextAdvance() {
+    return Duration.ofSeconds(
+        nextAdvanceTimeInSeconds.minusMinZero(timeProvider.getTimeInSeconds()).longValue());
+  }
+
+  @Override
+  public void onError(final Throwable t) {
+    final Throwable rootCause = Throwables.getRootCause(t);
+    if (rootCause instanceof BlockUnavailableException) {
+      LOG.error(
+          "Block number {} not yet available. Retrying after delay.",
+          ((BlockUnavailableException) rootCause).getBlockNumber());
+    } else if (rootCause instanceof Eth1RequestException && rootCause.getSuppressed().length == 0) {
+      LOG.debug("Failed to update eth1 chain head - no endpoints available");
+    } else if (ExceptionUtil.hasCause(t, ConnectException.class)) {
+      LOG.error("Failed to update eth1 chain head - {}", t.getMessage());
+    } else {
+      LOG.error("Failed to update eth1 chain head", t);
     }
   }
 
@@ -162,28 +200,6 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
             maybeBlock -> maybeBlock.orElseThrow(() -> new BlockUnavailableException(blockNumber)));
   }
 
-  @Override
-  public Duration getDelayUntilNextAdvance() {
-    return Duration.ofSeconds(
-        nextAdvanceTimeInSeconds.minusMinZero(timeProvider.getTimeInSeconds()).longValue());
-  }
-
-  @Override
-  public void onError(final Throwable t) {
-    final Throwable rootCause = Throwables.getRootCause(t);
-    if (rootCause instanceof BlockUnavailableException) {
-      LOG.error(
-          "Block number {} not yet available. Retrying after delay.",
-          ((BlockUnavailableException) rootCause).getBlockNumber());
-    } else if (rootCause instanceof Eth1RequestException && rootCause.getSuppressed().length == 0) {
-      LOG.debug("Failed to update eth1 chain head - no endpoints available");
-    } else if (ExceptionUtil.hasCause(t, ConnectException.class)) {
-      LOG.error("Failed to update eth1 chain head - {}", t.getMessage());
-    } else {
-      LOG.error("Failed to update eth1 chain head", t);
-    }
-  }
-
   private boolean isOldEnough(final Block headBlock) {
     final UInt64 cutOffTime = getCutOffTime();
     final long blockTime = headBlock.getTimestamp().longValueExact();
@@ -206,9 +222,6 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
     return spec.getGenesisSpecConfig().getEth1FollowDistance();
   }
 
-  @Override
-  public void stop() {}
-
   private void notifyNewHead(final Block headBlock) {
     searchForwards = true;
     if (!headBlock.equals(lastNotifiedChainHead)) {
@@ -219,16 +232,6 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
       lastNotifiedChainHead = headBlock;
       headSubscription.set(UInt64.valueOf(headBlock.getNumber()));
     }
-  }
-
-  @Override
-  public long subscribe(final ValueObserver<UInt64> subscriber) {
-    return headSubscription.subscribe(subscriber);
-  }
-
-  @Override
-  public void unsubscribe(final long subscriberId) {
-    headSubscription.unsubscribe(subscriberId);
   }
 
   private static class BlockUnavailableException extends RuntimeException {
