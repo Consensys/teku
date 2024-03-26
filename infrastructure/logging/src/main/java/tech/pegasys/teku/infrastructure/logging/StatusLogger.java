@@ -134,8 +134,8 @@ public class StatusLogger {
         batchSize);
   }
 
-  public void eth1PollingHasBeenDisabled(final UInt64 epoch) {
-    log.info("Eth1 polling has been disabled at epoch {}", epoch);
+  public void eth1PollingHasBeenDisabled() {
+    log.info("Eth1 polling has been disabled ");
   }
 
   public void unexpectedFailure(final String description, final Throwable cause) {
