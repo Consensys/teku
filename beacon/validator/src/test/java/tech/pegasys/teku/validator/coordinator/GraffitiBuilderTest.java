@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.AUTO;
-import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.CLIENT_NAMES;
+import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.CLIENT_CODES;
 import static tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat.DISABLED;
 
 import java.nio.charset.StandardCharsets;
@@ -432,19 +432,19 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)),
         Arguments.of(
-            CLIENT_NAMES,
+            CLIENT_CODES,
             Optional.empty(),
             TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(
-            CLIENT_NAMES,
+            CLIENT_CODES,
             Optional.of("small"),
             "small " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(
-            CLIENT_NAMES,
+            CLIENT_CODES,
             Optional.of(UTF_8_GRAFFITI_4),
             UTF_8_GRAFFITI_4 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(
-            CLIENT_NAMES,
+            CLIENT_CODES,
             Optional.of(ASCII_GRAFFITI_20),
             ASCII_GRAFFITI_20 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(DISABLED, Optional.empty(), ""),

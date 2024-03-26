@@ -19,7 +19,7 @@ public enum ClientGraffitiAppendFormat {
   // Clients info is separated with a space after user's graffiti if any.
   AUTO,
   // Appends client name codes if there is a space for it.
-  CLIENT_NAMES,
+  CLIENT_CODES,
   // Clients information is not appended to the graffiti.
   DISABLED;
 }

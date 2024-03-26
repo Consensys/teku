@@ -90,7 +90,7 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
               extractGraffiti(userGraffiti, userGraffitiLength),
               formatClientsInfo(clientInfoLength));
         }
-        case CLIENT_NAMES -> {
+        case CLIENT_CODES -> {
           final int clientInfoLength = Integer.min(Bytes32.SIZE - 1 - userGraffitiLength, 4);
           yield joinNonEmpty(
               SPACE,
