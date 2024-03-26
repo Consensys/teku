@@ -60,7 +60,9 @@ public class Eth2NetworkConfiguration {
 
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
-  public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS = 5;
+  // at least 5, but happily up to 12
+  public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
+      Math.max(5, Math.min(Runtime.getRuntime().availableProcessors(), 12));
 
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS =
       Math.max(Runtime.getRuntime().availableProcessors(), DEFAULT_VALIDATOR_EXECUTOR_THREADS);
