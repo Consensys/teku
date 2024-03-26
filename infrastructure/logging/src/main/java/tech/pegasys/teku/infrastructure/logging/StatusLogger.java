@@ -135,7 +135,7 @@ public class StatusLogger {
   }
 
   public void eth1PollingHasBeenDisabled() {
-    log.info("Eth1 polling has been disabled ");
+    log.info("Eth1 polling has been disabled");
   }
 
   public void unexpectedFailure(final String description, final Throwable cause) {
