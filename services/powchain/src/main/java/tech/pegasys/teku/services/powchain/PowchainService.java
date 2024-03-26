@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -55,7 +56,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -68,13 +68,17 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
+  private final AtomicBoolean hasInitialized = new AtomicBoolean(false);
+
+  private final ServiceConfig serviceConfig;
+  private final PowchainConfiguration powConfig;
+  private final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider;
   private final Supplier<Optional<BeaconState>> latestFinalizedState;
-  private final OkHttpClient okHttpClient;
-  private final Eth1DepositManager eth1DepositManager;
-  private final Eth1HeadTracker headTracker;
-  private final List<Web3j> web3js;
-  private final Eth1Providers eth1Providers;
+
+  private List<Web3j> web3js;
+  private Eth1Providers eth1Providers;
+  private Eth1DepositManager eth1DepositManager;
+  private Eth1HeadTracker headTracker;
 
   public PowchainService(
       final ServiceConfig serviceConfig,
@@ -82,11 +86,71 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
       final Supplier<Optional<BeaconState>> latestFinalizedState) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
-
-    this.spec = powConfig.getSpec();
+    this.serviceConfig = serviceConfig;
+    this.powConfig = powConfig;
+    this.maybeExecutionWeb3jClientProvider = maybeExecutionWeb3jClientProvider;
     this.latestFinalizedState = latestFinalizedState;
-    this.okHttpClient = createOkHttpClient();
+  }
 
+  @Override
+  protected SafeFuture<?> doStart() {
+    if (isFormerDepositMechanismDisabled()) {
+      // no need to initialize and start services if Eth1 polling has already been disabled
+      return SafeFuture.COMPLETE;
+    }
+    return SafeFuture.fromRunnable(this::initialize)
+        .thenPeek(__ -> hasInitialized.set(true))
+        .thenCompose(
+            __ ->
+                SafeFuture.allOfFailFast(
+                    SafeFuture.fromRunnable(headTracker::start),
+                    SafeFuture.fromRunnable(eth1DepositManager::start),
+                    SafeFuture.fromRunnable(eth1Providers::start)));
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    if (!hasInitialized.get()) {
+      return SafeFuture.COMPLETE;
+    }
+    return SafeFuture.allOfFailFast(
+        Stream.concat(
+                Stream.<ExceptionThrowingRunnable>of(
+                    headTracker::stop, eth1DepositManager::stop, eth1Providers::stop),
+                web3js.stream().map(web3j -> web3j::shutdown))
+            .map(SafeFuture::fromRunnable)
+            .toArray(SafeFuture[]::new));
+  }
+
+  @Override
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
+    if (!isRunning()) {
+      return;
+    }
+    if (isFormerDepositMechanismDisabled()) {
+      // stop Eth1 polling
+      stop()
+          .finish(
+              () -> {
+                if (hasInitialized.get()) {
+                  // only log if polling has been enabled and now stopped
+                  STATUS_LOG.eth1PollingHasBeenDisabled();
+                }
+              },
+              LOG::error);
+    }
+  }
+
+  private boolean isFormerDepositMechanismDisabled() {
+    return latestFinalizedState
+        .get()
+        .map(powConfig.getSpec()::isFormerDepositMechanismDisabled)
+        .orElse(false);
+  }
+
+  @VisibleForTesting
+  void initialize() {
     final AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
@@ -98,7 +162,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
             "Eth1 endpoint fallback is not compatible with Websockets execution engine endpoint");
       }
       LOG.info("Eth1 endpoint not provided, using execution engine endpoint for eth1 data");
-      this.web3js = Collections.singletonList(executionWeb3jClientProvider.getWeb3j());
+      web3js = Collections.singletonList(executionWeb3jClientProvider.getWeb3j());
 
       final Web3jEth1Provider web3jEth1Provider =
           new Web3jEth1Provider(
@@ -116,7 +180,8 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
               serviceConfig.getTimeProvider(),
               serviceConfig.getMetricsSystem());
     } else {
-      this.web3js = createWeb3js(powConfig);
+      final OkHttpClient httpClient = createOkHttpClient();
+      web3js = createWeb3js(powConfig, httpClient);
       final List<? extends MonitorableEth1Provider> baseProviders =
           IntStream.range(0, web3js.size())
               .mapToObj(
@@ -220,6 +285,19 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
     return builder.build();
   }
 
+  private List<Web3j> createWeb3js(
+      final PowchainConfiguration config, final OkHttpClient httpClient) {
+    return config.getEth1Endpoints().stream()
+        .map(endpoint -> createWeb3j(endpoint, httpClient))
+        .toList();
+  }
+
+  private Web3j createWeb3j(final String endpoint, final OkHttpClient httpClient) {
+    final HttpService web3jService = new HttpService(endpoint, httpClient);
+    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
+    return Web3j.build(web3jService);
+  }
+
   private DepositSnapshotFileLoader createDepositSnapshotFileLoader(
       final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration) {
     final DepositSnapshotFileLoader.Builder depositSnapshotFileLoaderBuilder =
@@ -240,57 +318,8 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
     return depositSnapshotFileLoaderBuilder.build();
   }
 
-  private List<Web3j> createWeb3js(final PowchainConfiguration config) {
-    return config.getEth1Endpoints().stream().map(this::createWeb3j).toList();
-  }
-
-  private Web3j createWeb3j(final String endpoint) {
-    final HttpService web3jService = new HttpService(endpoint, this.okHttpClient);
-    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
-    return Web3j.build(web3jService);
-  }
-
-  @Override
-  protected SafeFuture<?> doStart() {
-    if (isFormerDepositMechanismDisabled()) {
-      // no need to start services if Eth1 polling has already been disabled
-      return SafeFuture.COMPLETE;
-    }
-    return SafeFuture.allOfFailFast(
-        SafeFuture.fromRunnable(headTracker::start),
-        SafeFuture.fromRunnable(eth1DepositManager::start),
-        SafeFuture.fromRunnable(eth1Providers::start));
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.allOfFailFast(
-        Stream.concat(
-                Stream.<ExceptionThrowingRunnable>of(
-                    headTracker::stop, eth1DepositManager::stop, eth1Providers::stop),
-                web3js.stream().map(web3j -> web3j::shutdown))
-            .map(SafeFuture::fromRunnable)
-            .toArray(SafeFuture[]::new));
-  }
-
-  @Override
-  public void onNewFinalizedCheckpoint(
-      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    if (!isRunning()) {
-      return;
-    }
-    if (isFormerDepositMechanismDisabled()) {
-      // stop Eth1 polling
-      stop().finish(STATUS_LOG::eth1PollingHasBeenDisabled, LOG::error);
-    }
-  }
-
   @VisibleForTesting
   Eth1DepositManager getEth1DepositManager() {
     return eth1DepositManager;
-  }
-
-  private boolean isFormerDepositMechanismDisabled() {
-    return latestFinalizedState.get().map(spec::isFormerDepositMechanismDisabled).orElse(false);
   }
 }
