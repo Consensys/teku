@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.ethereum.executionclient;
 
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 
-public record ClientVersion(String code, String name, String version, Bytes4 commit) {
+public interface ExecutionClientVersionChannel extends ExecutionClientEventsChannel {
+  void onExecutionClientVersion(ClientVersion executionClientVersion);
 
-  public static final String TEKU_CLIENT_CODE = "TK";
-
-  public static final ClientVersion UNKNOWN = new ClientVersion("NA", "", "", Bytes4.ZERO);
+  @Override
+  default void onAvailabilityUpdated(boolean isAvailable) {}
 }
