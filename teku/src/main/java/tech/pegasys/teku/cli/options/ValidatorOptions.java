@@ -27,6 +27,7 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -54,6 +55,17 @@ public class ValidatorOptions {
               + "Takes precedence over --validators-graffiti. If the file can not be read, the --validators-graffiti value is used as a fallback.",
       arity = "1")
   private Path graffitiFile;
+
+  @Option(
+      names = {"--validators-graffiti-client-append-format"},
+      paramLabel = "<STRING>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Appends CL and EL clients information with a space to user's graffiti "
+              + "when producing a block on the Beacon Node. (Valid values: ${COMPLETION-CANDIDATES})",
+      arity = "1")
+  private ClientGraffitiAppendFormat clientGraffitiAppendFormat =
+      ValidatorConfig.DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT;
 
   @Option(
       names = {"--validators-performance-tracking-mode"},
@@ -175,6 +187,7 @@ public class ValidatorOptions {
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
                 .generateEarlyAttestations(generateEarlyAttestations)
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)

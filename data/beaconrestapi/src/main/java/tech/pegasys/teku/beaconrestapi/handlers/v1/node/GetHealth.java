@@ -22,11 +22,13 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -53,6 +55,7 @@ public class GetHealth extends RestApiEndpoint {
             .response(SC_OK, "Node is ready")
             .response(SC_PARTIAL_CONTENT, "Node is syncing but can serve incomplete data")
             .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues")
+            .withBadRequestResponse(Optional.of("Invalid syncing status code"))
             .build());
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
@@ -72,7 +75,13 @@ public class GetHealth extends RestApiEndpoint {
 
   private int getResponseCodeFromQueryParams(final RestApiRequest request) {
     try {
-      return request.getOptionalQueryParameter(SYNCING_PARAMETER).orElse(SC_PARTIAL_CONTENT);
+      final int responseCode =
+          request.getOptionalQueryParameter(SYNCING_PARAMETER).orElse(SC_PARTIAL_CONTENT);
+      if (responseCode < 100 || responseCode > 599) {
+        throw new BadRequestException("Invalid syncing status code");
+      } else {
+        return responseCode;
+      }
     } catch (IllegalArgumentException ex) {
       LOG.trace("Illegal parameter in GetHealth", ex);
     }

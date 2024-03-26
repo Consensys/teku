@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.time.Duration;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class P2PConfig {
 
@@ -182,14 +184,21 @@ public class P2PConfig {
           isGossipScoringEnabled
               ? GossipConfigurator.scoringEnabled(spec)
               : GossipConfigurator.NOOP;
+      final SpecConfig specConfig = spec.getGenesisSpecConfig();
       final Eth2Context eth2Context =
           Eth2Context.builder()
-              .activeValidatorCount(spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount())
+              .activeValidatorCount(specConfig.getMinGenesisActiveValidatorCount())
               .gossipEncoding(gossipEncoding)
               .build();
-      networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
+      networkConfig.gossipConfig(
+          builder -> {
+            gossipConfigurator.configure(builder, eth2Context);
+            builder.seenTTL(
+                Duration.ofSeconds(
+                    (long) specConfig.getSecondsPerSlot() * specConfig.getSlotsPerEpoch() * 2));
+          });
 
-      NetworkConfig networkConfig = this.networkConfig.build();
+      final NetworkConfig networkConfig = this.networkConfig.build();
       discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
       discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
 
