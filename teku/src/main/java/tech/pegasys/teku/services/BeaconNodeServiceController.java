@@ -25,6 +25,7 @@ import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
@@ -62,14 +63,15 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.discovery().isDiscoveryEnabled()));
     // making it a Supplier ensures that BeaconChainService has been started and RecentChainData has
     // been initialized
-    final Supplier<BeaconState> latestFinalizedState =
-        () ->
-            beaconChainService
-                .getBeaconChainController()
-                .getRecentChainData()
-                .getStore()
-                .getLatestFinalized()
-                .getState();
+    final Supplier<Optional<BeaconState>> latestFinalizedState =
+        () -> {
+          final RecentChainData recentChainData =
+              beaconChainService.getBeaconChainController().getRecentChainData();
+          if (recentChainData.isPreGenesis()) {
+            return Optional.empty();
+          }
+          return Optional.of(recentChainData.getStore().getLatestFinalized().getState());
+        };
     powchainService(
             tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider, latestFinalizedState)
         .ifPresent(services::add);
@@ -91,7 +93,7 @@ public class BeaconNodeServiceController extends ServiceController {
       final TekuConfiguration tekuConfig,
       final ServiceConfig serviceConfig,
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
-      final Supplier<BeaconState> latestFinalizedState) {
+      final Supplier<Optional<BeaconState>> latestFinalizedState) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionWeb3jClientProvider.isEmpty())) {
       return Optional.empty();

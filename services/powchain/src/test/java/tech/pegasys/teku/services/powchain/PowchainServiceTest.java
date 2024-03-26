@@ -46,7 +46,7 @@ import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 public class PowchainServiceTest {
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final PowchainConfiguration powConfig = mock(PowchainConfiguration.class);
-  private final Supplier<BeaconState> latestFinalizedState = () -> mock(BeaconState.class);
+  private final Supplier<Optional<BeaconState>> latestFinalizedState = Optional::empty;
   private final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
       mock(DepositTreeSnapshotConfiguration.class);
   private final ExecutionWeb3jClientProvider engineWeb3jClientProvider =

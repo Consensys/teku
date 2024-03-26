@@ -69,7 +69,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final Supplier<BeaconState> latestFinalizedState;
+  private final Supplier<Optional<BeaconState>> latestFinalizedState;
   private final OkHttpClient okHttpClient;
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
@@ -80,7 +80,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
-      final Supplier<BeaconState> latestFinalizedState) {
+      final Supplier<Optional<BeaconState>> latestFinalizedState) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
 
     this.spec = powConfig.getSpec();
@@ -252,7 +252,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
 
   @Override
   protected SafeFuture<?> doStart() {
-    if (spec.isFormerDepositMechanismDisabled(latestFinalizedState.get())) {
+    if (isFormerDepositMechanismDisabled()) {
       // no need to start services if Eth1 polling has already been disabled
       return SafeFuture.COMPLETE;
     }
@@ -279,7 +279,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
     if (!isRunning()) {
       return;
     }
-    if (spec.isFormerDepositMechanismDisabled(latestFinalizedState.get())) {
+    if (isFormerDepositMechanismDisabled()) {
       // stop Eth1 polling
       stop().finish(STATUS_LOG::eth1PollingHasBeenDisabled, LOG::error);
     }
@@ -288,5 +288,9 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
   @VisibleForTesting
   Eth1DepositManager getEth1DepositManager() {
     return eth1DepositManager;
+  }
+
+  private boolean isFormerDepositMechanismDisabled() {
+    return latestFinalizedState.get().map(spec::isFormerDepositMechanismDisabled).orElse(false);
   }
 }
