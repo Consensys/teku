@@ -15,8 +15,13 @@ package tech.pegasys.teku.networking.p2p.network.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.libp2p.core.multiformats.Multiaddr;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.DirectPeerManager;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 @SuppressWarnings("AddressSelection")
 class NetworkConfigTest {
@@ -74,5 +79,33 @@ class NetworkConfigTest {
 
   private NetworkConfig createConfig() {
     return NetworkConfig.builder().advertisedIp(advertisedIp).networkInterface(listenIp).build();
+  }
+
+  @Test
+  void checkDirectPeersConfigCreatedCorrectly() {
+    final String peerAddress1 =
+        "/ip4/198.51.100.0/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N";
+    final String peerAddress2 =
+        "/ip4/198.51.100.0/tcp/4242/p2p/QmTESTo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjTEST";
+    final LibP2PNodeId peerId1 = new LibP2PNodeId(new Multiaddr(peerAddress1).getPeerId());
+    final LibP2PNodeId peerId2 = new LibP2PNodeId(new Multiaddr(peerAddress2).getPeerId());
+
+    final List<NodeId> directPeers = List.of(peerId1);
+
+    final NetworkConfig config =
+        NetworkConfig.builder()
+            .advertisedIp(advertisedIp)
+            .networkInterface(listenIp)
+            .directPeers(directPeers)
+            .build();
+
+    final Optional<DirectPeerManager> optionalDirectPeerManager =
+        config.getGossipConfig().getScoringConfig().getPeerScoringConfig().getDirectPeerManager();
+    assertThat(optionalDirectPeerManager).isPresent();
+
+    final DirectPeerManager manager = optionalDirectPeerManager.get();
+
+    assert manager.isDirectPeer(peerId1);
+    assert !manager.isDirectPeer(peerId2);
   }
 }

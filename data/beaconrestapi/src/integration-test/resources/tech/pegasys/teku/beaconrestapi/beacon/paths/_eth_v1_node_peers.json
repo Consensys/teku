@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Node" ],
-    "operationId" : "getNodePeers",
-    "summary" : "Get node peers",
+    "operationId" : "getPeers",
+    "summary" : "Get node network peers",
     "description" : "Retrieves data about the node's network peers.",
     "responses" : {
       "200" : {

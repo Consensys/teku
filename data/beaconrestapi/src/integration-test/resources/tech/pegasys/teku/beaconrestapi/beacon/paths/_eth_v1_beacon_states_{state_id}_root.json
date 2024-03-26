@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Beacon" ],
     "operationId" : "getStateRoot",
-    "summary" : "Get state root",
+    "summary" : "Get state SSZ HashTreeRoot",
     "description" : "Calculates HashTreeRoot for state with given 'state_id'. If stateId is root, same value will be returned.",
     "parameters" : [ {
       "name" : "state_id",

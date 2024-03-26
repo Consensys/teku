@@ -399,10 +399,11 @@ public class TestSpecFactory {
             }));
   }
 
-  public static Spec createMinimalWithCapellaAndDenebForkEpoch(
-      final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch) {
+  public static Spec createMinimalWithCapellaDenebAndElectraForkEpoch(
+      final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch, final UInt64 electraForkEpoch) {
     final SpecConfigBellatrix config =
-        getDenebSpecConfig(Eth2Network.MINIMAL, capellaForkEpoch, denebForkEpoch);
-    return create(config, SpecMilestone.DENEB);
+        getElectraSpecConfig(
+            Eth2Network.MINIMAL, capellaForkEpoch, denebForkEpoch, electraForkEpoch);
+    return create(config, SpecMilestone.ELECTRA);
   }
 }

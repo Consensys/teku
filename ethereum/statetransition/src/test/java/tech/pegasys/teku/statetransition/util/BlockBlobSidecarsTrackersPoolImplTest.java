@@ -40,6 +40,7 @@ import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -225,6 +226,31 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertBlobSidecarsCount(0);
     assertBlobSidecarsTrackersCount(0);
+  }
+
+  @Test
+  public void onCompletedBlockAndBlobSidecars_shouldLogWarningWhenNotCompleted() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(BlockBlobSidecarsTrackersPoolImpl.class)) {
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+      final int expectedBlobs =
+          block
+              .getMessage()
+              .getBody()
+              .toVersionDeneb()
+              .orElseThrow()
+              .getBlobKzgCommitments()
+              .size();
+
+      assertThat(expectedBlobs).isGreaterThan(0);
+
+      blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, List.of());
+
+      logCaptor.assertErrorLog(
+          "Tracker for block "
+              + block.toLogString()
+              + " is supposed to be completed but it is not. Missing blob sidecars: "
+              + expectedBlobs);
+    }
   }
 
   @Test

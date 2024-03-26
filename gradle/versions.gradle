@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.16.1'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.0'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.17.0'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.17.0'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.26.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.26.1') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -14,7 +14,7 @@ dependencyManagement {
 
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
-    dependency 'com.google.guava:guava:33.0.0-jre'
+    dependency 'com.google.guava:guava:33.1.0-jre'
 
     dependency 'org.jsoup:jsoup:1.17.2'
 
@@ -27,14 +27,14 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.5'
 
-    dependencySet(group: 'io.javalin', version: '6.1.2') {
+    dependencySet(group: 'io.javalin', version: '6.1.3') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
 
     dependency 'io.libp2p:jvm-libp2p:1.1.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.11'
-    dependency 'tech.pegasys:jc-kzg-4844:0.8.0'
+    dependency 'tech.pegasys:jc-kzg-4844:1.0.0'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -42,17 +42,17 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.20') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.21') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.11.8'
+    dependency 'org.webjars:swagger-ui:5.12.0'
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.165'
-    dependencySet(group: 'com.github.oshi', version: '6.4.13') {
+    dependency 'io.github.classgraph:classgraph:4.8.168'
+    dependencySet(group: 'com.github.oshi', version: '6.5.0') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
@@ -62,13 +62,13 @@ dependencyManagement {
       entry 'netty-codec-http'
     }
 
-    dependencySet(group: 'io.vertx', version: '4.5.4') {
+    dependencySet(group: 'io.vertx', version: '4.5.5') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.6.2'
+    dependency 'io.projectreactor:reactor-core:3.6.4'
 
     dependency 'it.unimi.dsi:fastutil:8.5.12'
 
@@ -98,7 +98,7 @@ dependencyManagement {
 
     dependency 'org.assertj:assertj-core:3.25.3'
 
-    dependency 'org.awaitility:awaitility:4.2.0'
+    dependency 'org.awaitility:awaitility:4.2.1'
 
     dependencySet(group: 'org.bouncycastle', version: '1.77') {
       entry 'bcprov-jdk18on'
@@ -148,7 +148,7 @@ dependencyManagement {
       entry('plugin-api')
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.19.6') {
+    dependencySet(group: 'org.testcontainers', version: '1.19.7') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -172,6 +172,6 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.8.3'
+    dependency 'net.jqwik:jqwik:1.8.4'
   }
 }

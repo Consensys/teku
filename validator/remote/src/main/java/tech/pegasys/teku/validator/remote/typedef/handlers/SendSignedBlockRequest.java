@@ -14,10 +14,13 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
 
 import java.util.Collections;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.HttpUrl;
@@ -26,6 +29,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -73,7 +77,9 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
       final ValidatorApiMethod apiMethod,
       final SignedBlockContainer signedBlockContainer,
       final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition) {
-    final SendSignedBlockResult result = sendSignedBlockAsSsz(apiMethod, signedBlockContainer);
+    final SpecMilestone milestone = spec.atSlot(signedBlockContainer.getSlot()).getMilestone();
+    final SendSignedBlockResult result =
+        sendSignedBlockAsSsz(apiMethod, signedBlockContainer, milestone);
     if (!result.isPublished() && !preferSszBlockEncoding.get()) {
       return sendSignedBlockAsJson(apiMethod, signedBlockContainer, typeDefinition);
     }
@@ -81,10 +87,13 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
   }
 
   private SendSignedBlockResult sendSignedBlockAsSsz(
-      final ValidatorApiMethod apiMethod, final SignedBlockContainer signedBlockContainer) {
+      final ValidatorApiMethod apiMethod,
+      final SignedBlockContainer signedBlockContainer,
+      final SpecMilestone milestone) {
     return postOctetStream(
             apiMethod,
             Collections.emptyMap(),
+            Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
             signedBlockContainer.sszSerialize().toArray(),
             sszResponseHandler)
         .map(__ -> SendSignedBlockResult.success(signedBlockContainer.getRoot()))

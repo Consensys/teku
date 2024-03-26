@@ -46,8 +46,8 @@ public class PostAggregateAndProofs extends RestApiEndpoint {
       final ValidatorDataProvider provider, final SchemaDefinitions schemaDefinitions) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postAggregateAndProofs")
-            .summary("Publish aggregate and proofs")
+            .operationId("publishAggregateAndProofs")
+            .summary("Publish multiple aggregate and proofs")
             .description(
                 "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)

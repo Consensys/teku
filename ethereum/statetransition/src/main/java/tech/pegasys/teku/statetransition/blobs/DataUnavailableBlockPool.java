@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Queue;
@@ -21,25 +22,31 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 /**
  * This pool is designed to track chain tips blocks that has been attempted to import but failed due
  * to data unavailability. These are chain tips only because blocks with unknown parent will fail
  * with UNKNOWN_BLOCK and will be tracked in the block pendingPool.
  */
-public class DataUnavailableBlockPool {
+public class DataUnavailableBlockPool implements FinalizedCheckpointChannel {
+  public static final int MAX_CAPACITY = 10;
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration WAIT_BEFORE_RETRY = Duration.ofSeconds(1);
 
   // this is a queue of chain tips
   private final Queue<SignedBeaconBlock> awaitingDataAvailabilityQueue =
-      new ArrayBlockingQueue<>(10);
+      new ArrayBlockingQueue<>(MAX_CAPACITY);
+  private final Spec spec;
   private final BlockManager blockManager;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final AsyncRunner asyncRunner;
@@ -49,9 +56,11 @@ public class DataUnavailableBlockPool {
   private boolean inSync = false;
 
   public DataUnavailableBlockPool(
+      final Spec spec,
       final BlockManager blockManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final AsyncRunner asyncRunner) {
+    this.spec = spec;
     this.blockManager = blockManager;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.asyncRunner = asyncRunner;
@@ -64,14 +73,24 @@ public class DataUnavailableBlockPool {
 
     boolean wasEmpty = awaitingDataAvailabilityQueue.isEmpty();
     if (!awaitingDataAvailabilityQueue.offer(block)) {
+      final SignedBeaconBlock oldestBlock = awaitingDataAvailabilityQueue.poll();
+      awaitingDataAvailabilityQueue.add(block);
       LOG.info(
           "Discarding block {} as data unavailable retry pool capacity exceeded",
-          block::toLogString);
+          oldestBlock::toLogString);
       return;
     }
     if (wasEmpty) {
       tryToReimport();
     }
+  }
+
+  @Override
+  public synchronized void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
+    final UInt64 latestFinalizedSlot = checkpoint.getEpochStartSlot(spec);
+    awaitingDataAvailabilityQueue.removeIf(
+        block -> block.getSlot().isLessThanOrEqualTo(latestFinalizedSlot));
   }
 
   public synchronized void onSyncingStatusChanged(boolean inSync) {
@@ -80,6 +99,11 @@ public class DataUnavailableBlockPool {
     delayedRetryTask.ifPresent(Cancellable::cancel);
     delayedRetryTask = Optional.empty();
     awaitingDataAvailabilityQueue.clear();
+  }
+
+  @VisibleForTesting
+  boolean containsBlock(final SignedBeaconBlock block) {
+    return awaitingDataAvailabilityQueue.contains(block);
   }
 
   private synchronized void tryToReimport() {

@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Config" ],
-    "operationId" : "getScheduledForks",
-    "summary" : "Get scheduled forks",
+    "operationId" : "getForkSchedule",
+    "summary" : "Get scheduled upcoming forks.",
     "description" : "Retrieve all scheduled upcoming forks this node is aware of.",
     "responses" : {
       "200" : {

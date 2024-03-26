@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
@@ -91,7 +90,6 @@ import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -869,8 +867,8 @@ public class Spec {
   }
 
   // Attestation helpers
-  public IntList getAttestingIndices(BeaconState state, AttestationData data, SszBitlist bits) {
-    return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
+  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+    return atState(state).getAttestationUtil().getAttestingIndices(state, attestation);
   }
 
   public AttestationData getGenericAttestationData(
@@ -892,10 +890,6 @@ public class Spec {
         .getAttestationUtil()
         .isValidIndexedAttestationAsync(
             getForkAtSlot(slot), state, attestation, blsSignatureVerifier);
-  }
-
-  public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return atState(state).getAttestationUtil().createAttestationWorthinessChecker(state);
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
@@ -938,6 +932,11 @@ public class Spec {
     return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
         .map(this::computeStartSlotAtEpoch);
+  }
+
+  // Electra Utils
+  public boolean isFormerDepositMechanismDisabled(BeaconState state) {
+    return atState(state).miscHelpers().isFormerDepositMechanismDisabled(state);
   }
 
   // Deneb private helpers

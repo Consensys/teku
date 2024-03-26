@@ -52,7 +52,7 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
 
   private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
     return EndpointMetadata.post(ROUTE)
-        .operationId("postBlsToExecutionChange")
+        .operationId("submitPoolBLSToExecutionChange")
         .summary("Submit SignedBLSToExecutionChange object to node's pool")
         .description(
             "Submits SignedBLSToExecutionChange object to node's pool and if passes validation node MUST broadcast it"

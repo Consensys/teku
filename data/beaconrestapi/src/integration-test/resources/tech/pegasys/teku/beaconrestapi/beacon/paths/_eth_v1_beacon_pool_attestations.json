@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getAttestations",
-    "summary" : "Get attestations",
+    "operationId" : "getPoolAttestations",
+    "summary" : "Get Attestations from operations pool",
     "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
     "parameters" : [ {
       "name" : "slot",
@@ -58,8 +58,8 @@
   },
   "post" : {
     "tags" : [ "Beacon", "Validator Required Api" ],
-    "operationId" : "postAttestation",
-    "summary" : "Submit signed attestations",
+    "operationId" : "submitPoolAttestations",
+    "summary" : "Submit Attestation objects to node",
     "description" : "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
     "requestBody" : {
       "content" : {

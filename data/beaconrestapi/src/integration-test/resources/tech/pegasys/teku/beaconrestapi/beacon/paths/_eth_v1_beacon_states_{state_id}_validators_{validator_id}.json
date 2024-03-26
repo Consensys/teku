@@ -2,7 +2,7 @@
   "get" : {
     "tags" : [ "Beacon", "Validator Required Api" ],
     "operationId" : "getStateValidator",
-    "summary" : "Get validator from state",
+    "summary" : "Get validator from state by id",
     "description" : "Retrieves data about the given peer.",
     "parameters" : [ {
       "name" : "state_id",

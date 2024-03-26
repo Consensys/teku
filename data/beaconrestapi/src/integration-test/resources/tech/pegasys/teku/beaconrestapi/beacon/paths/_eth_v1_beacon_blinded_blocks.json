@@ -4,6 +4,15 @@
     "operationId" : "publishBlindedBlock",
     "summary" : "Publish a signed blinded block",
     "description" : "Submit a signed blinded beacon block to the beacon node to be broadcast and imported. The beacon node performs the required validation.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the block being submitted, if using SSZ encoding."
+      }
+    } ],
     "requestBody" : {
       "content" : {
         "application/octet-stream" : {

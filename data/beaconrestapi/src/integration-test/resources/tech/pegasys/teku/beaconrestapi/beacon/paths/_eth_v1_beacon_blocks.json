@@ -4,6 +4,15 @@
     "operationId" : "publishBlock",
     "summary" : "Publish a signed block",
     "description" : "Submit a signed beacon block to the beacon node to be broadcast and imported. After Deneb, this additionally instructs the beacon node to broadcast and import all given blobs. The beacon node performs the required validation.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the block being submitted, if using SSZ encoding."
+      }
+    } ],
     "requestBody" : {
       "content" : {
         "application/octet-stream" : {
