@@ -62,7 +62,7 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.network().getListenPort(),
             tekuConfig.discovery().isDiscoveryEnabled()));
     // making it a Supplier ensures that BeaconChainService has been started and RecentChainData has
-    // been initialized
+    // been initialized when `get()` is called
     final Supplier<Optional<BeaconState>> latestFinalizedState =
         () -> {
           final RecentChainData recentChainData =
