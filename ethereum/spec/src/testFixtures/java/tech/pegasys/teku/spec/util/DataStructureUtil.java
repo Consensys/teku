@@ -150,8 +150,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -164,7 +164,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectra;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -894,8 +893,8 @@ public final class DataStructureUtil {
   }
 
   public AttesterSlashing randomAttesterSlashing(final UInt64... attestingIndices) {
-    IndexedAttestation attestation1 = randomIndexedAttestation(attestingIndices);
-    IndexedAttestation attestation2 = randomIndexedAttestation(attestingIndices);
+    IndexedAttestationContainer attestation1 = randomIndexedAttestation(attestingIndices);
+    IndexedAttestationContainer attestation2 = randomIndexedAttestation(attestingIndices);
     return spec.getGenesisSchemaDefinitions()
         .getAttesterSlashingSchema()
         .create(attestation1, attestation2);
@@ -1533,39 +1532,33 @@ public final class DataStructureUtil {
         randomSignedBeaconBlockHeader(slot, proposerIndex));
   }
 
-  public IndexedAttestationElectra randomIndexedAttestationElectra() {
-    return randomIndexedAttestationElectra(randomUInt64(), randomUInt64(), randomUInt64());
-  }
-
-  public IndexedAttestationElectra randomIndexedAttestationElectra(
-      final UInt64... attestingIndicesInput) {
-    return randomIndexedAttestationElectra(randomAttestationData(), attestingIndicesInput);
-  }
-
-  public IndexedAttestationElectra randomIndexedAttestationElectra(
-      final AttestationData data, final UInt64... attestingIndicesInput) {
-    final IndexedAttestationElectraSchema indexedAttestationElectraSchema =
-        getElectraSchemaDefinitions(randomUInt64()).getIndexedAttestationElectraSchema();
-    SszUInt64List attestingIndices =
-        indexedAttestationElectraSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
-    return indexedAttestationElectraSchema.create(attestingIndices, data, randomSignature());
-  }
-
-  public IndexedAttestation randomIndexedAttestation() {
+  public IndexedAttestationContainer randomIndexedAttestation() {
     return randomIndexedAttestation(randomUInt64(), randomUInt64(), randomUInt64());
   }
 
-  public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndicesInput) {
+  public IndexedAttestationContainer randomIndexedAttestation(
+      final UInt64... attestingIndicesInput) {
     return randomIndexedAttestation(randomAttestationData(), attestingIndicesInput);
   }
 
-  public IndexedAttestation randomIndexedAttestation(
+  public IndexedAttestationContainer randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
-    final IndexedAttestationSchema indexedAttestationSchema =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
-    final SszUInt64List attestingIndices =
-        indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
-    return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
+    if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
+      final IndexedAttestationElectraSchema indexedAttestationElectraSchema =
+          spec.getGenesisSchemaDefinitions()
+              .toVersionElectra()
+              .orElseThrow()
+              .getIndexedAttestationElectraSchema();
+      SszUInt64List attestingIndices =
+          indexedAttestationElectraSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
+      return indexedAttestationElectraSchema.create(attestingIndices, data, randomSignature());
+    } else {
+      final IndexedAttestationSchema indexedAttestationSchema =
+          spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
+      SszUInt64List attestingIndices =
+          indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
+      return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
+    }
   }
 
   public DepositMessage randomDepositMessage(final BLSKeyPair keyPair) {
@@ -1655,7 +1648,7 @@ public final class DataStructureUtil {
     return randomDepositEvent(UInt64.valueOf(index));
   }
 
-  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent(final UInt64 index) {
+  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent(UInt64 index) {
     return new tech.pegasys.teku.ethereum.pow.api.Deposit(
         BLSTestUtil.randomPublicKey(nextSeed()),
         randomBytes32(),

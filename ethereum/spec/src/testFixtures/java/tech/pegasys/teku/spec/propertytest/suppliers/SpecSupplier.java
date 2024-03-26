@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.propertytest.suppliers;
 
+import java.util.Optional;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ArbitrarySupplier;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecSupplier implements ArbitrarySupplier<Spec> {
   private final SpecMilestone minimumSpecMilestone;
+  private Optional<SpecMilestone> maximumSpecMilestone = Optional.empty();
 
   @SuppressWarnings("unused")
   public SpecSupplier() {
@@ -34,11 +36,24 @@ public class SpecSupplier implements ArbitrarySupplier<Spec> {
     this.minimumSpecMilestone = minimumSpecMilestone;
   }
 
+  public SpecSupplier(
+      final SpecMilestone minimumSpecMilestone, final SpecMilestone maximumSpecMilestone) {
+    this.minimumSpecMilestone = minimumSpecMilestone;
+    this.maximumSpecMilestone = Optional.of(maximumSpecMilestone);
+  }
+
   @Override
   public Arbitrary<Spec> get() {
     Arbitrary<SpecMilestone> milestone =
         Arbitraries.of(SpecMilestone.class)
-            .filter(m -> m.isGreaterThanOrEqualTo(minimumSpecMilestone));
+            .filter(
+                m ->
+                    maximumSpecMilestone
+                        .map(
+                            maximumSpecMilestone ->
+                                m.isGreaterThanOrEqualTo(minimumSpecMilestone)
+                                    && !m.isGreaterThanOrEqualTo(maximumSpecMilestone))
+                        .orElse(m.isGreaterThanOrEqualTo(minimumSpecMilestone)));
     Arbitrary<Eth2Network> network = Arbitraries.of(Eth2Network.class);
     return Combinators.combine(milestone, network)
         .as(TestSpecFactory::create)

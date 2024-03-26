@@ -15,21 +15,30 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@TestSpecContext(allMilestones = true)
 class IndexedAttestationTest {
+  private DataStructureUtil dataStructureUtil;
 
-  private final Spec spec = TestSpecFactory.createDefault();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private IndexedAttestationContainer indexedAttestation;
+  private IndexedAttestationContainer newIndexedAttestation;
 
-  @Test
+  @BeforeEach
+  public void setup(TestSpecInvocationContextProvider.SpecContext specContext) {
+    dataStructureUtil = specContext.getDataStructureUtil();
+    indexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    newIndexedAttestation =
+        (IndexedAttestationContainer)
+            indexedAttestation.getSchema().sszDeserialize(indexedAttestation.sszSerialize());
+  }
+
+  @TestTemplate
   void roundTripViaSsz() {
-    IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
-    IndexedAttestation newIndexedAttestation =
-        indexedAttestation.getSchema().sszDeserialize(indexedAttestation.sszSerialize());
     assertEquals(indexedAttestation, newIndexedAttestation);
   }
 }

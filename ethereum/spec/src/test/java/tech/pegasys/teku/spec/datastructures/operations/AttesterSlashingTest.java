@@ -17,34 +17,57 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Objects;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@TestSpecContext(allMilestones = true)
 class AttesterSlashingTest {
 
-  private final Spec spec = TestSpecFactory.createDefault();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttesterSlashingSchema attesterSlashingSchema =
-      spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
-  private final IndexedAttestation indexedAttestation1 =
-      dataStructureUtil.randomIndexedAttestation();
-  private final IndexedAttestation indexedAttestation2 =
-      dataStructureUtil.randomIndexedAttestation();
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private AttesterSlashingSchema attesterSlashingSchema;
+  private IndexedAttestationContainer indexedAttestation1;
+  private IndexedAttestationContainer indexedAttestation2;
+  private IndexedAttestationContainer otherIndexedAttestation1;
+  private IndexedAttestationContainer otherIndexedAttestation2;
+  private AttesterSlashing attesterSlashing;
 
-  private AttesterSlashing attesterSlashing =
-      attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
+  @BeforeEach
+  public void setup(TestSpecInvocationContextProvider.SpecContext specContext) {
+    spec = specContext.getSpec();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    attesterSlashingSchema = spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
+    indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
+    indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
+    otherIndexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
+    // IndexedAttestation is rather involved to create. Just create a random one until it is not
+    // the same as the original.
+    while (Objects.equals(otherIndexedAttestation1, indexedAttestation1)) {
+      otherIndexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
+    }
+    otherIndexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
+    // IndexedAttestation is rather involved to create. Just create a random one until it is not
+    // the ame as the original.
+    while (Objects.equals(otherIndexedAttestation2, indexedAttestation2)) {
+      otherIndexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
+    }
 
-  @Test
+    attesterSlashing = attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
+  }
+
+  @TestTemplate
   void equalsReturnsTrueWhenObjectsAreSame() {
     AttesterSlashing testAttesterSlashing = attesterSlashing;
 
     assertEquals(attesterSlashing, testAttesterSlashing);
   }
 
-  @Test
+  @TestTemplate
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     AttesterSlashing testAttesterSlashing =
         attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
@@ -52,39 +75,24 @@ class AttesterSlashingTest {
     assertEquals(attesterSlashing, testAttesterSlashing);
   }
 
-  @Test
+  @TestTemplate
   void equalsReturnsFalseWhenIndexedAttestation1IsDifferent() {
-    // IndexedAttestation is rather involved to create. Just create a random one until it is not
-    // the same as the original.
-    IndexedAttestation otherIndexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
-    while (Objects.equals(otherIndexedAttestation1, indexedAttestation1)) {
-      otherIndexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
-    }
-
     AttesterSlashing testAttesterSlashing =
         attesterSlashingSchema.create(otherIndexedAttestation1, indexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
 
-  @Test
+  @TestTemplate
   void equalsReturnsFalseWhenIndexedAttestation2IsDifferent() {
-    // IndexedAttestation is rather involved to create. Just create a random one until it is not
-    // the ame as the original.
-    IndexedAttestation otherIndexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
-    while (Objects.equals(otherIndexedAttestation2, indexedAttestation2)) {
-      otherIndexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
-    }
-
     AttesterSlashing testAttesterSlashing =
         attesterSlashingSchema.create(indexedAttestation1, otherIndexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
 
-  @Test
+  @TestTemplate
   void roundtripSsz() {
-    AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing newAttesterSlashing =
         attesterSlashingSchema.sszDeserialize(attesterSlashing.sszSerialize());
     assertEquals(attesterSlashing, newAttesterSlashing);

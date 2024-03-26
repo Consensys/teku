@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.operations.versions.electra;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectra;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class IndexedAttestationElectraSupplier
-    extends DataStructureUtilSupplier<IndexedAttestationElectra> {
+    extends DataStructureUtilSupplier<IndexedAttestationContainer> {
   public IndexedAttestationElectraSupplier() {
-    super(DataStructureUtil::randomIndexedAttestationElectra, SpecMilestone.ELECTRA);
+    super(DataStructureUtil::randomIndexedAttestation, SpecMilestone.ELECTRA);
   }
 }

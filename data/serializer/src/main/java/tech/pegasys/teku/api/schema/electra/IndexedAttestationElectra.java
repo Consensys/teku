@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema;
+package tech.pegasys.teku.api.schema.electra;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
@@ -21,14 +21,17 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
+import tech.pegasys.teku.api.schema.AttestationData;
+import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.interfaces.IndexedAttestationContainer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 
 @SuppressWarnings("JavaCase")
-public class IndexedAttestation implements IndexedAttestationContainer {
+public class IndexedAttestationElectra implements IndexedAttestationContainer {
+
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UInt64> attesting_indices;
 
@@ -37,8 +40,8 @@ public class IndexedAttestation implements IndexedAttestationContainer {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
-  public IndexedAttestation(
-      final tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
+  public IndexedAttestationElectra(
+      tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
           indexedAttestation) {
     this.attesting_indices = indexedAttestation.getAttestingIndices().streamUnboxed().toList();
     this.data = new AttestationData(indexedAttestation.getData());
@@ -46,7 +49,7 @@ public class IndexedAttestation implements IndexedAttestationContainer {
   }
 
   @JsonCreator
-  public IndexedAttestation(
+  public IndexedAttestationElectra(
       @JsonProperty("attesting_indices") final List<UInt64> attesting_indices,
       @JsonProperty("data") final AttestationData data,
       @JsonProperty("signature") final BLSSignature signature) {
@@ -62,23 +65,26 @@ public class IndexedAttestation implements IndexedAttestationContainer {
 
   public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
       asInternalIndexedAttestation(final SpecVersion spec) {
-    final IndexedAttestationSchema indexedAttestationSchema =
-        spec.getSchemaDefinitions().getIndexedAttestationSchema();
-    return indexedAttestationSchema.create(
-        indexedAttestationSchema.getAttestingIndicesSchema().of(attesting_indices),
+    final IndexedAttestationElectraSchema indexedAttestationelectraSchema =
+        spec.getSchemaDefinitions()
+            .toVersionElectra()
+            .orElseThrow()
+            .getIndexedAttestationElectraSchema();
+    return indexedAttestationelectraSchema.create(
+        indexedAttestationelectraSchema.getAttestingIndicesSchema().of(attesting_indices),
         data.asInternalAttestationData(),
         signature.asInternalBLSSignature());
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof IndexedAttestation)) {
+    if (!(o instanceof IndexedAttestationElectra)) {
       return false;
     }
-    IndexedAttestation that = (IndexedAttestation) o;
+    IndexedAttestationElectra that = (IndexedAttestationElectra) o;
     return Objects.equals(attesting_indices, that.attesting_indices)
         && Objects.equals(data, that.data)
         && Objects.equals(signature, that.signature);

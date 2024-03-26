@@ -37,7 +37,11 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
@@ -70,6 +74,11 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
 
+  private final IndexedAttestationContainerSchema<IndexedAttestationContainer>
+      indexedAttestationContainerSchema;
+  private final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema;
+  private final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema;
+
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig);
     this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
@@ -80,16 +89,23 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
     this.executionPayloadHeaderSchemaCapella =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
+
+    this.indexedAttestationSchema = new IndexedAttestation.IndexedAttestationSchema(specConfig);
+    this.indexedAttestationContainerSchema =
+        indexedAttestationSchema.castTypeToIndexedAttestationContainer();
+    this.attesterSlashingSchema =
+        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationContainerSchema);
+
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaCapellaImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             signedBlsToExecutionChangeSchema,
             "BeaconBlockBodyCapella");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaCapellaImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             signedBlsToExecutionChangeSchema,
             "BlindedBlockBodyCapella");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema;
+package tech.pegasys.teku.api.schema.electra;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,35 +19,33 @@ import java.util.Objects;
 import tech.pegasys.teku.api.schema.interfaces.AttesterSlashingContainer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 
 @SuppressWarnings("JavaCase")
-public class AttesterSlashing implements AttesterSlashingContainer {
-  public final IndexedAttestation attestation_1;
-  public final IndexedAttestation attestation_2;
+public class AttesterSlashingElectra implements AttesterSlashingContainer {
+  public final IndexedAttestationElectra attestation_1;
+  public final IndexedAttestationElectra attestation_2;
 
-  public AttesterSlashing(
-      final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing attesterSlashing) {
-    this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation1());
-    this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation2());
+  public AttesterSlashingElectra(AttesterSlashing attesterSlashing) {
+    this.attestation_1 = new IndexedAttestationElectra(attesterSlashing.getAttestation1());
+    this.attestation_2 = new IndexedAttestationElectra(attesterSlashing.getAttestation2());
   }
 
   @JsonCreator
-  public AttesterSlashing(
-      @JsonProperty("attestation_1") final IndexedAttestation attestation_1,
-      @JsonProperty("attestation_2") final IndexedAttestation attestation_2) {
+  public AttesterSlashingElectra(
+      @JsonProperty("attestation_1") final IndexedAttestationElectra attestation_1,
+      @JsonProperty("attestation_2") final IndexedAttestationElectra attestation_2) {
     this.attestation_1 = attestation_1;
     this.attestation_2 = attestation_2;
   }
 
-  public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
-      asInternalAttesterSlashing(final Spec spec) {
+  public AttesterSlashing asInternalAttesterSlashing(final Spec spec) {
     return asInternalAttesterSlashing(spec.atSlot(attestation_1.data.slot));
   }
 
   @Override
-  public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
-      asInternalAttesterSlashing(final SpecVersion spec) {
+  public AttesterSlashing asInternalAttesterSlashing(final SpecVersion spec) {
     final AttesterSlashingSchema attesterSlashingSchema =
         spec.getSchemaDefinitions().getAttesterSlashingSchema();
     return attesterSlashingSchema.create(
@@ -56,14 +54,14 @@ public class AttesterSlashing implements AttesterSlashingContainer {
   }
 
   @Override
-  public boolean equals(final Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof AttesterSlashing)) {
+    if (!(o instanceof AttesterSlashingElectra)) {
       return false;
     }
-    AttesterSlashing that = (AttesterSlashing) o;
+    AttesterSlashingElectra that = (AttesterSlashingElectra) o;
     return Objects.equals(attestation_1, that.attestation_1)
         && Objects.equals(attestation_2, that.attestation_2);
   }

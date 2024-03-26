@@ -20,10 +20,6 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainerSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 
@@ -34,10 +30,6 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
       SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
   private final HistoricalBatchSchema historicalBatchSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
-  private final IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      indexedAttestationContainerSchema;
-  private final IndexedAttestationSchema indexedAttestationSchema;
-  private final AttesterSlashingSchema attesterSlashingSchema;
   private final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
       beaconBlocksByRootRequestMessageSchema;
 
@@ -46,10 +38,6 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(specConfig);
     this.beaconBlocksByRootRequestMessageSchema =
         new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(specConfig);
-    this.indexedAttestationSchema = new IndexedAttestationSchema(specConfig);
-    this.indexedAttestationContainerSchema =
-        indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-    this.attesterSlashingSchema = new AttesterSlashingSchema(indexedAttestationContainerSchema);
     this.attnetsENRFieldSchema = SszBitvectorSchema.create(specConfig.getAttestationSubnetCount());
   }
 
@@ -74,24 +62,8 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   }
 
   @Override
-  public IndexedAttestationSchema getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
-  }
-
-  @Override
-  public IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      getIndexedAttestationContainerSchema() {
-    return indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-  }
-
-  @Override
   public AttestationContainerSchema<AttestationContainer> getAttestationContainerSchema() {
     return getAttestationSchema().castTypeToAttestationContainer();
-  }
-
-  @Override
-  public AttesterSlashingSchema getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
   }
 
   @Override

@@ -31,7 +31,7 @@ public class IndexedAttestationElectraSchema
 
   public IndexedAttestationElectraSchema(final SpecConfig config) {
     super(
-        "IndexedAttestation",
+        "IndexedAttestationElectra",
         namedSchema(
             "attesting_indices",
             SszUInt64ListSchema.create(
