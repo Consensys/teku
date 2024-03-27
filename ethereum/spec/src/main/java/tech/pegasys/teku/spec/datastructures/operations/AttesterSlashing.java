@@ -32,10 +32,11 @@ public class AttesterSlashing
           AttesterSlashing, IndexedAttestationContainer, IndexedAttestationContainer> {
 
     public AttesterSlashingSchema(
+        final String containerName,
         final IndexedAttestationContainerSchema<IndexedAttestationContainer>
             indexedAttestationContainerSchema) {
       super(
-          "AttesterSlashing",
+          containerName,
           namedSchema("attestation_1", indexedAttestationContainerSchema),
           namedSchema("attestation_2", indexedAttestationContainerSchema));
     }

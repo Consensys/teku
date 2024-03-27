@@ -94,7 +94,8 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.indexedAttestationContainerSchema =
         indexedAttestationSchema.castTypeToIndexedAttestationContainer();
     this.attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationContainerSchema);
+        new AttesterSlashing.AttesterSlashingSchema(
+            "AttesterSlashing", indexedAttestationContainerSchema);
 
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaCapellaImpl.create(

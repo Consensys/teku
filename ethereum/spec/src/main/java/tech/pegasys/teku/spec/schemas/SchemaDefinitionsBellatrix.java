@@ -69,7 +69,8 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.indexedAttestationContainerSchema =
         indexedAttestationSchema.castTypeToIndexedAttestationContainer();
     this.attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationContainerSchema);
+        new AttesterSlashing.AttesterSlashingSchema(
+            "AttesterSlashing", indexedAttestationContainerSchema);
 
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaBellatrixImpl.create(

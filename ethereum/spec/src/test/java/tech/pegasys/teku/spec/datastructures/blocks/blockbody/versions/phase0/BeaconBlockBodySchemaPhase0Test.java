@@ -36,12 +36,14 @@ public class BeaconBlockBodySchemaPhase0Test {
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(
+                "AttesterSlashing",
                 indexAttestationSchemaA.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(
+                "AttesterSlashing",
                 indexAttestationSchemaB.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
 
@@ -60,12 +62,14 @@ public class BeaconBlockBodySchemaPhase0Test {
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(
+                "AttesterSlashing",
                 indexAttestationSchemaA.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(
+                "AttesterSlashing",
                 indexAttestationSchemaB.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
 

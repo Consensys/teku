@@ -69,7 +69,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.indexedAttestationSchema = new IndexedAttestationSchema(specConfig);
     this.indexedAttestationContainerSchema =
         indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-    this.attesterSlashingSchema = new AttesterSlashingSchema(indexedAttestationContainerSchema);
+    this.attesterSlashingSchema =
+        new AttesterSlashingSchema("AttesterSlashing", indexedAttestationContainerSchema);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaAltairImpl.create(
             specConfig, attesterSlashingSchema, "BeaconBlockBodyAltair");

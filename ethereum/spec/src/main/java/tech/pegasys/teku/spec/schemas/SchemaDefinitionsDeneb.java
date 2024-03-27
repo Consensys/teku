@@ -103,7 +103,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.indexedAttestationContainerSchema =
         indexedAttestationSchema.castTypeToIndexedAttestationContainer();
     this.attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationContainerSchema);
+        new AttesterSlashing.AttesterSlashingSchema(
+            "AttesterSlashing", indexedAttestationContainerSchema);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaDenebImpl.create(
             specConfig,

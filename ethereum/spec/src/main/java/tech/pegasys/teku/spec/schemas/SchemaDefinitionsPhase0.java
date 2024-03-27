@@ -50,7 +50,8 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.indexedAttestationSchema = new IndexedAttestationSchema(specConfig);
     this.indexedAttestationContainerSchema =
         indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-    this.attesterSlashingSchema = new AttesterSlashingSchema(indexedAttestationContainerSchema);
+    this.attesterSlashingSchema =
+        new AttesterSlashingSchema("AttesterSlashing", indexedAttestationContainerSchema);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(
             specConfig, attesterSlashingSchema, "BeaconBlockBodyPhase0");
