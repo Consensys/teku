@@ -515,6 +515,13 @@ public class StatusLogger {
         executionBlockHash);
   }
 
+  public void warnFlagDeprecation(final String oldFlag, final String newFlag) {
+    logWithColorIfLevelGreaterThanInfo(
+        Level.WARN,
+        String.format("Flag `%s` is deprecated, use `%s` instead", oldFlag, newFlag),
+        Color.YELLOW);
+  }
+
   public void warnIgnoringWeakSubjectivityPeriod() {
     log.warn(
         print(

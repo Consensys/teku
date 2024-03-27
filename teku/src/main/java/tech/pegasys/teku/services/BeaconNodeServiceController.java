@@ -63,7 +63,7 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.discovery().isDiscoveryEnabled()));
     // making it a Supplier ensures that BeaconChainService has been started and RecentChainData has
     // been initialized when `get()` is called
-    final Supplier<Optional<BeaconState>> latestFinalizedState =
+    final Supplier<Optional<BeaconState>> finalizedStateSupplier =
         () -> {
           final RecentChainData recentChainData =
               beaconChainService.getBeaconChainController().getRecentChainData();
@@ -73,7 +73,7 @@ public class BeaconNodeServiceController extends ServiceController {
           return Optional.of(recentChainData.getStore().getLatestFinalized().getState());
         };
     powchainService(
-            tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider, latestFinalizedState)
+            tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider, finalizedStateSupplier)
         .ifPresent(services::add);
 
     final Optional<SlashingRiskAction> maybeValidatorSlashedAction =
@@ -93,7 +93,7 @@ public class BeaconNodeServiceController extends ServiceController {
       final TekuConfiguration tekuConfig,
       final ServiceConfig serviceConfig,
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
-      final Supplier<Optional<BeaconState>> latestFinalizedState) {
+      final Supplier<Optional<BeaconState>> finalizedStateSupplier) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionWeb3jClientProvider.isEmpty())) {
       return Optional.empty();
@@ -103,7 +103,7 @@ public class BeaconNodeServiceController extends ServiceController {
             serviceConfig,
             tekuConfig.powchain(),
             maybeExecutionWeb3jClientProvider,
-            latestFinalizedState);
+            finalizedStateSupplier);
     serviceConfig.getEventChannels().subscribe(FinalizedCheckpointChannel.class, powchainService);
     return Optional.of(powchainService);
   }

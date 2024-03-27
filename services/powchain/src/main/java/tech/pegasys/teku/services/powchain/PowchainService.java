@@ -73,7 +73,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
   private final ServiceConfig serviceConfig;
   private final PowchainConfiguration powConfig;
   private final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider;
-  private final Supplier<Optional<BeaconState>> latestFinalizedState;
+  private final Supplier<Optional<BeaconState>> finalizedStateSupplier;
 
   private List<Web3j> web3js;
   private Eth1Providers eth1Providers;
@@ -84,12 +84,12 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
-      final Supplier<Optional<BeaconState>> latestFinalizedState) {
+      final Supplier<Optional<BeaconState>> finalizedStateSupplier) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
     this.serviceConfig = serviceConfig;
     this.powConfig = powConfig;
     this.maybeExecutionWeb3jClientProvider = maybeExecutionWeb3jClientProvider;
-    this.latestFinalizedState = latestFinalizedState;
+    this.finalizedStateSupplier = finalizedStateSupplier;
   }
 
   @Override
@@ -129,7 +129,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
       return;
     }
     if (isFormerDepositMechanismDisabled()) {
-      // stop Eth1 polling
+      //  stop Eth1 polling
       stop()
           .finish(
               () -> {
@@ -143,7 +143,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
   }
 
   private boolean isFormerDepositMechanismDisabled() {
-    return latestFinalizedState
+    return finalizedStateSupplier
         .get()
         .map(powConfig.getSpec()::isFormerDepositMechanismDisabled)
         .orElse(false);

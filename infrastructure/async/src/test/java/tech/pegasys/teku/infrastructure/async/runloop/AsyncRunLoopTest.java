@@ -103,11 +103,11 @@ class AsyncRunLoopTest {
     verify(logic, never()).advance();
 
     advanceTime(firstAdvanceDelay);
-    verify(logic, times(1)).advance();
+    verify(logic).advance();
 
     // Shouldn't use same delay for second advance so this won't wait long enough
     advanceTime(firstAdvanceDelay);
-    verify(logic, times(1)).advance();
+    verify(logic).advance();
 
     // Advance remaining time until second advance is due and confirm it is invoked
     advanceTime(secondAdvanceDelay.minus(firstAdvanceDelay));
@@ -128,13 +128,13 @@ class AsyncRunLoopTest {
     verify(logic, never()).advance();
 
     advanceTime(advanceDelay);
-    verify(logic, times(1)).advance();
+    verify(logic).advance();
 
     runLoop.stop();
     advanceTime(advanceDelay);
 
     // advance should have been invoked only once
-    verify(logic, times(1)).advance();
+    verify(logic).advance();
   }
 
   @Test
