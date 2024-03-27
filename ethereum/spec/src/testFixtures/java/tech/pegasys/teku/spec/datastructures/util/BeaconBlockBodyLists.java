@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -29,9 +30,11 @@ public class BeaconBlockBodyLists {
     return new BeaconBlockBodyLists(spec);
   }
 
+  private final Spec spec;
   private final BeaconBlockBodySchema<?> blockBodySchema;
 
   public BeaconBlockBodyLists(Spec spec) {
+    this.spec = spec;
     blockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
@@ -41,6 +44,15 @@ public class BeaconBlockBodyLists {
 
   public SszList<AttesterSlashing> createAttesterSlashings(AttesterSlashing... attesterSlashings) {
     return blockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings);
+  }
+
+  public SszList<AttesterSlashing> createAttesterSlashings(
+      UInt64 slot, AttesterSlashing... attesterSlashings) {
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .getAttesterSlashingsSchema()
+        .of(attesterSlashings);
   }
 
   public SszList<Attestation> createAttestations(Attestation... attestations) {
