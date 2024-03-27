@@ -544,7 +544,7 @@ public class DatabaseTest {
             .streamValidAttestationsForBlockAtSlot(targetSlot)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
 
     // Create several different blocks at the same slot
     final SignedBlockAndState blockA =
@@ -628,7 +628,7 @@ public class DatabaseTest {
             .streamValidAttestationsForBlockAtSlot(divergingSlot)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
 
     // Create several different blocks at the same slot
     final SignedBlockAndState blockA =
@@ -859,7 +859,7 @@ public class DatabaseTest {
         chainBuilder
             .streamBlocksAndStates(
                 checkpoint1BlockAndState.getSlot(), checkpoint2BlockAndState.getSlot())
-            .collect(toList());
+            .toList();
 
     final UpdatableStore result = recreateStore();
     // Historical blocks should not be in the new store
@@ -1004,9 +1004,7 @@ public class DatabaseTest {
     final SignedBlockAndState transitionBlock =
         generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
-        chainBuilder
-            .streamBlocksAndStates(genesisBlockAndState.getSlot().intValue())
-            .collect(toList());
+        chainBuilder.streamBlocksAndStates(genesisBlockAndState.getSlot().intValue()).toList();
     // Save all blocks and states in separate transactions
     for (SignedBlockAndState newBlock : newBlocks) {
       add(List.of(newBlock));
@@ -2093,18 +2091,20 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void shouldStoreFinalizedState(final DatabaseContext context) throws IOException {
+  public void shouldStoreReconstructedFinalizedState(final DatabaseContext context)
+      throws IOException {
     createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
     assertThat(database.getLatestAvailableFinalizedState(ONE)).isEmpty();
 
     final BeaconState beaconState = dataStructureUtil.randomBeaconState(ONE);
-    database.storeFinalizedState(beaconState, dataStructureUtil.randomBytes32());
+    database.storeReconstructedFinalizedState(beaconState, dataStructureUtil.randomBytes32());
 
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(beaconState);
   }
 
   @TestTemplate
-  public void shouldStoreFinalizedStateAndRoots(final DatabaseContext context) throws IOException {
+  public void shouldStoreReconstructedFinalizedStateAndRoots(final DatabaseContext context)
+      throws IOException {
     createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), false);
 
     final BeaconState state1 = dataStructureUtil.randomBeaconState(ONE);
@@ -2114,8 +2114,8 @@ public class DatabaseTest {
     final Bytes32 blockRoot2 = dataStructureUtil.randomBytes32();
 
     assertThat(database.getLatestAvailableFinalizedState(UInt64.valueOf(2))).isEmpty();
-    database.storeFinalizedState(state1, blockRoot1);
-    database.storeFinalizedState(state2, blockRoot2);
+    database.storeReconstructedFinalizedState(state1, blockRoot1);
+    database.storeReconstructedFinalizedState(state2, blockRoot2);
 
     assertThat(database.getLatestAvailableFinalizedState(ONE)).contains(state1);
     assertThat(database.getLatestAvailableFinalizedState(UInt64.valueOf(2))).contains(state2);
@@ -2486,7 +2486,7 @@ public class DatabaseTest {
           block,
           blobSidecars.stream()
               .filter(blobSidecar -> blobSidecar.getBlockRoot().equals(block.getRoot()))
-              .collect(Collectors.toUnmodifiableList()),
+              .toList(),
           spec.calculateBlockCheckpoints(block.getState()));
     }
     commit(transaction);
@@ -2517,7 +2517,7 @@ public class DatabaseTest {
                         .filter(
                             blobSidecar ->
                                 blobSidecar.getBlockRoot().equals(blockAndState.getRoot()))
-                        .collect(Collectors.toUnmodifiableList()),
+                        .toList(),
                     spec.calculateBlockCheckpoints(blockAndState.getState())));
   }
 
@@ -2630,7 +2630,7 @@ public class DatabaseTest {
   }
 
   private void assertBlobSidecars(final Map<UInt64, List<BlobSidecar>> blobSidecars) {
-    final List<UInt64> slots = blobSidecars.keySet().stream().sorted().collect(toList());
+    final List<UInt64> slots = blobSidecars.keySet().stream().sorted().toList();
     if (slots.isEmpty()) {
       return;
     }
@@ -2652,7 +2652,7 @@ public class DatabaseTest {
   }
 
   private void assertNonCanonicalBlobSidecars(final Map<UInt64, List<BlobSidecar>> blobSidecars) {
-    final List<UInt64> slots = blobSidecars.keySet().stream().sorted().collect(toList());
+    final List<UInt64> slots = blobSidecars.keySet().stream().sorted().toList();
     if (slots.isEmpty()) {
       return;
     }
