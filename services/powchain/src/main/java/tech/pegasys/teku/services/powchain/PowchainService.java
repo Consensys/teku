@@ -149,7 +149,8 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
         .orElse(false);
   }
 
-  private void initialize() {
+  @VisibleForTesting
+  void initialize() {
     final AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();

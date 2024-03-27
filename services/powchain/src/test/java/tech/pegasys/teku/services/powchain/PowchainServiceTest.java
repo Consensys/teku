@@ -57,6 +57,7 @@ public class PowchainServiceTest {
 
   @BeforeEach
   public void setup() {
+    when(serviceConfig.createAsyncRunner("powchain")).thenReturn(mock(AsyncRunner.class));
     when(serviceConfig.getTimeProvider()).thenReturn(mock(TimeProvider.class));
     when(serviceConfig.getMetricsSystem()).thenReturn(mock(MetricsSystem.class));
     when(powConfig.isEnabled()).thenReturn(false);
@@ -77,14 +78,15 @@ public class PowchainServiceTest {
 
   @Test
   public void shouldFail_WhenNeitherEth1NorExecutionEndpoint() {
-    assertThatThrownBy(() -> createAndStartPowchainService(Optional.empty()))
+    assertThatThrownBy(() -> createAndInitializePowchainService(Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void shouldFail_WhenNoEth1EndpointButWebsocketsExecutionEndpoint() {
     when(web3JClient.isWebsocketsClient()).thenReturn(true);
-    assertThatThrownBy(() -> createAndStartPowchainService(Optional.of(engineWeb3jClientProvider)))
+    assertThatThrownBy(
+            () -> createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider)))
         .hasMessageContaining("not compatible with Websockets");
   }
 
@@ -101,7 +103,8 @@ public class PowchainServiceTest {
         .thenReturn(mock(Eth1DepositStorageChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
     assertThatNoException()
-        .isThrownBy(() -> createAndStartPowchainService(Optional.of(engineWeb3jClientProvider)));
+        .isThrownBy(
+            () -> createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider)));
   }
 
   @Test
@@ -112,7 +115,7 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/bundled"));
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
@@ -127,7 +130,7 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/bundled", true)));
@@ -142,7 +145,7 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
@@ -158,7 +161,7 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService,
@@ -178,7 +181,7 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
@@ -191,7 +194,7 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/checkpoint"));
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
@@ -205,7 +208,7 @@ public class PowchainServiceTest {
         .thenReturn(Optional.empty());
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     assertThat(
             powchainService
@@ -225,8 +228,12 @@ public class PowchainServiceTest {
     latestFinalizedState = () -> Optional.of(finalizedState);
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
 
+    powchainService.start().join();
+
+    assertThat(powchainService.isRunning()).isTrue();
     assertThat(powchainService.getEth1DepositManager()).isNull();
   }
 
@@ -240,20 +247,22 @@ public class PowchainServiceTest {
     latestFinalizedState = () -> Optional.of(finalizedState);
 
     final PowchainService powchainService =
-        createAndStartPowchainService(Optional.of(engineWeb3jClientProvider));
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
+
+    powchainService.start().join();
 
     powchainService.onNewFinalizedCheckpoint(mock(Checkpoint.class), false);
 
     assertThat(powchainService.isRunning()).isFalse();
   }
 
-  private PowchainService createAndStartPowchainService(
+  private PowchainService createAndInitializePowchainService(
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
     final PowchainService powchainService =
         new PowchainService(
             serviceConfig, powConfig, maybeExecutionWeb3jClientProvider, latestFinalizedState);
-    // start the PowchainService
-    powchainService.start().join();
+    powchainService.initialize();
     return powchainService;
   }
 
