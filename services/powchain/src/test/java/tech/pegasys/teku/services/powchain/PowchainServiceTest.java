@@ -142,7 +142,7 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
@@ -178,7 +178,7 @@ public class PowchainServiceTest {
     when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
