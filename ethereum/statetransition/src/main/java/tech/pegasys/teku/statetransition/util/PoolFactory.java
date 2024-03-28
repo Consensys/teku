@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PoolFactory {
@@ -107,11 +108,13 @@ public class PoolFactory {
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
+      final BlockImportChannel blockImportChannel,
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData) {
     return createPoolForBlockBlobSidecarsTrackers(
+        blockImportChannel,
         spec,
         timeProvider,
         asyncRunner,
@@ -122,6 +125,7 @@ public class PoolFactory {
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
+      final BlockImportChannel blockImportChannel,
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
@@ -130,6 +134,7 @@ public class PoolFactory {
       final UInt64 futureBlockTolerance,
       final int maxTrackers) {
     return new BlockBlobSidecarsTrackersPoolImpl(
+        blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
@@ -143,6 +148,7 @@ public class PoolFactory {
 
   @VisibleForTesting
   BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
+      final BlockImportChannel blockImportChannel,
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
@@ -152,6 +158,7 @@ public class PoolFactory {
       final int maxItems,
       final BlockBlobSidecarsTrackerFactory trackerFactory) {
     return new BlockBlobSidecarsTrackersPoolImpl(
+        blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,

@@ -24,6 +24,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 
 public class BlockBlobSidecarsTracker {
   private static final Logger LOG = LogManager.getLogger();
@@ -48,6 +51,8 @@ public class BlockBlobSidecarsTracker {
   private final AtomicReference<Optional<SignedBeaconBlock>> block =
       new AtomicReference<>(Optional.empty());
 
+  private final AtomicBoolean blockImportOnCompletionEnabled = new AtomicBoolean(false);
+
   private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
@@ -58,6 +63,9 @@ public class BlockBlobSidecarsTracker {
   /**
    * {@link BlockBlobSidecarsTracker#add} and {@link BlockBlobSidecarsTracker#setBlock} methods are
    * assumed to be called from {@link BlockBlobSidecarsTrackersPool} in a synchronized context
+   *
+   * <p>{@link BlockBlobSidecarsTracker#setBlock} is also called in historical sync, but a dedicated
+   * tracker instance will be used, so no synchronized is required
    *
    * @param slotAndBlockRoot slot and block root to create tracker for
    * @param maxBlobsPerBlock max number of blobs per block for the slot
@@ -181,6 +189,20 @@ public class BlockBlobSidecarsTracker {
     checkCompletion();
 
     return true;
+  }
+
+  public void enableBlockImportOnCompletion(final BlockImportChannel blockImportChannel) {
+    final boolean alreadyEnabled = blockImportOnCompletionEnabled.getAndSet(true);
+    if (alreadyEnabled) {
+      return;
+    }
+
+    blobSidecarsComplete
+        .thenCompose(
+            __ ->
+                blockImportChannel.importBlock(
+                    getBlock().orElseThrow(), BroadcastValidationLevel.NOT_REQUIRED))
+        .finish(error -> LOG.error("An error occurred during block import", error));
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {

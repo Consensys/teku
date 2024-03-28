@@ -15,6 +15,11 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -35,7 +40,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 
 public class BlockBlobSidecarsTrackerTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
@@ -386,6 +394,30 @@ public class BlockBlobSidecarsTrackerTest {
     assertThat(blockBlobSidecarsTracker.add(excessiveBlobSidecar2)).isFalse();
 
     assertThat(blockBlobSidecarsTracker.getBlobSidecars().size()).isEqualTo(1);
+  }
+
+  @Test
+  void enableBlockImportOnCompletion_shouldImportOnlyOnceWhenCalled() {
+    BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
+
+    blockBlobSidecarsTracker.setBlock(block);
+
+    final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
+        .thenReturn(
+            SafeFuture.completedFuture(new BlockImportAndBroadcastValidationResults(null, null)));
+
+    blockBlobSidecarsTracker.enableBlockImportOnCompletion(blockImportChannel);
+    blockBlobSidecarsTracker.enableBlockImportOnCompletion(blockImportChannel);
+
+    verifyNoInteractions(blockImportChannel);
+
+    blobSidecarsForBlock.forEach(blockBlobSidecarsTracker::add);
+
+    assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
+
+    verify(blockImportChannel, times(1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   private BlobSidecar createBlobSidecar(final UInt64 index) {
