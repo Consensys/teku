@@ -130,7 +130,11 @@ public class StorageService extends Service implements StorageServiceFacade {
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage =
-                  ChainStorage.create(database, config.getSpec(), config.getDataStorageMode());
+                  ChainStorage.create(
+                      database,
+                      config.getSpec(),
+                      config.getDataStorageMode(),
+                      config.getStateRebuildTimeoutSeconds());
               final DepositStorage depositStorage =
                   DepositStorage.create(
                       eventChannels.getPublisher(Eth1EventsChannel.class),

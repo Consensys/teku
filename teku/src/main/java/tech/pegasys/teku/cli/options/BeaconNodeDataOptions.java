@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
+
 import java.nio.file.Path;
 import java.time.Duration;
 import picocli.CommandLine;
@@ -136,6 +138,15 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "0..1")
   private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
 
+  @Option(
+      names = {"--Xdata-storage-state-rebuild-timeout-seconds"},
+      hidden = true,
+      paramLabel = "<seconds>",
+      description =
+          "Only allow up to an allocated period of time to attempt to rebuild a missing finalized state.",
+      arity = "1")
+  private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
+
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
@@ -153,6 +164,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
                 .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds))
                 .blockPruningLimit(blockPruningLimit)
+                .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
                 .blobsPruningLimit(blobsPruningLimit));
     builder.sync(
