@@ -14,3 +14,5 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Additions and Improvements
 
 ### Bug Fixes
+
+- Fixed a checkpoint sync issue where Teku couldn't start when the finalized state has been transitioned with empty slot(s) 
