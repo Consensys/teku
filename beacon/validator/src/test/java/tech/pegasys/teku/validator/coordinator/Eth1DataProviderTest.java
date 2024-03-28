@@ -70,7 +70,7 @@ public class Eth1DataProviderTest {
     assertThat(slotsInVotingPeriod).isEqualTo(SLOTS_IN_VOTING_PERIOD_ASSERTION);
 
     final Eth1VotingPeriod eth1VotingPeriod = new Eth1VotingPeriod(spec);
-    final Eth1DataCache eth1DataCache = new Eth1DataCache(metricsSystem, eth1VotingPeriod);
+    final Eth1DataCache eth1DataCache = new Eth1DataCache(spec, metricsSystem, eth1VotingPeriod);
     final DepositProvider depositProvider =
         new DepositProvider(
             new StubMetricsSystem(),
