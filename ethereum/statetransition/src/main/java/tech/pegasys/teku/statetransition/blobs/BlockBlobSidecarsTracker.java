@@ -65,7 +65,7 @@ public class BlockBlobSidecarsTracker {
    * assumed to be called from {@link BlockBlobSidecarsTrackersPool} in a synchronized context
    *
    * <p>{@link BlockBlobSidecarsTracker#setBlock} is also called in historical sync, but a dedicated
-   * tracker instance will be used, so no synchronized is required
+   * tracker instance will be used, so no synchronization is required
    *
    * @param slotAndBlockRoot slot and block root to create tracker for
    * @param maxBlobsPerBlock max number of blobs per block for the slot
@@ -197,12 +197,24 @@ public class BlockBlobSidecarsTracker {
       return;
     }
 
+    LOG.debug("Enabling block import on completion for {}", slotAndBlockRoot::toLogString);
+
     blobSidecarsComplete
         .thenCompose(
-            __ ->
-                blockImportChannel.importBlock(
-                    getBlock().orElseThrow(), BroadcastValidationLevel.NOT_REQUIRED))
-        .finish(error -> LOG.error("An error occurred during block import", error));
+            __ -> {
+              LOG.debug("Tracker completed: importing block {}", slotAndBlockRoot::toLogString);
+              return blockImportChannel.importBlock(
+                  getBlock().orElseThrow(), BroadcastValidationLevel.NOT_REQUIRED);
+            })
+        .finish(
+            () ->
+                LOG.debug(
+                    "Block {} imported upon tracker completion", slotAndBlockRoot::toLogString),
+            error ->
+                LOG.error(
+                    "An error occurred importing block {} upon tracker completion",
+                    slotAndBlockRoot.toLogString(),
+                    error));
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
@@ -312,6 +324,7 @@ public class BlockBlobSidecarsTracker {
         .add("isBlockPresent", block.get().isPresent())
         .add("isCompleted", isCompleted())
         .add("fetchTriggered", fetchTriggered)
+        .add("blockImportOnCompletionEnabled", blockImportOnCompletionEnabled.get())
         .add(
             "blobSidecars",
             blobSidecars.entrySet().stream()
