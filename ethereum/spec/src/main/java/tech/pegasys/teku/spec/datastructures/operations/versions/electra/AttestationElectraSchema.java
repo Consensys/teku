@@ -35,7 +35,7 @@ public class AttestationElectraSchema
 
   public AttestationElectraSchema(final SpecConfig specConfig) {
     super(
-        "Attestation",
+        "AttestationElectra",
         namedSchema(
             "aggregation_bits",
             SszListSchema.create(
