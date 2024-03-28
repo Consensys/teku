@@ -20,14 +20,18 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.schema.electra.AttesterSlashingElectra;
+import tech.pegasys.teku.api.schema.interfaces.AttesterSlashingContainer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectra;
 
 @SuppressWarnings("JavaCase")
 public class BeaconBlockBody {
@@ -40,7 +44,7 @@ public class BeaconBlockBody {
   public final Bytes32 graffiti;
 
   public final List<ProposerSlashing> proposer_slashings;
-  public final List<AttesterSlashing> attester_slashings;
+  public final List<AttesterSlashingContainer> attester_slashings;
   public final List<Attestation> attestations;
   public final List<Deposit> deposits;
   public final List<SignedVoluntaryExit> voluntary_exits;
@@ -51,7 +55,7 @@ public class BeaconBlockBody {
       @JsonProperty("eth1_data") final Eth1Data eth1_data,
       @JsonProperty("graffiti") final Bytes32 graffiti,
       @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposer_slashings,
-      @JsonProperty("attester_slashings") final List<AttesterSlashing> attester_slashings,
+      @JsonProperty("attester_slashings") final List<AttesterSlashingContainer> attester_slashings,
       @JsonProperty("attestations") final List<Attestation> attestations,
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntary_exits) {
@@ -72,8 +76,16 @@ public class BeaconBlockBody {
     this.graffiti = body.getGraffiti();
     this.proposer_slashings =
         body.getProposerSlashings().stream().map(ProposerSlashing::new).toList();
-    this.attester_slashings =
-        body.getAttesterSlashings().stream().map(AttesterSlashing::new).toList();
+    this.attester_slashings = new ArrayList<>();
+    body.getAttesterSlashings().stream()
+        .forEach(
+            attesterSlashing -> {
+              if (attesterSlashing.getAttestation1() instanceof IndexedAttestationElectra) {
+                this.attester_slashings.add(new AttesterSlashingElectra(attesterSlashing));
+              } else {
+                this.attester_slashings.add(new AttesterSlashing(attesterSlashing));
+              }
+            });
     this.attestations = body.getAttestations().stream().map(Attestation::new).toList();
     this.deposits = body.getDeposits().stream().map(Deposit::new).toList();
     this.voluntary_exits = body.getVoluntaryExits().stream().map(SignedVoluntaryExit::new).toList();

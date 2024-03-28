@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -25,38 +26,61 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 public class BeaconBlockBodyLists {
 
-  public static BeaconBlockBodyLists ofSpec(Spec spec) {
+  public static BeaconBlockBodyLists ofSpec(final Spec spec) {
     return new BeaconBlockBodyLists(spec);
   }
 
+  private final Spec spec;
   private final BeaconBlockBodySchema<?> blockBodySchema;
 
-  public BeaconBlockBodyLists(Spec spec) {
+  public BeaconBlockBodyLists(final Spec spec) {
+    this.spec = spec;
     blockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
-  public SszList<ProposerSlashing> createProposerSlashings(ProposerSlashing... proposerSlashings) {
+  public SszList<ProposerSlashing> createProposerSlashings(
+      final ProposerSlashing... proposerSlashings) {
     return blockBodySchema.getProposerSlashingsSchema().of(proposerSlashings);
   }
 
-  public SszList<AttesterSlashing> createAttesterSlashings(AttesterSlashing... attesterSlashings) {
+  public SszList<AttesterSlashing> createAttesterSlashings(
+      final AttesterSlashing... attesterSlashings) {
     return blockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings);
   }
 
-  public SszList<Attestation> createAttestations(Attestation... attestations) {
+  public SszList<AttesterSlashing> createAttesterSlashings(
+      final UInt64 slot, final AttesterSlashing... attesterSlashings) {
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .getAttesterSlashingsSchema()
+        .of(attesterSlashings);
+  }
+
+  public SszList<Attestation> createAttestations(final Attestation... attestations) {
     return blockBodySchema.getAttestationsSchema().of(attestations);
   }
 
-  public SszList<Deposit> createDeposits(Deposit... deposits) {
+  public SszList<Attestation> createAttestations(
+      final UInt64 slot, final Attestation... attestations) {
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .getAttestationsSchema()
+        .of(attestations);
+  }
+
+  public SszList<Deposit> createDeposits(final Deposit... deposits) {
     return blockBodySchema.getDepositsSchema().of(deposits);
   }
 
-  public SszList<SignedVoluntaryExit> createVoluntaryExits(SignedVoluntaryExit... voluntaryExits) {
+  public SszList<SignedVoluntaryExit> createVoluntaryExits(
+      final SignedVoluntaryExit... voluntaryExits) {
     return blockBodySchema.getVoluntaryExitsSchema().of(voluntaryExits);
   }
 
   public SszList<SignedBlsToExecutionChange> createBlsToExecutionChanges(
-      SignedBlsToExecutionChange... blsToExecutionChanges) {
+      final SignedBlsToExecutionChange... blsToExecutionChanges) {
     return blockBodySchema
         .toVersionCapella()
         .map(schema -> schema.getBlsToExecutionChangesSchema().of(blsToExecutionChanges))

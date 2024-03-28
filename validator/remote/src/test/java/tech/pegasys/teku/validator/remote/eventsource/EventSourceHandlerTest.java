@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -82,8 +82,10 @@ class EventSourceHandlerTest {
 
   @Test
   void onMessage_shouldHandleAttesterSlashingEvent() throws Exception {
-    final IndexedAttestation indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
-    final IndexedAttestation indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
+    final IndexedAttestationContainer indexedAttestation1 =
+        dataStructureUtil.randomIndexedAttestation();
+    final IndexedAttestationContainer indexedAttestation2 =
+        dataStructureUtil.randomIndexedAttestation();
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
         spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
     final AttesterSlashing attesterSlashing =

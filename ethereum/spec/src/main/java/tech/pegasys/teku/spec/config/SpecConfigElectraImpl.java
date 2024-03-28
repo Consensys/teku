@@ -25,18 +25,24 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
 
   private final int maxDepositReceiptsPerPayload;
   private final int maxExecutionLayerExits;
+  private final int maxAttesterSlashingsElectra;
+  private final int maxAttestationsElectra;
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
       final Bytes4 electraForkVersion,
       final UInt64 electraForkEpoch,
       final int maxDepositReceiptsPerPayload,
-      final int maxExecutionLayerExits) {
+      final int maxExecutionLayerExits,
+      final int maxAttesterSlashingsElectra,
+      final int maxAttestationsElectra) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
     this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
     this.maxExecutionLayerExits = maxExecutionLayerExits;
+    this.maxAttesterSlashingsElectra = maxAttesterSlashingsElectra;
+    this.maxAttestationsElectra = maxAttestationsElectra;
   }
 
   @Override
@@ -60,6 +66,16 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
+  public int getMaxAttesterSlashingsElectra() {
+    return maxAttesterSlashingsElectra;
+  }
+
+  @Override
+  public int getMaxAttestationsElectra() {
+    return maxAttestationsElectra;
+  }
+
+  @Override
   public Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.of(this);
   }
@@ -77,7 +93,9 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         && Objects.equals(electraForkVersion, that.electraForkVersion)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && maxDepositReceiptsPerPayload == that.maxDepositReceiptsPerPayload
-        && maxExecutionLayerExits == that.maxExecutionLayerExits;
+        && maxExecutionLayerExits == that.maxExecutionLayerExits
+        && maxAttesterSlashingsElectra == that.maxAttesterSlashingsElectra
+        && maxAttestationsElectra == that.maxAttestationsElectra;
   }
 
   @Override
@@ -87,6 +105,8 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         electraForkVersion,
         electraForkEpoch,
         maxDepositReceiptsPerPayload,
-        maxExecutionLayerExits);
+        maxDepositReceiptsPerPayload,
+        maxAttesterSlashingsElectra,
+        maxAttestationsElectra);
   }
 }

@@ -42,21 +42,23 @@ class AggregateAttestationBuilder {
 
   public boolean canAggregate(final ValidatableAttestation candidate) {
     return currentAggregateBits == null
-        || !currentAggregateBits.intersects(candidate.getAttestation().getAggregationBits());
+        || !currentAggregateBits.intersects(
+            candidate.getAttestation().getAggregationBitsRequired());
   }
 
   public boolean isFullyIncluded(final ValidatableAttestation candidate) {
     return currentAggregateBits != null
-        && currentAggregateBits.isSuperSetOf(candidate.getAttestation().getAggregationBits());
+        && currentAggregateBits.isSuperSetOf(
+            candidate.getAttestation().getAggregationBitsRequired());
   }
 
   public void aggregate(final ValidatableAttestation attestation) {
     includedAttestations.add(attestation);
     if (currentAggregateBits == null) {
-      currentAggregateBits = attestation.getAttestation().getAggregationBits();
+      currentAggregateBits = attestation.getAttestation().getAggregationBitsRequired();
     } else {
       currentAggregateBits =
-          currentAggregateBits.or(attestation.getAttestation().getAggregationBits());
+          currentAggregateBits.or(attestation.getAttestation().getAggregationBitsRequired());
     }
   }
 
@@ -73,7 +75,7 @@ class AggregateAttestationBuilder {
                 BLS.aggregate(
                     includedAttestations.stream()
                         .map(ValidatableAttestation::getAttestation)
-                        .map(Attestation::getAggregateSignature)
+                        .map(Attestation::getAggregateSignatureRequired)
                         .toList())));
   }
 

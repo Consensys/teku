@@ -32,8 +32,12 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -80,7 +84,12 @@ public interface SchemaDefinitions {
     return getAggregateAndProofSchema().getAttestationSchema();
   }
 
+  AttestationContainerSchema<AttestationContainer> getAttestationContainerSchema();
+
   IndexedAttestationSchema getIndexedAttestationSchema();
+
+  IndexedAttestationContainerSchema<IndexedAttestationContainer>
+      getIndexedAttestationContainerSchema();
 
   AttesterSlashingSchema getAttesterSlashingSchema();
 

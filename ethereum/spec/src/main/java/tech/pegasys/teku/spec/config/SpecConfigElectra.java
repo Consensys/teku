@@ -39,6 +39,10 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxExecutionLayerExits();
 
+  int getMaxAttesterSlashingsElectra();
+
+  int getMaxAttestationsElectra();
+
   @Override
   Optional<SpecConfigElectra> toVersionElectra();
 }

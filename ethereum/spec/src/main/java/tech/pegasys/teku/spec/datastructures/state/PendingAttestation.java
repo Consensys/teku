@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
@@ -85,8 +86,8 @@ public class PendingAttestation
   }
 
   @Override
-  public SszBitlist getAggregationBits() {
-    return getField0();
+  public Optional<SszBitlist> getAggregationBits() {
+    return Optional.of(getField0());
   }
 
   @Override

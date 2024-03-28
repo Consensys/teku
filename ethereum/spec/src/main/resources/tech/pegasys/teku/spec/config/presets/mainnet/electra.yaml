@@ -6,3 +6,10 @@
 MAX_DEPOSIT_RECEIPTS_PER_PAYLOAD: 8192
 # 2**4 (= 16) exits
 MAX_EXECUTION_LAYER_EXITS: 16
+
+# Updated max operations per block
+# ---------------------------------------------------------------
+# 2**0 (= 1)
+MAX_ATTESTER_SLASHINGS_ELECTRA: 1
+# 2**3 (= 8)
+MAX_ATTESTATIONS_ELECTRA: 8

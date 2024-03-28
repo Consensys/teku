@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.propertytest.suppliers;
 
+import java.util.Optional;
 import java.util.function.Function;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<T> {
   private final Function<DataStructureUtil, T> accessor;
   private final SpecMilestone minimumSpecMilestone;
+  private Optional<SpecMilestone> maximumSpecMilestone = Optional.empty();
 
   protected DataStructureUtilSupplier(final Function<DataStructureUtil, T> accessor) {
     this.accessor = accessor;
@@ -37,10 +39,25 @@ public abstract class DataStructureUtilSupplier<T> implements ArbitrarySupplier<
     this.minimumSpecMilestone = minimumSpecMilestone;
   }
 
+  protected DataStructureUtilSupplier(
+      final Function<DataStructureUtil, T> accessor,
+      final SpecMilestone minimumSpecMilestone,
+      final SpecMilestone maximumSpecMilestone) {
+    this.accessor = accessor;
+    this.minimumSpecMilestone = minimumSpecMilestone;
+    this.maximumSpecMilestone = Optional.of(maximumSpecMilestone);
+  }
+
   @Override
   public Arbitrary<T> get() {
-    Arbitrary<Integer> seed = Arbitraries.integers();
-    Arbitrary<Spec> spec = new SpecSupplier(minimumSpecMilestone).get();
+    final Arbitrary<Integer> seed = Arbitraries.integers();
+    final Arbitrary<Spec> spec =
+        maximumSpecMilestone
+            .map(
+                maximumSpecMilestone ->
+                    new SpecSupplier(minimumSpecMilestone, maximumSpecMilestone).get())
+            .orElse(new SpecSupplier(minimumSpecMilestone).get());
+
     Arbitrary<DataStructureUtil> dsu = Combinators.combine(seed, spec).as(DataStructureUtil::new);
     return dsu.map(accessor);
   }

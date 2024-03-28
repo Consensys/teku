@@ -32,6 +32,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private UInt64 electraForkEpoch;
   private Integer maxDepositReceiptsPerPayload;
   private Integer maxExecutionLayerExits;
+  private Integer maxAttesterSlashingsElectra;
+  private Integer maxAttestationsElectra;
 
   ElectraBuilder() {}
 
@@ -42,7 +44,9 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         electraForkVersion,
         electraForkEpoch,
         maxDepositReceiptsPerPayload,
-        maxExecutionLayerExits);
+        maxExecutionLayerExits,
+        maxAttesterSlashingsElectra,
+        maxAttestationsElectra);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -69,6 +73,18 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
+  public ElectraBuilder maxAttesterSlashingsElectra(final Integer maxAttesterSlashingsElectra) {
+    checkNotNull(maxAttesterSlashingsElectra);
+    this.maxAttesterSlashingsElectra = maxAttesterSlashingsElectra;
+    return this;
+  }
+
+  public ElectraBuilder maxAttestationsElectra(final Integer maxAttestationsElectra) {
+    checkNotNull(maxAttestationsElectra);
+    this.maxAttestationsElectra = maxAttestationsElectra;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (electraForkEpoch == null) {
@@ -91,6 +107,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("electraForkEpoch", electraForkEpoch);
     constants.put("electraForkVersion", electraForkVersion);
     constants.put("maxDepositReceiptsPerPayload", maxDepositReceiptsPerPayload);
+    constants.put("maxAttesterSlashingsElectra", maxAttesterSlashingsElectra);
+    constants.put("maxAttestationsElectra", maxAttestationsElectra);
 
     return constants;
   }

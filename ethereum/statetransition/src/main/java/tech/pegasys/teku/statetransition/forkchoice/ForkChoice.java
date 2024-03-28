@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -791,7 +791,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private boolean validateBlockAttestation(
       final ForkChoiceStrategy forkChoiceStrategy,
       final UInt64 currentEpoch,
-      final IndexedAttestation attestation) {
+      final IndexedAttestationContainer attestation) {
     return spec.atSlot(attestation.getData().getSlot())
         .getForkChoiceUtil()
         .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.getData())
@@ -879,7 +879,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     "Attempting to perform fork choice operations before store has been initialized"));
   }
 
-  private IndexedAttestation getIndexedAttestation(final ValidatableAttestation attestation) {
+  private IndexedAttestationContainer getIndexedAttestation(
+      final ValidatableAttestation attestation) {
     return attestation
         .getIndexedAttestation()
         .orElseThrow(

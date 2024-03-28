@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -59,7 +60,7 @@ public class AttestationGenerator {
   }
 
   public static int getSingleAttesterIndex(Attestation attestation) {
-    return attestation.getAggregationBits().streamAllSetBits().findFirst().orElse(-1);
+    return attestation.getAggregationBitsRequired().streamAllSetBits().findFirst().orElse(-1);
   }
 
   public static AttestationData diffSlotAttestationData(UInt64 slot, AttestationData data) {
@@ -87,10 +88,13 @@ public class AttestationGenerator {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
     final AttestationSchema attestationSchema = srcAttestations.get(0).getSchema();
     int targetBitlistSize =
-        srcAttestations.stream().mapToInt(a -> a.getAggregationBits().size()).max().getAsInt();
+        srcAttestations.stream()
+            .mapToInt(a -> a.getAggregationBitsRequired().size())
+            .max()
+            .getAsInt();
     SszBitlist targetBitlist =
         srcAttestations.stream()
-            .map(Attestation::getAggregationBits)
+            .map(AttestationContainer::getAggregationBitsRequired)
             .reduce(
                 attestationSchema.getAggregationBitsSchema().ofBits(targetBitlistSize),
                 SszBitlist::or,
@@ -98,7 +102,7 @@ public class AttestationGenerator {
     BLSSignature targetSig =
         BLS.aggregate(
             srcAttestations.stream()
-                .map(Attestation::getAggregateSignature)
+                .map(attestation -> attestation.getAggregateSignature().orElseThrow())
                 .collect(Collectors.toList()));
 
     return attestationSchema.create(targetBitlist, srcAttestations.get(0).getData(), targetSig);

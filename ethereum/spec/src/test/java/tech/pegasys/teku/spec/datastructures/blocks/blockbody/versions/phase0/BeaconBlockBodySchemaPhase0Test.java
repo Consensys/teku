@@ -28,15 +28,23 @@ public class BeaconBlockBodySchemaPhase0Test {
   public void create_minimal() {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final IndexedAttestationSchema indexAttestationSchemaA =
+        new IndexedAttestationSchema(specConfig);
+    final IndexedAttestationSchema indexAttestationSchemaB =
+        new IndexedAttestationSchema(specConfig);
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            new AttesterSlashingSchema(
+                "AttesterSlashing",
+                indexAttestationSchemaA.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            new AttesterSlashingSchema(
+                "AttesterSlashing",
+                indexAttestationSchemaB.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);
@@ -46,15 +54,23 @@ public class BeaconBlockBodySchemaPhase0Test {
   public void create_mainnet() {
     final Spec spec = TestSpecFactory.createMainnetPhase0();
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final IndexedAttestationSchema indexAttestationSchemaA =
+        new IndexedAttestationSchema(specConfig);
+    final IndexedAttestationSchema indexAttestationSchemaB =
+        new IndexedAttestationSchema(specConfig);
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            new AttesterSlashingSchema(
+                "AttesterSlashing",
+                indexAttestationSchemaA.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
+            new AttesterSlashingSchema(
+                "AttesterSlashing",
+                indexAttestationSchemaB.castTypeToIndexedAttestationContainer()),
             "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);

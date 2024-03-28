@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -867,7 +868,8 @@ public class Spec {
   }
 
   // Attestation helpers
-  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+  public IntList getAttestingIndices(
+      final BeaconState state, final AttestationContainer attestation) {
     return atState(state).getAttestationUtil().getAttestingIndices(state, attestation);
   }
 

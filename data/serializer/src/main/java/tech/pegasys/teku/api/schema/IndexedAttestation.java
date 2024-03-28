@@ -21,13 +21,14 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
+import tech.pegasys.teku.api.schema.interfaces.IndexedAttestationContainer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 
 @SuppressWarnings("JavaCase")
-public class IndexedAttestation {
+public class IndexedAttestation implements IndexedAttestationContainer {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UInt64> attesting_indices;
 
@@ -37,7 +38,8 @@ public class IndexedAttestation {
   public final BLSSignature signature;
 
   public IndexedAttestation(
-      tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
+      tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
+          indexedAttestation) {
     this.attesting_indices = indexedAttestation.getAttestingIndices().streamUnboxed().toList();
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());
@@ -53,12 +55,12 @@ public class IndexedAttestation {
     this.signature = signature;
   }
 
-  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
+  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
       asInternalIndexedAttestation(final Spec spec) {
     return asInternalIndexedAttestation(spec.atSlot(data.slot));
   }
 
-  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
+  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
       asInternalIndexedAttestation(final SpecVersion spec) {
     final IndexedAttestationSchema indexedAttestationSchema =
         spec.getSchemaDefinitions().getIndexedAttestationSchema();

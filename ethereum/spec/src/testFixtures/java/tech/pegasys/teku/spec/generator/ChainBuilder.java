@@ -570,11 +570,11 @@ public class ChainBuilder {
     try {
       SszList<Attestation> attestations =
           BeaconBlockBodyLists.ofSpec(spec)
-              .createAttestations(options.getAttestations().toArray(new Attestation[0]));
+              .createAttestations(slot, options.getAttestations().toArray(new Attestation[0]));
       SszList<AttesterSlashing> attesterSlashings =
           BeaconBlockBodyLists.ofSpec(spec)
               .createAttesterSlashings(
-                  options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
+                  slot, options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
       SszList<ProposerSlashing> proposerSlashings =
           BeaconBlockBodyLists.ofSpec(spec)
               .createProposerSlashings(

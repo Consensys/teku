@@ -47,12 +47,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -293,7 +294,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected void assertAttestationValid(
-      final MutableBeaconState state, final Attestation attestation) {
+      final MutableBeaconState state, final AttestationContainer attestation) {
     final AttestationData data = attestation.getData();
 
     final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
@@ -302,10 +303,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         "process_attestations: %s",
         invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-    IntList committee =
+    final IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
-        attestation.getAggregationBits().size() == committee.size(),
+        attestation.getAggregationBitsRequired().size() == committee.size(),
         "process_attestations: Attestation aggregation bits and committee don't have the same length");
   }
 
@@ -883,7 +884,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   public interface IndexedAttestationProvider {
-    IndexedAttestation getIndexedAttestation(final Attestation attestation);
+    IndexedAttestationContainer getIndexedAttestation(final AttestationContainer attestation);
   }
 
   protected interface BlockProcessingAction {
