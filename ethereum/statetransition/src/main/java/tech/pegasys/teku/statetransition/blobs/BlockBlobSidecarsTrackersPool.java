@@ -85,6 +85,9 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
         }
 
         @Override
+        public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {}
+
+        @Override
         public void subscribeRequiredBlobSidecar(
             final RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber) {}
 
@@ -125,6 +128,8 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
   BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(SignedBeaconBlock block);
 
   Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(SignedBeaconBlock block);
+
+  void enableBlockImportOnCompletion(SignedBeaconBlock block);
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
 
