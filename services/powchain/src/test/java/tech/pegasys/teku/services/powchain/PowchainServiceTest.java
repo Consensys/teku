@@ -252,6 +252,8 @@ public class PowchainServiceTest {
 
     powchainService.start().join();
 
+    assertThat(powchainService.isRunning()).isTrue();
+
     powchainService.onNewFinalizedCheckpoint(mock(Checkpoint.class), false);
 
     assertThat(powchainService.isRunning()).isFalse();
