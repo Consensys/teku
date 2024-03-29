@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class AttestationElectraSchema
     extends ContainerSchema4<
-        AttestationElectra, SszList<SszBitlist>, AttestationData, SszBitvector, SszSignature>
+        AttestationElectra, SszBitlist, AttestationData, SszBitvector, SszSignature>
     implements AttestationContainerSchema<AttestationElectra> {
 
   public AttestationElectraSchema(final SpecConfig specConfig) {
@@ -38,9 +38,9 @@ public class AttestationElectraSchema
         "AttestationElectra",
         namedSchema(
             "aggregation_bits",
-            SszListSchema.create(
-                SszBitlistSchema.create(specConfig.getMaxValidatorsPerCommittee()),
-                specConfig.getMaxCommitteesPerSlot())),
+            SszBitlistSchema.create(
+                (long) specConfig.getMaxValidatorsPerCommittee()
+                    * specConfig.getMaxCommitteesPerSlot())),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema(
             "committee_bits", SszBitvectorSchema.create(specConfig.getMaxCommitteesPerSlot())),
@@ -58,7 +58,7 @@ public class AttestationElectraSchema
   }
 
   public AttestationElectra create(
-      final SszList<SszBitlist> aggregationBits,
+      final SszBitlist aggregationBits,
       final AttestationData data,
       final SszBitvector committeeBits,
       final BLSSignature signature) {

@@ -18,7 +18,6 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -47,11 +46,11 @@ public interface AttestationContainer extends SszData, SszContainer {
         .orElseThrow(() -> new IllegalArgumentException("Missing aggregate signature"));
   }
 
-  default Optional<SszList<SszBitlist>> getAggregationBitsElectra() {
+  default Optional<SszBitlist> getAggregationBitsElectra() {
     return Optional.empty();
   }
 
-  default SszList<SszBitlist> getAggregationBitsElectraRequired() {
+  default SszBitlist getAggregationBitsElectraRequired() {
     return getAggregationBitsElectra()
         .orElseThrow(() -> new IllegalArgumentException("Missing aggregation bits"));
   }

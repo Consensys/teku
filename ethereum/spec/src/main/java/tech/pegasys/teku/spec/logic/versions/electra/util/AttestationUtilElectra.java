@@ -17,7 +17,6 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -45,7 +44,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
    * @return
    * @throws IllegalArgumentException
    * @see
-   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/_features/eip7549/beacon-chain.md#modified-get_attesting_indices</a>
    */
   @Override
   public IntList getAttestingIndices(
@@ -54,35 +53,31 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         attestation
             .getCommitteeIndices()
             .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
-    final SszList<SszBitlist> aggregationBits = attestation.getAggregationBitsElectraRequired();
+    final SszBitlist aggregationBits = attestation.getAggregationBitsElectraRequired();
     final IntList attestingIndices = new IntArrayList();
-    committeeIndices.forEach(
-        committeeIndex -> {
-          final SszBitlist attesterBits = aggregationBits.get(committeeIndex.intValue());
-          final IntList committeeAttesters =
-              getCommitteeAttesters(
-                  state, attestation.getData().getSlot(), attesterBits, committeeIndex);
-          attestingIndices.addAll(committeeAttesters);
-        });
+    int committeeOffset = 0;
+    for (final UInt64 committeeIndex : committeeIndices) {
+      final IntList committee =
+          beaconStateAccessors.getBeaconCommittee(
+              state, attestation.getData().getSlot(), committeeIndex);
+      final IntList committeeAttesters =
+          getCommitteeAttesters(committee, aggregationBits, committeeOffset);
+      attestingIndices.addAll(committeeAttesters);
+      committeeOffset += committee.size();
+    }
     return attestingIndices;
   }
 
   public IntList getCommitteeAttesters(
-      final BeaconState state,
-      final UInt64 slot,
-      final SszBitlist attesterBits,
-      final UInt64 committeeIndex) {
+      final IntList committee, final SszBitlist aggregationBits, final int committeeOffset) {
     return IntList.of(
-        streamCommitteeAttesters(state, slot, attesterBits, committeeIndex).toArray());
+        streamCommitteeAttesters(committee, aggregationBits, committeeOffset).toArray());
   }
 
   public IntStream streamCommitteeAttesters(
-      final BeaconState state,
-      final UInt64 slot,
-      final SszBitlist attesterBits,
-      final UInt64 committeeIndex) {
-    final IntList committee = beaconStateAccessors.getBeaconCommittee(state, slot, committeeIndex);
-    final IntList attestingBits = attesterBits.getAllSetBits();
-    return attestingBits.intStream().map(committee::getInt);
+      final IntList committee, final SszBitlist aggregationBits, final int committeeOffset) {
+    return IntStream.range(committeeOffset, committeeOffset + committee.size())
+        .filter(aggregationBits::isSet)
+        .map(attesterIndex -> committee.getInt(attesterIndex - committeeOffset));
   }
 }
