@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -161,6 +162,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggr
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -808,6 +810,28 @@ public final class DataStructureUtil {
 
   public Attestation randomAttestation(final long slot) {
     return randomAttestation(UInt64.valueOf(slot));
+  }
+
+  public AttestationElectra randomAttestationElectra() {
+    return randomAttestationElectra(randomUInt64());
+  }
+
+  public AttestationElectra randomAttestationElectra(final UInt64 slot) {
+    final int maxCommitteePerSlot =
+        SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
+            .getMaxCommitteesPerSlot();
+    final int maxValidatorsPerCommittee =
+        SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
+            .getMaxValidatorsPerCommittee();
+    final SszBitlist randomAggregationBits =
+        randomBitlist(maxCommitteePerSlot * maxValidatorsPerCommittee);
+    return getElectraSchemaDefinitions(slot)
+        .getAttestationElectraSchema()
+        .create(
+            randomAggregationBits,
+            randomAttestationData(),
+            randomSszBitvector(maxCommitteePerSlot),
+            randomSignature());
   }
 
   public Attestation randomAttestation(final UInt64 slot) {

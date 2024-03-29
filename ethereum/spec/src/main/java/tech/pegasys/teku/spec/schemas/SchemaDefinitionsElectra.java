@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -75,6 +76,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final DepositReceiptSchema depositReceiptSchema;
 
   private final ExecutionLayerExitSchema executionLayerExitSchema;
+  private final AttestationElectraSchema attestationElectraSchema;
 
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
@@ -83,6 +85,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
     this.executionPayloadHeaderSchemaElectra =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
+    this.attestationElectraSchema = new AttestationElectraSchema(specConfig);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaElectraImpl.create(
             specConfig,
@@ -254,5 +257,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  public AttestationElectraSchema getAttestationElectraSchema() {
+    return attestationElectraSchema;
   }
 }

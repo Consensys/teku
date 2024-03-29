@@ -109,7 +109,7 @@ public abstract class AttestationUtil {
             .map(UInt64::valueOf)
             .collect(indexedAttestationSchema.getAttestingIndicesSchema().collectorUnboxed()),
         attestation.getData(),
-        attestation.getAggregateSignature());
+        attestation.getAggregateSignatureRequired());
   }
 
   /**
@@ -130,7 +130,7 @@ public abstract class AttestationUtil {
   public IntStream streamAttestingIndices(
       final BeaconState state, final AttestationContainer attestation) {
     final AttestationData data = attestation.getData();
-    final SszBitlist aggregationBits = attestation.getAggregationBits();
+    final SszBitlist aggregationBits = attestation.getAggregationBitsRequired();
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
