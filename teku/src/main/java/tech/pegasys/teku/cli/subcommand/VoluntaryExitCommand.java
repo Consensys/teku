@@ -298,13 +298,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     }
 
     validateOrDefaultEpoch();
-    // Lock-in domain on Capella after Capella. See
-    // https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md?plain=1#L406-L424
-    if (spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      this.fork = spec.getForkSchedule().getFork(SpecMilestone.CAPELLA);
-    } else {
-      this.fork = spec.getForkSchedule().getFork(epoch);
-    }
+    fork = spec.getForkSchedule().getFork(epoch);
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();
