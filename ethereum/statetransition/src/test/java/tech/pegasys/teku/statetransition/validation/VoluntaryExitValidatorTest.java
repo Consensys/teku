@@ -27,15 +27,25 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
+import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -69,6 +79,35 @@ public class VoluntaryExitValidatorTest {
     when(mockSpec.validateVoluntaryExit(getBestState(), exit)).thenReturn(Optional.empty());
     when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
         .thenReturn(true);
+    assertValidationResult(exit, ACCEPT);
+  }
+
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
+      throws Exception {
+    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
+    recentChainData = MemoryOnlyRecentChainData.create(spec);
+    beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
+    beaconChainUtil.initializeStorage();
+    // cannot exit before epoch 64
+    beaconChainUtil.createAndImportBlockAtSlot(spec.slotsPerEpoch(UInt64.ZERO) * 64L);
+    this.voluntaryExitValidator = new VoluntaryExitValidator(spec, recentChainData);
+
+    final UInt64 currentEpoch = spec.getCurrentEpoch(getBestState());
+    assertThat(spec.atEpoch(currentEpoch).getMilestone()).isEqualTo(specMilestone);
+
+    final VoluntaryExit voluntaryExit = new VoluntaryExit(currentEpoch, UInt64.ZERO);
+    BLSSignature exitSignature =
+        new LocalSigner(spec, VALIDATOR_KEYS.get(0), SyncAsyncRunner.SYNC_RUNNER)
+            .signVoluntaryExit(
+                voluntaryExit,
+                new ForkInfo(
+                    getBestState().getForkInfo().getFork(),
+                    getBestState().getGenesisValidatorsRoot()))
+            .join();
+    final SignedVoluntaryExit exit = new SignedVoluntaryExit(voluntaryExit, exitSignature);
+
     assertValidationResult(exit, ACCEPT);
   }
 
