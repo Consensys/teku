@@ -85,7 +85,6 @@ public class PeerManager implements ConnectionHandler {
       peersLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
     }
 
-    // fixme correct or LIBP2P like above?
     final LabelledGauge peerCounter =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.NETWORK, // fixme correct or LIBP2P like above?
