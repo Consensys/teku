@@ -59,7 +59,6 @@ public class PeerManager implements ConnectionHandler {
   private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
       Subscribers.create(true);
 
-  private final LabelledGauge peerCounter;
   private final AtomicLong inboundPeers = new AtomicLong(0);
   private final AtomicLong outboundPeers = new AtomicLong(0);
 
@@ -86,14 +85,15 @@ public class PeerManager implements ConnectionHandler {
       peersLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
     }
 
-    this.peerCounter =
+    // fixme correct or LIBP2P like above?
+    final LabelledGauge peerCounter =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.NETWORK, // fixme correct or LIBP2P like above?
             "peer_count",
             "The number of peers by direction including inbound and outbound",
             "direction");
-    this.peerCounter.labels(inboundPeers::get, "inbound");
-    this.peerCounter.labels(outboundPeers::get, "outbound");
+    peerCounter.labels(inboundPeers::get, "inbound");
+    peerCounter.labels(outboundPeers::get, "outbound");
   }
 
   @Override
