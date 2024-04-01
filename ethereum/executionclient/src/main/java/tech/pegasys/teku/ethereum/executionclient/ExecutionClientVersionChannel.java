@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
-import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 
-public interface ExecutionClientVersionChannel extends ExecutionClientEventsChannel {
-  void onExecutionClientVersion(ClientVersion executionClientVersion);
+public interface ExecutionClientVersionChannel extends VoidReturningChannelInterface {
 
-  @Override
-  default void onAvailabilityUpdated(boolean isAvailable) {}
+  void onExecutionClientVersion(ClientVersion executionClientVersion);
 }

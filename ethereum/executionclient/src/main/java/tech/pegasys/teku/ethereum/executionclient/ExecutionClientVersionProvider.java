@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +38,7 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
   private final ExecutionLayerChannel executionLayerChannel;
   private final ExecutionClientVersionChannel executionClientVersionChannel;
   private final ClientVersion consensusClientVersion;
+
   private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>(null);
 
   public ExecutionClientVersionProvider(
@@ -74,7 +77,8 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
     if (executionClientVersion.equals(this.executionClientVersion.get())) {
       return;
     }
-
+    EVENT_LOG.logExecutionClientVersion(
+        executionClientVersion.name(), executionClientVersion.version());
     this.executionClientVersion.set(executionClientVersion);
     executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
   }
