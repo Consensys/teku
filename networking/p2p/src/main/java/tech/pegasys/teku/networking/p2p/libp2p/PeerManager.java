@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -58,6 +59,10 @@ public class PeerManager implements ConnectionHandler {
   private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
       Subscribers.create(true);
 
+  private final LabelledGauge peerCounter;
+  private final AtomicLong inboundPeers = new AtomicLong(0);
+  private final AtomicLong outboundPeers = new AtomicLong(0);
+
   public PeerManager(
       final MetricsSystem metricsSystem,
       final ReputationManager reputationManager,
@@ -80,6 +85,15 @@ public class PeerManager implements ConnectionHandler {
     for (PeerClientType type : PeerClientType.values()) {
       peersLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
     }
+
+    this.peerCounter =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.NETWORK, // fixme correct or LIBP2P like above?
+            "peer_count",
+            "The number of peers by direction including inbound and outbound",
+            "direction");
+    this.peerCounter.labels(inboundPeers::get, "inbound");
+    this.peerCounter.labels(outboundPeers::get, "outbound");
   }
 
   @Override
@@ -129,6 +143,7 @@ public class PeerManager implements ConnectionHandler {
                       "No peer registered for established connection to " + nodeId);
                 }
               }
+              incrementPeerCounter(connectedPeer);
               reputationManager.reportInitiatedConnectionSuccessful(peer);
               return connectedPeer;
             })
@@ -160,6 +175,7 @@ public class PeerManager implements ConnectionHandler {
     } else {
       LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
       peer.disconnectImmediately(Optional.empty(), true);
+      decrementPeerCounter(peer);
       throw new PeerAlreadyConnectedException(peer);
     }
   }
@@ -170,6 +186,7 @@ public class PeerManager implements ConnectionHandler {
       LOG.debug("Peer disconnected: {}", peer.getId());
       reputationManager.reportDisconnection(peer.getAddress(), reason, locallyInitiated);
       peerHandlers.forEach(h -> h.onDisconnect(peer));
+      decrementPeerCounter(peer);
     }
   }
 
@@ -179,5 +196,21 @@ public class PeerManager implements ConnectionHandler {
 
   public int getPeerCount() {
     return connectedPeerMap.size();
+  }
+
+  private void incrementPeerCounter(final Peer peer) {
+    if (peer.connectionInitiatedLocally()) {
+      outboundPeers.incrementAndGet();
+    } else {
+      inboundPeers.incrementAndGet();
+    }
+  }
+
+  private void decrementPeerCounter(final Peer peer) {
+    if (peer.connectionInitiatedLocally()) {
+      outboundPeers.decrementAndGet();
+    } else {
+      inboundPeers.decrementAndGet();
+    }
   }
 }
