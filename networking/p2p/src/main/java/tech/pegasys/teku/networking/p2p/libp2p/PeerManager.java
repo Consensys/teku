@@ -74,7 +74,7 @@ public class PeerManager implements ConnectionHandler {
     this.peerScoreFunction = peerScoreFunction;
     metricsSystem.createGauge(
         TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
-    final LabelledGauge peersLabelledGauge =
+    final LabelledGauge peerClientLabelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.LIBP2P,
             "connected_peers_current",
@@ -82,17 +82,17 @@ public class PeerManager implements ConnectionHandler {
             "client");
 
     for (PeerClientType type : PeerClientType.values()) {
-      peersLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
+      peerClientLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
     }
 
-    final LabelledGauge peerCounter =
+    final LabelledGauge peerDirectionLabelledGauge =
         metricsSystem.createLabelledGauge(
-            TekuMetricCategory.NETWORK, // fixme correct or LIBP2P like above?
-            "peer_count",
+            TekuMetricCategory.LIBP2P,
+            "peers_direction",
             "The number of peers by direction including inbound and outbound",
             "direction");
-    peerCounter.labels(inboundPeers::get, "inbound");
-    peerCounter.labels(outboundPeers::get, "outbound");
+    peerDirectionLabelledGauge.labels(inboundPeers::get, "inbound");
+    peerDirectionLabelledGauge.labels(outboundPeers::get, "outbound");
   }
 
   @Override

@@ -78,11 +78,15 @@ public class PeerManagerTest {
   @Test
   public void shouldCreatePeerTypeMetrics() {
     final MetricsSystem metricsSystem = mock(MetricsSystem.class);
-    final LabelledGauge gauge = mock(LabelledGauge.class);
+    final LabelledGauge peerClientLabelledGauge = mock(LabelledGauge.class);
+    final LabelledGauge peerDirectionLabelledGauge = mock(LabelledGauge.class);
 
     when(metricsSystem.createLabelledGauge(
-            eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), any()))
-        .thenReturn(gauge);
+            eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), eq("client")))
+        .thenReturn(peerClientLabelledGauge);
+    when(metricsSystem.createLabelledGauge(
+            eq(TekuMetricCategory.LIBP2P), eq("peers_direction"), any(), eq("direction")))
+        .thenReturn(peerDirectionLabelledGauge);
     new PeerManager(
         metricsSystem,
         reputationManager,
@@ -91,8 +95,10 @@ public class PeerManagerTest {
         peerId -> 0.0);
 
     for (PeerClientType type : PeerClientType.values()) {
-      verify(gauge).labels(any(), eq(type.getDisplayName()));
+      verify(peerClientLabelledGauge).labels(any(), eq(type.getDisplayName()));
     }
+    verify(peerDirectionLabelledGauge).labels(any(), eq("inbound"));
+    verify(peerDirectionLabelledGauge).labels(any(), eq("outbound"));
   }
 
   @Test
