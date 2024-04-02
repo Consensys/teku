@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
@@ -1669,9 +1668,7 @@ public final class DataStructureUtil {
   }
 
   public Validator randomValidator(final BLSPublicKey publicKey) {
-    return validatorBuilder()
-        .publicKey(publicKey)
-        .build();
+    return validatorBuilder().publicKey(publicKey).build();
   }
 
   public Validator randomValidator(
@@ -2460,7 +2457,8 @@ public final class DataStructureUtil {
         .create(randomEth1Address(), randomPublicKey());
   }
 
-  public ExecutionLayerExit executionLayerExit(final Bytes20 sourceAddress, BLSPublicKey validatorPubKey) {
+  public ExecutionLayerExit executionLayerExit(
+      final Bytes20 sourceAddress, BLSPublicKey validatorPubKey) {
     return getElectraSchemaDefinitions(randomSlot())
         .getExecutionLayerExitSchema()
         .create(sourceAddress, validatorPubKey);
