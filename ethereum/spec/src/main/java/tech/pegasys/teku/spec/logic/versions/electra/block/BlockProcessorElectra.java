@@ -14,8 +14,13 @@
 package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -23,12 +28,15 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -79,19 +87,57 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
-    super.processOperationsNoValidation(state, body, indexedAttestationCache);
+    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
+
+    //TODO-lucas maybe we need a better way of defining the order of operations?
 
     safelyProcess(
-        () ->
-            processDepositReceipts(
-                MutableBeaconStateElectra.required(state),
-                body.getOptionalExecutionPayload()
-                    .flatMap(ExecutionPayload::toVersionElectra)
-                    .map(ExecutionPayloadElectra::getDepositReceipts)
-                    .orElseThrow(
-                        () ->
-                            new BlockProcessingException(
-                                "Deposit receipts were not found during block processing."))));
+        () -> {
+          verifyOutstandingDepositsAreProcessed(state, body);
+
+          final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+              beaconStateMutators.createValidatorExitContextSupplier(state);
+
+          processProposerSlashingsNoValidation(
+              state, body.getProposerSlashings(), validatorExitContextSupplier);
+          processAttesterSlashings(
+              state, body.getAttesterSlashings(), validatorExitContextSupplier);
+          processAttestationsNoVerification(state, body.getAttestations(), indexedAttestationCache);
+          processDeposits(state, body.getDeposits());
+          processVoluntaryExitsNoValidation(
+              state, body.getVoluntaryExits(), validatorExitContextSupplier);
+
+          processExecutionPayloadExits(electraState, getExecutionLayerExitsFromBlock(body));
+
+          processBlsToExecutionChangesNoValidation(
+              electraState,
+              body.getOptionalBlsToExecutionChanges()
+                  .orElseThrow(
+                      () ->
+                          new BlockProcessingException(
+                              "BlsToExecutionChanges was not found during block processing.")));
+
+          processDepositReceipts(
+              electraState,
+              body.getOptionalExecutionPayload()
+                  .flatMap(ExecutionPayload::toVersionElectra)
+                  .map(ExecutionPayloadElectra::getDepositReceipts)
+                  .orElseThrow(
+                      () ->
+                          new BlockProcessingException(
+                              "Deposit receipts were not found during block processing.")));
+        });
+  }
+
+  private static SszList<ExecutionLayerExit> getExecutionLayerExitsFromBlock(
+      final BeaconBlockBody body) throws BlockProcessingException {
+    return body.getOptionalExecutionPayload()
+        .flatMap(ExecutionPayload::toVersionElectra)
+        .map(ExecutionPayloadElectra::getExits)
+        .orElseThrow(
+            () ->
+                new BlockProcessingException(
+                    "Execution layer exits were not found during block processing."));
   }
 
   @Override
@@ -119,6 +165,79 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
   }
 
+  /*
+   Implements process_execution_layer_exit from consensus-spec (EIP-7002)
+  */
+  public void processExecutionPayloadExits(
+      final MutableBeaconStateElectra state,
+      final SszList<ExecutionLayerExit> executionLayerExits) {
+    final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+        beaconStateMutators.createValidatorExitContextSupplier(state);
+
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
+
+    executionLayerExits.forEach(
+        exit -> {
+          final OptionalInt maybeValidatorIndex =
+              IntStream.range(0, state.getValidators().size())
+                  .filter(
+                      idx ->
+                          state
+                              .getValidators()
+                              .get(idx)
+                              .getPublicKey()
+                              .equals(exit.getValidatorPublicKey()))
+                  .findFirst();
+          if (maybeValidatorIndex.isEmpty()) {
+            return;
+          }
+
+          final int validatorIndex = maybeValidatorIndex.getAsInt();
+          final Validator validator = state.getValidators().get(validatorIndex);
+
+          // Check if validator has eth1 credentials
+          boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
+          if (!isExecutionAddress) {
+            return;
+          }
+
+          // Check exit source_address matches validator eth1 withdrawal credentials
+          final Bytes20 executionAddress =
+              new Bytes20(validator.getWithdrawalCredentials().slice(12));
+          boolean isCorrectSourceAddress = executionAddress.equals(exit.getSourceAddress());
+          if (!isCorrectSourceAddress) {
+            return;
+          }
+
+          // Check if validator is active
+          final boolean isValidatorActive = predicates.isActiveValidator(validator, currentEpoch);
+          if (!isValidatorActive) {
+            return;
+          }
+
+          // Check if validator has already initiated exit
+          boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
+          if (hasInitiatedExit) {
+            return;
+          }
+
+          // Check if validator has been active long enough
+          final boolean validatorActiveLongEnough =
+              currentEpoch.isLessThan(
+                  validator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()));
+          if (validatorActiveLongEnough) {
+            return;
+          }
+
+          // If all conditions are ok, initiate exit
+          beaconStateMutators.initiateValidatorExit(
+              state, validatorIndex, validatorExitContextSupplier);
+        });
+  }
+
+  /*
+   Implements process_deposit_receipt from consensus-spec (EIP-6110)
+  */
   public void processDepositReceipts(
       final MutableBeaconStateElectra state, final SszList<DepositReceipt> depositReceipts) {
     for (DepositReceipt depositReceipt : depositReceipts) {
