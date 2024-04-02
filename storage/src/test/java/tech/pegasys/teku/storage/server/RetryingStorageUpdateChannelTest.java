@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
@@ -39,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.UpdateResult;
@@ -79,20 +77,6 @@ class RetryingStorageUpdateChannelTest {
 
     assertThat(result).isCompleted();
     verify(delegate, times(3)).onFinalizedBlocks(blocks, blobSidecarsBySlot, Optional.empty());
-  }
-
-  @Test
-  void onFinalizedState_shouldRetryUntilSuccess() {
-    final BeaconState state = mock(BeaconState.class);
-    when(delegate.onFinalizedState(state, Bytes32.ZERO))
-        .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 1")))
-        .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 2")))
-        .thenReturn(SafeFuture.completedFuture(null));
-
-    final SafeFuture<Void> result = retryingChannel.onFinalizedState(state, Bytes32.ZERO);
-
-    assertThat(result).isCompleted();
-    verify(delegate, times(3)).onFinalizedState(state, Bytes32.ZERO);
   }
 
   @Test
