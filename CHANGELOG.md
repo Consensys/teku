@@ -12,5 +12,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
+- Added `peers_direction_current` LIBP2P metric for the number of peers by direction including inbound and outbound.
 
 ### Bug Fixes
