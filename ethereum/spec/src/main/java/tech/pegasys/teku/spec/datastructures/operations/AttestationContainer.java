@@ -28,32 +28,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface AttestationContainer extends SszData, SszContainer {
   AttestationData getData();
 
-  default Optional<SszBitlist> getAggregationBits() {
-    return Optional.empty();
-  }
+  SszBitlist getAggregationBits();
 
-  default SszBitlist getAggregationBitsRequired() {
-    return getAggregationBits()
-        .orElseThrow(() -> new IllegalArgumentException("Missing aggregation bits"));
-  }
-
-  default Optional<BLSSignature> getAggregateSignature() {
-    return Optional.empty();
-  }
-
-  default BLSSignature getAggregateSignatureRequired() {
-    return getAggregateSignature()
-        .orElseThrow(() -> new IllegalArgumentException("Missing aggregate signature"));
-  }
-
-  default Optional<SszBitlist> getAggregationBitsElectra() {
-    return Optional.empty();
-  }
-
-  default SszBitlist getAggregationBitsElectraRequired() {
-    return getAggregationBitsElectra()
-        .orElseThrow(() -> new IllegalArgumentException("Missing aggregation bits"));
-  }
+  BLSSignature getAggregateSignature();
 
   default Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.empty();

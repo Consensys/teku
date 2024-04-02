@@ -160,6 +160,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
+  public int getMaxValidatorsPerAttestation() {
+    return getMaxValidatorsPerCommittee() * getMaxCommitteesPerSlot();
+  }
+
+  @Override
   public Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.of(this);
   }

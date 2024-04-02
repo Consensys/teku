@@ -304,7 +304,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
         slotToBitlists.merge(
-            entry.getKey(), attestation.getAggregationBitsRequired(), SszBitlist::nullableOr);
+            entry.getKey(), attestation.getAggregationBits(), SszBitlist::nullableOr);
       }
     }
 
@@ -317,7 +317,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       final NavigableMap<UInt64, SszBitlist> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
-        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregationBitsRequired())) {
+        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregationBits())) {
           inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
           break;
         }

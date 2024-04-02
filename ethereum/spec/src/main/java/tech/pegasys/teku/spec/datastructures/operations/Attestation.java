@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import com.google.common.collect.Sets;
 import java.util.Collection;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
@@ -41,7 +40,7 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
           "Attestation",
           namedSchema(
               "aggregation_bits",
-              SszBitlistSchema.create(specConfig.getMaxValidatorsPerCommittee())),
+              SszBitlistSchema.create(specConfig.getMaxValidatorsPerAttestation())),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
@@ -94,8 +93,8 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
   }
 
   @Override
-  public Optional<SszBitlist> getAggregationBits() {
-    return Optional.of(getField0());
+  public SszBitlist getAggregationBits() {
+    return getField0();
   }
 
   @Override
@@ -104,7 +103,7 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
   }
 
   @Override
-  public Optional<BLSSignature> getAggregateSignature() {
-    return Optional.of(getField2().getSignature());
+  public BLSSignature getAggregateSignature() {
+    return getField2().getSignature();
   }
 }

@@ -53,7 +53,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         attestation
             .getCommitteeIndices()
             .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
-    final SszBitlist aggregationBits = attestation.getAggregationBitsElectraRequired();
+    final SszBitlist aggregationBits = attestation.getAggregationBits();
     final IntList attestingIndices = new IntArrayList();
     int committeeOffset = 0;
     for (final UInt64 committeeIndex : committeeIndices) {

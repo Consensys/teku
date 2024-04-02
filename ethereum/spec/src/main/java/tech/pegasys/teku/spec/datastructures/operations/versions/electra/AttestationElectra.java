@@ -60,8 +60,8 @@ public class AttestationElectra
   }
 
   @Override
-  public Optional<SszBitlist> getAggregationBitsElectra() {
-    return Optional.of(getField0());
+  public SszBitlist getAggregationBits() {
+    return getField0();
   }
 
   @Override
@@ -74,8 +74,8 @@ public class AttestationElectra
   }
 
   @Override
-  public Optional<BLSSignature> getAggregateSignature() {
-    return Optional.of(getField3().getSignature());
+  public BLSSignature getAggregateSignature() {
+    return getField3().getSignature();
   }
 
   @Override

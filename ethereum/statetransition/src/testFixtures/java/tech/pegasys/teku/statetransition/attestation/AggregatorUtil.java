@@ -23,13 +23,13 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 public class AggregatorUtil {
   public static Attestation aggregateAttestations(
       final Attestation firstAttestation, final Attestation... attestations) {
-    SszBitlist aggregateBits = firstAttestation.getAggregationBitsRequired();
+    SszBitlist aggregateBits = firstAttestation.getAggregationBits();
     final List<BLSSignature> signatures = new ArrayList<>();
-    signatures.add(firstAttestation.getAggregateSignatureRequired());
+    signatures.add(firstAttestation.getAggregateSignature());
 
     for (Attestation attestation : attestations) {
-      aggregateBits = aggregateBits.or(attestation.getAggregationBitsRequired());
-      signatures.add(attestation.getAggregateSignatureRequired());
+      aggregateBits = aggregateBits.or(attestation.getAggregationBits());
+      signatures.add(attestation.getAggregateSignature());
     }
     return firstAttestation
         .getSchema()

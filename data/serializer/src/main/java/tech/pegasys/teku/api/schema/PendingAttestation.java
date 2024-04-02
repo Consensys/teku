@@ -50,7 +50,7 @@ public class PendingAttestation {
 
   public PendingAttestation(
       final tech.pegasys.teku.spec.datastructures.state.PendingAttestation pendingAttestation) {
-    this.aggregation_bits = pendingAttestation.getAggregationBitsRequired().sszSerialize();
+    this.aggregation_bits = pendingAttestation.getAggregationBits().sszSerialize();
     this.data = new AttestationData(pendingAttestation.getData());
     this.inclusion_delay = pendingAttestation.getInclusionDelay();
     this.proposer_index = pendingAttestation.getProposerIndex();

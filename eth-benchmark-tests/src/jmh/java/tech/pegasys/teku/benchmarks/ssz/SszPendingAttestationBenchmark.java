@@ -33,8 +33,7 @@ public class SszPendingAttestationBenchmark
   private static final PendingAttestation aPendingAttestation =
       dataStructureUtil.randomPendingAttestation();
 
-  private static final SszBitlist aggregation_bits =
-      aPendingAttestation.getAggregationBitsRequired();
+  private static final SszBitlist aggregation_bits = aPendingAttestation.getAggregationBits();
   private static final AttestationData attestationData = aPendingAttestation.getData();
   private static final UInt64 inclusion_delay = aPendingAttestation.getInclusionDelay();
   private static final UInt64 proposer_index = aPendingAttestation.getProposerIndex();
