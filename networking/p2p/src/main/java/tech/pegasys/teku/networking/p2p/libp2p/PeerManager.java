@@ -88,16 +88,10 @@ public class PeerManager implements ConnectionHandler {
             "The number of peers by direction including inbound and outbound",
             "direction");
     peerDirectionLabelledGauge.labels(
-        () ->
-            connectedPeerMap.values().stream()
-                .filter(peer -> peer.isConnected() && peer.connectionInitiatedRemotely())
-                .count(),
+        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedRemotely).count(),
         "inbound");
     peerDirectionLabelledGauge.labels(
-        () ->
-            connectedPeerMap.values().stream()
-                .filter(peer -> peer.isConnected() & peer.connectionInitiatedLocally())
-                .count(),
+        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedLocally).count(),
         "outbound");
   }
 
