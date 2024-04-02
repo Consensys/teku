@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -56,7 +56,7 @@ public class AttesterSlashingGenerator {
               goodAttestation.getData().getSlot(), blockAndState.getSlot()));
     }
     AttestationUtil attestationUtil = spec.atSlot(blockAndState.getSlot()).getAttestationUtil();
-    IndexedAttestationContainer indexedGoodAttestation =
+    IndexedAttestation indexedGoodAttestation =
         attestationUtil.getIndexedAttestation(blockAndState.getState(), goodAttestation);
     int validatorIndex = indexedGoodAttestation.getAttestingIndices().get(0).get().intValue();
 
@@ -90,7 +90,7 @@ public class AttesterSlashingGenerator {
             indexIntoCommittee,
             committee,
             brokenAttestationData);
-    IndexedAttestationContainer indexedBadAttestation =
+    IndexedAttestation indexedBadAttestation =
         attestationUtil.getIndexedAttestation(blockAndState.getState(), badAttestation);
 
     return spec.getGenesisSchemaDefinitions()

@@ -31,10 +31,6 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
@@ -58,22 +54,13 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final LightClientBootstrapSchema lightClientBootstrapSchema;
   private final LightClientUpdateSchema lightClientUpdateSchema;
   private final LightClientUpdateResponseSchema lightClientUpdateResponseSchema;
-  private final IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      indexedAttestationContainerSchema;
-  private final IndexedAttestationSchema indexedAttestationSchema;
-  private final AttesterSlashingSchema attesterSlashingSchema;
 
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
-    this.indexedAttestationSchema = new IndexedAttestationSchema(specConfig);
-    this.indexedAttestationContainerSchema =
-        indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-    this.attesterSlashingSchema =
-        new AttesterSlashingSchema("AttesterSlashing", indexedAttestationContainerSchema);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaAltairImpl.create(
-            specConfig, attesterSlashingSchema, "BeaconBlockBodyAltair");
+            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyAltair");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockAltair");
     this.signedBeaconBlockSchema =
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockAltair");
@@ -162,22 +149,6 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   @Override
   public MetadataMessageSchemaAltair getMetadataMessageSchema() {
     return metadataMessageSchema;
-  }
-
-  @Override
-  public IndexedAttestationSchema getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
-  }
-
-  @Override
-  public IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      getIndexedAttestationContainerSchema() {
-    return indexedAttestationContainerSchema;
-  }
-
-  @Override
-  public AttesterSlashingSchema getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
   }
 
   @Override

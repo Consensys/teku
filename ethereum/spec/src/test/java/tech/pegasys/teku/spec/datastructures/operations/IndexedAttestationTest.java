@@ -23,18 +23,15 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true)
 class IndexedAttestationTest {
-  private DataStructureUtil dataStructureUtil;
-
-  private IndexedAttestationContainer indexedAttestation;
-  private IndexedAttestationContainer newIndexedAttestation;
+  private IndexedAttestation indexedAttestation;
+  private IndexedAttestation newIndexedAttestation;
 
   @BeforeEach
   public void setup(TestSpecInvocationContextProvider.SpecContext specContext) {
-    dataStructureUtil = specContext.getDataStructureUtil();
+    final DataStructureUtil dataStructureUtil = specContext.getDataStructureUtil();
     indexedAttestation = dataStructureUtil.randomIndexedAttestation();
     newIndexedAttestation =
-        (IndexedAttestationContainer)
-            indexedAttestation.getSchema().sszDeserialize(indexedAttestation.sszSerialize());
+        indexedAttestation.getSchema().sszDeserialize(indexedAttestation.sszSerialize());
   }
 
   @TestTemplate

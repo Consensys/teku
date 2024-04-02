@@ -82,10 +82,8 @@ public class PostAttesterSlashing extends RestApiEndpoint {
       final SpecConfig specConfig) {
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
         new IndexedAttestation.IndexedAttestationSchema(specConfig);
-    // TODO Handle AttesterSlashingElectra
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(
-            "AttesterSlashing", indexedAttestationSchema.castTypeToIndexedAttestationContainer());
+        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
 
     return attesterSlashingSchema.getJsonTypeDefinition();
   }

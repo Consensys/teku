@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -96,8 +96,7 @@ class AttestationUtilTest {
     final ValidatableAttestation validatableAttestation =
         ValidatableAttestation.from(spec, dataStructureUtil.randomAttestation());
     validatableAttestation.setValidIndexedAttestation();
-    final IndexedAttestationContainer indexedAttestation =
-        dataStructureUtil.randomIndexedAttestation();
+    final IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
     validatableAttestation.setIndexedAttestation(indexedAttestation);
 
     final SafeFuture<AttestationProcessingResult> result =

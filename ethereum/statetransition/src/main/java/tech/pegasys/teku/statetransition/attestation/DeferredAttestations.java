@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
 /**
@@ -49,7 +49,7 @@ public class DeferredAttestations {
   private final ConcurrentNavigableMap<UInt64, DeferredVoteUpdates> deferredVoteUpdatesBySlot =
       new ConcurrentSkipListMap<>();
 
-  public void addAttestation(final IndexedAttestationContainer attestation) {
+  public void addAttestation(final IndexedAttestation attestation) {
     deferredVoteUpdatesBySlot
         .computeIfAbsent(attestation.getData().getSlot(), DeferredVoteUpdates::new)
         .addAttestation(attestation);
@@ -89,7 +89,7 @@ public class DeferredAttestations {
               indices.forEach(validatorIndex -> consumer.accept(blockRoot, validatorIndex)));
     }
 
-    private void addAttestation(final IndexedAttestationContainer attestation) {
+    private void addAttestation(final IndexedAttestation attestation) {
       checkArgument(
           attestation.getData().getSlot().equals(slot),
           "Attempting to store deferred attestation for wrong slot. Expected %s but got %s",

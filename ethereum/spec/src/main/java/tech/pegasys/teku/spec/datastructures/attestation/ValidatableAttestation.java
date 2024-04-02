@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -43,7 +43,7 @@ public class ValidatableAttestation {
   private volatile boolean isValidIndexedAttestation = false;
   private volatile boolean acceptedAsGossip = false;
 
-  private volatile Optional<IndexedAttestationContainer> indexedAttestation = Optional.empty();
+  private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
 
   public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
@@ -128,7 +128,7 @@ public class ValidatableAttestation {
     this.acceptedAsGossip = true;
   }
 
-  public Optional<IndexedAttestationContainer> getIndexedAttestation() {
+  public Optional<IndexedAttestation> getIndexedAttestation() {
     return indexedAttestation;
   }
 
@@ -140,7 +140,7 @@ public class ValidatableAttestation {
     return receivedSubnetId;
   }
 
-  public void setIndexedAttestation(final IndexedAttestationContainer indexedAttestation) {
+  public void setIndexedAttestation(final IndexedAttestation indexedAttestation) {
     this.indexedAttestation = Optional.of(indexedAttestation);
   }
 

@@ -35,10 +35,6 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderB
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
@@ -55,30 +51,18 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema;
   private final BuilderBidSchema<?> builderBidSchema;
   private final SignedBuilderBidSchema signedBuilderBidSchema;
-  private final IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      indexedAttestationContainerSchema;
-  private final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema;
-  private final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaBellatrix.create(specConfig);
     this.executionPayloadHeaderSchema = beaconStateSchema.getLastExecutionPayloadHeaderSchema();
-
-    this.indexedAttestationSchema = new IndexedAttestation.IndexedAttestationSchema(specConfig);
-    this.indexedAttestationContainerSchema =
-        indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-    this.attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(
-            "AttesterSlashing", indexedAttestationContainerSchema);
-
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaBellatrixImpl.create(
-            specConfig, attesterSlashingSchema, "BeaconBlockBodyBellatrix");
+            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyBellatrix");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaBellatrixImpl.create(
             specConfig,
-            attesterSlashingSchema,
+            getAttesterSlashingSchema(),
             "BlindedBlockBodyBellatrix",
             executionPayloadHeaderSchema);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockBellatrix");

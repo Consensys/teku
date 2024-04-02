@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
@@ -27,7 +28,6 @@ import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
-import tech.pegasys.teku.api.schema.interfaces.AttesterSlashingContainer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -48,7 +48,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
       @JsonProperty("eth1_data") final Eth1Data eth1Data,
       @JsonProperty("graffiti") final Bytes32 graffiti,
       @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposerSlashings,
-      @JsonProperty("attester_slashings") final List<AttesterSlashingContainer> attesterSlashings,
+      @JsonProperty("attester_slashings") final List<AttesterSlashing> attesterSlashings,
       @JsonProperty("attestations") final List<Attestation> attestations,
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,

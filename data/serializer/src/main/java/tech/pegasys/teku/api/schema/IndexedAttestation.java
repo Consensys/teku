@@ -21,14 +21,13 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import tech.pegasys.teku.api.schema.interfaces.IndexedAttestationContainer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 
 @SuppressWarnings("JavaCase")
-public class IndexedAttestation implements IndexedAttestationContainer {
+public class IndexedAttestation {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UInt64> attesting_indices;
 
@@ -38,7 +37,7 @@ public class IndexedAttestation implements IndexedAttestationContainer {
   public final BLSSignature signature;
 
   public IndexedAttestation(
-      final tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
+      final tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
           indexedAttestation) {
     this.attesting_indices = indexedAttestation.getAttestingIndices().streamUnboxed().toList();
     this.data = new AttestationData(indexedAttestation.getData());
@@ -55,12 +54,12 @@ public class IndexedAttestation implements IndexedAttestationContainer {
     this.signature = signature;
   }
 
-  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
+  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
       asInternalIndexedAttestation(final Spec spec) {
     return asInternalIndexedAttestation(spec.atSlot(data.slot));
   }
 
-  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer
+  public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
       asInternalIndexedAttestation(final SpecVersion spec) {
     final IndexedAttestationSchema indexedAttestationSchema =
         spec.getSchemaDefinitions().getIndexedAttestationSchema();

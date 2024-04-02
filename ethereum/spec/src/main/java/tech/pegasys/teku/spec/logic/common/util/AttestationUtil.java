@@ -40,8 +40,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -97,7 +97,7 @@ public abstract class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
-  public IndexedAttestationContainer getIndexedAttestation(
+  public IndexedAttestation getIndexedAttestation(
       final BeaconState state, final AttestationContainer attestation) {
     final List<Integer> attestingIndices = getAttestingIndices(state, attestation);
 
@@ -177,7 +177,7 @@ public abstract class AttestationUtil {
     return SafeFuture.of(
             () -> {
               // getIndexedAttestation() throws, so wrap it in a future
-              final IndexedAttestationContainer indexedAttestation =
+              final IndexedAttestation indexedAttestation =
                   getIndexedAttestation(state, attestation.getAttestation());
               attestation.setIndexedAttestation(indexedAttestation);
               return indexedAttestation;
@@ -218,16 +218,14 @@ public abstract class AttestationUtil {
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
   public AttestationProcessingResult isValidIndexedAttestation(
-      final Fork fork,
-      final BeaconState state,
-      final IndexedAttestationContainer indexedAttestation) {
+      final Fork fork, final BeaconState state, final IndexedAttestation indexedAttestation) {
     return isValidIndexedAttestation(fork, state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork,
       final BeaconState state,
-      final IndexedAttestationContainer indexedAttestation,
+      final IndexedAttestation indexedAttestation,
       final BLSSignatureVerifier signatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
@@ -239,7 +237,7 @@ public abstract class AttestationUtil {
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       final Fork fork,
       final BeaconState state,
-      final IndexedAttestationContainer indexedAttestation,
+      final IndexedAttestation indexedAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
     final SszUInt64List indices = indexedAttestation.getAttestingIndices();
 

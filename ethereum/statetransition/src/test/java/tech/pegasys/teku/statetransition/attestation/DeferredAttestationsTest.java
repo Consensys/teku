@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 
@@ -102,7 +102,7 @@ class DeferredAttestationsTest {
     assertThat(votes).containsExactlyInAnyOrder(expected);
   }
 
-  private IndexedAttestationContainer createAttestation(
+  private IndexedAttestation createAttestation(
       final UInt64 slot, final Bytes32 root, final int... attestingValidators) {
     return dataStructureUtil.randomIndexedAttestation(
         dataStructureUtil.randomAttestationData(slot, root),

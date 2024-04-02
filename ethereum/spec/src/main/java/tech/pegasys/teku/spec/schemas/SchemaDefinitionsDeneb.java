@@ -48,10 +48,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
@@ -86,11 +82,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
   private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
 
-  private final IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      indexedAttestationContainerSchema;
-  private final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema;
-  private final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema;
-
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig);
     this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
@@ -99,23 +90,17 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.executionPayloadHeaderSchemaDeneb =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.blobKzgCommitmentsSchema = new BlobKzgCommitmentsSchema(specConfig);
-    this.indexedAttestationSchema = new IndexedAttestation.IndexedAttestationSchema(specConfig);
-    this.indexedAttestationContainerSchema =
-        indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-    this.attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(
-            "AttesterSlashing", indexedAttestationContainerSchema);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaDenebImpl.create(
             specConfig,
-            attesterSlashingSchema,
+            getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             "BeaconBlockBodyDeneb");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaDenebImpl.create(
             specConfig,
-            attesterSlashingSchema,
+            getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             "BlindedBlockBodyDeneb");

@@ -93,6 +93,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getMaxValidatorsPerCommittee();
 
+  default int getMaxValidatorsPerAttestation() {
+    return getMaxValidatorsPerCommittee();
+  }
+
   int getShuffleRoundCount();
 
   UInt64 getHysteresisQuotient();

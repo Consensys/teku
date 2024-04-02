@@ -26,10 +26,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
@@ -39,22 +35,13 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   private final MetadataMessageSchemaPhase0 metadataMessageSchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      indexedAttestationContainerSchema;
-  private final IndexedAttestationSchema indexedAttestationSchema;
-  private final AttesterSlashingSchema attesterSlashingSchema;
 
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
-    this.indexedAttestationSchema = new IndexedAttestationSchema(specConfig);
-    this.indexedAttestationContainerSchema =
-        indexedAttestationSchema.castTypeToIndexedAttestationContainer();
-    this.attesterSlashingSchema =
-        new AttesterSlashingSchema("AttesterSlashing", indexedAttestationContainerSchema);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(
-            specConfig, attesterSlashingSchema, "BeaconBlockBodyPhase0");
+            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyPhase0");
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
     beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockPhase0");
     signedBeaconBlockSchema =
@@ -117,11 +104,6 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   }
 
   @Override
-  public AttesterSlashingSchema getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
-  }
-
-  @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
     return new BeaconBlockBodyBuilderPhase0(beaconBlockBodySchema);
   }
@@ -129,17 +111,6 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   @Override
   public MetadataMessageSchemaPhase0 getMetadataMessageSchema() {
     return metadataMessageSchema;
-  }
-
-  @Override
-  public IndexedAttestationSchema getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
-  }
-
-  @Override
-  public IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      getIndexedAttestationContainerSchema() {
-    return indexedAttestationContainerSchema;
   }
 
   @Override

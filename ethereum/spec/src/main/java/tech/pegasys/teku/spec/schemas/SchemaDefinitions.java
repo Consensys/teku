@@ -36,8 +36,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainerSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -87,9 +85,6 @@ public interface SchemaDefinitions {
   AttestationContainerSchema<AttestationContainer> getAttestationContainerSchema();
 
   IndexedAttestationSchema getIndexedAttestationSchema();
-
-  IndexedAttestationContainerSchema<IndexedAttestationContainer>
-      getIndexedAttestationContainerSchema();
 
   AttesterSlashingSchema getAttesterSlashingSchema();
 

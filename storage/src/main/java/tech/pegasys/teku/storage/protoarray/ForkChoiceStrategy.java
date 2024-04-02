@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -135,8 +135,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  public void onAttestation(
-      final VoteUpdater voteUpdater, final IndexedAttestationContainer attestation) {
+  public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
       attestation

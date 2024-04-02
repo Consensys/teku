@@ -31,10 +31,10 @@ class AttesterSlashingTest {
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private AttesterSlashingSchema attesterSlashingSchema;
-  private IndexedAttestationContainer indexedAttestation1;
-  private IndexedAttestationContainer indexedAttestation2;
-  private IndexedAttestationContainer otherIndexedAttestation1;
-  private IndexedAttestationContainer otherIndexedAttestation2;
+  private IndexedAttestation indexedAttestation1;
+  private IndexedAttestation indexedAttestation2;
+  private IndexedAttestation otherIndexedAttestation1;
+  private IndexedAttestation otherIndexedAttestation2;
   private AttesterSlashing attesterSlashing;
 
   @BeforeEach

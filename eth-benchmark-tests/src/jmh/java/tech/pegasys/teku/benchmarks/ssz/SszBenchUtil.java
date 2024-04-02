@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -86,7 +86,7 @@ public class SszBenchUtil {
     iterateData(s.getAttestation2(), bh);
   }
 
-  public static void iterateData(IndexedAttestationContainer a, Blackhole bh) {
+  public static void iterateData(IndexedAttestation a, Blackhole bh) {
     a.getAttestingIndices().forEach(bh::consume);
     bh.consume(a.getSignature());
     iterateData(a.getData(), bh);
