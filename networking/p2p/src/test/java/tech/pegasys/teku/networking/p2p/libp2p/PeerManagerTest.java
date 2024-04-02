@@ -31,12 +31,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -46,10 +47,11 @@ public class PeerManagerTest {
 
   private final ReputationManager reputationManager = mock(ReputationManager.class);
   private final Network network = mock(Network.class);
+  final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final PeerManager peerManager =
       new PeerManager(
-          new NoOpMetricsSystem(),
+          metricsSystem,
           reputationManager,
           Collections.emptyList(),
           Collections.emptyList(),
@@ -61,18 +63,25 @@ public class PeerManagerTest {
     peerManager.subscribeConnect(connectedPeers::add);
     // Sanity check
     assertThat(connectedPeers).isEmpty();
+    validatePeerMetrics(0, 0);
 
     // Add a peer
     final Peer peer = mock(Peer.class);
     when(peer.getId()).thenReturn(new MockNodeId(1));
+    when(peer.connectionInitiatedLocally()).thenReturn(true); // increase outbound count
+    when(peer.connectionInitiatedRemotely()).thenReturn(false);
     peerManager.onConnectedPeer(peer);
     assertThat(connectedPeers).containsExactly(peer);
+    validatePeerMetrics(1, 0);
 
     // Add another peer
     final Peer peer2 = mock(Peer.class);
     when(peer2.getId()).thenReturn(new MockNodeId(2));
+    when(peer2.connectionInitiatedLocally()).thenReturn(false);
+    when(peer2.connectionInitiatedRemotely()).thenReturn(true); // increase inbound count
     peerManager.onConnectedPeer(peer2);
     assertThat(connectedPeers).containsExactly(peer, peer2);
+    validatePeerMetrics(1, 1);
   }
 
   @Test
@@ -112,7 +121,10 @@ public class PeerManagerTest {
 
     final Peer peer = mock(Peer.class);
     when(peer.getId()).thenReturn(new MockNodeId(1));
+    when(peer.connectionInitiatedLocally()).thenReturn(false);
+    when(peer.connectionInitiatedRemotely()).thenReturn(true); // increase inbound count
     peerManager.onConnectedPeer(peer);
+    validatePeerMetrics(0, 1);
 
     assertThat(connectedPeers).containsExactly(peer);
     assertThat(connectedPeersB).containsExactly(peer);
@@ -125,8 +137,11 @@ public class PeerManagerTest {
 
     final Peer peer = mock(Peer.class);
     when(peer.getId()).thenReturn(new MockNodeId(1));
+    when(peer.connectionInitiatedLocally()).thenReturn(true); // increase outbound count
+    when(peer.connectionInitiatedRemotely()).thenReturn(false);
     peerManager.onConnectedPeer(peer);
     assertThat(connectedPeers).containsExactly(peer);
+    validatePeerMetrics(1, 0);
 
     Assertions.assertThrows(
         PeerAlreadyConnectedException.class, () -> peerManager.onConnectedPeer(peer));
@@ -168,5 +183,12 @@ public class PeerManagerTest {
 
     verify(reputationManager).reportInitiatedConnectionSuccessful(peerAddress);
     verify(reputationManager, never()).reportInitiatedConnectionFailed(peerAddress);
+  }
+
+  private void validatePeerMetrics(final double expectedOutbound, final double expectedInbound) {
+    final StubLabelledGauge labelledGauge =
+        metricsSystem.getLabelledGauge(TekuMetricCategory.LIBP2P, "peers_direction_current");
+    assertThat(labelledGauge.getValue("inbound")).hasValue(expectedInbound);
+    assertThat(labelledGauge.getValue("outbound")).hasValue(expectedOutbound);
   }
 }
