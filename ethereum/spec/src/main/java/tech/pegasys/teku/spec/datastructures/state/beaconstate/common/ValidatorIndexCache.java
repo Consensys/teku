@@ -99,6 +99,7 @@ public class ValidatorIndexCache {
     return Optional.empty();
   }
 
+  // TODO: call this method also on startup when the chain is initialized with an anchor point
   public void updateLatestFinalizedIndex(final BeaconState finalizedState) {
     latestFinalizedIndex.updateAndGet(
         curr -> Math.max(curr, finalizedState.getValidators().size() - 1));
