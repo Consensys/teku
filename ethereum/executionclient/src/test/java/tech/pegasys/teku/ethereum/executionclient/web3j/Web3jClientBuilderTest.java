@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 

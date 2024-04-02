@@ -74,6 +74,12 @@ public class ValidatorRestApi {
             spec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
     final Path slashingProtectionPath =
         ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
+    final Path validatorApiBearerFile =
+        config
+            .getMaybeValidatorApiBearerFile()
+            .orElse(
+                ValidatorClientService.getKeyManagerPath(dataDirLayout)
+                    .resolve("validator-api-bearer"));
     return new RestApiBuilder()
         .openApiInfo(
             openApi ->
@@ -123,8 +129,7 @@ public class ValidatorRestApi {
         .endpoint(new DeleteGasLimit(proposerConfigManager))
         .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
-        .passwordFilePath(
-            ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))
+        .passwordFilePath(validatorApiBearerFile)
         .build();
   }
 }

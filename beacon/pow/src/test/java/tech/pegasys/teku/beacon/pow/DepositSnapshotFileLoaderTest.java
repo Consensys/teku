@@ -31,6 +31,8 @@ public class DepositSnapshotFileLoaderTest {
 
   private static final String SNAPSHOT_BUNDLED_RESOURCE = "deposit_tree_snapshot_bundled.ssz";
   private static final String SNAPSHOT_BEACON_API_RESOURCE = "deposit_tree_snapshot_beaconAPI.json";
+  private static final String SNAPSHOT_BEACON_API_BROKEN_RESOURCE =
+      "deposit_tree_snapshot_broken_beaconAPI.json";
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -161,6 +163,36 @@ public class DepositSnapshotFileLoaderTest {
 
     final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
 
+    assertWith(
+        result,
+        snapshotResult -> {
+          assertThat(snapshotResult.getDepositTreeSnapshot().isPresent()).isTrue();
+          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDepositCount())
+              .isEqualTo(deposits);
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedDepositIndex())
+              .contains(BigInteger.valueOf(deposits - 1));
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedBlockNumber())
+              .isEqualTo(blockNumber);
+        });
+  }
+
+  @Test
+  public void shouldNotLoadBrokenDepositTree() {
+    // broken has 1106575 deposits
+    final String brokenResourcePath = getResourceFilePath(SNAPSHOT_BEACON_API_BROKEN_RESOURCE);
+    final String validResourcePath = getResourceFilePath(SNAPSHOT_BEACON_API_RESOURCE);
+    // assertion values from SNAPSHOT_BEACON_API_RESOURCE
+    final int deposits = 1106572;
+    final int blockNumber = 18754822;
+
+    depositSnapshotLoader =
+        new DepositSnapshotFileLoader.Builder()
+            .addOptionalResource(brokenResourcePath)
+            .addRequiredResource(validResourcePath)
+            .build();
+
+    final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
+    assertThat(result.getDepositTreeSnapshot()).isPresent();
     assertWith(
         result,
         snapshotResult -> {

@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.validator.client.Validator;
 
 public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner {
@@ -39,13 +38,7 @@ public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner 
 
     // Not needed for all milestones
     final Supplier<BlockContainerSignerDeneb> blockContainerSignerDeneb =
-        Suppliers.memoize(
-            () -> {
-              final SchemaDefinitionsDeneb schemaDefinitions =
-                  SchemaDefinitionsDeneb.required(
-                      spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
-              return new BlockContainerSignerDeneb(spec, schemaDefinitions);
-            });
+        Suppliers.memoize(() -> new BlockContainerSignerDeneb(spec));
 
     // Populate forks signers
     spec.getEnabledMilestones()

@@ -1,8 +1,8 @@
 {
   "post" : {
     "tags" : [ "Validator" ],
-    "operationId" : "postValidatorLiveness",
-    "summary" : "Get Validator Liveness",
+    "operationId" : "getLiveness",
+    "summary" : "Indicates if a validator has been observed on the network",
     "description" : "Requests the beacon node to indicate if a validator has been observed to be live in a given epoch. The beacon node might detect liveness by observing messages from the validator on the network, in the beacon chain, from its API or from any other source. It is important to note that the values returned by the beacon node are not canonical; they are best-effort and based upon a subjective view of the network.",
     "parameters" : [ {
       "name" : "epoch",

@@ -14,16 +14,12 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import static java.util.Collections.emptyMap;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PREPARE_BEACON_PROPOSER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
@@ -40,7 +36,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +51,6 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.request.v1.beacon.PostStateValidatorsRequest;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
@@ -66,8 +60,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -129,39 +121,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             queryParams,
             createHandler(GetStateValidatorsResponse.class))
         .map(response -> response.data);
-  }
-
-  /**
-   * <a
-   * href="https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/postStateValidators">POST
-   * Get validators from state</a>
-   */
-  @Override
-  public Optional<List<ValidatorResponse>> postValidators(final List<String> validatorIds) {
-    final PostStateValidatorsRequest requestBody = new PostStateValidatorsRequest(validatorIds);
-    return post(
-            GET_VALIDATORS,
-            EMPTY_MAP,
-            requestBody,
-            createHandler(GetStateValidatorsResponse.class)
-                .withHandler(
-                    (request, response) -> {
-                      throw new PostStateValidatorsNotExistingException();
-                    },
-                    SC_BAD_REQUEST,
-                    SC_NOT_FOUND,
-                    SC_METHOD_NOT_ALLOWED))
-        .map(response -> response.data);
-  }
-
-  @Override
-  public Optional<PostAttesterDutiesResponse> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
-    return post(
-        GET_ATTESTATION_DUTIES,
-        Map.of("epoch", epoch.toString()),
-        validatorIndices.stream().map(UInt64::valueOf).toList(),
-        createHandler(PostAttesterDutiesResponse.class));
   }
 
   @Override
@@ -248,16 +207,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         syncCommitteeMessages,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
-    return post(
-        GET_SYNC_COMMITTEE_DUTIES,
-        Map.of("epoch", epoch.toString()),
-        validatorIndices.stream().map(UInt64::valueOf).toList(),
-        createHandler(PostSyncDutiesResponse.class));
   }
 
   @Override

@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
     },
     "execution_optimistic" : {
       "type" : "boolean"
@@ -26,7 +26,9 @@
         "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
       }, {
         "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
-      } ]
+      }, {
+        "$ref" : "#/components/schemas/SignedBeaconBlockElectra"
+      }  ]
     }
   }
 }

@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -40,4 +42,6 @@ public interface ExecutionClientHandler {
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
   SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
+
+  SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 }

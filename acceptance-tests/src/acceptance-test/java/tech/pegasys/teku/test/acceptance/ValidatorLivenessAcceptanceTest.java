@@ -16,13 +16,15 @@ package tech.pegasys.teku.test.acceptance;
 import static tech.pegasys.teku.test.acceptance.dsl.ValidatorLivenessExpectation.expectLive;
 import static tech.pegasys.teku.test.acceptance.dsl.ValidatorLivenessExpectation.expectNotLive;
 
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
 
@@ -30,26 +32,26 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
   private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
-  private TekuNode primaryNode;
-  private TekuNode secondaryNode;
+  private TekuBeaconNode primaryNode;
+  private TekuBeaconNode secondaryNode;
 
   @BeforeEach
-  public void setup() {
+  public void setup() throws IOException {
     final UInt64 altairEpoch = UInt64.valueOf(100);
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     primaryNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime)
-                    .withAltairEpoch(altairEpoch)
-                    .withInteropValidators(0, NODE_VALIDATORS));
+        createTekuBeaconNode(
+            configureNode(genesisTime)
+                .withAltairEpoch(altairEpoch)
+                .withInteropValidators(0, NODE_VALIDATORS)
+                .build());
     secondaryNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime)
-                    .withAltairEpoch(altairEpoch)
-                    .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
-                    .withPeers(primaryNode));
+        createTekuBeaconNode(
+            configureNode(genesisTime)
+                .withAltairEpoch(altairEpoch)
+                .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
+                .withPeers(primaryNode)
+                .build());
   }
 
   /*
@@ -82,10 +84,10 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
     primaryNode.stop();
   }
 
-  private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
-    return node.withNetwork("swift")
-        .withGenesisTime(genesisTime)
+  private TekuNodeConfigBuilder configureNode(final int genesisTime) throws IOException {
+    return TekuNodeConfigBuilder.createBeaconNode()
         .withValidatorLivenessTracking()
+        .withGenesisTime(genesisTime)
         .withInteropNumberOfValidators(TOTAL_VALIDATORS)
         .withRealNetwork();
   }

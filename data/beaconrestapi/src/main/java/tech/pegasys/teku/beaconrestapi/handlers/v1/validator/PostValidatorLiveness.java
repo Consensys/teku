@@ -65,8 +65,8 @@ public class PostValidatorLiveness extends RestApiEndpoint {
       final SyncDataProvider syncDataProvider) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postValidatorLiveness")
-            .summary("Get Validator Liveness")
+            .operationId("getLiveness")
+            .summary("Indicates if a validator has been observed on the network")
             .description(
                 "Requests the beacon node to indicate if a validator has been"
                     + " observed to be live in a given epoch. The beacon node might detect liveness by"

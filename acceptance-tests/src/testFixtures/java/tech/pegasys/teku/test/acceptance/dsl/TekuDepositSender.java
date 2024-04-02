@@ -39,7 +39,7 @@ public class TekuDepositSender extends Node {
   private final ValidatorKeyGenerator validatorKeyGenerator = new ValidatorKeyGenerator();
 
   public TekuDepositSender(final Network network, final Spec spec) {
-    super(network, TekuNode.TEKU_DOCKER_IMAGE_NAME, TekuDockerVersion.LOCAL_BUILD, LOG);
+    super(network, TekuBeaconNode.TEKU_DOCKER_IMAGE_NAME, TekuDockerVersion.LOCAL_BUILD, LOG);
     this.spec = spec;
   }
 
@@ -51,7 +51,7 @@ public class TekuDepositSender extends Node {
   }
 
   public ValidatorKeystores sendValidatorDeposits(
-      final BesuNode eth1Node, final int numberOfValidators, UInt64 amount)
+      final BesuNode eth1Node, final int numberOfValidators, final UInt64 amount)
       throws InterruptedException, ExecutionException, TimeoutException {
     final Eth1Address eth1Address = eth1Node.getDepositContractAddress();
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
@@ -66,7 +66,7 @@ public class TekuDepositSender extends Node {
   }
 
   public void sendValidatorDeposits(
-      final BesuNode eth1Node, final ValidatorKeystores validatorKeys, UInt64 amount)
+      final BesuNode eth1Node, final ValidatorKeystores validatorKeys, final UInt64 amount)
       throws InterruptedException, ExecutionException, TimeoutException {
     final Eth1Address eth1Address = eth1Node.getDepositContractAddress();
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
@@ -82,16 +82,23 @@ public class TekuDepositSender extends Node {
   }
 
   public ValidatorKeystores generateValidatorKeys(
-      int numberOfValidators, final Eth1Address withdrawalAddress) {
+      final int numberOfValidators, final Eth1Address withdrawalAddress) {
     return new ValidatorKeystores(
         validatorKeyGenerator
             .generateKeysStream(numberOfValidators, withdrawalAddress)
             .collect(Collectors.toList()));
   }
 
-  public ValidatorKeystores generateValidatorKeys(int numberOfValidators) {
+  public ValidatorKeystores generateValidatorKeys(final int numberOfValidators) {
+    return generateValidatorKeys(numberOfValidators, false);
+  }
+
+  public ValidatorKeystores generateValidatorKeys(
+      final int numberOfValidators, final boolean isLocked) {
     return new ValidatorKeystores(
-        validatorKeyGenerator.generateKeysStream(numberOfValidators).collect(Collectors.toList()));
+        validatorKeyGenerator
+            .generateKeysStream(numberOfValidators, isLocked)
+            .collect(Collectors.toList()));
   }
 
   public UInt64 getMinDepositAmount() {

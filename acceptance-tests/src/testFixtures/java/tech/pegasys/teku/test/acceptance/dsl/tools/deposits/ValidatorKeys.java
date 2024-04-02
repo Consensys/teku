@@ -21,19 +21,25 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 
 public class ValidatorKeys {
   private final BLSKeyPair validatorKey;
+
+  private boolean locked = false;
   private final Bytes32 withdrawalCredentials;
   private final Optional<BLSKeyPair> withdrawalKey;
 
-  public ValidatorKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey) {
+  public ValidatorKeys(
+      final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey, final boolean locked) {
     this.validatorKey = validatorKey;
     this.withdrawalCredentials = createWithdrawalCredentials(withdrawalKey.getPublicKey());
     this.withdrawalKey = Optional.of(withdrawalKey);
+    this.locked = locked;
   }
 
-  public ValidatorKeys(final BLSKeyPair validatorKey, final Bytes32 withdrawalCredentials) {
+  public ValidatorKeys(
+      final BLSKeyPair validatorKey, final Bytes32 withdrawalCredentials, final boolean locked) {
     this.validatorKey = validatorKey;
     this.withdrawalCredentials = withdrawalCredentials;
     this.withdrawalKey = Optional.empty();
+    this.locked = locked;
   }
 
   public BLSKeyPair getValidatorKey() {
@@ -42,6 +48,10 @@ public class ValidatorKeys {
 
   public Bytes32 getWithdrawalCredentials() {
     return withdrawalCredentials;
+  }
+
+  public boolean isLocked() {
+    return locked;
   }
 
   public Optional<BLSKeyPair> getWithdrawalKey() {

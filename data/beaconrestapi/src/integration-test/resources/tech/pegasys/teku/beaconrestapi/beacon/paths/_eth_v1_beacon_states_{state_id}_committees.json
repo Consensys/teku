@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getStateCommittees",
-    "summary" : "Get committees at state",
+    "operationId" : "getEpochCommittees",
+    "summary" : "Get all committees for a state.",
     "description" : "Retrieves the committees for the given state.",
     "parameters" : [ {
       "name" : "state_id",

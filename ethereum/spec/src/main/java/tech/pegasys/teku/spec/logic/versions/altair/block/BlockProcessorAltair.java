@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -216,13 +215,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   protected void addValidatorToRegistry(
-      final MutableBeaconState genericState, final Deposit deposit) {
-    super.addValidatorToRegistry(genericState, deposit);
-    final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    super.addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
+    final MutableBeaconStateAltair stateAltair = MutableBeaconStateAltair.required(state);
 
-    state.getPreviousEpochParticipation().append(SszByte.ZERO);
-    state.getCurrentEpochParticipation().append(SszByte.ZERO);
-    state.getInactivityScores().append(SszUInt64.ZERO);
+    stateAltair.getPreviousEpochParticipation().append(SszByte.ZERO);
+    stateAltair.getCurrentEpochParticipation().append(SszByte.ZERO);
+    stateAltair.getInactivityScores().append(SszUInt64.ZERO);
   }
 
   @Override

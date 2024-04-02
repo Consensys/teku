@@ -1,0 +1,22 @@
+{
+  "title" : "BeaconCommitteeSelectionProof",
+  "type" : "object",
+  "required" : [ "validator_index", "slot", "selection_proof" ],
+  "properties" : {
+    "validator_index" : {
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
+    },
+    "slot" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "selection_proof" : {
+      "type" : "string"
+    }
+  }
+}

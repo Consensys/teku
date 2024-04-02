@@ -20,6 +20,7 @@ import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.MalformedInputException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -37,7 +38,7 @@ public class FilePrivateKeySource implements PrivateKeySource {
     try {
       File file = new File(fileName);
       if (!file.createNewFile()) {
-        return getPrivateKeyBytesFromFile();
+        return getPrivateKeyBytesFromTextFile();
       }
       final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
       final Bytes privateKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
@@ -51,9 +52,21 @@ public class FilePrivateKeySource implements PrivateKeySource {
     }
   }
 
-  private Bytes getPrivateKeyBytesFromFile() {
+  private Bytes getPrivateKeyBytesFromTextFile() {
     try {
       final Bytes privateKeyBytes = Bytes.fromHexString(Files.readString(Paths.get(fileName)));
+      STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
+      return privateKeyBytes;
+    } catch (MalformedInputException e) {
+      return getPrivateKeyBytesFromBytesFile();
+    } catch (IOException e) {
+      throw new RuntimeException("p2p private key file not found - " + fileName);
+    }
+  }
+
+  private Bytes getPrivateKeyBytesFromBytesFile() {
+    try {
+      final Bytes privateKeyBytes = Bytes.wrap(Files.readAllBytes(Paths.get(fileName)));
       STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
       return privateKeyBytes;
     } catch (IOException e) {

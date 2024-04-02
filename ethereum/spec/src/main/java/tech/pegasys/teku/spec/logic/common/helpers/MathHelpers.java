@@ -22,6 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MathHelpers {
 
+  public static final UInt64 MAX_SQRT = UInt64.valueOf(4294967295L);
+
   public static long integerSquareRoot(final long n) {
     checkArgument(n >= 0, "Cannot calculate integerSquareRoot of negative number");
     return integerSquareRootInternal(n);
@@ -29,7 +31,7 @@ public class MathHelpers {
 
   public static UInt64 integerSquareRoot(final UInt64 n) {
     if (n.isMaxValue()) {
-      return UInt64.valueOf(4294967295L);
+      return MAX_SQRT;
     }
     return UInt64.valueOf(integerSquareRootInternal(n.longValue()));
   }

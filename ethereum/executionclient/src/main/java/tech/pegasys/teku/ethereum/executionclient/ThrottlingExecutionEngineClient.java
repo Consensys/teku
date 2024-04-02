@@ -17,13 +17,16 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -79,6 +82,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
+  public SafeFuture<Response<GetPayloadV4Response>> getPayloadV4(final Bytes8 payloadId) {
+    return taskQueue.queueTask(() -> delegate.getPayloadV4(payloadId));
+  }
+
+  @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV1(
       final ExecutionPayloadV1 executionPayload) {
     return taskQueue.queueTask(() -> delegate.newPayloadV1(executionPayload));
@@ -97,6 +105,15 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final Bytes32 parentBeaconBlockRoot) {
     return taskQueue.queueTask(
         () -> delegate.newPayloadV3(executionPayload, blobVersionedHashes, parentBeaconBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV4(
+      final ExecutionPayloadV4 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot) {
+    return taskQueue.queueTask(
+        () -> delegate.newPayloadV4(executionPayload, blobVersionedHashes, parentBeaconBlockRoot));
   }
 
   @Override
@@ -126,5 +143,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
     return taskQueue.queueTask(() -> delegate.exchangeCapabilities(capabilities));
+  }
+
+  @Override
+  public SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(
+      final ClientVersionV1 clientVersion) {
+    return taskQueue.queueTask(() -> delegate.getClientVersionV1(clientVersion));
   }
 }

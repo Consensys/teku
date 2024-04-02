@@ -88,7 +88,7 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         "Validator keystore [" + outputPath.resolve(withdrawalFileName) + "] saved successfully.");
   }
 
-  public void writeValidatorKey(final BLSKeyPair validatorKey)
+  public String writeValidatorKey(final BLSKeyPair validatorKey)
       throws UncheckedIOException, KeyStoreValidationException {
 
     final KeyStoreData validatorKeyStoreData =
@@ -97,7 +97,9 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     final String validatorFileName =
         validatorKey.getPublicKey().toAbbreviatedString() + "_validator.json";
 
-    saveKeyStore(outputPath.resolve(validatorFileName), validatorKeyStoreData);
+    final Path keystorePath = outputPath.resolve(validatorFileName);
+    saveKeyStore(keystorePath, validatorKeyStoreData);
+    return keystorePath.toAbsolutePath().toString();
   }
 
   private void createKeystoreDirectory() {

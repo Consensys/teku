@@ -170,6 +170,17 @@ public class EventLogger {
         Color.YELLOW);
   }
 
+  public void logExecutionClientVersion(final String name, final String version) {
+    log.info("Execution Client version: {} {}", name, version);
+  }
+
+  public void logDefaultGraffiti(final String graffiti) {
+    log.info(
+        "Default graffiti to use when building block without external VC: \"{}\". "
+            + "To change check validator graffiti options.",
+        graffiti);
+  }
+
   public void builderIsNotAvailable(final String errorMessage) {
     final String builderIsNotAvailableEventLog =
         String.format(

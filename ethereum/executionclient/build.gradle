@@ -8,8 +8,10 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:version')
   implementation project(':ethereum:execution-types')
+  implementation project(':infrastructure:http')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:json-types')
+  implementation project(':ethereum:events')
 
   api 'org.web3j:core'
   implementation 'org.apache.tuweni:tuweni-units'

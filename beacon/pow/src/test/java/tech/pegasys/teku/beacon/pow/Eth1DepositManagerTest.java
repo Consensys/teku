@@ -362,6 +362,8 @@ class Eth1DepositManagerTest {
     final BigInteger headBlockNumber = BigInteger.valueOf(60);
     final BigInteger lastReplayedBlock = BigInteger.valueOf(70);
     final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(71);
+
+    // No deposit tree snapshot loaded, this will be used
     when(eth1DepositStorageChannel.replayDepositEvents())
         .thenReturn(
             SafeFuture.completedFuture(
@@ -383,11 +385,11 @@ class Eth1DepositManagerTest {
   }
 
   @Test
-  void shouldStartFromSnapshotFileWhenProvided() {
+  void shouldIgnoreSnapshotFileWhenDBSavedVersionProvided() {
     final UInt64 deposits = UInt64.valueOf(100);
     final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
 
-    // DepositTreeSnapshot from file will be used to start from
+    // This one will be ignored as DB already has a saved version
     final DepositTreeSnapshot depositTreeSnapshotFromFile =
         dataStructureUtil.randomDepositTreeSnapshot(
             deposits.longValue(), UInt64.valueOf(lastBlockNumber));
@@ -395,10 +397,11 @@ class Eth1DepositManagerTest {
         .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
-    // This one will be ignored
+    // DepositTreeSnapshot from DB will be used to start from
+    final UInt64 dbDepositCount = deposits.plus(50);
+    final UInt64 dbBlockHeight = UInt64.valueOf(lastBlockNumber).plus(500);
     final DepositTreeSnapshot depositTreeSnapshotFromDb =
-        dataStructureUtil.randomDepositTreeSnapshot(
-            deposits.plus(50).longValue(), UInt64.valueOf(lastBlockNumber).plus(500));
+        dataStructureUtil.randomDepositTreeSnapshot(dbDepositCount.longValue(), dbBlockHeight);
     when(depositSnapshotStorageLoader.loadDepositSnapshot())
         .thenReturn(
             SafeFuture.completedFuture(
@@ -406,8 +409,39 @@ class Eth1DepositManagerTest {
 
     manager.start();
     notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verify(depositSnapshotFileLoader, never()).loadDepositSnapshot();
     verify(eth1DepositStorageChannel, never()).replayDepositEvents();
-    verify(eth1EventsChannel).setLatestPublishedDeposit(deposits.decrement());
+    verify(eth1EventsChannel).setLatestPublishedDeposit(dbDepositCount.decrement());
+    inOrder
+        .verify(depositProcessingController)
+        .startSubscription(dbBlockHeight.bigIntegerValue().add(BigInteger.ONE));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void shouldTakeSnapshotFileWhenDBSavedVersionNotProvided() {
+    final UInt64 depositsCount = UInt64.valueOf(100);
+    final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
+
+    // This one will be used as DB empty
+    final DepositTreeSnapshot depositTreeSnapshotFromFile =
+        dataStructureUtil.randomDepositTreeSnapshot(
+            depositsCount.longValue(), UInt64.valueOf(lastBlockNumber));
+    when(depositSnapshotFileLoader.loadDepositSnapshot())
+        .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    // DepositTreeSnapshot from DB empty
+    when(depositSnapshotStorageLoader.loadDepositSnapshot())
+        .thenReturn(SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY));
+
+    manager.start();
+    notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verify(depositSnapshotStorageLoader).loadDepositSnapshot();
+    verify(depositSnapshotFileLoader).loadDepositSnapshot();
+    verify(eth1DepositStorageChannel, never()).replayDepositEvents();
+    verify(eth1EventsChannel).setLatestPublishedDeposit(depositsCount.decrement());
     inOrder
         .verify(depositProcessingController)
         .startSubscription(lastBlockNumber.add(BigInteger.ONE));
@@ -444,8 +478,8 @@ class Eth1DepositManagerTest {
   }
 
   @Test
-  void shouldStartFromBestSnapshotWhenOptionEnabled() {
-    final Eth1DepositManager manager2 =
+  void shouldUseCustomDepositSnapshotPathWhenProvided() {
+    final Eth1DepositManager manager =
         new Eth1DepositManager(
             config,
             eth1Provider,
@@ -460,34 +494,26 @@ class Eth1DepositManagerTest {
             Optional.empty(),
             eth1HeadTracker);
 
-    final UInt64 deposits = UInt64.valueOf(100);
-    final BigInteger lastBlockNumberFile = BigInteger.valueOf(1000);
-    final BigInteger lastBlockNumberStorage = BigInteger.valueOf(2000);
+    final UInt64 depositsCount = UInt64.valueOf(100);
+    final BigInteger lastBlockNumber = BigInteger.valueOf(1000);
 
-    // DepositTreeSnapshot from file will be loaded
+    // Custom deposit snapshot path provided, so will be used
     final DepositTreeSnapshot depositTreeSnapshotFromFile =
         dataStructureUtil.randomDepositTreeSnapshot(
-            deposits.longValue(), UInt64.valueOf(lastBlockNumberFile));
+            depositsCount.longValue(), UInt64.valueOf(lastBlockNumber));
     when(depositSnapshotFileLoader.loadDepositSnapshot())
         .thenReturn(LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromFile)));
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
-    // Storage snapshot will be loaded too and compared to the one from file
-    final DepositTreeSnapshot depositTreeSnapshotFromDb =
-        dataStructureUtil.randomDepositTreeSnapshot(
-            deposits.longValue(), UInt64.valueOf(lastBlockNumberStorage));
-    when(depositSnapshotStorageLoader.loadDepositSnapshot())
-        .thenReturn(
-            SafeFuture.completedFuture(
-                LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshotFromDb))));
-
-    manager2.start();
-    notifyHeadBlock(BigInteger.valueOf(3000), MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    manager.start();
+    notifyHeadBlock(lastBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
+    verify(depositSnapshotStorageLoader, never()).loadDepositSnapshot();
+    verify(depositSnapshotFileLoader).loadDepositSnapshot();
     verify(eth1DepositStorageChannel, never()).replayDepositEvents();
-    verify(eth1EventsChannel).setLatestPublishedDeposit(deposits.decrement());
+    verify(eth1EventsChannel).setLatestPublishedDeposit(depositsCount.decrement());
     inOrder
         .verify(depositProcessingController)
-        .startSubscription(lastBlockNumberStorage.add(BigInteger.ONE));
+        .startSubscription(lastBlockNumber.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
     assertNoUncaughtExceptions();
   }

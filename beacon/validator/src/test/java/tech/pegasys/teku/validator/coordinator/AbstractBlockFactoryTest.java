@@ -85,6 +85,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractBlockFactoryTest {
@@ -116,6 +117,9 @@ public abstract class AbstractBlockFactoryTest {
   protected Optional<BuilderPayload> builderPayload = Optional.empty();
 
   protected ExecutionPayloadResult cachedExecutionPayloadResult = null;
+
+  protected GraffitiBuilder graffitiBuilder =
+      new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED, Optional.empty());
 
   @BeforeAll
   public static void initSession() {
@@ -181,7 +185,7 @@ public abstract class AbstractBlockFactoryTest {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
-    when(attestationsPool.getAttestationsForBlock(any(), any(), any())).thenReturn(attestations);
+    when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
     when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);

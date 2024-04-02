@@ -26,6 +26,7 @@ import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrPeerAddress;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptions {
@@ -143,10 +144,23 @@ public class P2POptions {
   @Option(
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
-      description = "Static peers",
+      description =
+          "Specifies a list of 'static' peers with which to establish and maintain connections",
       split = ",",
       arity = "0..*")
   private List<String> p2pStaticPeers = new ArrayList<>();
+
+  @Option(
+      names = {"--p2p-direct-peers"},
+      paramLabel = "<PEER_ADDRESSES>",
+      description =
+          """
+              Specifies a list of 'direct' peers with which to establish and maintain connections.
+              Direct peers are static peers with which this node will always exchange full messages, regardless of peer scoring mechanisms.
+              Such peers will also need to enable you as direct in order to work.""",
+      split = ",",
+      arity = "0..*")
+  private List<String> p2pDirectPeers = new ArrayList<>();
 
   @Option(
       names = {"--Xp2p-multipeer-sync-enabled"},
@@ -226,6 +240,16 @@ public class P2POptions {
       arity = "1",
       hidden = true)
   private Integer peerRateLimit = P2PConfig.DEFAULT_PEER_RATE_LIMIT;
+
+  @Option(
+      names = {"--Xpeer-all-topics-filter-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Add all topic filtering to p2p configuration.",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean allTopicsFilterEnabled = P2PConfig.DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
 
   @Option(
       names = {"--Xpeer-request-limit"},
@@ -311,6 +335,9 @@ public class P2POptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
+    // From a discovery configuration perspective, direct peers are static peers
+    p2pStaticPeers.addAll(p2pDirectPeers);
+
     builder
         .p2p(
             b ->
@@ -322,6 +349,7 @@ public class P2POptions {
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                     .isGossipScoringEnabled(gossipScoringEnabled)
                     .peerRateLimit(peerRateLimit)
+                    .allTopicsFilterEnabled(allTopicsFilterEnabled)
                     .peerRequestLimit(peerRequestLimit))
         .discovery(
             d -> {
@@ -350,6 +378,13 @@ public class P2POptions {
               }
               if (p2pAdvertisedPort != null) {
                 n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
+              }
+              if (!p2pDirectPeers.isEmpty()) {
+                n.directPeers(
+                    p2pDirectPeers.stream()
+                        .map(MultiaddrPeerAddress::fromAddress)
+                        .map(MultiaddrPeerAddress::getId)
+                        .toList());
               }
               n.networkInterface(p2pInterface)
                   .isEnabled(p2pEnabled)

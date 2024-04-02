@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.HttpUrl;
@@ -22,7 +23,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,15 +39,20 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostStateValidatorsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SyncCommitteeSelectionsRequest;
 
 public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefClient {
 
@@ -54,9 +64,14 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final GetGenesisRequest getGenesisRequest;
   private final GetProposerDutiesRequest getProposerDutiesRequest;
   private final GetStateValidatorsRequest getStateValidatorsRequest;
+  private final PostAttesterDutiesRequest postAttesterDutiesRequest;
+  private final PostStateValidatorsRequest postStateValidatorsRequest;
+  private final PostSyncDutiesRequest postSyncDutiesRequest;
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
   private final CreateAttestationDataRequest createAttestationDataRequest;
+  private final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest;
+  private final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -70,12 +85,19 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
     this.getStateValidatorsRequest = new GetStateValidatorsRequest(baseEndpoint, okHttpClient);
+    this.postStateValidatorsRequest = new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
+    this.postSyncDutiesRequest = new PostSyncDutiesRequest(baseEndpoint, okHttpClient);
+    this.postAttesterDutiesRequest = new PostAttesterDutiesRequest(baseEndpoint, okHttpClient);
     this.sendSignedBlockRequest =
         new SendSignedBlockRequest(spec, baseEndpoint, okHttpClient, preferSszBlockEncoding);
     this.registerValidatorsRequest =
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
     this.createAttestationDataRequest =
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
+    this.beaconCommitteeSelectionsRequest =
+        new BeaconCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
+    this.syncCommitteeSelectionsRequest =
+        new SyncCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -98,6 +120,22 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return getStateValidatorsRequest
         .getStateValidators(validatorIds)
         .map(ObjectAndMetaData::getData);
+  }
+
+  public Optional<List<StateValidatorData>> postStateValidators(final List<String> validatorIds) {
+    return postStateValidatorsRequest
+        .postStateValidators(validatorIds)
+        .map(ObjectAndMetaData::getData);
+  }
+
+  public Optional<SyncCommitteeDuties> postSyncDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return postSyncDutiesRequest.postSyncDuties(epoch, validatorIndices);
+  }
+
+  public Optional<AttesterDuties> postAttesterDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return postAttesterDutiesRequest.postAttesterDuties(epoch, validatorIndices);
   }
 
   public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
@@ -151,5 +189,15 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public Optional<AttestationData> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return createAttestationDataRequest.createAttestationData(slot, committeeIndex);
+  }
+
+  public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> validatorsPartialProofs) {
+    return beaconCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+  }
+
+  public Optional<List<SyncCommitteeSelectionProof>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> validatorsPartialProofs) {
+    return syncCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
   }
 }

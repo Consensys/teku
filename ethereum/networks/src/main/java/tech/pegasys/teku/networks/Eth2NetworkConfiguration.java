@@ -85,6 +85,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> bellatrixForkEpoch;
   private final Optional<UInt64> capellaForkEpoch;
   private final Optional<UInt64> denebForkEpoch;
+  private final Optional<UInt64> electraForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -114,6 +115,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<UInt64> capellaForkEpoch,
       final Optional<UInt64> denebForkEpoch,
+      final Optional<UInt64> electraForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -135,6 +137,7 @@ public class Eth2NetworkConfiguration {
     this.bellatrixForkEpoch = bellatrixForkEpoch;
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
+    this.electraForkEpoch = electraForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -214,6 +217,7 @@ public class Eth2NetworkConfiguration {
       case BELLATRIX -> bellatrixForkEpoch;
       case CAPELLA -> capellaForkEpoch;
       case DENEB -> denebForkEpoch;
+      case ELECTRA -> electraForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -293,6 +297,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
+        && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
         && Objects.equals(trustedSetup, that.trustedSetup)
@@ -316,6 +321,7 @@ public class Eth2NetworkConfiguration {
         bellatrixForkEpoch,
         capellaForkEpoch,
         denebForkEpoch,
+        electraForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
         trustedSetup,
@@ -355,6 +361,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
     private Optional<UInt64> denebForkEpoch = Optional.empty();
+    private Optional<UInt64> electraForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -405,6 +412,9 @@ public class Eth2NetworkConfiguration {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
                       });
+                  builder.electraBuilder(
+                      electraBuilder ->
+                          electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
@@ -436,6 +446,7 @@ public class Eth2NetworkConfiguration {
           bellatrixForkEpoch,
           capellaForkEpoch,
           denebForkEpoch,
+          electraForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -625,6 +636,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder denebForkEpoch(final UInt64 denebForkEpoch) {
       this.denebForkEpoch = Optional.of(denebForkEpoch);
+      return this;
+    }
+
+    public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
+      this.electraForkEpoch = Optional.of(electraForkEpoch);
       return this;
     }
 

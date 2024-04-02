@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 
 public class PowchainServiceTest {
@@ -50,9 +53,11 @@ public class PowchainServiceTest {
       mock(ExecutionWeb3jClientProvider.class);
   private final Web3JClient web3JClient = mock(Web3JClient.class);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private Supplier<Optional<BeaconState>> latestFinalizedState;
 
   @BeforeEach
   public void setup() {
+    when(serviceConfig.createAsyncRunner("powchain")).thenReturn(mock(AsyncRunner.class));
     when(serviceConfig.getTimeProvider()).thenReturn(mock(TimeProvider.class));
     when(serviceConfig.getMetricsSystem()).thenReturn(mock(MetricsSystem.class));
     when(powConfig.isEnabled()).thenReturn(false);
@@ -68,11 +73,12 @@ public class PowchainServiceTest {
     when(eventChannels.getPublisher(eq(Eth1DepositStorageChannel.class), any(AsyncRunner.class)))
         .thenReturn(mock(Eth1DepositStorageChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
+    latestFinalizedState = Optional::empty;
   }
 
   @Test
   public void shouldFail_WhenNeitherEth1NorExecutionEndpoint() {
-    assertThatThrownBy(() -> new PowchainService(serviceConfig, powConfig, Optional.empty()))
+    assertThatThrownBy(() -> createAndInitializePowchainService(Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -80,9 +86,7 @@ public class PowchainServiceTest {
   public void shouldFail_WhenNoEth1EndpointButWebsocketsExecutionEndpoint() {
     when(web3JClient.isWebsocketsClient()).thenReturn(true);
     assertThatThrownBy(
-            () ->
-                new PowchainService(
-                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)))
+            () -> createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider)))
         .hasMessageContaining("not compatible with Websockets");
   }
 
@@ -100,9 +104,7 @@ public class PowchainServiceTest {
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
     assertThatNoException()
         .isThrownBy(
-            () ->
-                new PowchainService(
-                    serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)));
+            () -> createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider)));
   }
 
   @Test
@@ -113,7 +115,7 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/bundled"));
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
@@ -125,12 +127,27 @@ public class PowchainServiceTest {
         .thenReturn(Optional.empty());
     when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
         .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/bundled", true)));
+  }
+
+  @Test
+  public void shouldNotUseBundledDepositSnapshotPathWhenDepositSnapshotDisabled() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
+
+    final PowchainService powchainService =
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
 
   @Test
@@ -141,15 +158,32 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/checkpoint"));
     when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
         .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(true);
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService,
         List.of(
             new DepositSnapshotResource("/foo/checkpoint", false),
             new DepositSnapshotResource("/foo/bundled", true)));
+  }
+
+  @Test
+  public void shouldNotUseCheckpointSyncAndBundledDepositSnapshotPathWhenSnapshotDisabled() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getCheckpointSyncDepositSnapshotUrl())
+        .thenReturn(Optional.of("/foo/checkpoint"));
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).thenReturn(false);
+
+    final PowchainService powchainService =
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedOrderOfDepositSnapshotPathResources(powchainService, List.of());
   }
 
   @Test
@@ -160,7 +194,7 @@ public class PowchainServiceTest {
         .thenReturn(Optional.of("/foo/checkpoint"));
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     verifyExpectedOrderOfDepositSnapshotPathResources(
         powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
@@ -174,7 +208,7 @@ public class PowchainServiceTest {
         .thenReturn(Optional.empty());
 
     final PowchainService powchainService =
-        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+        createAndInitializePowchainService(Optional.of(engineWeb3jClientProvider));
 
     assertThat(
             powchainService
@@ -182,6 +216,56 @@ public class PowchainServiceTest {
                 .getDepositSnapshotFileLoader()
                 .getDepositSnapshotResources())
         .isEmpty();
+  }
+
+  @Test
+  public void shouldNotInitializeIfEth1PollingHasBeenDisabled() {
+    final Spec spec = mock(Spec.class);
+    when(powConfig.getSpec()).thenReturn(spec);
+    final BeaconState finalizedState = mock(BeaconState.class);
+    when(spec.isFormerDepositMechanismDisabled(finalizedState)).thenReturn(true);
+
+    latestFinalizedState = () -> Optional.of(finalizedState);
+
+    final PowchainService powchainService =
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
+
+    powchainService.start().join();
+
+    assertThat(powchainService.isRunning()).isTrue();
+    assertThat(powchainService.getEth1DepositManager()).isNull();
+  }
+
+  @Test
+  public void shouldStopServiceIfEth1PollingHasBeenDisabledOnFinalizedCheckpoint() {
+    final Spec spec = mock(Spec.class);
+    when(powConfig.getSpec()).thenReturn(spec);
+    final BeaconState finalizedState = mock(BeaconState.class);
+    when(spec.isFormerDepositMechanismDisabled(finalizedState)).thenReturn(true);
+
+    latestFinalizedState = () -> Optional.of(finalizedState);
+
+    final PowchainService powchainService =
+        new PowchainService(
+            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
+
+    powchainService.start().join();
+
+    assertThat(powchainService.isRunning()).isTrue();
+
+    powchainService.onNewFinalizedCheckpoint(mock(Checkpoint.class), false);
+
+    assertThat(powchainService.isRunning()).isFalse();
+  }
+
+  private PowchainService createAndInitializePowchainService(
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+    final PowchainService powchainService =
+        new PowchainService(
+            serviceConfig, powConfig, maybeExecutionWeb3jClientProvider, latestFinalizedState);
+    powchainService.initialize();
+    return powchainService;
   }
 
   private void verifyExpectedOrderOfDepositSnapshotPathResources(
