@@ -142,6 +142,7 @@ public class ExecutionPayloadSchemaDeneb
     throw new IllegalStateException("Attempted to get a deposit receipt schema from deneb");
   }
 
+  @Override
   public SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>>
       getExecutionLayerExitsSchemaRequired() {
     throw new IllegalStateException("Attempted to get execution layer exits schema from deneb");

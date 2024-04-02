@@ -89,7 +89,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       throws BlockProcessingException {
     final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
 
-    //TODO-lucas maybe we need a better way of defining the order of operations?
+    // TODO-lucas maybe we need a better way of defining the order of operations?
 
     safelyProcess(
         () -> {
