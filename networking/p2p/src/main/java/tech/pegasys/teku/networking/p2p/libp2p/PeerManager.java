@@ -88,7 +88,7 @@ public class PeerManager implements ConnectionHandler {
     final LabelledGauge peerDirectionLabelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.LIBP2P,
-            "peers_direction",
+            "peers_direction_current",
             "The number of peers by direction including inbound and outbound",
             "direction");
     peerDirectionLabelledGauge.labels(inboundPeers::get, "inbound");

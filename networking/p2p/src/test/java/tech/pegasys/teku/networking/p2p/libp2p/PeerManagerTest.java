@@ -85,7 +85,7 @@ public class PeerManagerTest {
             eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), eq("client")))
         .thenReturn(peerClientLabelledGauge);
     when(metricsSystem.createLabelledGauge(
-            eq(TekuMetricCategory.LIBP2P), eq("peers_direction"), any(), eq("direction")))
+            eq(TekuMetricCategory.LIBP2P), eq("peers_direction_current"), any(), eq("direction")))
         .thenReturn(peerDirectionLabelledGauge);
     new PeerManager(
         metricsSystem,
