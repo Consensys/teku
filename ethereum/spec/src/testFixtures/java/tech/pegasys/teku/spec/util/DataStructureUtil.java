@@ -1660,33 +1660,35 @@ public final class DataStructureUtil {
     return new VoluntaryExit(randomUInt64(), validatorIndex);
   }
 
+  public ValidatorBuilder validatorBuilder() {
+    return new ValidatorBuilder(spec, this);
+  }
+
   public Validator randomValidator() {
-    return randomValidator(randomPublicKey());
+    return validatorBuilder().build();
   }
 
   public Validator randomValidator(final BLSPublicKey publicKey) {
-    return new Validator(
-        publicKey,
-        randomBytes32(),
-        getMaxEffectiveBalance(),
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
+    return validatorBuilder()
+        .publicKey(publicKey)
+        .build();
+  }
+
+  public Validator randomValidator(
+      final BLSPublicKey publicKey, final Bytes32 withdrawalCredentials) {
+    return validatorBuilder()
+        .publicKey(publicKey)
+        .withdrawalCredentials(withdrawalCredentials)
+        .build();
   }
 
   public Validator randomValidator(
       final BLSPublicKey publicKey, final Bytes32 withdrawalCredentials, final UInt64 balance) {
-    return new Validator(
-        publicKey,
-        withdrawalCredentials,
-        balance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
+    return validatorBuilder()
+        .publicKey(publicKey)
+        .withdrawalCredentials(withdrawalCredentials)
+        .effectiveBalance(balance)
+        .build();
   }
 
   public Fork randomFork() {
@@ -2456,6 +2458,19 @@ public final class DataStructureUtil {
     return getElectraSchemaDefinitions(randomSlot())
         .getExecutionLayerExitSchema()
         .create(randomEth1Address(), randomPublicKey());
+  }
+
+  public ExecutionLayerExit executionLayerExit(final Bytes20 sourceAddress, BLSPublicKey validatorPubKey) {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerExitSchema()
+        .create(sourceAddress, validatorPubKey);
+  }
+
+  public ExecutionLayerExit executionLayerExit(final Validator validator) {
+    final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerExitSchema()
+        .create(executionAddress, validator.getPublicKey());
   }
 
   public UInt64 randomBlobSidecarIndex() {
