@@ -70,7 +70,9 @@ public class ValidatorIndexCache {
       final SszList<Validator> validators,
       final BLSPublicKey publicKey,
       final int latestFinalizedIndex) {
-    for (int i = lastCachedIndex.get() + 1; i <= latestFinalizedIndex; i++) {
+    for (int i = lastCachedIndex.get() + 1;
+        i <= Math.min(latestFinalizedIndex, validators.size() - 1);
+        i++) {
       final BLSPublicKey pubKey = validators.get(i).getPublicKey();
       // cache finalized mapping
       validatorIndices.invalidateWithNewValue(pubKey, i);
@@ -99,10 +101,14 @@ public class ValidatorIndexCache {
     return Optional.empty();
   }
 
-  // TODO: call this method also on startup when the chain is initialized with an anchor point
   public void updateLatestFinalizedIndex(final BeaconState finalizedState) {
     latestFinalizedIndex.updateAndGet(
         curr -> Math.max(curr, finalizedState.getValidators().size() - 1));
+  }
+
+  @VisibleForTesting
+  public int getLatestFinalizedIndex() {
+    return latestFinalizedIndex.get();
   }
 
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
@@ -116,11 +122,6 @@ public class ValidatorIndexCache {
   @VisibleForTesting
   Cache<BLSPublicKey, Integer> getValidatorIndices() {
     return validatorIndices;
-  }
-
-  @VisibleForTesting
-  int getLatestFinalizedIndex() {
-    return latestFinalizedIndex.get();
   }
 
   @VisibleForTesting
