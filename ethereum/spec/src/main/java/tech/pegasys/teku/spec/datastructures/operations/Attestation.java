@@ -40,7 +40,7 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
           "Attestation",
           namedSchema(
               "aggregation_bits",
-              SszBitlistSchema.create(specConfig.getMaxValidatorsPerAttestation())),
+              SszBitlistSchema.create(specConfig.getMaxValidatorsPerCommittee())),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }

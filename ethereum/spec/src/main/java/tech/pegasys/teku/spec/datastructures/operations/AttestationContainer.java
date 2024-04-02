@@ -35,4 +35,9 @@ public interface AttestationContainer extends SszData, SszContainer {
   default Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.empty();
   }
+
+  default List<UInt64> getCommitteeIndicesRequired() {
+    return getCommitteeIndices()
+        .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
+  }
 }

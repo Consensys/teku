@@ -49,10 +49,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   @Override
   public IntList getAttestingIndices(
       final BeaconState state, final AttestationContainer attestation) {
-    final List<UInt64> committeeIndices =
-        attestation
-            .getCommitteeIndices()
-            .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
+    final List<UInt64> committeeIndices = attestation.getCommitteeIndicesRequired();
     final SszBitlist aggregationBits = attestation.getAggregationBits();
     final IntList attestingIndices = new IntArrayList();
     int committeeOffset = 0;

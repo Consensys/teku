@@ -38,7 +38,9 @@ public class AttestationElectraSchema
         "AttestationElectra",
         namedSchema(
             "aggregation_bits",
-            SszBitlistSchema.create(specConfig.getMaxValidatorsPerAttestation())),
+            SszBitlistSchema.create(
+                (long) specConfig.getMaxValidatorsPerCommittee()
+                    * specConfig.getMaxCommitteesPerSlot())),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema(
             "committee_bits", SszBitvectorSchema.create(specConfig.getMaxCommitteesPerSlot())),
