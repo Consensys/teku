@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateAssert.assertThatSyncAggregate;
 
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -187,8 +186,6 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Override
   public BlockFactory createBlockFactory(final Spec spec) {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     return new BlockFactoryPhase0(
         spec,
         new BlockOperationSelectorFactory(
@@ -201,7 +198,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
             syncCommitteeContributionPool,
             depositProvider,
             eth1DataCache,
-            () -> graffiti,
+            graffitiBuilder,
             forkChoiceNotifier,
             executionLayer));
   }

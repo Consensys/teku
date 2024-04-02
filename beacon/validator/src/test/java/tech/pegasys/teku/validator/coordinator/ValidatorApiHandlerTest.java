@@ -1267,7 +1267,7 @@ class ValidatorApiHandlerTest {
                       UInt64.valueOf(index),
                       dataStructureUtil.randomUInt64(),
                       statusOverrides.getOrDefault(publicKey, ValidatorStatus.active_ongoing),
-                      dataStructureUtil.randomValidator(publicKey));
+                      dataStructureUtil.validatorBuilder().publicKey(publicKey).build());
                 })
             .collect(Collectors.toList());
 

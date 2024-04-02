@@ -19,7 +19,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -178,8 +177,6 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
   @Override
   public BlockFactory createBlockFactory(final Spec spec) {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     return new BlockFactoryDeneb(
         spec,
         new BlockOperationSelectorFactory(
@@ -192,7 +189,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             syncCommitteeContributionPool,
             depositProvider,
             eth1DataCache,
-            () -> graffiti,
+            graffitiBuilder,
             forkChoiceNotifier,
             executionLayer));
   }
