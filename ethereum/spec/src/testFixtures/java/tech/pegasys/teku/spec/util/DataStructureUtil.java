@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.util;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
@@ -1660,33 +1659,16 @@ public final class DataStructureUtil {
     return new VoluntaryExit(randomUInt64(), validatorIndex);
   }
 
+  public ValidatorBuilder validatorBuilder() {
+    return new ValidatorBuilder(spec, this);
+  }
+
+  /*
+   STOP! Before thinking about adding a new method to create a specific type of validator, consider using
+   DataStructureUtil.validatorBuilder() to create a custom validator that suit your needs.
+  */
   public Validator randomValidator() {
-    return randomValidator(randomPublicKey());
-  }
-
-  public Validator randomValidator(final BLSPublicKey publicKey) {
-    return new Validator(
-        publicKey,
-        randomBytes32(),
-        getMaxEffectiveBalance(),
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
-  }
-
-  public Validator randomValidator(
-      final BLSPublicKey publicKey, final Bytes32 withdrawalCredentials, final UInt64 balance) {
-    return new Validator(
-        publicKey,
-        withdrawalCredentials,
-        balance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
+    return validatorBuilder().build();
   }
 
   public Fork randomFork() {
@@ -2456,6 +2438,20 @@ public final class DataStructureUtil {
     return getElectraSchemaDefinitions(randomSlot())
         .getExecutionLayerExitSchema()
         .create(randomEth1Address(), randomPublicKey());
+  }
+
+  public ExecutionLayerExit executionLayerExit(
+      final Bytes20 sourceAddress, BLSPublicKey validatorPubKey) {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerExitSchema()
+        .create(sourceAddress, validatorPubKey);
+  }
+
+  public ExecutionLayerExit executionLayerExit(final Validator validator) {
+    final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerExitSchema()
+        .create(executionAddress, validator.getPublicKey());
   }
 
   public UInt64 randomBlobSidecarIndex() {
