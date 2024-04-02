@@ -1663,29 +1663,12 @@ public final class DataStructureUtil {
     return new ValidatorBuilder(spec, this);
   }
 
+  /*
+   STOP! Before thinking about adding a new method to create a specific type of validator, consider using
+   DataStructureUtil.validatorBuilder() to create a custom validator that suit your needs.
+  */
   public Validator randomValidator() {
     return validatorBuilder().build();
-  }
-
-  public Validator randomValidator(final BLSPublicKey publicKey) {
-    return validatorBuilder().publicKey(publicKey).build();
-  }
-
-  public Validator randomValidator(
-      final BLSPublicKey publicKey, final Bytes32 withdrawalCredentials) {
-    return validatorBuilder()
-        .publicKey(publicKey)
-        .withdrawalCredentials(withdrawalCredentials)
-        .build();
-  }
-
-  public Validator randomValidator(
-      final BLSPublicKey publicKey, final Bytes32 withdrawalCredentials, final UInt64 balance) {
-    return validatorBuilder()
-        .publicKey(publicKey)
-        .withdrawalCredentials(withdrawalCredentials)
-        .effectiveBalance(balance)
-        .build();
   }
 
   public Fork randomFork() {

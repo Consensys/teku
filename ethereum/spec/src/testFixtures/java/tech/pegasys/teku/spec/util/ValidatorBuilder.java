@@ -36,7 +36,7 @@ public class ValidatorBuilder {
   public ValidatorBuilder(final Spec spec, final DataStructureUtil dataStructureUtil) {
     this.dataStructureUtil = dataStructureUtil;
     this.publicKey = dataStructureUtil.randomPublicKey();
-    this.withdrawalCredentials = dataStructureUtil.randomEth1WithdrawalCredentials();
+    this.withdrawalCredentials = dataStructureUtil.randomBytes32();
     this.effectiveBalance = spec.getGenesisSpec().getConfig().getMaxEffectiveBalance();
   }
 
