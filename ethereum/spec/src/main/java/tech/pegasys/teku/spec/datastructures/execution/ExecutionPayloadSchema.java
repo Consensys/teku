@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload>
@@ -42,6 +43,9 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
       getDepositReceiptsSchemaRequired();
 
   DepositReceiptSchema getDepositReceiptSchemaRequired();
+
+  SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>>
+      getExecutionLayerExitsSchemaRequired();
 
   ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired();
 
