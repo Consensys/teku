@@ -25,74 +25,127 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatorIndexCacheTest {
-  final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-  final BeaconState state = dataStructureUtil.randomBeaconState();
-  final BLSPublicKey missingPublicKey = dataStructureUtil.randomPublicKey();
+
+  private static final int NUMBER_OF_VALIDATORS = 64;
+
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final BeaconState state = dataStructureUtil.randomBeaconState(NUMBER_OF_VALIDATORS);
 
   @SuppressWarnings("unchecked")
   final Cache<BLSPublicKey, Integer> cache = mock(Cache.class);
 
   @Test
-  public void shouldNotScanStateIfAlreadyHaveValidators() {
+  public void shouldScanFinalizedStateAndCache() {
+    final SszList<Validator> validators = state.getValidators();
+    final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
+    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+    validatorIndexCache.updateLatestFinalizedIndex(state);
+
+    final Optional<Integer> index =
+        validatorIndexCache.getValidatorIndex(
+            state, validators.get(latestFinalizedIndex).getPublicKey());
+
+    assertThat(index).hasValue(latestFinalizedIndex);
+
+    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(NUMBER_OF_VALIDATORS);
+    assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(latestFinalizedIndex);
+  }
+
+  @Test
+  public void shouldStartScanningFinalizedStateFromLastCachedIndex() {
+    final SszList<Validator> validators = state.getValidators();
+    final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
+    final int lastCachedIndex = 31;
     final ValidatorIndexCache validatorIndexCache =
-        new ValidatorIndexCache(cache, state.getValidators().size());
+        new ValidatorIndexCache(cache, latestFinalizedIndex, lastCachedIndex);
 
-    when(cache.getCached(missingPublicKey)).thenReturn(Optional.empty());
-    final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, missingPublicKey);
+    when(cache.getCached(any())).thenReturn(Optional.empty());
 
-    verify(cache).getCached(missingPublicKey);
+    final Optional<Integer> index =
+        validatorIndexCache.getValidatorIndex(
+            state, validators.get(latestFinalizedIndex).getPublicKey());
+
+    // last cached index is 31, so need to cache 32 more validators (final index - 63)
+    verify(cache, times(32)).invalidateWithNewValue(any(), any());
+    assertThat(index).hasValue(latestFinalizedIndex);
+
+    assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(latestFinalizedIndex);
+  }
+
+  @Test
+  public void shouldScanNonFinalizedStateButDoNotCacheIfIndexNotFoundInFinalizedState() {
+    final SszList<Validator> validators = state.getValidators();
+    final int latestFinalizedIndex = 31;
+    final ValidatorIndexCache validatorIndexCache =
+        new ValidatorIndexCache(cache, latestFinalizedIndex, latestFinalizedIndex);
+
+    when(cache.getCached(any())).thenReturn(Optional.empty());
+
+    final Optional<Integer> index =
+        validatorIndexCache.getValidatorIndex(
+            state, validators.get(NUMBER_OF_VALIDATORS - 1).getPublicKey());
+
     verify(cache, never()).invalidateWithNewValue(any(), any());
-    assertThat(index).isEmpty();
+    assertThat(index).hasValue(NUMBER_OF_VALIDATORS - 1);
+
+    assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(latestFinalizedIndex);
   }
 
   @Test
-  public void shouldScanNewValidatorsInSuppliedState() {
-    final ValidatorIndexCache validatorIndexCache =
-        new ValidatorIndexCache(cache, state.getValidators().size() - 5);
-
-    when(cache.getCached(missingPublicKey)).thenReturn(Optional.empty());
-    final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, missingPublicKey);
-    verify(cache).getCached(missingPublicKey);
-    verify(cache, times(5)).invalidateWithNewValue(any(), any());
-    assertThat(index).isEmpty();
-  }
-
-  @Test
-  public void shouldGetAllValidatorKeysCachedIfMissingKeyPassed() {
+  public void shouldReturnEmptyIfPubkeyNotFoundInState() {
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, missingPublicKey);
+    validatorIndexCache.updateLatestFinalizedIndex(state);
+
+    final Optional<Integer> index =
+        validatorIndexCache.getValidatorIndex(state, dataStructureUtil.randomPublicKey());
+
+    // all keys were cached
+    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(NUMBER_OF_VALIDATORS);
+
     assertThat(index).isEmpty();
-    assertThat(validatorIndexCache.getValidatorIndices().size())
-        .isEqualTo(state.getValidators().size());
   }
 
   @Test
-  public void shouldPopulateCacheItemsFromState() {
+  public void shouldUpdateLatestFinalizedIndex() {
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    final BLSPublicKey foundKey =
-        BLSPublicKey.fromBytesCompressed(state.getValidators().get(10).getPubkeyBytes());
 
-    final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, foundKey);
-    assertThat(index.get()).isEqualTo(10);
-    assertThat(validatorIndexCache.getLastIndex()).isEqualTo(10);
-    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(11);
+    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(-1);
+
+    validatorIndexCache.updateLatestFinalizedIndex(state);
+
+    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(63);
   }
 
   @Test
-  public void shouldFilterItemsBeyondStateIndex() {
+  public void shouldInvalidatePublicKeyIfFinalized() {
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    validatorIndexCache.invalidateWithNewValue(missingPublicKey, 100);
-    final Optional<Integer> index = validatorIndexCache.getValidatorIndex(state, missingPublicKey);
+    validatorIndexCache.updateLatestFinalizedIndex(state);
 
-    assertThat(index).isEmpty();
-    // state didn't get scanned, because we had the index but it was out of bounds
-    assertThat(validatorIndexCache.getLastIndex()).isEqualTo(-1);
-    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(1);
+    final BLSPublicKey updatedPublicKey = dataStructureUtil.randomPublicKey();
+    validatorIndexCache.invalidateWithNewValue(updatedPublicKey, 30);
+
+    assertThat(validatorIndexCache.getValidatorIndices().size()).isOne();
+    assertThat(validatorIndexCache.getValidatorIndex(state, updatedPublicKey)).hasValue(30);
+  }
+
+  @Test
+  public void shouldNotInvalidatePublicKeyIfIndexIsNotFinalized() {
+    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+
+    final BLSPublicKey updatedPublicKey = dataStructureUtil.randomPublicKey();
+    validatorIndexCache.invalidateWithNewValue(updatedPublicKey, 30);
+
+    // nothing has been cached because the state is not finalized
+    assertThat(validatorIndexCache.getValidatorIndices().size()).isZero();
+    assertThat(validatorIndexCache.getValidatorIndex(state, updatedPublicKey)).isEmpty();
   }
 }
