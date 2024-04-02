@@ -576,14 +576,6 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.addFinalizedState(blockRoot, state);
-      handleAddFinalizedStateRoot(state, updater);
-    }
-  }
-
-  @Override
   public void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addReconstructedFinalizedState(blockRoot, state);
@@ -804,14 +796,6 @@ public class KvStoreDatabase implements Database {
   public Optional<BlobSidecar> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     final Optional<Bytes> maybePayload = dao.getNonCanonicalBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
-  }
-
-  @Override
-  public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      getBlobSidecarKeys(slotAndBlockRoot).forEach(updater::removeBlobSidecar);
-      updater.commit();
-    }
   }
 
   @Override

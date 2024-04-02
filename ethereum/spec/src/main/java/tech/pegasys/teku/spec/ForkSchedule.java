@@ -95,6 +95,14 @@ public class ForkSchedule {
     return milestoneToFork.get(getSpecMilestoneAtEpoch(epoch));
   }
 
+  public Fork getFork(final SpecMilestone milestone) {
+    return Optional.ofNullable(fullMilestoneToForkMap.get(milestone))
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    String.format("Milestone %s is not a part of fork schedule", milestone)));
+  }
+
   public Fork getGenesisFork() {
     return genesisFork;
   }
