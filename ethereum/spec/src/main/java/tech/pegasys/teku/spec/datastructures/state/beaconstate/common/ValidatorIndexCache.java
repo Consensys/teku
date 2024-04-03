@@ -77,14 +77,10 @@ public class ValidatorIndexCache {
       final SszList<Validator> validators,
       final BLSPublicKey publicKey,
       final int latestFinalizedIndex) {
-    LOG.info(
-        "Scanning for {} in finalized state from {} to {}",
-        publicKey,
-        lastCachedIndex.get() + 1,
-        Math.min(latestFinalizedIndex, validators.size() - 1));
-    for (int i = lastCachedIndex.get() + 1;
-        i <= Math.min(latestFinalizedIndex, validators.size() - 1);
-        i++) {
+    int to = Math.min(latestFinalizedIndex, validators.size() - 1);
+    int from = lastCachedIndex.get() + 1;
+    LOG.info("Scanning for {} in finalized state from {} to {}", publicKey, from, to);
+    for (int i = from; i <= to; i++) {
       final BLSPublicKey pubKey = validators.get(i).getPublicKey();
       // cache finalized mapping
       validatorIndices.invalidateWithNewValue(pubKey, i);
