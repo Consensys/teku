@@ -177,7 +177,8 @@ public class PeerManager implements ConnectionHandler {
     }
   }
 
-  private void onDisconnectedPeer(
+  @VisibleForTesting
+  void onDisconnectedPeer(
       final Peer peer, final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
       LOG.debug("Peer disconnected: {}", peer.getId());
