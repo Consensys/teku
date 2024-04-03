@@ -70,7 +70,7 @@ public class PeerManager implements ConnectionHandler {
     this.peerScoreFunction = peerScoreFunction;
     metricsSystem.createGauge(
         TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
-    final LabelledGauge peersLabelledGauge =
+    final LabelledGauge peerClientLabelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.LIBP2P,
             "connected_peers_current",
@@ -78,8 +78,21 @@ public class PeerManager implements ConnectionHandler {
             "client");
 
     for (PeerClientType type : PeerClientType.values()) {
-      peersLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
+      peerClientLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
     }
+
+    final LabelledGauge peerDirectionLabelledGauge =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.LIBP2P,
+            "peers_direction_current",
+            "The number of peers by direction including inbound and outbound",
+            "direction");
+    peerDirectionLabelledGauge.labels(
+        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedRemotely).count(),
+        "inbound");
+    peerDirectionLabelledGauge.labels(
+        () -> connectedPeerMap.values().stream().filter(Peer::connectionInitiatedLocally).count(),
+        "outbound");
   }
 
   @Override
@@ -164,7 +177,8 @@ public class PeerManager implements ConnectionHandler {
     }
   }
 
-  private void onDisconnectedPeer(
+  @VisibleForTesting
+  void onDisconnectedPeer(
       final Peer peer, final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
       LOG.debug("Peer disconnected: {}", peer.getId());
