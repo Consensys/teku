@@ -49,6 +49,11 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   }
 
   @Override
+  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
+    return specConfig.getMaxValidatorsPerCommittee();
+  }
+
+  @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
     return beaconStateSchema;
   }

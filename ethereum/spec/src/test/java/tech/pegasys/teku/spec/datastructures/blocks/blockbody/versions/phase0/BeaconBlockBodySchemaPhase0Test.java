@@ -29,9 +29,9 @@ public class BeaconBlockBodySchemaPhase0Test {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
     final IndexedAttestationSchema indexAttestationSchemaA =
-        new IndexedAttestationSchema(specConfig);
+        new IndexedAttestationSchema(specConfig.getMaxValidatorsPerCommittee());
     final IndexedAttestationSchema indexAttestationSchemaB =
-        new IndexedAttestationSchema(specConfig);
+        new IndexedAttestationSchema(specConfig.getMaxValidatorsPerCommittee());
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
@@ -51,9 +51,9 @@ public class BeaconBlockBodySchemaPhase0Test {
     final Spec spec = TestSpecFactory.createMainnetPhase0();
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
     final IndexedAttestationSchema indexAttestationSchemaA =
-        new IndexedAttestationSchema(specConfig);
+        new IndexedAttestationSchema(specConfig.getMaxValidatorsPerCommittee());
     final IndexedAttestationSchema indexAttestationSchemaB =
-        new IndexedAttestationSchema(specConfig);
+        new IndexedAttestationSchema(specConfig.getMaxValidatorsPerCommittee());
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,

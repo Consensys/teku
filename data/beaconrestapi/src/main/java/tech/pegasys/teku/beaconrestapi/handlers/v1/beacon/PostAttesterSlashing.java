@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -49,7 +48,7 @@ public class PostAttesterSlashing extends RestApiEndpoint {
             .description(
                 "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.")
             .tags(TAG_BEACON)
-            .requestBodyType(getRequestType(spec.getGenesisSpecConfig()))
+            .requestBodyType(getRequestType(spec))
             .response(SC_OK, "Success")
             .build());
     this.nodeDataProvider = provider;
@@ -78,10 +77,10 @@ public class PostAttesterSlashing extends RestApiEndpoint {
             }));
   }
 
-  private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(
-      final SpecConfig specConfig) {
+  private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(final Spec spec) {
+    // TODO handle electra indexed attestations
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
-        new IndexedAttestation.IndexedAttestationSchema(specConfig);
+        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
         new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
 

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.schemas;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -190,5 +191,10 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
 
   public LightClientUpdateResponseSchema getLightClientUpdateResponseSchema() {
     return lightClientUpdateResponseSchema;
+  }
+
+  @Override
+  long getMaxValidatorPerAttestation(SpecConfig specConfig) {
+    return specConfig.getMaxValidatorsPerCommittee();
   }
 }

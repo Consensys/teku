@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -29,12 +28,11 @@ public class IndexedAttestation
   public static class IndexedAttestationSchema
       extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 
-    public IndexedAttestationSchema(final SpecConfig config) {
+    public IndexedAttestationSchema(final long maxValidatorsPerIndexedAttestation) {
       super(
           "IndexedAttestation",
           namedSchema(
-              "attesting_indices",
-              SszUInt64ListSchema.create(config.getMaxValidatorsPerAttestation())),
+              "attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerIndexedAttestation)),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }

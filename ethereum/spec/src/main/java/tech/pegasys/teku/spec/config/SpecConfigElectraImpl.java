@@ -80,11 +80,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public int getMaxValidatorsPerAttestation() {
-    return getMaxValidatorsPerCommittee() * getMaxCommitteesPerSlot();
-  }
-
-  @Override
   public Bytes4 getElectraForkVersion() {
     return electraForkVersion;
   }
