@@ -1,0 +1,19 @@
+{
+  "title" : "PendingConsolidation",
+  "type" : "object",
+  "required" : [ "source_index", "target_index" ],
+  "properties" : {
+    "source_index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "target_index" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    }
+  }
+}

@@ -38,10 +38,21 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBe
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class BeaconStateSchemaElectra
     extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
   public static final int DEPOSIT_RECEIPTS_START_INDEX = 28;
+  public static final int DEPOSIT_BALANCE_TO_CONSUME_INDEX = 29;
+  public static final int EXIT_BALANCE_TO_CONSUME_INDEX = 30;
+  public static final int EARLIEST_EXIT_EPOCH_INDEX = 31;
+  public static final int CONSOLIDATION_BALANCE_TO_CONSUME_INDEX = 32;
+  public static final int EARLIEST_CONSOLIDATION_EPOCH_INDEX = 33;
+  public static final int PENDING_BALANCE_DEPOSITS_INDEX = 34;
+  public static final int PENDING_PARTIAL_WITHDRAWALS_INDEX = 35;
+  public static final int PENDING_CONSOLIDATIONS_INDEX = 36;
 
   @VisibleForTesting
   BeaconStateSchemaElectra(final SpecConfig specConfig) {
@@ -51,6 +62,12 @@ public class BeaconStateSchemaElectra
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
+    final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema =
+        new PendingBalanceDeposit.PendingBalanceDepositSchema();
+    final PendingPartialWithdrawal.PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema =
+        new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
+    final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
+        new PendingConsolidation.PendingConsolidationSchema();
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
@@ -79,6 +96,53 @@ public class BeaconStateSchemaElectra
             DEPOSIT_RECEIPTS_START_INDEX,
             BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField depositBalanceToConsumeField =
+        new SszField(
+            DEPOSIT_BALANCE_TO_CONSUME_INDEX,
+            BeaconStateFields.DEPOSIT_BALANCE_TO_CONSUME,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField exitBalanceToConsumeField =
+        new SszField(
+            EXIT_BALANCE_TO_CONSUME_INDEX,
+            BeaconStateFields.EXIT_BALANCE_TO_CONSUME,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField earliestExitEpochField =
+        new SszField(
+            EARLIEST_EXIT_EPOCH_INDEX,
+            BeaconStateFields.EARLIEST_EXIT_EPOCH,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField consolidationBalanceToConsumeField =
+        new SszField(
+            CONSOLIDATION_BALANCE_TO_CONSUME_INDEX,
+            BeaconStateFields.CONSOLIDATION_BALANCE_TO_CONSUME,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField earliestConsolidationEpochField =
+        new SszField(
+            EARLIEST_CONSOLIDATION_EPOCH_INDEX,
+            BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField pendingBalanceDepositsField =
+        new SszField(
+            PENDING_BALANCE_DEPOSITS_INDEX,
+            BeaconStateFields.PENDING_BALANCE_DEPOSITS,
+            () ->
+                SszListSchema.create(
+                    pendingBalanceDepositSchema, specConfig.getPendingBalanceDepositsLimit()));
+    final SszField pendingPartialWithdrawalsField =
+        new SszField(
+            PENDING_PARTIAL_WITHDRAWALS_INDEX,
+            BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS,
+            () ->
+                SszListSchema.create(
+                    pendingPartialWithdrawalSchema,
+                    specConfig.getPendingPartialWithdrawalsLimit()));
+    final SszField pendingConsolidationsField =
+        new SszField(
+            PENDING_CONSOLIDATIONS_INDEX,
+            BeaconStateFields.PENDING_CONSOLIDATIONS,
+            () ->
+                SszListSchema.create(
+                    pendingConsolidationSchema, specConfig.getPendingConsolidationsLimit()));
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(
@@ -86,7 +150,15 @@ public class BeaconStateSchemaElectra
                 nextWithdrawalIndexField,
                 nextWithdrawalValidatorIndexField,
                 historicalSummariesField,
-                depositReceiptsStartIndexField))
+                depositReceiptsStartIndexField,
+                depositBalanceToConsumeField,
+                exitBalanceToConsumeField,
+                earliestExitEpochField,
+                consolidationBalanceToConsumeField,
+                earliestConsolidationEpochField,
+                pendingBalanceDepositsField,
+                pendingPartialWithdrawalsField,
+                pendingConsolidationsField))
         .toList();
   }
 
@@ -152,5 +224,23 @@ public class BeaconStateSchemaElectra
   @Override
   public BeaconStateElectraImpl createFromBackingNode(TreeNode node) {
     return new BeaconStateElectraImpl(this, node);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingBalanceDeposit, ?> getPendingBalanceDepositsSchema() {
+    return (SszListSchema<PendingBalanceDeposit, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_BALANCE_DEPOSITS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
+    return (SszListSchema<PendingPartialWithdrawal, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
+    return (SszListSchema<PendingConsolidation, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
   }
 }

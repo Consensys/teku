@@ -63,6 +63,13 @@ HISTORICAL_ROOTS_LIMIT: 16777216
 # 2**40 (= 1,099,511,627,776) validator spots
 VALIDATOR_REGISTRY_LIMIT: 1099511627776
 
+# 2**27 (= 134,217,728) pending balance deposits
+PENDING_BALANCE_DEPOSITS_LIMIT: 134217728
+# 2**27 (= 134,217,728) pending partial withdrawals
+PENDING_PARTIAL_WITHDRAWALS_LIMIT: 134217728
+# 2**18 (= 262,144) pending consolidations
+PENDING_CONSOLIDATIONS_LIMIT: 262144
+
 
 # Reward and penalty quotients
 # ---------------------------------------------------------------
