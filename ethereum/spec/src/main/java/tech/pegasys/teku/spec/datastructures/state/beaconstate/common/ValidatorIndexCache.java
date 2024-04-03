@@ -32,7 +32,6 @@ public class ValidatorIndexCache {
       new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE, INDEX_NONE);
 
   private final Cache<BLSPublicKey, Integer> validatorIndices;
-
   private final AtomicInteger latestFinalizedIndex;
   private final AtomicInteger lastCachedIndex;
 
@@ -47,7 +46,9 @@ public class ValidatorIndexCache {
   }
 
   public ValidatorIndexCache() {
-    this(LRUCache.create(Integer.MAX_VALUE - 1), INDEX_NONE, INDEX_NONE);
+    validatorIndices = LRUCache.create(Integer.MAX_VALUE - 1);
+    latestFinalizedIndex = new AtomicInteger(INDEX_NONE);
+    lastCachedIndex = new AtomicInteger(INDEX_NONE);
   }
 
   public Optional<Integer> getValidatorIndex(
@@ -106,17 +107,17 @@ public class ValidatorIndexCache {
         curr -> Math.max(curr, finalizedState.getValidators().size() - 1));
   }
 
-  @VisibleForTesting
-  public int getLatestFinalizedIndex() {
-    return latestFinalizedIndex.get();
-  }
-
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
     if (updatedIndex > latestFinalizedIndex.get()) {
       // do not cache if index is not finalized
       return;
     }
     validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
+  }
+
+  @VisibleForTesting
+  public int getLatestFinalizedIndex() {
+    return latestFinalizedIndex.get();
   }
 
   @VisibleForTesting
