@@ -77,7 +77,11 @@ public class ValidatorIndexCache {
       final SszList<Validator> validators,
       final BLSPublicKey publicKey,
       final int latestFinalizedIndex) {
-    LOG.info("Scanning for {} in finalized state", publicKey);
+    LOG.info(
+        "Scanning for {} in finalized state from {} to {}",
+        publicKey,
+        lastCachedIndex.get() + 1,
+        Math.min(latestFinalizedIndex, validators.size() - 1));
     for (int i = lastCachedIndex.get() + 1;
         i <= Math.min(latestFinalizedIndex, validators.size() - 1);
         i++) {
@@ -101,7 +105,11 @@ public class ValidatorIndexCache {
       final SszList<Validator> validators,
       final BLSPublicKey publicKey,
       final int latestFinalizedIndex) {
-    LOG.info("Scanning for {} in non-finalized state", publicKey);
+    LOG.info(
+        "Scanning for {} in non-finalized state from {} to {}",
+        publicKey,
+        latestFinalizedIndex + 1,
+        validators.size() - 1);
     for (int i = latestFinalizedIndex + 1; i < validators.size(); i++) {
       final BLSPublicKey pubKey = validators.get(i).getPublicKey();
       if (pubKey.equals(publicKey)) {
