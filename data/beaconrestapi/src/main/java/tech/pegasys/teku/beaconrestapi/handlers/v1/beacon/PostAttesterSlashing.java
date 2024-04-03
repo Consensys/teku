@@ -78,7 +78,7 @@ public class PostAttesterSlashing extends RestApiEndpoint {
   }
 
   private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(final Spec spec) {
-    // TODO handle electra indexed attestations
+    // TODO EIP-7549 handle electra indexed attestations
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
