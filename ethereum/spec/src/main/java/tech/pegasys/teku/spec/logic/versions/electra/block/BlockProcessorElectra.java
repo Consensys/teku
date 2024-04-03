@@ -168,9 +168,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   /*
    Implements process_execution_layer_exit from consensus-spec (EIP-7002)
   */
+  @Override
   public void processExecutionPayloadExits(
-      final MutableBeaconStateElectra state,
-      final SszList<ExecutionLayerExit> executionLayerExits) {
+      final MutableBeaconState state, final SszList<ExecutionLayerExit> executionLayerExits) {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         beaconStateMutators.createValidatorExitContextSupplier(state);
 

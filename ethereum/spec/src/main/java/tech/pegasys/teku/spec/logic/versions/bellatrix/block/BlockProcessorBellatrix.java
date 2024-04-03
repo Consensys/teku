@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -226,5 +227,12 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in Bellatrix");
+  }
+
+  @Override
+  public void processExecutionPayloadExits(
+      final MutableBeaconState state, final SszList<ExecutionLayerExit> executionLayerExits)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No execution layer exits in Bellatrix");
   }
 }

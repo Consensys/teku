@@ -151,9 +151,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
@@ -179,9 +177,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
@@ -209,9 +205,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
@@ -241,9 +235,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
@@ -276,9 +268,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
@@ -314,9 +304,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
@@ -352,9 +340,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
@@ -399,9 +385,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState)
-                        .processExecutionPayloadExits(
-                            MutableBeaconStateElectra.required(mutableState), exits)));
+                    getBlockProcessor(preState).processExecutionPayloadExits(mutableState, exits)));
 
     // After processing the exit, the validator has exit_epoch and withdrawable_epoch set
     assertThat(postState.getValidators().get(validatorIndex).getExitEpoch())

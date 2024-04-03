@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -160,6 +161,13 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in phase0");
+  }
+
+  @Override
+  public void processExecutionPayloadExits(
+      final MutableBeaconState state, final SszList<ExecutionLayerExit> executionLayerExits)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No execution layer exits in phase0");
   }
 
   @Override

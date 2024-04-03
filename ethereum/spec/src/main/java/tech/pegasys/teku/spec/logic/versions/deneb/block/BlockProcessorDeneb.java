@@ -21,7 +21,9 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -105,5 +107,12 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
     return beaconBlockBody
         .getOptionalBlobKzgCommitments()
         .orElseThrow(() -> new BlockProcessingException("Blob kzg commitments expected"));
+  }
+
+  @Override
+  public void processExecutionPayloadExits(
+      final MutableBeaconState state, final SszList<ExecutionLayerExit> executionLayerExits)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No execution layer exits in Deneb");
   }
 }
