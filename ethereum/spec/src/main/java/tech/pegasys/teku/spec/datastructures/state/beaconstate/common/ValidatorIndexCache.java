@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -25,6 +27,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorIndexCache {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final int INDEX_NONE = -1;
 
@@ -55,10 +59,13 @@ public class ValidatorIndexCache {
     // Store latestFinalizedIndex here in case we need to scan keys from the state.
     // This ensures we're adding from a point that we're confident the cache is at
     // when we scan for more keys through the state later.
+    LOG.info("Searching for {} in the cache", publicKey);
     final int latestFinalizedIndexSnapshot = latestFinalizedIndex.get();
+    LOG.info("Latest finalized index is: {}", latestFinalizedIndexSnapshot);
     final SszList<Validator> validators = state.getValidators();
-    return validatorIndices
-        .getCached(publicKey)
+    Optional<Integer> cached = validatorIndices.getCached(publicKey);
+    cached.ifPresent(i -> LOG.info("Cache hit for {} (index: {})", publicKey, i));
+    return cached
         .or(() -> findIndexFromFinalizedState(validators, publicKey, latestFinalizedIndexSnapshot))
         .or(
             () ->
@@ -70,6 +77,7 @@ public class ValidatorIndexCache {
       final SszList<Validator> validators,
       final BLSPublicKey publicKey,
       final int latestFinalizedIndex) {
+    LOG.info("Scanning for {} in finalized state", publicKey);
     for (int i = lastCachedIndex.get() + 1;
         i <= Math.min(latestFinalizedIndex, validators.size() - 1);
         i++) {
@@ -78,6 +86,7 @@ public class ValidatorIndexCache {
       validatorIndices.invalidateWithNewValue(pubKey, i);
       updateLastCachedIndex(i);
       if (pubKey.equals(publicKey)) {
+        LOG.info("Found {} in finalized state (index: {})", pubKey, i);
         return Optional.of(i);
       }
     }
@@ -92,9 +101,11 @@ public class ValidatorIndexCache {
       final SszList<Validator> validators,
       final BLSPublicKey publicKey,
       final int latestFinalizedIndex) {
+    LOG.info("Scanning for {} in non-finalized state", publicKey);
     for (int i = latestFinalizedIndex + 1; i < validators.size(); i++) {
       final BLSPublicKey pubKey = validators.get(i).getPublicKey();
       if (pubKey.equals(publicKey)) {
+        LOG.info("Found {} in non-finalized state (index: {})", pubKey, i);
         return Optional.of(i);
       }
     }
