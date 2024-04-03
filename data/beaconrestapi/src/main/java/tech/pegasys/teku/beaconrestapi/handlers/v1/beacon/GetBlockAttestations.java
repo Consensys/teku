@@ -74,7 +74,7 @@ public class GetBlockAttestations extends RestApiEndpoint {
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
       final Spec spec) {
     Attestation.AttestationSchema dataSchema =
-        new Attestation.AttestationSchema(spec.getGenesisSpecConfig());
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
         .name("GetBlockAttestationsResponse")

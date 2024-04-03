@@ -36,11 +36,13 @@ public class BeaconBlockBodySchemaPhase0Test {
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(indexAttestationSchemaA),
+            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(indexAttestationSchemaB),
+            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);
@@ -58,11 +60,13 @@ public class BeaconBlockBodySchemaPhase0Test {
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(indexAttestationSchemaA),
+            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             new AttesterSlashingSchema(indexAttestationSchemaB),
+            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);

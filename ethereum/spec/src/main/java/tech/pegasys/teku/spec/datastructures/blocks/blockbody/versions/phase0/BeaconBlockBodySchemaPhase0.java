@@ -76,6 +76,7 @@ public class BeaconBlockBodySchemaPhase0
   public static BeaconBlockBodySchemaPhase0 create(
       final SpecConfig specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
+      final long maxValidatorsPerAttestation,
       final String containerName) {
     return new BeaconBlockBodySchemaPhase0(
         containerName,
@@ -92,7 +93,8 @@ public class BeaconBlockBodySchemaPhase0
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                new AttestationSchema(maxValidatorsPerAttestation),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
