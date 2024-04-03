@@ -51,7 +51,7 @@ public class LengthBoundsCalculatorTest {
   final Spec spec = TestSpecFactory.createMainnetPhase0();
   final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
 
-  @ParameterizedTest(name = "{0}")
+  @ParameterizedTest(name = "{1}")
   @MethodSource("generateParameters")
   void shouldCalculateCorrectLengthBounds(
       final SchemaProvider type, final SszLengthBounds expected) {
@@ -71,13 +71,13 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(getProvider(AttestationData.SSZ_SCHEMA), SszLengthBounds.ofBytes(128, 128)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getAttesterSlashingSchema,
-            SszLengthBounds.ofBytes(464, 33232)),
+            SszLengthBounds.ofBytes(464, 2097616)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getBeaconBlockSchema,
-            SszLengthBounds.ofBytes(304, 157656)),
+            SszLengthBounds.ofBytes(304, 4286424)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getBeaconBlockBodySchema,
-            SszLengthBounds.ofBytes(220, 157572)),
+            SszLengthBounds.ofBytes(220, 4286340)),
         Arguments.of(getProvider(BeaconBlockHeader.SSZ_SCHEMA), SszLengthBounds.ofBytes(112, 112)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getBeaconStateSchema,
@@ -94,7 +94,7 @@ public class LengthBoundsCalculatorTest {
             SszLengthBounds.ofBytes(524288, 524288)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getIndexedAttestationSchema,
-            SszLengthBounds.ofBytes(228, 16612)),
+            SszLengthBounds.ofBytes(228, 1048804)),
         Arguments.of(
             (SchemaProvider)
                 definitions ->
@@ -107,7 +107,7 @@ public class LengthBoundsCalculatorTest {
             SszLengthBounds.ofBytes(437, 693)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getSignedBeaconBlockSchema,
-            SszLengthBounds.ofBytes(404, 157756)),
+            SszLengthBounds.ofBytes(404, 4286524)),
         Arguments.of(
             getProvider(SignedBeaconBlockHeader.SSZ_SCHEMA), SszLengthBounds.ofBytes(208, 208)),
         Arguments.of(
