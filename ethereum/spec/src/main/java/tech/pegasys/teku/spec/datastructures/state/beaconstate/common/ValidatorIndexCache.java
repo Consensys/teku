@@ -59,12 +59,9 @@ public class ValidatorIndexCache {
     // Store latestFinalizedIndex here in case we need to scan keys from the state.
     // This ensures we're adding from a point that we're confident the cache is at
     // when we scan for more keys through the state later.
-    LOG.info("Searching for {} in the cache", publicKey);
     final int latestFinalizedIndexSnapshot = latestFinalizedIndex.get();
-    LOG.info("Latest finalized index is: {}", latestFinalizedIndexSnapshot);
     final SszList<Validator> validators = state.getValidators();
     Optional<Integer> cached = validatorIndices.getCached(publicKey);
-    cached.ifPresent(i -> LOG.info("Cache hit for {} (index: {})", publicKey, i));
     return cached
         .or(() -> findIndexFromFinalizedState(validators, publicKey, latestFinalizedIndexSnapshot))
         .or(
