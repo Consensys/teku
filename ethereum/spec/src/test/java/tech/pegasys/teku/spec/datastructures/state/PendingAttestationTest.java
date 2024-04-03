@@ -34,7 +34,7 @@ class PendingAttestationTest {
   private final PendingAttestationSchema schema =
       BeaconStateSchemaPhase0.required(spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
           .getPendingAttestationSchema();
-  private final SszBitlist participationBitfield = dataStructureUtil.randomBitlist();
+  private final SszBitlist participationBitfield = dataStructureUtil.randomAggregationBits();
   private final AttestationData data = dataStructureUtil.randomAttestationData();
   private final UInt64 inclusionDelay = dataStructureUtil.randomUInt64();
   private final UInt64 proposerIndex = dataStructureUtil.randomUInt64();
@@ -74,7 +74,8 @@ class PendingAttestationTest {
   @Test
   void equalsReturnsFalseWhenParticipationBitfieldsAreDifferent() {
     PendingAttestation testPendingAttestation =
-        schema.create(dataStructureUtil.randomBitlist(), data, inclusionDelay, proposerIndex);
+        schema.create(
+            dataStructureUtil.randomAggregationBits(), data, inclusionDelay, proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }

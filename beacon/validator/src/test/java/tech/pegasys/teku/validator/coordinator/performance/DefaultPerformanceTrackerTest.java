@@ -264,7 +264,7 @@ public class DefaultPerformanceTrackerTest {
         spec.getGenesisSchemaDefinitions()
             .getAttestationSchema()
             .create(
-                dataStructureUtil.randomBitlist(),
+                dataStructureUtil.randomAggregationBits(),
                 dataStructureUtil.randomAttestationData(UInt64.ONE),
                 BLSTestUtil.randomSignature(0)));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));

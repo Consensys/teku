@@ -387,14 +387,19 @@ public final class DataStructureUtil {
     return SszByte.of(randomByte());
   }
 
-  public SszBitlist randomBitlist() {
-    return randomBitlist(getMaxValidatorsPerCommittee());
+  public SszBitlist randomAggregationBits() {
+    return randomAggregationBits(
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationSchema()
+            .getAggregationBitsSchema()
+            .getMaxLength());
   }
 
-  public SszBitlist randomBitlist(final int n) {
+  public SszBitlist randomAggregationBits(final long n) {
     Random random = new Random(nextSeed());
-    int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
-    return SszBitlistSchema.create(n).ofBits(n, bits);
+    int[] bits =
+        IntStream.range(0, (int) n).sequential().filter(__ -> random.nextBoolean()).toArray();
+    return SszBitlistSchema.create(n).ofBits((int) n, bits);
   }
 
   public SszBitvector randomSszBitvector(final int n) {
@@ -793,7 +798,7 @@ public final class DataStructureUtil {
   public Attestation randomAttestation() {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(), randomSignature());
+        .create(randomAggregationBits(), randomAttestationData(), randomSignature());
   }
 
   public AttestationElectra randomAttestationElectra() {
@@ -808,7 +813,7 @@ public final class DataStructureUtil {
         SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
             .getMaxValidatorsPerCommittee();
     final SszBitlist randomAggregationBits =
-        randomBitlist(maxCommitteePerSlot * maxValidatorsPerCommittee);
+        randomAggregationBits((long) maxCommitteePerSlot * maxValidatorsPerCommittee);
     return getElectraSchemaDefinitions(slot)
         .getAttestationElectraSchema()
         .create(
@@ -825,13 +830,13 @@ public final class DataStructureUtil {
   public Attestation randomAttestation(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(slot), randomSignature());
+        .create(randomAggregationBits(), randomAttestationData(slot), randomSignature());
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), attestationData, randomSignature());
+        .create(randomAggregationBits(), attestationData, randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {
@@ -871,7 +876,7 @@ public final class DataStructureUtil {
   public PendingAttestation randomPendingAttestation(
       final PendingAttestationSchema pendingAttestationSchema) {
     return pendingAttestationSchema.create(
-        randomBitlist(), randomAttestationData(), randomUInt64(), randomUInt64());
+        randomAggregationBits(), randomAttestationData(), randomUInt64(), randomUInt64());
   }
 
   public AttesterSlashing randomAttesterSlashingAtSlot(final UInt64 slot) {
@@ -1425,7 +1430,8 @@ public final class DataStructureUtil {
                       randomSszList(
                           schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
                   .attestations(
-                      randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                      randomSszList(
+                          schema.getAttestationsSchema(), () -> this.randomAttestation(slot), 3))
                   .deposits(
                       randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
                   .voluntaryExits(
@@ -2576,10 +2582,6 @@ public final class DataStructureUtil {
 
   int getJustificationBitsLength() {
     return getConstant(SpecConfig::getJustificationBitsLength);
-  }
-
-  private int getMaxValidatorsPerCommittee() {
-    return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
   }
 
   private UInt64 getMaxEffectiveBalance() {

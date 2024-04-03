@@ -35,7 +35,7 @@ class AttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationSchema schema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
-  private SszBitlist aggregationBitfield = dataStructureUtil.randomBitlist();
+  private SszBitlist aggregationBitfield = dataStructureUtil.randomAggregationBits();
   private AttestationData data = dataStructureUtil.randomAttestationData();
   private BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
 
@@ -96,7 +96,7 @@ class AttestationTest {
   @Test
   void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
     Attestation testAttestation =
-        schema.create(dataStructureUtil.randomBitlist(), data, aggregateSignature);
+        schema.create(dataStructureUtil.randomAggregationBits(), data, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
