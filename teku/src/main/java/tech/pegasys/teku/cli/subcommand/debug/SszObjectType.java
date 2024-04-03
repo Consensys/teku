@@ -81,7 +81,7 @@ public enum SszObjectType {
   SyncAggregatorSelectionData(SyncAggregatorSelectionDataSchema.INSTANCE),
   SyncCommittee(altairConfig(SyncCommitteeSchema::new)),
   SyncAggregate(altairConfig(c -> SyncAggregateSchema.create(c.getSyncCommitteeSize()))),
-  SignedAggregateAndProof(schemas(SchemaDefinitions::getAggregateAndProofSchema)),
+  SignedAggregateAndProof(schemas(SchemaDefinitions::getSignedAggregateAndProofSchema)),
   Validator(new ValidatorSchema()),
   HistoricalBatch(config(c -> new HistoricalBatchSchema(c.getSlotsPerHistoricalRoot()))),
   ExecutionPayload(bellatrixSchemas(SchemaDefinitionsBellatrix::getExecutionPayloadSchema)),
