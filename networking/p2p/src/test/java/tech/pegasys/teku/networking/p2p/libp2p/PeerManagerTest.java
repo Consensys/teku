@@ -179,22 +179,22 @@ public class PeerManagerTest {
     validatePeerMetrics(0, 0);
 
     // Add a peer
-    final Peer peer = createPeerWithDirection(1, true);
-    peerManager.onConnectedPeer(peer);
+    final Peer outboundPeer1 = createPeerWithDirection(1, true);
+    peerManager.onConnectedPeer(outboundPeer1);
     validatePeerMetrics(1, 0);
 
     // Add another peer
-    final Peer peer2 = createPeerWithDirection(2, false);
-    peerManager.onConnectedPeer(peer2);
+    final Peer inboundPeer1 = createPeerWithDirection(2, false);
+    peerManager.onConnectedPeer(inboundPeer1);
     validatePeerMetrics(1, 1);
 
     // Disconnect a peer
-    peerManager.onDisconnectedPeer(peer, Optional.empty(), true);
+    peerManager.onDisconnectedPeer(outboundPeer1, Optional.empty(), true);
     validatePeerMetrics(0, 1);
 
     // Add another peer
-    final Peer peer3 = createPeerWithDirection(3, false);
-    peerManager.onConnectedPeer(peer3);
+    final Peer inboundPeer2 = createPeerWithDirection(3, false);
+    peerManager.onConnectedPeer(inboundPeer2);
     validatePeerMetrics(0, 2);
   }
 
