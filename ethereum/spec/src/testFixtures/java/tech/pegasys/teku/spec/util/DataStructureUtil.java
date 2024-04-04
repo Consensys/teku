@@ -809,15 +809,10 @@ public final class DataStructureUtil {
     final int maxCommitteePerSlot =
         SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
             .getMaxCommitteesPerSlot();
-    final int maxValidatorsPerCommittee =
-        SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
-            .getMaxValidatorsPerCommittee();
-    final SszBitlist randomAggregationBits =
-        randomAggregationBits((long) maxCommitteePerSlot * maxValidatorsPerCommittee);
     return getElectraSchemaDefinitions(slot)
         .getAttestationElectraSchema()
         .create(
-            randomAggregationBits,
+            randomAggregationBits(),
             randomAttestationData(),
             randomSszBitvector(maxCommitteePerSlot),
             randomSignature());

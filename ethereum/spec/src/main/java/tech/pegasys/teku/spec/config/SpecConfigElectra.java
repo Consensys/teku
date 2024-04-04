@@ -58,6 +58,8 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   UInt64 getMinPerEpochChurnLimitElectra();
 
+  int getMaxValidatorsPerAttestation();
+
   Bytes4 getElectraForkVersion();
 
   UInt64 getElectraForkEpoch();
@@ -65,10 +67,6 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
   int getMaxDepositReceiptsPerPayload();
 
   int getMaxExecutionLayerWithdrawalRequests();
-
-  int getMaxAttesterSlashingsElectra();
-
-  int getMaxAttestationsElectra();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();
