@@ -875,8 +875,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  @Override
-  public void processExecutionPayloadExits(
+  protected void processExecutionPayloadExits(
       final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
       throws BlockProcessingException {
     // No ExecutionLayer exits until Electra

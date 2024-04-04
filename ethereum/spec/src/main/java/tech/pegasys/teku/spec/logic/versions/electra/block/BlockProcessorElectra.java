@@ -128,7 +128,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   @Override
-  public void processExecutionPayloadExits(
+  protected void processExecutionPayloadExits(
       final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
       throws BlockProcessingException {
     processExecutionLayerExits(state, getExecutionLayerExitsFromBlock(executionPayload));
