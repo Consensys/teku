@@ -182,11 +182,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private boolean isCloseToInSync() {
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     final int maxSeedLookahead = spec.getSpecConfig(currentEpoch).getMaxSeedLookahead();
+    final int slotsPerEpoch = spec.slotsPerEpoch(currentEpoch);
+    final int distance = slotsPerEpoch * maxSeedLookahead;
 
     return recentChainData
         .getChainHeadSlotsBehind()
         .orElse(UInt64.MAX_VALUE)
-        .isLessThanOrEqualTo(currentEpoch.times(maxSeedLookahead));
+        .isLessThanOrEqualTo(distance);
   }
 
   private void setTopicScoringParams() {
