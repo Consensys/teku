@@ -47,6 +47,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHistoricalSlot
@@ -97,7 +98,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   private int totalBlobSidecars;
 
+  private final BlockImportChannel blockImportChannel;
+
   BlockBlobSidecarsTrackersPoolImpl(
+      final BlockImportChannel blockImportChannel,
       final SettableLabelledGauge sizeGauge,
       final LabelledMetric<Counter> poolStatsCounters,
       final Spec spec,
@@ -108,6 +112,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final UInt64 futureSlotTolerance,
       final int maxTrackers) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
+    this.blockImportChannel = blockImportChannel;
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.asyncRunner = asyncRunner;
@@ -122,6 +127,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   @VisibleForTesting
   BlockBlobSidecarsTrackersPoolImpl(
+      final BlockImportChannel blockImportChannel,
       final SettableLabelledGauge sizeGauge,
       final LabelledMetric<Counter> poolStatsCounters,
       final Spec spec,
@@ -133,6 +139,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final int maxTrackers,
       final BlockBlobSidecarsTrackerFactory trackerFactory) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
+    this.blockImportChannel = blockImportChannel;
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.asyncRunner = asyncRunner;
@@ -360,6 +367,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return blockBlobSidecarsTrackers.values().stream()
         .flatMap(BlockBlobSidecarsTracker::getMissingBlobSidecars)
         .collect(Collectors.toSet());
+  }
+
+  @Override
+  public synchronized void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
+    Optional.ofNullable(blockBlobSidecarsTrackers.get(block.getRoot()))
+        .ifPresent(tracker -> tracker.enableBlockImportOnCompletion(blockImportChannel));
   }
 
   @Override

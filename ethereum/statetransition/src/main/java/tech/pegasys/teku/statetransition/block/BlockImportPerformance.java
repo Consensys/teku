@@ -129,6 +129,10 @@ public class BlockImportPerformance {
                 totalProcessingDuration, TOTAL_PROCESSING_TIME_LABEL, resultMetricLabelValue),
         (totalDuration, timings) ->
             eventLogger.lateBlockImport(
-                block.getRoot(), block.getSlot(), block.getProposerIndex(), timings));
+                block.getRoot(),
+                block.getSlot(),
+                block.getProposerIndex(),
+                timings,
+                resultMetricLabelValue));
   }
 }

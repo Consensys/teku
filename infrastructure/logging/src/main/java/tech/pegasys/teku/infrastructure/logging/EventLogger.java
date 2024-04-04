@@ -273,11 +273,15 @@ public class EventLogger {
   }
 
   public void lateBlockImport(
-      final Bytes32 root, final UInt64 slot, final UInt64 proposer, final String timings) {
-    String slowBlockLog =
+      final Bytes32 root,
+      final UInt64 slot,
+      final UInt64 proposer,
+      final String timings,
+      final String result) {
+    final String slowBlockLog =
         String.format(
-            "Late Block Import *** Block: %s proposer %s %s",
-            LogFormatter.formatBlock(slot, root), proposer, timings);
+            "Late Block Import *** Block: %s Proposer: %s Result: %s Timings: %s",
+            LogFormatter.formatBlock(slot, root), proposer, result, timings);
     warn(slowBlockLog, Color.YELLOW);
   }
 
