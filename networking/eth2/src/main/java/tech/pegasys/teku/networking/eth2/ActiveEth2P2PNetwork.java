@@ -180,10 +180,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   private boolean isCloseToInSync() {
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
+    final int maxSeedLookahead = spec.getSpecConfig(currentEpoch).getMaxSeedLookahead();
+
     return recentChainData
         .getChainHeadSlotsBehind()
         .orElse(UInt64.MAX_VALUE)
-        .isLessThanOrEqualTo(500);
+        .isLessThanOrEqualTo(currentEpoch.times(maxSeedLookahead));
   }
 
   private void setTopicScoringParams() {
