@@ -58,8 +58,8 @@ public class ValidatorIndexCache {
     if (validatorIndex.isPresent()) {
       return validatorIndex.filter(index -> index < validators.size());
     }
-    // Making sure to use the same latestFinalizedIndex when scanning through
-    // the finalized and the non-finalized states
+    // Using the same latestFinalizedIndex when scanning through
+    // the finalized and the non-finalized states ensures consistency
     final int latestFinalizedIndexSnapshot = latestFinalizedIndex.get();
     return findIndexFromFinalizedState(validators, publicKey, latestFinalizedIndexSnapshot)
         .or(
