@@ -448,8 +448,8 @@ class BlockProductionDutyTest {
     final BeaconBlockBody block = dataStructureUtil.randomBeaconBlockBody(denebSlot);
     assertThat(duty.getBlockSummary(block))
         .containsExactly(
-            "Blobs: 1",
-            "4483248126065046120 (0%) gas, EL block: b736203ee72088edaf7eb5c7839744f5b1be69f748eea8fea77740914415c5b4 (4479943159631677864)");
+            "Blobs: 2",
+            "4481595642848361992 (0%) gas, EL block: cb571a3e876c6732a4c11cf3562059c2b8c16889ffb6d1b8d5f883591e767c3f (4491510546443434056)");
   }
 
   @Test
