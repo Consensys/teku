@@ -53,14 +53,15 @@ public class ValidatorIndexCache {
 
   public Optional<Integer> getValidatorIndex(
       final BeaconState state, final BLSPublicKey publicKey) {
-    // Store latestFinalizedIndex here in case we need to scan keys from the state.
-    // This ensures we're adding from a point that we're confident the cache is at
-    // when we scan for more keys through the state later.
-    final int latestFinalizedIndexSnapshot = latestFinalizedIndex.get();
     final SszList<Validator> validators = state.getValidators();
-    return validatorIndices
-        .getCached(publicKey)
-        .or(() -> findIndexFromFinalizedState(validators, publicKey, latestFinalizedIndexSnapshot))
+    final Optional<Integer> validatorIndex = validatorIndices.getCached(publicKey);
+    if (validatorIndex.isPresent()) {
+      return validatorIndex.filter(index -> index < validators.size());
+    }
+    // Using the same latestFinalizedIndex when scanning through
+    // the finalized and the non-finalized states ensures consistency
+    final int latestFinalizedIndexSnapshot = latestFinalizedIndex.get();
+    return findIndexFromFinalizedState(validators, publicKey, latestFinalizedIndexSnapshot)
         .or(
             () ->
                 findIndexFromNonFinalizedState(
