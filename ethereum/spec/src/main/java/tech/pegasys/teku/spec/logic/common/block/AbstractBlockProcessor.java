@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -878,7 +879,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   public void processExecutionPayloadExits(
       final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
       throws BlockProcessingException {
+    // No ExecutionLayer exits until Electra
+  }
 
+  @Override
+  public void processExecutionLayerExits(
+      final MutableBeaconState state, final SszList<ExecutionLayerExit> exits) {
     // No ExecutionLayer exits until Electra
   }
 

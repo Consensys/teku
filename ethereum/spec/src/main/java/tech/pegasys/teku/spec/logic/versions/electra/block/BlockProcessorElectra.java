@@ -127,77 +127,81 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
   }
 
-  /*
-   Implements process_execution_layer_exit from consensus-spec (EIP-7002)
-  */
   @Override
   public void processExecutionPayloadExits(
       final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
       throws BlockProcessingException {
+    processExecutionLayerExits(state, getExecutionLayerExitsFromBlock(executionPayload));
+  }
+
+  /*
+    Implements process_execution_layer_exit from consensus-spec (EIP-7002)
+  */
+  @Override
+  public void processExecutionLayerExits(
+      final MutableBeaconState state, final SszList<ExecutionLayerExit> exits) {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         beaconStateMutators.createValidatorExitContextSupplier(state);
 
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
-    getExecutionLayerExitsFromBlock(executionPayload)
-        .forEach(
-            exit -> {
-              final OptionalInt maybeValidatorIndex =
-                  IntStream.range(0, state.getValidators().size())
-                      .filter(
-                          idx ->
-                              state
-                                  .getValidators()
-                                  .get(idx)
-                                  .getPublicKey()
-                                  .equals(exit.getValidatorPublicKey()))
-                      .findFirst();
-              if (maybeValidatorIndex.isEmpty()) {
-                return;
-              }
+    exits.forEach(
+        exit -> {
+          final OptionalInt maybeValidatorIndex =
+              IntStream.range(0, state.getValidators().size())
+                  .filter(
+                      idx ->
+                          state
+                              .getValidators()
+                              .get(idx)
+                              .getPublicKey()
+                              .equals(exit.getValidatorPublicKey()))
+                  .findFirst();
+          if (maybeValidatorIndex.isEmpty()) {
+            return;
+          }
 
-              final int validatorIndex = maybeValidatorIndex.getAsInt();
-              final Validator validator = state.getValidators().get(validatorIndex);
+          final int validatorIndex = maybeValidatorIndex.getAsInt();
+          final Validator validator = state.getValidators().get(validatorIndex);
 
-              // Check if validator has eth1 credentials
-              boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
-              if (!isExecutionAddress) {
-                return;
-              }
+          // Check if validator has eth1 credentials
+          boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
+          if (!isExecutionAddress) {
+            return;
+          }
 
-              // Check exit source_address matches validator eth1 withdrawal credentials
-              final Bytes20 executionAddress =
-                  new Bytes20(validator.getWithdrawalCredentials().slice(12));
-              boolean isCorrectSourceAddress = executionAddress.equals(exit.getSourceAddress());
-              if (!isCorrectSourceAddress) {
-                return;
-              }
+          // Check exit source_address matches validator eth1 withdrawal credentials
+          final Bytes20 executionAddress =
+              new Bytes20(validator.getWithdrawalCredentials().slice(12));
+          boolean isCorrectSourceAddress = executionAddress.equals(exit.getSourceAddress());
+          if (!isCorrectSourceAddress) {
+            return;
+          }
 
-              // Check if validator is active
-              final boolean isValidatorActive =
-                  predicates.isActiveValidator(validator, currentEpoch);
-              if (!isValidatorActive) {
-                return;
-              }
+          // Check if validator is active
+          final boolean isValidatorActive = predicates.isActiveValidator(validator, currentEpoch);
+          if (!isValidatorActive) {
+            return;
+          }
 
-              // Check if validator has already initiated exit
-              boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
-              if (hasInitiatedExit) {
-                return;
-              }
+          // Check if validator has already initiated exit
+          boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
+          if (hasInitiatedExit) {
+            return;
+          }
 
-              // Check if validator has been active long enough
-              final boolean validatorActiveLongEnough =
-                  currentEpoch.isLessThan(
-                      validator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()));
-              if (validatorActiveLongEnough) {
-                return;
-              }
+          // Check if validator has been active long enough
+          final boolean validatorActiveLongEnough =
+              currentEpoch.isLessThan(
+                  validator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()));
+          if (validatorActiveLongEnough) {
+            return;
+          }
 
-              // If all conditions are ok, initiate exit
-              beaconStateMutators.initiateValidatorExit(
-                  state, validatorIndex, validatorExitContextSupplier);
-            });
+          // If all conditions are ok, initiate exit
+          beaconStateMutators.initiateValidatorExit(
+              state, validatorIndex, validatorExitContextSupplier);
+        });
   }
 
   private SszList<ExecutionLayerExit> getExecutionLayerExitsFromBlock(
