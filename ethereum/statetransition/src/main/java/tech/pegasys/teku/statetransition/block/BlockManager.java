@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -289,9 +290,7 @@ public class BlockManager extends Service
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
                   case FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE:
-                    LOG.warn(
-                        "Unable to import block {} due to data unavailability",
-                        block.toLogString());
+                    logFailedBlockImport(block, result.getFailureReason());
                     blockBlobSidecarsTrackersPool.enableBlockImportOnCompletion(block);
                     break;
                   case FAILED_DATA_AVAILABILITY_CHECK_INVALID:
@@ -300,7 +299,7 @@ public class BlockManager extends Service
                     // pool and discard.
                     // If next block builds on top of this one, we will re-download all blobSidecars
                     // and block again via RPC by root.
-                    LOG.warn("Unable to import block {} due to invalid data", block.toLogString());
+                    logFailedBlockImport(block, result.getFailureReason());
                     blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
                     break;
                   case FAILED_BROADCAST_VALIDATION:
@@ -314,14 +313,16 @@ public class BlockManager extends Service
                       FAILED_WEAK_SUBJECTIVITY_CHECKS,
                       DESCENDANT_OF_INVALID_BLOCK,
                       INTERNAL_ERROR:
-                    LOG.trace(
-                        "Unable to import block for reason {}: {}",
-                        result.getFailureReason(),
-                        block);
+                    logFailedBlockImport(block, result.getFailureReason());
                     dropInvalidBlock(block, result);
                 }
               }
             });
+  }
+
+  private void logFailedBlockImport(
+      final SignedBeaconBlock block, final FailureReason failureReason) {
+    LOG.trace("Unable to import block for reason {}: {}", failureReason, block);
   }
 
   private String getExecutionPayloadInfoForLog(final SignedBeaconBlock block) {

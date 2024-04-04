@@ -126,7 +126,7 @@ public class BlobSidecarsAndValidationResult {
 
   public String toLogString() {
     return String.format(
-        "result %s, blob sidecars: %d, cause: %s",
+        "%s, blob sidecars: %d, cause: %s",
         validationResult, blobSidecars.size(), cause.map(ExceptionUtil::getMessageOrSimpleName));
   }
 }
