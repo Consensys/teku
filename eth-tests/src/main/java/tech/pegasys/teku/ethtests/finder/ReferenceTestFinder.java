@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 @SuppressWarnings("MustBeClosedChecker")
 public class ReferenceTestFinder {
 
+  // Can be overridden with -Dteku.ref-test-module.override-root="<path>"
   private static final Path TEST_PATH_FROM_MODULE =
       Path.of("src", "referenceTest", "resources", "consensus-spec-tests", "tests");
   private static final List<String> SUPPORTED_FORKS =
@@ -77,13 +78,18 @@ public class ReferenceTestFinder {
             Path.of(System.getProperty("user.dir"), "eth-reference-tests") // Run from teku root
             );
     return searchPaths.stream()
-        .map(path -> path.resolve(TEST_PATH_FROM_MODULE))
+        .map(
+            path ->
+                path.resolve(
+                    System.getProperty(
+                        "teku.ref-test-module.override-root", TEST_PATH_FROM_MODULE.toString())))
         .filter(path -> path.toFile().exists())
         .findFirst()
         .orElseThrow(
             () ->
                 new IllegalStateException(
-                    "Unable to find the reference tests module. Try setting teku.ref-test-module.path system property and ensure you have run ./gradlew expandRefTests"));
+                    "Unable to find the reference tests module. Try setting teku.ref-test-module.path system property"
+                        + " and ensure you have run ./gradlew expandRefTests"));
   }
 
   static <I, O> Function<I, O> unchecked(final ExceptionThrowingFunction<I, O> function) {
