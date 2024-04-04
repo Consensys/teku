@@ -17,9 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -128,10 +126,13 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   @Override
-  protected void processExecutionPayloadExits(
-      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+  protected void processExecutionLayerExits(
+      final MutableBeaconState state,
+      final Optional<ExecutionPayload> executionPayload,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    processExecutionLayerExits(state, getExecutionLayerExitsFromBlock(executionPayload));
+    processExecutionLayerExits(
+        state, getExecutionLayerExitsFromBlock(executionPayload), validatorExitContextSupplier);
   }
 
   /*
@@ -139,29 +140,20 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   */
   @Override
   public void processExecutionLayerExits(
-      final MutableBeaconState state, final SszList<ExecutionLayerExit> exits) {
-    final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-        beaconStateMutators.createValidatorExitContextSupplier(state);
-
+      final MutableBeaconState state,
+      final SszList<ExecutionLayerExit> exits,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
     exits.forEach(
         exit -> {
-          final OptionalInt maybeValidatorIndex =
-              IntStream.range(0, state.getValidators().size())
-                  .filter(
-                      idx ->
-                          state
-                              .getValidators()
-                              .get(idx)
-                              .getPublicKey()
-                              .equals(exit.getValidatorPublicKey()))
-                  .findFirst();
+          final Optional<Integer> maybeValidatorIndex =
+              validatorsUtil.getValidatorIndex(state, exit.getValidatorPublicKey());
           if (maybeValidatorIndex.isEmpty()) {
             return;
           }
 
-          final int validatorIndex = maybeValidatorIndex.getAsInt();
+          final int validatorIndex = maybeValidatorIndex.get();
           final Validator validator = state.getValidators().get(validatorIndex);
 
           // Check if validator has eth1 credentials

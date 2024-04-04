@@ -168,7 +168,9 @@ public interface BlockProcessor {
       throws BlockProcessingException;
 
   void processExecutionLayerExits(
-      final MutableBeaconState state, final SszList<ExecutionLayerExit> exits);
+      final MutableBeaconState state,
+      final SszList<ExecutionLayerExit> exits,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier);
 
   Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
 

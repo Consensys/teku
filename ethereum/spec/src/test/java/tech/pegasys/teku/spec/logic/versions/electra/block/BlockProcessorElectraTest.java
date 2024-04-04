@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDenebTest;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -145,25 +147,34 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void processExecutionLayerExits_WithEmptyExitsList_DoesNothing() {
+  public void processExecutionLayerExits_WithEmptyExitsList_DoesNothing()
+      throws BlockProcessingException {
     final BeaconStateElectra preState = BeaconStateElectra.required(createBeaconState());
 
-    final SszList<ExecutionLayerExit> exits = createExecutionLayerExits(List.of());
+    final Optional<ExecutionPayload> executionPayloadWithExits =
+        createExecutionPayloadWithExits(preState.getSlot(), List.of());
 
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
+                    getBlockProcessor(preState)
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
 
   @Test
-  public void processExecutionLayerExits_ExitForAbsentValidator_DoesNothing() {
+  public void processExecutionLayerExits_ExitForAbsentValidator_DoesNothing()
+      throws BlockProcessingException {
     final BeaconStateElectra preState = BeaconStateElectra.required(createBeaconState());
-
     final ExecutionLayerExit executionLayerExit = dataStructureUtil.randomExecutionLayerExit();
+    final Optional<ExecutionPayload> executionPayloadWithExits =
+        createExecutionPayloadWithExits(preState.getSlot(), List.of(executionLayerExit));
+
     // Assert the exit does not correspond to an existing validator
     assertThat(
             preState.getValidators().stream()
@@ -174,19 +185,22 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                             .equals(executionLayerExit.getValidatorPublicKey())))
         .isEmpty();
 
-    final SszList<ExecutionLayerExit> exits =
-        createExecutionLayerExits(List.of(executionLayerExit));
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
+                    getBlockProcessor(preState)
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
 
   @Test
-  public void processExecutionLayerExits_ExitForValidatorWithoutEth1Credentials_DoesNothing() {
+  public void processExecutionLayerExits_ExitForValidatorWithoutEth1Credentials_DoesNothing()
+      throws BlockProcessingException {
     final Validator validator =
         dataStructureUtil.validatorBuilder().withRandomBlsWithdrawalCredentials().build();
 
@@ -200,19 +214,26 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                       mutableState.setValidators(validators);
                     }));
 
-    final SszList<ExecutionLayerExit> exits =
-        createExecutionLayerExits(List.of(dataStructureUtil.executionLayerExit(validator)));
+    final Optional<ExecutionPayload> executionPayloadWithExits =
+        createExecutionPayloadWithExits(
+            preState.getSlot(), List.of(dataStructureUtil.executionLayerExit(validator)));
+
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
+                    getBlockProcessor(preState)
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
 
   @Test
-  public void processExecutionLayerExits_ExitWithWrongSourceAddress_DoesNothing() {
+  public void processExecutionLayerExits_ExitWithWrongSourceAddress_DoesNothing()
+      throws BlockProcessingException {
     final Validator validator =
         dataStructureUtil.validatorBuilder().withRandomEth1WithdrawalCredentials().build();
 
@@ -229,20 +250,25 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
     final ExecutionLayerExit exitWithInvalidSourceAddress =
         dataStructureUtil.executionLayerExit(
             dataStructureUtil.randomEth1Address(), validator.getPublicKey());
+    final Optional<ExecutionPayload> executionPayloadWithExits =
+        createExecutionPayloadWithExits(preState.getSlot(), List.of(exitWithInvalidSourceAddress));
 
-    final SszList<ExecutionLayerExit> exits =
-        createExecutionLayerExits(List.of(exitWithInvalidSourceAddress));
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
+                    getBlockProcessor(preState)
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
 
   @Test
-  public void processExecutionLayerExits_ExitForInactiveValidator_DoesNothing() {
+  public void processExecutionLayerExits_ExitForInactiveValidator_DoesNothing()
+      throws BlockProcessingException {
     final Validator validator =
         dataStructureUtil
             .validatorBuilder()
@@ -260,19 +286,25 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                       mutableState.setValidators(validators);
                     }));
 
-    final SszList<ExecutionLayerExit> exits =
-        createExecutionLayerExits(List.of(dataStructureUtil.executionLayerExit(validator)));
+    final Optional<ExecutionPayload> executionPayloadWithExits =
+        createExecutionPayloadWithExits(
+            preState.getSlot(), List.of(dataStructureUtil.executionLayerExit(validator)));
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
+                    getBlockProcessor(preState)
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
 
   @Test
-  public void processExecutionLayerExits_ExitForValidatorAlreadyExiting_DoesNothing() {
+  public void processExecutionLayerExits_ExitForValidatorAlreadyExiting_DoesNothing()
+      throws BlockProcessingException {
     final UInt64 currentEpoch = UInt64.valueOf(1_000);
     final Validator validator =
         dataStructureUtil
@@ -293,19 +325,25 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                       mutableState.setSlot(spec.computeStartSlotAtEpoch(currentEpoch));
                     }));
 
-    final SszList<ExecutionLayerExit> exits =
-        createExecutionLayerExits(List.of(dataStructureUtil.executionLayerExit(validator)));
+    final Optional<ExecutionPayload> executionPayloadWithExits =
+        createExecutionPayloadWithExits(
+            preState.getSlot(), List.of(dataStructureUtil.executionLayerExit(validator)));
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
+                    getBlockProcessor(preState)
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
 
   @Test
-  public void processExecutionLayerExits_ExitForValidatorNotActiveLongEnough_DoesNothing() {
+  public void processExecutionLayerExits_ExitForValidatorNotActiveLongEnough_DoesNothing()
+      throws BlockProcessingException {
     final UInt64 currentEpoch = UInt64.valueOf(1_000);
     final Validator validator =
         dataStructureUtil
@@ -326,65 +364,25 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                       mutableState.setSlot(spec.computeStartSlotAtEpoch(currentEpoch));
                     }));
 
-    final SszList<ExecutionLayerExit> exits =
-        createExecutionLayerExits(List.of(dataStructureUtil.executionLayerExit(validator)));
+    final Optional<ExecutionPayload> executionPayloadWithExits =
+        createExecutionPayloadWithExits(
+            preState.getSlot(), List.of(dataStructureUtil.executionLayerExit(validator)));
+
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
+                    getBlockProcessor(preState)
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     assertThat(postState.hashTreeRoot()).isEqualTo(preState.hashTreeRoot());
   }
 
   @Test
-  public void processExecutionLayerExits_ExitForEligibleValidator() {
-    final UInt64 currentEpoch = UInt64.valueOf(1_000);
-    final Validator validator =
-        dataStructureUtil
-            .validatorBuilder()
-            .withRandomEth1WithdrawalCredentials()
-            .activationEpoch(UInt64.ZERO)
-            .exitEpoch(FAR_FUTURE_EPOCH)
-            .build();
-
-    final BeaconStateElectra preState =
-        BeaconStateElectra.required(
-            createBeaconState()
-                .updated(
-                    mutableState -> {
-                      final SszMutableList<Validator> validators = mutableState.getValidators();
-                      validators.append(validator);
-                      mutableState.setValidators(validators);
-                      mutableState.setSlot(spec.computeStartSlotAtEpoch(currentEpoch));
-                    }));
-    // The validator we created was the last one added to the list of validators
-    int validatorIndex = preState.getValidators().size() - 1;
-
-    // Before processing the exit, the validator has FAR_FUTURE_EPOCH for exit_epoch and
-    // withdrawable_epoch
-    assertThat(preState.getValidators().get(validatorIndex).getExitEpoch())
-        .isEqualTo(FAR_FUTURE_EPOCH);
-    assertThat(preState.getValidators().get(validatorIndex).getWithdrawableEpoch())
-        .isEqualTo(FAR_FUTURE_EPOCH);
-
-    final SszList<ExecutionLayerExit> exits =
-        createExecutionLayerExits(List.of(dataStructureUtil.executionLayerExit(validator)));
-    final BeaconStateElectra postState =
-        BeaconStateElectra.required(
-            preState.updated(
-                mutableState ->
-                    getBlockProcessor(preState).processExecutionLayerExits(mutableState, exits)));
-
-    // After processing the exit, the validator has exit_epoch and withdrawable_epoch set
-    assertThat(postState.getValidators().get(validatorIndex).getExitEpoch())
-        .isLessThan(FAR_FUTURE_EPOCH);
-    assertThat(postState.getValidators().get(validatorIndex).getWithdrawableEpoch())
-        .isLessThan(FAR_FUTURE_EPOCH);
-  }
-
-  @Test
-  public void processExecutionPayloadExits_DecodesExitsFromElectraExecutionPayload()
+  public void processExecutionLayerExits_ExitForEligibleValidator()
       throws BlockProcessingException {
     final UInt64 currentEpoch = UInt64.valueOf(1_000);
     final Validator validator =
@@ -415,15 +413,19 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
     assertThat(preState.getValidators().get(validatorIndex).getWithdrawableEpoch())
         .isEqualTo(FAR_FUTURE_EPOCH);
 
-    final Optional<ExecutionPayload> executionPayload =
+    final Optional<ExecutionPayload> executionPayloadWithExits =
         createExecutionPayloadWithExits(
             preState.getSlot(), List.of(dataStructureUtil.executionLayerExit(validator)));
+
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionPayloadExits(mutableState, executionPayload)));
+                        .processExecutionLayerExits(
+                            mutableState,
+                            executionPayloadWithExits,
+                            validatorExitContextSupplier(preState))));
 
     // After processing the exit, the validator has exit_epoch and withdrawable_epoch set
     assertThat(postState.getValidators().get(validatorIndex).getExitEpoch())
@@ -432,14 +434,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         .isLessThan(FAR_FUTURE_EPOCH);
   }
 
-  private SszList<ExecutionLayerExit> createExecutionLayerExits(
-      final List<ExecutionLayerExit> exits) {
-    final SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>> exitsSchema =
-        SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
-            .getExecutionPayloadSchema()
-            .getExecutionLayerExitsSchemaRequired();
-
-    return exitsSchema.createFromElements(exits);
+  private Supplier<ValidatorExitContext> validatorExitContextSupplier(final BeaconState state) {
+    return spec.getGenesisSpec().beaconStateMutators().createValidatorExitContextSupplier(state);
   }
 
   private Optional<ExecutionPayload> createExecutionPayloadWithExits(

@@ -442,7 +442,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
-          processExecutionPayloadExits(state, body.getOptionalExecutionPayload());
+          processExecutionLayerExits(
+              state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
         });
   }
 
@@ -875,15 +876,19 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  protected void processExecutionPayloadExits(
-      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+  protected void processExecutionLayerExits(
+      final MutableBeaconState state,
+      final Optional<ExecutionPayload> executionPayload,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     // No ExecutionLayer exits until Electra
   }
 
   @Override
   public void processExecutionLayerExits(
-      final MutableBeaconState state, final SszList<ExecutionLayerExit> exits) {
+      final MutableBeaconState state,
+      final SszList<ExecutionLayerExit> exits,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     // No ExecutionLayer exits until Electra
   }
 
