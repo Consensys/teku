@@ -44,6 +44,23 @@ public class ValidatorIndexCacheTest {
   final Cache<BLSPublicKey, Integer> cache = mock(Cache.class);
 
   @Test
+  public void shouldReturnEmptyIfValidatorIndexIsNotConsistentWithNumberOfValidatorsInState() {
+    final SszList<Validator> validators = state.getValidators();
+    final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
+    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+    validatorIndexCache.updateLatestFinalizedIndex(state);
+
+    final BLSPublicKey publicKey = validators.get(latestFinalizedIndex).getPublicKey();
+    // cache eagerly the last validator public key
+    validatorIndexCache.invalidateWithNewValue(publicKey, latestFinalizedIndex);
+
+    // state with one less validator
+    final BeaconState state = dataStructureUtil.randomBeaconState(NUMBER_OF_VALIDATORS - 1);
+
+    assertThat(validatorIndexCache.getValidatorIndex(state, publicKey)).isEmpty();
+  }
+
+  @Test
   public void shouldScanFinalizedStateAndCache() {
     final SszList<Validator> validators = state.getValidators();
     final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
