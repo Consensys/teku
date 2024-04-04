@@ -30,13 +30,15 @@ import io.libp2p.crypto.keys.EcdsaKt;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -46,10 +48,11 @@ public class PeerManagerTest {
 
   private final ReputationManager reputationManager = mock(ReputationManager.class);
   private final Network network = mock(Network.class);
+  final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final PeerManager peerManager =
       new PeerManager(
-          new NoOpMetricsSystem(),
+          metricsSystem,
           reputationManager,
           Collections.emptyList(),
           Collections.emptyList(),
@@ -78,11 +81,15 @@ public class PeerManagerTest {
   @Test
   public void shouldCreatePeerTypeMetrics() {
     final MetricsSystem metricsSystem = mock(MetricsSystem.class);
-    final LabelledGauge gauge = mock(LabelledGauge.class);
+    final LabelledGauge peerClientLabelledGauge = mock(LabelledGauge.class);
+    final LabelledGauge peerDirectionLabelledGauge = mock(LabelledGauge.class);
 
     when(metricsSystem.createLabelledGauge(
-            eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), any()))
-        .thenReturn(gauge);
+            eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), eq("client")))
+        .thenReturn(peerClientLabelledGauge);
+    when(metricsSystem.createLabelledGauge(
+            eq(TekuMetricCategory.LIBP2P), eq("peers_direction_current"), any(), eq("direction")))
+        .thenReturn(peerDirectionLabelledGauge);
     new PeerManager(
         metricsSystem,
         reputationManager,
@@ -91,8 +98,10 @@ public class PeerManagerTest {
         peerId -> 0.0);
 
     for (PeerClientType type : PeerClientType.values()) {
-      verify(gauge).labels(any(), eq(type.getDisplayName()));
+      verify(peerClientLabelledGauge).labels(any(), eq(type.getDisplayName()));
     }
+    verify(peerDirectionLabelledGauge).labels(any(), eq("inbound"));
+    verify(peerDirectionLabelledGauge).labels(any(), eq("outbound"));
   }
 
   @Test
@@ -162,5 +171,45 @@ public class PeerManagerTest {
 
     verify(reputationManager).reportInitiatedConnectionSuccessful(peerAddress);
     verify(reputationManager, never()).reportInitiatedConnectionFailed(peerAddress);
+  }
+
+  @Test
+  public void testPeerDirectionMetric() {
+    // Sanity check
+    validatePeerMetrics(0, 0);
+
+    // Add a peer
+    final Peer outboundPeer1 = createPeerWithDirection(1, true);
+    peerManager.onConnectedPeer(outboundPeer1);
+    validatePeerMetrics(1, 0);
+
+    // Add another peer
+    final Peer inboundPeer1 = createPeerWithDirection(2, false);
+    peerManager.onConnectedPeer(inboundPeer1);
+    validatePeerMetrics(1, 1);
+
+    // Disconnect a peer
+    peerManager.onDisconnectedPeer(outboundPeer1, Optional.empty(), true);
+    validatePeerMetrics(0, 1);
+
+    // Add another peer
+    final Peer inboundPeer2 = createPeerWithDirection(3, false);
+    peerManager.onConnectedPeer(inboundPeer2);
+    validatePeerMetrics(0, 2);
+  }
+
+  private void validatePeerMetrics(final double expectedOutbound, final double expectedInbound) {
+    final StubLabelledGauge labelledGauge =
+        metricsSystem.getLabelledGauge(TekuMetricCategory.LIBP2P, "peers_direction_current");
+    assertThat(labelledGauge.getValue("inbound")).hasValue(expectedInbound);
+    assertThat(labelledGauge.getValue("outbound")).hasValue(expectedOutbound);
+  }
+
+  private Peer createPeerWithDirection(final int id, final boolean outbound) {
+    final Peer peer = mock(Peer.class);
+    when(peer.getId()).thenReturn(new MockNodeId(id));
+    when(peer.connectionInitiatedLocally()).thenReturn(outbound);
+    when(peer.connectionInitiatedRemotely()).thenReturn(!outbound);
+    return peer;
   }
 }

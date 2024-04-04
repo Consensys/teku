@@ -52,8 +52,6 @@ public interface Database extends AutoCloseable {
       Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
       Optional<UInt64> maybeEarliestBlobSidecarSlot);
 
-  void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
-
   void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot);
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
@@ -65,8 +63,6 @@ public interface Database extends AutoCloseable {
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
   Optional<BlobSidecar> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
-
-  void removeBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   /**
    * This prune method will delete BlobSidecars starting from the oldest BlobSidecars (by slot) up

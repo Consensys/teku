@@ -138,7 +138,7 @@ public class DepositProvider
                 .getEth1DataAndHeight(finalizedState.getEth1Data())
                 .map(Eth1DataCache.Eth1DataAndHeight::getBlockHeight);
         if (heightOptional.isEmpty()) {
-          LOG.debug("Eth1Data height not found in cache. Skipping DepositTree pruning");
+          LOG.debug("Eth1Data height not found in cache. Skipping DepositTree finalization");
           return;
         }
         depositMerkleTree.finalize(finalizedState.getEth1Data(), heightOptional.get());
@@ -179,14 +179,16 @@ public class DepositProvider
       return;
     }
 
-    // We want to verify our Beacon Node view of the eth1 deposits.
-    // So we want to check if it has the necessary deposit data to propose a block
-
     recentChainData
         .getBestState()
         .get()
         .thenAccept(
             state -> {
+              if (spec.isFormerDepositMechanismDisabled(state)) {
+                return;
+              }
+              // We want to verify our Beacon Node view of the eth1 deposits.
+              // So we want to check if it has the necessary deposit data to propose a block
               final UInt64 eth1DepositCount = state.getEth1Data().getDepositCount();
 
               final UInt64 lastAvailableDepositIndex =

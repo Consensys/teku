@@ -62,13 +62,10 @@ public class NoOpDatabase implements Database {
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {}
 
   @Override
-  public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {}
+  public void storeReconstructedFinalizedState(final BeaconState state, final Bytes32 blockRoot) {}
 
   @Override
-  public void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot) {}
-
-  @Override
-  public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {}
+  public void updateWeakSubjectivityState(final WeakSubjectivityUpdate weakSubjectivityUpdate) {}
 
   @Override
   public Optional<OnDiskStoreData> createMemoryStore() {
@@ -290,9 +287,6 @@ public class NoOpDatabase implements Database {
   public Optional<BlobSidecar> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     return Optional.empty();
   }
-
-  @Override
-  public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(

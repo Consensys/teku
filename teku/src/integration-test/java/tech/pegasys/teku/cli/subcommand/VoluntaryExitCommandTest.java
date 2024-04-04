@@ -34,6 +34,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,12 +45,18 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Parameter;
 import tech.pegasys.teku.api.ConfigProvider;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 @ExtendWith(MockServerExtension.class)
 public class VoluntaryExitCommandTest {
@@ -86,6 +95,9 @@ public class VoluntaryExitCommandTest {
   private final String nonExistingKey = BLSTestUtil.randomPublicKey(17).toString();
 
   private final String exitSubmitted = "Exit for validator %s submitted.";
+
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec specDeneb = TestSpecFactory.createMinimalDeneb();
 
   private List<String> commandArgs;
 
@@ -292,6 +304,54 @@ public class VoluntaryExitCommandTest {
         .contains("The specified epoch 1024 is greater than current epoch");
   }
 
+  @Test
+  void shouldUseCurrentForkDomainForSignatureBeforeDeneb() throws JsonProcessingException {
+    setUserInput("yes");
+    configureSuccessfulSpecResponse(mockBeaconServer);
+    final Supplier<List<SignedVoluntaryExit>> exitsCapture =
+        configureSuccessfulVoluntaryExitResponseWithCapture(mockBeaconServer);
+
+    final List<String> args =
+        getCommandArguments(false, true, List.of("--validator-public-keys", validatorPubKey1));
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(0);
+    assertValidatorsExited(validatorPubKey1);
+
+    final SignedVoluntaryExit signedVoluntaryExit = exitsCapture.get().get(0);
+    assertThat(spec.atEpoch(signedVoluntaryExit.getMessage().getEpoch()).getMilestone())
+        .isEqualTo(SpecMilestone.BELLATRIX);
+    verifyVoluntaryExitSignature(
+        signedVoluntaryExit,
+        BLSPublicKey.fromHexString(validatorPubKey1),
+        spec,
+        SpecMilestone.BELLATRIX);
+  }
+
+  @Test
+  void shouldUseCapellaForkDomainForSignatureAfterCapella() throws JsonProcessingException {
+    setUserInput("yes");
+    configureSuccessfulDenebSpecResponse(mockBeaconServer);
+    final Supplier<List<SignedVoluntaryExit>> exitsCapture =
+        configureSuccessfulVoluntaryExitResponseWithCapture(mockBeaconServer);
+
+    final List<String> args =
+        getCommandArguments(false, true, List.of("--validator-public-keys", validatorPubKey1));
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(0);
+    assertValidatorsExited(validatorPubKey1);
+
+    final SignedVoluntaryExit signedVoluntaryExit = exitsCapture.get().get(0);
+    assertThat(specDeneb.atEpoch(signedVoluntaryExit.getMessage().getEpoch()).getMilestone())
+        .isEqualTo(SpecMilestone.DENEB);
+    verifyVoluntaryExitSignature(
+        signedVoluntaryExit,
+        BLSPublicKey.fromHexString(validatorPubKey1),
+        specDeneb,
+        SpecMilestone.CAPELLA);
+  }
+
   private void setUserInput(final String confirmationText) {
     String userInput =
         String.format(confirmationText, System.lineSeparator(), System.lineSeparator());
@@ -317,7 +377,12 @@ public class VoluntaryExitCommandTest {
 
   private void configureSuccessfulSpecResponse(final ClientAndServer mockBeaconServer)
       throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalBellatrix());
+    configureSuccessfulSpecResponse(mockBeaconServer, spec);
+  }
+
+  private void configureSuccessfulDenebSpecResponse(final ClientAndServer mockBeaconServer)
+      throws JsonProcessingException {
+    configureSuccessfulSpecResponse(mockBeaconServer, specDeneb);
   }
 
   private void configureSuccessfulSpecResponse(
@@ -431,6 +496,30 @@ public class VoluntaryExitCommandTest {
         .respond(response().withStatusCode(200));
   }
 
+  private Supplier<List<SignedVoluntaryExit>> configureSuccessfulVoluntaryExitResponseWithCapture(
+      final ClientAndServer mockBeaconServer) {
+    final List<String> responses = new ArrayList<>();
+    mockBeaconServer
+        .when(request().withPath("/eth/v1/beacon/pool/voluntary_exits"))
+        .respond(
+            httpRequest -> {
+              responses.add(httpRequest.getBody().toString());
+              return response().withStatusCode(200);
+            });
+    return () ->
+        responses.stream()
+            .map(
+                response -> {
+                  try {
+                    return JsonUtil.parse(
+                        response, SignedVoluntaryExit.SSZ_SCHEMA.getJsonTypeDefinition());
+                  } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .toList();
+  }
+
   private void configureRejectedVoluntaryExitResponse(final ClientAndServer mockBeaconServer)
       throws IOException {
     final String rejectedExitResponseBody =
@@ -468,5 +557,28 @@ public class VoluntaryExitCommandTest {
               assertThat(stdOut.toString(UTF_8))
                   .doesNotContain(String.format(exitSubmitted, extractValidatorId(arg)));
             });
+  }
+
+  private void verifyVoluntaryExitSignature(
+      final SignedVoluntaryExit signedVoluntaryExit,
+      final BLSPublicKey pubKey,
+      final Spec spec,
+      final SpecMilestone expectedMilestoneDomain) {
+    // from configureSuccessfulGenesisResponse
+    final Bytes32 genesisValidatorsRoot =
+        Bytes32.fromHexString("0xf03f804ff1c97ada13050eb617e66e88e1199c2ce1be0b6b27e36fafb8d3ee48");
+    // using base functions next, milestone doesn't matter
+    final MiscHelpers miscHelpers = spec.forMilestone(SpecMilestone.BELLATRIX).miscHelpers();
+    final Bytes32 domain =
+        miscHelpers.computeDomain(
+            Domain.VOLUNTARY_EXIT,
+            spec.getForkSchedule().getFork(expectedMilestoneDomain).getCurrentVersion(),
+            genesisValidatorsRoot);
+    final Bytes signingRoot =
+        miscHelpers.computeSigningRoot(signedVoluntaryExit.getMessage(), domain);
+    assertThat(
+            BLSSignatureVerifier.SIMPLE.verify(
+                pubKey, signingRoot, signedVoluntaryExit.getSignature()))
+        .isTrue();
   }
 }

@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -239,6 +240,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });
+
+    // Update the ValidatorIndexCache latest finalized index to the anchor state
+    BeaconStateCache.getTransitionCaches(anchorState)
+        .getValidatorIndexCache()
+        .updateLatestFinalizedIndex(anchorState);
 
     storeInitializedFuture.complete(null);
     return true;
