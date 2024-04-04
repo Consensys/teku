@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -347,12 +346,5 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       }
     }
     return BlockValidationResult.SUCCESSFUL;
-  }
-
-  @Override
-  public void processExecutionPayloadExits(
-      final MutableBeaconState state, final SszList<ExecutionLayerExit> executionLayerExits)
-      throws BlockProcessingException {
-    throw new UnsupportedOperationException("No execution layer exits in Capella");
   }
 }

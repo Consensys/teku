@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -354,13 +353,6 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   @Override
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
     return Optional.empty();
-  }
-
-  @Override
-  public void processExecutionPayloadExits(
-      final MutableBeaconState state, final SszList<ExecutionLayerExit> executionLayerExits)
-      throws BlockProcessingException {
-    throw new UnsupportedOperationException("No execution layer exits in Altair");
   }
 
   public static boolean eth2FastAggregateVerify(
