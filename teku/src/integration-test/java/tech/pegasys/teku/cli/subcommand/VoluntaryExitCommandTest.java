@@ -30,17 +30,21 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Parameter;
@@ -279,6 +283,71 @@ public class VoluntaryExitCommandTest {
     assertThat(stdOut.toString(UTF_8)).doesNotContain(VoluntaryExitCommand.WITHDRAWALS_NOT_ACTIVE);
     assertValidatorsNotExited(
         validatorPubKey1, validatorPubKey2, keyManagerPubKey1, keyManagerPubKey2, nonExistingKey);
+  }
+
+  @Test
+  void shouldGenerateExitWithoutSendingToNode(@TempDir final Path tempDir) throws IOException {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    final Path outputFolder = tempDir.resolve("out");
+    final List<String> args = new ArrayList<>();
+    args.addAll(commandArgs);
+    args.addAll(
+        List.of(
+            "--validator-public-keys",
+            validatorPubKey1,
+            "--save-exits-path",
+            outputFolder.toAbsolutePath().toString()));
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(0);
+    assertThat(stdErr.toString(UTF_8)).isEmpty();
+
+    final String outString = stdOut.toString(UTF_8);
+    assertThat(outString).contains("Saving exits to folder " + outputFolder);
+    // specifically we wrote validator 1's exit message
+    assertThat(outString).contains("Writing signed exit for a756543");
+    // generically, we only wrote 1 signed exit to file
+    assertThat(StringUtils.countMatches(outString, "Writing signed exit for")).isEqualTo(1);
+    // we succeeded in writing a file
+    assertThat(outputFolder.resolve("a756543_exit.json").toFile().exists()).isTrue();
+    assertValidatorsNotExited(validatorPubKey1);
+  }
+
+  @Test
+  void shouldFailIfSaveFolderCannotBeCreated(@TempDir final Path tempDir) throws IOException {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    final Path invalidOutputDestination = tempDir.resolve("testFile");
+    Files.writeString(invalidOutputDestination, "test");
+    final List<String> args = new ArrayList<>();
+    args.addAll(commandArgs);
+    args.addAll(
+        List.of(
+            "--validator-public-keys",
+            validatorPubKey1,
+            "--save-exits-path",
+            invalidOutputDestination.toAbsolutePath().toString()));
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8))
+        .contains("exists and is not a directory, cannot export to this path.");
+  }
+
+  @Test
+  void shouldFailIfSaveFolderHasInsufficientAccess(@TempDir final Path tempDir) throws IOException {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    final Path invalidOutputDestination = tempDir.resolve("testFile");
+    tempDir.toFile().mkdir();
+    tempDir.toFile().setWritable(false);
+    final List<String> args = new ArrayList<>();
+    args.addAll(commandArgs);
+    args.addAll(
+        List.of(
+            "--validator-public-keys",
+            validatorPubKey1,
+            "--save-exits-path",
+            invalidOutputDestination.toAbsolutePath().toString()));
+    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8)).contains("Failed to store exit for a756543");
   }
 
   @Test
