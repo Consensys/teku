@@ -280,7 +280,7 @@ public class EventLogger {
       final String result) {
     final String slowBlockLog =
         String.format(
-            "Late Block Import *** Block: %s Proposer: %s Result: %s %s",
+            "Late Block Import *** Block: %s Proposer: %s Result: %s Timings: %s",
             LogFormatter.formatBlock(slot, root), proposer, result, timings);
     warn(slowBlockLog, Color.YELLOW);
   }
