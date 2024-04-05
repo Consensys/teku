@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockBlobSidecarsTrackersPoolImplTest {
@@ -67,10 +68,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final int maxItems = 15;
   private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
       new PoolFactory(metricsSystem)
           .createPoolForBlockBlobSidecarsTrackers(
+              blockImportChannel,
               spec,
               timeProvider,
               asyncRunner,
@@ -930,6 +933,23 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(blockBlobSidecarsTrackersPool.getAllRequiredBlobSidecars())
         .containsExactlyElementsOf(allMissing);
+  }
+
+  @Test
+  void enableBlockImportOnCompletion_shouldEnableOnTracker() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+
+    mockedTrackersFactory = Optional.of((slotAndRoot) -> mock(BlockBlobSidecarsTracker.class));
+
+    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
+
+    final BlockBlobSidecarsTracker tracker =
+        blockBlobSidecarsTrackersPool.getBlockBlobSidecarsTracker(block).orElseThrow();
+
+    blockBlobSidecarsTrackersPool.enableBlockImportOnCompletion(block);
+
+    verify(tracker).enableBlockImportOnCompletion(blockImportChannel);
   }
 
   @Test
