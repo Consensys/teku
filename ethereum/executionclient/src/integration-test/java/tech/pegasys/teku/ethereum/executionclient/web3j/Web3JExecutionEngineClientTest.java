@@ -28,7 +28,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -304,8 +303,7 @@ public class Web3JExecutionEngineClientTest {
 
   @TestTemplate
   @SuppressWarnings("unchecked")
-  public void newPayloadV4_shouldBuildRequestAndResponseSuccessfully()
-      throws JsonProcessingException {
+  public void newPayloadV4_shouldBuildRequestAndResponseSuccessfully() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
     final Bytes32 latestValidHash = dataStructureUtil.randomBytes32();
     final PayloadStatus payloadStatusResponse =
