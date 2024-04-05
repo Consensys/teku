@@ -259,7 +259,8 @@ public class ActiveEth2P2PNetworkTest {
   void isCloseToInSync_shouldCalculateWhenDistanceOutOfRange() {
     final UInt64 currentEpoch = storageSystem.combinedChainDataClient().getCurrentEpoch();
     final int distanceOutsideRange =
-        spec.getSpecConfig(currentEpoch).getMaxSeedLookahead() * spec.slotsPerEpoch(currentEpoch) + 1;
+        spec.getSpecConfig(currentEpoch).getMaxSeedLookahead() * spec.slotsPerEpoch(currentEpoch)
+            + 1;
 
     // Current slot is a long way beyond the chain head
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(distanceOutsideRange));
