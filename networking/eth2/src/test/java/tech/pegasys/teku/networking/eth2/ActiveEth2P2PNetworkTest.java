@@ -255,6 +255,22 @@ public class ActiveEth2P2PNetworkTest {
     verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
   }
 
+  @Test
+  void isCloseToInSync_shouldCalculateDistanceWithSeedWhenFar() {
+    // Current slot is a long way beyond the chain head
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(50));
+    final boolean closeToInSync = network.isCloseToInSync();
+    assertThat(closeToInSync).isFalse();
+  }
+
+  @Test
+  void isCloseToInSync_shouldCalculateDistanceWithSeedWhenClose() {
+    // Current slot is beyond the chain head, but less than maxSeedLookahead distance
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(30));
+    final boolean closeToInSync = network.isCloseToInSync();
+    assertThat(closeToInSync).isTrue();
+  }
+
   @SuppressWarnings("unchecked")
   private ArgumentCaptor<Iterable<Integer>> subnetIdCaptor() {
     return ArgumentCaptor.forClass(Iterable.class);

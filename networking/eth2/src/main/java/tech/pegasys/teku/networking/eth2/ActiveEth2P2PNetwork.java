@@ -179,7 +179,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     gossipForkManager.onOptimisticHeadChanged(isOptimistic);
   }
 
-  private boolean isCloseToInSync() {
+  @VisibleForTesting
+  boolean isCloseToInSync() {
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     final int maxSeedLookahead = spec.getSpecConfig(currentEpoch).getMaxSeedLookahead();
     final int slotsPerEpoch = spec.slotsPerEpoch(currentEpoch);
