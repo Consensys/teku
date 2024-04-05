@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -76,6 +78,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   private final ExecutionLayerExitSchema executionLayerExitSchema;
 
+  private final AttestationElectraSchema attestationElectraSchema;
+
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
     this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
@@ -83,12 +87,17 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
     this.executionPayloadHeaderSchemaElectra =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
+    final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
+    this.attestationElectraSchema =
+        new AttestationElectraSchema(
+            maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot());
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaElectraImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            maxValidatorsPerAttestation,
             "BeaconBlockBodyElectra");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
@@ -96,6 +105,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            maxValidatorsPerAttestation,
             "BlindedBlockBodyElectra");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
     this.blindedBeaconBlockSchema =
@@ -135,6 +145,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         SchemaDefinitionsElectra.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsElectra) schemaDefinitions;
+  }
+
+  @Override
+  long getMaxValidatorsPerAttestation(SpecConfig specConfig) {
+    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 
   @Override
@@ -254,5 +269,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  public AttestationElectraSchema getAttestationElectraSchema() {
+    return attestationElectraSchema;
   }
 }

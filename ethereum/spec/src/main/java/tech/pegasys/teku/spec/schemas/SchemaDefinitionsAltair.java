@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.schemas;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -60,7 +61,10 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaAltairImpl.create(
-            specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyAltair");
+            specConfig,
+            getAttesterSlashingSchema(),
+            getMaxValidatorsPerAttestation(specConfig),
+            "BeaconBlockBodyAltair");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockAltair");
     this.signedBeaconBlockSchema =
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockAltair");
@@ -83,6 +87,11 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
         SchemaDefinitionsAltair.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsAltair) schemaDefinitions;
+  }
+
+  @Override
+  long getMaxValidatorsPerAttestation(SpecConfig specConfig) {
+    return specConfig.getMaxValidatorsPerCommittee();
   }
 
   @Override

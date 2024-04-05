@@ -98,6 +98,7 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final long maxValidatorsPerAttestation,
       final String containerName) {
     return new BlindedBeaconBlockBodySchemaElectraImpl(
         containerName,
@@ -111,10 +112,12 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+        // TODO EIP-7549 replace with AttestationElectra
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                new AttestationSchema(maxValidatorsPerAttestation),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),

@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData.DepositDataS
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage.DepositMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing.ProposerSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit.SignedVoluntaryExitSchema;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit.VoluntaryExitSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
@@ -83,7 +82,7 @@ public enum SszObjectType {
   SyncAggregatorSelectionData(SyncAggregatorSelectionDataSchema.INSTANCE),
   SyncCommittee(altairConfig(SyncCommitteeSchema::new)),
   SyncAggregate(altairConfig(c -> SyncAggregateSchema.create(c.getSyncCommitteeSize()))),
-  SignedAggregateAndProof(config(SignedAggregateAndProofSchema::new)),
+  SignedAggregateAndProof(schemas(SchemaDefinitions::getSignedAggregateAndProofSchema)),
   Validator(new ValidatorSchema()),
   HistoricalBatch(config(c -> new HistoricalBatchSchema(c.getSlotsPerHistoricalRoot()))),
   ExecutionPayload(bellatrixSchemas(SchemaDefinitionsBellatrix::getExecutionPayloadSchema)),

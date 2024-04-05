@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 public class GetAttestations extends RestApiEndpoint {
@@ -55,7 +54,7 @@ public class GetAttestations extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
-            .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
+            .response(SC_OK, "Request successful", getResponseType(spec))
             .build());
     this.nodeDataProvider = nodeDataProvider;
   }
@@ -71,13 +70,14 @@ public class GetAttestations extends RestApiEndpoint {
     request.respondOk(nodeDataProvider.getAttestations(slot, committeeIndex));
   }
 
-  private static SerializableTypeDefinition<List<Attestation>> getResponseType(
-      SpecConfig specConfig) {
+  private static SerializableTypeDefinition<List<Attestation>> getResponseType(final Spec spec) {
+    // TODO EIP-7549 handle Electra attestations
     return SerializableTypeDefinition.<List<Attestation>>object()
         .name("GetPoolAttestationsResponse")
         .withField(
             "data",
-            listOf(new Attestation.AttestationSchema(specConfig).getJsonTypeDefinition()),
+            listOf(
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()),
             Function.identity())
         .build();
   }

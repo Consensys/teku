@@ -99,6 +99,7 @@ public class BeaconBlockBodySchemaDenebImpl
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final long maxValidatorsPerAttestation,
       final String containerName) {
     return new BeaconBlockBodySchemaDenebImpl(
         containerName,
@@ -115,7 +116,8 @@ public class BeaconBlockBodySchemaDenebImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                new AttestationSchema(maxValidatorsPerAttestation),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),

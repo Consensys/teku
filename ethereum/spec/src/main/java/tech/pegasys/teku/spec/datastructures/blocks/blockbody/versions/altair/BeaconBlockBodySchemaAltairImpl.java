@@ -78,6 +78,7 @@ public class BeaconBlockBodySchemaAltairImpl
   public static BeaconBlockBodySchemaAltairImpl create(
       final SpecConfig specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
+      final long maxValidatorsPerAttestation,
       final String containerName) {
     return new BeaconBlockBodySchemaAltairImpl(
         containerName,
@@ -94,7 +95,8 @@ public class BeaconBlockBodySchemaAltairImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                new AttestationSchema(maxValidatorsPerAttestation),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),

@@ -72,9 +72,10 @@ public class GetBlockAttestations extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
-      Spec spec) {
-    Attestation.AttestationSchema dataSchema =
-        new Attestation.AttestationSchema(spec.getGenesisSpecConfig());
+      final Spec spec) {
+    // TODO EIP-7549 handle Electra attestations
+    final Attestation.AttestationSchema dataSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
         .name("GetBlockAttestationsResponse")

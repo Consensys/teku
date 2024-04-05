@@ -88,7 +88,7 @@ public class AttestationGossipManagerTest {
         spec.getGenesisSchemaDefinitions()
             .getAttestationSchema()
             .create(
-                dataStructureUtil.randomBitlist(),
+                dataStructureUtil.randomAggregationBits(),
                 dataStructureUtil.randomAttestationData(UInt64.valueOf(13)),
                 dataStructureUtil.randomSignature());
     final int subnetId = computeSubnetId(attestation);
