@@ -48,7 +48,13 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, SpecMilestone.DENEB})
+@TestSpecContext(
+    milestone = {
+      SpecMilestone.ALTAIR,
+      SpecMilestone.BELLATRIX,
+      SpecMilestone.DENEB,
+      SpecMilestone.ELECTRA
+    })
 public class BlockGossipValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
