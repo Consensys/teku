@@ -101,6 +101,17 @@ public class GraffitiBuilderTest {
     assertThat(graffitiBuilder.buildGraffiti(Optional.of(graffiti))).isEqualTo(graffiti);
   }
 
+  @Test
+  public void buildGraffiti_shouldPreferCallInput() {
+    final Bytes32 defaultGraffiti = Bytes32Parser.toBytes32(asciiGraffiti32);
+    final Bytes32 userGraffiti = Bytes32Parser.toBytes32(ASCII_GRAFFITI_20);
+    final Bytes32 expectedGraffiti = Bytes32Parser.toBytes32(ASCII_GRAFFITI_20 + " TK");
+    this.graffitiBuilder = new GraffitiBuilder(CLIENT_CODES, Optional.of(defaultGraffiti));
+    graffitiBuilder.onExecutionClientVersion(ClientVersion.UNKNOWN);
+    assertThat(graffitiBuilder.buildGraffiti(Optional.of(userGraffiti)))
+        .isEqualTo(expectedGraffiti);
+  }
+
   @ParameterizedTest(name = "format={0}, userGraffiti={1}")
   @MethodSource("getBuildGraffitiFixtures")
   public void buildGraffiti_shouldProvideCorrectOutput(
@@ -129,6 +140,7 @@ public class GraffitiBuilderTest {
       final Optional<String> maybeUserGraffiti,
       final String expectedGraffiti) {
     this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
+    graffitiBuilder.onExecutionClientVersion(ClientVersion.UNKNOWN);
     final Bytes32 expectedGraffitiBytes = Bytes32Parser.toBytes32(expectedGraffiti);
     assertThat(
             new String(
@@ -327,6 +339,8 @@ public class GraffitiBuilderTest {
 
   @Test
   public void formatClientInfo_shouldRenderClClientNameAndFullCommit_whenElInfoNotAvailable() {
+    graffitiBuilder.onExecutionClientVersion(ClientVersion.UNKNOWN);
+
     // 20: LH1be52536BU0f91a674
     assertThat(graffitiBuilder.formatClientsInfo(30))
         .isEqualTo(
@@ -340,6 +354,8 @@ public class GraffitiBuilderTest {
 
   @Test
   public void formatClientInfo_shouldRenderClClientNameAndHalfCommit_whenElInfoNotAvailable() {
+    graffitiBuilder.onExecutionClientVersion(ClientVersion.UNKNOWN);
+
     // 12: LH1be5BU0f91
     assertThat(graffitiBuilder.formatClientsInfo(19))
         .isEqualTo(
@@ -355,6 +371,8 @@ public class GraffitiBuilderTest {
 
   @Test
   public void formatClientInfo_shouldRenderClClientNameAnd1stCommitByte_whenElInfoNotAvailable() {
+    graffitiBuilder.onExecutionClientVersion(ClientVersion.UNKNOWN);
+
     // 8: LH1bBU0f
     assertThat(graffitiBuilder.formatClientsInfo(11))
         .isEqualTo(
@@ -370,6 +388,8 @@ public class GraffitiBuilderTest {
 
   @Test
   public void formatClientInfo_shouldRenderClClientName_whenElInfoNotAvailable() {
+    graffitiBuilder.onExecutionClientVersion(ClientVersion.UNKNOWN);
+
     // 4: LHBU
     assertThat(graffitiBuilder.formatClientsInfo(7))
         .isEqualTo(TEKU_CLIENT_VERSION.code())
@@ -381,6 +401,8 @@ public class GraffitiBuilderTest {
 
   @Test
   public void formatClientInfo_shouldSkipClientsInfo_whenNotEnoughSpaceAndElInfoNotAvailable() {
+    graffitiBuilder.onExecutionClientVersion(ClientVersion.UNKNOWN);
+
     // Empty
     assertThat(graffitiBuilder.formatClientsInfo(3))
         .isEqualTo("")
