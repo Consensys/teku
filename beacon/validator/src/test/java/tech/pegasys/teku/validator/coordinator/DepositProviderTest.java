@@ -306,6 +306,21 @@ public class DepositProviderTest {
   }
 
   @Test
+  void
+      shouldNotLogAnEventOnSlotIfFormerDepositMechanismIsDisabled_EvenIfAllDepositsRequiredForStateNotAvailable() {
+    setup(1, SpecMilestone.ELECTRA);
+    mockDepositsFromEth1Block(0, 8);
+    updateStateEth1DepositIndex(5);
+    updateStateDepositReceiptsStartIndex(5);
+    updateStateEth1DataDepositCount(10);
+    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+
+    depositProvider.onSlot(UInt64.ONE);
+
+    verifyNoInteractions(eventLogger);
+  }
+
+  @Test
   void shouldNotLogAnEventOnSlotWhenAllDepositsRequiredForStateAvailable() {
     setup(1);
     // To generate a valid proof we need the deposits up to state deposit count

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.pow;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -31,6 +33,8 @@ public class DepositSnapshotStorageLoader {
     if (!depositSnapshotStorageEnabled) {
       return SafeFuture.completedFuture(LoadDepositSnapshotResult.EMPTY);
     }
+
+    STATUS_LOG.loadingDepositSnapshotFromDb();
     return historicalChainData
         .getFinalizedDepositSnapshot()
         .thenApply(LoadDepositSnapshotResult::create);

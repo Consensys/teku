@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.validator.api;
 
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-
-public record ClientVersion(String code, String name, String version, Bytes4 commit) {
-
-  public static final String TEKU_CLIENT_CODE = "TK";
-
-  public static final ClientVersion UNKNOWN = new ClientVersion("NA", "", "", Bytes4.ZERO);
+public enum ClientGraffitiAppendFormat {
+  // Appends comprehensive clients information if there is a space for it.
+  // Reduces verbosity with less space or completely skips adding clients information.
+  // Clients info is separated with a space after user's graffiti if any.
+  AUTO,
+  // Appends client name codes if there is a space for it.
+  CLIENT_CODES,
+  // Clients information is not appended to the graffiti.
+  DISABLED;
 }

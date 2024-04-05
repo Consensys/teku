@@ -538,7 +538,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       case VALID, NOT_REQUIRED -> LOG.debug(
           "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
       case NOT_AVAILABLE -> {
-        LOG.warn(
+        LOG.debug(
             "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             blobSidecarsAndValidationResult.getCause());

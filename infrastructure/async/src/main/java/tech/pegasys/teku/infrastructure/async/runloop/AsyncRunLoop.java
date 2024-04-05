@@ -15,11 +15,15 @@ package tech.pegasys.teku.infrastructure.async.runloop;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncRunLoop {
+
+  private final AtomicBoolean stopped = new AtomicBoolean(false);
+
   private final RunLoopLogic logic;
   private final AsyncRunner asyncRunner;
   private final Duration retryDelay;
@@ -38,15 +42,29 @@ public class AsyncRunLoop {
         .finish(error -> onError(error, this::start));
   }
 
+  public void stop() {
+    stopped.compareAndSet(false, true);
+  }
+
+  private SafeFuture<Void> nextLoopAfterDelay() {
+    if (stopped.get()) {
+      return SafeFuture.COMPLETE;
+    }
+    return asyncRunner.runAfterDelay(
+        () -> {
+          if (stopped.get()) {
+            return;
+          }
+          nextLoop();
+        },
+        logic.getDelayUntilNextAdvance());
+  }
+
   private void nextLoop() {
     logic
         .advance()
         .thenCompose(__ -> nextLoopAfterDelay())
         .finish(error -> onError(error, this::nextLoop));
-  }
-
-  private SafeFuture<Void> nextLoopAfterDelay() {
-    return asyncRunner.runAfterDelay(this::nextLoop, logic.getDelayUntilNextAdvance());
   }
 
   private void onError(final Throwable error, final ExceptionThrowingRunnable retryAction) {

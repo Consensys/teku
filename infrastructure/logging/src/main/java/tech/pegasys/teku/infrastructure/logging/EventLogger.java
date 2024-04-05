@@ -174,6 +174,13 @@ public class EventLogger {
     log.info("Execution Client version: {} {}", name, version);
   }
 
+  public void logDefaultGraffiti(final String graffiti) {
+    log.info(
+        "Default graffiti to use when building block without external VC: \"{}\". "
+            + "To change check validator graffiti options.",
+        graffiti);
+  }
+
   public void builderIsNotAvailable(final String errorMessage) {
     final String builderIsNotAvailableEventLog =
         String.format(
@@ -266,11 +273,15 @@ public class EventLogger {
   }
 
   public void lateBlockImport(
-      final Bytes32 root, final UInt64 slot, final UInt64 proposer, final String timings) {
-    String slowBlockLog =
+      final Bytes32 root,
+      final UInt64 slot,
+      final UInt64 proposer,
+      final String timings,
+      final String result) {
+    final String slowBlockLog =
         String.format(
-            "Late Block Import *** Block: %s proposer %s %s",
-            LogFormatter.formatBlock(slot, root), proposer, timings);
+            "Late Block Import *** Block: %s Proposer: %s Result: %s Timings: %s",
+            LogFormatter.formatBlock(slot, root), proposer, result, timings);
     warn(slowBlockLog, Color.YELLOW);
   }
 
