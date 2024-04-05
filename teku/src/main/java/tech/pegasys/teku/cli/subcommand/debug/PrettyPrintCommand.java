@@ -133,7 +133,7 @@ public class PrettyPrintCommand implements Callable<Integer> {
     }
   }
 
-  private enum OutputFormat {
+  public enum OutputFormat {
     JSON(JsonFactory::new),
     YAML(YAMLFactory::new);
 
