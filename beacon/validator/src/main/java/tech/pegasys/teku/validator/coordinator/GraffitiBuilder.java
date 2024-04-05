@@ -128,8 +128,10 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
 
   @VisibleForTesting
   protected String formatClientsInfo(final int length) {
+    final boolean isElInfoAvailable = !ClientVersion.UNKNOWN.equals(executionClientVersion.get());
     final String safeConsensusCode = extractClientCodeSafely(consensusClientVersion);
-    final String safeExecutionCode = extractClientCodeSafely(executionClientVersion.get());
+    final String safeExecutionCode =
+        isElInfoAvailable ? extractClientCodeSafely(executionClientVersion.get()) : "";
     // LH1be52536BU0f91a674
     if (length >= 20) {
       return String.format(
@@ -137,7 +139,7 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
           safeConsensusCode,
           consensusClientVersion.commit().toUnprefixedHexString(),
           safeExecutionCode,
-          executionClientVersion.get().commit().toUnprefixedHexString());
+          isElInfoAvailable ? executionClientVersion.get().commit().toUnprefixedHexString() : "");
     }
     // LH1be5BU0f91
     if (length >= 12) {
@@ -146,7 +148,9 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
           safeConsensusCode,
           consensusClientVersion.commit().toUnprefixedHexString().substring(0, 4),
           safeExecutionCode,
-          executionClientVersion.get().commit().toUnprefixedHexString().substring(0, 4));
+          isElInfoAvailable
+              ? executionClientVersion.get().commit().toUnprefixedHexString().substring(0, 4)
+              : "");
     }
     // LH1bBU0f
     if (length >= 8) {
@@ -155,11 +159,13 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
           safeConsensusCode,
           consensusClientVersion.commit().toUnprefixedHexString().substring(0, 2),
           safeExecutionCode,
-          executionClientVersion.get().commit().toUnprefixedHexString().substring(0, 2));
+          isElInfoAvailable
+              ? executionClientVersion.get().commit().toUnprefixedHexString().substring(0, 2)
+              : "");
     }
     // LHBU
     if (length >= 4) {
-      return String.format("%s%s", safeConsensusCode, safeExecutionCode);
+      return String.format("%s%s", safeConsensusCode, isElInfoAvailable ? safeExecutionCode : "");
     }
 
     return "";

@@ -122,6 +122,26 @@ public class GraffitiBuilderTest {
         .isEqualTo(expectedGraffitiBytes);
   }
 
+  @ParameterizedTest(name = "format={0}, userGraffiti={1}")
+  @MethodSource("getBuildGraffitiFixturesElInfoNa")
+  public void buildGraffiti_shouldProvideCorrectOutput_whenElInfoNa(
+      final ClientGraffitiAppendFormat clientGraffitiAppendFormat,
+      final Optional<String> maybeUserGraffiti,
+      final String expectedGraffiti) {
+    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
+    final Bytes32 expectedGraffitiBytes = Bytes32Parser.toBytes32(expectedGraffiti);
+    assertThat(
+            new String(
+                Arrays.copyOfRange(
+                    expectedGraffitiBytes.toArray(),
+                    0,
+                    32 - expectedGraffitiBytes.numberOfTrailingZeroBytes()),
+                StandardCharsets.UTF_8))
+        .isEqualTo(expectedGraffiti);
+    assertThat(graffitiBuilder.buildGraffiti(maybeUserGraffiti.map(Bytes32Parser::toBytes32)))
+        .isEqualTo(expectedGraffitiBytes);
+  }
+
   @Test
   public void extractGraffiti_shouldReturnEmptyString() {
     assertThat(graffitiBuilder.extractGraffiti(Optional.empty(), 0)).isEqualTo("");
@@ -290,9 +310,77 @@ public class GraffitiBuilderTest {
   }
 
   @Test
-  public void formatClientInfo_shouldSkipClientsInfoWhenNotEnoughSpace() {
+  public void formatClientInfo_shouldSkipClientsInfo_whenNotEnoughSpace() {
     graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
 
+    // Empty
+    assertThat(graffitiBuilder.formatClientsInfo(3))
+        .isEqualTo("")
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(0));
+    assertThat(graffitiBuilder.formatClientsInfo(0))
+        .isEqualTo("")
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(0));
+    assertThat(graffitiBuilder.formatClientsInfo(-1))
+        .isEqualTo("")
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isEqualTo(0));
+  }
+
+  @Test
+  public void formatClientInfo_shouldRenderClClientNameAndFullCommit_whenElInfoNotAvailable() {
+    // 20: LH1be52536BU0f91a674
+    assertThat(graffitiBuilder.formatClientsInfo(30))
+        .isEqualTo(
+            TEKU_CLIENT_VERSION.code() + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString())
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(20));
+    assertThat(graffitiBuilder.formatClientsInfo(20))
+        .isEqualTo(
+            TEKU_CLIENT_VERSION.code() + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString())
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(20));
+  }
+
+  @Test
+  public void formatClientInfo_shouldRenderClClientNameAndHalfCommit_whenElInfoNotAvailable() {
+    // 12: LH1be5BU0f91
+    assertThat(graffitiBuilder.formatClientsInfo(19))
+        .isEqualTo(
+            TEKU_CLIENT_VERSION.code()
+                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 4))
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(12));
+    assertThat(graffitiBuilder.formatClientsInfo(12))
+        .isEqualTo(
+            TEKU_CLIENT_VERSION.code()
+                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 4))
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(12));
+  }
+
+  @Test
+  public void formatClientInfo_shouldRenderClClientNameAnd1stCommitByte_whenElInfoNotAvailable() {
+    // 8: LH1bBU0f
+    assertThat(graffitiBuilder.formatClientsInfo(11))
+        .isEqualTo(
+            TEKU_CLIENT_VERSION.code()
+                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2))
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(8));
+    assertThat(graffitiBuilder.formatClientsInfo(8))
+        .isEqualTo(
+            TEKU_CLIENT_VERSION.code()
+                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2))
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(8));
+  }
+
+  @Test
+  public void formatClientInfo_shouldRenderClClientName_whenElInfoNotAvailable() {
+    // 4: LHBU
+    assertThat(graffitiBuilder.formatClientsInfo(7))
+        .isEqualTo(TEKU_CLIENT_VERSION.code())
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(4));
+    assertThat(graffitiBuilder.formatClientsInfo(4))
+        .isEqualTo(TEKU_CLIENT_VERSION.code())
+        .satisfies(s -> assertThat(s.getBytes(StandardCharsets.UTF_8).length).isLessThan(4));
+  }
+
+  @Test
+  public void formatClientInfo_shouldSkipClientsInfo_whenNotEnoughSpaceAndElInfoNotAvailable() {
     // Empty
     assertThat(graffitiBuilder.formatClientsInfo(3))
         .isEqualTo("")
@@ -447,6 +535,48 @@ public class GraffitiBuilderTest {
             CLIENT_CODES,
             Optional.of(ASCII_GRAFFITI_20),
             ASCII_GRAFFITI_20 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
+        Arguments.of(DISABLED, Optional.empty(), ""),
+        Arguments.of(DISABLED, Optional.of("small"), "small"),
+        Arguments.of(DISABLED, Optional.of(UTF_8_GRAFFITI_4), UTF_8_GRAFFITI_4),
+        Arguments.of(DISABLED, Optional.of(ASCII_GRAFFITI_20), ASCII_GRAFFITI_20));
+  }
+
+  private static Stream<Arguments> getBuildGraffitiFixturesElInfoNa() {
+    return Stream.of(
+        Arguments.of(
+            AUTO,
+            Optional.empty(),
+            TEKU_CLIENT_VERSION.code() + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()),
+        Arguments.of(
+            AUTO,
+            Optional.of("small"),
+            "small "
+                + TEKU_CLIENT_VERSION.code()
+                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()),
+        Arguments.of(
+            AUTO,
+            Optional.of(UTF_8_GRAFFITI_4),
+            UTF_8_GRAFFITI_4
+                + " "
+                + TEKU_CLIENT_VERSION.code()
+                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()),
+        Arguments.of(
+            AUTO,
+            Optional.of(ASCII_GRAFFITI_20),
+            ASCII_GRAFFITI_20
+                + " "
+                + TEKU_CLIENT_VERSION.code()
+                + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)),
+        Arguments.of(CLIENT_CODES, Optional.empty(), TEKU_CLIENT_VERSION.code()),
+        Arguments.of(CLIENT_CODES, Optional.of("small"), "small " + TEKU_CLIENT_VERSION.code()),
+        Arguments.of(
+            CLIENT_CODES,
+            Optional.of(UTF_8_GRAFFITI_4),
+            UTF_8_GRAFFITI_4 + " " + TEKU_CLIENT_VERSION.code()),
+        Arguments.of(
+            CLIENT_CODES,
+            Optional.of(ASCII_GRAFFITI_20),
+            ASCII_GRAFFITI_20 + " " + TEKU_CLIENT_VERSION.code()),
         Arguments.of(DISABLED, Optional.empty(), ""),
         Arguments.of(DISABLED, Optional.of("small"), "small"),
         Arguments.of(DISABLED, Optional.of(UTF_8_GRAFFITI_4), UTF_8_GRAFFITI_4),
