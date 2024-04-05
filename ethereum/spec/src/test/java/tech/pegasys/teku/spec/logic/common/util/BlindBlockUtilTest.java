@@ -26,7 +26,13 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA, SpecMilestone.DENEB})
+@TestSpecContext(
+    milestone = {
+      SpecMilestone.BELLATRIX,
+      SpecMilestone.CAPELLA,
+      SpecMilestone.DENEB,
+      SpecMilestone.ELECTRA
+    })
 class BlindBlockUtilTest {
 
   private DataStructureUtil dataStructureUtil;
