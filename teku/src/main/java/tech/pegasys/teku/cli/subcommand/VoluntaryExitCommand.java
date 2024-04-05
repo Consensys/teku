@@ -49,6 +49,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
+import tech.pegasys.teku.cli.subcommand.debug.PrettyPrintCommand;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -219,8 +220,8 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     final AtomicInteger failures = new AtomicInteger();
     getValidatorIndices(validatorsMap)
         .forEach(
-            (k, v) -> {
-              if (!storeExitForValidator(k, v)) {
+            (publicKey, validatorIndex) -> {
+              if (!storeExitForValidator(publicKey, validatorIndex)) {
                 failures.incrementAndGet();
               }
             });
@@ -257,7 +258,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   }
 
   private Object2IntMap<BLSPublicKey> getValidatorIndices(
-      Map<BLSPublicKey, Validator> validatorsMap) {
+      final Map<BLSPublicKey, Validator> validatorsMap) {
     final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
         validatorsMap.keySet().stream().map(BLSPublicKey::toString).toList();
@@ -289,7 +290,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     try {
       final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
           generateSignedExit(publicKey, validatorIndex);
-      Optional<PostDataFailureResponse> response =
+      final Optional<PostDataFailureResponse> response =
           apiClient.sendVoluntaryExit(new SignedVoluntaryExit(exit));
       if (response.isPresent()) {
         SUB_COMMAND_LOG.error(response.get().message);
@@ -319,7 +320,8 @@ public class VoluntaryExitCommand implements Callable<Integer> {
         message, signature);
   }
 
-  private boolean storeExitForValidator(BLSPublicKey blsPublicKey, Integer validatorIndex) {
+  private boolean storeExitForValidator(
+      final BLSPublicKey blsPublicKey, final Integer validatorIndex) {
     final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
         generateSignedExit(blsPublicKey, validatorIndex);
     try {
@@ -338,8 +340,16 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit
           signedVoluntaryExit)
       throws JsonProcessingException {
+    final PrettyPrintCommand.OutputFormat json = PrettyPrintCommand.OutputFormat.JSON;
     return JsonUtil.serialize(
-        signedVoluntaryExit, signedVoluntaryExit.getSchema().getJsonTypeDefinition());
+        json.createFactory(),
+        gen -> {
+          gen.useDefaultPrettyPrinter();
+          signedVoluntaryExit
+              .getSchema()
+              .getJsonTypeDefinition()
+              .serialize(signedVoluntaryExit, gen);
+        });
   }
 
   private Optional<UInt64> getEpoch() {
