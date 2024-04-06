@@ -85,12 +85,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
-    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     super.processOperationsNoValidation(state, body, indexedAttestationCache);
+
     safelyProcess(
         () ->
             processDepositReceipts(
-                electraState,
+                MutableBeaconStateElectra.required(state),
                 body.getOptionalExecutionPayload()
                     .flatMap(ExecutionPayload::toVersionElectra)
                     .map(ExecutionPayloadElectra::getDepositReceipts)
@@ -136,7 +136,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /*
-    Implements process_execution_layer_exit from consensus-spec (EIP-7002)
+    Implements process_execution_layer_exit from consensus-specs (EIP-7002)
   */
   @Override
   public void processExecutionLayerExits(
@@ -208,7 +208,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /*
-   Implements process_deposit_receipt from consensus-spec (EIP-6110)
+   Implements process_deposit_receipt from consensus-specs (EIP-6110)
   */
   public void processDepositReceipts(
       final MutableBeaconStateElectra state, final SszList<DepositReceipt> depositReceipts) {
