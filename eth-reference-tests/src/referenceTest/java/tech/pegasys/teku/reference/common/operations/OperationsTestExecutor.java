@@ -420,7 +420,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           ATTESTATION,
           SYNC_AGGREGATE,
           EXECUTION_PAYLOAD,
-          WITHDRAWAL -> {}
+          WITHDRAWAL,
+          DEPOSIT_RECEIPT,
+          EXECUTION_LAYER_EXIT -> {}
     }
   }
 
