@@ -6,6 +6,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-core'
     compileOnly 'com.github.oshi:oshi-core'
 
+    testImplementation testFixtures(project(':ethereum:spec'))
     testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
     testImplementation 'com.github.oshi:oshi-core'
 }
