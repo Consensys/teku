@@ -41,8 +41,8 @@ class P2PDumpManagerTest {
             tempDir, "test_topic", timestamp, messageBytes);
     assertThat(file).isPresent();
 
-    final String filename = String.format("%s_%s.ssz", timestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("gossip_decoding_error_messages").resolve(filename);
+    final String fileName = String.format("%s_%s.ssz", timestamp, "test_topic");
+    final Path expectedFile = tempDir.resolve("gossip_decoding_error_messages").resolve(fileName);
     assertThat(file.get()).isEqualTo(expectedFile.toString());
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
@@ -57,15 +57,15 @@ class P2PDumpManagerTest {
     assertThat(decodingErrorMessagesDir.toFile().mkdir()).isTrue();
 
     // Make file with expected name
-    final String filename = String.format("%s_%s.ssz", timestamp, "test_topic");
-    assertThat(decodingErrorMessagesDir.resolve(filename).toFile().createNewFile()).isTrue();
+    final String fileName = String.format("%s_%s.ssz", timestamp, "test_topic");
+    assertThat(decodingErrorMessagesDir.resolve(fileName).toFile().createNewFile()).isTrue();
 
     // Should not be able to create file when exists
     final Optional<String> file =
         P2PDumpManager.saveGossipMessageDecodingError(
             tempDir, "test_topic", timestamp, messageBytes);
     assertThat(file).isEmpty();
-    checkBytesSavedToFile(decodingErrorMessagesDir.resolve(filename), Bytes.EMPTY);
+    checkBytesSavedToFile(decodingErrorMessagesDir.resolve(fileName), Bytes.EMPTY);
   }
 
   @Test
@@ -77,8 +77,8 @@ class P2PDumpManagerTest {
             tempDir, "test_topic", timestamp, messageBytes);
     assertThat(file).isPresent();
 
-    final String filename = String.format("%s_%s.ssz", timestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("rejected_gossip_messages").resolve(filename);
+    final String fileName = String.format("%s_%s.ssz", timestamp, "test_topic");
+    final Path expectedFile = tempDir.resolve("rejected_gossip_messages").resolve(fileName);
     assertThat(file.get()).isEqualTo(expectedFile.toString());
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
@@ -93,15 +93,15 @@ class P2PDumpManagerTest {
     assertThat(rejectedGossipMessagesDir.toFile().mkdir()).isTrue();
 
     // Make file with expected name
-    final String filename = String.format("%s_%s.ssz", timestamp, "test_topic");
-    assertThat(rejectedGossipMessagesDir.resolve(filename).toFile().createNewFile()).isTrue();
+    final String fileName = String.format("%s_%s.ssz", timestamp, "test_topic");
+    assertThat(rejectedGossipMessagesDir.resolve(fileName).toFile().createNewFile()).isTrue();
 
     // Should not be able to create file when exists
     final Optional<String> file =
         P2PDumpManager.saveGossipRejectedMessageToFile(
             tempDir, "test_topic", timestamp, messageBytes);
     assertThat(file).isEmpty();
-    checkBytesSavedToFile(rejectedGossipMessagesDir.resolve(filename), Bytes.EMPTY);
+    checkBytesSavedToFile(rejectedGossipMessagesDir.resolve(fileName), Bytes.EMPTY);
   }
 
   @Test
@@ -112,10 +112,10 @@ class P2PDumpManagerTest {
             tempDir, block.getSlot(), block.getRoot(), block.sszSerialize());
     assertThat(file).isPresent();
 
-    final String filename =
+    final String fileName =
         String.format(
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
-    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(filename);
+    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
     assertThat(file.get()).isEqualTo(expectedFile.toString());
     checkBytesSavedToFile(expectedFile, block.sszSerialize());
   }
@@ -129,17 +129,17 @@ class P2PDumpManagerTest {
     assertThat(invalidBlocksDir.toFile().mkdir()).isTrue();
 
     // Make file with expected name
-    final String filename =
+    final String fileName =
         String.format(
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
-    assertThat(invalidBlocksDir.resolve(filename).toFile().createNewFile()).isTrue();
+    assertThat(invalidBlocksDir.resolve(fileName).toFile().createNewFile()).isTrue();
 
     // Should not be able to create file when exists
     final Optional<String> file =
         P2PDumpManager.saveInvalidBlockToFile(
             tempDir, block.getSlot(), block.getRoot(), block.sszSerialize());
     assertThat(file).isEmpty();
-    checkBytesSavedToFile(invalidBlocksDir.resolve(filename), Bytes.EMPTY);
+    checkBytesSavedToFile(invalidBlocksDir.resolve(fileName), Bytes.EMPTY);
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {

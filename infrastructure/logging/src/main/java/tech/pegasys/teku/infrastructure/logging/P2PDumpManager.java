@@ -36,13 +36,13 @@ public class P2PDumpManager {
       final String topic,
       final String timestamp,
       final Bytes originalMessage) {
-    final String filename = String.format("%s_%s.ssz", timestamp, topic);
+    final String fileName = String.format("%s_%s.ssz", timestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
         directory,
         "gossip message with decoding error",
         GOSSIP_DECODING_ERROR_DIR,
-        filename,
+        fileName,
         identifiers,
         originalMessage);
   }
@@ -52,31 +52,31 @@ public class P2PDumpManager {
       final String topic,
       final String timestamp,
       final Bytes decodedMessage) {
-    final String filename = String.format("%s_%s.ssz", timestamp, topic);
+    final String fileName = String.format("%s_%s.ssz", timestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
         directory,
         "rejected gossip message",
         GOSSIP_REJECTED_DIR,
-        filename,
+        fileName,
         identifiers,
         decodedMessage);
   }
 
   public static Optional<String> saveInvalidBlockToFile(
       final Path directory, final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
-    final String filename =
+    final String fileName =
         String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
     final String identifiers = String.format("Slot: %s, Block Root: %s", slot, blockRoot);
     return saveBytesToFile(
-        directory, "invalid block", INVALID_BLOCK_DIR, filename, identifiers, blockSsz);
+        directory, "invalid block", INVALID_BLOCK_DIR, fileName, identifiers, blockSsz);
   }
 
   private static Optional<String> saveBytesToFile(
       final Path baseDirectory,
       final String object,
       final String errorDirectory,
-      final String filename,
+      final String fileName,
       final String identifiers,
       final Bytes bytes) {
     // Check directory exists
@@ -84,7 +84,7 @@ public class P2PDumpManager {
     if (directory.toFile().mkdir()) {
       LOG.info(String.format("%s directory has been created to save %s.", errorDirectory, object));
     }
-    final Path path = directory.resolve(filename);
+    final Path path = directory.resolve(fileName);
 
     try {
       // Create file and save ssz
