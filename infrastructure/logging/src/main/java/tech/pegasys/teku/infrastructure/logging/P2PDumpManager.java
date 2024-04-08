@@ -60,7 +60,8 @@ public class P2PDumpManager {
 
   public static Optional<String> saveInvalidBlockToFile(
       final Path directory, final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
-    final String filename = String.format("slot%s_root%s.ssz", slot, blockRoot);
+    final String filename =
+        String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
     final String identifiers = String.format("Slot: %s, Block Root: %s", slot, blockRoot);
     return saveBytesToFile(
         directory, "invalid block", INVALID_BLOCK_DIR, filename, identifiers, blockSsz);
