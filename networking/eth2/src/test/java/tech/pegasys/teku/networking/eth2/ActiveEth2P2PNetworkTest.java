@@ -264,8 +264,7 @@ public class ActiveEth2P2PNetworkTest {
     // Current slot is a long way beyond the chain head
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(distanceOutsideRange));
 
-    final boolean closeToInSync = network.isCloseToInSync();
-    assertThat(closeToInSync).isFalse();
+    assertThat(network.isCloseToInSync()).isFalse();
   }
 
   @Test
@@ -276,8 +275,7 @@ public class ActiveEth2P2PNetworkTest {
 
     // Current slot is beyond the chain head, but less than maxSeedLookahead distance
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(distanceInRange));
-    final boolean closeToInSync = network.isCloseToInSync();
-    assertThat(closeToInSync).isTrue();
+    assertThat(network.isCloseToInSync()).isTrue();
   }
 
   @Test
@@ -300,8 +298,7 @@ public class ActiveEth2P2PNetworkTest {
             processedAttestationSubscriptionProvider,
             true);
 
-    final boolean closeToInSync = network.isCloseToInSync();
-    assertThat(closeToInSync).isFalse();
+    assertThat(network.isCloseToInSync()).isFalse();
   }
 
   @SuppressWarnings("unchecked")
