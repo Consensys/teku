@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -885,10 +886,18 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
+  public void processDepositReceipts(
+      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+      throws BlockProcessingException {
+    // No DepositReceipts until Electra
+  }
+
+  @Override
   public void processExecutionLayerExits(
       final MutableBeaconState state,
       final SszList<ExecutionLayerExit> exits,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
     // No ExecutionLayer exits until Electra
   }
 

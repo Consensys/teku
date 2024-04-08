@@ -142,7 +142,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   public void processExecutionLayerExits(
       final MutableBeaconState state,
       final SszList<ExecutionLayerExit> exits,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
     exits.forEach(
@@ -210,14 +211,17 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   /*
    Implements process_deposit_receipt from consensus-specs (EIP-6110)
   */
+  @Override
   public void processDepositReceipts(
-      final MutableBeaconStateElectra state, final SszList<DepositReceipt> depositReceipts) {
+      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+      throws BlockProcessingException {
+    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     for (DepositReceipt depositReceipt : depositReceipts) {
       // process_deposit_receipt
-      if (state
+      if (electraState
           .getDepositReceiptsStartIndex()
           .equals(SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX)) {
-        state.setDepositReceiptsStartIndex(depositReceipt.getIndex());
+        electraState.setDepositReceiptsStartIndex(depositReceipt.getIndex());
       }
       applyDeposit(
           state,
