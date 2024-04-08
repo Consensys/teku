@@ -32,8 +32,11 @@ public class P2PDumpManager {
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
 
   public static Optional<String> saveGossipMessageDecodingError(
-      final Path directory, final String topic, final Bytes originalMessage) {
-    final String filename = "originalMessage.ssz"; // TODO fix add identifiers to filename
+      final Path directory,
+      final String topic,
+      final String timestamp,
+      final Bytes originalMessage) {
+    final String filename = String.format("%s_%s.ssz", timestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
         directory,
@@ -45,9 +48,11 @@ public class P2PDumpManager {
   }
 
   public static Optional<String> saveGossipRejectedMessageToFile(
-      final Path directory, final String topic, final Bytes decodedMessage) {
-    final String filename =
-        "rejectedGossipDecodedMessage.ssz"; // TODO fix add identifiers to filename
+      final Path directory,
+      final String topic,
+      final String timestamp,
+      final Bytes decodedMessage) {
+    final String filename = String.format("%s_%s.ssz", timestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
         directory,
