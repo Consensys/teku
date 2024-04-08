@@ -34,9 +34,9 @@ public class P2PDumpManager {
   public static Optional<String> saveGossipMessageDecodingError(
       final Path directory,
       final String topic,
-      final String timestamp,
+      final String arrivalTimestamp,
       final Bytes originalMessage) {
-    final String fileName = String.format("%s_%s.ssz", timestamp, topic);
+    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
         directory,
@@ -50,9 +50,9 @@ public class P2PDumpManager {
   public static Optional<String> saveGossipRejectedMessageToFile(
       final Path directory,
       final String topic,
-      final String timestamp,
+      final String arrivalTimestamp,
       final Bytes decodedMessage) {
-    final String fileName = String.format("%s_%s.ssz", timestamp, topic);
+    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
         directory,
