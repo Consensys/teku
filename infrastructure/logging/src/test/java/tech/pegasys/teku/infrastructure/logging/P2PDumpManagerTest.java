@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -31,10 +32,12 @@ class P2PDumpManagerTest {
   final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
 
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
+
   @Test
   void saveGossipMessageDecodingError_shouldSaveToFile(@TempDir Path tempDir) {
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
-    final String arrivalTimestamp = dataStructureUtil.randomUInt64().toString();
+    final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     final Optional<String> file =
         P2PDumpManager.saveGossipMessageDecodingError(
             tempDir, "test_topic", arrivalTimestamp, messageBytes);
@@ -49,7 +52,7 @@ class P2PDumpManagerTest {
   @Test
   void saveGossipMessageDecodingError_failsToCreateFile(@TempDir Path tempDir) throws IOException {
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
-    final String arrivalTimestamp = dataStructureUtil.randomUInt64().toString();
+    final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     final Path decodingErrorMessagesDir = tempDir.resolve("gossip_decoding_error_messages");
 
     // Make invalid_blocks directory
@@ -70,7 +73,7 @@ class P2PDumpManagerTest {
   @Test
   void saveGossipRejectedMessageToFile_shouldSaveToFile(@TempDir Path tempDir) {
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
-    final String arrivalTimestamp = dataStructureUtil.randomUInt64().toString();
+    final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     final Optional<String> file =
         P2PDumpManager.saveGossipRejectedMessageToFile(
             tempDir, "test_topic", arrivalTimestamp, messageBytes);
@@ -85,7 +88,7 @@ class P2PDumpManagerTest {
   @Test
   void saveGossipRejectedMessageToFile_failsToCreateFile(@TempDir Path tempDir) throws IOException {
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
-    final String arrivalTimestamp = dataStructureUtil.randomUInt64().toString();
+    final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     final Path rejectedGossipMessagesDir = tempDir.resolve("rejected_gossip_messages");
 
     // Make invalid_blocks directory
