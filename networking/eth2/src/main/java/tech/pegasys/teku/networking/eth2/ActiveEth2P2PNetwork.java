@@ -187,13 +187,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     }
 
     final int maxLookaheadEpochs = spec.getSpecConfig(currentEpoch.get()).getMaxSeedLookahead();
-    final int maxLookaheadSlots = spec.slotsPerEpoch(currentEpoch.get());
-    final int distance = maxLookaheadSlots * maxLookaheadEpochs;
+    final int slotsPerEpoch = spec.slotsPerEpoch(currentEpoch.get());
+    final int maxLookaheadSlots = slotsPerEpoch * maxLookaheadEpochs;
 
     return recentChainData
         .getChainHeadSlotsBehind()
         .orElse(UInt64.MAX_VALUE)
-        .isLessThanOrEqualTo(distance);
+        .isLessThanOrEqualTo(maxLookaheadSlots);
   }
 
   private void setTopicScoringParams() {
