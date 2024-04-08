@@ -259,8 +259,7 @@ public class ActiveEth2P2PNetworkTest {
   void isCloseToInSync_shouldCalculateWhenDistanceOutOfRange() {
     final UInt64 currentEpoch = storageSystem.combinedChainDataClient().getCurrentEpoch();
     final int distanceOutsideRange =
-        spec.getSpecConfig(currentEpoch).getMaxSeedLookahead() * spec.slotsPerEpoch(currentEpoch)
-            + 1;
+        spec.getGenesisSpecConfig().getMaxSeedLookahead() * spec.slotsPerEpoch(currentEpoch) + 1;
 
     // Current slot is a long way beyond the chain head
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(distanceOutsideRange));
@@ -273,7 +272,7 @@ public class ActiveEth2P2PNetworkTest {
   void isCloseToInSync_shouldCalculateWhenDistanceInRange() {
     final UInt64 currentEpoch = storageSystem.combinedChainDataClient().getCurrentEpoch();
     final int distanceInRange =
-        spec.getSpecConfig(currentEpoch).getMaxSeedLookahead() * spec.slotsPerEpoch(currentEpoch);
+        spec.getGenesisSpecConfig().getMaxSeedLookahead() * spec.slotsPerEpoch(currentEpoch);
 
     // Current slot is beyond the chain head, but less than maxSeedLookahead distance
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(distanceInRange));
