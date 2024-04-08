@@ -309,6 +309,12 @@ public class EventLogger {
         Color.RED);
   }
 
+  public void depositContractLogsSyncingDisabled() {
+    warn(
+        "Deposit contract logs syncing from the Execution Client has been disabled! You WILL not be able to produce blocks.",
+        Color.YELLOW);
+  }
+
   public void builderBidNotHonouringGasLimit(
       final UInt64 parentGasLimit, final UInt64 proposedGasLimit, final UInt64 preferredGasLimit) {
     String reorgEventLog =

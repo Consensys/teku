@@ -68,6 +68,18 @@ public class DepositOptions {
       fallbackValue = "true")
   private boolean depositSnapshotEnabled = PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
 
+  @Option(
+      names = {"--Xdeposit-contract-logs-syncing-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Enable syncing of deposit contract logs from the Execution Engine node. This is required for block production.",
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean depositContractLogsSyncingEnabled =
+      PowchainConfiguration.DEFAULT_DEPOSIT_CONTRACT_LOGS_SYNCING_ENABLED;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
         b -> {
@@ -76,6 +88,7 @@ public class DepositOptions {
           b.useMissingDepositEventLogging(useMissingDepositEventLogging);
           b.customDepositSnapshotPath(depositSnapshotPath);
           b.depositSnapshotEnabled(depositSnapshotEnabled);
+          b.depositContractLogsSyncingEnabled(depositContractLogsSyncingEnabled);
         });
   }
 }
