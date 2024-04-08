@@ -100,7 +100,7 @@ public class P2PDumpManager {
       final String errorMessage =
           String.format("Failed to save %s bytes to file. %s", object, identifiers);
       LOG.error(errorMessage, e);
-      return Optional.empty(); // TODO What to do if error? Is returning empty enough?
+      return Optional.empty();
     }
   }
 }
