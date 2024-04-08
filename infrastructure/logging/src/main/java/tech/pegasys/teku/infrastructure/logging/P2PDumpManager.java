@@ -27,36 +27,72 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class P2PDumpManager {
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final String GOSSIP_DECODING_ERROR_DIR = "gossip_decoding_error_messages";
+  private static final String GOSSIP_REJECTED_DIR = "rejected_gossip_messages";
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
+
+  public static Optional<String> saveGossipMessageDecodingError(
+      final Path directory, final String topic, final Bytes originalMessage) {
+    final String filename = "originalMessage.ssz"; // TODO fix add identifiers to filename
+    final String identifiers = String.format("Topic: %s", topic);
+    return saveBytesToFile(
+        directory,
+        "gossip message with decoding error",
+        GOSSIP_DECODING_ERROR_DIR,
+        filename,
+        identifiers,
+        originalMessage);
+  }
+
+  public static Optional<String> saveGossipRejectedMessageToFile(
+      final Path directory, final String topic, final Bytes decodedMessage) {
+    final String filename =
+        "rejectedGossipDecodedMessage.ssz"; // TODO fix add identifiers to filename
+    final String identifiers = String.format("Topic: %s", topic);
+    return saveBytesToFile(
+        directory,
+        "rejected gossip message",
+        GOSSIP_REJECTED_DIR,
+        filename,
+        identifiers,
+        decodedMessage);
+  }
 
   public static Optional<String> saveInvalidBlockToFile(
       final Path directory, final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
-    // Check directory exists
-    final Path invalidBlocksDir = directory.resolve(INVALID_BLOCK_DIR);
-    if (invalidBlocksDir.toFile().mkdir()) {
-      LOG.info(INVALID_BLOCK_DIR + " directory has been created to save invalid blocks.");
-    }
+    final String filename = String.format("slot%s_root%s.ssz", slot, blockRoot);
+    final String identifiers = String.format("Slot: %s, Block Root: %s", slot, blockRoot);
+    return saveBytesToFile(
+        directory, "invalid block", INVALID_BLOCK_DIR, filename, identifiers, blockSsz);
+  }
 
-    final String fileName = String.format("slot%s_root%s.ssz", slot, blockRoot);
-    final Path path = invalidBlocksDir.resolve(fileName);
+  private static Optional<String> saveBytesToFile(
+      final Path baseDirectory,
+      final String object,
+      final String errorDirectory,
+      final String filename,
+      final String identifiers,
+      final Bytes bytes) {
+    // Check directory exists
+    final Path directory = baseDirectory.resolve(errorDirectory);
+    if (directory.toFile().mkdir()) {
+      LOG.info(String.format("%s directory has been created to save %s.", errorDirectory, object));
+    }
+    final Path path = directory.resolve(filename);
 
     try {
       // Create file and save ssz
       if (!path.toFile().createNewFile()) {
         final String errorMessage =
-            String.format(
-                "Unable to create new file to save invalid block. Slot: %s, Block Root: %s",
-                slot, blockRoot);
+            String.format("Unable to create new file to save %s. %s", object, identifiers);
         throw new FileAlreadyExistsException(errorMessage);
       }
-      final Path writtenPath = Files.write(path, blockSsz.toArray());
+      final Path writtenPath = Files.write(path, bytes.toArray());
       return Optional.of(writtenPath.toString());
 
     } catch (IOException e) {
       final String errorMessage =
-          String.format(
-              "Failed to save invalid block bytes to file. Slot: %s, Block Root: %s",
-              slot, blockRoot);
+          String.format("Failed to save %s bytes to file. %s", object, identifiers);
       LOG.error(errorMessage, e);
       return Optional.empty(); // TODO What to do if error? Is returning empty enough?
     }
