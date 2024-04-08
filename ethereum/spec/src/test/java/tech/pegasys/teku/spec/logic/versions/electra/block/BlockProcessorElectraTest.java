@@ -129,7 +129,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                         UInt64.valueOf(firstElectraDepositReceiptIndex + i)))
             .toList();
 
-    final BeaconState state =
+    final BeaconStateElectra state =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
@@ -139,7 +139,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                             depositReceiptsSchema.createFromElements(depositReceipts))));
 
     // verify deposit_receipts_start_index has been set
-    assertThat(BeaconStateElectra.required(state).getDepositReceiptsStartIndex())
+    assertThat(state.getDepositReceiptsStartIndex())
         .isEqualTo(UInt64.valueOf(firstElectraDepositReceiptIndex));
     // verify validators have been added to the state
     assertThat(state.getValidators().size())
