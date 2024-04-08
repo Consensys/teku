@@ -281,6 +281,29 @@ public class ActiveEth2P2PNetworkTest {
     assertThat(closeToInSync).isTrue();
   }
 
+  @Test
+  void isCloseToInSync_shouldReturnFalseWhenEmptyCurrentEpoch() {
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    final RecentChainData recentChainData = storageSystem.recentChainData();
+    final ActiveEth2P2PNetwork network = new ActiveEth2P2PNetwork(
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            peerManager,
+            gossipForkManager,
+            eventChannels,
+            recentChainData,
+            attestationSubnetService,
+            syncCommitteeSubnetService,
+            gossipEncoding,
+            gossipConfigurator,
+            processedAttestationSubscriptionProvider,
+            true);
+
+    final boolean closeToInSync = network.isCloseToInSync();
+    assertThat(closeToInSync).isFalse();
+  }
+
   @SuppressWarnings("unchecked")
   private ArgumentCaptor<Iterable<Integer>> subnetIdCaptor() {
     return ArgumentCaptor.forClass(Iterable.class);
