@@ -90,7 +90,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     safelyProcess(
         () ->
             processDepositReceipts(
-                MutableBeaconStateElectra.required(state),
+                state,
                 body.getOptionalExecutionPayload()
                     .flatMap(ExecutionPayload::toVersionElectra)
                     .map(ExecutionPayloadElectra::getDepositReceipts)
