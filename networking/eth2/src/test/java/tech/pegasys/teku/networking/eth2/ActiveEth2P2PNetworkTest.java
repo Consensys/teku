@@ -285,7 +285,8 @@ public class ActiveEth2P2PNetworkTest {
   void isCloseToInSync_shouldReturnFalseWhenEmptyCurrentEpoch() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final RecentChainData recentChainData = storageSystem.recentChainData();
-    final ActiveEth2P2PNetwork network = new ActiveEth2P2PNetwork(
+    final ActiveEth2P2PNetwork network =
+        new ActiveEth2P2PNetwork(
             spec,
             asyncRunner,
             discoveryNetwork,
