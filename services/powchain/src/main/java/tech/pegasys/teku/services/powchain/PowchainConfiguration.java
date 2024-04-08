@@ -98,7 +98,7 @@ public class PowchainConfiguration {
     return useMissingDepositEventLogging;
   }
 
-  public boolean depositContractLogsSyncingEnabled() {
+  public boolean isDepositContractLogsSyncingEnabled() {
     return depositContractLogsSyncingEnabled;
   }
 

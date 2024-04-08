@@ -72,7 +72,7 @@ public class DepositOptions {
       names = {"--Xdeposit-contract-logs-syncing-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Enable syncing of deposit contract logs from the EL. This is required for block production.",
+          "Enable syncing of deposit contract logs from the Execution Engine node. This is required for block production.",
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1",

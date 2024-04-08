@@ -100,7 +100,7 @@ public class BeaconNodeServiceController extends ServiceController {
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionWeb3jClientProvider.isEmpty())) {
       return Optional.empty();
     }
-    if (!tekuConfig.powchain().depositContractLogsSyncingEnabled()) {
+    if (!tekuConfig.powchain().isDepositContractLogsSyncingEnabled()) {
       // PowchainService is only used for deposit contract logs syncing, so no need to initialize it
       // if disabled
       EVENT_LOG.depositContractLogsSyncingDisabled();
