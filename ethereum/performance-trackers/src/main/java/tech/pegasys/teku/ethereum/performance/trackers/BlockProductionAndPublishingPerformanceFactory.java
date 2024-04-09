@@ -20,24 +20,27 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class BlockProductionAndPublishingPerformanceFactory {
   private final TimeProvider timeProvider;
   private final boolean enabled;
-  private final int lateEventThreshold;
+  private final int lateProductionEventThreshold;
+  private final int latePublishingEventThreshold;
   private final Function<UInt64, UInt64> slotTimeCalculator;
 
   public BlockProductionAndPublishingPerformanceFactory(
       final TimeProvider timeProvider,
       final Function<UInt64, UInt64> slotTimeCalculator,
       final boolean enabled,
-      final int lateEventThreshold) {
+      final int lateProductionEventThreshold,
+      final int latePublishingEventThreshold) {
     this.timeProvider = timeProvider;
     this.slotTimeCalculator = slotTimeCalculator;
     this.enabled = enabled;
-    this.lateEventThreshold = lateEventThreshold;
+    this.lateProductionEventThreshold = lateProductionEventThreshold;
+    this.latePublishingEventThreshold = latePublishingEventThreshold;
   }
 
   public BlockProductionPerformance createForProduction(final UInt64 slot) {
     if (enabled) {
       return new BlockProductionPerformanceImpl(
-          timeProvider, slot, slotTimeCalculator.apply(slot), lateEventThreshold);
+          timeProvider, slot, slotTimeCalculator.apply(slot), lateProductionEventThreshold);
     } else {
       return BlockProductionPerformance.NOOP;
     }
@@ -46,7 +49,7 @@ public class BlockProductionAndPublishingPerformanceFactory {
   public BlockPublishingPerformance createForPublishing(final UInt64 slot) {
     if (enabled) {
       return new BlockPublishingPerformanceImpl(
-          timeProvider, slot, slotTimeCalculator.apply(slot), lateEventThreshold);
+          timeProvider, slot, slotTimeCalculator.apply(slot), latePublishingEventThreshold);
     } else {
       return BlockPublishingPerformance.NOOP;
     }
