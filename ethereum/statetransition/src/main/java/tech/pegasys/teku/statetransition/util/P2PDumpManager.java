@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2;
+package tech.pegasys.teku.statetransition.util;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
