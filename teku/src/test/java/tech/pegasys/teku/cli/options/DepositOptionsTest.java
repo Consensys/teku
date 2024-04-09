@@ -183,4 +183,11 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
         .hasValue("/foo/bar");
   }
+
+  @Test
+  public void shouldHaveDepositContractLogsSyncingEnabledByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isDepositContractLogsSyncingEnabled()).isTrue();
+  }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services;
 
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -96,6 +98,12 @@ public class BeaconNodeServiceController extends ServiceController {
       final Supplier<Optional<BeaconState>> finalizedStateSupplier) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionWeb3jClientProvider.isEmpty())) {
+      return Optional.empty();
+    }
+    if (!tekuConfig.powchain().isDepositContractLogsSyncingEnabled()) {
+      // PowchainService is only used for deposit contract logs syncing, so no need to initialize it
+      // if disabled
+      EVENT_LOG.depositContractLogsSyncingDisabled();
       return Optional.empty();
     }
     final PowchainService powchainService =
