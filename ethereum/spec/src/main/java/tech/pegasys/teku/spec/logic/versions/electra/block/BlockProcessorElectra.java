@@ -85,12 +85,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
-    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     super.processOperationsNoValidation(state, body, indexedAttestationCache);
+
     safelyProcess(
         () ->
             processDepositReceipts(
-                electraState,
+                state,
                 body.getOptionalExecutionPayload()
                     .flatMap(ExecutionPayload::toVersionElectra)
                     .map(ExecutionPayloadElectra::getDepositReceipts)
@@ -136,13 +136,14 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /*
-    Implements process_execution_layer_exit from consensus-spec (EIP-7002)
+    Implements process_execution_layer_exit from consensus-specs (EIP-7002)
   */
   @Override
   public void processExecutionLayerExits(
       final MutableBeaconState state,
       final SszList<ExecutionLayerExit> exits,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
     exits.forEach(
@@ -208,16 +209,19 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /*
-   Implements process_deposit_receipt from consensus-spec (EIP-6110)
+   Implements process_deposit_receipt from consensus-specs (EIP-6110)
   */
+  @Override
   public void processDepositReceipts(
-      final MutableBeaconStateElectra state, final SszList<DepositReceipt> depositReceipts) {
+      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+      throws BlockProcessingException {
+    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     for (DepositReceipt depositReceipt : depositReceipts) {
       // process_deposit_receipt
-      if (state
+      if (electraState
           .getDepositReceiptsStartIndex()
           .equals(SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX)) {
-        state.setDepositReceiptsStartIndex(depositReceipt.getIndex());
+        electraState.setDepositReceiptsStartIndex(depositReceipt.getIndex());
       }
       applyDeposit(
           state,

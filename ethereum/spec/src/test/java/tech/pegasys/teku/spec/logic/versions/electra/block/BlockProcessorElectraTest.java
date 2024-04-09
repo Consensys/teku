@@ -105,7 +105,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void processesDepositReceipts() {
+  public void processesDepositReceipts() throws BlockProcessingException {
     final BeaconStateElectra preState =
         BeaconStateElectra.required(
             createBeaconState()
