@@ -13,26 +13,42 @@
 
 package tech.pegasys.teku.ethereum.performance.trackers;
 
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BlockProductionPerformanceFactory {
+public class BlockProductionAndPublishingPerformanceFactory {
   private final TimeProvider timeProvider;
   private final boolean enabled;
   private final int lateEventThreshold;
+  private final Function<UInt64, UInt64> slotTimeCalculator;
 
-  public BlockProductionPerformanceFactory(
-      final TimeProvider timeProvider, final boolean enabled, final int lateEventThreshold) {
+  public BlockProductionAndPublishingPerformanceFactory(
+      final TimeProvider timeProvider,
+      final Function<UInt64, UInt64> slotTimeCalculator,
+      final boolean enabled,
+      final int lateEventThreshold) {
     this.timeProvider = timeProvider;
+    this.slotTimeCalculator = slotTimeCalculator;
     this.enabled = enabled;
     this.lateEventThreshold = lateEventThreshold;
   }
 
-  public BlockProductionPerformance create(final UInt64 slot) {
+  public BlockProductionPerformance createForProduction(final UInt64 slot) {
     if (enabled) {
-      return new BlockProductionPerformanceImpl(timeProvider, slot, lateEventThreshold);
+      return new BlockProductionPerformanceImpl(
+          timeProvider, slot, slotTimeCalculator.apply(slot), lateEventThreshold);
     } else {
       return BlockProductionPerformance.NOOP;
+    }
+  }
+
+  public BlockPublishingPerformance createForPublishing(final UInt64 slot) {
+    if (enabled) {
+      return new BlockPublishingPerformanceImpl(
+          timeProvider, slot, slotTimeCalculator.apply(slot), lateEventThreshold);
+    } else {
+      return BlockPublishingPerformance.NOOP;
     }
   }
 }

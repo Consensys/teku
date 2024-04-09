@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTESTATION_PRODUCTION;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -54,8 +53,9 @@ import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -116,7 +116,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
    */
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
-  private final BlockProductionPerformanceFactory blockProductionPerformanceFactory;
+  private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory;
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -160,7 +160,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-      final BlockProductionPerformanceFactory blockProductionPerformanceFactory) {
+      final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory) {
     this.blockProductionPerformanceFactory = blockProductionPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
     this.nodeDataProvider = nodeDataProvider;
@@ -323,21 +323,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
     final BlockProductionPerformance blockProductionPerformance =
-        blockProductionPerformanceFactory.create(slot);
+        blockProductionPerformanceFactory.createForProduction(slot);
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
         .thenCompose(
             __ ->
                 combinedChainDataClient.getStateForBlockProduction(
                     slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
-        .thenPeek(
-            maybeState -> {
-              maybeState.ifPresent(
-                  state ->
-                      blockProductionPerformance.slotTime(
-                          () -> secondsToMillis(spec.computeTimeAtSlot(state, slot))));
-              blockProductionPerformance.getStateAtSlot();
-            })
+        .thenPeek(__ -> blockProductionPerformance.getStateAtSlot())
         .thenCompose(
             blockSlotState ->
                 createBlock(
@@ -630,13 +623,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
+    final BlockPublishingPerformance blockPublishingPerformance =
+        blockProductionPerformanceFactory.createForPublishing(maybeBlindedBlockContainer.getSlot());
     return blockPublisher
-        .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel)
+        .sendSignedBlock(
+            maybeBlindedBlockContainer, broadcastValidationLevel, blockPublishingPerformance)
         .exceptionally(
             ex -> {
               final String reason = getRootCauseMessage(ex);
               return SendSignedBlockResult.rejected(reason);
-            });
+            })
+        .alwaysRun(blockPublishingPerformance::complete);
   }
 
   @Override
