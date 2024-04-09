@@ -70,16 +70,26 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
               final ClientVersion executionClientVersion = clientVersions.get(0);
               updateVersionIfNeeded(executionClientVersion);
             })
-        .finish(ex -> LOG.debug("Exception while calling engine_getClientVersion", ex));
+        .finish(
+            ex -> {
+              LOG.debug("Exception while calling engine_getClientVersion", ex);
+              updateVersionIfNeeded(ClientVersion.UNKNOWN);
+            });
   }
 
   private synchronized void updateVersionIfNeeded(final ClientVersion executionClientVersion) {
     if (executionClientVersion.equals(this.executionClientVersion.get())) {
       return;
     }
-    EVENT_LOG.logExecutionClientVersion(
-        executionClientVersion.name(), executionClientVersion.version());
-    this.executionClientVersion.set(executionClientVersion);
-    executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
+    if (!executionClientVersion.equals(ClientVersion.UNKNOWN)) {
+      EVENT_LOG.logExecutionClientVersion(
+          executionClientVersion.name(), executionClientVersion.version());
+    }
+    // push UNKNOWN forward only when it's set for the first time
+    if (!executionClientVersion.equals(ClientVersion.UNKNOWN)
+        || this.executionClientVersion.get() == null) {
+      this.executionClientVersion.set(executionClientVersion);
+      executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
+    }
   }
 }
