@@ -22,6 +22,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.Streams;
+import ethereum.ckzg4844.CKZG4844JNI;
 import ethereum.ckzg4844.CKZGException;
 import ethereum.ckzg4844.CKZGException.CKZGError;
 import java.math.BigInteger;
@@ -128,6 +129,14 @@ public final class CKZG4844Test {
   @Test
   public void testVerifyingEmptyBatch() {
     assertThat(CKZG.verifyBlobKzgProofBatch(List.of(), List.of(), List.of())).isTrue();
+  }
+
+  @Test
+  public void testExtendingBlob() {
+    Bytes blob = getSampleBlob();
+    Bytes extBlob = Bytes.wrap(CKZG4844JNI.computeCells(blob.toArrayUnsafe()));
+    assertThat(extBlob.size()).isEqualTo(blob.size() * 2);
+    assertThat(extBlob.slice(0, blob.size())).isEqualTo(blob);
   }
 
   @Test
