@@ -81,6 +81,10 @@ public class ActiveEth2P2PNetworkTest {
   private Fork altairFork;
   private Bytes32 genesisValidatorsRoot;
 
+  private final int maxFollowDistanceSlots =
+      spec.getGenesisSpecConfig().getMaxSeedLookahead()
+          * spec.slotsPerEpoch(storageSystem.combinedChainDataClient().getCurrentEpoch());
+
   @BeforeEach
   public void setup() {
     when(discoveryNetwork.start()).thenReturn(SafeFuture.completedFuture(null));
@@ -253,6 +257,41 @@ public class ActiveEth2P2PNetworkTest {
     // Can't unsubscribe from these so should only subscribe once
     assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
     verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
+  }
+
+  @Test
+  void isCloseToInSync_shouldCalculateWhenDistanceOutOfRange() {
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(maxFollowDistanceSlots + 1));
+    assertThat(network.isCloseToInSync()).isFalse();
+  }
+
+  @Test
+  void isCloseToInSync_shouldCalculateWhenDistanceInRange() {
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(maxFollowDistanceSlots));
+    assertThat(network.isCloseToInSync()).isTrue();
+  }
+
+  @Test
+  void isCloseToInSync_shouldReturnFalseWhenEmptyCurrentEpoch() {
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    final RecentChainData recentChainData = storageSystem.recentChainData();
+    final ActiveEth2P2PNetwork network =
+        new ActiveEth2P2PNetwork(
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            peerManager,
+            gossipForkManager,
+            eventChannels,
+            recentChainData,
+            attestationSubnetService,
+            syncCommitteeSubnetService,
+            gossipEncoding,
+            gossipConfigurator,
+            processedAttestationSubscriptionProvider,
+            true);
+
+    assertThat(network.isCloseToInSync()).isFalse();
   }
 
   @SuppressWarnings("unchecked")
