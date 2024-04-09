@@ -31,15 +31,34 @@ public class P2PDumpManager {
   private static final String GOSSIP_REJECTED_DIR = "rejected_gossip_messages";
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
 
-  public static Optional<String> saveGossipMessageDecodingError(
-      final Path directory,
-      final String topic,
-      final String arrivalTimestamp,
-      final Bytes originalMessage) {
+  private final Path directory;
+
+  public P2PDumpManager(final Path directory) {
+    this.directory = directory;
+    if (this.directory.resolve(GOSSIP_DECODING_ERROR_DIR).toFile().mkdir()) {
+      LOG.info(
+          String.format(
+              "%s directory has been created to save gossip messages with decoding errors.",
+              GOSSIP_DECODING_ERROR_DIR));
+    }
+    if (this.directory.resolve(GOSSIP_REJECTED_DIR).toFile().mkdir()) {
+      LOG.info(
+          String.format(
+              "%s directory has been created to save rejected gossip messages.",
+              GOSSIP_REJECTED_DIR));
+    }
+    if (this.directory.resolve(INVALID_BLOCK_DIR).toFile().mkdir()) {
+      LOG.info(
+          String.format(
+              "%s directory has been created to save invalid blocks.", INVALID_BLOCK_DIR));
+    }
+  }
+
+  public Optional<String> saveGossipMessageDecodingError(
+      final String topic, final String arrivalTimestamp, final Bytes originalMessage) {
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
-        directory,
         "gossip message with decoding error",
         GOSSIP_DECODING_ERROR_DIR,
         fileName,
@@ -47,45 +66,29 @@ public class P2PDumpManager {
         originalMessage);
   }
 
-  public static Optional<String> saveGossipRejectedMessageToFile(
-      final Path directory,
-      final String topic,
-      final String arrivalTimestamp,
-      final Bytes decodedMessage) {
+  public Optional<String> saveGossipRejectedMessageToFile(
+      final String topic, final String arrivalTimestamp, final Bytes decodedMessage) {
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
     return saveBytesToFile(
-        directory,
-        "rejected gossip message",
-        GOSSIP_REJECTED_DIR,
-        fileName,
-        identifiers,
-        decodedMessage);
+        "rejected gossip message", GOSSIP_REJECTED_DIR, fileName, identifiers, decodedMessage);
   }
 
-  public static Optional<String> saveInvalidBlockToFile(
-      final Path directory, final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
+  public Optional<String> saveInvalidBlockToFile(
+      final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
     final String fileName =
         String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
     final String identifiers = String.format("Slot: %s, Block Root: %s", slot, blockRoot);
-    return saveBytesToFile(
-        directory, "invalid block", INVALID_BLOCK_DIR, fileName, identifiers, blockSsz);
+    return saveBytesToFile("invalid block", INVALID_BLOCK_DIR, fileName, identifiers, blockSsz);
   }
 
-  private static Optional<String> saveBytesToFile(
-      final Path baseDirectory,
+  private Optional<String> saveBytesToFile(
       final String object,
       final String errorDirectory,
       final String fileName,
       final String identifiers,
       final Bytes bytes) {
-    // Check directory exists
-    final Path directory = baseDirectory.resolve(errorDirectory);
-    if (directory.toFile().mkdir()) {
-      LOG.info(String.format("%s directory has been created to save %s.", errorDirectory, object));
-    }
-    final Path path = directory.resolve(fileName);
-
+    final Path path = directory.resolve(errorDirectory).resolve(fileName);
     try {
       // Create file and save ssz
       if (!path.toFile().createNewFile()) {
