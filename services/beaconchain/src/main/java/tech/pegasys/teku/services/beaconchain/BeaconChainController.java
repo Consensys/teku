@@ -925,11 +925,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }
-    final UInt64 genesisTime = recentChainData.getGenesisTime();
+
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
         new BlockProductionAndPublishingPerformanceFactory(
             timeProvider,
-            (slot) -> secondsToMillis(spec.computeTimeAtSlot(genesisTime, slot)),
+            (slot) ->
+                secondsToMillis(spec.computeTimeAtSlot(recentChainData.getGenesisTime(), slot)),
             beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled(),
             beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold(),
             beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningThreshold());
