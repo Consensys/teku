@@ -14,11 +14,17 @@
 package tech.pegasys.teku.kzg;
 
 import ethereum.ckzg4844.CKZG4844JNI;
+
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
+
+import ethereum.ckzg4844.CellsAndProofs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
 
 /**
  * Wrapper around jc-kzg-4844
@@ -49,7 +55,9 @@ final class CKZG4844 implements KZG {
     }
   }
 
-  /** Only one trusted setup at a time can be loaded. */
+  /**
+   * Only one trusted setup at a time can be loaded.
+   */
   @Override
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     if (loadedTrustedSetupFile.isPresent()
@@ -144,5 +152,42 @@ final class CKZG4844 implements KZG {
       throw new KZGException(
           "Failed to compute KZG proof for blob with commitment " + kzgCommitment, ex);
     }
+  }
+
+  @Override
+  public List<Cell> computeCells(Bytes blob) {
+    byte[] cellBytes = CKZG4844JNI.computeCells(blob.toArrayUnsafe());
+    return Cell.splitBytes(Bytes.wrap(cellBytes));
+  }
+
+  @Override
+  public List<CellAndProof> computeCellsAndProofs(Bytes blob) {
+    CellsAndProofs cellsAndProofs = CKZG4844JNI.computeCellsAndProofs(blob.toArrayUnsafe());
+    List<Cell> cells = Cell.splitBytes(Bytes.wrap(cellsAndProofs.getCells()));
+    List<KZGProof> proofs = KZGProof.splitBytes(Bytes.wrap(cellsAndProofs.getProofs()));
+    if (cells.size() != proofs.size()) throw new KZGException("Cells and proofs size differ");
+    return IntStream.range(0, cells.size())
+        .mapToObj(i -> new CellAndProof(cells.get(i), proofs.get(i)))
+        .toList();
+  }
+
+  @Override
+  public boolean verifyCellProof(KZGCommitment commitment, CellWithID cellWithID, KZGProof proof) {
+    return CKZG4844JNI.verifyCellProof(
+        commitment.toArrayUnsafe(),
+        cellWithID.id().id().longValue(),
+        cellWithID.cell().bytes().toArrayUnsafe(),
+        proof.toArrayUnsafe());
+  }
+
+  @Override
+  public List<Cell> recoverCells(List<CellWithID> cells) {
+    long[] cellIds = cells.stream().mapToLong(c -> c.id().id().longValue()).toArray();
+    byte[] cellBytes = CKZG4844Utils.flattenBytes(
+        cells.stream().map(c -> c.cell().bytes()).toList(),
+        cells.size() * BYTES_PER_CELL
+    );
+    byte[] recovered = CKZG4844JNI.recoverCells(cellIds, cellBytes);
+    return Cell.splitBytes(Bytes.wrap(recovered));
   }
 }

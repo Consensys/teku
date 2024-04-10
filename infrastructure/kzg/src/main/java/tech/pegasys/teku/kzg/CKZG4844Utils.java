@@ -24,9 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.IntStream;
+
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
+
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
 
 class CKZG4844Utils {
 
@@ -54,6 +58,16 @@ class CKZG4844Utils {
 
   public static byte[] flattenG2Points(final List<Bytes> g2Points) {
     return flattenBytes(g2Points, CKZG4844JNI.BYTES_PER_G2 * g2Points.size());
+  }
+
+  static List<Bytes> bytesChunked(Bytes bytes, int chunkSize) {
+    if (bytes.size() % chunkSize != 0) {
+      throw new IllegalArgumentException("Invalid bytes size: " + bytes.size());
+    }
+    return IntStream.range(0, bytes.size() / chunkSize)
+        .map(i -> i * chunkSize)
+        .mapToObj(startIdx -> bytes.slice(startIdx, chunkSize))
+        .toList();
   }
 
   public static TrustedSetup parseTrustedSetupFile(final String trustedSetupFile)
@@ -90,7 +104,7 @@ class CKZG4844Utils {
     }
   }
 
-  private static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
+  static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
     return flattenBytes(toFlatten, Bytes::toArrayUnsafe, expectedSize);
   }
 

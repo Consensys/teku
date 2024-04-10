@@ -18,4 +18,8 @@ public class KZGException extends RuntimeException {
   public KZGException(final String message, final Throwable cause) {
     super(message, cause);
   }
+
+  public KZGException(final String message) {
+    super(message);
+  }
 }

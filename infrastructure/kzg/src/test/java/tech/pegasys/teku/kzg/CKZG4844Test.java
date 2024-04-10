@@ -15,6 +15,7 @@ package tech.pegasys.teku.kzg;
 
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_BLOB;
+import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_BLOB;
 import static ethereum.ckzg4844.CKZG4844JNI.FIELD_ELEMENTS_PER_BLOB;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -25,6 +26,7 @@ import com.google.common.collect.Streams;
 import ethereum.ckzg4844.CKZG4844JNI;
 import ethereum.ckzg4844.CKZGException;
 import ethereum.ckzg4844.CKZGException.CKZGError;
+
 import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -32,6 +34,8 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import kotlin.ranges.IntRange;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
@@ -115,7 +119,7 @@ public final class CKZG4844Test {
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
 
     assertThat(
-            CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
+        CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
@@ -171,7 +175,7 @@ public final class CKZG4844Test {
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
 
     assertThat(
-            CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
+        CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
@@ -220,9 +224,9 @@ public final class CKZG4844Test {
   @ParameterizedTest(name = "blob={0}")
   @ValueSource(
       strings = {
-        "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
-        "0x",
-        "0x925668a49d06f4"
+          "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
+          "0x",
+          "0x925668a49d06f4"
       })
   public void testComputingProofWithIncorrectLengthBlobDoesNotCauseSegfault(final String blobHex) {
     final Bytes blob = Bytes.fromHexString(blobHex);
@@ -248,15 +252,15 @@ public final class CKZG4844Test {
   @ParameterizedTest(name = "trusted_setup={0}")
   @ValueSource(
       strings = {
-        "broken/trusted_setup_g1_length.txt",
-        "broken/trusted_setup_g2_length.txt",
-        "broken/trusted_setup_g2_bytesize.txt"
+          "broken/trusted_setup_g1_length.txt",
+          "broken/trusted_setup_g2_length.txt",
+          "broken/trusted_setup_g2_bytesize.txt"
       })
   public void incorrectTrustedSetupFilesShouldThrow(final String filename) {
     final Throwable cause =
         assertThrows(
-                KZGException.class,
-                () -> CKZG.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(filename)))
+            KZGException.class,
+            () -> CKZG.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(filename)))
             .getCause();
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
   }
@@ -282,8 +286,42 @@ public final class CKZG4844Test {
         .hasMessage("Expected G2 point to be 96 bytes");
   }
 
+  static int CELLS_PER_EXT_BLOB = CELLS_PER_BLOB;
+  static int CELLS_PER_ORIG_BLOB = CELLS_PER_EXT_BLOB / 2;
+
+  @Test
+  public void testComputeRecoverCells() {
+    Bytes blob = getSampleBlob();
+    List<Cell> cells = CKZG.computeCells(blob);
+    assertThat(cells).hasSize(CELLS_PER_EXT_BLOB);
+
+    List<CellWithID> cellsToRecover = IntStream.range(CELLS_PER_ORIG_BLOB, CELLS_PER_EXT_BLOB)
+        .mapToObj(i -> new CellWithID(cells.get(i), CellID.fromCellColumnIndex(i)))
+        .toList();
+
+    List<Cell> recoveredCells = CKZG.recoverCells(cellsToRecover);
+    assertThat(recoveredCells).isEqualTo(cells);
+  }
+
   private List<Bytes> getSampleBlobs(final int count) {
     return IntStream.range(0, count).mapToObj(__ -> getSampleBlob()).collect(Collectors.toList());
+  }
+
+  @Test
+  public void testComputeAndVerifyCellProof() {
+    Bytes blob = getSampleBlob();
+    List<CellAndProof> cellAndProofs = CKZG.computeCellsAndProofs(blob);
+    KZGCommitment kzgCommitment = CKZG.blobToKzgCommitment(blob);
+
+    for (int i = 0; i < cellAndProofs.size(); i++) {
+      assertThat(
+          CKZG.verifyCellProof(kzgCommitment, CellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), cellAndProofs.get(i).proof())
+      ).isTrue();
+      var invalidProof = cellAndProofs.get((i + 1) % cellAndProofs.size()).proof();
+      assertThat(
+          CKZG.verifyCellProof(kzgCommitment, CellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), invalidProof)
+      ).isFalse();
+    }
   }
 
   private Bytes getSampleBlob() {
