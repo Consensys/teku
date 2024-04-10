@@ -130,10 +130,6 @@ public class SpecConfigBuilder {
 
   private Integer reorgParentWeightThreshold = 160;
 
-  private Integer pendingBalanceDepositsLimit = 134217728;
-  private Integer pendingPartialWithdrawalsLimit = 134217728;
-  private Integer pendingConsolidationsLimit = 262144;
-
   private final BuilderChain<SpecConfig, SpecConfigElectra> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
@@ -218,10 +214,7 @@ public class SpecConfigBuilder {
             attestationSubnetPrefixBits,
             reorgMaxEpochsSinceFinalization,
             reorgHeadWeightThreshold,
-            reorgParentWeightThreshold,
-            pendingBalanceDepositsLimit,
-            pendingPartialWithdrawalsLimit,
-            pendingConsolidationsLimit);
+            reorgParentWeightThreshold);
 
     return builderChain.build(config);
   }
@@ -295,10 +288,6 @@ public class SpecConfigBuilder {
     constants.put("reorgMaxEpochsSinceFinalization", reorgMaxEpochsSinceFinalization);
     constants.put("reorgHeadWeightThreshold", reorgHeadWeightThreshold);
     constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
-
-    constants.put("pendingBalanceDepositsLimit", pendingBalanceDepositsLimit);
-    constants.put("pendingPartialWithdrawalsLimit", pendingPartialWithdrawalsLimit);
-    constants.put("pendingConsolidationsLimit", pendingConsolidationsLimit);
     return constants;
   }
 
@@ -521,22 +510,6 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder historicalRootsLimit(final Integer historicalRootsLimit) {
     checkNotNull(historicalRootsLimit);
     this.historicalRootsLimit = historicalRootsLimit;
-    return this;
-  }
-
-  public SpecConfigBuilder pendingBalanceDepositsLimit(final Integer pendingBalanceDepositsLimit) {
-    this.pendingBalanceDepositsLimit = pendingBalanceDepositsLimit;
-    return this;
-  }
-
-  public SpecConfigBuilder pendingPartialWithdrawalsLimit(
-      final Integer pendingPartialWithdrawalsLimit) {
-    this.pendingPartialWithdrawalsLimit = pendingPartialWithdrawalsLimit;
-    return this;
-  }
-
-  public SpecConfigBuilder pendingConsolidationsLimit(final Integer pendingConsolidationsLimit) {
-    this.pendingConsolidationsLimit = pendingConsolidationsLimit;
     return this;
   }
 

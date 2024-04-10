@@ -66,13 +66,14 @@ public class BeaconStateSchemaElectra
         new PendingBalanceDeposit.PendingBalanceDepositSchema();
     final PendingPartialWithdrawal.PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
+    final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
     final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
         new PendingConsolidation.PendingConsolidationSchema();
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaElectra(SpecConfigElectra.required(specConfig)));
+            () -> new ExecutionPayloadHeaderSchemaElectra(specConfigElectra));
     final SszField nextWithdrawalIndexField =
         new SszField(
             NEXT_WITHDRAWAL_INDEX,
@@ -127,7 +128,8 @@ public class BeaconStateSchemaElectra
             BeaconStateFields.PENDING_BALANCE_DEPOSITS,
             () ->
                 SszListSchema.create(
-                    pendingBalanceDepositSchema, specConfig.getPendingBalanceDepositsLimit()));
+                    pendingBalanceDepositSchema,
+                    specConfigElectra.getPendingBalanceDepositsLimit()));
     final SszField pendingPartialWithdrawalsField =
         new SszField(
             PENDING_PARTIAL_WITHDRAWALS_INDEX,
@@ -135,14 +137,14 @@ public class BeaconStateSchemaElectra
             () ->
                 SszListSchema.create(
                     pendingPartialWithdrawalSchema,
-                    specConfig.getPendingPartialWithdrawalsLimit()));
+                    specConfigElectra.getPendingPartialWithdrawalsLimit()));
     final SszField pendingConsolidationsField =
         new SszField(
             PENDING_CONSOLIDATIONS_INDEX,
             BeaconStateFields.PENDING_CONSOLIDATIONS,
             () ->
                 SszListSchema.create(
-                    pendingConsolidationSchema, specConfig.getPendingConsolidationsLimit()));
+                    pendingConsolidationSchema, specConfigElectra.getPendingConsolidationsLimit()));
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(

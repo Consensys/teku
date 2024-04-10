@@ -119,9 +119,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int reorgMaxEpochsSinceFinalization;
   private final int reorgHeadWeightThreshold;
   private final int reorgParentWeightThreshold;
-  private final int pendingBalanceDepositsLimit;
-  private final int pendingPartialWithdrawalsLimit;
-  private final int pendingConsolidationsLimit;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -191,10 +188,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int attestationSubnetPrefixBits,
       final int reorgMaxEpochsSinceFinalization,
       final int reorgHeadWeightThreshold,
-      final int reorgParentWeightThreshold,
-      final int pendingBalanceDepositsLimit,
-      final int pendingPartialWithdrawalsLimit,
-      final int pendingConsolidationsLimit) {
+      final int reorgParentWeightThreshold) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -264,9 +258,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgMaxEpochsSinceFinalization = reorgMaxEpochsSinceFinalization;
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
-    this.pendingBalanceDepositsLimit = pendingBalanceDepositsLimit;
-    this.pendingPartialWithdrawalsLimit = pendingPartialWithdrawalsLimit;
-    this.pendingConsolidationsLimit = pendingConsolidationsLimit;
   }
 
   @Override
@@ -540,21 +531,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getPendingBalanceDepositsLimit() {
-    return pendingBalanceDepositsLimit;
-  }
-
-  @Override
-  public int getPendingConsolidationsLimit() {
-    return pendingConsolidationsLimit;
-  }
-
-  @Override
-  public int getPendingPartialWithdrawalsLimit() {
-    return pendingPartialWithdrawalsLimit;
-  }
-
-  @Override
   public int getProposerScoreBoost() {
     return proposerScoreBoost;
   }
@@ -704,9 +680,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && respTimeout == that.respTimeout
         && attestationPropagationSlotRange == that.attestationPropagationSlotRange
         && maximumGossipClockDisparity == that.maximumGossipClockDisparity
-        && pendingBalanceDepositsLimit == that.pendingBalanceDepositsLimit
-        && pendingPartialWithdrawalsLimit == that.pendingPartialWithdrawalsLimit
-        && pendingConsolidationsLimit == that.pendingConsolidationsLimit
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -793,9 +766,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         subnetsPerNode,
         attestationSubnetCount,
         attestationSubnetExtraBits,
-        attestationSubnetPrefixBits,
-        pendingBalanceDepositsLimit,
-        pendingPartialWithdrawalsLimit,
-        pendingConsolidationsLimit);
+        attestationSubnetPrefixBits);
   }
 }

@@ -186,10 +186,4 @@ public interface SpecConfig extends NetworkingSpecConfig {
   default Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.empty();
   }
-
-  int getPendingBalanceDepositsLimit();
-
-  int getPendingConsolidationsLimit();
-
-  int getPendingPartialWithdrawalsLimit();
 }

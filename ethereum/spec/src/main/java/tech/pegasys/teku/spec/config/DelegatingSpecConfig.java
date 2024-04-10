@@ -297,21 +297,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getPendingBalanceDepositsLimit() {
-    return specConfig.getPendingBalanceDepositsLimit();
-  }
-
-  @Override
-  public int getPendingConsolidationsLimit() {
-    return specConfig.getPendingConsolidationsLimit();
-  }
-
-  @Override
-  public int getPendingPartialWithdrawalsLimit() {
-    return specConfig.getPendingPartialWithdrawalsLimit();
-  }
-
-  @Override
   public long getDepositChainId() {
     return specConfig.getDepositChainId();
   }

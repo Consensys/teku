@@ -36,9 +36,9 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer maxExecutionLayerExits;
   private UInt64 minActivationBalance;
   private UInt64 maxEffectiveBalanceElectra;
-  private UInt64 pendingBalanceDepositsLimit;
-  private UInt64 pendingPartialWithdrawalsLimit;
-  private UInt64 pendingConsolidationsLimit;
+  private Integer pendingBalanceDepositsLimit;
+  private Integer pendingPartialWithdrawalsLimit;
+  private Integer pendingConsolidationsLimit;
   private Integer whistleblowerRewardQuotientElectra;
   private Integer minSlashingPenaltyQuotientElectra;
   private Integer maxPartialWithdrawalsPerPayload;
@@ -120,20 +120,20 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
-  public ElectraBuilder pendingBalanceDepositsLimit(final UInt64 pendingBalanceDepositsLimit) {
+  public ElectraBuilder pendingBalanceDepositsLimit(final Integer pendingBalanceDepositsLimit) {
     checkNotNull(pendingBalanceDepositsLimit);
     this.pendingBalanceDepositsLimit = pendingBalanceDepositsLimit;
     return this;
   }
 
   public ElectraBuilder pendingPartialWithdrawalsLimit(
-      final UInt64 pendingPartialWithdrawalsLimit) {
+      final Integer pendingPartialWithdrawalsLimit) {
     checkNotNull(pendingPartialWithdrawalsLimit);
     this.pendingPartialWithdrawalsLimit = pendingPartialWithdrawalsLimit;
     return this;
   }
 
-  public ElectraBuilder pendingConsolidationsLimit(final UInt64 pendingConsolidationsLimit) {
+  public ElectraBuilder pendingConsolidationsLimit(final Integer pendingConsolidationsLimit) {
     checkNotNull(pendingConsolidationsLimit);
     this.pendingConsolidationsLimit = pendingConsolidationsLimit;
     return this;
