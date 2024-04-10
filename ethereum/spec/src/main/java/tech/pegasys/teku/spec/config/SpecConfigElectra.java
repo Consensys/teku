@@ -55,6 +55,8 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   UInt64 getMinPerEpochChurnLimitElectra();
 
+  UInt64 getMaxPerEpochActivationExitChurnLimit();
+
   Bytes4 getElectraForkVersion();
 
   UInt64 getElectraForkEpoch();

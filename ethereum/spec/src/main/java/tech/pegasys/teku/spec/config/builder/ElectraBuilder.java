@@ -31,6 +31,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Bytes4 electraForkVersion;
   private UInt64 electraForkEpoch;
   private UInt64 minPerEpochChurnLimitElectra;
+  private UInt64 maxPerEpochActivationExitChurnLimit;
   private Integer maxDepositReceiptsPerPayload;
   private Integer maxExecutionLayerExits;
   private UInt64 minActivationBalance;
@@ -56,6 +57,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         maxDepositReceiptsPerPayload,
         maxExecutionLayerExits,
         minPerEpochChurnLimitElectra,
+        maxPerEpochActivationExitChurnLimit,
         minActivationBalance,
         maxEffectiveBalanceElectra,
         pendingBalanceDepositsLimit,
@@ -96,6 +98,13 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   public ElectraBuilder minPerEpochChurnLimitElectra(final UInt64 minPerEpochChurnLimitElectra) {
     checkNotNull(minPerEpochChurnLimitElectra);
     this.minPerEpochChurnLimitElectra = minPerEpochChurnLimitElectra;
+    return this;
+  }
+
+  public ElectraBuilder maxPerEpochActivationExitChurnLimit(
+      final UInt64 maxPerEpochActivationExitChurnLimit) {
+    checkNotNull(maxPerEpochActivationExitChurnLimit);
+    this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
     return this;
   }
 
