@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -109,7 +111,7 @@ public class BeaconChainUtil {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
-            null,
+            mock(P2PDumpManager.class),
             new StubMetricsSystem()),
         true);
   }
@@ -130,7 +132,7 @@ public class BeaconChainUtil {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
-            null,
+            mock(P2PDumpManager.class),
             new StubMetricsSystem()),
         signDeposits);
   }
@@ -328,7 +330,7 @@ public class BeaconChainUtil {
                 new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP),
-                null,
+                mock(P2PDumpManager.class),
                 new StubMetricsSystem());
       }
       if (validatorKeys == null) {
