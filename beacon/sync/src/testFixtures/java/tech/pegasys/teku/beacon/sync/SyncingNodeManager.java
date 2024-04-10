@@ -104,7 +104,8 @@ public class SyncingNodeManager {
       final AsyncRunner asyncRunner,
       final Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
-      final Consumer<Eth2P2PNetworkBuilder> configureNetwork)
+      final Consumer<Eth2P2PNetworkBuilder> configureNetwork,
+      final P2PDumpManager p2pDumpManager)
       throws Exception {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final EventChannels eventChannels =
@@ -125,7 +126,7 @@ public class SyncingNodeManager {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            mock(P2PDumpManager.class),
+            p2pDumpManager,
             new StubMetricsSystem());
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =

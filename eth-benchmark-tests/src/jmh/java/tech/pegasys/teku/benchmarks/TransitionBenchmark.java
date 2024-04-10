@@ -104,7 +104,7 @@ public abstract class TransitionBenchmark {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            mock(P2PDumpManager.class),
+            mock(P2PDumpManager.class), // todo fix
             new StubMetricsSystem());
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
