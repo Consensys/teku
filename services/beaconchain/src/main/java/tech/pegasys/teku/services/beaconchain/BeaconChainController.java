@@ -929,8 +929,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
         new BlockProductionAndPublishingPerformanceFactory(
             timeProvider,
-            (slot) ->
-                secondsToMillis(spec.computeTimeAtSlot(recentChainData.getGenesisTime(), slot)),
+            (slot) -> secondsToMillis(recentChainData.computeTimeAtSlot(slot)),
             beaconConfig.getMetricsConfig().isBlockProductionAndPublishingPerformanceEnabled(),
             beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold(),
             beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningThreshold());
