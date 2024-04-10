@@ -102,7 +102,7 @@ public class P2PDumpManager {
       final String errorMessage =
           String.format("Failed to save %s bytes to file. %s", object, identifiers);
       LOG.error(errorMessage, e);
-      return "error"; // FIXME to do when error
+      return "ERROR saving to file";
     }
   }
 }
