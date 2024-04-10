@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
@@ -55,7 +56,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionProvider;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -929,11 +930,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }
-    final BlockProductionPerformanceFactory blockProductionPerformanceFactory =
-        new BlockProductionPerformanceFactory(
+
+    final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
+        new BlockProductionAndPublishingPerformanceFactory(
             timeProvider,
-            beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled(),
-            beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold());
+            (slot) ->
+                secondsToMillis(spec.computeTimeAtSlot(recentChainData.getGenesisTime(), slot)),
+            beaconConfig.getMetricsConfig().isBlockProductionAndPublishingPerformanceEnabled(),
+            beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold(),
+            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningThreshold());
 
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(

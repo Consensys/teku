@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.ethereum.performance.trackers;
 
-import java.util.function.Supplier;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
 /**
  * This is high level flow, some steps are executed only if builder flow take place
  *
@@ -62,8 +59,6 @@ public interface BlockProductionPerformance {
 
   BlockProductionPerformance NOOP =
       new BlockProductionPerformance() {
-        @Override
-        public void slotTime(final Supplier<UInt64> slotTimeSupplier) {}
 
         @Override
         public void complete() {}
@@ -101,8 +96,6 @@ public interface BlockProductionPerformance {
         @Override
         public void stateHashing() {}
       };
-
-  void slotTime(Supplier<UInt64> slotTimeSupplier);
 
   void complete();
 

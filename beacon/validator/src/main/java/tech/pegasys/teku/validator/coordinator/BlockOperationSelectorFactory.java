@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -409,7 +410,8 @@ public class BlockOperationSelectorFactory {
         .thenAccept(bodyBuilder::blobKzgCommitments);
   }
 
-  public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector() {
+  public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
+      final BlockPublishingPerformance blockPublishingPerformance) {
     return bodyUnblinder -> {
       final SignedBeaconBlock signedBlindedBlock = bodyUnblinder.getSignedBlindedBeaconBlock();
 
@@ -432,7 +434,7 @@ public class BlockOperationSelectorFactory {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
                 executionLayerBlockProductionManager
-                    .getUnblindedPayload(signedBlindedBlock)
+                    .getUnblindedPayload(signedBlindedBlock, blockPublishingPerformance)
                     .thenApply(BuilderPayload::getExecutionPayload));
       }
     };
@@ -442,7 +444,8 @@ public class BlockOperationSelectorFactory {
     return block -> getCachedExecutionBlobsBundle(block.getSlot());
   }
 
-  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
+  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector(
+      final BlockPublishingPerformance blockPublishingPerformance) {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
@@ -479,12 +482,17 @@ public class BlockOperationSelectorFactory {
         proofs = blockContainer.getKzgProofs().orElseThrow();
       }
 
-      return IntStream.range(0, blobs.size())
-          .mapToObj(
-              index ->
-                  miscHelpersDeneb.constructBlobSidecar(
-                      block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
-          .toList();
+      final List<BlobSidecar> blobSidecars =
+          IntStream.range(0, blobs.size())
+              .mapToObj(
+                  index ->
+                      miscHelpersDeneb.constructBlobSidecar(
+                          block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
+              .toList();
+
+      blockPublishingPerformance.blobSidecarsPrepared();
+
+      return blobSidecars;
     };
   }
 
