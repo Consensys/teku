@@ -54,7 +54,7 @@ public class P2PDumpManager {
     }
   }
 
-  public Optional<String> saveGossipMessageDecodingError(
+  public String saveGossipMessageDecodingError(
       final String topic, final String arrivalTimestamp, final Bytes originalMessage) {
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
@@ -66,7 +66,7 @@ public class P2PDumpManager {
         originalMessage);
   }
 
-  public Optional<String> saveGossipRejectedMessageToFile(
+  public String saveGossipRejectedMessageToFile(
       final String topic, final String arrivalTimestamp, final Bytes decodedMessage) {
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
@@ -74,7 +74,7 @@ public class P2PDumpManager {
         "rejected gossip message", GOSSIP_REJECTED_DIR, fileName, identifiers, decodedMessage);
   }
 
-  public Optional<String> saveInvalidBlockToFile(
+  public String saveInvalidBlockToFile(
       final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
     final String fileName =
         String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
@@ -82,7 +82,7 @@ public class P2PDumpManager {
     return saveBytesToFile("invalid block", INVALID_BLOCK_DIR, fileName, identifiers, blockSsz);
   }
 
-  private Optional<String> saveBytesToFile(
+  private String saveBytesToFile(
       final String object,
       final String errorDirectory,
       final String fileName,
@@ -97,13 +97,13 @@ public class P2PDumpManager {
         throw new FileAlreadyExistsException(errorMessage);
       }
       final Path writtenPath = Files.write(path, bytes.toArray());
-      return Optional.of(writtenPath.toString());
+      return writtenPath.toString();
 
     } catch (IOException e) {
       final String errorMessage =
           String.format("Failed to save %s bytes to file. %s", object, identifiers);
       LOG.error(errorMessage, e);
-      return Optional.empty();
+      return "error"; // FIXME to do when error
     }
   }
 }
