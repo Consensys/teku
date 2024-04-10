@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.util;
 
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
@@ -34,19 +33,19 @@ public class P2PDumpManager {
 
   public P2PDumpManager(final Path directory) {
     this.directory = directory;
-    if (this.directory.resolve(GOSSIP_DECODING_ERROR_DIR).toFile().mkdir()) {
+    if (this.directory.resolve(GOSSIP_DECODING_ERROR_DIR).toFile().mkdirs()) {
       LOG.info(
           String.format(
               "%s directory has been created to save gossip messages with decoding errors.",
               GOSSIP_DECODING_ERROR_DIR));
     }
-    if (this.directory.resolve(GOSSIP_REJECTED_DIR).toFile().mkdir()) {
+    if (this.directory.resolve(GOSSIP_REJECTED_DIR).toFile().mkdirs()) {
       LOG.info(
           String.format(
               "%s directory has been created to save rejected gossip messages.",
               GOSSIP_REJECTED_DIR));
     }
-    if (this.directory.resolve(INVALID_BLOCK_DIR).toFile().mkdir()) {
+    if (this.directory.resolve(INVALID_BLOCK_DIR).toFile().mkdirs()) {
       LOG.info(
           String.format(
               "%s directory has been created to save invalid blocks.", INVALID_BLOCK_DIR));
@@ -89,20 +88,13 @@ public class P2PDumpManager {
       final Bytes bytes) {
     final Path path = directory.resolve(errorDirectory).resolve(fileName);
     try {
-      // Create file and save ssz
-      if (!path.toFile().createNewFile()) {
-        final String errorMessage =
-            String.format("Unable to create new file to save %s. %s", object, identifiers);
-        throw new FileAlreadyExistsException(errorMessage);
-      }
-      final Path writtenPath = Files.write(path, bytes.toArray());
-      return writtenPath.toString();
+      return Files.write(path, bytes.toArray()).toString();
 
     } catch (IOException e) {
       final String errorMessage =
           String.format("Failed to save %s bytes to file. %s", object, identifiers);
       LOG.error(errorMessage, e);
-      return "ERROR saving to file";
+      return String.format("Error saving to %s", path);
     }
   }
 }

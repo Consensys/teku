@@ -60,7 +60,7 @@ class P2PDumpManagerTest {
     // Should not be able to create file when exists
     final String file =
         manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
-    assertThat(file).isEqualTo("ERROR saving to file");
+    assertThat(file).isEqualTo("Error saving to " + path);
     checkBytesSavedToFile(path, Bytes.EMPTY);
   }
 
@@ -92,7 +92,7 @@ class P2PDumpManagerTest {
     // Should not be able to create file when exists
     final String file =
         manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
-    assertThat(file).isEqualTo("ERROR saving to file");
+    assertThat(file).isEqualTo("Error saving to " + path);
     checkBytesSavedToFile(path, Bytes.EMPTY);
   }
 
@@ -126,7 +126,7 @@ class P2PDumpManagerTest {
     // Should not be able to create file when exists
     final String file =
         manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
-    assertThat(file).isEqualTo("ERROR saving to file");
+    assertThat(file).isEqualTo("Error saving to " + path);
     checkBytesSavedToFile(path, Bytes.EMPTY);
   }
 
