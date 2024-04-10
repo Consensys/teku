@@ -36,7 +36,7 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  //TODO: implement the logic
+  // TODO: implement the logic
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final JsonNode testNode = TestDataUtils.loadJson(testDefinition, testDefinition.getTestName());
