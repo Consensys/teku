@@ -126,7 +126,7 @@ public class EpochTransitionBenchmark {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            mock(P2PDumpManager.class), // todo fix
+            mock(P2PDumpManager.class),
             metricsSystem);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();

@@ -107,7 +107,7 @@ public class ProfilingRun {
               BlobSidecarManager.NOOP,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              mock(P2PDumpManager.class), // todo fix
+              mock(P2PDumpManager.class),
               metricsSystem);
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
@@ -202,7 +202,7 @@ public class ProfilingRun {
               BlobSidecarManager.NOOP,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              mock(P2PDumpManager.class), // todo fix
+              mock(P2PDumpManager.class),
               metricsSystem);
       BlockImporter blockImporter =
           new BlockImporter(
