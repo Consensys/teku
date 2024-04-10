@@ -31,6 +31,30 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
                         + specConfig.getClass().getSimpleName()));
   }
 
+  UInt64 getMinActivationBalance();
+
+  UInt64 getMaxEffectiveBalanceElectra();
+
+  UInt64 getPendingBalanceDepositsLimit();
+
+  UInt64 getPendingPartialWithdrawalsLimit();
+
+  UInt64 getPendingConsolidationsLimit();
+
+  int getWhistleblowerRewardQuotientElectra();
+
+  int getMinSlashingPenaltyQuotientElectra();
+
+  int getMaxAttesterSlashingsElectra();
+
+  int getMaxAttestationsElectra();
+
+  int getMaxConsolidations();
+
+  int getMaxPartialWithdrawalsPerPayload();
+
+  UInt64 getMinPerEpochChurnLimitElectra();
+
   Bytes4 getElectraForkVersion();
 
   UInt64 getElectraForkEpoch();
