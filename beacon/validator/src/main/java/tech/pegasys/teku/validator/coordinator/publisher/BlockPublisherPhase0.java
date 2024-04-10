@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -42,13 +43,19 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
       final SignedBeaconBlock block,
       final List<BlobSidecar> blobSidecars,
-      final BroadcastValidationLevel broadcastValidationLevel) {
-    return blockImportChannel.importBlock(block, broadcastValidationLevel);
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    return blockImportChannel
+        .importBlock(block, broadcastValidationLevel)
+        .thenPeek(__ -> blockPublishingPerformance.blockImportCompleted());
   }
 
   @Override
   void publishBlockAndBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+      final SignedBeaconBlock block,
+      final List<BlobSidecar> blobSidecars,
+      final BlockPublishingPerformance blockPublishingPerformance) {
     blockGossipChannel.publishBlock(block);
+    blockPublishingPerformance.blockPublishingInitiated();
   }
 }

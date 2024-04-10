@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -21,5 +22,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 /** Used to publish blocks (unblinded and blinded) and blob sidecars */
 public interface BlockPublisher {
   SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      SignedBlockContainer blockContainer, BroadcastValidationLevel broadcastValidationLevel);
+      SignedBlockContainer blockContainer,
+      BroadcastValidationLevel broadcastValidationLevel,
+      BlockPublishingPerformance blockPublishingPerformance);
 }

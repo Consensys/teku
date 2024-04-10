@@ -31,6 +31,7 @@ public class PowchainConfiguration {
   public static final int DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE = 10_000;
   public static final boolean DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING = false;
   public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_ENABLED = true;
+  public static final boolean DEFAULT_DEPOSIT_CONTRACT_LOGS_SYNCING_ENABLED = true;
   public static final String DEPOSIT_SNAPSHOT_URL_PATH = "/eth/v1/beacon/deposit_snapshot";
 
   private final Spec spec;
@@ -40,6 +41,7 @@ public class PowchainConfiguration {
   private final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration;
   private final int eth1LogsMaxBlockRange;
   private final boolean useMissingDepositEventLogging;
+  private final boolean depositContractLogsSyncingEnabled;
 
   private PowchainConfiguration(
       final Spec spec,
@@ -48,7 +50,8 @@ public class PowchainConfiguration {
       final Optional<UInt64> depositContractDeployBlock,
       final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration,
       final int eth1LogsMaxBlockRange,
-      final boolean useMissingDepositEventLogging) {
+      final boolean useMissingDepositEventLogging,
+      final boolean depositContractLogsSyncingEnabled) {
     this.spec = spec;
     this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
@@ -56,6 +59,7 @@ public class PowchainConfiguration {
     this.depositTreeSnapshotConfiguration = depositTreeSnapshotConfiguration;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.useMissingDepositEventLogging = useMissingDepositEventLogging;
+    this.depositContractLogsSyncingEnabled = depositContractLogsSyncingEnabled;
   }
 
   public static Builder builder() {
@@ -94,6 +98,10 @@ public class PowchainConfiguration {
     return useMissingDepositEventLogging;
   }
 
+  public boolean isDepositContractLogsSyncingEnabled() {
+    return depositContractLogsSyncingEnabled;
+  }
+
   public static class Builder {
     private Spec spec;
     private List<String> eth1Endpoints = new ArrayList<>();
@@ -105,6 +113,8 @@ public class PowchainConfiguration {
     private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
     private boolean useMissingDepositEventLogging = DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
     private boolean depositSnapshotEnabled = DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
+    private boolean depositContractLogsSyncingEnabled =
+        DEFAULT_DEPOSIT_CONTRACT_LOGS_SYNCING_ENABLED;
 
     private Builder() {}
 
@@ -125,7 +135,8 @@ public class PowchainConfiguration {
               bundledDepositSnapshotPath,
               isBundledSnapshotEnabled),
           eth1LogsMaxBlockRange,
-          useMissingDepositEventLogging);
+          useMissingDepositEventLogging,
+          depositContractLogsSyncingEnabled);
     }
 
     private void validate() {
@@ -208,6 +219,12 @@ public class PowchainConfiguration {
 
     public Builder depositSnapshotEnabled(final boolean depositSnapshotEnabled) {
       this.depositSnapshotEnabled = depositSnapshotEnabled;
+      return this;
+    }
+
+    public Builder depositContractLogsSyncingEnabled(
+        final boolean depositContractLogsSyncingEnabled) {
+      this.depositContractLogsSyncingEnabled = depositContractLogsSyncingEnabled;
       return this;
     }
 

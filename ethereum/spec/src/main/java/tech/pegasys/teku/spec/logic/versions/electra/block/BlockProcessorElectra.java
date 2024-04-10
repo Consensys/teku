@@ -14,8 +14,11 @@
 package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Optional;
+import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -23,12 +26,15 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -84,7 +90,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     safelyProcess(
         () ->
             processDepositReceipts(
-                MutableBeaconStateElectra.required(state),
+                state,
                 body.getOptionalExecutionPayload()
                     .flatMap(ExecutionPayload::toVersionElectra)
                     .map(ExecutionPayloadElectra::getDepositReceipts)
@@ -119,14 +125,103 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
   }
 
+  @Override
+  protected void processExecutionLayerExits(
+      final MutableBeaconState state,
+      final Optional<ExecutionPayload> executionPayload,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    processExecutionLayerExits(
+        state, getExecutionLayerExitsFromBlock(executionPayload), validatorExitContextSupplier);
+  }
+
+  /*
+    Implements process_execution_layer_exit from consensus-specs (EIP-7002)
+  */
+  @Override
+  public void processExecutionLayerExits(
+      final MutableBeaconState state,
+      final SszList<ExecutionLayerExit> exits,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
+
+    exits.forEach(
+        exit -> {
+          final Optional<Integer> maybeValidatorIndex =
+              validatorsUtil.getValidatorIndex(state, exit.getValidatorPublicKey());
+          if (maybeValidatorIndex.isEmpty()) {
+            return;
+          }
+
+          final int validatorIndex = maybeValidatorIndex.get();
+          final Validator validator = state.getValidators().get(validatorIndex);
+
+          // Check if validator has eth1 credentials
+          boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
+          if (!isExecutionAddress) {
+            return;
+          }
+
+          // Check exit source_address matches validator eth1 withdrawal credentials
+          final Bytes20 executionAddress =
+              new Bytes20(validator.getWithdrawalCredentials().slice(12));
+          boolean isCorrectSourceAddress = executionAddress.equals(exit.getSourceAddress());
+          if (!isCorrectSourceAddress) {
+            return;
+          }
+
+          // Check if validator is active
+          final boolean isValidatorActive = predicates.isActiveValidator(validator, currentEpoch);
+          if (!isValidatorActive) {
+            return;
+          }
+
+          // Check if validator has already initiated exit
+          boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
+          if (hasInitiatedExit) {
+            return;
+          }
+
+          // Check if validator has been active long enough
+          final boolean validatorActiveLongEnough =
+              currentEpoch.isLessThan(
+                  validator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()));
+          if (validatorActiveLongEnough) {
+            return;
+          }
+
+          // If all conditions are ok, initiate exit
+          beaconStateMutators.initiateValidatorExit(
+              state, validatorIndex, validatorExitContextSupplier);
+        });
+  }
+
+  private SszList<ExecutionLayerExit> getExecutionLayerExitsFromBlock(
+      final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
+    return maybeExecutionPayload
+        .flatMap(ExecutionPayload::toVersionElectra)
+        .map(ExecutionPayloadElectra::getExits)
+        .orElseThrow(
+            () ->
+                new BlockProcessingException(
+                    "Execution layer exits were not found during block processing."));
+  }
+
+  /*
+   Implements process_deposit_receipt from consensus-specs (EIP-6110)
+  */
+  @Override
   public void processDepositReceipts(
-      final MutableBeaconStateElectra state, final SszList<DepositReceipt> depositReceipts) {
+      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+      throws BlockProcessingException {
+    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     for (DepositReceipt depositReceipt : depositReceipts) {
       // process_deposit_receipt
-      if (state
+      if (electraState
           .getDepositReceiptsStartIndex()
           .equals(SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX)) {
-        state.setDepositReceiptsStartIndex(depositReceipt.getIndex());
+        electraState.setDepositReceiptsStartIndex(depositReceipt.getIndex());
       }
       applyDeposit(
           state,

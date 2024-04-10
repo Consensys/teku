@@ -718,10 +718,11 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final List<Validator> validators = new ArrayList<>();
     while (validators.size() < 16) {
       validators.add(
-          dataStructureUtil.randomValidator(
-              dataStructureUtil.randomPublicKey(),
-              dataStructureUtil.randomEth1WithdrawalCredentials(),
-              specConfig.getMaxEffectiveBalance()));
+          dataStructureUtil
+              .validatorBuilder()
+              .withRandomEth1WithdrawalCredentials()
+              .effectiveBalance(specConfig.getMaxEffectiveBalance())
+              .build());
     }
     final UInt64 eff = specConfig.getMaxEffectiveBalance();
     capellaBuilder.balances(

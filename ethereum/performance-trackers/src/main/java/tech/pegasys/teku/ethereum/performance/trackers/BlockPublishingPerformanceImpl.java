@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,13 +18,13 @@ import tech.pegasys.teku.infrastructure.time.PerformanceTracker;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BlockProductionPerformanceImpl implements BlockProductionPerformance {
+public class BlockPublishingPerformanceImpl implements BlockPublishingPerformance {
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
   private final UInt64 slotTime;
   private final int lateThreshold;
 
-  BlockProductionPerformanceImpl(
+  BlockPublishingPerformanceImpl(
       final TimeProvider timeProvider,
       final UInt64 slot,
       final UInt64 slotTime,
@@ -46,61 +46,31 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
         (event, stepDuration) -> {},
         totalDuration -> {},
         (totalDuration, timings) ->
-            EventLogger.EVENT_LOG.slowBlockProductionEvent(slot, totalDuration, timings));
+            EventLogger.EVENT_LOG.slowBlockPublishingEvent(slot, totalDuration, timings));
   }
 
   @Override
-  public void prepareOnTick() {
-    performanceTracker.addEvent("preparation_on_tick");
+  public void builderGetPayload() {
+    performanceTracker.addEvent("builder_get_payload");
   }
 
   @Override
-  public void prepareApplyDeferredAttestations() {
-    performanceTracker.addEvent("preparation_apply_deferred_attestations");
+  public void blobSidecarsPrepared() {
+    performanceTracker.addEvent("blob_sidecars_prepared");
   }
 
   @Override
-  public void prepareProcessHead() {
-    performanceTracker.addEvent("preparation_process_head");
+  public void blockAndBlobSidecarsPublishingInitiated() {
+    performanceTracker.addEvent("block_and_blob_sidecars_publishing_initiated");
   }
 
   @Override
-  public void beaconBlockPrepared() {
-    performanceTracker.addEvent("beacon_block_prepared");
+  public void blockPublishingInitiated() {
+    performanceTracker.addEvent("block_publishing_initiated");
   }
 
   @Override
-  public void getStateAtSlot() {
-    performanceTracker.addEvent("retrieve_state");
-  }
-
-  @Override
-  public void engineGetPayload() {
-    performanceTracker.addEvent("local_get_payload");
-  }
-
-  @Override
-  public void builderGetHeader() {
-    performanceTracker.addEvent("builder_get_header");
-  }
-
-  @Override
-  public void builderBidValidated() {
-    performanceTracker.addEvent("builder_bid_validated");
-  }
-
-  @Override
-  public void beaconBlockCreated() {
-    performanceTracker.addEvent("beacon_block_created");
-  }
-
-  @Override
-  public void stateTransition() {
-    performanceTracker.addEvent("state_transition");
-  }
-
-  @Override
-  public void stateHashing() {
-    performanceTracker.addEvent("state_hashing");
+  public void blockImportCompleted() {
+    performanceTracker.addEvent("block_import_completed");
   }
 }

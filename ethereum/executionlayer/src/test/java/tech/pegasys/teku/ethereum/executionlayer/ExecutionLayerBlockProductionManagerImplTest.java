@@ -34,6 +34,7 @@ import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -142,13 +143,17 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final SafeFuture<BuilderPayload> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
-            dataStructureUtil.randomSignedBlindedBeaconBlock(slot));
+            dataStructureUtil.randomSignedBlindedBeaconBlock(slot),
+            BlockPublishingPerformance.NOOP);
     assertThat(unblindedPayload.get()).isEqualTo(localPayload);
 
     // wrong slot, we will hit builder client by this call
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot.plus(1));
-    assertThatThrownBy(() -> blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock));
+    assertThatThrownBy(
+        () ->
+            blockProductionManager.getUnblindedPayload(
+                signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP));
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
@@ -195,7 +200,9 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayload payload = prepareBuilderGetPayloadResponse(signedBlindedBeaconBlock);
 
     // we expect result from the builder
-    assertThat(blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock))
+    assertThat(
+            blockProductionManager.getUnblindedPayload(
+                signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP))
         .isCompletedWithValue(payload);
 
     // we expect both builder and local engine have been called
@@ -241,7 +248,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
     // we will hit builder client by this call
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-    assertThatThrownBy(() -> blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock));
+    assertThatThrownBy(
+        () ->
+            blockProductionManager.getUnblindedPayload(
+                signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP));
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
@@ -304,7 +314,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final SafeFuture<BuilderPayload> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
-            dataStructureUtil.randomSignedBlindedBeaconBlock(slot));
+            dataStructureUtil.randomSignedBlindedBeaconBlock(slot),
+            BlockPublishingPerformance.NOOP);
     assertThat(unblindedPayload.get()).isEqualTo(localPayload);
 
     verifyNoMoreInteractions(builderClient);
@@ -356,7 +367,9 @@ class ExecutionLayerBlockProductionManagerImplTest {
         prepareBuilderGetPayloadResponseWithBlobs(signedBlindedBeaconBlock);
 
     // we expect result from the builder
-    assertThat(blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock))
+    assertThat(
+            blockProductionManager.getUnblindedPayload(
+                signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP))
         .isCompletedWithValue(payloadAndBlobsBundle);
 
     // we expect both builder and local engine have been called
@@ -407,7 +420,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
     // we will hit builder client by this call
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-    assertThatThrownBy(() -> blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock));
+    assertThatThrownBy(
+        () ->
+            blockProductionManager.getUnblindedPayload(
+                signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP));
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
