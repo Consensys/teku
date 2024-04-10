@@ -57,7 +57,7 @@ public class P2PDumpManager {
 
   public String saveGossipMessageDecodingError(
       final String topic, final String arrivalTimestamp, final Bytes originalMessage) {
-    if (isIncludeP2pWarnings) {
+    if (!isIncludeP2pWarnings) {
       return "";
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
@@ -72,7 +72,7 @@ public class P2PDumpManager {
 
   public String saveGossipRejectedMessageToFile(
       final String topic, final String arrivalTimestamp, final Bytes decodedMessage) {
-    if (isIncludeP2pWarnings) {
+    if (!isIncludeP2pWarnings) {
       return "";
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
@@ -83,7 +83,7 @@ public class P2PDumpManager {
 
   public String saveInvalidBlockToFile(
       final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
-    if (isIncludeP2pWarnings) {
+    if (!isIncludeP2pWarnings) {
       return "";
     }
     final String fileName =
