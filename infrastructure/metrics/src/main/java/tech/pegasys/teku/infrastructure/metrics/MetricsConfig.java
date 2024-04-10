@@ -86,7 +86,8 @@ public class MetricsConfig {
     this.blockPerformanceEnabled = blockPerformanceEnabled;
     this.tickPerformanceEnabled = tickPerformanceEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
-    this.blockProductionAndPublishingPerformanceEnabled = blockProductionAndPublishingPerformanceEnabled;
+    this.blockProductionAndPublishingPerformanceEnabled =
+        blockProductionAndPublishingPerformanceEnabled;
     this.blockProductionPerformanceWarningThreshold = blockProductionPerformanceWarningThreshold;
     this.blockPublishingPerformanceWarningThreshold = blockPublishingPerformanceWarningThreshold;
   }
