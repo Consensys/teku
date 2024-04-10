@@ -27,14 +27,17 @@ public class DataConfig {
   private final Path dataBasePath;
   private final Optional<Path> beaconDataPath;
   private final Optional<Path> validatorDataPath;
+  private final Optional<Path> p2pDumpsDataPath;
 
   private DataConfig(
       final Path dataBasePath,
       final Optional<Path> beaconDataPath,
-      final Optional<Path> validatorDataPath) {
+      final Optional<Path> validatorDataPath,
+      final Optional<Path> p2pDumpsDataPath) {
     this.dataBasePath = dataBasePath;
     this.beaconDataPath = beaconDataPath;
     this.validatorDataPath = validatorDataPath;
+    this.p2pDumpsDataPath = p2pDumpsDataPath;
   }
 
   public static DataConfig.Builder builder() {
@@ -53,11 +56,16 @@ public class DataConfig {
     return validatorDataPath;
   }
 
+  public Optional<Path> getP2pDumpsDataPath() {
+    return p2pDumpsDataPath;
+  }
+
   public static final class Builder {
 
     private Path dataBasePath = defaultDataPath();
     private Optional<Path> beaconDataPath = Optional.empty();
     private Optional<Path> validatorDataPath = Optional.empty();
+    private Optional<Path> p2pDumpsDataPath = Optional.empty();
 
     private Builder() {}
 
@@ -76,11 +84,16 @@ public class DataConfig {
       return this;
     }
 
+    public Builder p2pDumpsDataPath(Path p2pDumpsDataPath) {
+      this.p2pDumpsDataPath = Optional.ofNullable(p2pDumpsDataPath);
+      return this;
+    }
+
     public DataConfig build() {
       if (dataBasePath == null) {
         throw new InvalidConfigurationException("data-base-path must be specified");
       }
-      return new DataConfig(dataBasePath, beaconDataPath, validatorDataPath);
+      return new DataConfig(dataBasePath, beaconDataPath, validatorDataPath, p2pDumpsDataPath);
     }
   }
 }

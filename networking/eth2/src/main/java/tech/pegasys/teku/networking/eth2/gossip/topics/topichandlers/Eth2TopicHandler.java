@@ -40,6 +40,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -54,6 +55,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
   private final OperationMilestoneValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
+  private final P2PDumpManager p2pDumpManager;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -64,7 +66,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final String topicName,
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final P2PDumpManager p2pDumpManager) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
@@ -76,6 +79,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
+    this.p2pDumpManager = p2pDumpManager;
   }
 
   public Eth2TopicHandler(
@@ -87,7 +91,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipTopicName topicName,
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final P2PDumpManager p2pDumpManager) {
     this(
         recentChainData,
         asyncRunner,
@@ -97,7 +102,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         topicName.toString(),
         forkValidator,
         messageType,
-        networkingConfig);
+        networkingConfig,
+        p2pDumpManager);
   }
 
   @Override
@@ -129,10 +135,12 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {
       case REJECT:
-        P2P_LOG.onGossipRejected(
-            getTopic(),
-            message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
-            internalValidationResult.getDescription());
+        final String savedFile =
+            p2pDumpManager.saveGossipRejectedMessageToFile(
+                getTopic(),
+                message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
+                message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY));
+        P2P_LOG.onGossipRejected(getTopic(), savedFile, internalValidationResult.getDescription());
         break;
       case IGNORE:
         LOG.trace("Ignoring message for topic: {}", this::getTopic);
@@ -160,7 +168,12 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message, final Throwable err) {
     final ValidationResult response;
     if (ExceptionUtil.hasCause(err, DecodingException.class)) {
-      P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
+      final String savedFile =
+          p2pDumpManager.saveGossipMessageDecodingError(
+              getTopic(),
+              message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
+              message.getOriginalMessage());
+      P2P_LOG.onGossipMessageDecodingError(getTopic(), savedFile, err);
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.hasCause(err, RejectedExecutionException.class)) {
       LOG.warn(

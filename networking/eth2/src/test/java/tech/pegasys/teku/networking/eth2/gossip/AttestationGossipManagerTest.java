@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -69,7 +70,8 @@ public class AttestationGossipManagerTest {
           gossipEncoding,
           recentChainData,
           gossipedAttestationProcessor,
-          forkInfo);
+          forkInfo,
+          mock(P2PDumpManager.class));
 
   @BeforeEach
   public void setup() {

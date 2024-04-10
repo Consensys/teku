@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
@@ -40,6 +41,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final OperationProcessor<ValidatableAttestation> processor;
   private final ForkInfo forkInfo;
   private final AttestationSchema attestationSchema;
+  private final P2PDumpManager p2pDumpManager;
 
   public AttestationSubnetSubscriptions(
       final Spec spec,
@@ -48,7 +50,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
       final OperationProcessor<ValidatableAttestation> processor,
-      final ForkInfo forkInfo) {
+      final ForkInfo forkInfo,
+      final P2PDumpManager p2pDumpManager) {
     super(gossipNetwork, gossipEncoding);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -57,6 +60,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
     this.forkInfo = forkInfo;
     attestationSchema =
         spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions().getAttestationSchema();
+    this.p2pDumpManager = p2pDumpManager;
   }
 
   public SafeFuture<?> gossip(final Attestation attestation) {
@@ -85,6 +89,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final String topicName = GossipTopicName.getAttestationSubnetTopicName(subnetId);
+
     return SingleAttestationTopicHandler.createHandler(
         recentChainData,
         asyncRunner,
@@ -93,7 +98,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         forkInfo,
         topicName,
         attestationSchema,
-        subnetId);
+        subnetId,
+        p2pDumpManager);
   }
 
   private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {

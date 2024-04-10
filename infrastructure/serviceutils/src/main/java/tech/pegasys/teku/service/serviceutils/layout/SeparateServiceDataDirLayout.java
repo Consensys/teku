@@ -19,16 +19,20 @@ import java.util.Optional;
 public class SeparateServiceDataDirLayout implements DataDirLayout {
   static final String BEACON_DATA_DIR_NAME = "beacon";
   static final String VALIDATOR_DATA_DIR_NAME = "validator";
+  static final String P2P_DUMP_DIR_NAME = "p2p-dumps";
   private final Path beaconNodeDataDir;
   private final Path validatorDataDir;
+  private final Path p2pDumpDir;
 
   public SeparateServiceDataDirLayout(
       final Path baseDir,
       final Optional<Path> beaconDataDirectory,
-      final Optional<Path> validatorDataDirectory) {
+      final Optional<Path> validatorDataDirectory,
+      final Optional<Path> p2pDumpDirectory) {
     beaconNodeDataDir = beaconDataDirectory.orElseGet(() -> baseDir.resolve(BEACON_DATA_DIR_NAME));
     validatorDataDir =
         validatorDataDirectory.orElseGet(() -> baseDir.resolve(VALIDATOR_DATA_DIR_NAME));
+    p2pDumpDir = p2pDumpDirectory.orElseGet(() -> baseDir.resolve(P2P_DUMP_DIR_NAME));
   }
 
   @Override
@@ -39,5 +43,10 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
   @Override
   public Path getValidatorDataDirectory() {
     return validatorDataDir;
+  }
+
+  @Override
+  public Path getP2pDumpDirectory() {
+    return p2pDumpDir;
   }
 }

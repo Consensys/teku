@@ -109,6 +109,7 @@ public class BeaconChainUtil {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
+            null,
             new StubMetricsSystem()),
         true);
   }
@@ -129,6 +130,7 @@ public class BeaconChainUtil {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
+            null,
             new StubMetricsSystem()),
         signDeposits);
   }
@@ -326,6 +328,7 @@ public class BeaconChainUtil {
                 new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP),
+                null,
                 new StubMetricsSystem());
       }
       if (validatorKeys == null) {

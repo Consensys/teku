@@ -80,6 +80,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
@@ -124,6 +125,7 @@ public class Eth2P2PNetworkBuilder {
   protected StatusMessageFactory statusMessageFactory;
   protected KZG kzg;
   protected boolean recordMessageArrival;
+  protected P2PDumpManager p2PDumpManager;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -219,7 +221,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedAggregateProcessor,
           gossipedAttesterSlashingConsumer,
           gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer);
+          gossipedVoluntaryExitConsumer,
+          p2PDumpManager);
       case ALTAIR -> new GossipForkSubscriptionsAltair(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -235,7 +238,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedProposerSlashingConsumer,
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor);
+          gossipedSyncCommitteeMessageProcessor,
+          p2PDumpManager);
       case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -251,7 +255,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedProposerSlashingConsumer,
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor);
+          gossipedSyncCommitteeMessageProcessor,
+          p2PDumpManager);
       case CAPELLA -> new GossipForkSubscriptionsCapella(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -268,7 +273,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
           gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
+          gossipedSignedBlsToExecutionChangeProcessor,
+          p2PDumpManager);
       case DENEB -> new GossipForkSubscriptionsDeneb(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -286,7 +292,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
           gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
+          gossipedSignedBlsToExecutionChangeProcessor,
+          p2PDumpManager);
       case ELECTRA -> new GossipForkSubscriptionsElectra(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -304,7 +311,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
           gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
+          gossipedSignedBlsToExecutionChangeProcessor,
+          p2PDumpManager);
     };
   }
 
@@ -596,6 +604,11 @@ public class Eth2P2PNetworkBuilder {
 
   public Eth2P2PNetworkBuilder recordMessageArrival(final boolean recordMessageArrival) {
     this.recordMessageArrival = recordMessageArrival;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder p2pDumpManager(final P2PDumpManager p2PDumpManager) {
+    this.p2PDumpManager = p2PDumpManager;
     return this;
   }
 }

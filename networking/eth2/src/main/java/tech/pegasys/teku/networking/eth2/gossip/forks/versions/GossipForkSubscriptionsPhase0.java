@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
@@ -65,6 +66,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   private VoluntaryExitGossipManager voluntaryExitGossipManager;
   private ProposerSlashingGossipManager proposerSlashingGossipManager;
   private AttesterSlashingGossipManager attesterSlashingGossipManager;
+  protected P2PDumpManager p2pDumpManager;
 
   public GossipForkSubscriptionsPhase0(
       final Fork fork,
@@ -79,7 +81,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor) {
+      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
+      final P2PDumpManager p2pDumpManager) {
     this.fork = fork;
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -93,6 +96,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
     this.attesterSlashingProcessor = attesterSlashingProcessor;
     this.proposerSlashingProcessor = proposerSlashingProcessor;
     this.voluntaryExitProcessor = voluntaryExitProcessor;
+    this.p2pDumpManager = p2pDumpManager;
   }
 
   @Override
@@ -121,7 +125,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             recentChainData,
             attestationProcessor,
-            forkInfo);
+            forkInfo,
+            p2pDumpManager);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
@@ -137,7 +142,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blockProcessor);
+            blockProcessor,
+            p2pDumpManager);
     addGossipManager(blockGossipManager);
   }
 
@@ -150,7 +156,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            aggregateProcessor);
+            aggregateProcessor,
+            p2pDumpManager);
     addGossipManager(aggregateGossipManager);
   }
 
@@ -163,7 +170,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             voluntaryExitProcessor,
-            spec.getNetworkingConfig());
+            spec.getNetworkingConfig(),
+            p2pDumpManager);
     addGossipManager(voluntaryExitGossipManager);
   }
 
@@ -176,7 +184,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             proposerSlashingProcessor,
-            spec.getNetworkingConfig());
+            spec.getNetworkingConfig(),
+            p2pDumpManager);
     addGossipManager(proposerSlashingGossipManager);
   }
 
@@ -189,7 +198,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            attesterSlashingProcessor);
+            attesterSlashingProcessor,
+            p2pDumpManager);
     addGossipManager(attesterSlashingGossipManager);
   }
 

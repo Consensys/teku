@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<ValidatableAttestation> {
@@ -31,7 +33,14 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
   @Override
   protected Eth2TopicHandler<?> createHandler() {
     return new AggregateGossipManager(
-            spec, recentChainData, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
+            spec,
+            recentChainData,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            forkInfo,
+            processor,
+            mock(P2PDumpManager.class))
         .getTopicHandler();
   }
 

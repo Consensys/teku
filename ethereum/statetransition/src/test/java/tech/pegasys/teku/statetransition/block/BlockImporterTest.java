@@ -70,6 +70,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -103,6 +104,7 @@ public class BlockImporterTest {
           BlobSidecarManager.NOOP,
           forkChoiceNotifier,
           transitionBlockValidator,
+          mock(P2PDumpManager.class),
           metricsSystem);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(spec, recentChainData, validatorKeys, forkChoice, false);
@@ -460,6 +462,7 @@ public class BlockImporterTest {
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
+            mock(P2PDumpManager.class),
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
@@ -505,6 +508,7 @@ public class BlockImporterTest {
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
+            mock(P2PDumpManager.class),
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
@@ -558,6 +562,7 @@ public class BlockImporterTest {
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
+            mock(P2PDumpManager.class),
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
@@ -603,6 +608,7 @@ public class BlockImporterTest {
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
+            mock(P2PDumpManager.class),
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
@@ -636,6 +642,7 @@ public class BlockImporterTest {
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
+            mock(P2PDumpManager.class),
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
@@ -690,6 +697,7 @@ public class BlockImporterTest {
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator,
+            mock(P2PDumpManager.class),
             storageSystem.getMetricsSystem());
 
     final BlockImporter blockImporter =

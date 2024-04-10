@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella {
@@ -59,7 +60,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
       final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
-          signedBlsToExecutionChangeOperationProcessor) {
+          signedBlsToExecutionChangeOperationProcessor,
+      final P2PDumpManager p2PDumpManager) {
     super(
         fork,
         spec,
@@ -76,7 +78,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
         voluntaryExitProcessor,
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor,
-        signedBlsToExecutionChangeOperationProcessor);
+        signedBlsToExecutionChangeOperationProcessor,
+        p2PDumpManager);
     this.blobSidecarProcessor = blobSidecarProcessor;
   }
 
@@ -95,7 +98,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blobSidecarProcessor);
+            blobSidecarProcessor,
+            p2pDumpManager);
     addGossipManager(blobSidecarGossipManager);
   }
 

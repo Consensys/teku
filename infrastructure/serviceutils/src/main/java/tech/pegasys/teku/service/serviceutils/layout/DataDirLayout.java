@@ -21,7 +21,8 @@ public interface DataDirLayout {
         new SeparateServiceDataDirLayout(
             dataConfig.getDataBasePath(),
             dataConfig.getBeaconDataPath(),
-            dataConfig.getValidatorDataPath());
+            dataConfig.getValidatorDataPath(),
+            dataConfig.getP2pDumpsDataPath());
 
     return layout;
   }
@@ -29,4 +30,6 @@ public interface DataDirLayout {
   Path getBeaconDataDirectory();
 
   Path getValidatorDataDirectory();
+
+  Path getP2pDumpDirectory();
 }

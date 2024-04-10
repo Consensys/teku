@@ -27,6 +27,14 @@ public abstract class DataOptions {
       arity = "1")
   private Path dataBasePath = DataConfig.defaultDataPath();
 
+  @Option(
+      hidden = true,
+      names = {"--Xp2p-log-to-file-directory"},
+      paramLabel = "<FILENAME>",
+      description = "Path to base directory where P2P log hex dumps will be saved.",
+      arity = "1")
+  private Path p2pDumpsDataPath;
+
   public DataConfig getDataConfig() {
     return configureDataConfig(DataConfig.builder()).build();
   }
@@ -40,6 +48,6 @@ public abstract class DataOptions {
   }
 
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
-    return config.dataBasePath(dataBasePath);
+    return config.dataBasePath(dataBasePath).p2pDumpsDataPath(p2pDumpsDataPath);
   }
 }

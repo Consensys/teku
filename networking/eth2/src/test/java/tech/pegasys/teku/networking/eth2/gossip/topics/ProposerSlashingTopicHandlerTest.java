@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<ProposerSlashing> {
@@ -39,7 +41,8 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
             gossipEncoding,
             forkInfo,
             processor,
-            spec.getNetworkingConfig())
+            spec.getNetworkingConfig(),
+            mock(P2PDumpManager.class))
         .getTopicHandler();
   }
 

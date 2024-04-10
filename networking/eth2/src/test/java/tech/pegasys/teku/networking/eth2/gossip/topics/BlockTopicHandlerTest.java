@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +30,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
+import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeaconBlock> {
@@ -36,7 +38,14 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   @Override
   protected Eth2TopicHandler<SignedBeaconBlock> createHandler() {
     return new BlockGossipManager(
-            recentChainData, spec, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
+            recentChainData,
+            spec,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            forkInfo,
+            processor,
+            mock(P2PDumpManager.class))
         .getTopicHandler();
   }
 
