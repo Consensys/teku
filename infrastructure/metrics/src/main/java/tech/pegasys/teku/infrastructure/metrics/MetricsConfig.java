@@ -56,7 +56,7 @@ public class MetricsConfig {
   private final boolean blockPerformanceEnabled;
   private final boolean tickPerformanceEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
-  private final boolean blockProductionPerformanceEnabled;
+  private final boolean blockProductionAndPublishingPerformanceEnabled;
   private final int blockProductionPerformanceWarningThreshold;
   private final int blockPublishingPerformanceWarningThreshold;
 
@@ -72,7 +72,7 @@ public class MetricsConfig {
       final boolean blockPerformanceEnabled,
       final boolean tickPerformanceEnabled,
       final boolean blobSidecarsStorageCountersEnabled,
-      final boolean blockProductionPerformanceEnabled,
+      final boolean blockProductionAndPublishingPerformanceEnabled,
       final int blockProductionPerformanceWarningThreshold,
       final int blockPublishingPerformanceWarningThreshold) {
     this.metricsEnabled = metricsEnabled;
@@ -86,7 +86,7 @@ public class MetricsConfig {
     this.blockPerformanceEnabled = blockPerformanceEnabled;
     this.tickPerformanceEnabled = tickPerformanceEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
-    this.blockProductionPerformanceEnabled = blockProductionPerformanceEnabled;
+    this.blockProductionAndPublishingPerformanceEnabled = blockProductionAndPublishingPerformanceEnabled;
     this.blockProductionPerformanceWarningThreshold = blockProductionPerformanceWarningThreshold;
     this.blockPublishingPerformanceWarningThreshold = blockPublishingPerformanceWarningThreshold;
   }
@@ -131,8 +131,8 @@ public class MetricsConfig {
     return blockPerformanceEnabled;
   }
 
-  public boolean isBlockProductionPerformanceEnabled() {
-    return blockProductionPerformanceEnabled;
+  public boolean isBlockProductionAndPublishingPerformanceEnabled() {
+    return blockProductionAndPublishingPerformanceEnabled;
   }
 
   public int getBlockProductionPerformanceWarningThreshold() {
@@ -162,7 +162,7 @@ public class MetricsConfig {
     private int metricsPublishInterval = DEFAULT_METRICS_PUBLICATION_INTERVAL;
     private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
     private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
-    private boolean blockProductionPerformanceEnabled =
+    private boolean blockProductionAndPublishingPerformanceEnabled =
         DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED;
     private int blockProductionPerformanceWarningThreshold =
         DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD;
@@ -232,8 +232,9 @@ public class MetricsConfig {
     }
 
     public MetricsConfigBuilder blockProductionAndPublishingPerformanceEnabled(
-        final boolean blockProductionPerformanceEnabled) {
-      this.blockProductionPerformanceEnabled = blockProductionPerformanceEnabled;
+        final boolean blockProductionAndPublishingPerformanceEnabled) {
+      this.blockProductionAndPublishingPerformanceEnabled =
+          blockProductionAndPublishingPerformanceEnabled;
       return this;
     }
 
@@ -273,7 +274,7 @@ public class MetricsConfig {
           blockPerformanceEnabled,
           tickPerformanceEnabled,
           blobSidecarsStorageCountersEnabled,
-          blockProductionPerformanceEnabled,
+          blockProductionAndPublishingPerformanceEnabled,
           blockProductionPerformanceWarningThreshold,
           blockPublishingPerformanceWarningThreshold);
     }

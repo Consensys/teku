@@ -116,7 +116,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
    */
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
-  private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory;
+  private final BlockProductionAndPublishingPerformanceFactory
+      blockProductionAndPublishingPerformanceFactory;
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -160,8 +161,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-      final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory) {
-    this.blockProductionPerformanceFactory = blockProductionPerformanceFactory;
+      final BlockProductionAndPublishingPerformanceFactory
+          blockProductionAndPublishingPerformanceFactory) {
+    this.blockProductionAndPublishingPerformanceFactory =
+        blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
     this.nodeDataProvider = nodeDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -323,7 +326,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
     final BlockProductionPerformance blockProductionPerformance =
-        blockProductionPerformanceFactory.createForProduction(slot);
+        blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
         .thenCompose(
@@ -624,7 +627,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SignedBlockContainer maybeBlindedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     final BlockPublishingPerformance blockPublishingPerformance =
-        blockProductionPerformanceFactory.createForPublishing(maybeBlindedBlockContainer.getSlot());
+        blockProductionAndPublishingPerformanceFactory.createForPublishing(
+            maybeBlindedBlockContainer.getSlot());
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer, broadcastValidationLevel, blockPublishingPerformance)

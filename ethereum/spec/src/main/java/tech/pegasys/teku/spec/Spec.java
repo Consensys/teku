@@ -429,7 +429,7 @@ public class Spec {
   }
 
   public UInt64 computeTimeAtSlot(final BeaconState state, final UInt64 slot) {
-    return atSlot(slot).miscHelpers().computeTimeAtSlot(state.getGenesisTime(), slot);
+    return computeTimeAtSlot(state.getGenesisTime(), slot);
   }
 
   public UInt64 computeTimeAtSlot(final UInt64 genesisTime, final UInt64 slot) {

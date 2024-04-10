@@ -931,7 +931,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             timeProvider,
             (slot) ->
                 secondsToMillis(spec.computeTimeAtSlot(recentChainData.getGenesisTime(), slot)),
-            beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled(),
+            beaconConfig.getMetricsConfig().isBlockProductionAndPublishingPerformanceEnabled(),
             beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold(),
             beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningThreshold());
 
