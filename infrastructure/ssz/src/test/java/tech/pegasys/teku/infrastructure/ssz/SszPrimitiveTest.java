@@ -62,6 +62,7 @@ public class SszPrimitiveTest implements SszDataTestBase {
                 "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")));
   }
 
+  @SuppressWarnings("unchecked")
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   <V, S extends SszPrimitive<V>> void get_roundtrip(S data) {
