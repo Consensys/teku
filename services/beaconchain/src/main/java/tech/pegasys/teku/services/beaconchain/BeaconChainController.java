@@ -321,7 +321,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
     this.p2pDumpManager =
-        new P2PDumpManager(serviceConfig.getDataDirLayout().getP2pDumpDirectory());
+        new P2PDumpManager(
+            serviceConfig.getDataDirLayout().getDebugDataDirectory(),
+            beaconConfig.p2pConfig().isP2pDumpsToFileEnabled());
     this.futureItemsMetric =
         SettableLabelledGauge.create(
             metricsSystem,

@@ -285,6 +285,16 @@ public class P2POptions {
   private int batchVerifyMaxBatchSize = P2PConfig.DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
 
   @Option(
+      names = {"--Xp2p-dumps-to-file-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables saving P2P dumps to file.",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean p2pDumpsToFileEnabled = P2PConfig.DEFAULT_P2P_DUMPS_TO_FILE_ENABLED;
+
+  @Option(
       names = {"--Xp2p-batch-verify-signatures-strict-thread-limit-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -350,7 +360,8 @@ public class P2POptions {
                     .isGossipScoringEnabled(gossipScoringEnabled)
                     .peerRateLimit(peerRateLimit)
                     .allTopicsFilterEnabled(allTopicsFilterEnabled)
-                    .peerRequestLimit(peerRequestLimit))
+                    .peerRequestLimit(peerRequestLimit)
+                    .p2pDumpsToFileEnabled(p2pDumpsToFileEnabled))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {

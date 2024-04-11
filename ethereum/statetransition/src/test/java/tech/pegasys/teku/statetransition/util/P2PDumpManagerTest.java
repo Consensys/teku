@@ -18,12 +18,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -36,79 +35,79 @@ class P2PDumpManagerTest {
 
   @Test
   void saveGossipMessageDecodingError_shouldSaveToFile(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir);
+    final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
-    final String file =
-        manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
     final Path expectedFile = tempDir.resolve("gossip_decoding_error_messages").resolve(fileName);
-    assertThat(file).isEqualTo(expectedFile.toString());
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
 
   @Test
-  void saveGossipMessageDecodingError_shouldNotSaveToFileWhenWarningsDisabled(
-      @TempDir Path tempDir) {
-    disableP2pWarnings();
-    final P2PDumpManager manager = new P2PDumpManager(tempDir);
+  void saveGossipMessageDecodingError_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
+    final P2PDumpManager manager = new P2PDumpManager(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
-    final String file =
-        manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
-    assertThat(file).isEqualTo("");
+    manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
+    assertThat(manager.isEnabled()).isFalse();
+
+    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
+    final Path expectedFile = tempDir.resolve("gossip_decoding_error_messages").resolve(fileName);
+    checkFileNotExist(expectedFile);
   }
 
   @Test
   void saveGossipRejectedMessageToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir);
+    final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
-    final String file =
-        manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
     final Path expectedFile = tempDir.resolve("rejected_gossip_messages").resolve(fileName);
-    assertThat(file).isEqualTo(expectedFile.toString());
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
 
   @Test
-  void saveGossipRejectedMessageToFile_shouldNotSaveToFileWhenWarningsDisabled(
-      @TempDir Path tempDir) {
-    disableP2pWarnings();
-    final P2PDumpManager manager = new P2PDumpManager(tempDir);
+  void saveGossipRejectedMessageToFile_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
+    final P2PDumpManager manager = new P2PDumpManager(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
-    final String file =
-        manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
-    assertThat(file).isEqualTo("");
+    manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
+    assertThat(manager.isEnabled()).isFalse();
+
+    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
+    final Path expectedFile = tempDir.resolve("rejected_gossip_messages").resolve(fileName);
+    checkFileNotExist(expectedFile);
   }
 
   @Test
   void saveInvalidBlockToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir);
+    final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final String file =
-        manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
+    manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
 
     final String fileName =
         String.format(
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
     final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
-    assertThat(file).isEqualTo(expectedFile.toString());
     checkBytesSavedToFile(expectedFile, block.sszSerialize());
   }
 
   @Test
-  void saveInvalidBlockToFile_shouldNotSaveToFileWhenWarningsDisabled(@TempDir Path tempDir) {
-    disableP2pWarnings();
-    final P2PDumpManager manager = new P2PDumpManager(tempDir);
+  void saveInvalidBlockToFile_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
+    final P2PDumpManager manager = new P2PDumpManager(tempDir, false);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final String file =
-        manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
-    assertThat(file).isEqualTo("");
+    manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
+    assertThat(manager.isEnabled()).isFalse();
+
+    final String fileName =
+        String.format(
+            "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
+    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
+    checkFileNotExist(expectedFile);
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
@@ -120,12 +119,14 @@ class P2PDumpManagerTest {
     }
   }
 
-  private void disableP2pWarnings() {
-    LoggingConfigurator.update(
-        LoggingConfig.builder()
-            .logDirectory(".")
-            .logFileNamePrefix("prefix")
-            .includeP2pWarningsEnabled(false)
-            .build());
+  private void checkFileNotExist(final Path path) {
+    try {
+      Bytes.wrap(Files.readAllBytes(path));
+    } catch (IOException e) {
+      if (e instanceof NoSuchFileException) {
+        return;
+      }
+    }
+    fail("File was found and bytes read");
   }
 }

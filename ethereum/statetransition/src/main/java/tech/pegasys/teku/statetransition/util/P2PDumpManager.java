@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class P2PDumpManager {
@@ -30,12 +30,16 @@ public class P2PDumpManager {
   private static final String GOSSIP_REJECTED_DIR = "rejected_gossip_messages";
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
 
-  private final boolean isIncludeP2pWarnings = LoggingConfigurator.isIncludeP2pWarnings();
-
+  private final boolean enabled;
   private final Path directory;
 
-  public P2PDumpManager(final Path directory) {
+  public P2PDumpManager(final Path directory, final boolean enabled) {
+    this.enabled = enabled; // TODO fix directory structure
     this.directory = directory;
+    if (!enabled) {
+      return;
+    }
+
     if (this.directory.resolve(GOSSIP_DECODING_ERROR_DIR).toFile().mkdirs()) {
       LOG.info(
           String.format(
@@ -55,14 +59,14 @@ public class P2PDumpManager {
     }
   }
 
-  public String saveGossipMessageDecodingError(
+  public void saveGossipMessageDecodingError(
       final String topic, final String arrivalTimestamp, final Bytes originalMessage) {
-    if (!isIncludeP2pWarnings) {
-      return "";
+    if (!enabled) {
+      return;
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
-    return saveBytesToFile(
+    saveBytesToFile(
         "gossip message with decoding error",
         GOSSIP_DECODING_ERROR_DIR,
         fileName,
@@ -70,29 +74,29 @@ public class P2PDumpManager {
         originalMessage);
   }
 
-  public String saveGossipRejectedMessageToFile(
+  public void saveGossipRejectedMessageToFile(
       final String topic, final String arrivalTimestamp, final Bytes decodedMessage) {
-    if (!isIncludeP2pWarnings) {
-      return "";
+    if (!enabled) {
+      return;
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
-    return saveBytesToFile(
+    saveBytesToFile(
         "rejected gossip message", GOSSIP_REJECTED_DIR, fileName, identifiers, decodedMessage);
   }
 
-  public String saveInvalidBlockToFile(
+  public void saveInvalidBlockToFile(
       final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
-    if (!isIncludeP2pWarnings) {
-      return "";
+    if (!enabled) {
+      return;
     }
     final String fileName =
         String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
     final String identifiers = String.format("Slot: %s, Block Root: %s", slot, blockRoot);
-    return saveBytesToFile("invalid block", INVALID_BLOCK_DIR, fileName, identifiers, blockSsz);
+    saveBytesToFile("invalid block", INVALID_BLOCK_DIR, fileName, identifiers, blockSsz);
   }
 
-  private String saveBytesToFile(
+  private void saveBytesToFile(
       final String object,
       final String errorDirectory,
       final String fileName,
@@ -100,13 +104,17 @@ public class P2PDumpManager {
       final Bytes bytes) {
     final Path path = directory.resolve(errorDirectory).resolve(fileName);
     try {
-      return Files.write(path, bytes.toArray()).toString();
-
+      final String file =
+          Files.write(path, bytes.toArray())
+              .toString(); // todo change to not be printing the whole path
+      LOG.info("Saved {} bytes to file. {}. Location: {}", object, identifiers, file);
     } catch (IOException e) {
-      final String errorMessage =
-          String.format("Failed to save %s bytes to file. %s", object, identifiers);
-      LOG.error(errorMessage, e);
-      return String.format("Error saving to %s", path);
+      LOG.error("Failed to save {}} bytes to file. {}", object, identifiers, e);
     }
+  }
+
+  @VisibleForTesting
+  protected boolean isEnabled() {
+    return enabled;
   }
 }

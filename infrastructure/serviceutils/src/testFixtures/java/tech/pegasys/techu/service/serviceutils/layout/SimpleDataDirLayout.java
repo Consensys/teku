@@ -34,7 +34,7 @@ public class SimpleDataDirLayout implements DataDirLayout {
   }
 
   @Override
-  public Path getP2pDumpDirectory() {
+  public Path getDebugDataDirectory() {
     return path;
   }
 }

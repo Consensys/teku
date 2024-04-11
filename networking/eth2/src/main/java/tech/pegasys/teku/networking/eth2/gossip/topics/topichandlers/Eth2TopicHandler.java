@@ -135,12 +135,14 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {
       case REJECT:
-        final String savedFile =
-            p2pDumpManager.saveGossipRejectedMessageToFile(
-                getTopic(),
-                message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
-                message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY));
-        P2P_LOG.onGossipRejected(getTopic(), savedFile, internalValidationResult.getDescription());
+        p2pDumpManager.saveGossipRejectedMessageToFile(
+            getTopic(),
+            message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
+            message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY));
+        P2P_LOG.onGossipRejected(
+            getTopic(),
+            message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
+            internalValidationResult.getDescription());
         break;
       case IGNORE:
         LOG.trace("Ignoring message for topic: {}", this::getTopic);
@@ -168,12 +170,11 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message, final Throwable err) {
     final ValidationResult response;
     if (ExceptionUtil.hasCause(err, DecodingException.class)) {
-      final String savedFile =
-          p2pDumpManager.saveGossipMessageDecodingError(
-              getTopic(),
-              message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
-              message.getOriginalMessage());
-      P2P_LOG.onGossipMessageDecodingError(getTopic(), savedFile, err);
+      p2pDumpManager.saveGossipMessageDecodingError(
+          getTopic(),
+          message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
+          message.getOriginalMessage());
+      P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.hasCause(err, RejectedExecutionException.class)) {
       LOG.warn(

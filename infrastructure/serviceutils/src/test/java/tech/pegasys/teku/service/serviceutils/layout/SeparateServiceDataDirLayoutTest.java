@@ -30,9 +30,7 @@ class SeparateServiceDataDirLayoutTest {
 
   @BeforeEach
   void setUp() {
-    layout =
-        new SeparateServiceDataDirLayout(
-            tempDir, Optional.empty(), Optional.empty(), Optional.empty());
+    layout = new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
   }
 
   @Test

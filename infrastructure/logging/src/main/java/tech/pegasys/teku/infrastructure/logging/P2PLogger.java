@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.logging;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -32,40 +33,40 @@ public class P2PLogger {
   }
 
   public void onGossipMessageDecodingError(
-      final String topic, final String savedFile, final Throwable error) {
+      final String topic, final Bytes originalMessage, final Throwable error) {
     if (isIncludeP2pWarnings) {
       log.warn(
-          "Failed to decode gossip message on topic {}, raw message location: {}",
+          "Failed to decode gossip message on topic {}, raw message: {}",
           topic,
-          savedFile,
+          originalMessage,
           error);
     }
   }
 
   public void onGossipRejected(
-      final String topic, final String savedFile, final Optional<String> description) {
+      final String topic, final Bytes decodedMessage, final Optional<String> description) {
     if (isIncludeP2pWarnings) {
       log.warn(
-          "Rejecting gossip message on topic {}, reason: {}, decoded message location: {}",
+          "Rejecting gossip message on topic {}, reason: {}, decoded message: {}",
           topic,
           description.orElse("failed validation"),
-          savedFile);
+          decodedMessage);
     }
   }
 
   public void onInvalidBlock(
       final UInt64 slot,
       final Bytes32 blockRoot,
-      final String savedFile,
+      final Bytes blockSsz,
       final String failureReason,
       final Optional<Throwable> failureCause) {
     if (isIncludeP2pWarnings) {
       log.warn(
-          "Rejecting invalid block at slot {} with root {} because {}. Full block data location: {}",
+          "Rejecting invalid block at slot {} with root {} because {}. Full block data: {}",
           slot,
           blockRoot,
           failureReason,
-          savedFile,
+          blockSsz,
           failureCause.orElse(null));
     }
   }
