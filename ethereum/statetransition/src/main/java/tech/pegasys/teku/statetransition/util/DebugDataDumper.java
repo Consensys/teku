@@ -14,9 +14,9 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,7 +68,6 @@ public class DebugDataDumper {
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
-    checkTopicDirExists(topicPath);
     saveBytesToFile(
         "gossip message with decoding error", topicPath.resolve(fileName), originalMessage);
   }
@@ -80,7 +79,6 @@ public class DebugDataDumper {
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
-    checkTopicDirExists(topicPath);
     saveBytesToFile("rejected gossip message", topicPath.resolve(fileName), decodedMessage);
   }
 
@@ -101,18 +99,25 @@ public class DebugDataDumper {
     try {
       Files.write(path, bytes.toArray());
       LOG.info("Saved {} bytes to file. Location: {}", object, relativeFilePath);
+    } catch (NoSuchFileException e) {
+      if (!path.getParent().toFile().mkdirs()) {
+        LOG.error("Failed to save {} bytes to file.", object, e);
+        return;
+      }
+      saveAfterCreatingTopicDirectory(object, relativeFilePath, bytes);
     } catch (IOException e) {
       LOG.error("Failed to save {} bytes to file.", object, e);
     }
   }
 
-  private void checkTopicDirExists(final Path topicDir) {
-    final File topicDirFile = directory.resolve(topicDir).toFile();
-    if (topicDirFile.exists()) {
-      return;
-    }
-    if (!topicDirFile.mkdirs()) {
-      LOG.debug("Failed to create topic directory: {}", topicDir);
+  private void saveAfterCreatingTopicDirectory(
+      final String object, final Path relativeFilePath, final Bytes bytes) {
+    final Path path = directory.resolve(relativeFilePath);
+    try {
+      Files.write(path, bytes.toArray());
+      LOG.info("Saved {} bytes to file. Location: {}", object, relativeFilePath);
+    } catch (IOException e) {
+      LOG.error("Failed to save {} bytes to file.", object, e);
     }
   }
 
