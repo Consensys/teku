@@ -607,7 +607,7 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder p2pDumpManager(final DebugDataDumper debugDataDumper) {
+  public Eth2P2PNetworkBuilder debugDataDumper(final DebugDataDumper debugDataDumper) {
     this.debugDataDumper = debugDataDumper;
     return this;
   }

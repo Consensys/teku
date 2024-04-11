@@ -724,7 +724,7 @@ public class Eth2P2PNetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder p2pDumpManager(final DebugDataDumper debugDataDumper) {
+    public Eth2P2PNetworkBuilder debugDataDumper(final DebugDataDumper debugDataDumper) {
       checkNotNull(debugDataDumper);
       this.debugDataDumper = debugDataDumper;
       return this;

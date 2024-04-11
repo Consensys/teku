@@ -1113,7 +1113,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .specProvider(spec)
             .kzg(kzg)
             .recordMessageArrival(true)
-            .p2pDumpManager(debugDataDumper)
+            .debugDataDumper(debugDataDumper)
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(
