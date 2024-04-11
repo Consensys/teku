@@ -126,7 +126,6 @@ public class SyncingNodeManager {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            debugDataDumper,
             new StubMetricsSystem());
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =

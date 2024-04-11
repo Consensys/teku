@@ -52,7 +52,6 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -107,7 +106,6 @@ public class ProfilingRun {
               BlobSidecarManager.NOOP,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              mock(DebugDataDumper.class),
               metricsSystem);
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
@@ -202,7 +200,6 @@ public class ProfilingRun {
               BlobSidecarManager.NOOP,
               new NoopForkChoiceNotifier(),
               transitionBlockValidator,
-              mock(DebugDataDumper.class),
               metricsSystem);
       BlockImporter blockImporter =
           new BlockImporter(

@@ -94,7 +94,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -181,7 +180,6 @@ public class BlockManagerTest {
             blobSidecarManager,
             forkChoiceNotifier,
             transitionBlockValidator,
-            mock(DebugDataDumper.class),
             metricsSystem);
     this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false, Optional.empty()));
     this.blockImporter =

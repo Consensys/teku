@@ -75,6 +75,7 @@ import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.noop.NoOpDebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -155,7 +156,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlobSidecarManager blobSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem) {
     this(
         spec,
@@ -167,7 +167,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         false,
-        debugDataDumper,
+        new NoOpDebugDataDumper(),
         metricsSystem);
   }
 
