@@ -30,8 +30,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
     extends AbstractSszPrimitiveSchema<UInt64, T> {
 
+  private final DeserializableTypeDefinition<T> typeDefinition;
+
   protected AbstractSszUInt64Schema() {
     super(64);
+    typeDefinition = createUInt64Definition(this);
   }
 
   @Override
@@ -98,7 +101,7 @@ public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
 
   @Override
   public DeserializableTypeDefinition<T> getJsonTypeDefinition() {
-    return createUInt64Definition(this);
+    return typeDefinition;
   }
 
   @Override
