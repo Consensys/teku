@@ -49,7 +49,7 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
     // our implementation does not fail importing when the GVR in the interchange mismatches the one
     // from the spec
     if (testData.name.startsWith("wrong_genesis_validators_root")) {
-      LOG.info("Not going to run {}", testData.name);
+      LOG.info("Skipping {}", testData.name);
       return;
     }
 
