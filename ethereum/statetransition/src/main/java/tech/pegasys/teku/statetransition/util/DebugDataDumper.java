@@ -32,7 +32,7 @@ public class DebugDataDumper {
   private static final String REJECTED_SUB_DIR = "rejected";
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
 
-  private final boolean enabled;
+  private boolean enabled;
   private final Path directory;
 
   public DebugDataDumper(final Path directory, final boolean enabled) {
@@ -43,21 +43,14 @@ public class DebugDataDumper {
     }
 
     final Path gossipMessagesPath = this.directory.resolve(GOSSIP_MESSAGES_DIR);
-    if (gossipMessagesPath.toFile().mkdirs()) {
-      LOG.debug("{} directory has been created to save gossip messages.", GOSSIP_MESSAGES_DIR);
-    }
-    if (gossipMessagesPath.resolve(DECODING_ERROR_SUB_DIR).toFile().mkdirs()) {
-      LOG.debug(
-          "{} directory has been created to save gossip messages with decoding errors.",
-          DECODING_ERROR_SUB_DIR);
-    }
-    if (gossipMessagesPath.resolve(REJECTED_SUB_DIR).toFile().mkdirs()) {
-      LOG.debug(
-          "{} directory has been created to save rejected gossip messages.", REJECTED_SUB_DIR);
-    }
-    if (this.directory.resolve(INVALID_BLOCK_DIR).toFile().mkdirs()) {
-      LOG.debug("{} directory has been created to save invalid blocks.", INVALID_BLOCK_DIR);
-    }
+    createDirectory(gossipMessagesPath, GOSSIP_MESSAGES_DIR, "gossip messages");
+    createDirectory(
+        gossipMessagesPath.resolve(DECODING_ERROR_SUB_DIR),
+        DECODING_ERROR_SUB_DIR,
+        "gossip messages with decoding errors");
+    createDirectory(
+        gossipMessagesPath.resolve(REJECTED_SUB_DIR), REJECTED_SUB_DIR, "rejected gossip messages");
+    createDirectory(this.directory.resolve(INVALID_BLOCK_DIR), INVALID_BLOCK_DIR, "invalid blocks");
   }
 
   public void saveGossipMessageDecodingError(
@@ -118,6 +111,25 @@ public class DebugDataDumper {
       LOG.info("Saved {} bytes to file. Location: {}", object, relativeFilePath);
     } catch (IOException e) {
       LOG.error("Failed to save {} bytes to file.", object, e);
+      if (!path.getParent().toFile().exists()) {
+        LOG.error(
+            "{} directory does not exist. Disabling saving debug data to file.",
+            relativeFilePath.getParent());
+      }
+    }
+  }
+
+  private void createDirectory(final Path path, final String directoryName, final String object) {
+    if (path.toFile().mkdirs()) {
+      LOG.debug("{} directory has been created to save {}.", directoryName, object);
+    } else {
+      if (!path.toFile().exists()) {
+        this.enabled = false;
+        LOG.error(
+            "Unable to create {} directory to save {}. Disabling saving debug data to file.",
+            directoryName,
+            object);
+      }
     }
   }
 
