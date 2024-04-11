@@ -27,9 +27,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class P2PDumpManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final String GOSSIP_DECODING_ERROR_DIR = "gossip-decoding-error-messages";
-  private static final String GOSSIP_REJECTED_DIR = "rejected-gossip-messages";
-  private static final String INVALID_BLOCK_DIR = "invalid-blocks";
+  private static final String GOSSIP_MESSAGES_DIR = "gossip_messages";
+  private static final String DECODING_ERROR_SUB_DIR = "decoding_error";
+  private static final String REJECTED_SUB_DIR = "rejected";
+  private static final String INVALID_BLOCK_DIR = "invalid_blocks";
 
   private final boolean enabled;
   private final Path directory;
@@ -41,17 +42,18 @@ public class P2PDumpManager {
       return;
     }
 
-    if (this.directory.resolve(GOSSIP_DECODING_ERROR_DIR).toFile().mkdirs()) {
-      LOG.info(
-          String.format(
-              "%s directory has been created to save gossip messages with decoding errors.",
-              GOSSIP_DECODING_ERROR_DIR));
+    final Path gossipMessagesPath = this.directory.resolve(GOSSIP_MESSAGES_DIR);
+    if (gossipMessagesPath.toFile().mkdirs()) {
+      LOG.info("{} directory has been created to save gossip messages.", GOSSIP_MESSAGES_DIR);
     }
-    if (this.directory.resolve(GOSSIP_REJECTED_DIR).toFile().mkdirs()) {
+    if (gossipMessagesPath.resolve(DECODING_ERROR_SUB_DIR).toFile().mkdirs()) {
       LOG.info(
-          String.format(
-              "%s directory has been created to save rejected gossip messages.",
-              GOSSIP_REJECTED_DIR));
+          "{} directory has been created to save gossip messages with decoding errors.",
+          DECODING_ERROR_SUB_DIR);
+    }
+    if (gossipMessagesPath.resolve(REJECTED_SUB_DIR).toFile().mkdirs()) {
+      LOG.info(
+          "{}} directory has been created to save rejected gossip messages.", REJECTED_SUB_DIR);
     }
     if (this.directory.resolve(INVALID_BLOCK_DIR).toFile().mkdirs()) {
       LOG.info(
@@ -67,12 +69,13 @@ public class P2PDumpManager {
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
-    final Path topicPath = Path.of(GOSSIP_DECODING_ERROR_DIR).resolve(topic);
+    final Path topicPath =
+        Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
     checkTopicDirExists(topicPath);
     saveBytesToFile(
         "gossip message with decoding error",
         identifiers,
-        Path.of(GOSSIP_DECODING_ERROR_DIR).resolve(topic).resolve(fileName),
+        topicPath.resolve(fileName),
         originalMessage);
   }
 
@@ -83,7 +86,7 @@ public class P2PDumpManager {
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
-    final Path topicPath = Path.of(GOSSIP_REJECTED_DIR).resolve(topic);
+    final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
     checkTopicDirExists(topicPath);
     saveBytesToFile(
         "rejected gossip message", identifiers, topicPath.resolve(fileName), decodedMessage);

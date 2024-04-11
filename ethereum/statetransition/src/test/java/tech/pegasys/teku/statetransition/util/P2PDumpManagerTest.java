@@ -43,7 +43,11 @@ class P2PDumpManagerTest {
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final Path expectedFile =
-        tempDir.resolve("gossip-decoding-error-messages").resolve(topic).resolve(fileName);
+        tempDir
+            .resolve("gossip_messages")
+            .resolve("decoding_error")
+            .resolve(topic)
+            .resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
 
@@ -56,7 +60,8 @@ class P2PDumpManagerTest {
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("gossip-decoding-error-messages").resolve(fileName);
+    final Path expectedFile =
+        tempDir.resolve("gossip_messages").resolve("decoding_error").resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 
@@ -70,7 +75,7 @@ class P2PDumpManagerTest {
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final Path expectedFile =
-        tempDir.resolve("rejected-gossip-messages").resolve(topic).resolve(fileName);
+        tempDir.resolve("gossip_messages").resolve("rejected").resolve(topic).resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
 
@@ -83,7 +88,8 @@ class P2PDumpManagerTest {
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("rejected-gossip-messages").resolve(fileName);
+    final Path expectedFile =
+        tempDir.resolve("gossip_messages").resolve("rejected").resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 
@@ -96,7 +102,7 @@ class P2PDumpManagerTest {
     final String fileName =
         String.format(
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
-    final Path expectedFile = tempDir.resolve("invalid-blocks").resolve(fileName);
+    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
     checkBytesSavedToFile(expectedFile, block.sszSerialize());
   }
 
@@ -110,7 +116,7 @@ class P2PDumpManagerTest {
     final String fileName =
         String.format(
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
-    final Path expectedFile = tempDir.resolve("invalid-blocks").resolve(fileName);
+    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 
