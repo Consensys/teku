@@ -68,18 +68,16 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
     final LocalSlashingProtector slashingProtector =
         new LocalSlashingProtector(SyncDataAccessor.create(tempDir), tempDir);
     testData.steps.forEach(
-        step ->
-            runStep(step, testData.genesisValidatorsRoot, importer, slashingProtector, tempDir));
+        step -> runStep(step, testData.genesisValidatorsRoot, importer, slashingProtector));
   }
 
   private void runStep(
       final Step step,
       final Bytes32 genesisValidatorsRoot,
       final SlashingProtectionImporter importer,
-      final LocalSlashingProtector slashingProtector,
-      final Path tempDir) {
-    final Path importFile = tempDir.resolve("import.yml");
+      final LocalSlashingProtector slashingProtector) {
     try {
+      final Path importFile = Files.createTempFile("import", ".yml");
       TestDataUtils.writeJsonToFile(step.interchange, importFile);
       importer.initialise(importFile.toFile());
       // cleanup
