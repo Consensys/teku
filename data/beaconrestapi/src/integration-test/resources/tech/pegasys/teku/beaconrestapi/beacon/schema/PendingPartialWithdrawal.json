@@ -1,7 +1,7 @@
 {
   "title" : "PendingPartialWithdrawal",
   "type" : "object",
-  "required" : [ "index", "amount", "epoch" ],
+  "required" : [ "index", "amount", "withdrawable_epoch" ],
   "properties" : {
     "index" : {
       "type" : "string",
@@ -15,7 +15,7 @@
       "example" : "1",
       "format" : "uint64"
     },
-    "epoch" : {
+    "withdrawable_epoch" : {
       "type" : "string",
       "description" : "unsigned 64 bit integer",
       "example" : "1",

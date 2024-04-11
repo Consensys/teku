@@ -28,15 +28,15 @@ public class PendingPartialWithdrawal {
   public final UInt64 amount;
 
   @JsonProperty("withdrawable_epoch")
-  public final UInt64 epoch;
+  public final UInt64 withdrawableEpoch;
 
   public PendingPartialWithdrawal(
       @JsonProperty("index") int index,
       @JsonProperty("amount") UInt64 amount,
-      @JsonProperty("withdrawable_epoch") UInt64 epoch) {
+      @JsonProperty("withdrawable_epoch") UInt64 withdrawableEpoch) {
     this.index = index;
     this.amount = amount;
-    this.epoch = epoch;
+    this.withdrawableEpoch = withdrawableEpoch;
   }
 
   public PendingPartialWithdrawal(
@@ -44,7 +44,7 @@ public class PendingPartialWithdrawal {
           pendingPartialWithdrawal) {
     this.index = pendingPartialWithdrawal.getIndex();
     this.amount = pendingPartialWithdrawal.getAmount();
-    this.epoch = pendingPartialWithdrawal.getEpoch();
+    this.withdrawableEpoch = pendingPartialWithdrawal.getWithdrawableEpoch();
   }
 
   public tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal
@@ -61,6 +61,6 @@ public class PendingPartialWithdrawal {
         .create(
             SszUInt64.of(UInt64.valueOf(this.index)),
             SszUInt64.of(this.amount),
-            SszUInt64.of(this.epoch));
+            SszUInt64.of(this.withdrawableEpoch));
   }
 }
