@@ -15,8 +15,10 @@ package tech.pegasys.teku.infrastructure.ssz.primitive;
 
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
+public class SszByte extends AbstractSszPrimitive<Byte> {
 
   public static final SszByte ZERO = SszByte.of(0);
 
@@ -30,5 +32,15 @@ public class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
 
   private SszByte(Byte value) {
     super(value, SszPrimitiveSchemas.BYTE_SCHEMA);
+  }
+
+  @Override
+  public AbstractSszPrimitiveSchema<Byte, SszByte> getSchema() {
+    return (AbstractSszPrimitiveSchema<Byte, SszByte>) super.getSchema();
+  }
+
+  @Override
+  public TreeNode getBackingNode() {
+    return getSchema().createBackingNode(this);
   }
 }

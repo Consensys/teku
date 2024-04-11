@@ -61,7 +61,7 @@ public final class SszPrimitiveTypeDefinitions {
   public static final DeserializableTypeDefinition<SszBytes4> SSZ_BYTES4_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTES4_SCHEMA, CoreTypes.BYTES4_TYPE);
 
-  public static final DeserializableTypeDefinition<SszUInt64> SSZ_UINT64_TYPE_DEFINITION =
+  public static final DeserializableTypeDefinition<? extends SszUInt64> SSZ_UINT64_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT64_SCHEMA, CoreTypes.UINT64_TYPE);
 
   public static final DeserializableTypeDefinition<SszUInt256> SSZ_UINT256_TYPE_DEFINITION =
