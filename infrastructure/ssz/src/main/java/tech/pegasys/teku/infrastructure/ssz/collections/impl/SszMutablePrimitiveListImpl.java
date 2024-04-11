@@ -24,8 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SszMutablePrimitiveListImpl<
-        ElementT, SszElementT extends SszPrimitive<ElementT>>
+public class SszMutablePrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends AbstractSszMutablePrimitiveCollection<ElementT, SszElementT>
     implements SszMutablePrimitiveList<ElementT, SszElementT> {
 

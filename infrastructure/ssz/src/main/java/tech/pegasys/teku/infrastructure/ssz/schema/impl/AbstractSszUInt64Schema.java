@@ -1,20 +1,31 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
-import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.createUInt64Definition;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
-
-import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.createUInt64Definition;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
     extends AbstractSszPrimitiveSchema<UInt64, T> {
@@ -59,8 +70,7 @@ public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
   }
 
   @Override
-  public TreeNode updatePackedNode(
-      TreeNode srcNode, List<PackedNodeUpdate<UInt64, T>> updates) {
+  public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate<UInt64, T>> updates) {
     if (updates.size() == 4) {
       byte[] data = new byte[32];
       for (int i = 0; i < 4; i++) {

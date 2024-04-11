@@ -18,8 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 /**
  * A wrapper class for SSZ primitive values. {@link SszPrimitive} classes has no mutable versions
  */
-public interface SszPrimitive<ValueType>
-    extends SszData {
+public interface SszPrimitive<ValueType> extends SszData {
 
   /** Returns wrapped primitive value */
   ValueType get();

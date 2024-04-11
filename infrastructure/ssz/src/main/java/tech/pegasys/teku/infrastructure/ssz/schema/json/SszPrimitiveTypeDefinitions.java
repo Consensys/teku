@@ -66,7 +66,8 @@ public final class SszPrimitiveTypeDefinitions {
   public static final DeserializableTypeDefinition<? extends SszUInt64> SSZ_UINT64_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT64_SCHEMA, CoreTypes.UINT64_TYPE);
 
-  public static <T extends SszUInt64> DeserializableTypeDefinition<T> createUInt64Definition(SszPrimitiveSchema<UInt64, T> schema) {
+  public static <T extends SszUInt64> DeserializableTypeDefinition<T> createUInt64Definition(
+      SszPrimitiveSchema<UInt64, T> schema) {
     return new SszTypeDefinitionWrapper<>(schema, CoreTypes.UINT64_TYPE);
   }
 

@@ -38,8 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
  *
  * @param <SszDataT> Class of the basic view of this type
  */
-public abstract class AbstractSszPrimitiveSchema<
-        DataT, SszDataT extends SszPrimitive<DataT>>
+public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT>>
     implements SszPrimitiveSchema<DataT, SszDataT> {
 
   protected static Bytes updateExtending(Bytes origBytes, int origOff, Bytes newBytes) {
@@ -57,7 +56,6 @@ public abstract class AbstractSszPrimitiveSchema<
       return dest;
     }
   }
-
 
   private final int bitsSize;
   private final int sszSize;

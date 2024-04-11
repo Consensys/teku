@@ -116,8 +116,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
     throw new UnsupportedOperationException();
   }
 
-  private static class NodeUpdate<
-      ElementT, SszElementT extends SszPrimitive<ElementT>> {
+  private static class NodeUpdate<ElementT, SszElementT extends SszPrimitive<ElementT>> {
     private final List<PackedNodeUpdate<ElementT, SszElementT>> updates;
     private final long nodeGIndex;
 

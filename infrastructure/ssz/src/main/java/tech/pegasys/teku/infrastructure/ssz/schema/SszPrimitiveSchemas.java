@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeD
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -159,16 +158,15 @@ public final class SszPrimitiveSchemas {
         }
       };
 
-
   ;
 
-
-  public static final AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA = new AbstractSszUInt64Schema<>() {
-    @Override
-    public SszUInt64 boxed(UInt64 rawValue) {
-      return SszUInt64.of(rawValue);
-    }
-  };
+  public static final AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA =
+      new AbstractSszUInt64Schema<>() {
+        @Override
+        public SszUInt64 boxed(UInt64 rawValue) {
+          return SszUInt64.of(rawValue);
+        }
+      };
 
   public static final AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
