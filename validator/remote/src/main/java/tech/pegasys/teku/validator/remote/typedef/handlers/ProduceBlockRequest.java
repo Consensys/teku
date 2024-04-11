@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BUILDER_BOOST_FACTOR;
@@ -126,6 +127,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             GET_UNSIGNED_BLOCK_V3,
             Map.of("slot", slot.toString()),
             queryParams,
+            emptyMap(),
             headers,
             this.responseHandler)
         .map(

@@ -35,11 +35,11 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   UInt64 getMaxEffectiveBalanceElectra();
 
-  UInt64 getPendingBalanceDepositsLimit();
+  int getPendingBalanceDepositsLimit();
 
-  UInt64 getPendingPartialWithdrawalsLimit();
+  int getPendingPartialWithdrawalsLimit();
 
-  UInt64 getPendingConsolidationsLimit();
+  int getPendingConsolidationsLimit();
 
   int getWhistleblowerRewardQuotientElectra();
 

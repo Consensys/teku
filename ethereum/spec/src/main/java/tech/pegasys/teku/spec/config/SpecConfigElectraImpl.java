@@ -29,9 +29,9 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxExecutionLayerExits;
   private final UInt64 minActivationBalance;
   private final UInt64 maxEffectiveBalanceElectra;
-  private final UInt64 pendingBalanceDepositsLimit;
-  private final UInt64 pendingPartialWithdrawalsLimit;
-  private final UInt64 pendingConsolidationsLimit;
+  private final int pendingBalanceDepositsLimit;
+  private final int pendingPartialWithdrawalsLimit;
+  private final int pendingConsolidationsLimit;
   private final int whistleblowerRewardQuotientElectra;
   private final int minSlashingPenaltyQuotientElectra;
   private final int maxPartialWithdrawalsPerPayload;
@@ -49,9 +49,9 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final UInt64 maxPerEpochActivationExitChurnLimit,
       final UInt64 minActivationBalance,
       final UInt64 maxEffectiveBalanceElectra,
-      final UInt64 pendingBalanceDepositsLimit,
-      final UInt64 pendingPartialWithdrawalsLimit,
-      final UInt64 pendingConsolidationsLimit,
+      final int pendingBalanceDepositsLimit,
+      final int pendingPartialWithdrawalsLimit,
+      final int pendingConsolidationsLimit,
       final int whistleblowerRewardQuotientElectra,
       final int minSlashingPenaltyQuotientElectra,
       final int maxPartialWithdrawalsPerPayload,
@@ -109,17 +109,17 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public UInt64 getPendingBalanceDepositsLimit() {
+  public int getPendingBalanceDepositsLimit() {
     return pendingBalanceDepositsLimit;
   }
 
   @Override
-  public UInt64 getPendingPartialWithdrawalsLimit() {
+  public int getPendingPartialWithdrawalsLimit() {
     return pendingPartialWithdrawalsLimit;
   }
 
   @Override
-  public UInt64 getPendingConsolidationsLimit() {
+  public int getPendingConsolidationsLimit() {
     return pendingConsolidationsLimit;
   }
 

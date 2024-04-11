@@ -57,6 +57,30 @@ public class BeaconStateElectra extends BeaconStateAltair {
   @JsonProperty("deposit_receipts_start_index")
   public final UInt64 depositReceiptsStartIndex;
 
+  @JsonProperty("deposit_balance_to_consume")
+  public final UInt64 depositBalanceToConsume;
+
+  @JsonProperty("exit_balance_to_consume")
+  public final UInt64 exitBalanceToConsume;
+
+  @JsonProperty("earliest_exit_epoch")
+  public final UInt64 earliestExitEpoch;
+
+  @JsonProperty("consolidation_balance_to_consume")
+  public final UInt64 consolidationBalanceToConsume;
+
+  @JsonProperty("earliest_consolidation_epoch")
+  public final UInt64 earliestConsolidationEpoch;
+
+  @JsonProperty("pending_balance_deposits")
+  public final List<PendingBalanceDeposit> pendingBalanceDeposits;
+
+  @JsonProperty("pending_partial_withdrawals")
+  public final List<PendingPartialWithdrawal> pendingPartialWithdrawals;
+
+  @JsonProperty("pending_consolidations")
+  public final List<PendingConsolidation> pendingConsolidations;
+
   public BeaconStateElectra(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
       @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot,
@@ -87,7 +111,18 @@ public class BeaconStateElectra extends BeaconStateAltair {
       @JsonProperty("next_withdrawal_index") final UInt64 nextWithdrawalIndex,
       @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex,
       @JsonProperty("historical_summaries") final List<HistoricalSummary> historicalSummaries,
-      @JsonProperty("deposit_receipts_start_index") final UInt64 depositReceiptsStartIndex) {
+      @JsonProperty("deposit_receipts_start_index") final UInt64 depositReceiptsStartIndex,
+      @JsonProperty("deposit_balance_to_consume") final UInt64 depositBalanceToConsume,
+      @JsonProperty("exit_balance_to_consume") final UInt64 exitBalanceToConsume,
+      @JsonProperty("earliest_exit_epoch") final UInt64 earliestExitEpoch,
+      @JsonProperty("consolidation_balance_to_consume") final UInt64 consolidationBalanceToConsume,
+      @JsonProperty("earliest_consolidation_epoch") final UInt64 earliestConsolidationEpoch,
+      @JsonProperty("pending_balance_deposits")
+          final List<PendingBalanceDeposit> pendingBalanceDeposits,
+      @JsonProperty("pending_partial_withdrawals")
+          final List<PendingPartialWithdrawal> pendingPartialWithdrawals,
+      @JsonProperty("pending_consolidations")
+          final List<PendingConsolidation> pendingConsolidations) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -118,6 +153,14 @@ public class BeaconStateElectra extends BeaconStateAltair {
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
     this.historicalSummaries = historicalSummaries;
     this.depositReceiptsStartIndex = depositReceiptsStartIndex;
+    this.depositBalanceToConsume = depositBalanceToConsume;
+    this.exitBalanceToConsume = exitBalanceToConsume;
+    this.earliestExitEpoch = earliestExitEpoch;
+    this.consolidationBalanceToConsume = consolidationBalanceToConsume;
+    this.earliestConsolidationEpoch = earliestConsolidationEpoch;
+    this.pendingBalanceDeposits = pendingBalanceDeposits;
+    this.pendingPartialWithdrawals = pendingPartialWithdrawals;
+    this.pendingConsolidations = pendingConsolidations;
   }
 
   public BeaconStateElectra(final BeaconState beaconState) {
@@ -132,6 +175,17 @@ public class BeaconStateElectra extends BeaconStateAltair {
     this.historicalSummaries =
         electra.getHistoricalSummaries().stream().map(HistoricalSummary::new).toList();
     this.depositReceiptsStartIndex = electra.getDepositReceiptsStartIndex();
+    this.depositBalanceToConsume = electra.getDepositBalanceToConsume();
+    this.exitBalanceToConsume = electra.getExitBalanceToConsume();
+    this.earliestExitEpoch = electra.getEarliestExitEpoch();
+    this.consolidationBalanceToConsume = electra.getConsolidationBalanceToConsume();
+    this.earliestConsolidationEpoch = electra.getEarliestConsolidationEpoch();
+    this.pendingBalanceDeposits =
+        electra.getPendingBalanceDeposits().stream().map(PendingBalanceDeposit::new).toList();
+    this.pendingPartialWithdrawals =
+        electra.getPendingPartialWithdrawals().stream().map(PendingPartialWithdrawal::new).toList();
+    this.pendingConsolidations =
+        electra.getPendingConsolidations().stream().map(PendingConsolidation::new).toList();
   }
 
   @Override
@@ -153,6 +207,15 @@ public class BeaconStateElectra extends BeaconStateAltair {
                     BeaconStateSchemaElectra.required(
                             mutableBeaconStateElectra.getBeaconStateSchema())
                         .getHistoricalSummariesSchema(),
+                    BeaconStateSchemaElectra.required(
+                            mutableBeaconStateElectra.getBeaconStateSchema())
+                        .getPendingBalanceDepositsSchema(),
+                    BeaconStateSchemaElectra.required(
+                            mutableBeaconStateElectra.getBeaconStateSchema())
+                        .getPendingPartialWithdrawalsSchema(),
+                    BeaconStateSchemaElectra.required(
+                            mutableBeaconStateElectra.getBeaconStateSchema())
+                        .getPendingConsolidationsSchema(),
                     this));
   }
 
@@ -164,6 +227,16 @@ public class BeaconStateElectra extends BeaconStateAltair {
       final SszListSchema<
               tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
           historicalSummariesSchema,
+      final SszListSchema<
+              tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit, ?>
+          pendingBalanceDepositsSchema,
+      final SszListSchema<
+              tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal,
+              ?>
+          pendingPartialWithdrawalsSchema,
+      final SszListSchema<
+              tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation, ?>
+          pendingConsolidationsSchema,
       final BeaconStateElectra instance) {
 
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
@@ -181,5 +254,31 @@ public class BeaconStateElectra extends BeaconStateAltair {
                     historicalSummary -> historicalSummary.asInternalHistoricalSummary(specVersion))
                 .toList()));
     state.setDepositReceiptsStartIndex(instance.depositReceiptsStartIndex);
+    state.setDepositBalanceToConsume(instance.depositBalanceToConsume);
+    state.setExitBalanceToConsume(instance.exitBalanceToConsume);
+    state.setEarliestExitEpoch(instance.earliestExitEpoch);
+    state.setConsolidationBalanceToConsume(instance.consolidationBalanceToConsume);
+    state.setEarliestConsolidationEpoch(instance.earliestConsolidationEpoch);
+    state.setPendingBalanceDeposits(
+        pendingBalanceDepositsSchema.createFromElements(
+            instance.pendingBalanceDeposits.stream()
+                .map(
+                    pendingBalanceDeposit ->
+                        pendingBalanceDeposit.asInternalPendingBalanceDeposit(specVersion))
+                .toList()));
+    state.setPendingPartialWithdrawals(
+        pendingPartialWithdrawalsSchema.createFromElements(
+            instance.pendingPartialWithdrawals.stream()
+                .map(
+                    pendingPartialWithdrawal ->
+                        pendingPartialWithdrawal.asInternalPendingPartialWithdrawal(specVersion))
+                .toList()));
+    state.setPendingConsolidations(
+        pendingConsolidationsSchema.createFromElements(
+            instance.pendingConsolidations.stream()
+                .map(
+                    pendingConsolidation ->
+                        pendingConsolidation.asInternalPendingConsolidation(specVersion))
+                .toList()));
   }
 }
