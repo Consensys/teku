@@ -47,7 +47,7 @@ public class OperationPoolEntryTest {
         .containsExactly(b2, b1, b0);
   }
 
-  private static class TestClass extends AbstractSszPrimitive<Bytes4, SszBytes4>
+  private static class TestClass extends AbstractSszPrimitive<Bytes4>
       implements MessageWithValidatorId {
 
     TestClass(final Bytes4 b) {

@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SszPrimitiveTest implements SszDataTestBase {
@@ -63,9 +64,10 @@ public class SszPrimitiveTest implements SszDataTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  <V, S extends SszPrimitive<V, S>> void get_roundtrip(S data) {
+  <V, S extends SszPrimitive<V>> void get_roundtrip(S data) {
     V rawVal = data.get();
-    S data1 = data.getSchema().boxed(rawVal);
+    SszPrimitiveSchema<V, S> schema = (SszPrimitiveSchema<V, S>) data.getSchema();
+    S data1 = schema.boxed(rawVal);
 
     SszDataAssert.assertThatSszData(data1).isEqualByAllMeansTo(data);
 

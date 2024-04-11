@@ -26,7 +26,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void getElement_shouldReturnUnboxedElement(
+  default <ElT, SszT extends SszPrimitive<ElT>> void getElement_shouldReturnUnboxedElement(
       SszPrimitiveCollection<ElT, SszT> collection) {
     for (int i = 0; i < collection.size(); i++) {
       assertThat(collection.getElement(i)).isEqualTo(collection.get(i).get());
@@ -49,7 +49,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void asListUnboxed_shouldReturnAllElements(
+  default <ElT, SszT extends SszPrimitive<ElT>> void asListUnboxed_shouldReturnAllElements(
       SszPrimitiveCollection<ElT, SszT> collection) {
     List<ElT> listUnboxed = collection.asListUnboxed();
     assertThat(listUnboxed.size()).isEqualTo(collection.size());
@@ -60,7 +60,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void asListUnboxed_isUnmodifiable(
+  default <ElT, SszT extends SszPrimitive<ElT>> void asListUnboxed_isUnmodifiable(
       SszPrimitiveCollection<ElT, SszT> collection) {
     List<ElT> list = collection.asListUnboxed();
     ElT newElement = collection.getSchema().getElementSchema().getDefault().get();
@@ -70,7 +70,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void streamUnboxed_shouldReturnAllElements(
+  default <ElT, SszT extends SszPrimitive<ElT>> void streamUnboxed_shouldReturnAllElements(
       SszPrimitiveCollection<ElT, SszT> collection) {
     assertThat(collection.streamUnboxed()).containsExactlyElementsOf(collection.asListUnboxed());
   }

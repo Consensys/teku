@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.primitive;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszUInt64Schema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -47,12 +48,7 @@ public class SszUInt64 extends AbstractSszPrimitive<UInt64> {
   }
 
   @Override
-  public AbstractSszPrimitiveSchema<UInt64, SszUInt64> getSchema() {
-    return (AbstractSszPrimitiveSchema<UInt64, SszUInt64>) super.getSchema();
-  }
-
-  @Override
-  public TreeNode getBackingNode() {
-    return getSchema().createBackingNode(this);
+  public AbstractSszUInt64Schema<? extends SszUInt64> getSchema() {
+    return (AbstractSszUInt64Schema<? extends SszUInt64>) super.getSchema();
   }
 }

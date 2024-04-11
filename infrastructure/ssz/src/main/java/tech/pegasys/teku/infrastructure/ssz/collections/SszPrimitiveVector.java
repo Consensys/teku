@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 
 public interface SszPrimitiveVector<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+        ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszPrimitiveCollection<ElementT, SszElementT>, SszVector<SszElementT> {
 
   @Override

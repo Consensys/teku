@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.primitive;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 
-public class SszBit extends AbstractSszPrimitive<Boolean, SszBit> {
+public class SszBit extends AbstractSszPrimitive<Boolean> {
 
   private static final SszBit TRUE_VIEW = new SszBit(true);
   private static final SszBit FALSE_VIEW = new SszBit(false);

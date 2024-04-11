@@ -321,7 +321,7 @@ public final class DataStructureUtil {
         .collect(schema.collector());
   }
 
-  public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+  public <ElementT, SszElementT extends SszPrimitive<ElementT>>
       SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
           final SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
           final long numItems,
@@ -353,7 +353,7 @@ public final class DataStructureUtil {
         .collect(schema.collectorUnboxed());
   }
 
-  public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+  public <ElementT, SszElementT extends SszPrimitive<ElementT>>
       SszPrimitiveVector<ElementT, SszElementT> randomSszPrimitiveVector(
           final SszPrimitiveVectorSchema<ElementT, SszElementT, ?> schema,
           final Supplier<ElementT> valueGenerator) {

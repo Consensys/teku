@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVecto
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszMutablePrimitiveVectorImpl<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+        ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends AbstractSszMutablePrimitiveCollection<ElementT, SszElementT>
     implements SszMutablePrimitiveVector<ElementT, SszElementT> {
 

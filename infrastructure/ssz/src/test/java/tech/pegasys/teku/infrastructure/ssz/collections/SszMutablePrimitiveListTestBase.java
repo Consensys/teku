@@ -32,7 +32,7 @@ public interface SszMutablePrimitiveListTestBase
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default <ElT, SszT extends SszPrimitive<ElT, SszT>> void append_extendsExtendableCollection(
+  default <ElT, SszT extends SszPrimitive<ElT>> void append_extendsExtendableCollection(
       SszMutablePrimitiveList<ElT, SszT> collection) {
     if (collection.size() < collection.getSchema().getMaxLength()) {
       // collection is extendable (List effectively)
@@ -52,7 +52,7 @@ public interface SszMutablePrimitiveListTestBase
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default <ElT, SszT extends SszPrimitive<ElT, SszT>>
+  default <ElT, SszT extends SszPrimitive<ElT>>
       void appendAllElements_extendsExtendableCollection(
           SszMutablePrimitiveList<ElT, SszT> collection) {
     if (collection.size() < collection.getSchema().getMaxLength()) {

@@ -17,8 +17,10 @@ import java.util.Objects;
 
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszUInt64Schema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public abstract class AbstractSszPrimitive<C>
@@ -41,11 +43,12 @@ public abstract class AbstractSszPrimitive<C>
     return schema;
   }
 
-//  @Override
-//  public TreeNode getBackingNode() {
-//    SszSchema<SszData> s = (SszSchema<SszData>) schema;
-//    return schema.createBackingNode(this);
-//  }
+  @Override
+  public TreeNode getBackingNode() {
+    AbstractSszPrimitiveSchema<C, AbstractSszPrimitive<C>> s =
+        (AbstractSszPrimitiveSchema<C, AbstractSszPrimitive<C>>) getSchema();
+    return s.createBackingNode(this);
+  }
 
   @Override
   public boolean equals(Object o) {

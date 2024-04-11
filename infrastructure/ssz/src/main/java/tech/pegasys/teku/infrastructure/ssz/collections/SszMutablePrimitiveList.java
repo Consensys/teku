@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 
 public interface SszMutablePrimitiveList<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+        ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszMutablePrimitiveCollection<ElementT, SszElementT>,
         SszMutableList<SszElementT>,
         SszPrimitiveList<ElementT, SszElementT> {

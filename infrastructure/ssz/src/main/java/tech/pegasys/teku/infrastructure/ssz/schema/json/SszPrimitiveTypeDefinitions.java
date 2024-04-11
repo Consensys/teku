@@ -29,8 +29,10 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public final class SszPrimitiveTypeDefinitions {
   public static final DeserializableTypeDefinition<SszNone> SSZ_NONE_TYPE_DEFINITION =
@@ -63,6 +65,10 @@ public final class SszPrimitiveTypeDefinitions {
 
   public static final DeserializableTypeDefinition<? extends SszUInt64> SSZ_UINT64_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT64_SCHEMA, CoreTypes.UINT64_TYPE);
+
+  public static <T extends SszUInt64> DeserializableTypeDefinition<T> createUInt64Definition(SszPrimitiveSchema<UInt64, T> schema) {
+    return new SszTypeDefinitionWrapper<>(schema, CoreTypes.UINT64_TYPE);
+  }
 
   public static final DeserializableTypeDefinition<SszUInt256> SSZ_UINT256_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT256_SCHEMA, CoreTypes.UINT256_TYPE);

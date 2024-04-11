@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPrimitiveVectorImpl<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+        ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszVectorImpl<SszElementT> implements SszPrimitiveVector<ElementT, SszElementT> {
 
   SszPrimitiveVectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
