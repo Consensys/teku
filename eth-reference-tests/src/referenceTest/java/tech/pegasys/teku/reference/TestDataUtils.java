@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.reference;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
@@ -90,7 +89,7 @@ public class TestDataUtils {
       throws IOException {
     final Path path = testDefinition.getTestDirectory().resolve(fileName);
     try (final InputStream in = Files.newInputStream(path)) {
-      return new ObjectMapper(YAML_FACTORY).readerFor(type).readValue(in);
+      return new ObjectMapper(YAML_FACTORY).readValue(in, type);
     }
   }
 
@@ -106,14 +105,17 @@ public class TestDataUtils {
     }
   }
 
-  public static JsonNode loadJson(final TestDefinition testDefinition, final String fileName)
+  public static <T> T loadJson(
+      final TestDefinition testDefinition, final String fileName, final Class<T> type)
       throws IOException {
     final Path path = testDefinition.getTestDirectory().resolve(fileName);
-    return JSON_PROVIDER.getObjectMapper().readTree(Files.newInputStream(path));
+    try (final InputStream in = Files.newInputStream(path)) {
+      return JSON_PROVIDER.getObjectMapper().readValue(in, type);
+    }
   }
 
-  public static <T> T jsonToObject(final String json, final Class<T> type)
-      throws JsonProcessingException {
-    return JSON_PROVIDER.jsonToObject(json, type);
+  public static <T> void writeJsonToFile(final T object, final Path file) throws IOException {
+    final String json = JSON_PROVIDER.getObjectMapper().writeValueAsString(object);
+    Files.writeString(file, json, StandardCharsets.UTF_8);
   }
 }

@@ -26,19 +26,19 @@ public class BlsRefTestFinder implements TestFinder {
 
   @Override
   @MustBeClosed
-  public Stream<TestDefinition> findTests(final String fork, final String spec, final Path testRoot)
-      throws IOException {
-    if (!spec.equals("bls")) {
+  public Stream<TestDefinition> findTests(
+      final String fork, final String config, final Path testRoot) throws IOException {
+    if (!config.equals("bls")) {
       return Stream.empty();
     }
     return Files.list(testRoot)
         .filter(path -> path.toFile().isDirectory())
-        .flatMap(unchecked(path -> findBlsTests(spec, testRoot, path)));
+        .flatMap(unchecked(path -> findBlsTests(config, testRoot, path)));
   }
 
   @MustBeClosed
   private Stream<TestDefinition> findBlsTests(
-      final String spec, final Path testRoot, final Path testCategoryDir) throws IOException {
+      final String config, final Path testRoot, final Path testCategoryDir) throws IOException {
     final String testType = "bls/" + testRoot.relativize(testCategoryDir);
     return Files.list(testCategoryDir)
         .filter(file -> file.toFile().getName().endsWith(".yaml"))
@@ -46,7 +46,7 @@ public class BlsRefTestFinder implements TestFinder {
             testFile ->
                 new TestDefinition(
                     "",
-                    spec,
+                    config,
                     testType,
                     testFile.toFile().getName(),
                     testRoot.relativize(testCategoryDir)));

@@ -19,13 +19,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-public class SlashingProtectionInterchangeTestFinder implements TestFinder {
+public class SlashingProtectionInterchangeRefTestFinder implements TestFinder {
 
   @Override
   @MustBeClosed
-  public Stream<TestDefinition> findTests(final String fork, final String spec, final Path testRoot)
-      throws IOException {
-    if (!spec.equals("slashing-protection-interchange")) {
+  public Stream<TestDefinition> findTests(
+      final String fork, final String config, final Path testRoot) throws IOException {
+    if (!config.equals("slashing-protection-interchange")) {
       return Stream.empty();
     }
     return Files.list(testRoot)
@@ -34,8 +34,8 @@ public class SlashingProtectionInterchangeTestFinder implements TestFinder {
             testFile ->
                 new TestDefinition(
                     fork,
-                    spec,
-                    spec,
+                    config,
+                    config,
                     testFile.toFile().getName(),
                     testRoot.relativize(testFile.getParent())));
   }

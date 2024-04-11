@@ -50,7 +50,7 @@ public class ReferenceTestFinder {
       return new BlsRefTestFinder().findTests("", spec, specDirectory);
     }
     if (spec.equals("slashing-protection-interchange")) {
-      return new SlashingProtectionInterchangeTestFinder().findTests("", spec, specDirectory);
+      return new SlashingProtectionInterchangeRefTestFinder().findTests("", spec, specDirectory);
     }
     return SUPPORTED_FORKS.stream()
         .flatMap(

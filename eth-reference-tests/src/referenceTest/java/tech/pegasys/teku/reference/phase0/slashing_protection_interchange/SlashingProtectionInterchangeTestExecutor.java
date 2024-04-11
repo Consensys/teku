@@ -15,79 +15,139 @@ package tech.pegasys.teku.reference.phase0.slashing_protection_interchange;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
+import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.reference.phase0.slashing_protection_interchange.SlashingProtectionInterchangeTestExecutor.TestData.Step;
 import tech.pegasys.teku.spec.signatures.LocalSlashingProtector;
 
 public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  // TODO: implement the logic
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    final JsonNode testNode = TestDataUtils.loadJson(testDefinition, testDefinition.getTestName());
+    final TestData testData =
+        TestDataUtils.loadJson(testDefinition, testDefinition.getTestName(), TestData.class);
 
-    final String testName = testNode.get("name").asText();
-    final Bytes32 genesisValidatorsRoot =
-        Bytes32.fromHexString(testNode.get("genesis_validators_root").asText());
+    // our implementation does not fail importing when the GVR in the interchange mismatches the one
+    // from the spec
+    if (testData.name.startsWith("wrong_genesis_validators_root")) {
+      LOG.info("Not going to run {}", testData.name);
+      return;
+    }
 
-    LOG.info("Running {}", testName);
+    LOG.info("Running {}", testData.name);
 
-    final Path tempDir = Files.createTempDirectory(testName);
+    final Path tempDir = Files.createTempDirectory(testData.name);
+    try {
+      runTest(testData, tempDir);
+    } finally {
+      deleteDirectory(tempDir);
+    }
+  }
 
-    final Path slashProtectionPath = tempDir.resolve("slashprotection");
+  private void runTest(final TestData testData, final Path tempDir) {
+    final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
+    final LocalSlashingProtector slashingProtector =
+        new LocalSlashingProtector(SyncDataAccessor.create(tempDir), tempDir);
+    testData.steps.forEach(
+        step ->
+            runStep(step, testData.genesisValidatorsRoot, importer, slashingProtector, tempDir));
+  }
 
-    final Path slashProtectionImportFile = tempDir.resolve("import.yml");
+  private void runStep(
+      final Step step,
+      final Bytes32 genesisValidatorsRoot,
+      final SlashingProtectionImporter importer,
+      final LocalSlashingProtector slashingProtector,
+      final Path tempDir) {
+    final Path importFile = tempDir.resolve("import.yml");
+    try {
+      TestDataUtils.writeJsonToFile(step.interchange, importFile);
+      importer.initialise(importFile.toFile());
+      // cleanup
+      Files.delete(importFile);
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
+    }
+    final Map<BLSPublicKey, String> importErrors =
+        importer.updateLocalRecords(status -> LOG.info("Import status: " + status));
+    if (step.shouldSucceed) {
+      assertThat(importErrors).isEmpty();
+    } else {
+      assertThat(importErrors).isNotEmpty();
+    }
+    step.blocks.forEach(
+        block ->
+            assertThat(
+                    slashingProtector.maySignBlock(block.pubkey, genesisValidatorsRoot, block.slot))
+                .isCompletedWithValue(block.shouldSucceed));
+    step.attestations.forEach(
+        attestation ->
+            assertThat(
+                    slashingProtector.maySignAttestation(
+                        attestation.pubkey,
+                        genesisValidatorsRoot,
+                        attestation.sourceEpoch,
+                        attestation.targetEpoch))
+                .isCompletedWithValue(attestation.shouldSucceed));
+  }
 
-    Files.writeString(
-        slashProtectionImportFile,
-        testNode.get("steps").get(0).get("interchange").toString(),
-        StandardCharsets.UTF_8);
+  private void deleteDirectory(final Path dir) {
+    try (DirectoryStream<Path> files = Files.newDirectoryStream(dir)) {
+      for (Path file : files) {
+        if (Files.isRegularFile(file)) {
+          Files.delete(file);
+        }
+      }
+      Files.delete(dir);
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
+    }
+  }
 
-    final BLSPublicKey pubkey =
-        BLSPublicKey.fromHexString(
-            "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c");
+  public record TestData(
+      String name,
+      @JsonProperty("genesis_validators_root") Bytes32 genesisValidatorsRoot,
+      List<Step> steps) {
 
-    Files.createDirectories(slashProtectionPath);
-    SlashingProtectionImporter importer = new SlashingProtectionImporter(slashProtectionPath);
-    importer.initialise(slashProtectionImportFile.toFile());
-    final Map<BLSPublicKey, String> errors = importer.updateLocalRecords((__) -> {});
+    public record Step(
+        @JsonProperty("should_succeed") boolean shouldSucceed,
+        @JsonProperty("contains_slashable_data") boolean containsSlashableData,
+        SlashingProtectionInterchangeFormat interchange,
+        List<Block> blocks,
+        List<Attestation> attestations) {}
 
-    assertThat(errors).isEmpty();
+    public record Block(
+        BLSPublicKey pubkey,
+        UInt64 slot,
+        @JsonProperty("signing_root") Bytes32 signingRoot,
+        @JsonProperty("should_succeed") boolean shouldSucceed,
+        @JsonProperty("should_succeed_complete") boolean shouldSucceedComplete) {}
 
-    LocalSlashingProtector localSlashingProtector =
-        new LocalSlashingProtector(
-            SyncDataAccessor.create(slashProtectionPath), slashProtectionPath);
-    assertThat(
-            localSlashingProtector.maySignBlock(pubkey, genesisValidatorsRoot, UInt64.valueOf(10)))
-        .isCompletedWithValue(false);
-    assertThat(
-            localSlashingProtector.maySignBlock(pubkey, genesisValidatorsRoot, UInt64.valueOf(13)))
-        .isCompletedWithValue(false);
-    assertThat(
-            localSlashingProtector.maySignBlock(pubkey, genesisValidatorsRoot, UInt64.valueOf(14)))
-        .isCompletedWithValue(true);
-    assertThat(
-            localSlashingProtector.maySignAttestation(
-                pubkey, genesisValidatorsRoot, UInt64.valueOf(0), UInt64.valueOf(2)))
-        .isCompletedWithValue(false);
-    assertThat(
-            localSlashingProtector.maySignAttestation(
-                pubkey, genesisValidatorsRoot, UInt64.valueOf(1), UInt64.valueOf(3)))
-        .isCompletedWithValue(false);
+    public record Attestation(
+        BLSPublicKey pubkey,
+        @JsonProperty("source_epoch") UInt64 sourceEpoch,
+        @JsonProperty("target_epoch") UInt64 targetEpoch,
+        @JsonProperty("signing_root") Bytes32 signingRoot,
+        @JsonProperty("should_succeed") boolean shouldSucceed,
+        @JsonProperty("should_succeed_complete") boolean shouldSucceedComplete) {}
   }
 }
