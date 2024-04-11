@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -122,8 +123,19 @@ class DebugDataDumperTest {
   }
 
   @Test
-  void saveBytesToFile_shouldNotThrowExceptionWhenUnableToSave(@TempDir Path tempDir) {
+  void saveBytesToFile_shouldNotThrowExceptionWhenNoDirectory(@TempDir Path tempDir) {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    assertDoesNotThrow(
+        () ->
+            manager.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
+  }
+
+  @Test
+  void saveBytesToFile_shouldNotEscalateWhenIOException(@TempDir Path tempDir) {
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final File invalidPath = tempDir.resolve("invalid").toFile();
+    assertThat(invalidPath.mkdirs()).isTrue();
+    assertThat(invalidPath.setWritable(false)).isTrue();
     assertDoesNotThrow(
         () ->
             manager.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
