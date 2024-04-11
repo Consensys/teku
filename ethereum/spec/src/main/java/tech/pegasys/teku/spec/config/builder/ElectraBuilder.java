@@ -30,8 +30,10 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
 
   private Bytes4 electraForkVersion;
   private UInt64 electraForkEpoch;
-  private UInt64 minPerEpochChurnLimitElectra;
-  private UInt64 maxPerEpochActivationExitChurnLimit;
+  // TODO: remove default when EIP-7251 become part of the Electra
+  private UInt64 minPerEpochChurnLimitElectra = UInt64.ZERO;
+  // TODO: remove default when EIP-7251 become part of the Electra
+  private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.ZERO;
   private Integer maxDepositReceiptsPerPayload;
   private Integer maxExecutionLayerExits;
   private UInt64 minActivationBalance;
