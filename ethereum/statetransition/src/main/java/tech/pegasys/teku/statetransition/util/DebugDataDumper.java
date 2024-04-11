@@ -120,6 +120,9 @@ public class DebugDataDumper {
   }
 
   private void createDirectory(final Path path, final String directoryName, final String object) {
+    if (!enabled) {
+      return;
+    }
     if (path.toFile().mkdirs()) {
       LOG.debug("{} directory has been created to save {}.", directoryName, object);
     } else {

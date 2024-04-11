@@ -141,6 +141,13 @@ class DebugDataDumperTest {
             manager.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
   }
 
+  @Test
+  void constructionOfDirectories_shouldDisableWhenFailedToCreate(@TempDir Path tempDir) {
+    assertThat(tempDir.toFile().setWritable(false)).isTrue();
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    assertThat(manager.isEnabled()).isFalse();
+  }
+
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
     try {
       final Bytes bytes = Bytes.wrap(Files.readAllBytes(path));
