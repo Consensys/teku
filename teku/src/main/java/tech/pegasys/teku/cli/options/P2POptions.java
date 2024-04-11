@@ -288,7 +288,8 @@ public class P2POptions {
       names = {"--Xp2p-dumps-to-file-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enables saving P2P dumps to file.",
+      description =
+          "Save objects to file that cause problems when processing, for example rejected blocks or invalid gossip.",
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
