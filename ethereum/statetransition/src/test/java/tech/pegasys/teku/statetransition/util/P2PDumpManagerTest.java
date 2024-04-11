@@ -38,10 +38,12 @@ class P2PDumpManagerTest {
     final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
+    final String topic = "test_topic";
     manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
 
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("gossip_decoding_error_messages").resolve(fileName);
+    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
+    final Path expectedFile =
+        tempDir.resolve("gossip-decoding-error-messages").resolve(topic).resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
 
@@ -54,7 +56,7 @@ class P2PDumpManagerTest {
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("gossip_decoding_error_messages").resolve(fileName);
+    final Path expectedFile = tempDir.resolve("gossip-decoding-error-messages").resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 
@@ -63,10 +65,12 @@ class P2PDumpManagerTest {
     final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
+    final String topic = "test_topic";
     manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
 
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("rejected_gossip_messages").resolve(fileName);
+    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
+    final Path expectedFile =
+        tempDir.resolve("rejected-gossip-messages").resolve(topic).resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
 
@@ -79,7 +83,7 @@ class P2PDumpManagerTest {
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
-    final Path expectedFile = tempDir.resolve("rejected_gossip_messages").resolve(fileName);
+    final Path expectedFile = tempDir.resolve("rejected-gossip-messages").resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 
@@ -92,7 +96,7 @@ class P2PDumpManagerTest {
     final String fileName =
         String.format(
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
-    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
+    final Path expectedFile = tempDir.resolve("invalid-blocks").resolve(fileName);
     checkBytesSavedToFile(expectedFile, block.sszSerialize());
   }
 
@@ -106,7 +110,7 @@ class P2PDumpManagerTest {
     final String fileName =
         String.format(
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
-    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
+    final Path expectedFile = tempDir.resolve("invalid-blocks").resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 

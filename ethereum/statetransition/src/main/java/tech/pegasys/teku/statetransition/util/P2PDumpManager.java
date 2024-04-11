@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,15 +27,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class P2PDumpManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final String GOSSIP_DECODING_ERROR_DIR = "gossip_decoding_error_messages";
-  private static final String GOSSIP_REJECTED_DIR = "rejected_gossip_messages";
-  private static final String INVALID_BLOCK_DIR = "invalid_blocks";
+  private static final String GOSSIP_DECODING_ERROR_DIR = "gossip-decoding-error-messages";
+  private static final String GOSSIP_REJECTED_DIR = "rejected-gossip-messages";
+  private static final String INVALID_BLOCK_DIR = "invalid-blocks";
 
   private final boolean enabled;
   private final Path directory;
 
   public P2PDumpManager(final Path directory, final boolean enabled) {
-    this.enabled = enabled; // TODO fix directory structure
+    this.enabled = enabled;
     this.directory = directory;
     if (!enabled) {
       return;
@@ -66,11 +67,12 @@ public class P2PDumpManager {
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
+    final Path topicPath = Path.of(GOSSIP_DECODING_ERROR_DIR).resolve(topic);
+    checkTopicDirExists(topicPath);
     saveBytesToFile(
         "gossip message with decoding error",
-        GOSSIP_DECODING_ERROR_DIR,
-        fileName,
         identifiers,
+        Path.of(GOSSIP_DECODING_ERROR_DIR).resolve(topic).resolve(fileName),
         originalMessage);
   }
 
@@ -81,8 +83,10 @@ public class P2PDumpManager {
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
     final String identifiers = String.format("Topic: %s", topic);
+    final Path topicPath = Path.of(GOSSIP_REJECTED_DIR).resolve(topic);
+    checkTopicDirExists(topicPath);
     saveBytesToFile(
-        "rejected gossip message", GOSSIP_REJECTED_DIR, fileName, identifiers, decodedMessage);
+        "rejected gossip message", identifiers, topicPath.resolve(fileName), decodedMessage);
   }
 
   public void saveInvalidBlockToFile(
@@ -93,23 +97,31 @@ public class P2PDumpManager {
     final String fileName =
         String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
     final String identifiers = String.format("Slot: %s, Block Root: %s", slot, blockRoot);
-    saveBytesToFile("invalid block", INVALID_BLOCK_DIR, fileName, identifiers, blockSsz);
+    saveBytesToFile(
+        "invalid block", identifiers, Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
   }
 
   private void saveBytesToFile(
       final String object,
-      final String errorDirectory,
-      final String fileName,
       final String identifiers,
+      final Path relativeFilePath,
       final Bytes bytes) {
-    final Path path = directory.resolve(errorDirectory).resolve(fileName);
+    final Path path = directory.resolve(relativeFilePath);
     try {
-      final String file =
-          Files.write(path, bytes.toArray())
-              .toString(); // todo change to not be printing the whole path
-      LOG.info("Saved {} bytes to file. {}. Location: {}", object, identifiers, file);
+      Files.write(path, bytes.toArray());
+      LOG.info("Saved {} bytes to file. {}. Location: {}", object, identifiers, relativeFilePath);
     } catch (IOException e) {
-      LOG.error("Failed to save {}} bytes to file. {}", object, identifiers, e);
+      LOG.error("Failed to save {} bytes to file. {}", object, identifiers, e);
+    }
+  }
+
+  private void checkTopicDirExists(final Path topicDir) {
+    final File topicDirFile = directory.resolve(topicDir).toFile();
+    if (topicDirFile.exists()) {
+      return;
+    }
+    if (!topicDirFile.mkdirs()) {
+      LOG.debug("Failed to create topic directory: {}", topicDir);
     }
   }
 
