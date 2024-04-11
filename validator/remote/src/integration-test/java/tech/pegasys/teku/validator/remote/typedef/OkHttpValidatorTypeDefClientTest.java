@@ -367,6 +367,21 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
+  void getStateValidators_MakesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    okHttpValidatorTypeDefClient.getStateValidators(List.of("1", "0x1234"));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("GET");
+
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
+    // comma-separated GET query array parameters shouldn't be encoded
+    // and must pass AS IS as per RFC-3986
+    assertThat(request.getPath()).contains("?id=1,0x1234");
+  }
+
+  @TestTemplate
   public void postValidators_WhenNoContent_ReturnsEmpty() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
