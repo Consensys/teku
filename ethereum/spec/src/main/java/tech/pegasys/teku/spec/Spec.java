@@ -292,10 +292,10 @@ public class Spec {
 
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
-      Bytes32 eth1BlockHash,
-      UInt64 eth1Timestamp,
-      List<? extends Deposit> deposits,
-      Optional<ExecutionPayloadHeader> payloadHeader) {
+      final Bytes32 eth1BlockHash,
+      final UInt64 eth1Timestamp,
+      final List<? extends Deposit> deposits,
+      final Optional<ExecutionPayloadHeader> payloadHeader) {
     final GenesisGenerator genesisGenerator = createGenesisGenerator();
     genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
     payloadHeader.ifPresent(genesisGenerator::updateExecutionPayloadHeader);
@@ -415,7 +415,7 @@ public class Spec {
     return atState(state).beaconStateAccessors().getPreviousEpoch(state);
   }
 
-  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domainType)
+  public Bytes32 getSeed(final BeaconState state, final UInt64 epoch, final Bytes4 domainType)
       throws IllegalArgumentException {
     return atState(state).beaconStateAccessors().getSeed(state, epoch, domainType);
   }
@@ -428,35 +428,36 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
   }
 
-  public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
+  public UInt64 computeTimeAtSlot(final BeaconState state, final UInt64 slot) {
     return atSlot(slot).miscHelpers().computeTimeAtSlot(state.getGenesisTime(), slot);
   }
 
-  public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
+  public Bytes computeSigningRoot(final BeaconBlock block, final Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
 
-  public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {
+  public Bytes computeSigningRoot(final BeaconBlockHeader blockHeader, final Bytes32 domain) {
     return atSlot(blockHeader.getSlot()).miscHelpers().computeSigningRoot(blockHeader, domain);
   }
 
-  public Bytes computeSigningRoot(AggregateAndProof proof, Bytes32 domain) {
+  public Bytes computeSigningRoot(final AggregateAndProof proof, final Bytes32 domain) {
     return atSlot(proof.getAggregate().getData().getSlot())
         .miscHelpers()
         .computeSigningRoot(proof, domain);
   }
 
-  public Bytes computeSigningRoot(UInt64 slot, Bytes32 domain) {
+  public Bytes computeSigningRoot(final UInt64 slot, final Bytes32 domain) {
     return atSlot(slot).miscHelpers().computeSigningRoot(slot, domain);
   }
 
-  public Bytes computeBuilderApplicationSigningRoot(UInt64 slot, Merkleizable object) {
+  public Bytes computeBuilderApplicationSigningRoot(final UInt64 slot, final Merkleizable object) {
     final MiscHelpers miscHelpers = atSlot(slot).miscHelpers();
     return miscHelpers.computeSigningRoot(
         object, miscHelpers.computeDomain(Domain.APPLICATION_BUILDER));
   }
 
-  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+  public Bytes4 computeForkDigest(
+      final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return atForkVersion(currentVersion)
         .miscHelpers()
         .computeForkDigest(currentVersion, genesisValidatorsRoot);
@@ -560,7 +561,7 @@ public class Spec {
         .getCurrentSlotForMillis(currentTimeMillis, genesisTimeMillis);
   }
 
-  public UInt64 getCurrentSlot(ReadOnlyStore store) {
+  public UInt64 getCurrentSlot(final ReadOnlyStore store) {
     return atTime(store.getGenesisTime(), store.getTimeSeconds())
         .getForkChoiceUtil()
         .getCurrentSlot(store);
@@ -570,36 +571,38 @@ public class Spec {
     return computeEpochAtSlot(getCurrentSlot(store));
   }
 
-  public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
+  public UInt64 getSlotStartTime(final UInt64 slotNumber, final UInt64 genesisTime) {
     return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
   }
 
-  public UInt64 getSlotStartTimeMillis(UInt64 slotNumber, UInt64 genesisTimeMillis) {
+  public UInt64 getSlotStartTimeMillis(final UInt64 slotNumber, final UInt64 genesisTimeMillis) {
     return atSlot(slotNumber)
         .getForkChoiceUtil()
         .getSlotStartTimeMillis(slotNumber, genesisTimeMillis);
   }
 
   public Optional<Bytes32> getAncestor(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
     return forGetAncestor(forkChoiceStrategy, root, slot)
         .getForkChoiceUtil()
         .getAncestor(forkChoiceStrategy, root, slot);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy,
-      Bytes32 root,
-      UInt64 startSlot,
-      UInt64 step,
-      UInt64 count) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 root,
+      final UInt64 startSlot,
+      final UInt64 step,
+      final UInt64 count) {
     return forGetAncestor(forkChoiceStrategy, root, startSlot)
         .getForkChoiceUtil()
         .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 root,
+      final UInt64 startSlot) {
     return forGetAncestor(forkChoiceStrategy, root, startSlot)
         .getForkChoiceUtil()
         .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);

@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -136,11 +137,16 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   @Override
-  public SafeFuture<BuilderPayload> getUnblindedPayload(final SignedBeaconBlock signedBeaconBlock) {
+  public SafeFuture<BuilderPayload> getUnblindedPayload(
+      final SignedBeaconBlock signedBeaconBlock,
+      final BlockPublishingPerformance blockPublishingPerformance) {
     return executionLayerChannel
         .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
-            builderPayload -> builderResultCache.put(signedBeaconBlock.getSlot(), builderPayload));
+            builderPayload -> {
+              builderResultCache.put(signedBeaconBlock.getSlot(), builderPayload);
+              blockPublishingPerformance.builderGetPayload();
+            });
   }
 
   @Override
