@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
@@ -35,8 +36,10 @@ public class GetStateValidatorsRequest extends AbstractTypeDefRequest {
       final List<String> validatorIds) {
     return get(
         GET_VALIDATORS,
-        Map.of(),
+        emptyMap(),
+        emptyMap(),
         Map.of(PARAM_ID, String.join(",", validatorIds)),
+        emptyMap(),
         new ResponseHandler<>(STATE_VALIDATORS_RESPONSE_TYPE));
   }
 }
