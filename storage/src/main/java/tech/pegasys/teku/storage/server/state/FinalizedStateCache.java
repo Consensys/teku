@@ -97,7 +97,7 @@ public class FinalizedStateCache {
     return Optional.ofNullable(availableSlots.floor(slot)).map(stateCache::getIfPresent);
   }
 
-  public NavigableSet<UInt64> getAvailableSlots() {
+  NavigableSet<UInt64> getAvailableSlots() {
     return availableSlots;
   }
 
