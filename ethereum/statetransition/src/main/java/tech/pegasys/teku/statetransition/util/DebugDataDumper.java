@@ -101,7 +101,8 @@ public class DebugDataDumper {
         "invalid block", identifiers, Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
   }
 
-  private void saveBytesToFile(
+  @VisibleForTesting
+  protected void saveBytesToFile(
       final String object,
       final String identifiers,
       final Path relativeFilePath,

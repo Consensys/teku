@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
@@ -118,6 +119,15 @@ class DebugDataDumperTest {
             "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
     final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
     checkFileNotExist(expectedFile);
+  }
+
+  @Test
+  void saveBytesToFile_shouldNotThrowExceptionWhenUnableToSave(@TempDir Path tempDir) {
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    assertDoesNotThrow(
+        () ->
+            manager.saveBytesToFile(
+                "object", "Identifier: data", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
