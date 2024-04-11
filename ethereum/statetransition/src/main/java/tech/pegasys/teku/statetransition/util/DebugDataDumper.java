@@ -24,7 +24,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class P2PDumpManager {
+public class DebugDataDumper {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final String GOSSIP_MESSAGES_DIR = "gossip_messages";
@@ -35,7 +35,7 @@ public class P2PDumpManager {
   private final boolean enabled;
   private final Path directory;
 
-  public P2PDumpManager(final Path directory, final boolean enabled) {
+  public DebugDataDumper(final Path directory, final boolean enabled) {
     this.enabled = enabled;
     this.directory = directory;
     if (!enabled) {

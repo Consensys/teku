@@ -30,7 +30,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeaconBlock> {
@@ -45,7 +45,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
             gossipEncoding,
             forkInfo,
             processor,
-            mock(P2PDumpManager.class))
+            mock(DebugDataDumper.class))
         .getTopicHandler();
   }
 

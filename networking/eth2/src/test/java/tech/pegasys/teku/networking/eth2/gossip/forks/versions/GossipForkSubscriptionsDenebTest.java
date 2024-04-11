@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -83,6 +83,6 @@ public class GossipForkSubscriptionsDenebTest {
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
-        mock(P2PDumpManager.class));
+        mock(DebugDataDumper.class));
   }
 }

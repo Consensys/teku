@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb {
@@ -55,7 +55,7 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
-      final P2PDumpManager p2PDumpManager) {
+      final DebugDataDumper debugDataDumper) {
     super(
         fork,
         spec,
@@ -74,6 +74,6 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor,
-        p2PDumpManager);
+        debugDataDumper);
   }
 }

@@ -65,8 +65,8 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
@@ -105,7 +105,7 @@ public class SyncingNodeManager {
       final Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       final Consumer<Eth2P2PNetworkBuilder> configureNetwork,
-      final P2PDumpManager p2pDumpManager)
+      final DebugDataDumper debugDataDumper)
       throws Exception {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final EventChannels eventChannels =
@@ -126,7 +126,7 @@ public class SyncingNodeManager {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
-            p2pDumpManager,
+            debugDataDumper,
             new StubMetricsSystem());
 
     final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =

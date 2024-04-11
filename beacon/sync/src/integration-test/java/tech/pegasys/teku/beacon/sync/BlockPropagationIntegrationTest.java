@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 
 public class BlockPropagationIntegrationTest {
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -62,7 +62,7 @@ public class BlockPropagationIntegrationTest {
             networkFactory,
             validatorKeys,
             c -> c.rpcEncoding(rpcEncoding).gossipEncoding(gossipEncoding),
-            mock(P2PDumpManager.class));
+            mock(DebugDataDumper.class));
     node1.chainUtil().setSlot(currentSlot);
 
     // Add some blocks to node1, which node 2 will need to fetch
@@ -80,7 +80,7 @@ public class BlockPropagationIntegrationTest {
             networkFactory,
             validatorKeys,
             c -> c.rpcEncoding(rpcEncoding).gossipEncoding(gossipEncoding),
-            mock(P2PDumpManager.class));
+            mock(DebugDataDumper.class));
 
     // Connect networks
     Waiter.waitFor(node1.connect(node2));

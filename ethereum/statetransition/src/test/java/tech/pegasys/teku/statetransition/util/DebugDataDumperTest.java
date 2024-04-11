@@ -28,14 +28,14 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class P2PDumpManagerTest {
+class DebugDataDumperTest {
   final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 
   @Test
   void saveGossipMessageDecodingError_shouldSaveToFile(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     final String topic = "test_topic";
@@ -53,7 +53,7 @@ class P2PDumpManagerTest {
 
   @Test
   void saveGossipMessageDecodingError_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir, false);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
@@ -67,7 +67,7 @@ class P2PDumpManagerTest {
 
   @Test
   void saveGossipRejectedMessageToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     final String topic = "test_topic";
@@ -81,7 +81,7 @@ class P2PDumpManagerTest {
 
   @Test
   void saveGossipRejectedMessageToFile_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir, false);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final String arrivalTimestamp = timeProvider.getTimeInMillis().toString();
     manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
@@ -95,7 +95,7 @@ class P2PDumpManagerTest {
 
   @Test
   void saveInvalidBlockToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
 
@@ -108,7 +108,7 @@ class P2PDumpManagerTest {
 
   @Test
   void saveInvalidBlockToFile_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
-    final P2PDumpManager manager = new P2PDumpManager(tempDir, false);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
     assertThat(manager.isEnabled()).isFalse();

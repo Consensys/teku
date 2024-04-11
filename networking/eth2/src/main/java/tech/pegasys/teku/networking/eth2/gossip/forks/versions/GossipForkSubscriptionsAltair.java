@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0 {
@@ -64,7 +64,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
           signedContributionAndProofOperationProcessor,
       final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
-      final P2PDumpManager p2PDumpManager) {
+      final DebugDataDumper debugDataDumper) {
     super(
         fork,
         spec,
@@ -79,7 +79,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
         attesterSlashingProcessor,
         proposerSlashingProcessor,
         voluntaryExitProcessor,
-        p2PDumpManager);
+        debugDataDumper);
     this.signedContributionAndProofOperationProcessor =
         signedContributionAndProofOperationProcessor;
     this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
@@ -99,7 +99,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             forkInfo,
             signedContributionAndProofOperationProcessor,
             specConfig.getNetworkingConfig(),
-            p2pDumpManager);
+            debugDataDumper);
     addGossipManager(syncCommitteeContributionGossipManager);
   }
 
@@ -116,7 +116,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             asyncRunner,
             syncCommitteeMessageOperationProcessor,
             forkInfo,
-            p2pDumpManager);
+            debugDataDumper);
     syncCommitteeMessageGossipManager =
         new SyncCommitteeMessageGossipManager(
             metricsSystem,

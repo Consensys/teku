@@ -70,7 +70,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -141,7 +141,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             true,
-            mock(P2PDumpManager.class),
+            mock(DebugDataDumper.class),
             storageSystem.getMetricsSystem());
     final ExecutionLayerChannelStub executionLayer =
         new ExecutionLayerChannelStub(spec, false, Optional.empty());

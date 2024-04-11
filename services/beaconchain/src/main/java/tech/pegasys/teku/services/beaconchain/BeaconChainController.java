@@ -149,8 +149,8 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -288,7 +288,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected PoolFactory poolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
-  protected P2PDumpManager p2pDumpManager;
+  protected DebugDataDumper debugDataDumper;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -320,8 +320,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
-    this.p2pDumpManager =
-        new P2PDumpManager(
+    this.debugDataDumper =
+        new DebugDataDumper(
             serviceConfig.getDataDirLayout().getDebugDataDirectory(),
             beaconConfig.p2pConfig().isP2pDumpsToFileEnabled());
     this.futureItemsMetric =
@@ -797,7 +797,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
-            p2pDumpManager,
+            debugDataDumper,
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
@@ -1113,7 +1113,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .specProvider(spec)
             .kzg(kzg)
             .recordMessageArrival(true)
-            .p2pDumpManager(p2pDumpManager)
+            .p2pDumpManager(debugDataDumper)
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

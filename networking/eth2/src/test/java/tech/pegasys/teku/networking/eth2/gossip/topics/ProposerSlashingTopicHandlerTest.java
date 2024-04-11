@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<ProposerSlashing> {
@@ -42,7 +42,7 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
             forkInfo,
             processor,
             spec.getNetworkingConfig(),
-            mock(P2PDumpManager.class))
+            mock(DebugDataDumper.class))
         .getTopicHandler();
   }
 

@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateGossipManager extends AbstractGossipManager<SignedAggregateAndProof> {
@@ -35,7 +35,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<ValidatableAttestation> processor,
-      final P2PDumpManager p2pDumpManager) {
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
@@ -53,7 +53,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
             .getSignedAggregateAndProofSchema(),
         message -> spec.computeEpochAtSlot(message.getMessage().getAggregate().getData().getSlot()),
         spec.getNetworkingConfig(),
-        p2pDumpManager);
+        debugDataDumper);
   }
 
   public void onNewAggregate(final ValidatableAttestation validatableAttestation) {

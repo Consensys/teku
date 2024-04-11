@@ -51,7 +51,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.util.P2PDumpManager;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -111,7 +111,7 @@ public class BeaconChainUtil {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
-            mock(P2PDumpManager.class),
+            mock(DebugDataDumper.class),
             new StubMetricsSystem()),
         true);
   }
@@ -132,7 +132,7 @@ public class BeaconChainUtil {
             BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
-            mock(P2PDumpManager.class),
+            mock(DebugDataDumper.class),
             new StubMetricsSystem()),
         signDeposits);
   }
@@ -330,7 +330,7 @@ public class BeaconChainUtil {
                 new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP),
-                mock(P2PDumpManager.class),
+                mock(DebugDataDumper.class),
                 new StubMetricsSystem());
       }
       if (validatorKeys == null) {
