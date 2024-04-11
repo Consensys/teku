@@ -108,6 +108,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       lastBuilderBlobsBundle = Optional.empty();
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
+  private boolean el_online =  true;
+
   public ExecutionLayerChannelStub(
       final Spec spec,
       final TimeProvider timeProvider,
@@ -147,6 +149,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     if (!transitionEmulationEnabled) {
       requestedPowBlocks.add(blockHash);
       return SafeFuture.completedFuture(Optional.ofNullable(knownBlocks.get(blockHash)));
@@ -172,6 +178,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     if (!transitionEmulationEnabled) {
       return SafeFuture.failedFuture(
           new UnsupportedOperationException("getPowChainHead not supported"));
@@ -195,6 +205,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     if (!bellatrixActivationDetected) {
       LOG.info(
           "forkChoiceUpdated received before terminalBlock has been sent. Assuming transition already happened");
@@ -229,6 +243,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     if (!bellatrixActivationDetected) {
       LOG.info(
           "getPayload received before terminalBlock has been sent. Assuming transition already happened");
@@ -312,6 +330,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     final ExecutionPayload executionPayload = newPayloadRequest.getExecutionPayload();
     final PayloadStatus returnedStatus =
         Optional.ofNullable(knownPosBlocks.get(executionPayload.getBlockHash()))
@@ -327,12 +349,19 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<List<ClientVersion>> engineGetClientVersion(final ClientVersion clientVersion) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     return SafeFuture.completedFuture(List.of(STUB_CLIENT_VERSION));
   }
 
   @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
     return SafeFuture.COMPLETE;
   }
 
@@ -343,6 +372,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final SafeFuture<UInt256> payloadValueResult,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
@@ -392,6 +425,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<BuilderPayload> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+    if(!el_online) {
+      return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
+    }
+
     final UInt64 slot = signedBeaconBlock.getSlot();
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
