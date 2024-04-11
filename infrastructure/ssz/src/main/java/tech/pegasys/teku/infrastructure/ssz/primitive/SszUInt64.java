@@ -48,9 +48,4 @@ public class SszUInt64 extends AbstractSszPrimitive<UInt64> {
   public long longValue() {
     return get().longValue();
   }
-
-  @Override
-  public AbstractSszUInt64Schema<? extends SszUInt64> getSchema() {
-    return (AbstractSszUInt64Schema<? extends SszUInt64>) super.getSchema();
-  }
 }
