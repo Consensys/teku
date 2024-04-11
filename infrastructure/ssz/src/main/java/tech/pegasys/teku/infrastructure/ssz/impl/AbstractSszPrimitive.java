@@ -38,11 +38,8 @@ public abstract class AbstractSszPrimitive<C> implements SszPrimitive<C> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public TreeNode getBackingNode() {
-    AbstractSszPrimitiveSchema<C, AbstractSszPrimitive<C>> s =
-        (AbstractSszPrimitiveSchema<C, AbstractSszPrimitive<C>>) getSchema();
-    return s.createBackingNode(this);
+    return getSchema().createBackingNode(this);
   }
 
   @Override

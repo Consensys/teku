@@ -109,7 +109,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
 
   protected abstract DataT createFromLeafBackingNode(LeafDataNode node, int internalIndex);
 
-  public <T extends SszDataT> TreeNode createBackingNode(T newValue) {
+  public TreeNode createBackingNode(SszData newValue) {
     return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);
   }
 
