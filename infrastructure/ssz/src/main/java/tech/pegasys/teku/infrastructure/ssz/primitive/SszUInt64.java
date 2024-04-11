@@ -37,8 +37,12 @@ public class SszUInt64 extends AbstractSszPrimitive<UInt64> {
     return new SszUInt64(val);
   }
 
-  protected SszUInt64(final UInt64 val) {
+  private SszUInt64(final UInt64 val) {
     super(val, SszPrimitiveSchemas.UINT64_SCHEMA);
+  }
+
+  protected SszUInt64(final UInt64 val, AbstractSszUInt64Schema<? extends SszUInt64> schema) {
+    super(val, schema);
   }
 
   public long longValue() {
