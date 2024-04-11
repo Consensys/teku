@@ -52,13 +52,10 @@ public class DebugDataDumper {
           DECODING_ERROR_SUB_DIR);
     }
     if (gossipMessagesPath.resolve(REJECTED_SUB_DIR).toFile().mkdirs()) {
-      LOG.info(
-          "{}} directory has been created to save rejected gossip messages.", REJECTED_SUB_DIR);
+      LOG.info("{} directory has been created to save rejected gossip messages.", REJECTED_SUB_DIR);
     }
     if (this.directory.resolve(INVALID_BLOCK_DIR).toFile().mkdirs()) {
-      LOG.info(
-          String.format(
-              "%s directory has been created to save invalid blocks.", INVALID_BLOCK_DIR));
+      LOG.info("{} directory has been created to save invalid blocks.", INVALID_BLOCK_DIR);
     }
   }
 
