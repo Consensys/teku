@@ -44,18 +44,19 @@ public class DebugDataDumper {
 
     final Path gossipMessagesPath = this.directory.resolve(GOSSIP_MESSAGES_DIR);
     if (gossipMessagesPath.toFile().mkdirs()) {
-      LOG.info("{} directory has been created to save gossip messages.", GOSSIP_MESSAGES_DIR);
+      LOG.debug("{} directory has been created to save gossip messages.", GOSSIP_MESSAGES_DIR);
     }
     if (gossipMessagesPath.resolve(DECODING_ERROR_SUB_DIR).toFile().mkdirs()) {
-      LOG.info(
+      LOG.debug(
           "{} directory has been created to save gossip messages with decoding errors.",
           DECODING_ERROR_SUB_DIR);
     }
     if (gossipMessagesPath.resolve(REJECTED_SUB_DIR).toFile().mkdirs()) {
-      LOG.info("{} directory has been created to save rejected gossip messages.", REJECTED_SUB_DIR);
+      LOG.debug(
+          "{} directory has been created to save rejected gossip messages.", REJECTED_SUB_DIR);
     }
     if (this.directory.resolve(INVALID_BLOCK_DIR).toFile().mkdirs()) {
-      LOG.info("{} directory has been created to save invalid blocks.", INVALID_BLOCK_DIR);
+      LOG.debug("{} directory has been created to save invalid blocks.", INVALID_BLOCK_DIR);
     }
   }
 
