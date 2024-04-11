@@ -66,15 +66,11 @@ public class DebugDataDumper {
       return;
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
-    final String identifiers = String.format("Topic: %s", topic);
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
     checkTopicDirExists(topicPath);
     saveBytesToFile(
-        "gossip message with decoding error",
-        identifiers,
-        topicPath.resolve(fileName),
-        originalMessage);
+        "gossip message with decoding error", topicPath.resolve(fileName), originalMessage);
   }
 
   public void saveGossipRejectedMessageToFile(
@@ -83,11 +79,9 @@ public class DebugDataDumper {
       return;
     }
     final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
-    final String identifiers = String.format("Topic: %s", topic);
     final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
     checkTopicDirExists(topicPath);
-    saveBytesToFile(
-        "rejected gossip message", identifiers, topicPath.resolve(fileName), decodedMessage);
+    saveBytesToFile("rejected gossip message", topicPath.resolve(fileName), decodedMessage);
   }
 
   public void saveInvalidBlockToFile(
@@ -97,23 +91,18 @@ public class DebugDataDumper {
     }
     final String fileName =
         String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
-    final String identifiers = String.format("Slot: %s, Block Root: %s", slot, blockRoot);
-    saveBytesToFile(
-        "invalid block", identifiers, Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
+    saveBytesToFile("invalid block", Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
   }
 
   @VisibleForTesting
   protected void saveBytesToFile(
-      final String object,
-      final String identifiers,
-      final Path relativeFilePath,
-      final Bytes bytes) {
+      final String object, final Path relativeFilePath, final Bytes bytes) {
     final Path path = directory.resolve(relativeFilePath);
     try {
       Files.write(path, bytes.toArray());
-      LOG.info("Saved {} bytes to file. {}. Location: {}", object, identifiers, relativeFilePath);
+      LOG.info("Saved {} bytes to file. Location: {}", object, relativeFilePath);
     } catch (IOException e) {
-      LOG.error("Failed to save {} bytes to file. {}", object, identifiers, e);
+      LOG.error("Failed to save {} bytes to file.", object, e);
     }
   }
 

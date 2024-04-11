@@ -126,8 +126,7 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     assertDoesNotThrow(
         () ->
-            manager.saveBytesToFile(
-                "object", "Identifier: data", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
+            manager.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
