@@ -121,6 +121,7 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void onFailoverNodeNotReady(final RemoteValidatorApiChannel failoverNotInSync) {
     if (currentEventStreamHasSameEndpoint(failoverNotInSync)) {
       final boolean switched = switchToFailoverEventStreamIfAvailable();
@@ -183,7 +184,6 @@ public class EventSourceBeaconChainEventAdapter
     return findReadyFailoverAndSwitch();
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   private boolean findReadyFailoverAndSwitch() {
     final Optional<? extends RemoteValidatorApiChannel> readyFailover =
         failoverBeaconNodeApis.stream()
