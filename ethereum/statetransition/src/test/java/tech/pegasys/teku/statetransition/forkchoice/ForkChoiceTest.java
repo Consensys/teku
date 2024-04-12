@@ -129,6 +129,7 @@ class ForkChoiceTest {
       mock(BlockBroadcastValidator.class);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
+  private DebugDataDumper debugDataDumper = mock(DebugDataDumper.class);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 
@@ -165,7 +166,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
-            mock(DebugDataDumper.class),
+            debugDataDumper,
             metricsSystem);
 
     // Starting and mocks
@@ -311,6 +312,11 @@ class ForkChoiceTest {
 
     importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
 
+    verify(debugDataDumper)
+        .saveInvalidBlockToFile(
+            eq(blockAndState.getSlot()),
+            eq(blockAndState.getBlock().getRoot()),
+            eq(blockAndState.getBlock().sszSerialize()));
     verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
   }
 
@@ -340,8 +346,8 @@ class ForkChoiceTest {
 
     // resolve with a failure
     payloadStatusSafeFuture.complete(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
-
     assertBlockImportFailure(importResult, FailureReason.FAILED_STATE_TRANSITION);
+    verify(debugDataDumper).saveInvalidBlockToFile(any(), any(), any());
   }
 
   @Test
@@ -741,6 +747,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockAndAssertFailure(
         chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
+    verify(debugDataDumper).saveInvalidBlockToFile(eq(slotToImport.increment()), any(), any());
   }
 
   @Test
@@ -777,7 +784,11 @@ class ForkChoiceTest {
     SignedBlockAndState invalidBlock = chainBuilder.generateNextBlock();
     importBlockAndAssertFailure(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
-
+    verify(debugDataDumper)
+        .saveInvalidBlockToFile(
+            eq(invalidBlock.getSlot()),
+            eq(invalidBlock.getRoot()),
+            eq(invalidBlock.getBlock().sszSerialize()));
     assertHeadIsOptimistic(maybeValidBlock);
     assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
         .isEqualTo(maybeValidBlock.getRoot());
