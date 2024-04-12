@@ -143,6 +143,7 @@ class DebugDataDumperTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void constructionOfDirectories_shouldDisableWhenFailedToCreate(@TempDir Path tempDir) {
     assertThat(tempDir.toFile().setWritable(false)).isTrue();
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
