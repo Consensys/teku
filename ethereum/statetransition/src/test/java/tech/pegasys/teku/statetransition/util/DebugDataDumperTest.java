@@ -51,7 +51,7 @@ class DebugDataDumperTest {
     manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
 
     final String fileName =
-        String.format("%s.ssz", manager.formatOptionalTimestamp(arrivalTimestamp));
+        String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
     final Path expectedFile =
         tempDir
             .resolve("gossip_messages")
@@ -70,7 +70,7 @@ class DebugDataDumperTest {
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName =
-        String.format("%s.ssz", manager.formatOptionalTimestamp(arrivalTimestamp));
+        String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
     final Path expectedFile =
         tempDir.resolve("gossip_messages").resolve("decoding_error").resolve(fileName);
     checkFileNotExist(expectedFile);
@@ -85,7 +85,7 @@ class DebugDataDumperTest {
     manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
 
     final String fileName =
-        String.format("%s.ssz", manager.formatOptionalTimestamp(arrivalTimestamp));
+        String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
     final Path expectedFile =
         tempDir.resolve("gossip_messages").resolve("rejected").resolve(topic).resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
