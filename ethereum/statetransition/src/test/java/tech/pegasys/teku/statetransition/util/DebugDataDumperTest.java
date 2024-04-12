@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -162,14 +165,20 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()));
-    assertThat(formattedTimestamp).isEqualTo("1970-01-01T12:46:40.00");
+
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
+    final Date expectedDate = new Date(timeProvider.getTimeInMillis().longValue());
+    assertThat(formattedTimestamp).isEqualTo(df.format(expectedDate));
   }
 
   @Test
   void generateTimestamp_shouldGenerateTimestamp() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp = manager.generateTimestamp(timeProvider);
-    assertThat(formattedTimestamp).isEqualTo("1970-01-01T12:46:40.00");
+
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
+    final Date expectedDate = new Date(timeProvider.getTimeInMillis().longValue());
+    assertThat(formattedTimestamp).isEqualTo(df.format(expectedDate));
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
