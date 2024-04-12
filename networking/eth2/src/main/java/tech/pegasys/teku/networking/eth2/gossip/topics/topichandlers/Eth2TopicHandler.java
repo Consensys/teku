@@ -170,6 +170,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message, final Throwable err) {
     final ValidationResult response;
     if (ExceptionUtil.hasCause(err, DecodingException.class)) {
+
       debugDataDumper.saveGossipMessageDecodingError(
           getTopic(), message.getArrivalTimestamp(), message.getOriginalMessage());
       P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);

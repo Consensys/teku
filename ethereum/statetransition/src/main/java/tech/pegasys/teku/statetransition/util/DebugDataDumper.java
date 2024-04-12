@@ -26,6 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DebugDataDumper {
@@ -62,7 +64,7 @@ public class DebugDataDumper {
     if (!enabled) {
       return;
     }
-    final String formattedTimestamp = formatTimestamp(arrivalTimestamp);
+    final String formattedTimestamp = formatOptionalTimestamp(arrivalTimestamp);
     final String fileName = String.format("%s.ssz", formattedTimestamp);
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
@@ -79,7 +81,7 @@ public class DebugDataDumper {
     if (!enabled) {
       return;
     }
-    final String formattedTimestamp = formatTimestamp(arrivalTimestamp);
+    final String formattedTimestamp = formatOptionalTimestamp(arrivalTimestamp);
     final String fileName = String.format("%s.ssz", formattedTimestamp);
     final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
     final String identifiers = String.format("on topic %s at %s", topic, formattedTimestamp);
@@ -154,13 +156,23 @@ public class DebugDataDumper {
   }
 
   @VisibleForTesting
-  String formatTimestamp(final Optional<UInt64> arrivalTimestamp) {
-    if (arrivalTimestamp.isEmpty()) {
-      return "unknown";
-    }
+  String formatOptionalTimestamp(final Optional<UInt64> maybeTimestamp) {
+    return maybeTimestamp
+        .map(this::formatTimestamp)
+        .orElse(generateTimestamp(new SystemTimeProvider()));
+  }
 
+  @VisibleForTesting
+  String formatTimestamp(final UInt64 arrivalTimestamp) {
     final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
-    final Date date = new Date(arrivalTimestamp.get().longValue());
+    final Date date = new Date(arrivalTimestamp.longValue());
+    return df.format(date);
+  }
+
+  @VisibleForTesting
+  String generateTimestamp(final TimeProvider timeProvider) {
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
+    final Date date = new Date(timeProvider.getTimeInMillis().longValue());
     return df.format(date);
   }
 

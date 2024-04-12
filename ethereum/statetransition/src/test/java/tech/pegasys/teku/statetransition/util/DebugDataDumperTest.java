@@ -47,7 +47,8 @@ class DebugDataDumperTest {
     final String topic = "test_topic";
     manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
 
-    final String fileName = String.format("%s.ssz", manager.formatTimestamp(arrivalTimestamp));
+    final String fileName =
+        String.format("%s.ssz", manager.formatOptionalTimestamp(arrivalTimestamp));
     final Path expectedFile =
         tempDir
             .resolve("gossip_messages")
@@ -65,7 +66,8 @@ class DebugDataDumperTest {
     manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
     assertThat(manager.isEnabled()).isFalse();
 
-    final String fileName = String.format("%s.ssz", manager.formatTimestamp(arrivalTimestamp));
+    final String fileName =
+        String.format("%s.ssz", manager.formatOptionalTimestamp(arrivalTimestamp));
     final Path expectedFile =
         tempDir.resolve("gossip_messages").resolve("decoding_error").resolve(fileName);
     checkFileNotExist(expectedFile);
@@ -79,7 +81,8 @@ class DebugDataDumperTest {
     final String topic = "test_topic";
     manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
 
-    final String fileName = String.format("%s.ssz", manager.formatTimestamp(arrivalTimestamp));
+    final String fileName =
+        String.format("%s.ssz", manager.formatOptionalTimestamp(arrivalTimestamp));
     final Path expectedFile =
         tempDir.resolve("gossip_messages").resolve("rejected").resolve(topic).resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
@@ -158,15 +161,15 @@ class DebugDataDumperTest {
   void formatTimestamp_shouldFormatDate() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp =
-        manager.formatTimestamp(Optional.of(timeProvider.getTimeInMillis()));
+        manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()));
     assertThat(formattedTimestamp).isEqualTo("1970-01-01T12:46:40.00");
   }
 
   @Test
-  void formatTimestamp_shouldReturnConsistentUnknown() {
+  void generateTimestamp_shouldGenerateTimestamp() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
-    final String formattedTimestamp = manager.formatTimestamp(Optional.empty());
-    assertThat(formattedTimestamp).isEqualTo("unknown");
+    final String formattedTimestamp = manager.generateTimestamp(timeProvider);
+    assertThat(formattedTimestamp).isEqualTo("1970-01-01T12:46:40.00");
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
