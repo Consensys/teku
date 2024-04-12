@@ -2135,6 +2135,13 @@ public final class DataStructureUtil {
             randomEth1Address().getWrappedBytes()));
   }
 
+  public Bytes32 randomCompoundingWithdrawalCredentials() {
+    return Bytes32.wrap(
+        Bytes.concatenate(
+            Bytes.fromHexString("0x020000000000000000000000"),
+            randomEth1Address().getWrappedBytes()));
+  }
+
   public List<VersionedHash> randomVersionedHashes(final int count) {
     return IntStream.range(0, count)
         .mapToObj(__ -> new VersionedHash(randomBytes32()))
