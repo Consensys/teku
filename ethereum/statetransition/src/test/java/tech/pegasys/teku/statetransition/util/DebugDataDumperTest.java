@@ -24,6 +24,8 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -129,6 +131,7 @@ class DebugDataDumperTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void saveBytesToFile_shouldNotEscalateWhenIOException(@TempDir Path tempDir) {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final File invalidPath = tempDir.resolve("invalid").toFile();
