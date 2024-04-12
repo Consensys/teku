@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -657,10 +658,10 @@ class BlockOperationSelectorFactoryTest {
     final CapturingBeaconBlockUnblinder blockUnblinder =
         new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
 
-    when(executionLayer.getUnblindedPayload(blindedSignedBlock))
+    when(executionLayer.getUnblindedPayload(blindedSignedBlock, BlockPublishingPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
-    factory.createBlockUnblinderSelector().accept(blockUnblinder);
+    factory.createBlockUnblinderSelector(BlockPublishingPerformance.NOOP).accept(blockUnblinder);
 
     assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
   }
@@ -789,7 +790,9 @@ class BlockOperationSelectorFactoryTest {
         MiscHelpersDeneb.required(spec.atSlot(signedBlockContents.getSlot()).miscHelpers());
 
     final List<BlobSidecar> blobSidecars =
-        factory.createBlobSidecarsSelector().apply(signedBlockContents);
+        factory
+            .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
+            .apply(signedBlockContents);
 
     final SszList<Blob> expectedBlobs = signedBlockContents.getBlobs().orElseThrow();
     final SszList<SszKZGProof> expectedProofs = signedBlockContents.getKzgProofs().orElseThrow();
@@ -833,7 +836,11 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayload(),
         Optional.of(blobsBundle));
 
-    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
+    assertThatThrownBy(
+            () ->
+                factory
+                    .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
+                    .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
@@ -854,7 +861,11 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayload(),
         Optional.of(blobsBundle));
 
-    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
+    assertThatThrownBy(
+            () ->
+                factory
+                    .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
+                    .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
@@ -875,7 +886,11 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayload(),
         Optional.of(blobsBundle));
 
-    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
+    assertThatThrownBy(
+            () ->
+                factory
+                    .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
+                    .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
@@ -899,7 +914,9 @@ class BlockOperationSelectorFactoryTest {
         Optional.of(blobsBundle));
 
     final List<BlobSidecar> blobSidecars =
-        factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock);
+        factory
+            .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
+            .apply(signedBlindedBeaconBlock);
 
     final SszList<Blob> expectedBlobs = blobsBundle.getBlobs();
     final SszList<SszKZGProof> expectedProofs = blobsBundle.getProofs();

@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -37,7 +38,9 @@ public interface BlockFactory {
       Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 
-  SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(SignedBeaconBlock maybeBlindedBlock);
+  SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
+      SignedBeaconBlock maybeBlindedBlock, BlockPublishingPerformance blockPublishingPerformance);
 
-  List<BlobSidecar> createBlobSidecars(SignedBlockContainer blockContainer);
+  List<BlobSidecar> createBlobSidecars(
+      SignedBlockContainer blockContainer, BlockPublishingPerformance blockPublishingPerformance);
 }

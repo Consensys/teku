@@ -30,8 +30,23 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
 
   private Bytes4 electraForkVersion;
   private UInt64 electraForkEpoch;
+  // TODO: remove default when EIP-7251 become part of the Electra
+  private UInt64 minPerEpochChurnLimitElectra = UInt64.ZERO;
+  // TODO: remove default when EIP-7251 become part of the Electra
+  private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.ZERO;
   private Integer maxDepositReceiptsPerPayload;
   private Integer maxExecutionLayerExits;
+  private UInt64 minActivationBalance;
+  private UInt64 maxEffectiveBalanceElectra;
+  private Integer pendingBalanceDepositsLimit;
+  private Integer pendingPartialWithdrawalsLimit;
+  private Integer pendingConsolidationsLimit;
+  private Integer whistleblowerRewardQuotientElectra;
+  private Integer minSlashingPenaltyQuotientElectra;
+  private Integer maxPartialWithdrawalsPerPayload;
+  private Integer maxAttesterSlashingsElectra;
+  private Integer maxAttestationsElectra;
+  private Integer maxConsolidations;
   private UInt64 fieldElementsPerCell;
 
   ElectraBuilder() {}
@@ -44,6 +59,19 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         electraForkEpoch,
         maxDepositReceiptsPerPayload,
         maxExecutionLayerExits,
+        minPerEpochChurnLimitElectra,
+        maxPerEpochActivationExitChurnLimit,
+        minActivationBalance,
+        maxEffectiveBalanceElectra,
+        pendingBalanceDepositsLimit,
+        pendingPartialWithdrawalsLimit,
+        pendingConsolidationsLimit,
+        whistleblowerRewardQuotientElectra,
+        minSlashingPenaltyQuotientElectra,
+        maxPartialWithdrawalsPerPayload,
+        maxAttesterSlashingsElectra,
+        maxAttestationsElectra,
+        maxConsolidations,
         fieldElementsPerCell);
   }
 
@@ -77,6 +105,89 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
+  public ElectraBuilder minPerEpochChurnLimitElectra(final UInt64 minPerEpochChurnLimitElectra) {
+    checkNotNull(minPerEpochChurnLimitElectra);
+    this.minPerEpochChurnLimitElectra = minPerEpochChurnLimitElectra;
+    return this;
+  }
+
+  public ElectraBuilder maxPerEpochActivationExitChurnLimit(
+      final UInt64 maxPerEpochActivationExitChurnLimit) {
+    checkNotNull(maxPerEpochActivationExitChurnLimit);
+    this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
+    return this;
+  }
+
+  public ElectraBuilder minActivationBalance(final UInt64 minActivationBalance) {
+    checkNotNull(minActivationBalance);
+    this.minActivationBalance = minActivationBalance;
+    return this;
+  }
+
+  public ElectraBuilder maxEffectiveBalanceElectra(final UInt64 maxEffectiveBalanceElectra) {
+    checkNotNull(maxEffectiveBalanceElectra);
+    this.maxEffectiveBalanceElectra = maxEffectiveBalanceElectra;
+    return this;
+  }
+
+  public ElectraBuilder pendingBalanceDepositsLimit(final Integer pendingBalanceDepositsLimit) {
+    checkNotNull(pendingBalanceDepositsLimit);
+    this.pendingBalanceDepositsLimit = pendingBalanceDepositsLimit;
+    return this;
+  }
+
+  public ElectraBuilder pendingPartialWithdrawalsLimit(
+      final Integer pendingPartialWithdrawalsLimit) {
+    checkNotNull(pendingPartialWithdrawalsLimit);
+    this.pendingPartialWithdrawalsLimit = pendingPartialWithdrawalsLimit;
+    return this;
+  }
+
+  public ElectraBuilder pendingConsolidationsLimit(final Integer pendingConsolidationsLimit) {
+    checkNotNull(pendingConsolidationsLimit);
+    this.pendingConsolidationsLimit = pendingConsolidationsLimit;
+    return this;
+  }
+
+  public ElectraBuilder whistleblowerRewardQuotientElectra(
+      final Integer whistleblowerRewardQuotientElectra) {
+    checkNotNull(whistleblowerRewardQuotientElectra);
+    this.whistleblowerRewardQuotientElectra = whistleblowerRewardQuotientElectra;
+    return this;
+  }
+
+  public ElectraBuilder minSlashingPenaltyQuotientElectra(
+      final Integer minSlashingPenaltyQuotientElectra) {
+    checkNotNull(minSlashingPenaltyQuotientElectra);
+    this.minSlashingPenaltyQuotientElectra = minSlashingPenaltyQuotientElectra;
+    return this;
+  }
+
+  public ElectraBuilder maxPartialWithdrawalsPerPayload(
+      final Integer maxPartialWithdrawalsPerPayload) {
+    checkNotNull(maxPartialWithdrawalsPerPayload);
+    this.maxPartialWithdrawalsPerPayload = maxPartialWithdrawalsPerPayload;
+    return this;
+  }
+
+  public ElectraBuilder maxAttesterSlashingsElectra(final Integer maxAttesterSlashingsElectra) {
+    checkNotNull(maxAttesterSlashingsElectra);
+    this.maxAttesterSlashingsElectra = maxAttesterSlashingsElectra;
+    return this;
+  }
+
+  public ElectraBuilder maxAttestationsElectra(final Integer maxAttestationsElectra) {
+    checkNotNull(maxAttestationsElectra);
+    this.maxAttestationsElectra = maxAttestationsElectra;
+    return this;
+  }
+
+  public ElectraBuilder maxConsolidations(final Integer maxConsolidations) {
+    checkNotNull(maxConsolidations);
+    this.maxConsolidations = maxConsolidations;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (electraForkEpoch == null) {
@@ -99,6 +210,19 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("electraForkEpoch", electraForkEpoch);
     constants.put("electraForkVersion", electraForkVersion);
     constants.put("maxDepositReceiptsPerPayload", maxDepositReceiptsPerPayload);
+    constants.put("minPerEpochChurnLimitElectra", minPerEpochChurnLimitElectra);
+    constants.put("maxExecutionLayerExits", maxExecutionLayerExits);
+    constants.put("minActivationBalance", minActivationBalance);
+    constants.put("maxEffectiveBalanceElectra", maxEffectiveBalanceElectra);
+    constants.put("pendingBalanceDepositsLimit", pendingBalanceDepositsLimit);
+    constants.put("pendingPartialWithdrawalsLimit", pendingPartialWithdrawalsLimit);
+    constants.put("pendingConsolidationsLimit", pendingConsolidationsLimit);
+    constants.put("whistleblowerRewardQuotientElectra", whistleblowerRewardQuotientElectra);
+    constants.put("minSlashingPenaltyQuotientElectra", minSlashingPenaltyQuotientElectra);
+    constants.put("maxPartialWithdrawalsPerPayload", maxPartialWithdrawalsPerPayload);
+    constants.put("maxAttesterSlashingsElectra", maxAttesterSlashingsElectra);
+    constants.put("maxAttestationsElectra", maxAttestationsElectra);
+    constants.put("maxConsolidations", maxConsolidations);
 
     return constants;
   }
