@@ -24,7 +24,9 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class ChainHeadTracker implements ValidatorTimingChannel {
+  public static final int HEAD_TOO_OLD_THRESHOLD = 32;
 
+  private UInt64 currentSlot = UInt64.ZERO;
   private UInt64 headBlockSlot = UInt64.ZERO;
   private Optional<Bytes32> headBlockRoot = Optional.empty();
 
@@ -34,6 +36,10 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
       throw new ChainHeadBeyondSlotException(atSlot);
     }
     return headBlockRoot;
+  }
+
+  public boolean isHeadTooOld() {
+    return currentSlot.minusMinZero(headBlockSlot).isGreaterThan(HEAD_TOO_OLD_THRESHOLD);
   }
 
   @Override
@@ -47,7 +53,9 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onSlot(final UInt64 slot) {}
+  public void onSlot(final UInt64 slot) {
+    currentSlot = slot;
+  }
 
   @Override
   public void onPossibleMissedEvents() {}

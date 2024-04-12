@@ -86,6 +86,9 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     if (assignments.isEmpty()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
+    if (chainHeadTracker.isHeadTooOld()) {
+      return SafeFuture.completedFuture(DutyResult.NODE_SYNCING);
+    }
     try {
       lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
     } catch (ChainHeadBeyondSlotException ex) {

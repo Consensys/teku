@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker.HEAD_TOO_OLD_THRESHOLD;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,23 @@ class ChainHeadTrackerTest {
 
     assertThrows(
         ChainHeadBeyondSlotException.class, () -> tracker.getCurrentChainHead(slot.minus(1)));
+  }
+
+  @Test
+  void isHeadTooOldShouldReturnFalseWhenHeadSlotIsInThreshold() {
+    final UInt64 currentSlot = UInt64.valueOf(HEAD_TOO_OLD_THRESHOLD + 1);
+    tracker.onSlot(currentSlot);
+    updateHead(currentSlot.minus(HEAD_TOO_OLD_THRESHOLD), dataStructureUtil.randomBytes32());
+    assertThat(tracker.isHeadTooOld()).isFalse();
+  }
+
+  @Test
+  void isHeadTooOldShouldReturnTrueWhenHeadSlotIsInThreshold() {
+    final UInt64 currentSlot = UInt64.valueOf(HEAD_TOO_OLD_THRESHOLD + 1);
+    tracker.onSlot(currentSlot);
+    updateHead(
+        currentSlot.minus(HEAD_TOO_OLD_THRESHOLD).decrement(), dataStructureUtil.randomBytes32());
+    assertThat(tracker.isHeadTooOld()).isTrue();
   }
 
   private void updateHead(final UInt64 slot, final Bytes32 headBlockRoot) {
