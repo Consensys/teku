@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -106,7 +107,8 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
     try {
       final Path importFile = Files.createTempFile("import", ".yml");
       TestDataUtils.writeJsonToFile(interchange, importFile);
-      importer.initialise(importFile.toFile());
+      final Optional<String> initialiseError = importer.initialise(importFile.toFile());
+      assertThat(initialiseError).isEmpty();
       // cleanup
       Files.delete(importFile);
     } catch (IOException ex) {
