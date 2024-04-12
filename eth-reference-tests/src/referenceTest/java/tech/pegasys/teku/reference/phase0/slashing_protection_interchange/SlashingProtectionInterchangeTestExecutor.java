@@ -46,8 +46,9 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
     final TestData testData =
         TestDataUtils.loadJson(testDefinition, testDefinition.getTestName(), TestData.class);
 
-    // our implementation does not fail importing when the GVR in the interchange mismatches the one
-    // from the spec
+    // our implementation fails when importing one of the keys in an interchange, which is already
+    // in our slashprotection directory with a different genesis validators root. However, the test
+    // does not import any keys
     if (testData.name.startsWith("wrong_genesis_validators_root")) {
       LOG.info("Skipping {}", testData.name);
       return;
@@ -55,30 +56,28 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
 
     LOG.info("Running {}", testData.name);
 
-    final Path tempDir = Files.createTempDirectory(testData.name);
+    final Path slashingProtectionPath = Files.createTempDirectory("slashprotection");
     try {
-      runTest(testData, tempDir);
+      runTest(testData, slashingProtectionPath);
     } finally {
-      deleteDirectory(tempDir);
+      deleteDirectory(slashingProtectionPath);
     }
   }
 
-  private void runTest(final TestData testData, final Path tempDir) {
-    final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
+  private void runTest(final TestData testData, final Path slashingProtectionPath) {
+    final SlashingProtectionImporter importer =
+        new SlashingProtectionImporter(slashingProtectionPath);
     final LocalSlashingProtector slashingProtector =
-        new LocalSlashingProtector(SyncDataAccessor.create(tempDir), tempDir);
-    testData.steps.forEach(
-        step -> runStep(step, testData.genesisValidatorsRoot, importer, slashingProtector));
+        new LocalSlashingProtector(
+            SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
+    testData.steps.forEach(step -> runStep(step, importer, slashingProtector));
   }
 
   private void runStep(
       final Step step,
-      final Bytes32 genesisValidatorsRoot,
       final SlashingProtectionImporter importer,
       final LocalSlashingProtector slashingProtector) {
-    importInterchange(importer, step.interchange);
-    final Map<BLSPublicKey, String> importErrors =
-        importer.updateLocalRecords(status -> LOG.info("Import status: " + status));
+    final Map<BLSPublicKey, String> importErrors = importInterchange(importer, step.interchange);
     if (step.shouldSucceed) {
       assertThat(importErrors).isEmpty();
     } else {
@@ -87,20 +86,21 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
     step.blocks.forEach(
         block ->
             assertThat(
-                    slashingProtector.maySignBlock(block.pubkey, genesisValidatorsRoot, block.slot))
+                    slashingProtector.maySignBlock(
+                        block.pubkey, step.interchange.metadata.genesisValidatorsRoot, block.slot))
                 .isCompletedWithValue(block.shouldSucceed));
     step.attestations.forEach(
         attestation ->
             assertThat(
                     slashingProtector.maySignAttestation(
                         attestation.pubkey,
-                        genesisValidatorsRoot,
+                        step.interchange.metadata.genesisValidatorsRoot,
                         attestation.sourceEpoch,
                         attestation.targetEpoch))
                 .isCompletedWithValue(attestation.shouldSucceed));
   }
 
-  private void importInterchange(
+  private Map<BLSPublicKey, String> importInterchange(
       final SlashingProtectionImporter importer,
       final SlashingProtectionInterchangeFormat interchange) {
     try {
@@ -112,6 +112,7 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }
+    return importer.updateLocalRecords(status -> LOG.info("Import status: " + status));
   }
 
   private void deleteDirectory(final Path dir) {
