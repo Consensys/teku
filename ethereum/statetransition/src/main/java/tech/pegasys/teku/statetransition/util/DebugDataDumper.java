@@ -140,18 +140,18 @@ public class DebugDataDumper {
   }
 
   @VisibleForTesting
-  protected static String formatTimestamp(final Optional<UInt64> arrivalTimestamp) {
+  static String formatTimestamp(final Optional<UInt64> arrivalTimestamp) {
     if (arrivalTimestamp.isEmpty()) {
       return "unknown";
     }
 
     final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
-    Date date = new Date(arrivalTimestamp.get().longValue());
+    final Date date = new Date(arrivalTimestamp.get().longValue());
     return df.format(date);
   }
 
   @VisibleForTesting
-  protected boolean isEnabled() {
+  boolean isEnabled() {
     return enabled;
   }
 }
