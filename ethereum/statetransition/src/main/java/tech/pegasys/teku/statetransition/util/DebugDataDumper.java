@@ -141,7 +141,7 @@ public class DebugDataDumper {
   }
 
   @VisibleForTesting
-  static String formatTimestamp(final Optional<UInt64> arrivalTimestamp) {
+  String formatTimestamp(final Optional<UInt64> arrivalTimestamp) {
     if (arrivalTimestamp.isEmpty()) {
       return "unknown";
     }
