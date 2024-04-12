@@ -76,15 +76,7 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
       final Bytes32 genesisValidatorsRoot,
       final SlashingProtectionImporter importer,
       final LocalSlashingProtector slashingProtector) {
-    try {
-      final Path importFile = Files.createTempFile("import", ".yml");
-      TestDataUtils.writeJsonToFile(step.interchange, importFile);
-      importer.initialise(importFile.toFile());
-      // cleanup
-      Files.delete(importFile);
-    } catch (IOException ex) {
-      throw new UncheckedIOException(ex);
-    }
+    importInterchange(importer, step.interchange);
     final Map<BLSPublicKey, String> importErrors =
         importer.updateLocalRecords(status -> LOG.info("Import status: " + status));
     if (step.shouldSucceed) {
@@ -106,6 +98,20 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
                         attestation.sourceEpoch,
                         attestation.targetEpoch))
                 .isCompletedWithValue(attestation.shouldSucceed));
+  }
+
+  private void importInterchange(
+      final SlashingProtectionImporter importer,
+      final SlashingProtectionInterchangeFormat interchange) {
+    try {
+      final Path importFile = Files.createTempFile("import", ".yml");
+      TestDataUtils.writeJsonToFile(interchange, importFile);
+      importer.initialise(importFile.toFile());
+      // cleanup
+      Files.delete(importFile);
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
+    }
   }
 
   private void deleteDirectory(final Path dir) {
@@ -137,15 +143,13 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
         BLSPublicKey pubkey,
         UInt64 slot,
         @JsonProperty("signing_root") Bytes32 signingRoot,
-        @JsonProperty("should_succeed") boolean shouldSucceed,
-        @JsonProperty("should_succeed_complete") boolean shouldSucceedComplete) {}
+        @JsonProperty("should_succeed") boolean shouldSucceed) {}
 
     public record Attestation(
         BLSPublicKey pubkey,
         @JsonProperty("source_epoch") UInt64 sourceEpoch,
         @JsonProperty("target_epoch") UInt64 targetEpoch,
         @JsonProperty("signing_root") Bytes32 signingRoot,
-        @JsonProperty("should_succeed") boolean shouldSucceed,
-        @JsonProperty("should_succeed_complete") boolean shouldSucceedComplete) {}
+        @JsonProperty("should_succeed") boolean shouldSucceed) {}
   }
 }
