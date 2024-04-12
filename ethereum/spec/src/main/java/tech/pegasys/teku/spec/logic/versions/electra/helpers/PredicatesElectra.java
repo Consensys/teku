@@ -52,11 +52,11 @@ public class PredicatesElectra extends Predicates {
     return hasMaxEffectiveBalance && hasExcessBalance;
   }
 
-  protected boolean hasCompoundingWithdrawalCredential(Validator validator) {
+  protected boolean hasCompoundingWithdrawalCredential(final Validator validator) {
     return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
   }
 
-  protected boolean isCompoundingWithdrawalCredential(Bytes32 withdrawalCredentials) {
+  protected boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
   }
 }

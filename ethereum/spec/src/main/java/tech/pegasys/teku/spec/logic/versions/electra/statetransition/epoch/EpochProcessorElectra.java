@@ -30,14 +30,14 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
   private final UInt64 minActivationBalance;
 
   public EpochProcessorElectra(
-      SpecConfigBellatrix specConfig,
-      MiscHelpersAltair miscHelpers,
-      BeaconStateAccessorsAltair beaconStateAccessors,
-      BeaconStateMutators beaconStateMutators,
-      ValidatorsUtil validatorsUtil,
-      BeaconStateUtil beaconStateUtil,
-      ValidatorStatusFactory validatorStatusFactory,
-      SchemaDefinitions schemaDefinitions) {
+      final SpecConfigBellatrix specConfig,
+      final MiscHelpersAltair miscHelpers,
+      final BeaconStateAccessorsAltair beaconStateAccessors,
+      final BeaconStateMutators beaconStateMutators,
+      final ValidatorsUtil validatorsUtil,
+      final BeaconStateUtil beaconStateUtil,
+      final ValidatorStatusFactory validatorStatusFactory,
+      final SchemaDefinitions schemaDefinitions) {
     super(
         specConfig,
         miscHelpers,

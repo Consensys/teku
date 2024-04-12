@@ -27,7 +27,9 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   protected PredicatesElectra predicatesElectra;
 
   public BeaconStateAccessorsElectra(
-      SpecConfigDeneb config, PredicatesElectra predicatesElectra, MiscHelpersDeneb miscHelpers) {
+      final SpecConfigDeneb config,
+      final PredicatesElectra predicatesElectra,
+      final MiscHelpersDeneb miscHelpers) {
     super(config, predicatesElectra, miscHelpers);
     this.maxEffectiveBalanceElectra =
         config.toVersionElectra().orElseThrow().getMaxEffectiveBalanceElectra();
