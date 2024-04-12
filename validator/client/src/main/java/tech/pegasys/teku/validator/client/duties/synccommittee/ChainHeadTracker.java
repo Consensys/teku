@@ -36,7 +36,7 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
     }
     if (headBlockRoot.isPresent()
         && atSlot.minusMinZero(headBlockSlot).isGreaterThan(HEAD_TOO_OLD_THRESHOLD)) {
-      throw new ChainHeadTooHoldException(headBlockSlot, atSlot);
+      throw new ChainHeadTooOldException(headBlockSlot, atSlot);
     }
     return headBlockRoot;
   }

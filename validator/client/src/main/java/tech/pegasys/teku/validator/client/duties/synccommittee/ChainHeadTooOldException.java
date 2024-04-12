@@ -15,9 +15,9 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ChainHeadTooHoldException extends RuntimeException {
+public class ChainHeadTooOldException extends RuntimeException {
 
-  public ChainHeadTooHoldException(final UInt64 headSlot, final UInt64 slot) {
+  public ChainHeadTooOldException(final UInt64 headSlot, final UInt64 slot) {
     super("Chain head too old. Head slot: " + headSlot + ", requested slot: " + slot);
   }
 }

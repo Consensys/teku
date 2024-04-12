@@ -88,7 +88,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     }
     try {
       lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
-    } catch (final ChainHeadBeyondSlotException | ChainHeadTooHoldException ex) {
+    } catch (final ChainHeadBeyondSlotException | ChainHeadTooOldException ex) {
       return chainHeadSlotCheckFailure(ex);
     }
     lastSignatureSlot = Optional.of(slot);

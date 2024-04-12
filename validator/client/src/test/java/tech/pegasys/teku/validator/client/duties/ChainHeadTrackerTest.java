@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadBeyondSlotException;
-import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTooHoldException;
+import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTooOldException;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 
 class ChainHeadTrackerTest {
@@ -69,7 +69,7 @@ class ChainHeadTrackerTest {
     updateHead(slot, headBlockRoot);
 
     assertThrows(
-        ChainHeadTooHoldException.class,
+        ChainHeadTooOldException.class,
         () -> tracker.getCurrentChainHead(slot.plus(HEAD_TOO_OLD_THRESHOLD + 1)));
   }
 
