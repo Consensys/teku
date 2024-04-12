@@ -86,13 +86,10 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     if (assignments.isEmpty()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    if (chainHeadTracker.isHeadTooOld()) {
-      return SafeFuture.completedFuture(DutyResult.NODE_SYNCING);
-    }
     try {
       lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
-    } catch (ChainHeadBeyondSlotException ex) {
-      return chainHeadBeyondSlotFailure(ex);
+    } catch (final ChainHeadBeyondSlotException | ChainHeadTooHoldException ex) {
+      return chainHeadSlotCheckFailure(ex);
     }
     lastSignatureSlot = Optional.of(slot);
     return lastSignatureBlockRoot
@@ -100,7 +97,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
         .orElse(SafeFuture.completedFuture(DutyResult.NODE_SYNCING));
   }
 
-  private SafeFuture<DutyResult> chainHeadBeyondSlotFailure(final ChainHeadBeyondSlotException ex) {
+  private SafeFuture<DutyResult> chainHeadSlotCheckFailure(final RuntimeException ex) {
     return SafeFuture.completedFuture(DutyResult.forError(getAllValidatorKeys(), ex));
   }
 

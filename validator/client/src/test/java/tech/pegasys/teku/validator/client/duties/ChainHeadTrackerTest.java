@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadBeyondSlotException;
+import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTooHoldException;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 
 class ChainHeadTrackerTest {
@@ -62,20 +63,14 @@ class ChainHeadTrackerTest {
   }
 
   @Test
-  void isHeadTooOldShouldReturnFalseWhenHeadSlotIsInThreshold() {
-    final UInt64 currentSlot = UInt64.valueOf(HEAD_TOO_OLD_THRESHOLD + 1);
-    tracker.onSlot(currentSlot);
-    updateHead(currentSlot.minus(HEAD_TOO_OLD_THRESHOLD), dataStructureUtil.randomBytes32());
-    assertThat(tracker.isHeadTooOld()).isFalse();
-  }
+  void shouldThrowCustomExceptionWhenHeadSlotIsTooOld() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
+    updateHead(slot, headBlockRoot);
 
-  @Test
-  void isHeadTooOldShouldReturnTrueWhenHeadSlotIsInThreshold() {
-    final UInt64 currentSlot = UInt64.valueOf(HEAD_TOO_OLD_THRESHOLD + 1);
-    tracker.onSlot(currentSlot);
-    updateHead(
-        currentSlot.minus(HEAD_TOO_OLD_THRESHOLD).decrement(), dataStructureUtil.randomBytes32());
-    assertThat(tracker.isHeadTooOld()).isTrue();
+    assertThrows(
+        ChainHeadTooHoldException.class,
+        () -> tracker.getCurrentChainHead(slot.plus(HEAD_TOO_OLD_THRESHOLD + 1)));
   }
 
   private void updateHead(final UInt64 slot, final Bytes32 headBlockRoot) {
