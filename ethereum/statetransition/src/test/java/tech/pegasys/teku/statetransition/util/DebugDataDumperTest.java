@@ -43,7 +43,7 @@ class DebugDataDumperTest {
     final String topic = "test_topic";
     manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
 
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
+    final String fileName = String.format("%s.ssz", arrivalTimestamp);
     final Path expectedFile =
         tempDir
             .resolve("gossip_messages")
@@ -61,7 +61,7 @@ class DebugDataDumperTest {
     manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
     assertThat(manager.isEnabled()).isFalse();
 
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
+    final String fileName = String.format("%s.ssz", arrivalTimestamp);
     final Path expectedFile =
         tempDir.resolve("gossip_messages").resolve("decoding_error").resolve(fileName);
     checkFileNotExist(expectedFile);
@@ -75,7 +75,7 @@ class DebugDataDumperTest {
     final String topic = "test_topic";
     manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
 
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
+    final String fileName = String.format("%s.ssz", arrivalTimestamp);
     final Path expectedFile =
         tempDir.resolve("gossip_messages").resolve("rejected").resolve(topic).resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
@@ -89,7 +89,7 @@ class DebugDataDumperTest {
     manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
     assertThat(manager.isEnabled()).isFalse();
 
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, "test_topic");
+    final String fileName = String.format("%s.ssz", arrivalTimestamp);
     final Path expectedFile =
         tempDir.resolve("gossip_messages").resolve("rejected").resolve(fileName);
     checkFileNotExist(expectedFile);
@@ -102,8 +102,7 @@ class DebugDataDumperTest {
     manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
 
     final String fileName =
-        String.format(
-            "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
+        String.format("%s_%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
     final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
     checkBytesSavedToFile(expectedFile, block.sszSerialize());
   }
@@ -116,8 +115,7 @@ class DebugDataDumperTest {
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName =
-        String.format(
-            "slot%s_root%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
+        String.format("%s_%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
     final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
     checkFileNotExist(expectedFile);
   }

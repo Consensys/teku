@@ -58,7 +58,7 @@ public class DebugDataDumper {
     if (!enabled) {
       return;
     }
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
+    final String fileName = String.format("%s.ssz", arrivalTimestamp);
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
     saveBytesToFile(
@@ -70,7 +70,7 @@ public class DebugDataDumper {
     if (!enabled) {
       return;
     }
-    final String fileName = String.format("%s_%s.ssz", arrivalTimestamp, topic);
+    final String fileName = String.format("%s.ssz", arrivalTimestamp);
     final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
     saveBytesToFile("rejected gossip message", topicPath.resolve(fileName), decodedMessage);
   }
@@ -80,8 +80,7 @@ public class DebugDataDumper {
     if (!enabled) {
       return;
     }
-    final String fileName =
-        String.format("slot%s_root%s.ssz", slot, blockRoot.toUnprefixedHexString());
+    final String fileName = String.format("%s_%s.ssz", slot, blockRoot.toUnprefixedHexString());
     saveBytesToFile("invalid block", Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
   }
 
