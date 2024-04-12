@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -213,6 +215,16 @@ public class Spec {
     return Optional.ofNullable(forMilestone(DENEB))
         .map(SpecVersion::getConfig)
         .map(specConfig -> (NetworkingSpecConfigDeneb) specConfig.getNetworkingConfig());
+  }
+
+  /**
+   * Networking config with Electra constants. Use {@link tech.pegasys.teku.spec.config.SpecConfigElectra#required(SpecConfig)} when
+   * you are sure that Electra is available, otherwise use this method
+   */
+  public Optional<NetworkingSpecConfigElectra> getNetworkingConfigElectra() {
+    return Optional.ofNullable(forMilestone(ELECTRA))
+        .map(SpecVersion::getConfig)
+        .map(specConfig -> (NetworkingSpecConfigElectra) specConfig.getNetworkingConfig());
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {

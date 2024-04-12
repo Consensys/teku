@@ -38,6 +38,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxAttesterSlashingsElectra;
   private final int maxAttestationsElectra;
   private final int maxConsolidations;
+  private final int dataColumnSidecarSubnetCount;
 
   private final UInt64 fieldElementsPerCell;
 
@@ -60,7 +61,8 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int maxAttesterSlashingsElectra,
       final int maxAttestationsElectra,
       final int maxConsolidations,
-      final UInt64 fieldElementsPerCell) {
+      final UInt64 fieldElementsPerCell,
+      final int dataColumnSidecarSubnetCount) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
@@ -80,6 +82,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.maxAttestationsElectra = maxAttestationsElectra;
     this.maxConsolidations = maxConsolidations;
     this.fieldElementsPerCell = fieldElementsPerCell;
+    this.dataColumnSidecarSubnetCount = dataColumnSidecarSubnetCount;
   }
 
   @Override
@@ -170,6 +173,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   @Override
   public UInt64 getFieldElementsPerCell() {
     return fieldElementsPerCell;
+  }
+
+  @Override
+  public int getDataColumnSidecarSubnetCount() {
+    return dataColumnSidecarSubnetCount;
   }
 
   @Override

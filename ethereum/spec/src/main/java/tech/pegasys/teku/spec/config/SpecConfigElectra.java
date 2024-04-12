@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SpecConfigElectra extends SpecConfigDeneb {
+public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfigElectra {
 
   UInt64 UNSET_DEPOSIT_RECEIPTS_START_INDEX = UInt64.MAX_VALUE;
 

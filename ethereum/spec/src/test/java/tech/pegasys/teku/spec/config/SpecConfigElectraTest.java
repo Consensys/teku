@@ -97,6 +97,7 @@ public class SpecConfigElectraTest {
         dataStructureUtil.randomPositiveInt(8),
         dataStructureUtil.randomPositiveInt(8),
         dataStructureUtil.randomPositiveInt(8),
-        dataStructureUtil.randomUInt64(64)) {};
+        dataStructureUtil.randomUInt64(64),
+        dataStructureUtil.randomPositiveInt(64)) {};
   }
 }

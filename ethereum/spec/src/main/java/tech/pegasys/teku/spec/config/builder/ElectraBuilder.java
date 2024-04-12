@@ -48,6 +48,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer maxAttestationsElectra;
   private Integer maxConsolidations;
   private UInt64 fieldElementsPerCell;
+  private Integer dataColumnSidecarSubnetCount;
 
   ElectraBuilder() {}
 
@@ -72,7 +73,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
         maxConsolidations,
-        fieldElementsPerCell);
+        fieldElementsPerCell,
+        dataColumnSidecarSubnetCount);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -188,6 +190,11 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
+  public ElectraBuilder dataColumnSidecarSubnetCount(final Integer blobSidecarSubnetCount) {
+    this.dataColumnSidecarSubnetCount = blobSidecarSubnetCount;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (electraForkEpoch == null) {
@@ -223,6 +230,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("maxAttesterSlashingsElectra", maxAttesterSlashingsElectra);
     constants.put("maxAttestationsElectra", maxAttestationsElectra);
     constants.put("maxConsolidations", maxConsolidations);
+    constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);
 
     return constants;
   }
