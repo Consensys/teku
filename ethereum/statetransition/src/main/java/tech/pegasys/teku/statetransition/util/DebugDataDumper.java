@@ -67,7 +67,9 @@ public class DebugDataDumper {
     final String formattedTimestamp = formatOptionalTimestamp(arrivalTimestamp);
     final String fileName = String.format("%s.ssz", formattedTimestamp);
     final Path topicPath =
-        Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
+        Path.of(GOSSIP_MESSAGES_DIR)
+            .resolve(DECODING_ERROR_SUB_DIR)
+            .resolve(topic.replaceAll("/", "_"));
     final String identifiers = String.format("on topic %s at %s", topic, formattedTimestamp);
     saveBytesToFile(
         "gossip message with decoding error",
@@ -83,7 +85,8 @@ public class DebugDataDumper {
     }
     final String formattedTimestamp = formatOptionalTimestamp(arrivalTimestamp);
     final String fileName = String.format("%s.ssz", formattedTimestamp);
-    final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
+    final Path topicPath =
+        Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic.replaceAll("/", "_"));
     final String identifiers = String.format("on topic %s at %s", topic, formattedTimestamp);
     saveBytesToFile(
         "rejected gossip message", identifiers, topicPath.resolve(fileName), decodedMessage);

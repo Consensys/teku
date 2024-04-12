@@ -47,8 +47,7 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    final String topic = "test_topic";
-    manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipMessageDecodingError("/eth/test/topic", arrivalTimestamp, messageBytes);
 
     final String fileName =
         String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
@@ -56,7 +55,7 @@ class DebugDataDumperTest {
         tempDir
             .resolve("gossip_messages")
             .resolve("decoding_error")
-            .resolve(topic)
+            .resolve("_eth_test_topic")
             .resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
@@ -66,13 +65,17 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipMessageDecodingError("test_topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipMessageDecodingError("/eth/test/topic", arrivalTimestamp, messageBytes);
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName =
         String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
     final Path expectedFile =
-        tempDir.resolve("gossip_messages").resolve("decoding_error").resolve(fileName);
+        tempDir
+            .resolve("gossip_messages")
+            .resolve("decoding_error")
+            .resolve("_eth_test_topic")
+            .resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 
@@ -81,13 +84,16 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    final String topic = "test_topic";
-    manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipRejectedMessageToFile("/eth/test/topic", arrivalTimestamp, messageBytes);
 
     final String fileName =
         String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
     final Path expectedFile =
-        tempDir.resolve("gossip_messages").resolve("rejected").resolve(topic).resolve(fileName);
+        tempDir
+            .resolve("gossip_messages")
+            .resolve("rejected")
+            .resolve("_eth_test_topic")
+            .resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
   }
 
@@ -96,12 +102,16 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipRejectedMessageToFile("test_topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipRejectedMessageToFile("/eth/test/topic", arrivalTimestamp, messageBytes);
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName = String.format("%s.ssz", arrivalTimestamp);
     final Path expectedFile =
-        tempDir.resolve("gossip_messages").resolve("rejected").resolve(fileName);
+        tempDir
+            .resolve("gossip_messages")
+            .resolve("rejected")
+            .resolve("_eth_test_topic")
+            .resolve(fileName);
     checkFileNotExist(expectedFile);
   }
 
