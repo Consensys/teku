@@ -180,16 +180,22 @@ public class EventSourceBeaconChainEventAdapter
   private void findReadyFailoverAndSwitch() {
     failoverBeaconNodeApis.stream()
         .filter(beaconNodeReadinessManager::isReady)
+        .filter(failover -> !currentEventStreamHasSameEndpoint(failover))
         .findFirst()
         .ifPresentOrElse(
             this::switchToFailoverEventStream,
-            validatorLogger::noFailoverBeaconNodesAvailableForEventStreaming);
+            () -> {
+              validatorLogger.noFailoverBeaconNodesAvailableForEventStreaming();
+              // if no failover switching is available, and we are currently connected to a failover
+              // event stream which has issues, trigger the readiness check against the primary BN
+              // immediately in the background
+              if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
+                beaconNodeReadinessManager.performPrimaryReadinessCheck();
+              }
+            });
   }
 
   private void switchToFailoverEventStream(final RemoteValidatorApiChannel beaconNodeApi) {
-    if (currentEventStreamHasSameEndpoint(beaconNodeApi)) {
-      return;
-    }
     eventSource.close();
     eventSource = createEventSource(beaconNodeApi);
     currentBeaconNodeUsedForEventStreaming = beaconNodeApi;
