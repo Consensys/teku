@@ -84,18 +84,18 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
     } else {
       assertThat(importErrors).isNotEmpty();
     }
+    final Bytes32 genesisValidatorsRoot = step.interchange.metadata.genesisValidatorsRoot;
     step.blocks.forEach(
         block ->
             assertThat(
-                    slashingProtector.maySignBlock(
-                        block.pubkey, step.interchange.metadata.genesisValidatorsRoot, block.slot))
+                    slashingProtector.maySignBlock(block.pubkey, genesisValidatorsRoot, block.slot))
                 .isCompletedWithValue(block.shouldSucceed));
     step.attestations.forEach(
         attestation ->
             assertThat(
                     slashingProtector.maySignAttestation(
                         attestation.pubkey,
-                        step.interchange.metadata.genesisValidatorsRoot,
+                        genesisValidatorsRoot,
                         attestation.sourceEpoch,
                         attestation.targetEpoch))
                 .isCompletedWithValue(attestation.shouldSucceed));
