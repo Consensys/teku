@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -28,6 +29,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -67,6 +69,32 @@ public class EventSourceBeaconChainEventAdapterTest {
         initEventSourceBeaconChainEventAdapter(shutdownWhenValidatorSlashedEnabled);
     eventSourceBeaconChainEventAdapter.createEventSource(beaconApiMock);
     verifyEventSourceSubscriptionUrl(httpUrlMock, shutdownWhenValidatorSlashedEnabled);
+  }
+
+  @Test
+  public void performsPrimaryReadinessCheckWhenFailoverNotReadyAndNoOtherFailoversAvailable() {
+    final BeaconNodeReadinessManager beaconNodeReadinessManager =
+        mock(BeaconNodeReadinessManager.class);
+    final RemoteValidatorApiChannel failover = mock(RemoteValidatorApiChannel.class);
+    final EventSourceBeaconChainEventAdapter eventSourceBeaconChainEventAdapter =
+        new EventSourceBeaconChainEventAdapter(
+            beaconNodeReadinessManager,
+            mock(RemoteValidatorApiChannel.class),
+            List.of(failover),
+            mock(OkHttpClient.class),
+            mock(ValidatorLogger.class),
+            mock(BeaconChainEventAdapter.class),
+            mock(ValidatorTimingChannel.class),
+            metricsSystemMock,
+            true,
+            false,
+            mock(Spec.class));
+
+    eventSourceBeaconChainEventAdapter.currentBeaconNodeUsedForEventStreaming = failover;
+
+    eventSourceBeaconChainEventAdapter.onFailoverNodeNotReady(failover);
+
+    verify(beaconNodeReadinessManager).performPrimaryReadinessCheck();
   }
 
   private EventSourceBeaconChainEventAdapter initEventSourceBeaconChainEventAdapter(

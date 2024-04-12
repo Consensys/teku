@@ -55,7 +55,7 @@ public class EventSourceBeaconChainEventAdapter
   private final CountDownLatch runningLatch = new CountDownLatch(1);
 
   private volatile BackgroundEventSource eventSource;
-  private volatile RemoteValidatorApiChannel currentBeaconNodeUsedForEventStreaming;
+  @VisibleForTesting volatile RemoteValidatorApiChannel currentBeaconNodeUsedForEventStreaming;
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
