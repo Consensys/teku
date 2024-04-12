@@ -18,6 +18,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -54,11 +58,11 @@ public class DebugDataDumper {
   }
 
   public void saveGossipMessageDecodingError(
-      final String topic, final String arrivalTimestamp, final Bytes originalMessage) {
+      final String topic, final Optional<UInt64> arrivalTimestamp, final Bytes originalMessage) {
     if (!enabled) {
       return;
     }
-    final String fileName = String.format("%s.ssz", arrivalTimestamp);
+    final String fileName = String.format("%s.ssz", formatTimestamp(arrivalTimestamp));
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
     saveBytesToFile(
@@ -66,11 +70,11 @@ public class DebugDataDumper {
   }
 
   public void saveGossipRejectedMessageToFile(
-      final String topic, final String arrivalTimestamp, final Bytes decodedMessage) {
+      final String topic, final Optional<UInt64> arrivalTimestamp, final Bytes decodedMessage) {
     if (!enabled) {
       return;
     }
-    final String fileName = String.format("%s.ssz", arrivalTimestamp);
+    final String fileName = String.format("%s.ssz", formatTimestamp(arrivalTimestamp));
     final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
     saveBytesToFile("rejected gossip message", topicPath.resolve(fileName), decodedMessage);
   }
@@ -133,6 +137,17 @@ public class DebugDataDumper {
             object);
       }
     }
+  }
+
+  @VisibleForTesting
+  protected static String formatTimestamp(final Optional<UInt64> arrivalTimestamp) {
+    if (arrivalTimestamp.isEmpty()) {
+      return "unknown";
+    }
+
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
+    Date date = new Date(arrivalTimestamp.get().longValue());
+    return df.format(date);
   }
 
   @VisibleForTesting

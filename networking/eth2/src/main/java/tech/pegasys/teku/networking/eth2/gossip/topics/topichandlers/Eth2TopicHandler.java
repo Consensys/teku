@@ -137,7 +137,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       case REJECT:
         debugDataDumper.saveGossipRejectedMessageToFile(
             getTopic(),
-            message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
+            message.getArrivalTimestamp(),
             message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY));
         P2P_LOG.onGossipRejected(
             getTopic(),
@@ -171,9 +171,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     final ValidationResult response;
     if (ExceptionUtil.hasCause(err, DecodingException.class)) {
       debugDataDumper.saveGossipMessageDecodingError(
-          getTopic(),
-          message.getArrivalTimestamp().map(UInt64::toString).orElse("unknown"),
-          message.getOriginalMessage());
+          getTopic(), message.getArrivalTimestamp(), message.getOriginalMessage());
       P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.hasCause(err, RejectedExecutionException.class)) {
