@@ -90,30 +90,30 @@ public class DebugDataDumper {
 
   @VisibleForTesting
   protected void saveBytesToFile(
-      final String object, final Path relativeFilePath, final Bytes bytes) {
+      final String description, final Path relativeFilePath, final Bytes bytes) {
     final Path path = directory.resolve(relativeFilePath);
     try {
       Files.write(path, bytes.toArray());
-      LOG.info("Saved {} bytes to file. Location: {}", object, relativeFilePath);
+      LOG.info("Saved {} bytes to file. Location: {}", description, relativeFilePath);
     } catch (NoSuchFileException e) {
       if (!path.getParent().toFile().mkdirs()) {
-        LOG.error("Failed to save {} bytes to file.", object, e);
+        LOG.error("Failed to save {} bytes to file.", description, e);
         return;
       }
-      saveAfterCreatingTopicDirectory(object, relativeFilePath, bytes);
+      saveAfterCreatingTopicDirectory(description, relativeFilePath, bytes);
     } catch (IOException e) {
-      LOG.error("Failed to save {} bytes to file.", object, e);
+      LOG.error("Failed to save {} bytes to file.", description, e);
     }
   }
 
   private void saveAfterCreatingTopicDirectory(
-      final String object, final Path relativeFilePath, final Bytes bytes) {
+      final String description, final Path relativeFilePath, final Bytes bytes) {
     final Path path = directory.resolve(relativeFilePath);
     try {
       Files.write(path, bytes.toArray());
-      LOG.info("Saved {} bytes to file. Location: {}", object, relativeFilePath);
+      LOG.info("Saved {} bytes to file. Location: {}", description, relativeFilePath);
     } catch (IOException e) {
-      LOG.error("Failed to save {} bytes to file.", object, e);
+      LOG.error("Failed to save {} bytes to file.", description, e);
       if (!path.getParent().toFile().exists()) {
         LOG.error(
             "{} directory does not exist. Disabling saving debug data to file.",
@@ -122,19 +122,20 @@ public class DebugDataDumper {
     }
   }
 
-  private void createDirectory(final Path path, final String directoryName, final String object) {
+  private void createDirectory(
+      final Path path, final String directoryName, final String description) {
     if (!enabled) {
       return;
     }
     if (path.toFile().mkdirs()) {
-      LOG.debug("{} directory has been created to save {}.", directoryName, object);
+      LOG.debug("{} directory has been created to save {}.", directoryName, description);
     } else {
       if (!path.toFile().exists()) {
         this.enabled = false;
         LOG.error(
             "Unable to create {} directory to save {}. Disabling saving debug data to file.",
             directoryName,
-            object);
+            description);
       }
     }
   }
