@@ -171,6 +171,11 @@ public class Eth2P2PNetworkBuilder {
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
+    final Optional<Integer> dasExtraCustodySubnetCount =
+        config.getDasExtraCustodySubnetCount() == 0
+            ? Optional.empty()
+            : Optional.of(config.getDasExtraCustodySubnetCount());
+
     return new ActiveEth2P2PNetwork(
         config.getSpec(),
         asyncRunner,
@@ -184,6 +189,7 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
+        dasExtraCustodySubnetCount,
         config.isAllTopicsFilterEnabled());
   }
 
