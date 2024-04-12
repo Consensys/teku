@@ -177,6 +177,7 @@ public class EventSourceBeaconChainEventAdapter
     findReadyFailoverAndSwitch();
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void findReadyFailoverAndSwitch() {
     failoverBeaconNodeApis.stream()
         .filter(beaconNodeReadinessManager::isReady)
