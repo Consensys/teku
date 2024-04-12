@@ -70,33 +70,33 @@ public interface KZG {
         }
 
         @Override
-        public List<Cell> computeCells(Bytes blob) {
-          List<Cell> blobCells = Cell.splitBytes(blob);
+        public List<KZGCell> computeCells(Bytes blob) {
+          List<KZGCell> blobCells = KZGCell.splitBytes(blob);
           return Stream.concat(
               blobCells.stream(),
-              Stream.generate(() -> Cell.ZERO).limit(blobCells.size())
+              Stream.generate(() -> KZGCell.ZERO).limit(blobCells.size())
           ).toList();
         }
 
         @Override
-        public List<CellAndProof> computeCellsAndProofs(Bytes blob) {
+        public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
           return computeCells(blob)
               .stream()
-              .map(cell -> new CellAndProof(cell, KZGProof.fromBytesCompressed(Bytes48.ZERO)))
+              .map(cell -> new KZGCellAndProof(cell, KZGProof.fromBytesCompressed(Bytes48.ZERO)))
               .toList();
         }
 
         @Override
-        public boolean verifyCellProof(KZGCommitment commitment, CellWithID cellWithID, KZGProof proof) {
+        public boolean verifyCellProof(KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof) {
           return true;
         }
 
         @Override
-        public List<Cell> recoverCells(List<CellWithID> cells) {
+        public List<KZGCell> recoverCells(List<KZGCellWithID> cells) {
           if (cells.size() < CELLS_PER_BLOB)
             throw new IllegalArgumentException("Can't recover from " + cells.size() + " cells");
           return cells.stream()
-              .map(CellWithID::cell)
+              .map(KZGCellWithID::cell)
               .limit(CELLS_PER_BLOB)
               .toList();
         }
@@ -119,13 +119,13 @@ public interface KZG {
 
   // EIP-7594 methods
 
-  List<Cell> computeCells(Bytes blob);
+  List<KZGCell> computeCells(Bytes blob);
 
-  List<CellAndProof> computeCellsAndProofs(Bytes blob);
+  List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 
-  boolean verifyCellProof(KZGCommitment commitment, CellWithID cellWithID, KZGProof proof);
+  boolean verifyCellProof(KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof);
 
   // TODO veryCellProofBatch()
 
-  List<Cell> recoverCells(List<CellWithID> cells);
+  List<KZGCell> recoverCells(List<KZGCellWithID> cells);
 }

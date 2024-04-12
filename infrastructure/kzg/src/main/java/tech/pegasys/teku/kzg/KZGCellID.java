@@ -2,10 +2,10 @@ package tech.pegasys.teku.kzg;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record CellID(UInt64 id) {
+public record KZGCellID(UInt64 id) {
 
-  static CellID fromCellColumnIndex(int idx) {
-    return new CellID(UInt64.valueOf(idx));
+  static KZGCellID fromCellColumnIndex(int idx) {
+    return new KZGCellID(UInt64.valueOf(idx));
   }
 
   int getColumnIndex() {

@@ -32,6 +32,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private UInt64 electraForkEpoch;
   private Integer maxDepositReceiptsPerPayload;
   private Integer maxExecutionLayerExits;
+  private UInt64 fieldElementsPerCell;
 
   ElectraBuilder() {}
 
@@ -42,7 +43,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         electraForkVersion,
         electraForkEpoch,
         maxDepositReceiptsPerPayload,
-        maxExecutionLayerExits);
+        maxExecutionLayerExits,
+        fieldElementsPerCell);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -66,6 +68,12 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   public ElectraBuilder maxExecutionLayerExits(final Integer maxExecutionLayerExits) {
     checkNotNull(maxExecutionLayerExits);
     this.maxExecutionLayerExits = maxExecutionLayerExits;
+    return this;
+  }
+
+  public ElectraBuilder fieldElementsPerCell(final UInt64 fieldElementsPerCell) {
+    checkNotNull(fieldElementsPerCell);
+    this.fieldElementsPerCell = fieldElementsPerCell;
     return this;
   }
 

@@ -26,17 +26,21 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxDepositReceiptsPerPayload;
   private final int maxExecutionLayerExits;
 
+  private final UInt64 fieldElementsPerCell;
+
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
       final Bytes4 electraForkVersion,
       final UInt64 electraForkEpoch,
       final int maxDepositReceiptsPerPayload,
-      final int maxExecutionLayerExits) {
+      final int maxExecutionLayerExits,
+      final UInt64 fieldElementsPerCell) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
     this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
     this.maxExecutionLayerExits = maxExecutionLayerExits;
+    this.fieldElementsPerCell = fieldElementsPerCell;
   }
 
   @Override
@@ -57,6 +61,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   @Override
   public int getMaxExecutionLayerExits() {
     return maxExecutionLayerExits;
+  }
+
+  @Override
+  public UInt64 getFieldElementsPerCell() {
+    return fieldElementsPerCell;
   }
 
   @Override

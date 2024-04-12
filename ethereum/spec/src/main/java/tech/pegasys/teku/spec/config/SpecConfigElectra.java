@@ -39,6 +39,8 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxExecutionLayerExits();
 
+  UInt64 getFieldElementsPerCell();
+
   @Override
   Optional<SpecConfigElectra> toVersionElectra();
 }

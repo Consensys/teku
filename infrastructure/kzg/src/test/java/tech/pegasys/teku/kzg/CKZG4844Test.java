@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import kotlin.ranges.IntRange;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
@@ -292,14 +291,14 @@ public final class CKZG4844Test {
   @Test
   public void testComputeRecoverCells() {
     Bytes blob = getSampleBlob();
-    List<Cell> cells = CKZG.computeCells(blob);
+    List<KZGCell> cells = CKZG.computeCells(blob);
     assertThat(cells).hasSize(CELLS_PER_EXT_BLOB);
 
-    List<CellWithID> cellsToRecover = IntStream.range(CELLS_PER_ORIG_BLOB, CELLS_PER_EXT_BLOB)
-        .mapToObj(i -> new CellWithID(cells.get(i), CellID.fromCellColumnIndex(i)))
+    List<KZGCellWithID> cellsToRecover = IntStream.range(CELLS_PER_ORIG_BLOB, CELLS_PER_EXT_BLOB)
+        .mapToObj(i -> new KZGCellWithID(cells.get(i), KZGCellID.fromCellColumnIndex(i)))
         .toList();
 
-    List<Cell> recoveredCells = CKZG.recoverCells(cellsToRecover);
+    List<KZGCell> recoveredCells = CKZG.recoverCells(cellsToRecover);
     assertThat(recoveredCells).isEqualTo(cells);
   }
 
@@ -310,16 +309,16 @@ public final class CKZG4844Test {
   @Test
   public void testComputeAndVerifyCellProof() {
     Bytes blob = getSampleBlob();
-    List<CellAndProof> cellAndProofs = CKZG.computeCellsAndProofs(blob);
+    List<KZGCellAndProof> cellAndProofs = CKZG.computeCellsAndProofs(blob);
     KZGCommitment kzgCommitment = CKZG.blobToKzgCommitment(blob);
 
     for (int i = 0; i < cellAndProofs.size(); i++) {
       assertThat(
-          CKZG.verifyCellProof(kzgCommitment, CellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), cellAndProofs.get(i).proof())
+          CKZG.verifyCellProof(kzgCommitment, KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), cellAndProofs.get(i).proof())
       ).isTrue();
       var invalidProof = cellAndProofs.get((i + 1) % cellAndProofs.size()).proof();
       assertThat(
-          CKZG.verifyCellProof(kzgCommitment, CellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), invalidProof)
+          CKZG.verifyCellProof(kzgCommitment, KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), invalidProof)
       ).isFalse();
     }
   }

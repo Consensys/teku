@@ -9,3 +9,5 @@ MAX_EXECUTION_LAYER_EXITS: 16
 # ---------------------------------------------------------------
 # [customized]
 MAX_DEPOSIT_RECEIPTS_PER_PAYLOAD: 4
+
+FIELD_ELEMENTS_PER_CELL: 64

@@ -38,6 +38,10 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
     super(elementSchema, vectorLength);
   }
 
+  public SszByteVectorSchemaImpl(final long vectorLength) {
+    this(SszPrimitiveSchemas.BYTE_SCHEMA, vectorLength);
+  }
+
   @Override
   protected DeserializableTypeDefinition<SszVectorT> createTypeDefinition() {
     return getElementSchema().equals(SszPrimitiveSchemas.BYTE_SCHEMA)
