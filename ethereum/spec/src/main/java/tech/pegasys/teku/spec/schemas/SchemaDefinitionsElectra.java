@@ -144,7 +144,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
     checkArgument(
         schemaDefinitions instanceof SchemaDefinitionsElectra,
-        "Expected definitions of type %s by got %s",
+        "Expected definitions of type %s but got %s",
         SchemaDefinitionsElectra.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsElectra) schemaDefinitions;

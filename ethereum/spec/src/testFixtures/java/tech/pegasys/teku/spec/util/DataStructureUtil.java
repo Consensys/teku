@@ -175,6 +175,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -2452,6 +2455,27 @@ public final class DataStructureUtil {
     return getElectraSchemaDefinitions(randomSlot())
         .getExecutionLayerExitSchema()
         .create(executionAddress, validator.getPublicKey());
+  }
+
+  public PendingBalanceDeposit randomPendingBalanceDeposit() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getPendingBalanceDepositSchema()
+        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+  }
+
+  public PendingConsolidation randomPendingConsolidation() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getPendingConsolidationSchema()
+        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+  }
+
+  public PendingPartialWithdrawal randomPendingPartialWithdrawal() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getPendingPartialWithdrawalSchema()
+        .create(
+            SszUInt64.of(randomUInt64()),
+            SszUInt64.of(randomUInt64()),
+            SszUInt64.of(randomUInt64()));
   }
 
   public UInt64 randomBlobSidecarIndex() {
