@@ -158,8 +158,8 @@ class DebugDataDumperTest {
   @Test
   void formatTimestamp_shouldFormatDate() {
     final String formattedTimestamp =
-        DebugDataDumper.formatTimestamp(Optional.of(dataStructureUtil.randomUInt64()));
-    assertThat(formattedTimestamp).isEqualTo("147882977-02-28T19:22:42.956");
+        DebugDataDumper.formatTimestamp(Optional.of(timeProvider.getTimeInMillis()));
+    assertThat(formattedTimestamp).isEqualTo("1970-01-01T12:46:40.00");
   }
 
   @Test
