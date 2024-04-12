@@ -62,11 +62,16 @@ public class DebugDataDumper {
     if (!enabled) {
       return;
     }
-    final String fileName = String.format("%s.ssz", formatTimestamp(arrivalTimestamp));
+    final String formattedTimestamp = formatTimestamp(arrivalTimestamp);
+    final String fileName = String.format("%s.ssz", formattedTimestamp);
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(DECODING_ERROR_SUB_DIR).resolve(topic);
+    final String identifiers = String.format("on topic %s at %s", topic, formattedTimestamp);
     saveBytesToFile(
-        "gossip message with decoding error", topicPath.resolve(fileName), originalMessage);
+        "gossip message with decoding error",
+        identifiers,
+        topicPath.resolve(fileName),
+        originalMessage);
   }
 
   public void saveGossipRejectedMessageToFile(
@@ -74,9 +79,12 @@ public class DebugDataDumper {
     if (!enabled) {
       return;
     }
-    final String fileName = String.format("%s.ssz", formatTimestamp(arrivalTimestamp));
+    final String formattedTimestamp = formatTimestamp(arrivalTimestamp);
+    final String fileName = String.format("%s.ssz", formattedTimestamp);
     final Path topicPath = Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic);
-    saveBytesToFile("rejected gossip message", topicPath.resolve(fileName), decodedMessage);
+    final String identifiers = String.format("on topic %s at %s", topic, formattedTimestamp);
+    saveBytesToFile(
+        "rejected gossip message", identifiers, topicPath.resolve(fileName), decodedMessage);
   }
 
   public void saveInvalidBlockToFile(
@@ -85,16 +93,21 @@ public class DebugDataDumper {
       return;
     }
     final String fileName = String.format("%s_%s.ssz", slot, blockRoot.toUnprefixedHexString());
-    saveBytesToFile("invalid block", Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
+    final String identifiers = String.format("at slot %s(%s)", slot, blockRoot);
+    saveBytesToFile(
+        "invalid block", identifiers, Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
   }
 
   @VisibleForTesting
   protected void saveBytesToFile(
-      final String description, final Path relativeFilePath, final Bytes bytes) {
+      final String description,
+      final String identifiers,
+      final Path relativeFilePath,
+      final Bytes bytes) {
     final Path path = directory.resolve(relativeFilePath);
     try {
       Files.write(path, bytes.toArray());
-      LOG.info("Saved {} bytes to file. Location: {}", description, relativeFilePath);
+      LOG.info("Saved {} {}", description, identifiers);
     } catch (NoSuchFileException e) {
       if (!path.getParent().toFile().mkdirs()) {
         LOG.error("Failed to save {} bytes to file.", description, e);
@@ -111,7 +124,7 @@ public class DebugDataDumper {
     final Path path = directory.resolve(relativeFilePath);
     try {
       Files.write(path, bytes.toArray());
-      LOG.info("Saved {} bytes to file. Location: {}", description, relativeFilePath);
+      LOG.info("Saved {} ", description);
     } catch (IOException e) {
       LOG.error("Failed to save {} bytes to file.", description, e);
       if (!path.getParent().toFile().exists()) {

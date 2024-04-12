@@ -129,7 +129,8 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     assertDoesNotThrow(
         () ->
-            manager.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
+            manager.saveBytesToFile(
+                "object", "at slot 1", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
   }
 
   @Test
@@ -141,7 +142,8 @@ class DebugDataDumperTest {
     assertThat(invalidPath.setWritable(false)).isTrue();
     assertDoesNotThrow(
         () ->
-            manager.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
+            manager.saveBytesToFile(
+                "object", "at slot 1", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
   }
 
   @Test
