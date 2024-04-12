@@ -77,6 +77,10 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
         .iterator();
   }
 
+  public SafeFuture<Void> performPrimaryReadinessCheck() {
+    return performReadinessCheck(primaryBeaconNodeApi, true);
+  }
+
   @Override
   protected SafeFuture<?> doStart() {
     return performReadinessCheckAgainstAllNodes();
@@ -134,10 +138,6 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     final Stream<SafeFuture<?>> failoverReadinessChecks =
         failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
     return SafeFuture.allOf(primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks));
-  }
-
-  private SafeFuture<Void> performPrimaryReadinessCheck() {
-    return performReadinessCheck(primaryBeaconNodeApi, true);
   }
 
   private SafeFuture<Void> performFailoverReadinessCheck(final RemoteValidatorApiChannel failover) {
