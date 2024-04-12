@@ -63,6 +63,12 @@ public class GossipTopics {
         forkDigest, GossipTopicName.getBlobSidecarSubnetTopicName(subnetId), gossipEncoding);
   }
 
+  public static String getDataColumnSidecarSubnetTopic(
+      final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
+    return getTopic(
+        forkDigest, GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId), gossipEncoding);
+  }
+
   public static Set<String> getAllTopics(
       final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
     final Set<String> topics = new HashSet<>();
@@ -78,6 +84,11 @@ public class GossipTopics {
         topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
       }
     }
+    spec.getNetworkingConfigElectra().ifPresent(electraNetworkConfig -> {
+      for (int i = 0; i < electraNetworkConfig.getDataColumnSidecarSubnetCount(); i++) {
+        topics.add(getDataColumnSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+      }
+    });
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }
