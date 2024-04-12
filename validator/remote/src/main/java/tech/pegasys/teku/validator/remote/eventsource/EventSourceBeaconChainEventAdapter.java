@@ -124,8 +124,7 @@ public class EventSourceBeaconChainEventAdapter
   @SuppressWarnings("FutureReturnValueIgnored")
   public void onFailoverNodeNotReady(final RemoteValidatorApiChannel failoverNotInSync) {
     if (currentEventStreamHasSameEndpoint(failoverNotInSync)) {
-      final boolean switched = switchToFailoverEventStreamIfAvailable();
-      if (!switched) {
+      if (failoverBeaconNodeApis.size() == 1 || !switchToFailoverEventStreamIfAvailable()) {
         // No failover switching is available, and we are currently connected to a failover node
         // with issues, so trigger the readiness check against the primary BN immediately
         beaconNodeReadinessManager.performPrimaryReadinessCheck();
