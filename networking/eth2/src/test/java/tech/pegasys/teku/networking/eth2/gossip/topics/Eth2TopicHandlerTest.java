@@ -104,7 +104,7 @@ public class Eth2TopicHandlerTest {
             spec,
             asyncRunner,
             (b, __) -> SafeFuture.completedFuture(InternalValidationResult.IGNORE),
-            null);
+            debugDataDumper);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -210,7 +210,7 @@ public class Eth2TopicHandlerTest {
             (b, __) -> {
               throw new RejectedExecutionException("No more capacity");
             },
-            null);
+            debugDataDumper);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -229,7 +229,7 @@ public class Eth2TopicHandlerTest {
             (b, __) -> {
               throw new CompletionException(new RejectedExecutionException("No more capacity"));
             },
-            null);
+            debugDataDumper);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -248,7 +248,7 @@ public class Eth2TopicHandlerTest {
             (b, __) -> {
               throw new RejectedExecutionException("No more capacity", new NullPointerException());
             },
-            null);
+            debugDataDumper);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -267,7 +267,7 @@ public class Eth2TopicHandlerTest {
             (b, __) -> {
               throw new ServiceCapacityExceededException("No more capacity");
             },
-            null);
+            debugDataDumper);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -287,7 +287,7 @@ public class Eth2TopicHandlerTest {
               throw new CompletionException(
                   new ServiceCapacityExceededException("No more capacity"));
             },
-            null);
+            debugDataDumper);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -306,7 +306,7 @@ public class Eth2TopicHandlerTest {
             (b, __) -> {
               throw new NullPointerException();
             },
-            null);
+            debugDataDumper);
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
