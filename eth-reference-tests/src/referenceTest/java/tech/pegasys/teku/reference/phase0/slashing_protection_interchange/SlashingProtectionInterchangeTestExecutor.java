@@ -48,7 +48,7 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
 
     // our implementation fails when importing one of the keys in an interchange, which is already
     // in our slashprotection directory with a different genesis validators root. However, the test
-    // does not import any keys
+    // does not import any keys.
     if (testData.name.startsWith("wrong_genesis_validators_root")) {
       LOG.info("Skipping {}", testData.name);
       return;
