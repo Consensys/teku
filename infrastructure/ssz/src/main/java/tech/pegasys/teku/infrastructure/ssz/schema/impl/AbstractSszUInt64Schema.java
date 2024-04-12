@@ -15,6 +15,8 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.createUInt64Definition;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
@@ -30,11 +32,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
     extends AbstractSszPrimitiveSchema<UInt64, T> {
 
-  private final DeserializableTypeDefinition<T> typeDefinition;
+  private Supplier<DeserializableTypeDefinition<T>> typeDefinition =
+      Suppliers.memoize(this::createJsonTypeDefinition);
 
   protected AbstractSszUInt64Schema() {
     super(64);
-    typeDefinition = createUInt64Definition(this);
   }
 
   @Override
@@ -99,9 +101,13 @@ public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
     return LeafNode.ZERO_LEAVES[8];
   }
 
+  private DeserializableTypeDefinition<T> createJsonTypeDefinition() {
+    return createUInt64Definition(this);
+  }
+
   @Override
   public DeserializableTypeDefinition<T> getJsonTypeDefinition() {
-    return typeDefinition;
+    return typeDefinition.get();
   }
 
   @Override
