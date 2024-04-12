@@ -164,14 +164,14 @@ public class DebugDataDumper {
 
   @VisibleForTesting
   String formatTimestamp(final UInt64 arrivalTimestamp) {
-    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH_mm_ss.SS");
     final Date date = new Date(arrivalTimestamp.longValue());
     return df.format(date);
   }
 
   @VisibleForTesting
   String generateTimestamp(final TimeProvider timeProvider) {
-    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH_mm_ss.SS");
     final Date date = new Date(timeProvider.getTimeInMillis().longValue());
     return df.format(date);
   }

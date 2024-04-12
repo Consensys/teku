@@ -165,20 +165,14 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()));
-
-    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
-    final Date expectedDate = new Date(timeProvider.getTimeInMillis().longValue());
-    assertThat(formattedTimestamp).isEqualTo(df.format(expectedDate));
+    assertThat(formattedTimestamp).isEqualTo("1970-01-01T12_46_40.00");
   }
 
   @Test
   void generateTimestamp_shouldGenerateTimestamp() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp = manager.generateTimestamp(timeProvider);
-
-    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS");
-    final Date expectedDate = new Date(timeProvider.getTimeInMillis().longValue());
-    assertThat(formattedTimestamp).isEqualTo(df.format(expectedDate));
+    assertThat(formattedTimestamp).isEqualTo("1970-01-01T12_46_40.00");
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
