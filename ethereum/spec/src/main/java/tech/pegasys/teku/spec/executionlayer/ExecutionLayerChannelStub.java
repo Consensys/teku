@@ -108,7 +108,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       lastBuilderBlobsBundle = Optional.empty();
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
-  private boolean el_online =  true;
+  private boolean online = true;
 
   public ExecutionLayerChannelStub(
       final Spec spec,
@@ -149,7 +149,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -178,7 +178,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -205,7 +205,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -243,7 +243,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -330,7 +330,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -349,7 +349,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<List<ClientVersion>> engineGetClientVersion(final ClientVersion clientVersion) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -359,7 +359,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
     return SafeFuture.COMPLETE;
@@ -372,7 +372,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final SafeFuture<UInt256> payloadValueResult,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -425,7 +425,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<BuilderPayload> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
-    if(!el_online) {
+    if (!online) {
       return SafeFuture.failedFuture(new RuntimeException("stub is offline"));
     }
 
@@ -498,6 +498,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   public Set<Bytes32> getRequestedPowBlocks() {
     return requestedPowBlocks;
+  }
+
+  public void setOnline(final boolean online) {
+    this.online = online;
   }
 
   @SuppressWarnings("unused")
