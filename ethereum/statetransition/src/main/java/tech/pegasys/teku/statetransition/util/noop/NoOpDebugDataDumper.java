@@ -28,13 +28,23 @@ public class NoOpDebugDataDumper extends DebugDataDumper {
 
   @Override
   public void saveGossipMessageDecodingError(
-      final String topic, final Optional<UInt64> arrivalTimestamp, final Bytes originalMessage) {}
+      final String topic,
+      final Optional<UInt64> arrivalTimestamp,
+      final Bytes originalMessage,
+      final Throwable error) {}
 
   @Override
   public void saveGossipRejectedMessageToFile(
-      final String topic, final Optional<UInt64> arrivalTimestamp, final Bytes decodedMessage) {}
+      final String topic,
+      final Optional<UInt64> arrivalTimestamp,
+      final Bytes decodedMessage,
+      final Optional<String> reason) {}
 
   @Override
   public void saveInvalidBlockToFile(
-      final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {}
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final Bytes blockSsz,
+      final String failureReason,
+      final Optional<Throwable> failureCause) {}
 }

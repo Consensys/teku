@@ -760,7 +760,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
       return;
     }
-    debugDataDumper.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
+    debugDataDumper.saveInvalidBlockToFile(
+        block.getSlot(),
+        block.getRoot(),
+        block.sszSerialize(),
+        result.getFailureReason().name(),
+        result.getFailureCause());
     P2P_LOG.onInvalidBlock(
         block.getSlot(),
         block.getRoot(),

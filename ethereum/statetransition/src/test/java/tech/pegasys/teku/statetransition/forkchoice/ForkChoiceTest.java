@@ -307,8 +307,9 @@ class ForkChoiceTest {
 
     final BlockProcessor blockProcessor = mock(BlockProcessor.class);
     when(spec.getBlockProcessor(blockAndState.getSlot())).thenReturn(blockProcessor);
+    final Exception blockException = new StateTransitionException("error!");
     when(blockProcessor.processAndValidateBlock(any(), any(), any(), any()))
-        .thenThrow(new StateTransitionException("error!"));
+        .thenThrow(blockException);
 
     importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
 
@@ -316,7 +317,9 @@ class ForkChoiceTest {
         .saveInvalidBlockToFile(
             eq(blockAndState.getSlot()),
             eq(blockAndState.getBlock().getRoot()),
-            eq(blockAndState.getBlock().sszSerialize()));
+            eq(blockAndState.getBlock().sszSerialize()),
+            eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
+            eq(Optional.of(blockException)));
     verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
   }
 
@@ -347,7 +350,9 @@ class ForkChoiceTest {
     // resolve with a failure
     payloadStatusSafeFuture.complete(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
     assertBlockImportFailure(importResult, FailureReason.FAILED_STATE_TRANSITION);
-    verify(debugDataDumper).saveInvalidBlockToFile(any(), any(), any());
+    verify(debugDataDumper)
+        .saveInvalidBlockToFile(
+            any(), any(), any(), eq(FailureReason.FAILED_STATE_TRANSITION.toString()), any());
   }
 
   @Test
@@ -747,7 +752,13 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockAndAssertFailure(
         chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
-    verify(debugDataDumper).saveInvalidBlockToFile(eq(slotToImport.increment()), any(), any());
+    verify(debugDataDumper)
+        .saveInvalidBlockToFile(
+            eq(slotToImport.increment()),
+            any(),
+            any(),
+            eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
+            any());
   }
 
   @Test
@@ -788,7 +799,9 @@ class ForkChoiceTest {
         .saveInvalidBlockToFile(
             eq(invalidBlock.getSlot()),
             eq(invalidBlock.getRoot()),
-            eq(invalidBlock.getBlock().sszSerialize()));
+            eq(invalidBlock.getBlock().sszSerialize()),
+            eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
+            any());
     assertHeadIsOptimistic(maybeValidBlock);
     assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
         .isEqualTo(maybeValidBlock.getRoot());

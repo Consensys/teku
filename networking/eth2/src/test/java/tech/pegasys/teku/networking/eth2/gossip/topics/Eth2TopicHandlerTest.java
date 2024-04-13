@@ -92,7 +92,7 @@ public class Eth2TopicHandlerTest {
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
     asyncRunner.executeQueuedActions();
     verify(debugDataDumper)
-        .saveGossipRejectedMessageToFile(eq(topicHandler.getTopic()), any(), any());
+        .saveGossipRejectedMessageToFile(eq(topicHandler.getTopic()), any(), any(), any());
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
   }
 
@@ -125,7 +125,7 @@ public class Eth2TopicHandlerTest {
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(invalidBytes, Optional.empty()));
     verify(debugDataDumper)
-        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any());
+        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any(), any());
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -148,7 +148,7 @@ public class Eth2TopicHandlerTest {
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
     verify(debugDataDumper)
-        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any());
+        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any(), any());
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -171,7 +171,7 @@ public class Eth2TopicHandlerTest {
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
     verify(debugDataDumper)
-        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any());
+        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any(), any());
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -194,7 +194,7 @@ public class Eth2TopicHandlerTest {
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
     verify(debugDataDumper)
-        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any());
+        .saveGossipMessageDecodingError(eq(topicHandler.getTopic()), any(), any(), any());
     asyncRunner.executeQueuedActions();
 
     assertThatSafeFuture(result).isCompletedWithValue(ValidationResult.Invalid);

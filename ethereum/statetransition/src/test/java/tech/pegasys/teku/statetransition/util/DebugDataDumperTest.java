@@ -47,7 +47,8 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipMessageDecodingError("/eth/test/topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipMessageDecodingError(
+        "/eth/test/topic", arrivalTimestamp, messageBytes, new Throwable());
 
     final String fileName =
         String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
@@ -65,7 +66,8 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipMessageDecodingError("/eth/test/topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipMessageDecodingError(
+        "/eth/test/topic", arrivalTimestamp, messageBytes, new Throwable());
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName =
@@ -84,7 +86,8 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipRejectedMessageToFile("/eth/test/topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipRejectedMessageToFile(
+        "/eth/test/topic", arrivalTimestamp, messageBytes, Optional.of("reason"));
 
     final String fileName =
         String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
@@ -102,7 +105,8 @@ class DebugDataDumperTest {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipRejectedMessageToFile("/eth/test/topic", arrivalTimestamp, messageBytes);
+    manager.saveGossipRejectedMessageToFile(
+        "/eth/test/topic", arrivalTimestamp, messageBytes, Optional.of("reason"));
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName = String.format("%s.ssz", arrivalTimestamp);
@@ -119,7 +123,12 @@ class DebugDataDumperTest {
   void saveInvalidBlockToFile_shouldSaveToFile(@TempDir Path tempDir) {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
+    manager.saveInvalidBlockToFile(
+        block.getSlot(),
+        block.getRoot(),
+        block.sszSerialize(),
+        "reason",
+        Optional.of(new Throwable()));
 
     final String fileName =
         String.format("%s_%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
@@ -131,7 +140,8 @@ class DebugDataDumperTest {
   void saveInvalidBlockToFile_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    manager.saveInvalidBlockToFile(block.getSlot(), block.getRoot(), block.sszSerialize());
+    manager.saveInvalidBlockToFile(
+        block.getSlot(), block.getRoot(), block.sszSerialize(), "reason", Optional.empty());
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName =
@@ -144,9 +154,12 @@ class DebugDataDumperTest {
   void saveBytesToFile_shouldNotThrowExceptionWhenNoDirectory(@TempDir Path tempDir) {
     final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     assertDoesNotThrow(
-        () ->
-            manager.saveBytesToFile(
-                "object", "at slot 1", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
+        () -> {
+          final boolean success =
+              manager.saveBytesToFile(
+                  "object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY);
+          assertThat(success).isTrue(); // creates directory
+        });
   }
 
   @Test
@@ -157,9 +170,12 @@ class DebugDataDumperTest {
     assertThat(invalidPath.mkdirs()).isTrue();
     assertThat(invalidPath.setWritable(false)).isTrue();
     assertDoesNotThrow(
-        () ->
-            manager.saveBytesToFile(
-                "object", "at slot 1", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY));
+        () -> {
+          final boolean success =
+              manager.saveBytesToFile(
+                  "object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY);
+          assertThat(success).isFalse();
+        });
   }
 
   @Test

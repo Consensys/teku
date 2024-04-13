@@ -60,7 +60,10 @@ public class DebugDataDumper {
   }
 
   public void saveGossipMessageDecodingError(
-      final String topic, final Optional<UInt64> arrivalTimestamp, final Bytes originalMessage) {
+      final String topic,
+      final Optional<UInt64> arrivalTimestamp,
+      final Bytes originalMessage,
+      final Throwable error) {
     if (!enabled) {
       return;
     }
@@ -70,16 +73,19 @@ public class DebugDataDumper {
         Path.of(GOSSIP_MESSAGES_DIR)
             .resolve(DECODING_ERROR_SUB_DIR)
             .resolve(topic.replaceAll("/", "_"));
-    final String identifiers = String.format("on topic %s at %s", topic, formattedTimestamp);
-    saveBytesToFile(
-        "gossip message with decoding error",
-        identifiers,
-        topicPath.resolve(fileName),
-        originalMessage);
+    final boolean success =
+        saveBytesToFile(
+            "gossip message with decoding error", topicPath.resolve(fileName), originalMessage);
+    if (success) {
+      LOG.warn("Failed to decode gossip message on topic {}", topic, error);
+    }
   }
 
   public void saveGossipRejectedMessageToFile(
-      final String topic, final Optional<UInt64> arrivalTimestamp, final Bytes decodedMessage) {
+      final String topic,
+      final Optional<UInt64> arrivalTimestamp,
+      final Bytes decodedMessage,
+      final Optional<String> reason) {
     if (!enabled) {
       return;
     }
@@ -87,57 +93,73 @@ public class DebugDataDumper {
     final String fileName = String.format("%s.ssz", formattedTimestamp);
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic.replaceAll("/", "_"));
-    final String identifiers = String.format("on topic %s at %s", topic, formattedTimestamp);
-    saveBytesToFile(
-        "rejected gossip message", identifiers, topicPath.resolve(fileName), decodedMessage);
+    final boolean success =
+        saveBytesToFile("rejected gossip message", topicPath.resolve(fileName), decodedMessage);
+    if (success) {
+      LOG.warn(
+          "Rejecting gossip message on topic {}, reason: {}",
+          topic,
+          reason.orElse("failed validation"));
+    }
   }
 
   public void saveInvalidBlockToFile(
-      final UInt64 slot, final Bytes32 blockRoot, final Bytes blockSsz) {
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final Bytes blockSsz,
+      final String failureReason,
+      final Optional<Throwable> failureCause) {
     if (!enabled) {
       return;
     }
     final String fileName = String.format("%s_%s.ssz", slot, blockRoot.toUnprefixedHexString());
-    final String identifiers = String.format("at slot %s(%s)", slot, blockRoot);
-    saveBytesToFile(
-        "invalid block", identifiers, Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
-  }
-
-  @VisibleForTesting
-  protected void saveBytesToFile(
-      final String description,
-      final String identifiers,
-      final Path relativeFilePath,
-      final Bytes bytes) {
-    final Path path = directory.resolve(relativeFilePath);
-    try {
-      Files.write(path, bytes.toArray());
-      LOG.info("Saved {} {}", description, identifiers);
-    } catch (NoSuchFileException e) {
-      if (!path.getParent().toFile().mkdirs()) {
-        LOG.error("Failed to save {} bytes to file.", description, e);
-        return;
-      }
-      saveAfterCreatingTopicDirectory(description, relativeFilePath, bytes);
-    } catch (IOException e) {
-      LOG.error("Failed to save {} bytes to file.", description, e);
+    final boolean success =
+        saveBytesToFile("invalid block", Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
+    if (success) {
+      LOG.warn(
+          "Rejecting invalid block at slot {} with root {} because {}",
+          slot,
+          blockRoot,
+          failureReason,
+          failureCause.orElse(null));
     }
   }
 
-  private void saveAfterCreatingTopicDirectory(
+  @VisibleForTesting
+  protected boolean saveBytesToFile(
       final String description, final Path relativeFilePath, final Bytes bytes) {
     final Path path = directory.resolve(relativeFilePath);
     try {
       Files.write(path, bytes.toArray());
-      LOG.info("Saved {} ", description);
+    } catch (NoSuchFileException e) {
+      if (!path.getParent().toFile().mkdirs()) {
+        LOG.error("Failed to save {} bytes to file.", description, e);
+        return false;
+      }
+      return saveAfterCreatingTopicDirectory(description, relativeFilePath, bytes);
+    } catch (IOException e) {
+      LOG.error("Failed to save {} bytes to file.", description, e);
+      return false;
+    }
+    return true;
+  }
+
+  private boolean saveAfterCreatingTopicDirectory(
+      final String description, final Path relativeFilePath, final Bytes bytes) {
+    final Path path = directory.resolve(relativeFilePath);
+    try {
+      Files.write(path, bytes.toArray());
     } catch (IOException e) {
       LOG.error("Failed to save {} bytes to file.", description, e);
       if (!path.getParent().toFile().exists()) {
+        this.enabled = false;
         LOG.error(
             "{} directory does not exist. Disabling saving debug data to file.",
             relativeFilePath.getParent());
       }
+      return false;
     }
+    return true;
   }
 
   private void createDirectory(
