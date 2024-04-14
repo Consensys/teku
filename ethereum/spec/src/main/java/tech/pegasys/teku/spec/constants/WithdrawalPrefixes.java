@@ -19,4 +19,7 @@ public class WithdrawalPrefixes {
   public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
   public static final byte ETH1_ADDRESS_WITHDRAWAL_BYTE = 0x01;
   public static final Bytes ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes.of(ETH1_ADDRESS_WITHDRAWAL_BYTE);
+  public static final byte COMPOUNDING_ADDRESS_WITHDRAWAL_BYTE = 0x02;
+  public static final Bytes COMPOUNDING_ADDRESS_WITHDRAWAL_PREFIX =
+      Bytes.of(COMPOUNDING_ADDRESS_WITHDRAWAL_BYTE);
 }

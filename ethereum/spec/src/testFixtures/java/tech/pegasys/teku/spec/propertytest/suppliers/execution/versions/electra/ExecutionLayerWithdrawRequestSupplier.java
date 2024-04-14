@@ -14,13 +14,14 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class ExecutionLayerExitSupplier extends DataStructureUtilSupplier<ExecutionLayerExit> {
+public class ExecutionLayerWithdrawRequestSupplier
+    extends DataStructureUtilSupplier<ExecutionLayerWithdrawRequest> {
 
-  public ExecutionLayerExitSupplier() {
-    super(DataStructureUtil::randomExecutionLayerExit, SpecMilestone.ELECTRA);
+  public ExecutionLayerWithdrawRequestSupplier() {
+    super(DataStructureUtil::randomExecutionLayerWithdrawRequest, SpecMilestone.ELECTRA);
   }
 }

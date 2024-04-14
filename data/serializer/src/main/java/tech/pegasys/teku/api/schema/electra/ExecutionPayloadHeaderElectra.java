@@ -31,7 +31,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
   public final Bytes32 depositReceiptsRoot;
 
   @JsonProperty("exits_root")
-  public final Bytes32 exitsRoot;
+  public final Bytes32 withdrawRequestsRoot;
 
   @JsonCreator
   public ExecutionPayloadHeaderElectra(
@@ -53,7 +53,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_receipts_root") final Bytes32 depositReceiptsRoot,
-      @JsonProperty("exits_root") final Bytes32 exitsRoot) {
+      @JsonProperty("exits_root") final Bytes32 withdrawRequestsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -73,7 +73,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         blobGasUsed,
         excessBlobGas);
     this.depositReceiptsRoot = depositReceiptsRoot;
-    this.exitsRoot = exitsRoot;
+    this.withdrawRequestsRoot = withdrawRequestsRoot;
   }
 
   public ExecutionPayloadHeaderElectra(final ExecutionPayloadHeader executionPayloadHeader) {
@@ -97,7 +97,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessBlobGas());
     this.depositReceiptsRoot =
         executionPayloadHeader.toVersionElectra().orElseThrow().getDepositReceiptsRoot();
-    this.exitsRoot = executionPayloadHeader.toVersionElectra().orElseThrow().getExitsRoot();
+    this.withdrawRequestsRoot =
+        executionPayloadHeader.toVersionElectra().orElseThrow().getWithdrawRequestsRoot();
   }
 
   @Override
@@ -124,7 +125,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
                 .blobGasUsed(() -> blobGasUsed)
                 .excessBlobGas(() -> excessBlobGas)
                 .depositReceiptsRoot(() -> depositReceiptsRoot)
-                .exitsRoot(() -> exitsRoot));
+                .withdrawRequestsRoot(() -> withdrawRequestsRoot));
   }
 
   @Override

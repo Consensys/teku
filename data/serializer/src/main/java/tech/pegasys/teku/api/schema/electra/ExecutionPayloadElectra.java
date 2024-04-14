@@ -33,8 +33,8 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
   @JsonProperty("deposit_receipts")
   public final List<DepositReceipt> depositReceipts;
 
-  @JsonProperty("exits")
-  public final List<ExecutionLayerExit> exits;
+  @JsonProperty("withdraw_requests")
+  public final List<ExecutionLayerWithdrawRequest> withdrawRequests;
 
   @JsonCreator
   public ExecutionPayloadElectra(
@@ -56,7 +56,8 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_receipts") final List<DepositReceipt> depositReceipts,
-      @JsonProperty("exits") final List<ExecutionLayerExit> exits) {
+      @JsonProperty("withdraw_requests")
+          final List<ExecutionLayerWithdrawRequest> withdrawRequests) {
     super(
         parentHash,
         feeRecipient,
@@ -76,7 +77,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         blobGasUsed,
         excessBlobGas);
     this.depositReceipts = depositReceipts;
-    this.exits = exits;
+    this.withdrawRequests = withdrawRequests;
   }
 
   public ExecutionPayloadElectra(
@@ -86,9 +87,9 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         executionPayload.toVersionElectra().orElseThrow().getDepositReceipts().stream()
             .map(DepositReceipt::new)
             .toList();
-    this.exits =
-        executionPayload.toVersionElectra().orElseThrow().getExits().stream()
-            .map(ExecutionLayerExit::new)
+    this.withdrawRequests =
+        executionPayload.toVersionElectra().orElseThrow().getWithdrawRequests().stream()
+            .map(ExecutionLayerWithdrawRequest::new)
             .toList();
   }
 
@@ -105,13 +106,14 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
                             depositReceipt.asInternalDepositReceipt(
                                 executionPayloadSchema.getDepositReceiptSchemaRequired()))
                     .toList())
-        .exits(
+        .withdrawRequests(
             () ->
-                exits.stream()
+                withdrawRequests.stream()
                     .map(
                         exit ->
-                            exit.asInternalExecutionLayerExit(
-                                executionPayloadSchema.getExecutionLayerExitSchemaRequired()))
+                            exit.asInternalExecutionLayerWithdrawRequest(
+                                executionPayloadSchema
+                                    .getExecutionLayerWithdrawRequestSchemaRequired()))
                     .toList());
   }
 

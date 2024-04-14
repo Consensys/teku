@@ -53,8 +53,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequestSchema;
 
 public class ExecutionPayloadSchemaBellatrix
     extends ContainerSchema14<
@@ -128,15 +128,17 @@ public class ExecutionPayloadSchemaBellatrix
   }
 
   @Override
-  public SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>>
-      getExecutionLayerExitsSchemaRequired() {
-    throw new IllegalStateException("Attempted to get execution layer exits schema from bellatrix");
+  public SszListSchema<
+          ExecutionLayerWithdrawRequest, ? extends SszList<ExecutionLayerWithdrawRequest>>
+      getExecutionLayerWithdrawRequestsSchemaRequired() {
+    throw new IllegalStateException(
+        "Attempted to get execution layer withdraw requests schema from bellatrix");
   }
 
   @Override
-  public ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired() {
+  public ExecutionLayerWithdrawRequestSchema getExecutionLayerWithdrawRequestSchemaRequired() {
     throw new IllegalStateException(
-        "Attempted to get a execution layer exit schema from bellatrix");
+        "Attempted to get a execution layer withdraw request schema from bellatrix");
   }
 
   @Override

@@ -29,7 +29,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   private ExecutionPayloadSchemaElectra schema;
 
   protected List<DepositReceipt> depositReceipts;
-  protected List<ExecutionLayerExit> exits;
+  protected List<ExecutionLayerWithdrawRequest> withdrawRequests;
 
   public ExecutionPayloadBuilderElectra schema(final ExecutionPayloadSchemaElectra schema) {
     this.schema = schema;
@@ -44,8 +44,9 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   }
 
   @Override
-  public ExecutionPayloadBuilder exits(final Supplier<List<ExecutionLayerExit>> exitsSupplier) {
-    this.exits = exitsSupplier.get();
+  public ExecutionPayloadBuilder withdrawRequests(
+      final Supplier<List<ExecutionLayerWithdrawRequest>> withdrawRequestsSupplier) {
+    this.withdrawRequests = withdrawRequestsSupplier.get();
     return this;
   }
 
@@ -58,7 +59,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   protected void validate() {
     super.validate();
     checkNotNull(depositReceipts, "depositReceipts must be specified");
-    checkNotNull(exits, "exits must be specified");
+    checkNotNull(withdrawRequests, "withdrawRequests must be specified");
   }
 
   @Override
@@ -86,6 +87,6 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas),
         schema.getDepositReceiptsSchema().createFromElements(depositReceipts),
-        schema.getExecutionLayerExitsSchema().createFromElements(exits));
+        schema.getExecutionLayerWithdrawRequestsSchema().createFromElements(withdrawRequests));
   }
 }

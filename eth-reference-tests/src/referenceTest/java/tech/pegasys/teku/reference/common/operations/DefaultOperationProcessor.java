@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -154,19 +154,21 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processExecutionLayerExit(
-      final MutableBeaconState state, final ExecutionLayerExit executionLayerExit)
+  public void processExecutionLayerWithdrawRequest(
+      final MutableBeaconState state,
+      final ExecutionLayerWithdrawRequest executionLayerWithdrawRequest)
       throws BlockProcessingException {
-    final SszList<ExecutionLayerExit> exits =
+    final SszList<ExecutionLayerWithdrawRequest> withdrawRequests =
         BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
             .getExecutionPayloadSchema()
-            .getExecutionLayerExitsSchemaRequired()
-            .of(executionLayerExit);
+            .getExecutionLayerWithdrawRequestsSchemaRequired()
+            .of(executionLayerWithdrawRequest);
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         spec.atSlot(state.getSlot())
             .beaconStateMutators()
             .createValidatorExitContextSupplier(state);
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionLayerExits(state, exits, validatorExitContextSupplier);
+        .processExecutionLayerWithdrawRequests(
+            state, withdrawRequests, validatorExitContextSupplier);
   }
 }

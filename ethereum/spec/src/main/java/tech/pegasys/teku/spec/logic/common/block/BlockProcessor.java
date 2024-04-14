@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -172,9 +172,9 @@ public interface BlockProcessor {
       final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
       throws BlockProcessingException;
 
-  void processExecutionLayerExits(
+  void processExecutionLayerWithdrawRequests(
       final MutableBeaconState state,
-      final SszList<ExecutionLayerExit> exits,
+      final SszList<ExecutionLayerWithdrawRequest> exits,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException;
 

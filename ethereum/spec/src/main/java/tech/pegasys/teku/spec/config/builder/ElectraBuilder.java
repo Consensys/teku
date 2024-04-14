@@ -35,7 +35,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   // TODO: remove default when EIP-7251 become part of the Electra
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.ZERO;
   private Integer maxDepositReceiptsPerPayload;
-  private Integer maxExecutionLayerExits;
+  private Integer maxExecutionLayerWithdrawRequests;
   private UInt64 minActivationBalance;
   private UInt64 maxEffectiveBalanceElectra;
   private Integer pendingBalanceDepositsLimit;
@@ -57,7 +57,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         electraForkVersion,
         electraForkEpoch,
         maxDepositReceiptsPerPayload,
-        maxExecutionLayerExits,
+        maxExecutionLayerWithdrawRequests,
         minPerEpochChurnLimitElectra,
         maxPerEpochActivationExitChurnLimit,
         minActivationBalance,
@@ -91,9 +91,10 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
-  public ElectraBuilder maxExecutionLayerExits(final Integer maxExecutionLayerExits) {
-    checkNotNull(maxExecutionLayerExits);
-    this.maxExecutionLayerExits = maxExecutionLayerExits;
+  public ElectraBuilder maxExecutionLayerWithdrawRequests(
+      final Integer maxExecutionLayerWithdrawRequests) {
+    checkNotNull(maxExecutionLayerWithdrawRequests);
+    this.maxExecutionLayerWithdrawRequests = maxExecutionLayerWithdrawRequests;
     return this;
   }
 
@@ -203,7 +204,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("electraForkVersion", electraForkVersion);
     constants.put("maxDepositReceiptsPerPayload", maxDepositReceiptsPerPayload);
     constants.put("minPerEpochChurnLimitElectra", minPerEpochChurnLimitElectra);
-    constants.put("maxExecutionLayerExits", maxExecutionLayerExits);
+    constants.put("maxExecutionLayerWithdrawRequests", maxExecutionLayerWithdrawRequests);
     constants.put("minActivationBalance", minActivationBalance);
     constants.put("maxEffectiveBalanceElectra", maxEffectiveBalanceElectra);
     constants.put("pendingBalanceDepositsLimit", pendingBalanceDepositsLimit);

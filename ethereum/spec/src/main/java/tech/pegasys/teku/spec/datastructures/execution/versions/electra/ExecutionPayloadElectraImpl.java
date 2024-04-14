@@ -53,7 +53,7 @@ public class ExecutionPayloadElectraImpl
         SszUInt64,
         SszUInt64,
         SszList<DepositReceipt>,
-        SszList<ExecutionLayerExit>>
+        SszList<ExecutionLayerWithdrawRequest>>
     implements ExecutionPayloadElectra {
 
   public ExecutionPayloadElectraImpl(
@@ -77,7 +77,7 @@ public class ExecutionPayloadElectraImpl
               SszUInt64,
               SszUInt64,
               SszList<DepositReceipt>,
-              SszList<ExecutionLayerExit>>
+              SszList<ExecutionLayerWithdrawRequest>>
           schema,
       TreeNode backingNode) {
     super(schema, backingNode);
@@ -103,7 +103,7 @@ public class ExecutionPayloadElectraImpl
       SszUInt64 blobGasUsed,
       SszUInt64 excessBlobGas,
       SszList<DepositReceipt> depositReceipts,
-      SszList<ExecutionLayerExit> exits) {
+      SszList<ExecutionLayerWithdrawRequest> exits) {
     super(
         schema,
         parentHash,
@@ -238,7 +238,7 @@ public class ExecutionPayloadElectraImpl
   }
 
   @Override
-  public SszList<ExecutionLayerExit> getExits() {
+  public SszList<ExecutionLayerWithdrawRequest> getWithdrawRequests() {
     return getField18();
   }
 
@@ -248,6 +248,6 @@ public class ExecutionPayloadElectraImpl
         getTransactions().getBackingNode(),
         getWithdrawals().getBackingNode(),
         getDepositReceipts().getBackingNode(),
-        getExits().getBackingNode());
+        getWithdrawRequests().getBackingNode());
   }
 }

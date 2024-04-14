@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_RECEIPTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXITS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -32,6 +31,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAW_REQUESTS_ROOT;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -100,7 +100,7 @@ public class ExecutionPayloadHeaderSchemaElectra
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(DEPOSIT_RECEIPTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(EXITS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
+        namedSchema(WITHDRAW_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
     final ExecutionPayloadElectraImpl defaultExecutionPayload =
         new ExecutionPayloadSchemaElectra(specConfig).getDefault();
@@ -121,7 +121,7 @@ public class ExecutionPayloadHeaderSchemaElectra
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)),
         getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS_ROOT)),
-        getChildGeneralizedIndex(getFieldIndex(EXITS_ROOT)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAW_REQUESTS_ROOT)));
   }
 
   @Override
@@ -172,6 +172,6 @@ public class ExecutionPayloadHeaderSchemaElectra
         SszUInt64.of(executionPayload.getBlobGasUsed()),
         SszUInt64.of(executionPayload.getExcessBlobGas()),
         SszBytes32.of(executionPayload.getDepositReceipts().hashTreeRoot()),
-        SszBytes32.of(executionPayload.getExits().hashTreeRoot()));
+        SszBytes32.of(executionPayload.getWithdrawRequests().hashTreeRoot()));
   }
 }

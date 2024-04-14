@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -75,7 +75,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     BLS_TO_EXECUTION_CHANGE,
     WITHDRAWAL,
     DEPOSIT_RECEIPT,
-    EXECUTION_LAYER_EXIT
+    EXECUTION_LAYER_WITHDRAW_REQUEST
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -120,9 +120,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/deposit_receipt",
               new OperationsTestExecutor<>("deposit_receipt.ssz_snappy", Operation.DEPOSIT_RECEIPT))
           .put(
-              "operations/execution_layer_exit",
+              "operations/execution_layer_withdraw_request",
               new OperationsTestExecutor<>(
-                  "execution_layer_exit.ssz_snappy", Operation.EXECUTION_LAYER_EXIT))
+                  "execution_layer_withdraw_request.ssz_snappy",
+                  Operation.EXECUTION_LAYER_WITHDRAW_REQUEST))
           .build();
 
   private final String dataFileName;
@@ -310,7 +311,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
       case DEPOSIT_RECEIPT -> processDepositReceipt(testDefinition, state, processor);
-      case EXECUTION_LAYER_EXIT -> processExecutionLayerExit(testDefinition, state, processor);
+      case EXECUTION_LAYER_WITHDRAW_REQUEST -> processExecutionLayerWithdrawRequest(
+          testDefinition, state, processor);
       default -> throw new UnsupportedOperationException(
           "Operation " + operation + " not implemented in OperationTestExecutor");
     }
@@ -348,14 +350,14 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     processor.processDepositReceipt(state, depositReceipt);
   }
 
-  private void processExecutionLayerExit(
+  private void processExecutionLayerWithdrawRequest(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
       final OperationProcessor processor)
       throws BlockProcessingException {
-    final ExecutionLayerExit executionLayerExit =
-        loadSsz(testDefinition, dataFileName, ExecutionLayerExit.SSZ_SCHEMA);
-    processor.processExecutionLayerExit(state, executionLayerExit);
+    final ExecutionLayerWithdrawRequest executionLayerWithdrawRequest =
+        loadSsz(testDefinition, dataFileName, ExecutionLayerWithdrawRequest.SSZ_SCHEMA);
+    processor.processExecutionLayerWithdrawRequest(state, executionLayerWithdrawRequest);
   }
 
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {
@@ -422,7 +424,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           EXECUTION_PAYLOAD,
           WITHDRAWAL,
           DEPOSIT_RECEIPT,
-          EXECUTION_LAYER_EXIT -> {}
+          EXECUTION_LAYER_WITHDRAW_REQUEST -> {}
     }
   }
 

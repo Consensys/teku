@@ -91,7 +91,7 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                                   .blobGasUsed(denebHeader::getBlobGasUsed)
                                   .excessBlobGas(denebHeader::getExcessBlobGas)
                                   .depositReceiptsRoot(() -> Bytes32.ZERO)
-                                  .exitsRoot(() -> Bytes32.ZERO));
+                                  .withdrawRequestsRoot(() -> Bytes32.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 

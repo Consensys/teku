@@ -126,7 +126,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -588,7 +588,7 @@ public final class DataStructureUtil {
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64)
                     .depositReceiptsRoot(this::randomBytes32)
-                    .exitsRoot(this::randomBytes32));
+                    .withdrawRequestsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -700,7 +700,7 @@ public final class DataStructureUtil {
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
                       .depositReceipts(this::randomExecutionPayloadDepositReceipts)
-                      .exits(this::randomExecutionPayloadExits);
+                      .withdrawRequests(this::randomExecutionPayloadExits);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -731,9 +731,9 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<ExecutionLayerExit> randomExecutionPayloadExits() {
+  public List<ExecutionLayerWithdrawRequest> randomExecutionPayloadExits() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_EXITS))
-        .mapToObj(__ -> randomExecutionLayerExit())
+        .mapToObj(__ -> randomExecutionLayerWithdrawRequest())
         .collect(toList());
   }
 
@@ -2434,24 +2434,26 @@ public final class DataStructureUtil {
     return getBlobKzgCommitmentsSchema().of();
   }
 
-  public ExecutionLayerExit randomExecutionLayerExit() {
+  public ExecutionLayerWithdrawRequest randomExecutionLayerWithdrawRequest() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(randomEth1Address(), randomPublicKey());
+        .getExecutionLayerWithdrawRequestSchema()
+        .create(randomEth1Address(), randomPublicKey(), randomUInt64());
   }
 
-  public ExecutionLayerExit executionLayerExit(
-      final Bytes20 sourceAddress, BLSPublicKey validatorPubKey) {
+  public ExecutionLayerWithdrawRequest executionLayerWithdrawRequest(
+      final Bytes20 sourceAddress, BLSPublicKey validatorPubKey, UInt64 amount) {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(sourceAddress, validatorPubKey);
+        .getExecutionLayerWithdrawRequestSchema()
+        .create(sourceAddress, validatorPubKey, amount);
   }
 
-  public ExecutionLayerExit executionLayerExit(final Validator validator) {
+  public ExecutionLayerWithdrawRequest executionLayerWithdrawRequest(final Validator validator) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
+    /* TODO: what should the value here be? */
+    final UInt64 amount = UInt64.ZERO;
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(executionAddress, validator.getPublicKey());
+        .getExecutionLayerWithdrawRequestSchema()
+        .create(executionAddress, validator.getPublicKey(), amount);
   }
 
   public UInt64 randomBlobSidecarIndex() {

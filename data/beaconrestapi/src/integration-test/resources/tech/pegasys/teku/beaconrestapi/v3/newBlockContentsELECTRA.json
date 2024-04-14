@@ -248,26 +248,31 @@
               "index": "4894716627408020434"
             }
           ],
-          "exits": [
+          "withdraw_requests": [
             {
               "source_address": "0x5d6ec4433175f5be08277b12261c89e3b0d65cac",
-              "validator_pubkey": "0xa83cbdf40e5c4bdb4e9802d94d765c70150d9926521b0ec4d273e788b83a9f304694e75d2e381ce631b24121ffecc9d4"
+              "validator_pubkey": "0xa83cbdf40e5c4bdb4e9802d94d765c70150d9926521b0ec4d273e788b83a9f304694e75d2e381ce631b24121ffecc9d4",
+              "amount": "0"
             },
             {
               "source_address": "0x96d1b2431158938de8efb094a1b6c64ac3df5962",
-              "validator_pubkey": "0xb679b4b686530827b2a201eb2b18454e9a5758d7257737b29bb215b9f354c2ff57e912b19d4a051556187aa24c97371b"
+              "validator_pubkey": "0xb679b4b686530827b2a201eb2b18454e9a5758d7257737b29bb215b9f354c2ff57e912b19d4a051556187aa24c97371b",
+              "amount": "0"
             },
             {
               "source_address": "0x83b0b843710cb448f2ac4969cd2db27dbddc5ad0",
-              "validator_pubkey": "0xa7f8aff7b912b6363efb810f2b661643624ab914b034e78d72397ef84fa04862dee94c9b2f46b872fe852f197f558fce"
+              "validator_pubkey": "0xa7f8aff7b912b6363efb810f2b661643624ab914b034e78d72397ef84fa04862dee94c9b2f46b872fe852f197f558fce",
+              "amount": "0"
             },
             {
               "source_address": "0xbc13a74351ef5117d2757feb48c8efe4cfe55786",
-              "validator_pubkey": "0x83b8c61b63de768821cbd82ee3c67c81bb848163d6af0186ffe1ca3936d283bb4cab886f3fbc7f6336fec3da8d542c76"
+              "validator_pubkey": "0x83b8c61b63de768821cbd82ee3c67c81bb848163d6af0186ffe1ca3936d283bb4cab886f3fbc7f6336fec3da8d542c76",
+              "amount": "0"
             },
             {
               "source_address": "0xa51dc242b07456952ea93a8886a01023c35b31c4",
-              "validator_pubkey": "0xa6c59055cc0bed5baf1a815f59d9d1cbd7aba1a4fb8d83de7310ad85640524318110a6a16f5bc141a81c34e103d9b7be"
+              "validator_pubkey": "0xa6c59055cc0bed5baf1a815f59d9d1cbd7aba1a4fb8d83de7310ad85640524318110a6a16f5bc141a81c34e103d9b7be",
+              "amount": "0"
             }
           ]
         },
