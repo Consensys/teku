@@ -28,22 +28,22 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
-import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.operations.validation.AttestationDataValidatorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class SpecLogicElectra extends AbstractSpecLogic {
@@ -53,7 +53,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   private SpecLogicElectra(
       final Predicates predicates,
       final MiscHelpersDeneb miscHelpers,
-      final BeaconStateAccessorsAltair beaconStateAccessors,
+      final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
@@ -61,7 +61,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final AttestationUtil attestationUtil,
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
-      final EpochProcessorCapella epochProcessor,
+      final EpochProcessorElectra epochProcessor,
       final BlockProcessorCapella blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -93,11 +93,11 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   public static SpecLogicElectra create(
       final SpecConfigElectra config, final SchemaDefinitionsElectra schemaDefinitions) {
     // Helpers
-    final Predicates predicates = new Predicates(config);
+    final PredicatesElectra predicates = new PredicatesElectra(config);
     final MiscHelpersElectra miscHelpers =
         new MiscHelpersElectra(config, predicates, schemaDefinitions);
-    final BeaconStateAccessorsDeneb beaconStateAccessors =
-        new BeaconStateAccessorsDeneb(config, predicates, miscHelpers);
+    final BeaconStateAccessorsElectra beaconStateAccessors =
+        new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =
         new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
 
@@ -126,8 +126,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
             predicates,
             miscHelpers,
             beaconStateAccessors);
-    final EpochProcessorCapella epochProcessor =
-        new EpochProcessorCapella(
+    final EpochProcessorElectra epochProcessor =
+        new EpochProcessorElectra(
             config,
             miscHelpers,
             beaconStateAccessors,
