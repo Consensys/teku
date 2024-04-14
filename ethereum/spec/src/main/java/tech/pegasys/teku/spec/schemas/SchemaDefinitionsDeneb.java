@@ -140,7 +140,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {
     checkArgument(
         schemaDefinitions instanceof SchemaDefinitionsDeneb,
-        "Expected definitions of type %s by got %s",
+        "Expected definitions of type %s but got %s",
         SchemaDefinitionsDeneb.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsDeneb) schemaDefinitions;
