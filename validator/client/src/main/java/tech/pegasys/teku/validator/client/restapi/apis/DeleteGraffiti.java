@@ -40,6 +40,7 @@ public class DeleteGraffiti extends RestApiEndpoint {
                 "Successfully removed the graffiti, or there was no graffiti set for the requested public key.")
             .withAuthenticationResponses()
             .withNotFoundResponse()
+            .withNotImplementedResponse()
             .build());
   }
 
