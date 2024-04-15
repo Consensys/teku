@@ -13,29 +13,24 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GRAFFITI;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.KeyManager;
-import tech.pegasys.teku.validator.client.Validator;
 
 public class GetGraffiti extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/graffiti";
-  private final KeyManager keyManager;
 
   private static final SerializableTypeDefinition<GraffitiResponse> GRAFFITI_TYPE =
       SerializableTypeDefinition.object(GraffitiResponse.class)
@@ -49,7 +44,7 @@ public class GetGraffiti extends RestApiEndpoint {
           .withField("data", GRAFFITI_TYPE, Function.identity())
           .build();
 
-  public GetGraffiti(final KeyManager keyManager) {
+  public GetGraffiti() {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getGraffiti")
@@ -63,25 +58,11 @@ public class GetGraffiti extends RestApiEndpoint {
             .withAuthenticationResponses()
             .withNotFoundResponse()
             .build());
-    this.keyManager = keyManager;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
-
-    final Optional<Validator> maybeValidator = keyManager.getValidatorByPublicKey(publicKey);
-    if (maybeValidator.isEmpty()) {
-      request.respondError(SC_NOT_FOUND, "Validator not found");
-      return;
-    }
-
-    String graffiti = maybeValidator.get().getGraffiti().map(this::processGraffitiBytes).orElse("");
-    request.respondOk(new GraffitiResponse(publicKey, graffiti));
-  }
-
-  private String processGraffitiBytes(final Bytes32 graffiti) {
-    return new String(graffiti.toArrayUnsafe(), StandardCharsets.UTF_8).strip().replace("\0", "");
+    throw new NotImplementedException("Not implemented");
   }
 
   static class GraffitiResponse {
