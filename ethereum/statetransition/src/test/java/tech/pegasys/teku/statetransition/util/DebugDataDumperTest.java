@@ -187,8 +187,8 @@ class DebugDataDumperTest {
   }
 
   @Test
-  void formatOptionalTimestamp_shouldFormatTimestamp() {
-    final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
+  void formatOptionalTimestamp_shouldFormatTimestamp(@TempDir Path tempDir) {
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()), timeProvider);
     assertThat(formattedTimestamp)
@@ -196,8 +196,8 @@ class DebugDataDumperTest {
   }
 
   @Test
-  void formatOptionalTimestamp_shouldGenerateTimestamp() {
-    final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
+  void formatOptionalTimestamp_shouldGenerateTimestamp(@TempDir Path tempDir) {
+    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.empty(), timeProvider);
     assertThat(formattedTimestamp)
