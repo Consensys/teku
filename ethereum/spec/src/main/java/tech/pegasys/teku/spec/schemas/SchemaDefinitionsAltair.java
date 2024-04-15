@@ -79,7 +79,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   public static SchemaDefinitionsAltair required(final SchemaDefinitions schemaDefinitions) {
     Preconditions.checkArgument(
         schemaDefinitions instanceof SchemaDefinitionsAltair,
-        "Expected definitions of type %s by got %s",
+        "Expected definitions of type %s but got %s",
         SchemaDefinitionsAltair.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsAltair) schemaDefinitions;

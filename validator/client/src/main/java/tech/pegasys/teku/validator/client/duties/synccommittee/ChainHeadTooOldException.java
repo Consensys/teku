@@ -11,14 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.constants;
+package tech.pegasys.teku.validator.client.duties.synccommittee;
 
-import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class WithdrawalPrefixes {
-  public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
-  public static final byte ETH1_ADDRESS_WITHDRAWAL_BYTE = 0x01;
-  public static final byte COMPOUNDING_WITHDRAWAL_BYTE = 0x02;
-  public static final Bytes ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes.of(ETH1_ADDRESS_WITHDRAWAL_BYTE);
-  public static final Bytes COMPOUNDING_WITHDRAWAL_PREFIX = Bytes.of(COMPOUNDING_WITHDRAWAL_BYTE);
+public class ChainHeadTooOldException extends RuntimeException {
+
+  public ChainHeadTooOldException(final UInt64 headSlot, final UInt64 slot) {
+    super("Chain head too old. Head slot: " + headSlot + ", requested slot: " + slot);
+  }
 }
