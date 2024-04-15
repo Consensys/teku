@@ -30,7 +30,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
   @JsonProperty("deposit_receipts_root")
   public final Bytes32 depositReceiptsRoot;
 
-  @JsonProperty("exits_root")
+  @JsonProperty("withdraw_requests_root")
   public final Bytes32 withdrawRequestsRoot;
 
   @JsonCreator
@@ -53,7 +53,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_receipts_root") final Bytes32 depositReceiptsRoot,
-      @JsonProperty("exits_root") final Bytes32 withdrawRequestsRoot) {
+      @JsonProperty("withdraw_requests_root") final Bytes32 withdrawRequestsRoot) {
     super(
         parentHash,
         feeRecipient,
