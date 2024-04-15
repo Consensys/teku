@@ -63,7 +63,6 @@ public class GetGraffiti extends RestApiEndpoint {
             .response(SC_OK, "Success response", RESPONSE_TYPE)
             .withAuthenticationResponses()
             .withNotFoundResponse()
-            .withNotImplementedResponse()
             .build());
     this.keyManager = keyManager;
   }
@@ -78,7 +77,8 @@ public class GetGraffiti extends RestApiEndpoint {
       return;
     }
 
-    String graffiti = maybeValidator.get().getGraffiti().map(this::processGraffitiBytes).orElse("");
+    final String graffiti =
+        maybeValidator.get().getGraffiti().map(this::processGraffitiBytes).orElse("");
     request.respondOk(new GraffitiResponse(publicKey, graffiti));
   }
 

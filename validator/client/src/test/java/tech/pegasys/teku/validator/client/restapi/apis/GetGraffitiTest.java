@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
@@ -69,7 +68,7 @@ class GetGraffitiTest {
 
     handler.handleRequest(request);
 
-    GetGraffiti.GraffitiResponse expectedResponse =
+    final GetGraffiti.GraffitiResponse expectedResponse =
         new GetGraffiti.GraffitiResponse(publicKey, stringGraffiti);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
@@ -89,7 +88,8 @@ class GetGraffitiTest {
 
     handler.handleRequest(request);
 
-    GetGraffiti.GraffitiResponse expectedResponse = new GetGraffiti.GraffitiResponse(publicKey, "");
+    final GetGraffiti.GraffitiResponse expectedResponse =
+        new GetGraffiti.GraffitiResponse(publicKey, "");
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
   }
@@ -140,10 +140,5 @@ class GetGraffitiTest {
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
-  }
-
-  @Test
-  void metadata_shouldHandle501() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
   }
 }
