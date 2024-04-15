@@ -41,7 +41,6 @@ public class WithdrawRequestV1 {
 
   public WithdrawRequestV1(
       @JsonProperty("sourceAddress") final Bytes20 sourceAddress,
-      /* TODO(JWT): shouldn't this be called validatorPubkey? */
       @JsonProperty("validatorPublicKey") final Bytes48 validatorPublicKey,
       @JsonProperty("amount") final UInt64 amount) {
     this.sourceAddress = sourceAddress;
