@@ -36,7 +36,7 @@ class GetGraffitiTest {
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    GetGraffiti.GraffitiResponse response =
+    final GetGraffiti.GraffitiResponse response =
         new GetGraffiti.GraffitiResponse(dataStructureUtil.randomPublicKey(), "Test graffiti");
     final String responseData = getResponseStringFromMetadata(handler, SC_OK, response);
     assertThat(responseData)
