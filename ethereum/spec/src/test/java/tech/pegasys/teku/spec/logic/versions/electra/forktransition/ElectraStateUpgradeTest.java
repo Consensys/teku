@@ -59,8 +59,8 @@ class ElectraStateUpgradeTest {
     final BeaconStateElectra post = upgrade.upgrade(pre);
 
     assertThat(post.getDepositBalanceToConsume()).isEqualTo(UInt64.ZERO);
-    // min churn - churn/balance_increment = (64 *10^9) - 64
-    assertThat(post.getExitBalanceToConsume()).isEqualTo(UInt64.valueOf(63_999_999_936L));
+    // min churn - churn/balance_increment = (64 *10^9) - (64 *10^9) MOD 10^9
+    assertThat(post.getExitBalanceToConsume()).isEqualTo(UInt64.valueOf(64_000_000_000L));
     assertThat(post.getEarliestExitEpoch()).isEqualTo(UInt64.ONE);
     assertThat(post.getConsolidationBalanceToConsume()).isEqualTo(UInt64.ZERO);
     // 80_000/8 (slots -> epochs) + max_seed_lookahead + 1

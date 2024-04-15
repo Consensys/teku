@@ -70,7 +70,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
         configElectra
             .getMinPerEpochChurnLimitElectra()
             .max(getTotalActiveBalance(state).dividedBy(configElectra.getChurnLimitQuotient()));
-    return churn.minusMinZero(churn.dividedBy(configElectra.getEffectiveBalanceIncrement()));
+    return churn.minusMinZero(churn.mod(configElectra.getEffectiveBalanceIncrement()));
   }
 
   /**
