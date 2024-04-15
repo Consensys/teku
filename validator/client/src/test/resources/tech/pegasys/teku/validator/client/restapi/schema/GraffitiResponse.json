@@ -1,0 +1,19 @@
+{
+  "title" : "GraffitiResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "graffiti" ],
+      "properties" : {
+        "pubkey" : {
+          "type" : "string"
+        },
+        "graffiti" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}
