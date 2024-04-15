@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -142,6 +143,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<SignedContributionAndProof> signedContributionAndProofProcessor;
     protected OperationProcessor<ValidatableSyncCommitteeMessage> syncCommitteeMessageProcessor;
     protected OperationProcessor<SignedBlsToExecutionChange> signedBlsToExecutionChangeProcessor;
+    protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -440,7 +442,8 @@ public class Eth2P2PNetworkFactory {
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor);
+            signedBlsToExecutionChangeProcessor,
+            dataColumnSidecarOperationProcessor);
       };
     }
 
@@ -659,6 +662,12 @@ public class Eth2P2PNetworkFactory {
             gossipedSignedBlsToExecutionChangeProcessor) {
       checkNotNull(gossipedSignedBlsToExecutionChangeProcessor);
       this.signedBlsToExecutionChangeProcessor = gossipedSignedBlsToExecutionChangeProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedDataColumnSidecarOperationProcessor(OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
+      checkNotNull(dataColumnSidecarOperationProcessor);
+      this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
       return this;
     }
 
