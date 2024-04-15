@@ -187,7 +187,7 @@ class DebugDataDumperTest {
   }
 
   @Test
-  void formatTimestamp_shouldFormatDate() {
+  void formatOptionalTimestamp_shouldFormatTimestamp() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()), timeProvider);
@@ -196,7 +196,7 @@ class DebugDataDumperTest {
   }
 
   @Test
-  void generateTimestamp_shouldGenerateTimestamp() {
+  void formatOptionalTimestamp_shouldGenerateTimestamp() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.empty(), timeProvider);
