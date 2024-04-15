@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.sql.Date;
 import java.text.DateFormat;
@@ -44,7 +43,7 @@ class DebugDataDumperTest {
 
   @Test
   void saveGossipMessageDecodingError_shouldSaveToFile(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
     manager.saveGossipMessageDecodingError(
@@ -59,31 +58,11 @@ class DebugDataDumperTest {
             .resolve("_eth_test_topic")
             .resolve(fileName);
     checkBytesSavedToFile(expectedFile, messageBytes);
-  }
-
-  @Test
-  void saveGossipMessageDecodingError_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
-    final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
-    final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipMessageDecodingError(
-        "/eth/test/topic", arrivalTimestamp, messageBytes, new Throwable());
-    assertThat(manager.isEnabled()).isFalse();
-
-    final String fileName =
-        String.format("%s.ssz", formatTimestamp(timeProvider.getTimeInMillis().longValue()));
-    final Path expectedFile =
-        tempDir
-            .resolve("gossip_messages")
-            .resolve("decoding_error")
-            .resolve("_eth_test_topic")
-            .resolve(fileName);
-    checkFileNotExist(expectedFile);
   }
 
   @Test
   void saveGossipRejectedMessageToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
     manager.saveGossipRejectedMessageToFile(
@@ -101,27 +80,8 @@ class DebugDataDumperTest {
   }
 
   @Test
-  void saveGossipRejectedMessageToFile_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
-    final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
-    final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipRejectedMessageToFile(
-        "/eth/test/topic", arrivalTimestamp, messageBytes, Optional.of("reason"));
-    assertThat(manager.isEnabled()).isFalse();
-
-    final String fileName = String.format("%s.ssz", arrivalTimestamp);
-    final Path expectedFile =
-        tempDir
-            .resolve("gossip_messages")
-            .resolve("rejected")
-            .resolve("_eth_test_topic")
-            .resolve(fileName);
-    checkFileNotExist(expectedFile);
-  }
-
-  @Test
   void saveInvalidBlockToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     manager.saveInvalidBlockToFile(
         block.getSlot(),
@@ -137,22 +97,8 @@ class DebugDataDumperTest {
   }
 
   @Test
-  void saveInvalidBlockToFile_shouldNotSaveToFileWhenDisabled(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, false);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    manager.saveInvalidBlockToFile(
-        block.getSlot(), block.getRoot(), block.sszSerialize(), "reason", Optional.empty());
-    assertThat(manager.isEnabled()).isFalse();
-
-    final String fileName =
-        String.format("%s_%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
-    final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
-    checkFileNotExist(expectedFile);
-  }
-
-  @Test
   void saveBytesToFile_shouldNotThrowExceptionWhenNoDirectory(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     assertDoesNotThrow(
         () -> {
           final boolean success =
@@ -165,7 +111,7 @@ class DebugDataDumperTest {
   @Test
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void saveBytesToFile_shouldNotEscalateWhenIOException(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     final File invalidPath = tempDir.resolve("invalid").toFile();
     assertThat(invalidPath.mkdirs()).isTrue();
     assertThat(invalidPath.setWritable(false)).isTrue();
@@ -182,13 +128,13 @@ class DebugDataDumperTest {
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void constructionOfDirectories_shouldDisableWhenFailedToCreate(@TempDir Path tempDir) {
     assertThat(tempDir.toFile().setWritable(false)).isTrue();
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     assertThat(manager.isEnabled()).isFalse();
   }
 
   @Test
   void formatOptionalTimestamp_shouldFormatTimestamp(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()), timeProvider);
     assertThat(formattedTimestamp)
@@ -197,7 +143,7 @@ class DebugDataDumperTest {
 
   @Test
   void formatOptionalTimestamp_shouldGenerateTimestamp(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir, true);
+    final DebugDataDumper manager = new DebugDataDumper(tempDir);
     final String formattedTimestamp =
         manager.formatOptionalTimestamp(Optional.empty(), timeProvider);
     assertThat(formattedTimestamp)
@@ -211,17 +157,6 @@ class DebugDataDumperTest {
     } catch (IOException e) {
       fail();
     }
-  }
-
-  private void checkFileNotExist(final Path path) {
-    try {
-      Bytes.wrap(Files.readAllBytes(path));
-    } catch (IOException e) {
-      if (e instanceof NoSuchFileException) {
-        return;
-      }
-    }
-    fail("File was found and bytes read");
   }
 
   private String formatTimestamp(final long timeInMillis) {

@@ -41,12 +41,9 @@ public class DebugDataDumper {
   private boolean enabled;
   private final Path directory;
 
-  public DebugDataDumper(final Path directory, final boolean enabled) {
-    this.enabled = enabled;
+  public DebugDataDumper(final Path directory) {
+    this.enabled = true;
     this.directory = directory;
-    if (!enabled) {
-      return;
-    }
 
     final Path gossipMessagesPath = this.directory.resolve(GOSSIP_MESSAGES_DIR);
     createDirectory(gossipMessagesPath, GOSSIP_MESSAGES_DIR, "gossip messages");
