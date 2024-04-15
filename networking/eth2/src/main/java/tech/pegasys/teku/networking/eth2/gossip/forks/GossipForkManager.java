@@ -31,6 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -205,11 +206,17 @@ public class GossipForkManager {
   }
 
   public void publishVoluntaryExit(final SignedVoluntaryExit message) {
+    final SpecMilestone messageMilestone =
+        spec.atEpoch(message.getMessage().getEpoch()).getMilestone();
+    final UInt64 publishingSlot;
+    if (messageMilestone.equals(SpecMilestone.CAPELLA)) {
+      publishingSlot =
+          spec.computeStartSlotAtEpoch(spec.getCurrentEpoch(recentChainData.getStore()));
+    } else {
+      publishingSlot = spec.computeStartSlotAtEpoch(message.getMessage().getEpoch());
+    }
     publishMessage(
-        spec.computeStartSlotAtEpoch(message.getMessage().getEpoch()),
-        message,
-        "voluntary exit",
-        GossipForkSubscriptions::publishVoluntaryExit);
+        publishingSlot, message, "voluntary exit", GossipForkSubscriptions::publishVoluntaryExit);
   }
 
   public void publishSignedBlsToExecutionChanges(final SignedBlsToExecutionChange message) {
