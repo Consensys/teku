@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
+import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.PUBKEY_API_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GRAFFITI;
@@ -34,7 +35,7 @@ public class GetGraffiti extends RestApiEndpoint {
 
   private static final SerializableTypeDefinition<GraffitiResponse> GRAFFITI_TYPE =
       SerializableTypeDefinition.object(GraffitiResponse.class)
-          .withOptionalField("pubkey", STRING_TYPE, GraffitiResponse::getPublicKey)
+          .withOptionalField("pubkey", PUBKEY_API_TYPE, GraffitiResponse::getPublicKey)
           .withField("graffiti", STRING_TYPE, GraffitiResponse::getGraffiti)
           .build();
 
@@ -67,15 +68,15 @@ public class GetGraffiti extends RestApiEndpoint {
   }
 
   static class GraffitiResponse {
-    private final Optional<String> publicKey;
+    private final Optional<BLSPublicKey> publicKey;
     private final String graffiti;
 
     GraffitiResponse(final BLSPublicKey publicKey, final String graffiti) {
-      this.publicKey = Optional.of(publicKey.toHexString());
+      this.publicKey = Optional.of(publicKey);
       this.graffiti = graffiti;
     }
 
-    Optional<String> getPublicKey() {
+    Optional<BLSPublicKey> getPublicKey() {
       return publicKey;
     }
 

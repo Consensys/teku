@@ -8,7 +8,7 @@
       "required" : [ "graffiti" ],
       "properties" : {
         "pubkey" : {
-          "type" : "string"
+          "$ref" : "#/components/schemas/Pubkey"
         },
         "graffiti" : {
           "type" : "string"
