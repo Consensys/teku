@@ -57,6 +57,7 @@ public class GetGraffiti extends RestApiEndpoint {
             .response(SC_OK, "Success response", RESPONSE_TYPE)
             .withAuthenticationResponses()
             .withNotFoundResponse()
+            .withNotImplementedResponse()
             .build());
   }
 
