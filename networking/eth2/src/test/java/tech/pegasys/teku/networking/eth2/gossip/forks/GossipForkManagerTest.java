@@ -381,7 +381,7 @@ class GossipForkManagerTest {
   }
 
   @Test
-  void shouldPublishVoluntaryExitAfterCapellaForkWhenSignatureEpochIsCapella() {
+  void shouldPublishCapellaVoluntaryExitAfterCapella() {
     final Spec specDeneb = TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.ONE);
     final GossipForkSubscriptions capellaFork = forkAtEpoch(0);
     final GossipForkSubscriptions denebFork = forkAtEpoch(1);

@@ -206,10 +206,10 @@ public class GossipForkManager {
   }
 
   public void publishVoluntaryExit(final SignedVoluntaryExit message) {
-    final SpecMilestone messageMilestone =
-        spec.atEpoch(message.getMessage().getEpoch()).getMilestone();
+    final SpecMilestone currentMilestone =
+        spec.atEpoch(spec.getCurrentEpoch(recentChainData.getStore())).getMilestone();
     final UInt64 publishingSlot;
-    if (messageMilestone.equals(SpecMilestone.CAPELLA)) {
+    if (currentMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
       publishingSlot =
           spec.computeStartSlotAtEpoch(spec.getCurrentEpoch(recentChainData.getStore()));
     } else {
