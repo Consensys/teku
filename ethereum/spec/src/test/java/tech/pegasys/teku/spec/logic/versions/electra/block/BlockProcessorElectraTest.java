@@ -538,7 +538,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
     assertThat(mostRecentPendingPartialWithdrawal.getIndex()).isEqualTo(validatorIndex);
     assertThat(mostRecentPendingPartialWithdrawal.getAmount()).isEqualTo(UInt64.valueOf(12345678));
     // TODO: determine what this value should be
-    //assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch()).isEqualTo(UInt64.ZERO);
+    // assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch()).isEqualTo(UInt64.ZERO);
   }
 
   private Supplier<ValidatorExitContext> validatorExitContextSupplier(final BeaconState state) {

@@ -91,9 +91,4 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS);
     set(fieldIndex, pendingConsolidations);
   }
-
-  default UInt64 computeExitEpochAndUpdateChurn(final UInt64 exitBalance) {
-    // TODO: implement this function
-    return UInt64.ZERO;
-  }
 }
