@@ -49,7 +49,8 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
 
     // our implementation fails when importing one of the keys in an interchange, which is already
     // in our slashprotection directory with a different genesis validators root. However, the test
-    // does not import any keys.
+    // does not import any keys. This case is covered by
+    // SlashingProtectionImporterTest#shouldFailImportingIfValidatorExistingRecordHasDifferentGenesisValidatorsRoot()
     if (testData.name.startsWith("wrong_genesis_validators_root")) {
       LOG.info("Skipping {}", testData.name);
       return;
@@ -137,6 +138,8 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
 
     public record Step(
         @JsonProperty("should_succeed") boolean shouldSucceed,
+        // we don't fail importing when the interchange contains slashable data, so can safely
+        // ignore this field in the tests
         @JsonProperty("contains_slashable_data") boolean containsSlashableData,
         SlashingProtectionInterchangeFormat interchange,
         List<Block> blocks,
