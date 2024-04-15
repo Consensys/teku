@@ -47,7 +47,10 @@ public class ReferenceTestFinder {
   private static Stream<TestDefinition> findTestTypes(final Path specDirectory) throws IOException {
     final String spec = specDirectory.getFileName().toString();
     if (spec.equals("bls")) {
-      return new BlsRefTestFinder().findTests(TestFork.PHASE0, spec, specDirectory);
+      return new BlsRefTestFinder().findTests("", spec, specDirectory);
+    }
+    if (spec.equals("slashing-protection-interchange")) {
+      return new SlashingProtectionInterchangeRefTestFinder().findTests("", spec, specDirectory);
     }
     return SUPPORTED_FORKS.stream()
         .flatMap(
@@ -60,7 +63,6 @@ public class ReferenceTestFinder {
               return Stream.of(
                       new BlsTestFinder(),
                       new KzgTestFinder(),
-                      new BlsRefTestFinder(),
                       new SszTestFinder("ssz_generic"),
                       new SszTestFinder("ssz_static"),
                       new ShufflingTestFinder(),
