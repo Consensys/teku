@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.Bytes32Parser;
+import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -52,45 +53,14 @@ class GetGraffitiTest {
 
   @Test
   void shouldGetGraffiti() throws JsonProcessingException {
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final String stringGraffiti = "Test graffiti";
     final Bytes32 graffiti = Bytes32Parser.toBytes32(stringGraffiti);
-
-    request =
-        StubRestApiRequest.builder()
-            .metadata(handler.getMetadata())
-            .pathParameter("pubkey", publicKey.toHexString())
-            .build();
-
-    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, () -> Optional.of(graffiti));
-    when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
-
-    handler.handleRequest(request);
-
-    final GetGraffiti.GraffitiResponse expectedResponse =
-        new GetGraffiti.GraffitiResponse(publicKey, stringGraffiti);
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+    checkGraffiti(() -> Optional.of(graffiti), stringGraffiti);
   }
 
   @Test
   void shouldGetEmptyGraffiti() throws JsonProcessingException {
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    request =
-        StubRestApiRequest.builder()
-            .metadata(handler.getMetadata())
-            .pathParameter("pubkey", publicKey.toHexString())
-            .build();
-
-    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
-    when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
-
-    handler.handleRequest(request);
-
-    final GetGraffiti.GraffitiResponse expectedResponse =
-        new GetGraffiti.GraffitiResponse(publicKey, "");
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+    checkGraffiti(Optional::empty, "");
   }
 
   @Test
@@ -139,5 +109,25 @@ class GetGraffitiTest {
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  private void checkGraffiti(final GraffitiProvider graffitiProvider, final String expectedGraffiti)
+      throws JsonProcessingException {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    request =
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("pubkey", publicKey.toHexString())
+            .build();
+
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, graffitiProvider);
+    when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
+
+    handler.handleRequest(request);
+
+    final GetGraffiti.GraffitiResponse expectedResponse =
+        new GetGraffiti.GraffitiResponse(publicKey, expectedGraffiti);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
   }
 }
