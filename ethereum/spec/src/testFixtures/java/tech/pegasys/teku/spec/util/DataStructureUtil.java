@@ -2459,8 +2459,14 @@ public final class DataStructureUtil {
 
   public ExecutionLayerWithdrawRequest executionLayerWithdrawRequest(final Validator validator) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
-    /* TODO: what should the value here be? */
-    final UInt64 amount = UInt64.ZERO;
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerWithdrawRequestSchema()
+        .create(executionAddress, validator.getPublicKey(), randomUInt64());
+  }
+
+  public ExecutionLayerWithdrawRequest executionLayerWithdrawRequest(
+      final Validator validator, final UInt64 amount) {
+    final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
         .getExecutionLayerWithdrawRequestSchema()
         .create(executionAddress, validator.getPublicKey(), amount);

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_AMOUNT;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 
 import java.util.Optional;
@@ -160,7 +161,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     withdrawRequests.forEach(
         withdrawRequest -> {
           // If partial withdrawal queue is full, only full exits are processed
-          final boolean isFullExitRequest = withdrawRequest.getAmount().isZero();
+          final boolean isFullExitRequest =
+              withdrawRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
           final boolean partialWithdrawalsQueueFull =
               state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
                   >= specConfigElectra.getPendingPartialWithdrawalsLimit();
@@ -177,9 +179,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final int validatorIndex = maybeValidatorIndex.get();
           final Validator validator = state.getValidators().get(validatorIndex);
 
-          // Check if validator has eth1 credentials
-          boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
-          if (!isExecutionAddress) {
+          // Check if validator has an execution address set
+          boolean hasExecutionAddress = predicates.hasExecutionWithdrawalCredential(validator);
+          if (!hasExecutionAddress) {
             return;
           }
 

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_BYTE;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -80,7 +81,7 @@ public class Predicates {
   }
 
   /**
-   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella Helper function. <br>
+   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella helper function. <br>
    * Checks if validator has a 0x01 prefixed "eth1" withdrawal credential.
    *
    * @param validator the validator being checked
@@ -88,6 +89,19 @@ public class Predicates {
    */
   public boolean hasEth1WithdrawalCredential(final Validator validator) {
     return validator.getWithdrawalCredentials().get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
+  }
+
+  /**
+   * Implementation of <b>has_execution_withdrawal_credential</b> Electra helper function. <br>
+   * Checks if validator has a 0x01 or 0x02 prefixed withdrawal credential.
+   *
+   * @param validator the validator being checked
+   * @return true if the validator has an "eth1" or "compounding" withdrawal credential, false
+   *     otherwise
+   */
+  public boolean hasExecutionWithdrawalCredential(final Validator validator) {
+    final byte credential = validator.getWithdrawalCredentials().get(0);
+    return credential == COMPOUNDING_WITHDRAWAL_BYTE || credential == ETH1_ADDRESS_WITHDRAWAL_BYTE;
   }
 
   /**
