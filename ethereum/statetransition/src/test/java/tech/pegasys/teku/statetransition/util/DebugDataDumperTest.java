@@ -51,7 +51,7 @@ class DebugDataDumperTest {
         "/eth/test/topic", arrivalTimestamp, messageBytes, new Throwable());
 
     final String fileName =
-        String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
+        String.format("%s.ssz", formatTimestamp(timeProvider.getTimeInMillis().longValue()));
     final Path expectedFile =
         tempDir
             .resolve("gossip_messages")
@@ -71,7 +71,7 @@ class DebugDataDumperTest {
     assertThat(manager.isEnabled()).isFalse();
 
     final String fileName =
-        String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
+        String.format("%s.ssz", formatTimestamp(timeProvider.getTimeInMillis().longValue()));
     final Path expectedFile =
         tempDir
             .resolve("gossip_messages")
@@ -90,7 +90,7 @@ class DebugDataDumperTest {
         "/eth/test/topic", arrivalTimestamp, messageBytes, Optional.of("reason"));
 
     final String fileName =
-        String.format("%s.ssz", manager.formatTimestamp(timeProvider.getTimeInMillis()));
+        String.format("%s.ssz", formatTimestamp(timeProvider.getTimeInMillis().longValue()));
     final Path expectedFile =
         tempDir
             .resolve("gossip_messages")
@@ -190,21 +190,18 @@ class DebugDataDumperTest {
   void formatTimestamp_shouldFormatDate() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
     final String formattedTimestamp =
-        manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()));
-
-    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH_mm_ss.SS");
-    final Date date = new Date(timeProvider.getTimeInMillis().longValue());
-    assertThat(formattedTimestamp).isEqualTo(df.format(date));
+        manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()), timeProvider);
+    assertThat(formattedTimestamp)
+        .isEqualTo(formatTimestamp(timeProvider.getTimeInMillis().longValue()));
   }
 
   @Test
   void generateTimestamp_shouldGenerateTimestamp() {
     final DebugDataDumper manager = new DebugDataDumper(Path.of("."), true);
-    final String formattedTimestamp = manager.generateTimestamp(timeProvider);
-
-    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH_mm_ss.SS");
-    final Date date = new Date(timeProvider.getTimeInMillis().longValue());
-    assertThat(formattedTimestamp).isEqualTo(df.format(date));
+    final String formattedTimestamp =
+        manager.formatOptionalTimestamp(Optional.empty(), timeProvider);
+    assertThat(formattedTimestamp)
+        .isEqualTo(formatTimestamp(timeProvider.getTimeInMillis().longValue()));
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
@@ -225,5 +222,11 @@ class DebugDataDumperTest {
       }
     }
     fail("File was found and bytes read");
+  }
+
+  private String formatTimestamp(final long timeInMillis) {
+    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH_mm_ss.SS");
+    final Date date = new Date(timeInMillis);
+    return df.format(date);
   }
 }

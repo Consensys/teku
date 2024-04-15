@@ -182,24 +182,18 @@ public class DebugDataDumper {
     }
   }
 
-  @VisibleForTesting
-  String formatOptionalTimestamp(final Optional<UInt64> maybeTimestamp) {
-    return maybeTimestamp
-        .map(this::formatTimestamp)
-        .orElse(generateTimestamp(new SystemTimeProvider()));
+  private String formatOptionalTimestamp(final Optional<UInt64> maybeTimestamp) {
+    return formatOptionalTimestamp(maybeTimestamp, new SystemTimeProvider());
   }
 
   @VisibleForTesting
-  String formatTimestamp(final UInt64 arrivalTimestamp) {
+  String formatOptionalTimestamp(
+      final Optional<UInt64> maybeTimestamp, final TimeProvider timeProvider) {
     final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH_mm_ss.SS");
-    final Date date = new Date(arrivalTimestamp.longValue());
-    return df.format(date);
-  }
-
-  @VisibleForTesting
-  String generateTimestamp(final TimeProvider timeProvider) {
-    final DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH_mm_ss.SS");
-    final Date date = new Date(timeProvider.getTimeInMillis().longValue());
+    final Date date =
+        maybeTimestamp
+            .map(timestamp -> new Date(timestamp.longValue()))
+            .orElse(new Date(timeProvider.getTimeInMillis().longValue()));
     return df.format(date);
   }
 
