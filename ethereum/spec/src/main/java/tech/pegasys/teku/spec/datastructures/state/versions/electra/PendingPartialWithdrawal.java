@@ -22,6 +22,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PendingPartialWithdrawal
     extends Container3<PendingPartialWithdrawal, SszUInt64, SszUInt64, SszUInt64> {
+  protected PendingPartialWithdrawal(
+      ContainerSchema3<PendingPartialWithdrawal, SszUInt64, SszUInt64, SszUInt64> schema) {
+    super(schema);
+  }
+
+  public PendingPartialWithdrawal(
+      final PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema,
+      final SszUInt64 index,
+      final SszUInt64 amount,
+      final SszUInt64 withdrawableEpoch) {
+    super(pendingPartialWithdrawalSchema, index, amount, withdrawableEpoch);
+  }
 
   public static class PendingPartialWithdrawalSchema
       extends ContainerSchema3<PendingPartialWithdrawal, SszUInt64, SszUInt64, SszUInt64> {
@@ -52,16 +64,13 @@ public class PendingPartialWithdrawal
 
     @Override
     public PendingPartialWithdrawal createFromBackingNode(TreeNode node) {
-      return null;
+      return new PendingPartialWithdrawal(this, node);
     }
   }
 
   private PendingPartialWithdrawal(
-      PendingPartialWithdrawal.PendingPartialWithdrawalSchema type,
-      final SszUInt64 index,
-      final SszUInt64 amount,
-      final SszUInt64 withdrawableEpoch) {
-    super(type, index, amount, withdrawableEpoch);
+      PendingPartialWithdrawal.PendingPartialWithdrawalSchema type, final TreeNode backingNode) {
+    super(type, backingNode);
   }
 
   public int getIndex() {

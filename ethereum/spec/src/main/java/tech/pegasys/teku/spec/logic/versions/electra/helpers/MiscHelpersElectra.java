@@ -13,20 +13,25 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersElectra extends MiscHelpersDeneb {
 
   public MiscHelpersElectra(
-      final SpecConfigElectra specConfig,
+      final SpecConfig specConfig,
       final Predicates predicates,
-      final SchemaDefinitionsElectra schemaDefinitions) {
-    super(specConfig, predicates, schemaDefinitions);
+      final SchemaDefinitions schemaDefinitions) {
+    super(
+        SpecConfigDeneb.required(specConfig),
+        predicates,
+        SchemaDefinitionsDeneb.required(schemaDefinitions));
   }
 
   @Override

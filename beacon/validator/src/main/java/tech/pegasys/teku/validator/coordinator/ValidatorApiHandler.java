@@ -490,6 +490,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
     return SafeFuture.completedFuture(
         syncCommitteeMessagePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
   }
