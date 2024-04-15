@@ -132,11 +132,7 @@ public class DebugDataDumper {
     try {
       Files.write(path, bytes.toArray());
     } catch (NoSuchFileException e) {
-      if (!path.getParent().toFile().mkdirs()) {
-        LOG.error("Failed to save {} bytes to file.", description, e);
-        return false;
-      }
-      return saveAfterCreatingTopicDirectory(description, relativeFilePath, bytes);
+      return saveAfterCreatingTopicDirectory(description, path, relativeFilePath, bytes);
     } catch (IOException e) {
       LOG.error("Failed to save {} bytes to file.", description, e);
       return false;
@@ -145,8 +141,14 @@ public class DebugDataDumper {
   }
 
   private boolean saveAfterCreatingTopicDirectory(
-      final String description, final Path relativeFilePath, final Bytes bytes) {
-    final Path path = directory.resolve(relativeFilePath);
+      final String description, final Path path, final Path relativeFilePath, final Bytes bytes) {
+    if (!path.getParent().toFile().mkdirs()) {
+      LOG.error(
+          "Failed to save {} bytes to file. No such directory {} to save file.",
+          description,
+          relativeFilePath.getParent());
+      return false;
+    }
     try {
       Files.write(path, bytes.toArray());
     } catch (IOException e) {
