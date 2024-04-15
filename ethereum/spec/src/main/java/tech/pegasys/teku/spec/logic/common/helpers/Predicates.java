@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
-import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_ADDRESS_WITHDRAWAL_BYTE;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_BYTE;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -89,17 +88,6 @@ public class Predicates {
    */
   public boolean hasEth1WithdrawalCredential(final Validator validator) {
     return validator.getWithdrawalCredentials().get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
-  }
-
-  /**
-   * Implementation of <b>has_compounding_withdrawal_credential</b> Electra Helper function. <br>
-   * Checks if validator has a 0x02 prefixed compounding withdrawal credential.
-   *
-   * @param validator the validator being checked
-   * @return true if the validator has a compounding withdrawal credential, false otherwise
-   */
-  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
-    return validator.getWithdrawalCredentials().get(0) == COMPOUNDING_ADDRESS_WITHDRAWAL_BYTE;
   }
 
   /**

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -225,8 +226,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
           final UInt64 minActivationBalance = specConfigElectra.getMinActivationBalance();
 
+          // TODO: use predicates.hasCompoundingWithdrawalCredential()
           final boolean hasCompoundingWithdrawalCredential =
-              predicates.hasCompoundingWithdrawalCredential(validator);
+              validator.getWithdrawalCredentials().get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
           final boolean hasSufficientEffectiveBalance =
               validator.getEffectiveBalance().isGreaterThanOrEqualTo(minActivationBalance);
           final boolean hasExcessBalance =
