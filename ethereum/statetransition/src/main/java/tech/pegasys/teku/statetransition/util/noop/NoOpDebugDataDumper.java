@@ -23,7 +23,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 public class NoOpDebugDataDumper extends DebugDataDumper {
 
   public NoOpDebugDataDumper() {
-    super(Path.of("/"), true);
+    super(Path.of("."), true);
   }
 
   @Override
