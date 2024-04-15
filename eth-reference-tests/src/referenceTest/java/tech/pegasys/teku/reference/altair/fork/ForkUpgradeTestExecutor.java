@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 
@@ -51,7 +50,6 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
           case BELLATRIX -> BeaconStateSchemaAltair.create(spec.getConfig());
           case CAPELLA -> BeaconStateSchemaBellatrix.create(spec.getConfig());
           case DENEB -> BeaconStateSchemaCapella.create(spec.getConfig());
-          case ELECTRA -> BeaconStateSchemaDeneb.create(spec.getConfig());
           default -> throw new IllegalStateException(
               "Unhandled fork upgrade for test "
                   + testDefinition.getDisplayName()
