@@ -289,6 +289,7 @@ public class ActiveEth2P2PNetworkTest {
             gossipEncoding,
             gossipConfigurator,
             processedAttestationSubscriptionProvider,
+            Optional.empty(),
             true);
 
     assertThat(network.isCloseToInSync()).isFalse();
@@ -325,6 +326,7 @@ public class ActiveEth2P2PNetworkTest {
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider,
+        Optional.empty(),
         true);
   }
 }

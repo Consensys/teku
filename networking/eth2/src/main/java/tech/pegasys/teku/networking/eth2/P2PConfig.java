@@ -52,6 +52,7 @@ public class P2PConfig {
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
+  private final int dasExtraCustodySubnetCount;
   private final int peerRateLimit;
   private final int peerRequestLimit;
   private final int batchVerifyMaxThreads;
@@ -69,6 +70,7 @@ public class P2PConfig {
       final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
+      final int dasExtraCustodySubnetCount,
       final int peerRateLimit,
       final int peerRequestLimit,
       final int batchVerifyMaxThreads,
@@ -83,6 +85,7 @@ public class P2PConfig {
     this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+    this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.batchVerifyMaxThreads = batchVerifyMaxThreads;
@@ -123,6 +126,10 @@ public class P2PConfig {
 
   public boolean isSubscribeAllSubnetsEnabled() {
     return subscribeAllSubnetsEnabled;
+  }
+
+  public int getDasExtraCustodySubnetCount() {
+    return dasExtraCustodySubnetCount;
   }
 
   public int getPeerRateLimit() {
@@ -166,6 +173,7 @@ public class P2PConfig {
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+    private int dasExtraCustodySubnetCount = 0;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
@@ -210,6 +218,7 @@ public class P2PConfig {
           gossipEncoding,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
+          dasExtraCustodySubnetCount,
           peerRateLimit,
           peerRequestLimit,
           batchVerifyMaxThreads,
@@ -258,6 +267,11 @@ public class P2PConfig {
     public Builder subscribeAllSubnetsEnabled(final Boolean subscribeAllSubnetsEnabled) {
       checkNotNull(subscribeAllSubnetsEnabled);
       this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+      return this;
+    }
+
+    public Builder dasExtraCustodySubnetCount(int dasExtraCustodySubnetCount) {
+      this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
       return this;
     }
 

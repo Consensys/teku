@@ -70,6 +70,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final SubnetSubscriptionService syncCommitteeSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
+  private final Optional<Integer> dasExtraCustodySubnetCount;
 
   private final GossipForkManager gossipForkManager;
 
@@ -93,6 +94,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
+      final Optional<Integer> dasExtraCustodySubnetCount,
       final boolean allTopicsFilterEnabled) {
     super(discoveryNetwork);
     this.spec = spec;
@@ -107,6 +109,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.attestationSubnetService = attestationSubnetService;
     this.syncCommitteeSubnetService = syncCommitteeSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
+    this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
@@ -148,6 +151,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkSyncCommitteeSubnetsSubscription =
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
+    dasExtraCustodySubnetCount.ifPresent(discoveryNetwork::setDASExtraCustodySubnetCount);
 
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
     if (allTopicsFilterEnabled) {
