@@ -106,7 +106,7 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
       final SlashingProtectionImporter importer,
       final SlashingProtectionInterchangeFormat interchange) {
     try {
-      final Path importFile = Files.createTempFile("import", ".yml");
+      final Path importFile = Files.createTempFile("import", ".json");
       TestDataUtils.writeJsonToFile(interchange, importFile);
       final Optional<String> initialiseError = importer.initialise(importFile.toFile());
       assertThat(initialiseError).isEmpty();
