@@ -19,15 +19,10 @@ import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GR
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.api.Bytes32Parser;
 
 public class SetGraffiti extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/graffiti";
@@ -45,7 +40,7 @@ public class SetGraffiti extends RestApiEndpoint {
             .response(SC_NO_CONTENT, "Successfully updated graffiti.")
             .withAuthenticationResponses()
             .withNotFoundResponse()
-                .withNotImplementedResponse()
+            .withNotImplementedResponse()
             .build());
   }
 
