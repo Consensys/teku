@@ -26,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
+import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -36,7 +37,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.Bytes32Parser;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
@@ -62,8 +62,7 @@ class GetGraffitiTest {
             .pathParameter("pubkey", publicKey.toHexString())
             .build();
 
-    final Validator validator =
-        new Validator(publicKey, mock(Signer.class), () -> Optional.of(graffiti));
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, () -> Optional.of(graffiti));
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
     handler.handleRequest(request);
@@ -83,7 +82,7 @@ class GetGraffitiTest {
             .pathParameter("pubkey", publicKey.toHexString())
             .build();
 
-    final Validator validator = new Validator(publicKey, mock(Signer.class), Optional::empty);
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
     handler.handleRequest(request);
