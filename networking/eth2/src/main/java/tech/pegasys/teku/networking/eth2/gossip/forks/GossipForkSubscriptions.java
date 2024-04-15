@@ -40,10 +40,6 @@ public interface GossipForkSubscriptions {
 
   void publishBlock(SignedBeaconBlock block);
 
-  default void publishDataColumnSidecar(DataColumnSidecar blobSidecar) {
-    // since Electra
-  }
-
   default void publishBlobSidecar(BlobSidecar blobSidecar) {
     // since Deneb
   }
@@ -75,4 +71,16 @@ public interface GossipForkSubscriptions {
   }
 
   default void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message) {}
+
+  default void publishDataColumnSidecar(DataColumnSidecar blobSidecar) {
+    // since Electra
+  }
+
+  default void subscribeToDataColumnSidecarSubnet(int subnetId) {
+    // since Electra
+  }
+
+  default void unsubscribeFromDataColumnSidecarSubnet(int subnetId) {
+    // since Electra
+  }
 }

@@ -35,7 +35,7 @@ public class DataColumnSidecarGossipManager implements GossipManager {
     subnetSubscriptions = attestationSubnetSubscriptions;
   }
 
-  public void onNewDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+  public void publish(final DataColumnSidecar dataColumnSidecar) {
     subnetSubscriptions
         .gossip(dataColumnSidecar)
         .finish(
