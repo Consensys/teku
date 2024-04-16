@@ -337,6 +337,16 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   @Override
+  public void subscribeToDataColumnSidecarSubnetId(int subnetId) {
+    gossipForkManager.subscribeToDataColumnSidecarSubnetId(subnetId);
+  }
+
+  @Override
+  public void unsubscribeFromDataColumnSidecarSubnetId(int subnetId) {
+    gossipForkManager.unsubscribeFromDataColumnSidecarSubnetId(subnetId);
+  }
+
+  @Override
   public MetadataMessage getMetadata() {
     return peerManager.getMetadataMessage();
   }

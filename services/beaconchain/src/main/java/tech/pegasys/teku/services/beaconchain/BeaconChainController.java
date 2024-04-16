@@ -38,6 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -80,6 +81,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetBackboneSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
@@ -512,6 +514,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationTopicSubscriber();
     initActiveValidatorTracker();
     initSubnetSubscriber();
+    initDataColumnSidecarSubnetBackboneSubscriber();
     initSlashingEventsSubscriptions();
     initPerformanceTracker();
     initDataProvider();
@@ -872,6 +875,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     eventChannels.subscribe(SlotEventsChannel.class, stableSubnetSubscriber);
   }
+
+  protected void initDataColumnSidecarSubnetBackboneSubscriber() {
+    LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
+    UInt256 nodeId = p2pNetwork.getDiscoveryNodeId()
+        .orElseThrow(() -> new InvalidConfigurationException(("NodeID is required for DataColumnSidecarSubnetBackboneSubscriber")));
+    DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
+        new DataColumnSidecarSubnetBackboneSubscriber(spec, p2pNetwork, nodeId, beaconConfig.p2pConfig().getDasExtraCustodySubnetCount());
+    eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
+  }
+
 
   public void initExecutionLayerBlockProductionManager() {
     LOG.debug("BeaconChainController.initExecutionLayerBlockProductionManager()");

@@ -40,3 +40,4 @@ MAX_PARTIAL_WITHDRAWALS_PER_PAYLOAD: 2
 # DAS
 # ---------------------------------------------------------------
 FIELD_ELEMENTS_PER_CELL: 64
+CUSTODY_REQUIREMENT: 1

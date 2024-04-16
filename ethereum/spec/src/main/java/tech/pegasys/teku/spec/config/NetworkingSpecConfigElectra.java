@@ -22,4 +22,6 @@ package tech.pegasys.teku.spec.config;
 public interface NetworkingSpecConfigElectra extends NetworkingSpecConfig {
 
   int getDataColumnSidecarSubnetCount();
+
+  int getCustodyRequirement();
 }

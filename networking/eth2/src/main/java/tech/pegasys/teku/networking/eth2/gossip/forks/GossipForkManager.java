@@ -61,6 +61,7 @@ public class GossipForkManager {
   private final Set<GossipForkSubscriptions> activeSubscriptions = new HashSet<>();
   private final IntSet currentAttestationSubnets = new IntOpenHashSet();
   private final IntSet currentSyncCommitteeSubnets = new IntOpenHashSet();
+  private final IntSet currentDataColumnSidecarSubnets = new IntOpenHashSet();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
 
@@ -229,6 +230,15 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
   }
 
+  public synchronized void publishDataColumnSidecarMessage(
+      final DataColumnSidecar message) {
+    publishMessage(
+        message.getSlot(),
+        message,
+        "data column sidecar message",
+        GossipForkSubscriptions::publishDataColumnSidecar);
+  }
+
   private <T> void publishMessage(
       final UInt64 slot,
       final T message,
@@ -270,6 +280,20 @@ public class GossipForkManager {
     if (currentSyncCommitteeSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromSyncCommitteeSubnet(subnetId));
+    }
+  }
+
+  public void subscribeToDataColumnSidecarSubnetId(final int subnetId) {
+    if (currentDataColumnSidecarSubnets.add(subnetId)) {
+      activeSubscriptions.forEach(
+          subscription -> subscription.subscribeToDataColumnSidecarSubnet(subnetId));
+    }
+  }
+
+  public void unsubscribeFromDataColumnSidecarSubnetId(final int subnetId) {
+    if (currentDataColumnSidecarSubnets.remove(subnetId)) {
+      activeSubscriptions.forEach(
+          subscription -> subscription.unsubscribeFromDataColumnSidecarSubnet(subnetId));
     }
   }
 

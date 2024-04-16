@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 
 public class MiscHelpers {
 
@@ -197,7 +198,7 @@ public class MiscHelpers {
         .toList();
   }
 
-  private UInt64 computeSubscribedSubnet(
+  protected UInt64 computeSubscribedSubnet(
       final UInt256 nodeId, final UInt64 epoch, final int index) {
 
     final int nodeIdPrefix =
@@ -379,6 +380,10 @@ public class MiscHelpers {
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  public Optional<MiscHelpersElectra> toVersionElectra() {
     return Optional.empty();
   }
 }
