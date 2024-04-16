@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
-import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_BYTE;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -89,36 +88,6 @@ public class Predicates {
    */
   public boolean hasEth1WithdrawalCredential(final Validator validator) {
     return validator.getWithdrawalCredentials().get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
-  }
-
-  /**
-   * has_execution_withdrawal_credential
-   *
-   * @param validator
-   * @return
-   */
-  public boolean hasExecutionWithdrawalCredential(final Validator validator) {
-    return hasCompoundingWithdrawalCredential(validator) || hasEth1WithdrawalCredential(validator);
-  }
-
-  /**
-   * has_compounding_withdrawal_credential
-   *
-   * @param validator
-   * @return
-   */
-  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
-    return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
-  }
-
-  /**
-   * is_compounding_withdrawal_credential
-   *
-   * @param withdrawalCredentials
-   * @return
-   */
-  public boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
-    return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
   }
 
   /**

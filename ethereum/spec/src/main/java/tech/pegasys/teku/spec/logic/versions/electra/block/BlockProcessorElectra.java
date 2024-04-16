@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -50,18 +49,20 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlockProcessorElectra extends BlockProcessorDeneb {
 
   private final SpecConfigElectra specConfigElectra;
+  private final PredicatesElectra predicatesElectra;
   private final BeaconStateMutatorsElectra beaconStateMutatorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
-      final Predicates predicates,
+      final PredicatesElectra predicates,
       final MiscHelpersDeneb miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
@@ -86,6 +87,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         operationValidator,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
     specConfigElectra = specConfig;
+    predicatesElectra = predicates;
     beaconStateMutatorsElectra = beaconStateMutators;
     schemaDefinitionsElectra = schemaDefinitions;
   }
@@ -182,7 +184,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
           // Check if validator has an execution address set
           final boolean hasExecutionAddress =
-              predicates.hasExecutionWithdrawalCredential(validator);
+              predicatesElectra.hasExecutionWithdrawalCredential(validator);
           if (!hasExecutionAddress) {
             return;
           }
@@ -231,7 +233,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final UInt64 minActivationBalance = specConfigElectra.getMinActivationBalance();
 
           final boolean hasCompoundingWithdrawalCredential =
-              predicates.hasCompoundingWithdrawalCredential(validator);
+              predicatesElectra.hasCompoundingWithdrawalCredential(validator);
           final boolean hasSufficientEffectiveBalance =
               validator.getEffectiveBalance().isGreaterThanOrEqualTo(minActivationBalance);
           final boolean hasExcessBalance =
