@@ -20,6 +20,6 @@
       "description" : "unsigned 64 bit integer",
       "example" : "1",
       "format" : "uint64"
-    },
+    }
   }
 }
