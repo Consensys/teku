@@ -180,7 +180,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final Validator validator = state.getValidators().get(validatorIndex);
 
           // Check if validator has an execution address set
-          final boolean hasExecutionAddress = predicates.hasExecutionWithdrawalCredential(validator);
+          final boolean hasExecutionAddress =
+              predicates.hasExecutionWithdrawalCredential(validator);
           if (!hasExecutionAddress) {
             return;
           }
