@@ -37,15 +37,15 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
   @Override
   BeaconStateElectra commitChanges();
 
+  @Override
+  default Optional<MutableBeaconStateElectra> toMutableVersionElectra() {
+    return Optional.of(this);
+  }
+
   default void setDepositReceiptsStartIndex(final UInt64 depositReceiptsStartIndex) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX);
     set(fieldIndex, SszUInt64.of(depositReceiptsStartIndex));
-  }
-
-  @Override
-  default Optional<MutableBeaconStateElectra> toMutableVersionElectra() {
-    return Optional.of(this);
   }
 
   default void setDepositBalanceToConsume(final UInt64 depositBalanceToConsume) {

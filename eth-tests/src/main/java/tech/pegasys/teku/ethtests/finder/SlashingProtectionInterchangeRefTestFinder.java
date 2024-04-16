@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,42 +13,30 @@
 
 package tech.pegasys.teku.ethtests.finder;
 
-import static tech.pegasys.teku.ethtests.finder.ReferenceTestFinder.unchecked;
-
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-@SuppressWarnings("MustBeClosedChecker")
-public class BlsRefTestFinder implements TestFinder {
+public class SlashingProtectionInterchangeRefTestFinder implements TestFinder {
 
   @Override
   @MustBeClosed
   public Stream<TestDefinition> findTests(
       final String fork, final String config, final Path testRoot) throws IOException {
-    if (!config.equals("bls")) {
+    if (!config.equals("slashing-protection-interchange")) {
       return Stream.empty();
     }
     return Files.list(testRoot)
-        .filter(path -> path.toFile().isDirectory())
-        .flatMap(unchecked(path -> findBlsTests(config, testRoot, path)));
-  }
-
-  @MustBeClosed
-  private Stream<TestDefinition> findBlsTests(
-      final String config, final Path testRoot, final Path testCategoryDir) throws IOException {
-    final String testType = "bls/" + testRoot.relativize(testCategoryDir);
-    return Files.list(testCategoryDir)
-        .filter(file -> file.toFile().getName().endsWith(".yaml"))
+        .filter(file -> file.toFile().getName().endsWith(".json"))
         .map(
             testFile ->
                 new TestDefinition(
-                    "",
+                    fork,
                     config,
-                    testType,
+                    config,
                     testFile.toFile().getName(),
-                    testRoot.relativize(testCategoryDir)));
+                    testRoot.relativize(testFile.getParent())));
   }
 }

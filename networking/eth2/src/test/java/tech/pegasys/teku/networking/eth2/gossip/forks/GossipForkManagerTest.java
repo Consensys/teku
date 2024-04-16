@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,13 +35,17 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 class GossipForkManagerTest {
   private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x12345678446687");
@@ -49,6 +56,7 @@ class GossipForkManagerTest {
 
   @BeforeEach
   void setUp() {
+    reset(recentChainData);
     when(recentChainData.getGenesisData())
         .thenReturn(
             Optional.of(new GenesisData(UInt64.valueOf(134234134L), GENESIS_VALIDATORS_ROOT)));
@@ -346,6 +354,62 @@ class GossipForkManagerTest {
 
     verify(firstFork, never()).publishSyncCommitteeMessage(message);
     verify(secondFork, never()).publishSyncCommitteeMessage(message);
+  }
+
+  @Test
+  void shouldPublishVoluntaryExitOnCapella() {
+    final Spec specCapella = TestSpecFactory.createMinimalCapella();
+    final GossipForkSubscriptions capellaFork = forkAtEpoch(0);
+    final GossipForkManager.Builder builder =
+        GossipForkManager.builder().recentChainData(recentChainData).spec(specCapella);
+    Stream.of(capellaFork).forEach(builder::fork);
+    final GossipForkManager manager = builder.build();
+
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getGenesisTime()).thenReturn(UInt64.ZERO);
+    when(store.getTimeSeconds()).thenReturn(UInt64.ONE);
+
+    final VoluntaryExit voluntaryExit = new VoluntaryExit(UInt64.ZERO, UInt64.ONE);
+    final SignedVoluntaryExit capellaVoluntaryExit =
+        new SignedVoluntaryExit(voluntaryExit, dataStructureUtil.randomSignature());
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    manager.publishVoluntaryExit(capellaVoluntaryExit);
+    verify(capellaFork).publishVoluntaryExit(capellaVoluntaryExit);
+  }
+
+  @Test
+  void shouldPublishCapellaVoluntaryExitAfterCapella() {
+    final Spec specDeneb = TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.ONE);
+    final GossipForkSubscriptions capellaFork = forkAtEpoch(0);
+    final GossipForkSubscriptions denebFork = forkAtEpoch(1);
+    final GossipForkManager.Builder builder =
+        GossipForkManager.builder().recentChainData(recentChainData).spec(specDeneb);
+    Stream.of(capellaFork, denebFork).forEach(builder::fork);
+    final GossipForkManager manager = builder.build();
+
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getGenesisTime()).thenReturn(UInt64.ZERO);
+    when(store.getTimeSeconds()).thenReturn(UInt64.valueOf(9000));
+    assertThat(specDeneb.getCurrentEpoch(store)).isGreaterThanOrEqualTo(UInt64.valueOf(3));
+
+    final VoluntaryExit voluntaryExit = new VoluntaryExit(UInt64.ZERO, UInt64.ONE);
+    final SignedVoluntaryExit capellaVoluntaryExit =
+        new SignedVoluntaryExit(voluntaryExit, dataStructureUtil.randomSignature());
+    assertEquals(
+        SpecMilestone.CAPELLA,
+        specDeneb.atEpoch(capellaVoluntaryExit.getMessage().getEpoch()).getMilestone());
+
+    // Deneb
+    // Previous subscriptions are stopped in 2 epochs after fork transition
+    manager.configureGossipForEpoch(UInt64.valueOf(3));
+
+    manager.publishVoluntaryExit(capellaVoluntaryExit);
+    verify(capellaFork, never()).publishVoluntaryExit(capellaVoluntaryExit);
+    verify(denebFork).publishVoluntaryExit(capellaVoluntaryExit);
   }
 
   @ParameterizedTest
