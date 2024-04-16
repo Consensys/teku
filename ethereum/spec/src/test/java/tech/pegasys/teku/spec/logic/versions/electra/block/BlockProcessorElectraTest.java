@@ -486,7 +486,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                               SszUInt64.of(
                                   specConfigElectra
                                       .getMinActivationBalance()
-                                      .plus(UInt64.valueOf(12345678))));
+                                      .plus(UInt64.valueOf(123_456_789))));
                     }));
     // The validator we created was the last one added to the list of validators
     int validatorIndex = preState.getValidators().size() - 1;
@@ -505,7 +505,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             .get(validatorIndex)
             .get()
             .minus(specConfigElectra.getMinActivationBalance());
-    assertThat(amount).isEqualTo(UInt64.valueOf(12345678));
+    assertThat(amount).isEqualTo(UInt64.valueOf(123_456_789));
 
     final Optional<ExecutionPayload> processExecutionLayerWithdrawRequests =
         createExecutionPayloadWithWithdrawRequests(
@@ -536,9 +536,10 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             .get(postState.getPendingPartialWithdrawals().size() - 1);
 
     assertThat(mostRecentPendingPartialWithdrawal.getIndex()).isEqualTo(validatorIndex);
-    assertThat(mostRecentPendingPartialWithdrawal.getAmount()).isEqualTo(UInt64.valueOf(12345678));
-    // TODO: determine what this value should be
-    // assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch()).isEqualTo(UInt64.ZERO);
+    assertThat(mostRecentPendingPartialWithdrawal.getAmount())
+        .isEqualTo(UInt64.valueOf(123_456_789));
+    assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch())
+        .isEqualTo(UInt64.valueOf(1_261));
   }
 
   private Supplier<ValidatorExitContext> validatorExitContextSupplier(final BeaconState state) {
