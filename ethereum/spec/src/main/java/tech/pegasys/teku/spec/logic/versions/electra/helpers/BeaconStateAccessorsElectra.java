@@ -13,12 +13,18 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
@@ -37,19 +43,6 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   }
 
   /**
-   * implements get_validator_max_effective_balance state accessor
-   *
-   * @param validator - a validator from a state.
-   * @return the max effective balance for the specified validator based on its withdrawal
-   *     credentials.
-   */
-  public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
-    return predicatesElectra.hasCompoundingWithdrawalCredential(validator)
-        ? configElectra.getMaxEffectiveBalanceElectra()
-        : configElectra.getMinActivationBalance();
-  }
-
-  /**
    * get_activation_exit_churn_limit
    *
    * @param state - the state to use to get the churn limit from
@@ -57,6 +50,37 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    */
   public UInt64 getActivationExitChurnLimit(final BeaconStateElectra state) {
     return getChurnLimit(state).min(configElectra.getMaxPerEpochActivationExitChurnLimit());
+  }
+
+  /**
+   * get_active_balance
+   *
+   * @param state The state to get the effective balance from
+   * @param validatorIndex the index of the validator
+   * @return
+   */
+  public UInt64 getActiveBalance(final BeaconState state, final int validatorIndex) {
+    final Validator validator = state.getValidators().get(validatorIndex);
+    final UInt64 maxEffectiveBalance = predicatesElectra.getValidatorMaxEffectiveBalance(validator);
+    final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
+    return validatorBalance.min(maxEffectiveBalance);
+  }
+
+  /**
+   * get_pending_balance_to_withdraw
+   *
+   * @param state The state
+   * @param validatorIndex The index of the validator
+   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue
+   */
+  public UInt64 getPendingBalanceToWithdraw(
+      final BeaconStateElectra state, final int validatorIndex) {
+    final List<PendingPartialWithdrawal> partialWithdrawals =
+        state.getPendingPartialWithdrawals().asList();
+    return partialWithdrawals.stream()
+        .filter(z -> z.getIndex() == validatorIndex)
+        .map(z -> z.getAmount())
+        .reduce(UInt64.ZERO, UInt64::plus);
   }
 
   /**
@@ -81,5 +105,15 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    */
   public UInt64 getConsolidationChurnLimit(final BeaconStateElectra state) {
     return getChurnLimit(state).minusMinZero(getActivationExitChurnLimit(state));
+  }
+
+  public static BeaconStateAccessorsElectra required(
+      final BeaconStateAccessors beaconStateAccessors) {
+    checkArgument(
+        beaconStateAccessors instanceof BeaconStateAccessorsElectra,
+        "Expected %s but it was %s",
+        BeaconStateAccessorsElectra.class,
+        beaconStateAccessors.getClass());
+    return (BeaconStateAccessorsElectra) beaconStateAccessors;
   }
 }

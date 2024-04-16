@@ -116,10 +116,10 @@ public class Predicates {
   public boolean isFullyWithdrawableValidator(
       final Validator validator, final UInt64 balance, final UInt64 epoch) {
     return hasEth1WithdrawalCredential(validator)
-        && isFullyWithdrawableValidatorEth1CredentialsChecked(validator, balance, epoch);
+        && isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch);
   }
 
-  public boolean isFullyWithdrawableValidatorEth1CredentialsChecked(
+  public boolean isFullyWithdrawableValidatorCredentialsChecked(
       final Validator validator, final UInt64 balance, final UInt64 epoch) {
     return validator.getWithdrawableEpoch().isLessThanOrEqualTo(epoch)
         && balance.isGreaterThan(UInt64.ZERO);
