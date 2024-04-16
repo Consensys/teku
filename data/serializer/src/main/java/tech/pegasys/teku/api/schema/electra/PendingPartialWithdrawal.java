@@ -53,7 +53,7 @@ public class PendingPartialWithdrawal {
         spec.getSchemaDefinitions().toVersionElectra();
     if (schemaDefinitionsElectra.isEmpty()) {
       throw new IllegalArgumentException(
-          "Could not create PendingBalanceDeposit for pre-electra spec");
+          "Could not create PendingPartialWithdrawal for pre-electra spec");
     }
     return schemaDefinitionsElectra
         .get()
