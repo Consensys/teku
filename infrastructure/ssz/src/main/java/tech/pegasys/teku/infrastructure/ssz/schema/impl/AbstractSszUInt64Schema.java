@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
     extends AbstractSszPrimitiveSchema<UInt64, T> {
 
-  private Supplier<DeserializableTypeDefinition<T>> typeDefinition =
+  private final Supplier<DeserializableTypeDefinition<T>> typeDefinition =
       Suppliers.memoize(this::createJsonTypeDefinition);
 
   protected AbstractSszUInt64Schema() {
@@ -40,12 +40,12 @@ public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
   }
 
   @Override
-  public UInt64 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-    Bytes leafNodeBytes = node.getData();
+  public UInt64 createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
+    final Bytes leafNodeBytes = node.getData();
     try {
-      Bytes elementBytes = leafNodeBytes.slice(internalIndex * 8, 8);
+      final Bytes elementBytes = leafNodeBytes.slice(internalIndex * 8, 8);
       return UInt64.fromLongBits(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN));
-    } catch (Exception e) {
+    } catch (final Exception e) {
       // additional info to track down the bug https://github.com/PegaSysEng/teku/issues/2579
       String info =
           "Refer to https://github.com/PegaSysEng/teku/issues/2579 if see this exception. ";
@@ -66,21 +66,23 @@ public abstract class AbstractSszUInt64Schema<T extends SszUInt64>
   }
 
   @Override
-  public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
-    Bytes uintBytes =
+  public TreeNode updateBackingNode(
+      final TreeNode srcNode, final int index, final SszData newValue) {
+    final Bytes uintBytes =
         Bytes.ofUnsignedLong(((SszUInt64) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
-    Bytes curVal = ((LeafNode) srcNode).getData();
-    Bytes newBytes = updateExtending(curVal, index * 8, uintBytes);
+    final Bytes curVal = ((LeafNode) srcNode).getData();
+    final Bytes newBytes = updateExtending(curVal, index * 8, uintBytes);
     return LeafNode.create(newBytes);
   }
 
   @Override
-  public TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate<UInt64, T>> updates) {
+  public TreeNode updatePackedNode(
+      final TreeNode srcNode, final List<PackedNodeUpdate<UInt64, T>> updates) {
     if (updates.size() == 4) {
-      byte[] data = new byte[32];
+      final byte[] data = new byte[32];
       for (int i = 0; i < 4; i++) {
-        long longValue = updates.get(i).getNewValue().longValue();
-        int off = i * 8;
+        final long longValue = updates.get(i).getNewValue().longValue();
+        final int off = i * 8;
         data[off + 0] = (byte) longValue;
         data[off + 1] = (byte) (longValue >> 8);
         data[off + 2] = (byte) (longValue >> 16);

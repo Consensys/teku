@@ -41,7 +41,7 @@ public class SszUInt64 extends AbstractSszPrimitive<UInt64> {
     super(val, SszPrimitiveSchemas.UINT64_SCHEMA);
   }
 
-  protected SszUInt64(final UInt64 val, AbstractSszUInt64Schema<? extends SszUInt64> schema) {
+  protected SszUInt64(final UInt64 val, final AbstractSszUInt64Schema<? extends SszUInt64> schema) {
     super(val, schema);
   }
 

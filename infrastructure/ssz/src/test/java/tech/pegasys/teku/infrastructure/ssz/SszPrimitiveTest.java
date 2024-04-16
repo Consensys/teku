@@ -65,14 +65,14 @@ public class SszPrimitiveTest implements SszDataTestBase {
   @SuppressWarnings("unchecked")
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  <V, S extends SszPrimitive<V>> void get_roundtrip(S data) {
-    V rawVal = data.get();
-    SszPrimitiveSchema<V, S> schema = (SszPrimitiveSchema<V, S>) data.getSchema();
-    S data1 = schema.boxed(rawVal);
+  <V, S extends SszPrimitive<V>> void get_roundtrip(final S data) {
+    final V rawVal = data.get();
+    final SszPrimitiveSchema<V, S> schema = (SszPrimitiveSchema<V, S>) data.getSchema();
+    final S data1 = schema.boxed(rawVal);
 
     SszDataAssert.assertThatSszData(data1).isEqualByAllMeansTo(data);
 
-    V rawVal1 = data1.get();
+    final V rawVal1 = data1.get();
 
     Assertions.assertThat(rawVal1).isEqualTo(rawVal);
   }

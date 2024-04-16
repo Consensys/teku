@@ -41,7 +41,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT>>
     implements SszPrimitiveSchema<DataT, SszDataT> {
 
-  protected static Bytes updateExtending(Bytes origBytes, int origOff, Bytes newBytes) {
+  protected static Bytes updateExtending(
+      final Bytes origBytes, final int origOff, final Bytes newBytes) {
     if (origOff == origBytes.size()) {
       return Bytes.wrap(origBytes, newBytes);
     } else {
@@ -109,7 +110,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
 
   protected abstract DataT createFromLeafBackingNode(LeafDataNode node, int internalIndex);
 
-  public TreeNode createBackingNode(SszData newValue) {
+  public TreeNode createBackingNode(final SszData newValue) {
     return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);
   }
 
