@@ -63,16 +63,16 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
     this.processor = processor;
     this.forkInfo = forkInfo;
     SpecVersion specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
-    this.dataColumnSidecarSchema = specVersion.getSchemaDefinitions().toVersionElectra().orElseThrow()
+    this.dataColumnSidecarSchema = SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
         .getDataColumnSidecarSchema();
-    this.subnetCount = specVersion.getConfig().toVersionElectra().orElseThrow()
+    this.subnetCount = SpecConfigElectra.required(specVersion.getConfig())
         .getDataColumnSidecarSubnetCount();
   }
 
   public SafeFuture<?> gossip(final DataColumnSidecar sidecar) {
     int subnetId = computeSubnetForSidecar(sidecar);
     final String topic =
-        GossipTopics.getAttestationSubnetTopic(
+        GossipTopics.getDataColumnSidecarSubnetTopic(
             forkInfo.getForkDigest(spec), subnetId, gossipEncoding);
     return gossipNetwork.gossip(topic, gossipEncoding.encode(sidecar));
   }

@@ -31,8 +31,8 @@ public class DataColumnSidecarGossipManager implements GossipManager {
   private final DataColumnSidecarSubnetSubscriptions subnetSubscriptions;
 
   public DataColumnSidecarGossipManager(
-      final DataColumnSidecarSubnetSubscriptions attestationSubnetSubscriptions) {
-    subnetSubscriptions = attestationSubnetSubscriptions;
+      final DataColumnSidecarSubnetSubscriptions dataColumnSidecarSubnetSubscriptions) {
+    subnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
   }
 
   public void publish(final DataColumnSidecar dataColumnSidecar) {
@@ -41,11 +41,11 @@ public class DataColumnSidecarGossipManager implements GossipManager {
         .finish(
             __ -> {
               LOG.debug(
-                  "Successfully published attestation for slot {}", dataColumnSidecar);
+                  "Successfully published data column sidecar for slot {}", dataColumnSidecar);
             },
             error -> {
               LOG.warn(
-                  "Error publishing data column for slot {}", dataColumnSidecar);
+                  "Error publishing data column sidecar for slot {}", dataColumnSidecar);
             });
   }
 
