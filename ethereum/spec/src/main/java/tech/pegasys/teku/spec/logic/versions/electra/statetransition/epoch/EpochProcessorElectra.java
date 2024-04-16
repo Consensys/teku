@@ -51,6 +51,12 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
   }
 
+  /**
+   * is_eligible_for_activation_queue
+   *
+   * @param status - Validator status
+   * @return
+   */
   @Override
   protected boolean isEligibleForActivationQueue(final ValidatorStatus status) {
     return !status.isActiveInCurrentEpoch()
