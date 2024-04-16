@@ -898,12 +898,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new GraffitiBuilder(
             beaconConfig.validatorConfig().getClientGraffitiAppendFormat(),
             beaconConfig.validatorConfig().getGraffitiProvider().get());
+    eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
             executionLayer,
             eventChannels.getPublisher(ExecutionClientVersionChannel.class),
             graffitiBuilder.getConsensusClientVersion());
-    eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final BlockOperationSelectorFactory operationSelector =
         new BlockOperationSelectorFactory(
             spec,
