@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -169,6 +170,14 @@ public class GossipForkManager {
         blobSidecar,
         "blob sidecar",
         GossipForkSubscriptions::publishBlobSidecar);
+  }
+
+  public synchronized void publishDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+    publishMessage(
+        dataColumnSidecar.getSlot(),
+        dataColumnSidecar,
+        "data column sidecar",
+        GossipForkSubscriptions::publishDataColumnSidecar);
   }
 
   public synchronized void publishSyncCommitteeMessage(

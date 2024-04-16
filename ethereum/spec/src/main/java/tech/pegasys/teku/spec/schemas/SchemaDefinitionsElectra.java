@@ -17,9 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
@@ -85,6 +88,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
       pendingPartialWithdrawalSchema;
   private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
 
+  private final DataColumnSchema dataColumnSchema;
+  private final DataColumnSidecarSchema dataColumnSidecarSchema;
+
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
     this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
@@ -139,6 +145,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
     this.pendingConsolidationSchema = new PendingConsolidation.PendingConsolidationSchema();
+
+    this.dataColumnSchema = new DataColumnSchema(specConfig);
+    this.dataColumnSidecarSchema = DataColumnSidecarSchema.create(SignedBeaconBlockHeader.SSZ_SCHEMA, dataColumnSchema, specConfig);
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
@@ -280,5 +289,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
     return pendingConsolidationSchema;
+  }
+
+  public DataColumnSidecarSchema getDataColumnSidecarSchema() {
+    return dataColumnSidecarSchema;
   }
 }

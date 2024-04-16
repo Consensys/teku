@@ -48,7 +48,7 @@ public class DataColumnSidecarSchema
   DataColumnSidecarSchema(
       final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
       final DataColumnSchema dataColumnSchema,
-      SpecConfigElectra specConfig) {
+      final SpecConfigElectra specConfig) {
     super(
         "DataColumnSidecar",
         namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -133,13 +133,13 @@ public class DataColumnSidecarSchema
 //        kzgCommitmentInclusionProof);
 //  }
 //
-//  public static DataColumnSidecarSchema create(
-//      final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
-//      final BlobSchema blobSchema,
-//      final int kzgCommitmentInclusionProofDepth) {
-//    return new DataColumnSidecarSchema(
-//        signedBeaconBlockHeaderSchema, blobSchema, kzgCommitmentInclusionProofDepth);
-//  }
+  public static DataColumnSidecarSchema create(
+      final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
+      final DataColumnSchema dataColumnSchema,
+      final SpecConfigElectra specConfig) {
+    return new DataColumnSidecarSchema(
+        signedBeaconBlockHeaderSchema, dataColumnSchema, specConfig);
+  }
 
   @Override
   public DataColumnSidecar createFromBackingNode(TreeNode node) {

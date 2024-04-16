@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -121,6 +122,7 @@ public class Eth2P2PNetworkBuilder {
       gossipedSignedContributionAndProofProcessor;
   protected OperationProcessor<ValidatableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
+  protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
   protected StatusMessageFactory statusMessageFactory;
   protected KZG kzg;
   protected boolean recordMessageArrival;
@@ -310,7 +312,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
           gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
+          gossipedSignedBlsToExecutionChangeProcessor,
+          dataColumnSidecarOperationProcessor);
     };
   }
 
@@ -530,6 +533,12 @@ public class Eth2P2PNetworkBuilder {
           gossipedSignedBlsToExecutionChangeProcessor) {
     checkNotNull(gossipedSignedBlsToExecutionChangeProcessor);
     this.gossipedSignedBlsToExecutionChangeProcessor = gossipedSignedBlsToExecutionChangeProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedDataColumnSidecarOperationProcessor(OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
+    checkNotNull(dataColumnSidecarOperationProcessor);
+    this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     return this;
   }
 
