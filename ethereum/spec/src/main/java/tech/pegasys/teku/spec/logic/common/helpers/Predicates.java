@@ -92,16 +92,33 @@ public class Predicates {
   }
 
   /**
-   * Implementation of <b>has_execution_withdrawal_credential</b> Electra helper function. <br>
-   * Checks if validator has a 0x01 or 0x02 prefixed withdrawal credential.
+   * has_execution_withdrawal_credential
    *
-   * @param validator the validator being checked
-   * @return true if the validator has an "eth1" or "compounding" withdrawal credential, false
-   *     otherwise
+   * @param validator
+   * @return
    */
   public boolean hasExecutionWithdrawalCredential(final Validator validator) {
-    final byte credential = validator.getWithdrawalCredentials().get(0);
-    return credential == COMPOUNDING_WITHDRAWAL_BYTE || credential == ETH1_ADDRESS_WITHDRAWAL_BYTE;
+    return hasCompoundingWithdrawalCredential(validator) || hasEth1WithdrawalCredential(validator);
+  }
+
+  /**
+   * has_compounding_withdrawal_credential
+   *
+   * @param validator
+   * @return
+   */
+  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
+    return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
+  }
+
+  /**
+   * is_compounding_withdrawal_credential
+   *
+   * @param withdrawalCredentials
+   * @return
+   */
+  public boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
+    return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
   }
 
   /**

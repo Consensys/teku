@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
-import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
-
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -60,36 +57,6 @@ public class PredicatesElectra extends Predicates {
       final Validator validator, final UInt64 balance, final UInt64 epoch) {
     return hasExecutionWithdrawalCredential(validator)
         && isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch);
-  }
-
-  /**
-   * has_execution_withdrawal_credential
-   *
-   * @param validator
-   * @return
-   */
-  public boolean hasExecutionWithdrawalCredential(final Validator validator) {
-    return hasCompoundingWithdrawalCredential(validator) || hasEth1WithdrawalCredential(validator);
-  }
-
-  /**
-   * has_compounding_withdrawal_credential
-   *
-   * @param validator
-   * @return
-   */
-  protected boolean hasCompoundingWithdrawalCredential(final Validator validator) {
-    return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
-  }
-
-  /**
-   * is_compounding_withdrawal_credential
-   *
-   * @param withdrawalCredentials
-   * @return
-   */
-  protected boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
-    return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
   }
 
   /**

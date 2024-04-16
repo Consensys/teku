@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.electra.block;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_AMOUNT;
-import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -51,13 +49,15 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlockProcessorElectra extends BlockProcessorDeneb {
 
-  private final SchemaDefinitionsElectra schemaDefinitionsElectra;
   private final SpecConfigElectra specConfigElectra;
+  private final BeaconStateMutatorsElectra beaconStateMutatorsElectra;
+  private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
@@ -65,7 +65,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final MiscHelpersDeneb miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
-      final BeaconStateMutators beaconStateMutators,
+      final BeaconStateMutatorsElectra beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -85,8 +85,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         validatorsUtil,
         operationValidator,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
-    schemaDefinitionsElectra = schemaDefinitions;
     specConfigElectra = specConfig;
+    beaconStateMutatorsElectra = beaconStateMutators;
+    schemaDefinitionsElectra = schemaDefinitions;
   }
 
   @Override
@@ -229,9 +230,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
           final UInt64 minActivationBalance = specConfigElectra.getMinActivationBalance();
 
-          // TODO: use predicates.hasCompoundingWithdrawalCredential()
           final boolean hasCompoundingWithdrawalCredential =
-              validator.getWithdrawalCredentials().get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
+              predicates.hasCompoundingWithdrawalCredential(validator);
           final boolean hasSufficientEffectiveBalance =
               validator.getEffectiveBalance().isGreaterThanOrEqualTo(minActivationBalance);
           final boolean hasExcessBalance =
@@ -244,8 +244,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                     .min(minActivationBalance)
                     .minus(pendingBalanceToWithdraw)
                     .min(withdrawRequest.getAmount());
-            // TODO: implement compute_exit_epoch_and_update_churn
-            final UInt64 exitQueueEpoch = UInt64.ZERO;
+            final UInt64 exitQueueEpoch =
+                beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(
+                    MutableBeaconStateElectra.required(state), toWithdraw);
             final UInt64 withdrawableEpoch =
                 exitQueueEpoch.plus(specConfigElectra.getMinValidatorWithdrawabilityDelay());
 
