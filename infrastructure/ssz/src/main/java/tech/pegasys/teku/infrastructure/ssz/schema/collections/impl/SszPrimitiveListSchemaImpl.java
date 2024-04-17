@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPrimitiveListSchemaImpl<
         ElementT,
-        SszElementT extends SszPrimitive<ElementT, SszElementT>,
+        SszElementT extends SszPrimitive<ElementT>,
         SszListT extends SszPrimitiveList<ElementT, SszElementT>>
     extends AbstractSszListSchema<SszElementT, SszListT>
     implements SszPrimitiveListSchema<ElementT, SszElementT, SszListT> {
