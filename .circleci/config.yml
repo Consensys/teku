@@ -446,7 +446,7 @@ jobs:
           at: ~/project
       - docker_trust_sign
       - docker_publish_images:
-          include_commit_hash: << parameters.commit_hash >>
+          include_commit_hash: << parameters.include_commit_hash >>
       - notify
 
   publishDockerArm64:
@@ -461,7 +461,7 @@ jobs:
           at: ~/project
       - docker_trust_sign
       - docker_publish_images:
-          include_commit_hash: << parameters.commit_hash >>
+          include_commit_hash: << parameters.include_commit_hash >>
       - notify
 
   manifestDocker:
