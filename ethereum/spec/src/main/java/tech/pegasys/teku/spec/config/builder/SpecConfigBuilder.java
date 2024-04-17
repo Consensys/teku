@@ -130,6 +130,7 @@ public class SpecConfigBuilder {
 
   private Integer reorgParentWeightThreshold = 160;
 
+  private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigElectra> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
@@ -214,7 +215,8 @@ public class SpecConfigBuilder {
             attestationSubnetPrefixBits,
             reorgMaxEpochsSinceFinalization,
             reorgHeadWeightThreshold,
-            reorgParentWeightThreshold);
+            reorgParentWeightThreshold,
+            maxPerEpochActivationExitChurnLimit);
 
     return builderChain.build(config);
   }
@@ -534,6 +536,13 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder proposerRewardQuotient(final UInt64 proposerRewardQuotient) {
     checkNotNull(proposerRewardQuotient);
     this.proposerRewardQuotient = proposerRewardQuotient;
+    return this;
+  }
+
+  public SpecConfigBuilder maxPerEpochActivationExitChurnLimit(
+      final UInt64 maxPerEpochActivationExitChurnLimit) {
+    checkNotNull(maxPerEpochActivationExitChurnLimit);
+    this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
     return this;
   }
 
