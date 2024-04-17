@@ -66,8 +66,8 @@ import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
@@ -101,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -172,8 +173,9 @@ class ValidatorApiHandlerTest {
   private final ArgumentCaptor<List<BlobSidecar>> blobSidecarsCaptor2 =
       ArgumentCaptor.forClass(List.class);
 
-  private final BlockProductionPerformanceFactory blockProductionPerformanceFactory =
-      new BlockProductionPerformanceFactory(StubTimeProvider.withTimeInMillis(0), false, 0);
+  private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
+      new BlockProductionAndPublishingPerformanceFactory(
+          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0);
 
   private Spec spec;
   private UInt64 epochStartSlot;
@@ -220,7 +222,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
-        .unblindSignedBlockIfBlinded(any());
+        .unblindSignedBlockIfBlinded(any(), any());
     when(proposersDataManager.updateValidatorRegistrations(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
   }
@@ -690,6 +692,17 @@ class ValidatorApiHandlerTest {
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createAggregate(
             ONE, dataStructureUtil.randomAttestationData().hashTreeRoot());
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
+  public void createSyncCommitteeContribution() {
+    nodeIsSyncing();
+    final SafeFuture<Optional<SyncCommitteeContribution>> result =
+        validatorApiHandler.createSyncCommitteeContribution(
+            ONE, 0, dataStructureUtil.randomBytes32());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -1337,7 +1350,7 @@ class ValidatorApiHandlerTest {
                   .toList();
             })
         .when(blockFactory)
-        .createBlobSidecars(any());
+        .createBlobSidecars(any(), any());
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(

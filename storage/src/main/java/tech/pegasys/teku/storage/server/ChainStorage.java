@@ -70,11 +70,15 @@ public class ChainStorage
   }
 
   public static ChainStorage create(
-      final Database database, final Spec spec, final StateStorageMode dataStorageMode) {
+      final Database database,
+      final Spec spec,
+      final StateStorageMode dataStorageMode,
+      int stateRebuildTimeoutSeconds) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
         database,
-        new FinalizedStateCache(spec, database, finalizedStateCacheSize, true),
+        new FinalizedStateCache(
+            spec, database, finalizedStateCacheSize, true, stateRebuildTimeoutSeconds),
         dataStorageMode);
   }
 
@@ -124,11 +128,6 @@ public class ChainStorage
         () ->
             database.storeFinalizedBlocks(
                 finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot));
-  }
-
-  @Override
-  public SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot) {
-    return SafeFuture.fromRunnable(() -> database.storeFinalizedState(finalizedState, blockRoot));
   }
 
   @Override

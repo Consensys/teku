@@ -179,11 +179,21 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     gossipForkManager.onOptimisticHeadChanged(isOptimistic);
   }
 
-  private boolean isCloseToInSync() {
+  @VisibleForTesting
+  boolean isCloseToInSync() {
+    final Optional<UInt64> currentEpoch = recentChainData.getCurrentEpoch();
+    if (currentEpoch.isEmpty()) {
+      return false;
+    }
+
+    final int maxLookaheadEpochs = spec.getSpecConfig(currentEpoch.get()).getMaxSeedLookahead();
+    final int slotsPerEpoch = spec.slotsPerEpoch(currentEpoch.get());
+    final int maxLookaheadSlots = slotsPerEpoch * maxLookaheadEpochs;
+
     return recentChainData
         .getChainHeadSlotsBehind()
         .orElse(UInt64.MAX_VALUE)
-        .isLessThanOrEqualTo(500);
+        .isLessThanOrEqualTo(maxLookaheadSlots);
   }
 
   private void setTopicScoringParams() {

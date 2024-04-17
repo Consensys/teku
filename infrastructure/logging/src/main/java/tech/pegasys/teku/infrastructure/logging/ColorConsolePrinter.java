@@ -33,25 +33,15 @@ public class ColorConsolePrinter {
   }
 
   private static String colorCode(final Color color) {
-    switch (color) {
-      case BLACK:
-        return "\u001b[30m";
-      case RED:
-        return "\u001b[31m";
-      case GREEN:
-        return "\u001b[32m";
-      case YELLOW:
-        return "\u001b[33m";
-      case BLUE:
-        return "\u001b[34m";
-      case PURPLE:
-        return "\u001b[35m";
-      case CYAN:
-        return "\u001b[36m";
-      case WHITE:
-        return "\u001b[37m";
-      default:
-        return "";
-    }
+    return switch (color) {
+      case BLACK -> "\u001b[30m";
+      case RED -> "\u001b[31m";
+      case GREEN -> "\u001b[32m";
+      case YELLOW -> "\u001b[33m";
+      case BLUE -> "\u001b[34m";
+      case PURPLE -> "\u001b[35m";
+      case CYAN -> "\u001b[36m";
+      case WHITE -> "\u001b[37m";
+    };
   }
 }

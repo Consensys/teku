@@ -151,6 +151,12 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @Override
+  public SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>>
+      getExecutionLayerExitsSchemaRequired() {
+    return getExecutionLayerExitsSchema();
+  }
+
+  @Override
   public ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired() {
     return getExecutionLayerExitSchema();
   }

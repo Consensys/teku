@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -94,16 +95,20 @@ public class BlockFactoryPhase0 implements BlockFactory {
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
-      final SignedBeaconBlock maybeBlindedBlock) {
+      final SignedBeaconBlock maybeBlindedBlock,
+      final BlockPublishingPerformance blockPublishingPerformance) {
     if (maybeBlindedBlock.isBlinded()) {
       return spec.unblindSignedBeaconBlock(
-          maybeBlindedBlock.getSignedBlock(), operationSelector.createBlockUnblinderSelector());
+          maybeBlindedBlock.getSignedBlock(),
+          operationSelector.createBlockUnblinderSelector(blockPublishingPerformance));
     }
     return SafeFuture.completedFuture(maybeBlindedBlock);
   }
 
   @Override
-  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
+  public List<BlobSidecar> createBlobSidecars(
+      final SignedBlockContainer blockContainer,
+      final BlockPublishingPerformance blockPublishingPerformance) {
     return Collections.emptyList();
   }
 }

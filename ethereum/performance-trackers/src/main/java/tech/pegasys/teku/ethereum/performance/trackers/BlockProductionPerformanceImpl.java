@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.performance.trackers;
 
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.PerformanceTracker;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -22,28 +21,23 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class BlockProductionPerformanceImpl implements BlockProductionPerformance {
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
-  private UInt64 slotTime = UInt64.ZERO;
+  private final UInt64 slotTime;
   private final int lateThreshold;
 
-  public BlockProductionPerformanceImpl(
-      final TimeProvider timeProvider, final UInt64 slot, final int lateThreshold) {
+  BlockProductionPerformanceImpl(
+      final TimeProvider timeProvider,
+      final UInt64 slot,
+      final UInt64 slotTime,
+      final int lateThreshold) {
     this.performanceTracker = new PerformanceTracker(timeProvider);
     this.lateThreshold = lateThreshold;
     this.slot = slot;
+    this.slotTime = slotTime;
     performanceTracker.addEvent("start");
   }
 
   @Override
-  public void slotTime(final Supplier<UInt64> slotTimeSupplier) {
-    this.slotTime = slotTimeSupplier.get();
-  }
-
-  @Override
   public void complete() {
-    if (slotTime.isZero()) {
-      // we haven't managed to calculate slot time, something wrong happened
-      return;
-    }
     final UInt64 completionTime = performanceTracker.addEvent(COMPLETE_LABEL);
     final boolean isLateEvent = completionTime.minusMinZero(slotTime).isGreaterThan(lateThreshold);
     performanceTracker.report(

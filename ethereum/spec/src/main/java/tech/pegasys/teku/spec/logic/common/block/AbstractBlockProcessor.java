@@ -46,6 +46,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -440,6 +443,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
+          processExecutionLayerExits(
+              state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
         });
   }
 
@@ -872,6 +877,30 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
+  protected void processExecutionLayerExits(
+      final MutableBeaconState state,
+      final Optional<ExecutionPayload> executionPayload,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    // No ExecutionLayer exits until Electra
+  }
+
+  @Override
+  public void processDepositReceipts(
+      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+      throws BlockProcessingException {
+    // No DepositReceipts until Electra
+  }
+
+  @Override
+  public void processExecutionLayerExits(
+      final MutableBeaconState state,
+      final SszList<ExecutionLayerExit> exits,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    // No ExecutionLayer exits until Electra
+  }
+
   // Catch generic errors and wrap them in a BlockProcessingException
   protected void safelyProcess(BlockProcessingAction action) throws BlockProcessingException {
     try {
@@ -883,10 +912,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   public interface IndexedAttestationProvider {
+
     IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 
   protected interface BlockProcessingAction {
+
     void run() throws BlockProcessingException;
   }
 }

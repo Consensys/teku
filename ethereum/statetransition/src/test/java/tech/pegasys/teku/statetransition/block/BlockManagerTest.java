@@ -770,7 +770,8 @@ public class BlockManagerTest {
                 + TRANSACTION_COMMITTED_EVENT_LABEL
                 + " +0ms, "
                 + COMPLETED_EVENT_LABEL
-                + " +0ms");
+                + " +0ms",
+            "success");
   }
 
   @Test

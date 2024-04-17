@@ -117,6 +117,7 @@ public class MultiThreadedStoreTest {
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.LEVELDB2)
         .storageMode(storageMode)
+        .stateRebuildTimeoutSeconds(12)
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)
         .storeNonCanonicalBlocks(storeNonCanonicalBlocks)
