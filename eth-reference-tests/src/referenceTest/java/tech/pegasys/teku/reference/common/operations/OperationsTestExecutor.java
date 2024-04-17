@@ -75,7 +75,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     BLS_TO_EXECUTION_CHANGE,
     WITHDRAWAL,
     DEPOSIT_RECEIPT,
-    EXECUTION_LAYER_WITHDRAW_REQUEST
+    EXECUTION_LAYER_WITHDRAWAL_REQUEST
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -123,7 +123,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/execution_layer_withdrawal_request",
               new OperationsTestExecutor<>(
                   "execution_layer_withdrawal_request.ssz_snappy",
-                  Operation.EXECUTION_LAYER_WITHDRAW_REQUEST))
+                  Operation.EXECUTION_LAYER_WITHDRAWAL_REQUEST))
           .build();
 
   private final String dataFileName;
@@ -311,7 +311,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
       case DEPOSIT_RECEIPT -> processDepositReceipt(testDefinition, state, processor);
-      case EXECUTION_LAYER_WITHDRAW_REQUEST -> processExecutionLayerWithdrawalRequest(
+      case EXECUTION_LAYER_WITHDRAWAL_REQUEST -> processExecutionLayerWithdrawalRequest(
           testDefinition, state, processor);
       default -> throw new UnsupportedOperationException(
           "Operation " + operation + " not implemented in OperationTestExecutor");
@@ -424,7 +424,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           EXECUTION_PAYLOAD,
           WITHDRAWAL,
           DEPOSIT_RECEIPT,
-          EXECUTION_LAYER_WITHDRAW_REQUEST -> {}
+          EXECUTION_LAYER_WITHDRAWAL_REQUEST -> {}
     }
   }
 

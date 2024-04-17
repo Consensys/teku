@@ -31,7 +31,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAW_REQUESTS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWAL_REQUESTS;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -113,7 +113,7 @@ public class ExecutionPayloadSchemaElectra
             SszListSchema.create(
                 DepositReceipt.SSZ_SCHEMA, specConfig.getMaxDepositReceiptsPerPayload())),
         namedSchema(
-            WITHDRAW_REQUESTS,
+            WITHDRAWAL_REQUESTS,
             SszListSchema.create(
                 ExecutionLayerWithdrawalRequest.SSZ_SCHEMA,
                 specConfig.getMaxExecutionLayerWithdrawalRequests())));
@@ -182,7 +182,7 @@ public class ExecutionPayloadSchemaElectra
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
         getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAW_REQUESTS)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)));
   }
 
   @Override
@@ -222,6 +222,6 @@ public class ExecutionPayloadSchemaElectra
   public SszListSchema<ExecutionLayerWithdrawalRequest, ?>
       getExecutionLayerWithdrawalRequestsSchema() {
     return (SszListSchema<ExecutionLayerWithdrawalRequest, ?>)
-        getChildSchema(getFieldIndex(WITHDRAW_REQUESTS));
+        getChildSchema(getFieldIndex(WITHDRAWAL_REQUESTS));
   }
 }
