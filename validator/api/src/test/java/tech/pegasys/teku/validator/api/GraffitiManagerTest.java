@@ -156,7 +156,7 @@ class GraffitiManagerTest {
       final Bytes32 parsedBytes = GraffitiParser.loadFromFile(filePath);
       assertThat(parsedBytes).isEqualTo(expectedBytes);
     } catch (GraffitiLoaderException e) {
-      fail(e.getMessage());
+      fail(e.toString());
     }
   }
 

@@ -71,7 +71,7 @@ class UpdatableGraffitiProviderTest {
   }
 
   @Test
-  void get_shouldUseDefaultProviderWhenGraffitiTooLong(@TempDir final Path tempDir)
+  void get_shouldUseDefaultProviderWhenStoredGraffitiTooLong(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     provider = new UpdatableGraffitiProvider(dataDirLayout, publicKey, defaultProvider);
