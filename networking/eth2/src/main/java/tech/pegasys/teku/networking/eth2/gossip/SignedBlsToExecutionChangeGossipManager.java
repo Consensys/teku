@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedBlsToExecutionChangeGossipManager
@@ -35,7 +36,8 @@ public class SignedBlsToExecutionChangeGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedBlsToExecutionChange> processor,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.BLS_TO_EXECUTION_CHANGE,
@@ -48,7 +50,8 @@ public class SignedBlsToExecutionChangeGossipManager
         // BLS changes don't have a fork they apply to so are always considered to match the fork
         // of the topic they arrived on (ie disable fork checking at this level)
         message -> forkInfo.getFork().getEpoch(),
-        networkingConfig);
+        networkingConfig,
+        debugDataDumper);
   }
 
   public void publish(final SignedBlsToExecutionChange message) {

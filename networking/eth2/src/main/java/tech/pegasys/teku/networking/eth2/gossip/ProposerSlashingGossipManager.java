@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposerSlashingGossipManager extends AbstractGossipManager<ProposerSlashing> {
@@ -32,7 +33,8 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<ProposerSlashing> processor,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.PROPOSER_SLASHING,
@@ -46,7 +48,8 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
             recentChainData
                 .getSpec()
                 .computeEpochAtSlot(message.getHeader1().getMessage().getSlot()),
-        networkingConfig);
+        networkingConfig,
+        debugDataDumper);
   }
 
   public void publishProposerSlashing(final ProposerSlashing message) {
