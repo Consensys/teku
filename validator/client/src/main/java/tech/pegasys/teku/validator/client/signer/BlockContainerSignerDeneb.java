@@ -15,12 +15,14 @@ package tech.pegasys.teku.validator.client.signer;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -29,12 +31,9 @@ import tech.pegasys.teku.validator.client.Validator;
 public class BlockContainerSignerDeneb implements BlockContainerSigner {
 
   private final Spec spec;
-  private final SchemaDefinitionsDeneb schemaDefinitions;
 
-  public BlockContainerSignerDeneb(
-      final Spec spec, final SchemaDefinitionsDeneb schemaDefinitions) {
+  public BlockContainerSignerDeneb(final Spec spec) {
     this.spec = spec;
-    this.schemaDefinitions = schemaDefinitions;
   }
 
   @Override
@@ -67,8 +66,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
                                     String.format(
                                         "Unable to get blobs when signing Deneb block at slot %d",
                                         unsignedBlockContainer.getSlot().longValue())));
-                return schemaDefinitions
-                    .getSignedBlockContentsSchema()
+                return getSignedBlockContentsSchema(signedBlock.getSlot())
                     .create(signedBlock, kzgProofs, blobs);
               }
             });
@@ -80,5 +78,10 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
         .getSigner()
         .signBlock(unsignedBlock, forkInfo)
         .thenApply(signature -> SignedBeaconBlock.create(spec, unsignedBlock, signature));
+  }
+
+  private SignedBlockContentsSchema getSignedBlockContentsSchema(final UInt64 slot) {
+    return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+        .getSignedBlockContentsSchema();
   }
 }

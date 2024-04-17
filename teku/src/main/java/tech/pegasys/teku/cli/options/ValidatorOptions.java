@@ -27,6 +27,7 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -54,6 +55,17 @@ public class ValidatorOptions {
               + "Takes precedence over --validators-graffiti. If the file can not be read, the --validators-graffiti value is used as a fallback.",
       arity = "1")
   private Path graffitiFile;
+
+  @Option(
+      names = {"--validators-graffiti-client-append-format"},
+      paramLabel = "<STRING>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Appends CL and EL clients information with a space to user's graffiti "
+              + "when producing a block on the Beacon Node. (Valid values: ${COMPLETION-CANDIDATES})",
+      arity = "1")
+  private ClientGraffitiAppendFormat clientGraffitiAppendFormat =
+      ValidatorConfig.DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT;
 
   @Option(
       names = {"--validators-performance-tracking-mode"},
@@ -143,28 +155,26 @@ public class ValidatorOptions {
       ValidatorConfig.DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
 
   @Option(
-      names = {"--Xvalidator-is-local-slashing-protection-synchronized-enabled"},
+      names = {"--validator-is-local-slashing-protection-synchronized-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Restrict local signing to a single operation at a time.",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
-      hidden = true,
       fallbackValue = "true")
   private boolean isLocalSlashingProtectionSynchronizedEnabled =
       DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
   @Option(
-      names = {"--Xshut-down-when-validator-slashed-enabled"},
+      names = {"--shut-down-when-validator-slashed-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "If an owned validator key is detected as slashed, the node should terminate with exit code 2. In this case, the service should not be restarted.",
+          "If enabled and an owned validator key is detected as slashed, the node will terminate. In this case, the service should not be restarted.",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
-      hidden = true,
       fallbackValue = "true")
   private boolean shutdownWhenValidatorSlashed = DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
             config
@@ -177,6 +187,7 @@ public class ValidatorOptions {
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
                 .generateEarlyAttestations(generateEarlyAttestations)
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)

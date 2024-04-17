@@ -21,7 +21,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.math.BigInteger;
 import java.util.Optional;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -47,7 +46,7 @@ public class Eth1DepositManager {
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private final DepositSnapshotFileLoader depositSnapshotFileLoader;
   private final DepositSnapshotStorageLoader depositSnapshotStorageLoader;
-  private final boolean takeBestDepositSnapshot;
+  private final boolean customDepositSnapshotPathPresent;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
   private final Optional<UInt64> depositContractDeployBlock;
@@ -61,7 +60,7 @@ public class Eth1DepositManager {
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final DepositSnapshotFileLoader depositSnapshotFileLoader,
       final DepositSnapshotStorageLoader depositSnapshotStorageLoader,
-      final boolean takeBestDepositSnapshot,
+      final boolean customDepositSnapshotPathPresent,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
       final Optional<UInt64> depositContractDeployBlock,
@@ -73,7 +72,7 @@ public class Eth1DepositManager {
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.depositSnapshotFileLoader = depositSnapshotFileLoader;
     this.depositSnapshotStorageLoader = depositSnapshotStorageLoader;
-    this.takeBestDepositSnapshot = takeBestDepositSnapshot;
+    this.customDepositSnapshotPathPresent = customDepositSnapshotPathPresent;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
     this.depositContractDeployBlock = depositContractDeployBlock;
@@ -118,31 +117,29 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {
-    final LoadDepositSnapshotResult fileDepositSnapshotResult =
-        depositSnapshotFileLoader.loadDepositSnapshot();
-    if (fileDepositSnapshotResult.getDepositTreeSnapshot().isPresent()
-        && !takeBestDepositSnapshot) {
-      LOG.debug("Deposit snapshot from file is provided, using it");
-      return SafeFuture.completedFuture(fileDepositSnapshotResult);
+    if (customDepositSnapshotPathPresent) {
+      LOG.debug("Custom deposit snapshot is provided, using it");
+      return SafeFuture.completedFuture(depositSnapshotFileLoader.loadDepositSnapshot());
     }
 
-    if (takeBestDepositSnapshot) {
-      STATUS_LOG.loadingDepositSnapshotFromDb();
-      return depositSnapshotStorageLoader
-          .loadDepositSnapshot()
-          .thenApply(
-              storageDepositSnapshotResult -> {
-                if (storageDepositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
-                  final DepositTreeSnapshot storageSnapshot =
-                      storageDepositSnapshotResult.getDepositTreeSnapshot().get();
-                  STATUS_LOG.onDepositSnapshot(
-                      storageSnapshot.getDepositCount(), storageSnapshot.getExecutionBlockHash());
-                }
-                return ObjectUtils.max(storageDepositSnapshotResult, fileDepositSnapshotResult);
-              });
-    } else {
-      return depositSnapshotStorageLoader.loadDepositSnapshot();
-    }
+    return depositSnapshotStorageLoader
+        .loadDepositSnapshot()
+        .thenApply(
+            storageDepositSnapshotResult -> {
+              if (storageDepositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
+                final DepositTreeSnapshot storageSnapshot =
+                    storageDepositSnapshotResult.getDepositTreeSnapshot().get();
+                STATUS_LOG.onDepositSnapshot(
+                    storageSnapshot.getDepositCount(), storageSnapshot.getExecutionBlockHash());
+                return storageDepositSnapshotResult;
+              }
+
+              final LoadDepositSnapshotResult fileDepositSnapshotResult =
+                  depositSnapshotFileLoader.loadDepositSnapshot();
+              LOG.debug(
+                  "Database deposit snapshot is not present, falling back to the file provided");
+              return fileDepositSnapshotResult;
+            });
   }
 
   public void stop() {

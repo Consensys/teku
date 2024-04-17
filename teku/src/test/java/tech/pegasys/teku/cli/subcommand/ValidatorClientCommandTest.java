@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
 import com.google.common.io.Resources;
 import java.net.URI;
@@ -180,7 +181,9 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
 
-    assertThat(tekuConfig.validatorClient().getValidatorConfig().getexecutorThreads()).isEqualTo(5);
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getexecutorThreads())
+        .isEqualTo(DEFAULT_VALIDATOR_EXECUTOR_THREADS);
+    assertThat(DEFAULT_VALIDATOR_EXECUTOR_THREADS).isGreaterThanOrEqualTo(5);
   }
 
   @Test
@@ -208,6 +211,23 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(cmdOutput)
         .contains(
             "--Xvalidator-client-executor-threads must be greater than 0 and less than 5000.");
+  }
+
+  @Test
+  public void shouldSetUseObolDvtSelectionsEndpoint() {
+    final String[] args = {"vc", "--network", "minimal", "--Xobol-dvt-integration-enabled"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isTrue();
+  }
+
+  @Test
+  public void shouldNotUseObolDvtSelectionsEndpointByDefault() {
+    final String[] args = {"vc", "--network", "minimal"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isFalse();
   }
 
   private String pathFor(final String filename) {

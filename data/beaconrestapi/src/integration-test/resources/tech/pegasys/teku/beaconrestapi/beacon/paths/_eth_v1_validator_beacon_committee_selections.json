@@ -1,0 +1,72 @@
+{
+  "post" : {
+    "tags" : [ "Validator" ],
+    "operationId" : "submitBeaconCommitteeSelections",
+    "summary" : "Determine if a distributed validator has been selected to aggregate attestations",
+    "description" : "This endpoint should be used by a validator client running as part of a distributed validator cluster, and is  implemented by a distributed validator middleware client. This endpoint is used to exchange partial  selection proofs for combined/aggregated selection proofs to allow a validator client  to correctly determine if any of its validators has been selected to perform an attestation aggregation duty in a slot.  Validator clients running in a distributed validator cluster must query this endpoint at the start of an epoch for the current and lookahead (next) epochs for all validators that have attester duties in the current and lookahead epochs. Consensus clients need not support this endpoint and may return a 501.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BeaconCommitteeSelectionProof"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Returns the threshold aggregated beacon committee selection proofs.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PostBeaconCommitteeSelectionsResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid request syntax.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "501" : {
+        "description" : "Not implemented",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

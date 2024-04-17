@@ -212,7 +212,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private CommandLine getCommandLine() {
-    return configureCommandLine(new CommandLine(this)).addSubcommand(validatorClientSubcommand);
+    return configureCommandLine(new CommandLine(this).addSubcommand(validatorClientSubcommand));
   }
 
   public int parse(final String[] args) {
@@ -319,13 +319,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }
 
-  private void printUsage(PrintWriter outputWriter) {
+  private void printUsage(final PrintWriter outputWriter) {
     outputWriter.println();
     outputWriter.println("To display full help:");
     outputWriter.println("teku [COMMAND] --help");
   }
 
-  public boolean isOptionSpecified(String optionLongName) {
+  public boolean isOptionSpecified(final String optionLongName) {
     var parseResult = spec.commandLine().getParseResult();
     var option = spec.findOption(optionLongName);
     return option != null && parseResult.hasMatchedOption(option);

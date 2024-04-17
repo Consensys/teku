@@ -22,7 +22,8 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -48,27 +49,26 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
             .generate();
 
     final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";
-    final TekuNode beaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(networkName)
-                    .withInitialState(genesis)
-                    .withAltairEpoch(UInt64.ZERO)
-                    .withBellatrixEpoch(UInt64.ZERO)
-                    .withStubExecutionEngine()
-                    .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withJwtSecretFile(JWT_FILE));
-
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withStubExecutionEngine()
+                .withJwtSecretFile(JWT_FILE)
+                .withNetwork(networkName)
+                .withInitialState(genesis)
+                .withAltairEpoch(UInt64.ZERO)
+                .withBellatrixEpoch(UInt64.ZERO)
+                .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
+                .build());
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withNetwork("auto")
-                    .withValidatorApiEnabled()
-                    .withProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withInteropModeDisabled()
-                    .withBeaconNode(beaconNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withValidatorApiEnabled()
+                .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
+                .withInteropModeDisabled()
+                .withBeaconNodes(beaconNode)
+                .withNetwork("auto")
+                .build());
     final ValidatorKeysApi api = validatorClient.getValidatorKeysApi();
 
     beaconNode.start();

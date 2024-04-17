@@ -45,7 +45,7 @@ public class GetVersion extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getNodeVersion")
-            .summary("Get node version")
+            .summary("Get version string of the running beacon node.")
             .description(
                 "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).")
             .tags(TAG_NODE)

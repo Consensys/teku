@@ -113,11 +113,12 @@ public class MetricsOptions {
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
-      description = "Whether block production timing metrics are tracked and reported",
+      description =
+          "Whether block production and publishing timing metrics are tracked and reported",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean blockProductionPerformanceEnabled =
-      MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
+  private boolean blockProductionAndPublishingPerformanceEnabled =
+      MetricsConfig.DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED;
 
   @Option(
       names = {"--Xmetrics-block-production-timing-tracking-warning-threshold"},
@@ -132,6 +133,18 @@ public class MetricsOptions {
       MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD;
 
   @Option(
+      names = {"--Xmetrics-block-publishing-timing-tracking-warning-threshold"},
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<INTEGER>",
+      description =
+          "The time (in ms) at which block publishing is to be considered 'slow'. If set to 100, block publishing taking at least 100ms would raise a warning.",
+      fallbackValue = "true",
+      arity = "0..1")
+  private int blockPublishingPerformanceWarningThreshold =
+      MetricsConfig.DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD;
+
+  @Option(
       names = {"--Xmetrics-blob-sidecars-storage-enabled"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
@@ -142,7 +155,7 @@ public class MetricsOptions {
   private boolean blobSidecarsStorageCountersEnabled =
       MetricsConfig.DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.metrics(
         b ->
             b.metricsEnabled(metricsEnabled)
@@ -156,9 +169,12 @@ public class MetricsOptions {
                 .blockPerformanceEnabled(blockPerformanceEnabled)
                 .tickPerformanceEnabled(tickPerformanceEnabled)
                 .blobSidecarsStorageCountersEnabled(blobSidecarsStorageCountersEnabled)
-                .blockProductionPerformanceEnabled(blockProductionPerformanceEnabled)
+                .blockProductionAndPublishingPerformanceEnabled(
+                    blockProductionAndPublishingPerformanceEnabled)
                 .blockProductionPerformanceWarningThreshold(
-                    blockProductionPerformanceWarningThreshold));
+                    blockProductionPerformanceWarningThreshold)
+                .blockPublishingPerformanceWarningThreshold(
+                    blockPublishingPerformanceWarningThreshold));
   }
 
   private URL parseMetricsEndpointUrl() {

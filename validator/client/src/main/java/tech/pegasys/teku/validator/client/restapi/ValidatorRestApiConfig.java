@@ -19,11 +19,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class ValidatorRestApiConfig {
-
+  private static final Logger LOG = LogManager.getLogger();
   public static final int DEFAULT_REST_API_PORT = 5052;
   public static final int MAX_URL_LENGTH = 65535;
   public static final String DEFAULT_REST_API_INTERFACE = "127.0.0.1";
@@ -40,6 +42,7 @@ public class ValidatorRestApiConfig {
 
   private final Optional<Path> restApiKeystoreFile;
   private final Optional<Path> restApiKeystorePasswordFile;
+  private final Optional<Path> maybeValidatorApiBearerFile;
 
   private ValidatorRestApiConfig(
       final int restApiPort,
@@ -50,7 +53,8 @@ public class ValidatorRestApiConfig {
       final List<String> restApiCorsAllowedOrigins,
       final int maxUrlLength,
       final Optional<Path> restApiKeystoreFile,
-      final Optional<Path> restApiKeystorePasswordFile) {
+      final Optional<Path> restApiKeystorePasswordFile,
+      final Optional<Path> maybeValidatorApiBearerFile) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -60,6 +64,7 @@ public class ValidatorRestApiConfig {
     this.maxUrlLength = maxUrlLength;
     this.restApiKeystoreFile = restApiKeystoreFile;
     this.restApiKeystorePasswordFile = restApiKeystorePasswordFile;
+    this.maybeValidatorApiBearerFile = maybeValidatorApiBearerFile;
   }
 
   public static ValidatorRestApiConfigBuilder builder() {
@@ -102,6 +107,10 @@ public class ValidatorRestApiConfig {
     return restApiKeystorePasswordFile;
   }
 
+  public Optional<Path> getMaybeValidatorApiBearerFile() {
+    return maybeValidatorApiBearerFile;
+  }
+
   public static final class ValidatorRestApiConfigBuilder {
     // Validator rest api
     private int restApiPort = DEFAULT_REST_API_PORT;
@@ -114,6 +123,8 @@ public class ValidatorRestApiConfig {
     private int maxUrlLength = MAX_URL_LENGTH;
     private Optional<Path> restApiKeystoreFile = Optional.empty();
     private Optional<Path> restApiKeystorePasswordFile = Optional.empty();
+    private Optional<Path> maybeValidatorApiBearerFile = Optional.empty();
+    private boolean validatorApiDisableSslHostRestrictionEnabled;
 
     public ValidatorRestApiConfigBuilder restApiPort(final int restApiPort) {
       if (!PortAvailability.isPortValid(restApiPort)) {
@@ -178,7 +189,14 @@ public class ValidatorRestApiConfig {
 
     public ValidatorRestApiConfig build() {
       if (restApiEnabled) {
-        if (!restApiSslEnabled && !Objects.equals(restApiInterface, DEFAULT_REST_API_INTERFACE)) {
+        if (validatorApiDisableSslHostRestrictionEnabled && !restApiSslEnabled) {
+          LOG.warn(
+              "UNSAFE - Validator API has been enabled without SSL, Allow list: {}, not using SSL.",
+              restApiHostAllowlist);
+        }
+        if (!validatorApiDisableSslHostRestrictionEnabled
+            && !restApiSslEnabled
+            && !Objects.equals(restApiInterface, DEFAULT_REST_API_INTERFACE)) {
           throw new IllegalArgumentException(
               "SSL connections can only be disabled on the localhost interface.");
         }
@@ -202,6 +220,9 @@ public class ValidatorRestApiConfig {
           restApiKeystorePasswordFile = Optional.empty();
         }
       }
+
+      maybeValidatorApiBearerFile.ifPresent(
+          bearer -> LOG.info("Using Validator API bearer file {}", bearer));
       return new ValidatorRestApiConfig(
           restApiPort,
           restApiDocsEnabled,
@@ -211,11 +232,25 @@ public class ValidatorRestApiConfig {
           restApiCorsAllowedOrigins,
           maxUrlLength,
           restApiKeystoreFile,
-          restApiKeystorePasswordFile);
+          restApiKeystorePasswordFile,
+          maybeValidatorApiBearerFile);
     }
 
     public ValidatorRestApiConfigBuilder restApiSslEnabled(final boolean restApiSslEnabled) {
       this.restApiSslEnabled = restApiSslEnabled;
+      return this;
+    }
+
+    public ValidatorRestApiConfigBuilder validatorApiBearerFile(
+        final Optional<Path> validatorApiBearerFile) {
+      this.maybeValidatorApiBearerFile = validatorApiBearerFile;
+      return this;
+    }
+
+    public ValidatorRestApiConfigBuilder validatorApiDisableSslHostRestrictionEnabled(
+        final boolean validatorApiDisableSslHostRestrictionEnabled) {
+      this.validatorApiDisableSslHostRestrictionEnabled =
+          validatorApiDisableSslHostRestrictionEnabled;
       return this;
     }
   }

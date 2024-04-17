@@ -78,6 +78,14 @@ public class ResponseHandler<TObject> {
     return this;
   }
 
+  public ResponseHandler<TObject> withHandler(
+      final Handler<TObject> handler, final int... responseCodes) {
+    for (final int responseCode : responseCodes) {
+      handlers.put(responseCode, handler);
+    }
+    return this;
+  }
+
   private Optional<TObject> defaultOkHandler(final Request request, final Response response)
       throws IOException {
     final ResponseBody responseBody = response.body();

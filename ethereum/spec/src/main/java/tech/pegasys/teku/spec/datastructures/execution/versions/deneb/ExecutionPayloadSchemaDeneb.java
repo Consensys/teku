@@ -54,6 +54,10 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 
 public class ExecutionPayloadSchemaDeneb
     extends ContainerSchema17<
@@ -125,6 +129,28 @@ public class ExecutionPayloadSchemaDeneb
   @Override
   public WithdrawalSchema getWithdrawalSchemaRequired() {
     return getWithdrawalSchema();
+  }
+
+  @Override
+  public SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>>
+      getDepositReceiptsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit receipts schema from deneb");
+  }
+
+  @Override
+  public DepositReceiptSchema getDepositReceiptSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit receipt schema from deneb");
+  }
+
+  @Override
+  public SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>>
+      getExecutionLayerExitsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get execution layer exits schema from deneb");
+  }
+
+  @Override
+  public ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a execution layer exit schema from deneb");
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

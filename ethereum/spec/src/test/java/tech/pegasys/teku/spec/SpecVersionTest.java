@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -70,6 +72,30 @@ class SpecVersionTest {
         SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.CAPELLA);
+    assertThat(actualVersion.get().getSchemaDefinitions())
+        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
+  }
+
+  @Test
+  void shouldCreateDenebSpec() {
+    final SpecConfigDeneb denebSpecConfig = SpecConfigDeneb.required(minimalConfig);
+    final SpecVersion expectedVersion = SpecVersion.createDeneb(denebSpecConfig);
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.DENEB, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.DENEB);
+    assertThat(actualVersion.get().getSchemaDefinitions())
+        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
+  }
+
+  @Test
+  void shouldCreateElectraSpec() {
+    final SpecConfigElectra electraSpecConfig = SpecConfigElectra.required(minimalConfig);
+    final SpecVersion expectedVersion = SpecVersion.createElectra(electraSpecConfig);
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ELECTRA);
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }

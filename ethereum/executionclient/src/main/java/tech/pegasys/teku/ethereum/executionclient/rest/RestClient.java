@@ -38,6 +38,7 @@ public interface RestClient {
 
   <T, S> SafeFuture<Response<T>> postAsync(
       final String apiPath,
+      final Map<String, String> headers,
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition,
       final DeserializableTypeDefinition<T> responseTypeDefinition);

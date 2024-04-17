@@ -1,7 +1,7 @@
 {
   "get" : {
     "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "getAttestationData",
+    "operationId" : "produceAttestationData",
     "summary" : "Produce an AttestationData",
     "description" : "Requests that the beacon node produce an AttestationData.",
     "parameters" : [ {

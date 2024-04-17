@@ -1,8 +1,8 @@
 {
   "get" : {
     "tags" : [ "Beacon", "Validator Required Api" ],
-    "operationId" : "getSateFork",
-    "summary" : "Get state fork",
+    "operationId" : "getStateFork",
+    "summary" : "Get Fork object for requested state",
     "description" : "Returns Fork object for state with given 'state_id'.",
     "parameters" : [ {
       "name" : "state_id",

@@ -27,28 +27,23 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecConfigLoaderTest {
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("knownNetworks")
-  public void shouldLoadAllKnownNetworks(final String name, final Class<?> configType)
-      throws Exception {
-    final SpecConfig config = SpecConfigLoader.loadConfigStrict(name);
-    assertAllFieldsSet(config, configType);
+  @EnumSource(Eth2Network.class)
+  public void shouldLoadAllKnownNetworks(final Eth2Network network) throws Exception {
+    final SpecConfig config = SpecConfigLoader.loadConfigStrict(network.configName());
+    // testing latest SpecConfig ensures all fields will be asserted on
+    assertAllFieldsSet(config, SpecConfigElectra.class);
   }
 
   /**
@@ -141,24 +136,6 @@ public class SpecConfigLoaderTest {
     final SpecConfig config = SpecConfigLoader.loadConfig(configUrl.toString(), false, __ -> {});
     assertThat(config).isNotNull();
     assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.
-  }
-
-  @Test
-  public void shouldTestAllKnownNetworks() {
-    final List<String> testedNetworks =
-        knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
-    final List<String> allKnownNetworks =
-        Arrays.stream(Eth2Network.values())
-            .map(Eth2Network::configName)
-            .sorted()
-            .collect(Collectors.toList());
-
-    assertThat(testedNetworks).isEqualTo(allKnownNetworks);
-  }
-
-  static Stream<Arguments> knownNetworks() {
-    return Stream.of(Eth2Network.values())
-        .map(network -> Arguments.of(network.configName(), SpecConfigBellatrix.class));
   }
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)

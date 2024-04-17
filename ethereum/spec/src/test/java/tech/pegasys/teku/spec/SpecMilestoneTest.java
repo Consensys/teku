@@ -23,10 +23,16 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
+  private final SpecConfigElectra electraSpecConfig =
+      SpecConfigElectra.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+  private final SpecConfigDeneb denebSpecConfig =
+      SpecConfigDeneb.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
   private final SpecConfigCapella capellaSpecConfig =
       SpecConfigCapella.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
   private final SpecConfigBellatrix bellatrixSpecConfig =
@@ -51,6 +57,15 @@ public class SpecMilestoneTest {
     assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isTrue();
     assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
     assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isFalse();
+
+    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isTrue();
+    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
+    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isTrue();
+    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)).isFalse();
+
+    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
+    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isTrue();
+    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)).isTrue();
   }
 
   @Test
@@ -60,6 +75,7 @@ public class SpecMilestoneTest {
     assertThat(SpecMilestone.BELLATRIX.getPreviousMilestone()).isEqualTo(SpecMilestone.ALTAIR);
     assertThat(SpecMilestone.CAPELLA.getPreviousMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
     assertThat(SpecMilestone.DENEB.getPreviousMilestone()).isEqualTo(SpecMilestone.CAPELLA);
+    assertThat(SpecMilestone.ELECTRA.getPreviousMilestone()).isEqualTo(SpecMilestone.DENEB);
   }
 
   @Test
@@ -83,6 +99,27 @@ public class SpecMilestoneTest {
   public void getAllPriorMilestones_capella() {
     assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.CAPELLA))
         .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
+  }
+
+  @Test
+  public void getAllPriorMilestones_deneb() {
+    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.DENEB))
+        .contains(
+            SpecMilestone.PHASE0,
+            SpecMilestone.ALTAIR,
+            SpecMilestone.BELLATRIX,
+            SpecMilestone.CAPELLA);
+  }
+
+  @Test
+  public void getAllPriorMilestones_electra() {
+    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.ELECTRA))
+        .contains(
+            SpecMilestone.PHASE0,
+            SpecMilestone.ALTAIR,
+            SpecMilestone.BELLATRIX,
+            SpecMilestone.CAPELLA,
+            SpecMilestone.DENEB);
   }
 
   @Test
@@ -110,6 +147,27 @@ public class SpecMilestoneTest {
   }
 
   @Test
+  public void getMilestonesUpTo_deneb() {
+    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.DENEB))
+        .contains(
+            SpecMilestone.PHASE0,
+            SpecMilestone.ALTAIR,
+            SpecMilestone.BELLATRIX,
+            SpecMilestone.CAPELLA);
+  }
+
+  @Test
+  public void getMilestonesUpTo_electra() {
+    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.ELECTRA))
+        .contains(
+            SpecMilestone.PHASE0,
+            SpecMilestone.ALTAIR,
+            SpecMilestone.BELLATRIX,
+            SpecMilestone.CAPELLA,
+            SpecMilestone.DENEB);
+  }
+
+  @Test
   public void areMilestonesInOrder() {
     assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.PHASE0, SpecMilestone.ALTAIR))
         .isTrue();
@@ -132,6 +190,14 @@ public class SpecMilestoneTest {
     assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA))
         .isTrue();
     assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.CAPELLA, SpecMilestone.BELLATRIX))
+        .isFalse();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.CAPELLA, SpecMilestone.DENEB))
+        .isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.DENEB, SpecMilestone.CAPELLA))
+        .isFalse();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.DENEB, SpecMilestone.ELECTRA))
+        .isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ELECTRA, SpecMilestone.DENEB))
         .isFalse();
   }
 
@@ -164,6 +230,20 @@ public class SpecMilestoneTest {
   }
 
   @Test
+  public void getForkVersion_deneb() {
+    final Bytes4 expected = denebSpecConfig.getDenebForkVersion();
+    assertThat(SpecMilestone.getForkVersion(denebSpecConfig, SpecMilestone.DENEB))
+        .contains(expected);
+  }
+
+  @Test
+  public void getForkVersion_electra() {
+    final Bytes4 expected = electraSpecConfig.getElectraForkVersion();
+    assertThat(SpecMilestone.getForkVersion(electraSpecConfig, SpecMilestone.ELECTRA))
+        .contains(expected);
+  }
+
+  @Test
   public void getForkEpoch_phase0() {
     final UInt64 expected = UInt64.ZERO;
     assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, SpecMilestone.PHASE0))
@@ -192,6 +272,19 @@ public class SpecMilestoneTest {
   }
 
   @Test
+  public void getForkEpoch_deneb() {
+    final UInt64 expected = denebSpecConfig.getDenebForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, SpecMilestone.DENEB)).contains(expected);
+  }
+
+  @Test
+  public void getForkEpoch_electra() {
+    final UInt64 expected = electraSpecConfig.getElectraForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(electraSpecConfig, SpecMilestone.ELECTRA))
+        .contains(expected);
+  }
+
+  @Test
   public void getForkSlot_altairNotScheduled() {
     assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR))
         .contains(UInt64.MAX_VALUE);
@@ -206,6 +299,18 @@ public class SpecMilestoneTest {
   @Test
   public void getForkEpoch_capellaNotScheduled() {
     assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, SpecMilestone.CAPELLA))
+        .contains(UInt64.MAX_VALUE);
+  }
+
+  @Test
+  public void getForkEpoch_denebNotScheduled() {
+    assertThat(SpecMilestone.getForkEpoch(capellaSpecConfig, SpecMilestone.DENEB))
+        .contains(UInt64.MAX_VALUE);
+  }
+
+  @Test
+  public void getForkEpoch_electraNotScheduled() {
+    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, SpecMilestone.ELECTRA))
         .contains(UInt64.MAX_VALUE);
   }
 }

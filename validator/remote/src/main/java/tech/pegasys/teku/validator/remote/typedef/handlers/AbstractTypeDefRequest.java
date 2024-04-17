@@ -84,18 +84,27 @@ public abstract class AbstractTypeDefRequest {
       final Map<String, String> urlParams,
       final Map<String, String> queryParams,
       final ResponseHandler<T> responseHandler) {
-    return get(apiMethod, urlParams, queryParams, Map.of(), responseHandler);
+    return get(apiMethod, urlParams, queryParams, emptyMap(), emptyMap(), responseHandler);
   }
 
   protected <T> Optional<T> get(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
       final Map<String, String> queryParams,
+      final Map<String, String> encodedQueryParams,
       final Map<String, String> headers,
       final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     if (queryParams != null && !queryParams.isEmpty()) {
       queryParams.forEach(httpUrlBuilder::addQueryParameter);
+    }
+
+    // The encodedQueryParams are considered to be encoded already
+    // and should not be encoded again. This is useful to prevent
+    // the comma in an array of values (e.g. id=1,2,3) from being
+    // encoded.
+    if (encodedQueryParams != null && !encodedQueryParams.isEmpty()) {
+      encodedQueryParams.forEach(httpUrlBuilder::addEncodedQueryParameter);
     }
 
     final Request.Builder builder = requestBuilder().url(httpUrlBuilder.build());
@@ -130,11 +139,14 @@ public abstract class AbstractTypeDefRequest {
   protected <T> Optional<T> postOctetStream(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
+      final Map<String, String> headers,
       final byte[] objectBytes,
       final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    final Request.Builder builder = requestBuilder();
+    headers.forEach(builder::addHeader);
     final Request request =
-        requestBuilder()
+        builder
             .url(httpUrlBuilder.build())
             .post(RequestBody.create(objectBytes, OCTET_STREAM))
             .build();

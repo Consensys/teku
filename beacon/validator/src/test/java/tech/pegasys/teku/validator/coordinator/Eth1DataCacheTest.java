@@ -67,7 +67,7 @@ public class Eth1DataCacheTest {
     when(eth1VotingPeriod.getSpecRangeLowerBound(SLOT, GENESIS_TIME))
         .thenReturn(VOTING_PERIOD_START);
     when(eth1VotingPeriod.getSpecRangeUpperBound(SLOT, GENESIS_TIME)).thenReturn(VOTING_PERIOD_END);
-    eth1DataCache = new Eth1DataCache(metricsSystem, eth1VotingPeriod);
+    eth1DataCache = new Eth1DataCache(spec, metricsSystem, eth1VotingPeriod);
   }
 
   // Add tests for eth1 block with no votes
@@ -216,6 +216,17 @@ public class Eth1DataCacheTest {
   }
 
   @Test
+  void shouldReturnStateEth1Data_ifFormerDepositMechanismHasBeenDisabled() {
+    final Spec spec = mock(Spec.class);
+    eth1DataCache = new Eth1DataCache(spec, new StubMetricsSystem(), eth1VotingPeriod);
+    final BeaconState beaconState = createBeaconStateWithVotes(createEth1Data(STATE_DEPOSIT_COUNT));
+
+    when(spec.isFormerDepositMechanismDisabled(beaconState)).thenReturn(true);
+
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(beaconState.getEth1Data());
+  }
+
+  @Test
   void shouldPruneOldBlocksWhenNewerOnesReceived() {
     final UInt64 olderBlockTimestamp = ZERO;
     final UInt64 oldBlockTimestamp = olderBlockTimestamp.plus(ONE);
@@ -243,30 +254,7 @@ public class Eth1DataCacheTest {
 
   @Test
   void shouldUpdateMetrics() {
-    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
-    Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
-    Eth1Data unknownVote1 = createEth1Data(STATE_DEPOSIT_COUNT);
-    Eth1Data unknownVote2 = createEth1Data(STATE_DEPOSIT_COUNT);
-
-    eth1DataCache.onBlockWithDeposit(HEIGHT_1, stateEth1Data, IN_RANGE_TIMESTAMP_1);
-    eth1DataCache.onBlockWithDeposit(HEIGHT_2, eth1Data1, IN_RANGE_TIMESTAMP_2);
-    eth1DataCache.onBlockWithDeposit(HEIGHT_3, eth1Data2, IN_RANGE_TIMESTAMP_3);
-    // Still unknown because it's out of range
-    eth1DataCache.onBlockWithDeposit(UInt64.valueOf(55), unknownVote1, VOTING_PERIOD_END.plus(ONE));
-
-    BeaconState beaconState =
-        createBeaconStateWithVotes(
-            eth1Data1,
-            eth1Data2,
-            eth1Data2,
-            eth1Data2,
-            eth1Data2,
-            unknownVote1,
-            unknownVote2,
-            stateEth1Data,
-            stateEth1Data,
-            stateEth1Data);
-    when(eth1VotingPeriod.getTotalSlotsInVotingPeriod(beaconState.getSlot())).thenReturn(50L);
+    final BeaconState beaconState = getStateForMetricsAssertions();
 
     eth1DataCache.updateMetrics(beaconState);
 
@@ -275,6 +263,24 @@ public class Eth1DataCacheTest {
     assertGaugeValue(Eth1DataCache.VOTES_UNKNOWN_METRIC_NAME, 2);
     assertGaugeValue(Eth1DataCache.VOTES_CURRENT_METRIC_NAME, 3);
     assertGaugeValue(Eth1DataCache.VOTES_BEST_METRIC_NAME, 4);
+  }
+
+  @Test
+  void shouldNotUpdateMetrics_ifFormerDepositMechanismHasBeenDisabled() {
+    final Spec spec = mock(Spec.class);
+    eth1DataCache = new Eth1DataCache(spec, new StubMetricsSystem(), eth1VotingPeriod);
+    final BeaconState beaconState = getStateForMetricsAssertions();
+
+    when(spec.isFormerDepositMechanismDisabled(beaconState)).thenReturn(true);
+
+    eth1DataCache.updateMetrics(beaconState);
+
+    // all gauge values are 0
+    assertGaugeValue(Eth1DataCache.VOTES_TOTAL_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_MAX_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_UNKNOWN_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_CURRENT_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_BEST_METRIC_NAME, 0);
   }
 
   @Test
@@ -317,6 +323,35 @@ public class Eth1DataCacheTest {
         metricsSystem
             .getGauge(TekuMetricCategory.BEACON, Eth1DataCache.CACHE_SIZE_METRIC_NAME)
             .getValue();
+  }
+
+  private BeaconState getStateForMetricsAssertions() {
+    final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    final Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
+    final Eth1Data unknownVote1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    final Eth1Data unknownVote2 = createEth1Data(STATE_DEPOSIT_COUNT);
+
+    eth1DataCache.onBlockWithDeposit(HEIGHT_1, stateEth1Data, IN_RANGE_TIMESTAMP_1);
+    eth1DataCache.onBlockWithDeposit(HEIGHT_2, eth1Data1, IN_RANGE_TIMESTAMP_2);
+    eth1DataCache.onBlockWithDeposit(HEIGHT_3, eth1Data2, IN_RANGE_TIMESTAMP_3);
+    // Still unknown because it's out of range
+    eth1DataCache.onBlockWithDeposit(UInt64.valueOf(55), unknownVote1, VOTING_PERIOD_END.plus(ONE));
+
+    final BeaconState beaconState =
+        createBeaconStateWithVotes(
+            eth1Data1,
+            eth1Data2,
+            eth1Data2,
+            eth1Data2,
+            eth1Data2,
+            unknownVote1,
+            unknownVote2,
+            stateEth1Data,
+            stateEth1Data,
+            stateEth1Data);
+    when(eth1VotingPeriod.getTotalSlotsInVotingPeriod(beaconState.getSlot())).thenReturn(50L);
+
+    return beaconState;
   }
 
   private void assertGaugeValue(final String metricName, final int expected) {

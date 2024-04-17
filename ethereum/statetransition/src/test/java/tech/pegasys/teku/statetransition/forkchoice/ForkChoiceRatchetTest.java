@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -56,6 +57,7 @@ class ForkChoiceRatchetTest {
 
   @Test
   void ensureForkChoiceCompleteForSlot_shouldBeCompleteWhenLastForkChoiceForLaterSlot() {
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     ratchet.scheduleForkChoiceForSlot(UInt64.valueOf(3));
 
     final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
@@ -67,7 +69,9 @@ class ForkChoiceRatchetTest {
     ratchet.scheduleForkChoiceForSlot(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
 
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
+    verify(forkChoice).getLastProcessHeadSlot();
     verifyNoMoreInteractions(forkChoice);
     assertThat(result).isNotDone();
 
@@ -77,6 +81,7 @@ class ForkChoiceRatchetTest {
 
   @Test
   void ensureForkChoiceCompleteForSlot_shouldRunForkChoiceWhenSlotIsGreaterThanLastRun() {
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     ratchet.scheduleForkChoiceForSlot(UInt64.ZERO);
     verify(forkChoice).processHead(UInt64.ZERO);
 
@@ -90,12 +95,22 @@ class ForkChoiceRatchetTest {
 
   @Test
   void ensureForkChoiceCompleteForSlot_shouldNotFailWhenForkChoiceFails() {
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     // Don't make block or attestation fail if fork choice fails, just go with the fork we're on
     final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
     assertThat(result).isNotDone();
 
     processHeadResult.completeExceptionally(new RuntimeException("Ka-boom!"));
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void ensureForkChoiceNotRerun() {
+    final UInt64 slot = UInt64.valueOf(3);
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(slot);
+    final SafeFuture<Void> result = ratchet.ensureForkChoiceCompleteForSlot(slot);
+    verify(forkChoice, never()).processHead(UInt64.valueOf(3));
     assertThat(result).isCompleted();
   }
 }

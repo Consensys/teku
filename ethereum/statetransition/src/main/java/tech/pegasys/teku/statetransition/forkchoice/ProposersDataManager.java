@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -59,9 +58,6 @@ public class ProposersDataManager implements SlotEventsChannel {
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute;
 
-  private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
-      Subscribers.create(true);
-
   public ProposersDataManager(
       final EventThread eventThread,
       final Spec spec,
@@ -86,10 +82,6 @@ public class ProposersDataManager implements SlotEventsChannel {
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
     this.forkChoiceUpdatedAlwaysSendPayloadAttribute = forkChoiceUpdatedAlwaysSendPayloadAttribute;
-  }
-
-  public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
-    proposersDataChangesSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -125,8 +117,6 @@ public class ProposersDataManager implements SlotEventsChannel {
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     updatePreparedProposerCache(preparedProposers, currentSlot);
-    proposersDataChangesSubscribers.deliver(
-        ProposersDataManagerSubscriber::onPreparedProposersUpdated);
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
@@ -180,9 +170,6 @@ public class ProposersDataManager implements SlotEventsChannel {
                         LOG.warn(
                             "validator index not found for public key {}",
                             signedValidatorRegistration.getMessage().getPublicKey())));
-
-    proposersDataChangesSubscribers.deliver(
-        ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
   }
 
   public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
@@ -301,11 +288,5 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   public boolean isProposerDefaultFeeRecipientDefined() {
     return proposerDefaultFeeRecipient.isPresent();
-  }
-
-  public interface ProposersDataManagerSubscriber {
-    void onPreparedProposersUpdated();
-
-    void onValidatorRegistrationsUpdated();
   }
 }

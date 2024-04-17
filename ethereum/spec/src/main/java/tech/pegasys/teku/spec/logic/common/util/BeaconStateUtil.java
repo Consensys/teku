@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -149,7 +147,7 @@ public class BeaconStateUtil {
                             predicates.isActiveValidator(validator, epoch) && !validator.isSlashed()
                                 ? validator.getEffectiveBalance()
                                 : UInt64.ZERO)
-                    .collect(toUnmodifiableList()));
+                    .toList());
   }
 
   public boolean all(SszBitvector bitvector, int start, int end) {

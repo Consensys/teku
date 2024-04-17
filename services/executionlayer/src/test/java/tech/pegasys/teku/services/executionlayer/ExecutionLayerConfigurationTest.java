@@ -16,9 +16,9 @@ package tech.pegasys.teku.services.executionlayer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.BUILDER_ALWAYS_KEYWORD;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_BID_COMPARE_FACTOR;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -87,7 +87,7 @@ public class ExecutionLayerConfigurationTest {
   public void shouldHaveCorrectDefaultBuilderBidCompareFactor() {
     final ExecutionLayerConfiguration.Builder builder1 = configBuilder.specProvider(bellatrixSpec);
     assertThat(builder1.build().getBuilderBidCompareFactor())
-        .isEqualByComparingTo(BUILDER_BOOST_FACTOR_MAX_PROFIT);
+        .isEqualByComparingTo(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
   }
 
   @Test

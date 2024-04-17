@@ -36,6 +36,11 @@ import tech.pegasys.teku.api.schema.deneb.BeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.api.schema.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.api.schema.deneb.BlindedBlockDeneb;
+import tech.pegasys.teku.api.schema.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.api.schema.electra.BeaconBlockElectra;
+import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
+import tech.pegasys.teku.api.schema.electra.BlindedBeaconBlockBodyElectra;
+import tech.pegasys.teku.api.schema.electra.BlindedBlockElectra;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -82,89 +87,87 @@ public class SchemaObjectProvider {
   public BeaconBlock getBlindedBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block,
       final SpecMilestone milestone) {
-    switch (milestone) {
-      case PHASE0:
-        return new BeaconBlockPhase0(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            new BeaconBlockBody(block.getBody()));
-      case ALTAIR:
-        return new BeaconBlockAltair(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBeaconBlockBodyAltair(block.getBody()));
-      case BELLATRIX:
-        return new BlindedBlockBellatrix(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBlindedBlockBodyBellatrix(block.getBody()));
-      case CAPELLA:
-        return new BlindedBlockCapella(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBlindedBlockBodyCapella(block.getBody()));
-      case DENEB:
-        return new BlindedBlockDeneb(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBlindedBlockBodyDeneb(block.getBody()));
-      default:
-        throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
-    }
+    return switch (milestone) {
+      case PHASE0 -> new BeaconBlockPhase0(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          new BeaconBlockBody(block.getBody()));
+      case ALTAIR -> new BeaconBlockAltair(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBeaconBlockBodyAltair(block.getBody()));
+      case BELLATRIX -> new BlindedBlockBellatrix(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBlindedBlockBodyBellatrix(block.getBody()));
+      case CAPELLA -> new BlindedBlockCapella(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBlindedBlockBodyCapella(block.getBody()));
+      case DENEB -> new BlindedBlockDeneb(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBlindedBlockBodyDeneb(block.getBody()));
+      case ELECTRA -> new BlindedBlockElectra(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBlindedBlockBodyElectra(block.getBody()));
+    };
   }
 
   public BeaconBlock getBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block,
       final SpecMilestone milestone) {
-    switch (milestone) {
-      case PHASE0:
-        return new BeaconBlockPhase0(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            new BeaconBlockBody(block.getBody()));
-      case ALTAIR:
-        return new BeaconBlockAltair(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBeaconBlockBodyAltair(block.getBody()));
-      case BELLATRIX:
-        return new BeaconBlockBellatrix(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBeaconBlockBodyBellatrix(block.getBody()));
-      case CAPELLA:
-        return new BeaconBlockCapella(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBeaconBlockBodyCapella(block.getBody()));
-      case DENEB:
-        return new BeaconBlockDeneb(
-            block.getSlot(),
-            block.getProposerIndex(),
-            block.getParentRoot(),
-            block.getStateRoot(),
-            getBeaconBlockBodyDeneb(block.getBody()));
-      default:
-        throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
-    }
+    return switch (milestone) {
+      case PHASE0 -> new BeaconBlockPhase0(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          new BeaconBlockBody(block.getBody()));
+      case ALTAIR -> new BeaconBlockAltair(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBeaconBlockBodyAltair(block.getBody()));
+      case BELLATRIX -> new BeaconBlockBellatrix(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBeaconBlockBodyBellatrix(block.getBody()));
+      case CAPELLA -> new BeaconBlockCapella(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBeaconBlockBodyCapella(block.getBody()));
+      case DENEB -> new BeaconBlockDeneb(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBeaconBlockBodyDeneb(block.getBody()));
+      case ELECTRA -> new BeaconBlockElectra(
+          block.getSlot(),
+          block.getProposerIndex(),
+          block.getParentRoot(),
+          block.getStateRoot(),
+          getBeaconBlockBodyElectra(block.getBody()));
+    };
   }
 
   private BeaconBlockBodyAltair getBeaconBlockBodyAltair(
@@ -195,6 +198,13 @@ public class SchemaObjectProvider {
             .required(body));
   }
 
+  private BeaconBlockBodyElectra getBeaconBlockBodyElectra(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BeaconBlockBodyElectra(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+            .BeaconBlockBodyElectra.required(body));
+  }
+
   private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyBellatrix(
@@ -216,22 +226,23 @@ public class SchemaObjectProvider {
             .BlindedBeaconBlockBodyDeneb.required(body));
   }
 
+  private BlindedBeaconBlockBodyElectra getBlindedBlockBodyElectra(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BlindedBeaconBlockBodyElectra(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+            .BlindedBeaconBlockBodyElectra.required(body));
+  }
+
   public BeaconState getBeaconState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final UInt64 slot = state.getSlot();
-    switch (spec.atSlot(slot).getMilestone()) {
-      case PHASE0:
-        return new BeaconStatePhase0(state);
-      case ALTAIR:
-        return new BeaconStateAltair(state);
-      case BELLATRIX:
-        return new BeaconStateBellatrix(state);
-      case CAPELLA:
-        return new BeaconStateCapella(state);
-      case DENEB:
-        return new BeaconStateDeneb(state);
-      default:
-        throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
-    }
+    return switch (spec.atSlot(slot).getMilestone()) {
+      case PHASE0 -> new BeaconStatePhase0(state);
+      case ALTAIR -> new BeaconStateAltair(state);
+      case BELLATRIX -> new BeaconStateBellatrix(state);
+      case CAPELLA -> new BeaconStateCapella(state);
+      case DENEB -> new BeaconStateDeneb(state);
+      case ELECTRA -> new BeaconStateElectra(state);
+    };
   }
 }

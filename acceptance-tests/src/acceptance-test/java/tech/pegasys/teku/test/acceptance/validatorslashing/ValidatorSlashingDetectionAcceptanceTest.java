@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 
 /**
  * In order to cover all possible validator slashing scenarios, this acceptance test runs different
@@ -45,7 +45,8 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   final SystemTimeProvider timeProvider = new SystemTimeProvider();
   final String network = "swift";
   final String slashingActionLog =
-      "Validator(s) with public key(s) %s got slashed. Shutting down...";
+      "Validator slashing detection is enabled and validator(s) with public key(s) %s detected as slashed. "
+          + "Shutting down...";
   final int shutdownWaitingSeconds = 60;
 
   enum SlashingEventType {
@@ -57,11 +58,6 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     return Stream.of(SlashingEventType.values()).map(Arguments::of);
   }
 
-  TekuNode.Config configureNode(
-      final TekuNode.Config node, final int genesisTime, final String network) {
-    return node.withNetwork(network).withGenesisTime(genesisTime).withRealNetwork();
-  }
-
   BLSKeyPair getBlsKeyPair(final int slashedValidatorIndex) {
     final List<BLSKeyPair> blsKeyPairs =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, slashedValidatorIndex + 1);
@@ -69,7 +65,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   }
 
   void postSlashing(
-      final TekuNode tekuNode,
+      final TekuBeaconNode tekuNode,
       final UInt64 slashingSlot,
       final UInt64 slashedIndex,
       final BLSSecretKey slashedValidatorSecretKey,

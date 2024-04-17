@@ -32,4 +32,9 @@ public class SimpleDataDirLayout implements DataDirLayout {
   public Path getValidatorDataDirectory() {
     return path;
   }
+
+  @Override
+  public Path getDebugDataDirectory() {
+    return path;
+  }
 }

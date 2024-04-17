@@ -37,8 +37,6 @@ public interface StorageUpdateChannel extends ChannelInterface {
       Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
       Optional<UInt64> maybeEarliestBlobSidecarSlot);
 
-  SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);
-
   SafeFuture<Void> onReconstructedFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);
 
   SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionlayer;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -58,7 +60,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<GetPayloadResponse> engineGetPayload(
-            final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -66,6 +68,12 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         public SafeFuture<PayloadStatus> engineNewPayload(
             final NewPayloadRequest newPayloadRequest) {
           return SafeFuture.completedFuture(PayloadStatus.SYNCING);
+        }
+
+        @Override
+        public SafeFuture<List<ClientVersion>> engineGetClientVersion(
+            final ClientVersion clientVersion) {
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
@@ -107,13 +115,15 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
 
+  SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
+
   /**
    * This is low level method, use {@link
    * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
    * BeaconState, boolean, Optional, BlockProductionPerformance)} instead
    */
   SafeFuture<GetPayloadResponse> engineGetPayload(
-      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
+      ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   // builder namespace
   SafeFuture<Void> builderRegisterValidators(

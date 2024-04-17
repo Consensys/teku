@@ -45,6 +45,8 @@ public class BlockImportPerformance {
   public static final String EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL =
       "execution_payload_result_received";
 
+  public static final String DATA_AVAILABILITY_CHECKED_LABEL = "data_availability_checked";
+
   public static final String BEGIN_IMPORTING_LABEL = "begin_importing";
 
   private final BlockImportMetrics blockImportMetrics;
@@ -99,6 +101,10 @@ public class BlockImportPerformance {
     performanceTracker.addEvent(EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL);
   }
 
+  public void dataAvailabilityChecked() {
+    performanceTracker.addEvent(DATA_AVAILABILITY_CHECKED_LABEL);
+  }
+
   public void beginImporting() {
     performanceTracker.addEvent(BEGIN_IMPORTING_LABEL);
   }
@@ -123,6 +129,10 @@ public class BlockImportPerformance {
                 totalProcessingDuration, TOTAL_PROCESSING_TIME_LABEL, resultMetricLabelValue),
         (totalDuration, timings) ->
             eventLogger.lateBlockImport(
-                block.getRoot(), block.getSlot(), block.getProposerIndex(), timings));
+                block.getRoot(),
+                block.getSlot(),
+                block.getProposerIndex(),
+                timings,
+                resultMetricLabelValue));
   }
 }

@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -57,9 +58,6 @@ public class BlockManager extends Service
   // as well.
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
-      Subscribers.create(true);
-
-  private final Subscribers<DataUnavailableSubscriber> dataUnavailableSubscribers =
       Subscribers.create(true);
 
   private final Optional<BlockImportMetrics> blockImportMetrics;
@@ -174,10 +172,6 @@ public class BlockManager extends Service
 
   public void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber) {
     failedPayloadExecutionSubscribers.subscribe(subscriber);
-  }
-
-  public void subscribeDataUnavailable(final DataUnavailableSubscriber subscriber) {
-    dataUnavailableSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -296,11 +290,8 @@ public class BlockManager extends Service
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
                   case FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE:
-                    LOG.warn(
-                        "Unable to import block {} due to data unavailability",
-                        block.toLogString());
-                    dataUnavailableSubscribers.deliver(
-                        DataUnavailableSubscriber::onDataUnavailable, block);
+                    logFailedBlockImport(block, result.getFailureReason());
+                    blockBlobSidecarsTrackersPool.enableBlockImportOnCompletion(block);
                     break;
                   case FAILED_DATA_AVAILABILITY_CHECK_INVALID:
                     // Block's commitments and known blobSidecars are not matching.
@@ -308,7 +299,7 @@ public class BlockManager extends Service
                     // pool and discard.
                     // If next block builds on top of this one, we will re-download all blobSidecars
                     // and block again via RPC by root.
-                    LOG.warn("Unable to import block {} due to invalid data", block.toLogString());
+                    logFailedBlockImport(block, result.getFailureReason());
                     blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
                     break;
                   case FAILED_BROADCAST_VALIDATION:
@@ -322,14 +313,16 @@ public class BlockManager extends Service
                       FAILED_WEAK_SUBJECTIVITY_CHECKS,
                       DESCENDANT_OF_INVALID_BLOCK,
                       INTERNAL_ERROR:
-                    LOG.trace(
-                        "Unable to import block for reason {}: {}",
-                        result.getFailureReason(),
-                        block);
+                    logFailedBlockImport(block, result.getFailureReason());
                     dropInvalidBlock(block, result);
                 }
               }
             });
+  }
+
+  private void logFailedBlockImport(
+      final SignedBeaconBlock block, final FailureReason failureReason) {
+    LOG.trace("Unable to import block for reason {}: {}", failureReason, block);
   }
 
   private String getExecutionPayloadInfoForLog(final SignedBeaconBlock block) {
@@ -372,9 +365,5 @@ public class BlockManager extends Service
 
   public interface FailedPayloadExecutionSubscriber {
     void onPayloadExecutionFailed(SignedBeaconBlock block);
-  }
-
-  public interface DataUnavailableSubscriber {
-    void onDataUnavailable(SignedBeaconBlock block);
   }
 }

@@ -111,7 +111,7 @@ public class ValidatorProposerOptions {
       arity = "0..1")
   private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
             config

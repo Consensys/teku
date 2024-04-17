@@ -118,6 +118,10 @@ public class StatusLogger {
     log.warn("Spec failed for {}: {}", description, cause, cause);
   }
 
+  public void failedToLoadValidatorKey(final String message) {
+    log.fatal("Failed to load keystore, error {}", message);
+  }
+
   public void eth1DepositEventsFailure(final Throwable cause) {
     log.fatal(
         "PLEASE CHECK YOUR ETH1 NODE | Encountered a problem retrieving deposit events from eth1 endpoint: {}",
@@ -128,6 +132,10 @@ public class StatusLogger {
     log.warn(
         "Request for eth1 deposit logs from {} blocks failed. Retrying with a smaller block range.",
         batchSize);
+  }
+
+  public void eth1PollingHasBeenDisabled() {
+    log.info("Eth1 polling has been disabled");
   }
 
   public void unexpectedFailure(final String description, final Throwable cause) {
@@ -144,18 +152,6 @@ public class StatusLogger {
 
   public void listeningForDiscv5(final String enr) {
     log.info("Local ENR: {}", enr);
-  }
-
-  public void blockCreationFailure(final Exception cause) {
-    log.error("Error during block creation", cause);
-  }
-
-  public void attestationFailure(final Throwable cause) {
-    log.error("Error during attestation creation", cause);
-  }
-
-  public void validatorDepositYamlKeyWriterFailure(final Path file) {
-    log.error("Error writing keys to {}", file.toString());
   }
 
   public void validatorDepositEncryptedKeystoreWriterFailure(
@@ -247,7 +243,8 @@ public class StatusLogger {
 
   public void validatorSlashedAlert(final Set<String> slashedValidatorPublicKeys) {
     log.fatal(
-        "Validator(s) with public key(s) {} got slashed. Shutting down...",
+        "Validator slashing detection is enabled and validator(s) with public key(s) {} detected as slashed. "
+            + "Shutting down...",
         String.join(", ", slashedValidatorPublicKeys));
   }
 
@@ -261,6 +258,12 @@ public class StatusLogger {
         "ReconstructHistoricalStatesService recorded {} of {} historical blocks",
         numberRecorded,
         totalToRecord);
+  }
+
+  public void failedToStartValidatorClient(final String message) {
+    log.fatal(
+        "An error was encountered during validator client service start up. Error: {}", message);
+    log.fatal("Please check the logs for details.");
   }
 
   public void fatalErrorInitialisingStorage(Throwable err) {
@@ -365,12 +368,6 @@ public class StatusLogger {
 
   public void minGenesisTimeReached() {
     log.info("ETH1 block satisfying minimum genesis time found");
-  }
-
-  public void migratingDataDirectory(final Path dataPath) {
-    log.info(
-        "Migrating data directory layout under {} to separate beacon node and validator data",
-        dataPath.toAbsolutePath());
   }
 
   public void beaconDataPathSet(final Path dataPath) {

@@ -17,6 +17,7 @@ import com.google.common.base.Suppliers;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -79,10 +80,11 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
-      final BroadcastValidationLevel broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel,
+      BlockPublishingPerformance blockPublishingPerformance) {
     final SpecMilestone blockMilestone = spec.atSlot(blockContainer.getSlot()).getMilestone();
     return registeredPublishers
         .get(blockMilestone)
-        .sendSignedBlock(blockContainer, broadcastValidationLevel);
+        .sendSignedBlock(blockContainer, broadcastValidationLevel, blockPublishingPerformance);
   }
 }

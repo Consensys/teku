@@ -40,6 +40,7 @@ import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockBlobSidecarsTrackersPoolImplTest {
@@ -66,10 +68,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final int maxItems = 15;
   private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
       new PoolFactory(metricsSystem)
           .createPoolForBlockBlobSidecarsTrackers(
+              blockImportChannel,
               spec,
               timeProvider,
               asyncRunner,
@@ -225,6 +229,31 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertBlobSidecarsCount(0);
     assertBlobSidecarsTrackersCount(0);
+  }
+
+  @Test
+  public void onCompletedBlockAndBlobSidecars_shouldLogWarningWhenNotCompleted() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(BlockBlobSidecarsTrackersPoolImpl.class)) {
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+      final int expectedBlobs =
+          block
+              .getMessage()
+              .getBody()
+              .toVersionDeneb()
+              .orElseThrow()
+              .getBlobKzgCommitments()
+              .size();
+
+      assertThat(expectedBlobs).isGreaterThan(0);
+
+      blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, List.of());
+
+      logCaptor.assertErrorLog(
+          "Tracker for block "
+              + block.toLogString()
+              + " is supposed to be completed but it is not. Missing blob sidecars: "
+              + expectedBlobs);
+    }
   }
 
   @Test
@@ -904,6 +933,23 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     assertThat(blockBlobSidecarsTrackersPool.getAllRequiredBlobSidecars())
         .containsExactlyElementsOf(allMissing);
+  }
+
+  @Test
+  void enableBlockImportOnCompletion_shouldEnableOnTracker() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+
+    mockedTrackersFactory = Optional.of((slotAndRoot) -> mock(BlockBlobSidecarsTracker.class));
+
+    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
+
+    final BlockBlobSidecarsTracker tracker =
+        blockBlobSidecarsTrackersPool.getBlockBlobSidecarsTracker(block).orElseThrow();
+
+    blockBlobSidecarsTrackersPool.enableBlockImportOnCompletion(block);
+
+    verify(tracker).enableBlockImportOnCompletion(blockImportChannel);
   }
 
   @Test

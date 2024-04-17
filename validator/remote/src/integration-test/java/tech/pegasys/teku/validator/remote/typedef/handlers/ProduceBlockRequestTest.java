@@ -205,7 +205,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsJson() {
-    assumeThat(specMilestone).isEqualTo(DENEB);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);
@@ -231,7 +231,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsSsz() {
-    assumeThat(specMilestone).isEqualTo(DENEB);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);

@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -91,8 +92,8 @@ public class EthereumTypes {
           .format("byte")
           .build();
 
-  public static final DeserializableTypeDefinition<SpecMilestone> MILESTONE_TYPE =
-      DeserializableTypeDefinition.enumOf(
+  public static final StringValueTypeDefinition<SpecMilestone> MILESTONE_TYPE =
+      new EnumTypeDefinition<>(
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>

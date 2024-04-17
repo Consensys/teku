@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +35,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   private UInt64 lastProductionSlot;
 
-  protected final NavigableMap<UInt64, PendingDuties> dutiesByEpoch = new TreeMap<>();
+  protected final NavigableMap<UInt64, PendingDuties> dutiesByEpoch = new ConcurrentSkipListMap<>();
   private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(

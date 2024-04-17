@@ -13,23 +13,24 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.util.function.Consumer;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class SyncAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
-    final TekuNode primaryNode = createTekuNode(Config::withRealNetwork);
+    final TekuBeaconNode primaryNode =
+        createTekuBeaconNode(TekuNodeConfigBuilder.createBeaconNode().withRealNetwork().build());
 
     primaryNode.start();
     UInt64 genesisTime = primaryNode.getGenesisTime();
-    final TekuNode lateJoiningNode =
-        createTekuNode(configureLateJoiningNode(primaryNode, genesisTime.intValue()));
+    final TekuBeaconNode lateJoiningNode =
+        createLateJoiningNode(primaryNode, genesisTime.intValue());
     primaryNode.waitForNewFinalization();
 
     lateJoiningNode.start();
@@ -37,12 +38,14 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
   }
 
-  private Consumer<Config> configureLateJoiningNode(
-      final TekuNode primaryNode, final int genesisTime) {
-    return c ->
-        c.withGenesisTime(genesisTime)
+  private TekuBeaconNode createLateJoiningNode(
+      final TekuBeaconNode primaryNode, final int genesisTime) throws IOException {
+    return createTekuBeaconNode(
+        TekuNodeConfigBuilder.createBeaconNode()
+            .withGenesisTime(genesisTime)
             .withRealNetwork()
             .withPeers(primaryNode)
-            .withInteropValidators(0, 0);
+            .withInteropValidators(0, 0)
+            .build());
   }
 }

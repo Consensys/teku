@@ -48,8 +48,8 @@ public class GetAttestations extends RestApiEndpoint {
   public GetAttestations(final NodeDataProvider nodeDataProvider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getAttestations")
-            .summary("Get attestations")
+            .operationId("getPoolAttestations")
+            .summary("Get Attestations from operations pool")
             .description(
                 "Retrieves attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)

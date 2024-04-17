@@ -25,6 +25,7 @@ import java.net.ConnectException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -73,6 +74,8 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilit
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.noop.NoOpDebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -103,7 +106,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final boolean forkChoiceLateBlockReorgEnabled;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
+  private final AtomicReference<UInt64> lastProcessHeadSlot = new AtomicReference<>();
+
   private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
+
+  private final DebugDataDumper debugDataDumper;
 
   public ForkChoice(
       final Spec spec,
@@ -115,6 +122,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -127,7 +135,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.lastProcessHeadSlot.set(UInt64.ZERO);
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
+    this.debugDataDumper = debugDataDumper;
     getProposerHeadSelectedCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -157,6 +167,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         false,
+        new NoOpDebugDataDumper(),
         metricsSystem);
   }
 
@@ -340,12 +351,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             justifiedCheckpoint::getRoot);
                         return false;
                       }
-
                       updateHeadTransaction(
                           nodeSlot,
                           maybeJustifiedCheckpointState.orElseThrow(),
                           finalizedCheckpoint,
                           justifiedCheckpoint);
+                      nodeSlot.ifPresent(lastProcessHeadSlot::set);
                       notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
                           isPreProposal ? nodeSlot : Optional.empty());
                       return true;
@@ -449,6 +460,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .getAvailabilityCheckResult()
             .thenPeek(
                 result -> {
+                  blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {
                     blockBroadcastValidator.onConsensusValidationSucceeded();
@@ -533,7 +545,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       case VALID, NOT_REQUIRED -> LOG.debug(
           "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
       case NOT_AVAILABLE -> {
-        LOG.warn(
+        LOG.debug(
             "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             blobSidecarsAndValidationResult.getCause());
@@ -748,6 +760,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
       return;
     }
+    debugDataDumper.saveInvalidBlockToFile(
+        block, result.getFailureReason().name(), result.getFailureCause());
     P2P_LOG.onInvalidBlock(
         block.getSlot(),
         block.getRoot(),
@@ -823,6 +837,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               final VoteTracker voteTracker = transaction.getVote(validatorIndex);
               transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
             });
+  }
+
+  public UInt64 getLastProcessHeadSlot() {
+    return lastProcessHeadSlot.get();
   }
 
   SafeFuture<Void> prepareForBlockProduction(

@@ -54,6 +54,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -97,6 +98,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -155,6 +157,7 @@ public class Eth2P2PNetworkFactory {
     protected Duration eth2StatusUpdateInterval;
     protected Spec spec = TestSpecFactory.createMinimalPhase0();
     private int earliestAvailableBlockSlotFrequency = 0;
+    protected DebugDataDumper debugDataDumper;
 
     public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
@@ -330,7 +333,8 @@ public class Eth2P2PNetworkFactory {
             syncCommitteeSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
-            processedAttestationSubscriptionProvider);
+            processedAttestationSubscriptionProvider,
+            config.isAllTopicsFilterEnabled());
       }
     }
 
@@ -353,7 +357,8 @@ public class Eth2P2PNetworkFactory {
             gossipedAggregateProcessor,
             attesterSlashingProcessor,
             proposerSlashingProcessor,
-            voluntaryExitProcessor);
+            voluntaryExitProcessor,
+            debugDataDumper);
         case ALTAIR -> new GossipForkSubscriptionsAltair(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -369,7 +374,8 @@ public class Eth2P2PNetworkFactory {
             proposerSlashingProcessor,
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor);
+            syncCommitteeMessageProcessor,
+            debugDataDumper);
         case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -385,7 +391,8 @@ public class Eth2P2PNetworkFactory {
             proposerSlashingProcessor,
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor);
+            syncCommitteeMessageProcessor,
+            debugDataDumper);
         case CAPELLA -> new GossipForkSubscriptionsCapella(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -402,7 +409,8 @@ public class Eth2P2PNetworkFactory {
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor);
+            signedBlsToExecutionChangeProcessor,
+            debugDataDumper);
         case DENEB -> new GossipForkSubscriptionsDeneb(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -420,7 +428,27 @@ public class Eth2P2PNetworkFactory {
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor);
+            signedBlsToExecutionChangeProcessor,
+            debugDataDumper);
+        case ELECTRA -> new GossipForkSubscriptionsElectra(
+            forkAndSpecMilestone.getFork(),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedBlobSidecarProcessor,
+            gossipedAttestationProcessor,
+            gossipedAggregateProcessor,
+            attesterSlashingProcessor,
+            proposerSlashingProcessor,
+            voluntaryExitProcessor,
+            signedContributionAndProofProcessor,
+            syncCommitteeMessageProcessor,
+            signedBlsToExecutionChangeProcessor,
+            debugDataDumper);
       };
     }
 
@@ -693,6 +721,12 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(Duration eth2StatusUpdateInterval) {
       checkNotNull(eth2StatusUpdateInterval);
       this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder debugDataDumper(final DebugDataDumper debugDataDumper) {
+      checkNotNull(debugDataDumper);
+      this.debugDataDumper = debugDataDumper;
       return this;
     }
   }

@@ -13,23 +13,23 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.util.function.Consumer;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.SentryNodesConfig;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void sentryBeaconNodesSetup() throws Exception {
-    final TekuNode dutiesProviderNode = createAndStartBootstrapBeaconNode();
-    final TekuNode attestationPublisherNode =
+    final TekuBeaconNode dutiesProviderNode = createAndStartBootstrapBeaconNode();
+    final TekuBeaconNode attestationPublisherNode =
         createAndStartPeerBeaconNode(dutiesProviderNode, dutiesProviderNode.getGenesisTime());
-    final TekuNode blockHandlerNode =
+    final TekuBeaconNode blockHandlerNode =
         createAndStartPeerBeaconNode(dutiesProviderNode, dutiesProviderNode.getGenesisTime());
 
     final SentryNodesConfig sentryNodesConfig =
@@ -41,7 +41,10 @@ public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
 
     final TekuValidatorNode remoteValidator =
         createValidatorNode(
-            config -> config.withInteropValidators(0, 32).withSentryNodes(sentryNodesConfig));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withInteropValidators(0, 32)
+                .withSentryNodes(sentryNodesConfig)
+                .build());
     remoteValidator.start();
 
     remoteValidator.waitForDutiesRequestedFrom(dutiesProviderNode);
@@ -49,34 +52,34 @@ public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
     remoteValidator.waitForBlockPublishedTo(blockHandlerNode);
   }
 
-  private TekuNode createAndStartPeerBeaconNode(
-      final TekuNode dutiesProviderNode, final UInt64 genesisTime) throws Exception {
-    final TekuNode blockHandlerNode =
-        createTekuNode(configureLateJoiningNode(dutiesProviderNode, genesisTime.intValue()));
+  private TekuBeaconNode createAndStartPeerBeaconNode(
+      final TekuBeaconNode dutiesProviderNode, final UInt64 genesisTime) throws Exception {
+    final TekuBeaconNode blockHandlerNode =
+        createLateJoiningNode(dutiesProviderNode, genesisTime.intValue());
     blockHandlerNode.start();
     return blockHandlerNode;
   }
 
-  private TekuNode createAndStartBootstrapBeaconNode() throws Exception {
-    final TekuNode dutiesProviderNode =
-        createTekuNode(
-            c -> {
-              c.withRealNetwork();
-              c.withNetwork("minimal");
-              c.withInteropNumberOfValidators(64);
-              c.withInteropValidators(32, 32);
-            });
+  private TekuBeaconNode createAndStartBootstrapBeaconNode() throws Exception {
+    final TekuBeaconNode dutiesProviderNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withRealNetwork()
+                .withInteropNumberOfValidators(64)
+                .withInteropValidators(32, 32)
+                .build());
     dutiesProviderNode.start();
     return dutiesProviderNode;
   }
 
-  private Consumer<Config> configureLateJoiningNode(
-      final TekuNode primaryNode, final int genesisTime) {
-    return c ->
-        c.withGenesisTime(genesisTime)
+  private TekuBeaconNode createLateJoiningNode(
+      final TekuBeaconNode primaryNode, final int genesisTime) throws IOException {
+    return createTekuBeaconNode(
+        TekuNodeConfigBuilder.createBeaconNode()
+            .withGenesisTime(genesisTime)
             .withRealNetwork()
-            .withNetwork("minimal")
             .withPeers(primaryNode)
-            .withInteropValidators(0, 0);
+            .withInteropValidators(0, 0)
+            .build());
   }
 }

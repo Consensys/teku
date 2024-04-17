@@ -179,9 +179,10 @@ public class TransitionCaches {
   /**
    * (validator pub key) -> (validator index) cache
    *
-   * <p>WARNING: May contain mappings for public keys of validators that are not yet registered in
-   * this state (but when registered are guaranteed to be at that index). Check index {@literal < }
-   * total validator count before looking up the cache
+   * <p>WARNING: Only contains mappings for public keys of validators whose indices are part of a
+   * finalized state. Otherwise, the mapping will be retrieved from the state. Look at
+   * https://eips.ethereum.org/EIPS/eip-6110#validator-index-invariant for more information. Check
+   * index {@literal < } total validator count before looking up the cache.
    */
   public ValidatorIndexCache getValidatorIndexCache() {
     return validatorIndexCache;

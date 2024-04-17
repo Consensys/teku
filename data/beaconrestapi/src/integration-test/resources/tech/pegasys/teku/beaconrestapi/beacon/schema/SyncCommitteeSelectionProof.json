@@ -1,0 +1,28 @@
+{
+  "title" : "SyncCommitteeSelectionProof",
+  "type" : "object",
+  "required" : [ "validator_index", "slot", "subcommittee_index", "selection_proof" ],
+  "properties" : {
+    "validator_index" : {
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
+    },
+    "slot" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "subcommittee_index" : {
+      "type" : "string",
+      "description" : "integer string",
+      "example" : "1",
+      "format" : "integer"
+    },
+    "selection_proof" : {
+      "type" : "string"
+    }
+  }
+}

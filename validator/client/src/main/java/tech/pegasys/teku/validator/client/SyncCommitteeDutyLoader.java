@@ -16,13 +16,13 @@ package tech.pegasys.teku.validator.client;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -38,6 +38,7 @@ public class SyncCommitteeDutyLoader
 
   private final SettableGauge currentSyncDutyCount;
   private final SettableGauge currentSyncCommitteeLastEpoch;
+  private final boolean useDvtEndpoint;
 
   public SyncCommitteeDutyLoader(
       final OwnedValidators validators,
@@ -46,7 +47,8 @@ public class SyncCommitteeDutyLoader
       final ValidatorApiChannel validatorApiChannel,
       final ChainHeadTracker chainHeadTracker,
       final ForkProvider forkProvider,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      boolean useDvtEndpoint) {
     super(validators, validatorIndexProvider);
     this.spec = spec;
     this.validatorApiChannel = validatorApiChannel;
@@ -64,6 +66,7 @@ public class SyncCommitteeDutyLoader
             TekuMetricCategory.VALIDATOR,
             "current_sync_committee_last_epoch",
             "The final epoch of the current sync committee period");
+    this.useDvtEndpoint = useDvtEndpoint;
   }
 
   @Override
@@ -89,7 +92,8 @@ public class SyncCommitteeDutyLoader
             .validatorApiChannel(validatorApiChannel)
             .chainHeadTracker(chainHeadTracker)
             .spec(spec)
-            .lastEpochInCommitteePeriod(lastEpochInCommitteePeriod);
+            .lastEpochInCommitteePeriod(lastEpochInCommitteePeriod)
+            .useDvtEndpoint(useDvtEndpoint);
     duties.getDuties().forEach(duty -> scheduleDuty(dutyBuilder, duty));
     final SyncCommitteeScheduledDuties scheduledDuties = dutyBuilder.build();
     scheduledDuties.subscribeToSubnets();

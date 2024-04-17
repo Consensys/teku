@@ -139,13 +139,15 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     super.processOperationsNoValidation(state, body, indexedAttestationCache);
 
-    processBlsToExecutionChangesNoValidation(
-        MutableBeaconStateCapella.required(state),
-        body.getOptionalBlsToExecutionChanges()
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "BlsToExecutionChanges was not found during block processing.")));
+    safelyProcess(
+        () ->
+            processBlsToExecutionChangesNoValidation(
+                MutableBeaconStateCapella.required(state),
+                body.getOptionalBlsToExecutionChanges()
+                    .orElseThrow(
+                        () ->
+                            new BlockProcessingException(
+                                "BlsToExecutionChanges was not found during block processing."))));
   }
 
   @Override
@@ -273,8 +275,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       if (predicates.hasEth1WithdrawalCredential(validator)) {
         final UInt64 balance = balances.get(validatorIndex).get();
 
-        if (predicates.isFullyWithdrawableValidatorEth1CredentialsChecked(
-            validator, balance, epoch)) {
+        if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
           expectedWithdrawals.add(
               withdrawalSchema.create(
                   withdrawalIndex,

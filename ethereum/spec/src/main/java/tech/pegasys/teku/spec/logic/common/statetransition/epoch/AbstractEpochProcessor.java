@@ -63,6 +63,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final BeaconStateMutators beaconStateMutators;
 
   private static final Logger LOG = LogManager.getLogger();
+  protected final UInt64 maxEffectiveBalance;
   // Used to log once per epoch (throttlingPeriod = 1)
   private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.ONE);
 
@@ -83,6 +84,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.beaconStateUtil = beaconStateUtil;
     this.validatorStatusFactory = validatorStatusFactory;
     this.schemaDefinitions = schemaDefinitions;
+    this.maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
   }
 
   /**
@@ -116,6 +118,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses);
     processEth1DataReset(state);
+    processPendingBalanceDeposits(state);
+    processPendingConsolidations(state);
     processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
     processRandaoMixesReset(state);
@@ -310,7 +314,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       SszMutableList<Validator> validators = state.getValidators();
       final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
       final UInt64 finalizedEpoch = state.getFinalizedCheckpoint().getEpoch();
-      final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
       final UInt64 ejectionBalance = specConfig.getEjectionBalance();
       final Supplier<ValidatorExitContext> validatorExitContextSupplier =
           beaconStateMutators.createValidatorExitContextSupplier(state);
@@ -318,12 +321,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
-        // Slightly optimised form of isEligibleForActivationQueue to avoid accessing the
-        // state for the majority of validators.  Can't be eligible for activation if already active
-        // or if effective balance is too low.  Only get the validator if both those checks pass to
-        // confirm it isn't already in the queue.
-        if (!status.isActiveInCurrentEpoch()
-            && status.getCurrentEpochEffectiveBalance().equals(maxEffectiveBalance)) {
+        if (isEligibleForActivationQueue(status)) {
           final Validator validator = validators.get(index);
           if (validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
             validators.set(
@@ -379,6 +377,17 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
     }
+  }
+
+  /**
+   * Can't be eligible for activation if already active or if effective balance is too low.
+   *
+   * @param status - Validator status
+   * @return true if validator is eligible to be added to the activation queue
+   */
+  protected boolean isEligibleForActivationQueue(final ValidatorStatus status) {
+    return !status.isActiveInCurrentEpoch()
+        && status.getCurrentEpochEffectiveBalance().equals(maxEffectiveBalance);
   }
 
   /** Processes slashings */

@@ -18,14 +18,15 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -33,13 +34,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BlockFactoryDeneb extends BlockFactoryPhase0 {
 
-  private final SchemaDefinitionsDeneb schemaDefinitionsDeneb;
-
   public BlockFactoryDeneb(final Spec spec, final BlockOperationSelectorFactory operationSelector) {
     super(spec, operationSelector);
-    this.schemaDefinitionsDeneb =
-        SchemaDefinitionsDeneb.required(
-            spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
   }
 
   @Override
@@ -75,14 +71,22 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   @Override
-  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
-    return operationSelector.createBlobSidecarsSelector().apply(blockContainer);
+  public List<BlobSidecar> createBlobSidecars(
+      final SignedBlockContainer blockContainer,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    return operationSelector
+        .createBlobSidecarsSelector(blockPublishingPerformance)
+        .apply(blockContainer);
   }
 
   private BlockContents createBlockContents(
       final BeaconBlock block, final BlobsBundle blobsBundle) {
-    return schemaDefinitionsDeneb
-        .getBlockContentsSchema()
+    return getBlockContentsSchema(block.getSlot())
         .create(block, blobsBundle.getProofs(), blobsBundle.getBlobs());
+  }
+
+  private BlockContentsSchema getBlockContentsSchema(final UInt64 slot) {
+    return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+        .getBlockContentsSchema();
   }
 }

@@ -42,7 +42,10 @@ public class BlockArchiveGenerator {
   private final List<BLSKeyPair> validatorKeys;
   private final RecentChainData localStorage;
   private final AttestationGenerator attestationGenerator;
+
+  @SuppressWarnings("deprecation")
   private final BeaconChainUtil localChain;
+
   private final int slotsPerEpoch;
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private final ValidatorsUtil validatorsUtil;
@@ -87,7 +90,7 @@ public class BlockArchiveGenerator {
     generator.generateBlocks();
   }
 
-  @SuppressWarnings("StaticAssignmentInConstructor")
+  @SuppressWarnings({"StaticAssignmentInConstructor", "deprecation"})
   private BlockArchiveGenerator(final int validatorCount, final int epochCount) {
     this.validatorCount = validatorCount;
     this.epochCount = epochCount;

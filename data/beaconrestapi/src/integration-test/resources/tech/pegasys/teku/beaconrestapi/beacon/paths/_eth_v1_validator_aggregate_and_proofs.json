@@ -1,8 +1,8 @@
 {
   "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "postAggregateAndProofs",
-    "summary" : "Publish aggregate and proofs",
+    "operationId" : "publishAggregateAndProofs",
+    "summary" : "Publish multiple aggregate and proofs",
     "description" : "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
     "requestBody" : {
       "content" : {

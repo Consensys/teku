@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 
 public class ContainersGenerator {
 
-  private final int maxFields = 17;
+  private final int maxFields = 19;
   private final Path templateSrcPath;
   private final Path targetSrcPath;
   private final String typePackagePath = "tech/pegasys/teku/infrastructure/ssz/containers/";

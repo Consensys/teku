@@ -61,10 +61,13 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
@@ -98,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -121,13 +125,10 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.validator.api.AttesterDuties;
-import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
@@ -172,8 +173,9 @@ class ValidatorApiHandlerTest {
   private final ArgumentCaptor<List<BlobSidecar>> blobSidecarsCaptor2 =
       ArgumentCaptor.forClass(List.class);
 
-  private final BlockProductionPerformanceFactory blockProductionPerformanceFactory =
-      new BlockProductionPerformanceFactory(StubTimeProvider.withTimeInMillis(0), false, 0);
+  private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
+      new BlockProductionAndPublishingPerformanceFactory(
+          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0);
 
   private Spec spec;
   private UInt64 epochStartSlot;
@@ -220,7 +222,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
-        .unblindSignedBlockIfBlinded(any());
+        .unblindSignedBlockIfBlinded(any(), any());
     when(proposersDataManager.updateValidatorRegistrations(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
   }
@@ -541,7 +543,7 @@ class ValidatorApiHandlerTest {
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
-    // even if passing a non-empty reqestedBlinded and requestedBuilderBoostFactor isn't a valid
+    // even if passing a non-empty requestedBlinded and requestedBuilderBoostFactor isn't a valid
     // combination,
     // we still want to check that all parameters are passed down the line to the block factory
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
@@ -690,6 +692,17 @@ class ValidatorApiHandlerTest {
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createAggregate(
             ONE, dataStructureUtil.randomAttestationData().hashTreeRoot());
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
+  public void createSyncCommitteeContribution() {
+    nodeIsSyncing();
+    final SafeFuture<Optional<SyncCommitteeContribution>> result =
+        validatorApiHandler.createSyncCommitteeContribution(
+            ONE, 0, dataStructureUtil.randomBytes32());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -1196,6 +1209,18 @@ class ValidatorApiHandlerTest {
     assertThat(validatorIsLive(validatorLivenessAtEpochsResult, thirdIndex)).isTrue();
   }
 
+  @Test
+  public void getBeaconCommitteeSelectionProofShouldNotBeImplementedByBeaconNode() {
+    assertThatThrownBy(() -> validatorApiHandler.getBeaconCommitteeSelectionProof(List.of()))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  public void getSyncCommitteeSelectionProofShouldNotBeImplementedByBeaconNode() {
+    assertThatThrownBy(() -> validatorApiHandler.getSyncCommitteeSelectionProof(List.of()))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
   private boolean validatorIsLive(
       List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs, UInt64 validatorIndex) {
     return validatorLivenessAtEpochs.stream()
@@ -1255,7 +1280,7 @@ class ValidatorApiHandlerTest {
                       UInt64.valueOf(index),
                       dataStructureUtil.randomUInt64(),
                       statusOverrides.getOrDefault(publicKey, ValidatorStatus.active_ongoing),
-                      dataStructureUtil.randomValidator(publicKey));
+                      dataStructureUtil.validatorBuilder().publicKey(publicKey).build());
                 })
             .collect(Collectors.toList());
 
@@ -1325,7 +1350,7 @@ class ValidatorApiHandlerTest {
                   .toList();
             })
         .when(blockFactory)
-        .createBlobSidecars(any());
+        .createBlobSidecars(any(), any());
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(

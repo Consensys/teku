@@ -62,6 +62,8 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getMinPerEpochChurnLimit();
 
+  UInt64 getMaxPerEpochActivationExitChurnLimit();
+
   int getChurnLimitQuotient();
 
   // Config: Fork choice
@@ -180,6 +182,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
   }
 
   default Optional<SpecConfigDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  default Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.empty();
   }
 }

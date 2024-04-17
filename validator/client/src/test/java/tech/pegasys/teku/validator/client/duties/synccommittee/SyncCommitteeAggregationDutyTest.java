@@ -15,7 +15,12 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -29,6 +34,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -52,6 +58,7 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 
 class SyncCommitteeAggregationDutyTest {
+
   private static final String TYPE = "sync_aggregate";
 
   private final Spec spec = TestSpecFactory.createAltair(createSpecConfig());
@@ -64,6 +71,8 @@ class SyncCommitteeAggregationDutyTest {
   private final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
   private final ValidatorLogger validatorLogger = Mockito.mock(ValidatorLogger.class);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+  private final SyncAggregatorSelectionProofProvider syncAggregatorSelectionProofProvider =
+      spy(new SyncAggregatorSelectionProofProvider());
   private final BLSSignature nonAggregatorSignature =
       BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
@@ -249,6 +258,124 @@ class SyncCommitteeAggregationDutyTest {
             exception);
   }
 
+  @Test
+  public void shouldReportFailureWhenSyncAggregatorFailsPreparingSelectionProof() {
+    withValidatorAggregatingSubnet(validator1, 0);
+    withValidatorAggregatingSubnet(validator2, 0);
+
+    final IllegalArgumentException exception = new IllegalArgumentException("Bang");
+    doThrow(exception)
+        .when(syncAggregatorSelectionProofProvider)
+        .prepareSelectionProofForSlot(eq(slot), any(), any(), eq(forkInfo));
+
+    final SyncCommitteeAggregationDuty duty =
+        createDuty(
+            committeeAssignment(
+                validator1, contributionAndProof.getAggregatorIndex().intValue(), 0),
+            committeeAssignment(
+                validator2, contributionAndProof.getAggregatorIndex().intValue(), 1));
+    produceAggregatesAndReport(duty);
+
+    verify(validatorLogger)
+        .dutyFailed(
+            TYPE,
+            slot,
+            Set.of(
+                validator1.getPublicKey().toAbbreviatedString(),
+                validator2.getPublicKey().toAbbreviatedString()),
+            exception);
+  }
+
+  @Test
+  public void shouldReportFailureWhenSyncAggregatorFailsFindingSelectionProof() {
+    withValidatorAggregatingSubnet(validator1, 0);
+    withValidatorAggregatingSubnet(validator2, 0);
+
+    final IllegalArgumentException exception = new IllegalArgumentException("Bang");
+    doThrow(exception)
+        .when(syncAggregatorSelectionProofProvider)
+        .getSelectionProofFuture(anyInt(), anyInt());
+
+    final SyncCommitteeAggregationDuty duty =
+        createDuty(
+            committeeAssignment(
+                validator1, contributionAndProof.getAggregatorIndex().intValue(), 0),
+            committeeAssignment(
+                validator2, contributionAndProof.getAggregatorIndex().intValue(), 1));
+    produceAggregatesAndReport(duty);
+
+    verify(validatorLogger)
+        .dutyFailed(
+            TYPE,
+            slot,
+            Set.of(
+                validator1.getPublicKey().toAbbreviatedString(),
+                validator2.getPublicKey().toAbbreviatedString()),
+            exception);
+  }
+
+  @Test
+  public void shouldReportFailureWhenSyncAggregatorCannotFindSelectionProofForValidator() {
+    final int validatorIndex = contributionAndProof.getAggregatorIndex().intValue();
+    final int subcommitteeIndex = 0;
+
+    withValidatorAggregatingSubnet(validator1, subcommitteeIndex);
+
+    doReturn(Optional.empty())
+        .when(syncAggregatorSelectionProofProvider)
+        .getSelectionProofFuture(eq(validatorIndex), eq(subcommitteeIndex));
+
+    final SyncCommitteeAggregationDuty duty =
+        createDuty(committeeAssignment(validator1, validatorIndex, subcommitteeIndex));
+    produceAggregatesAndReport(duty);
+
+    final ArgumentCaptor<Exception> exceptionArgumentCaptor =
+        ArgumentCaptor.forClass(Exception.class);
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(TYPE),
+            eq(slot),
+            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
+            exceptionArgumentCaptor.capture());
+
+    assertThat(exceptionArgumentCaptor.getValue())
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Can't find aggregation selection proof for validator");
+  }
+
+  @Test
+  public void shouldReportFailureOnlyForValidatorsThatFailedAggregation() {
+    final int committeeIndex = 9;
+    final int subcommitteeIndex = 0;
+    withValidatorAggregatingSubnet(validator1, subcommitteeIndex);
+    withValidatorAggregatingSubnet(validator2, subcommitteeIndex);
+
+    // Preparing only validator2 to fail its aggregation
+    doReturn(Optional.empty())
+        .when(syncAggregatorSelectionProofProvider)
+        .getSelectionProofFuture(eq(22), eq(0));
+
+    final SyncCommitteeAggregationDuty duty =
+        createDuty(
+            committeeAssignment(validator1, 11, committeeIndex),
+            committeeAssignment(validator2, 22, committeeIndex));
+
+    produceAggregatesAndReport(duty);
+
+    // Check that validator1 aggregation was produced and reported successfully
+    final List<SignedContributionAndProof> expectedSignedContributions =
+        List.of(
+            syncCommitteeUtil.createSignedContributionAndProof(
+                contributionAndProof, contributionSignature));
+    verify(validatorLogger).dutyCompleted(TYPE, slot, 1, Set.of(beaconBlockRoot), Optional.empty());
+    verify(validatorApiChannel).sendSignedContributionAndProofs(expectedSignedContributions);
+
+    // Check that validator2 aggregation failed and was reported as failure
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(TYPE), eq(slot), eq(Set.of(validator2.getPublicKey().toAbbreviatedString())), any());
+  }
+
   private void withValidatorAggregatingSubnet(
       final Validator validator, final int subcommitteeIndex) {
     final SyncAggregatorSelectionData expectedSigningData =
@@ -268,7 +395,12 @@ class SyncCommitteeAggregationDutyTest {
   private SyncCommitteeAggregationDuty createDuty(
       final ValidatorAndCommitteeIndices... assignments) {
     return new SyncCommitteeAggregationDuty(
-        spec, forkProvider, validatorApiChannel, validatorLogger, List.of(assignments));
+        spec,
+        forkProvider,
+        validatorApiChannel,
+        validatorLogger,
+        List.of(assignments),
+        syncAggregatorSelectionProofProvider);
   }
 
   private ValidatorAndCommitteeIndices committeeAssignment(

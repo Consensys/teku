@@ -37,10 +37,20 @@ class FilePrivateKeySourceTest {
   }
 
   @Test
-  void shouldGetKeyFromSavedFile(@TempDir Path tempDir) throws IOException {
+  void shouldGetKeyFromSavedTextFile(@TempDir Path tempDir) throws IOException {
     final Path file = tempDir.resolve("file.txt");
     final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
     Files.writeString(file, privateKey.toHexString());
+    final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
+
+    assertThat(privateKeySource.getOrGeneratePrivateKeyBytes()).isEqualTo(privateKey);
+  }
+
+  @Test
+  void shouldGetKeyFromBinaryFile(@TempDir Path tempDir) throws IOException {
+    final Path file = tempDir.resolve("file.dat");
+    final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
+    Files.write(file, privateKey.toArray());
     final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
 
     assertThat(privateKeySource.getOrGeneratePrivateKeyBytes()).isEqualTo(privateKey);

@@ -271,14 +271,21 @@ public class ValidatorClientService extends Service {
             })
         .exceptionally(
             error -> {
-              final Optional<Throwable> maybeCause =
-                  ExceptionUtil.getCause(error, InvalidConfigurationException.class);
-              if (maybeCause.isPresent()) {
-                LOG.warn(maybeCause.get().getMessage());
-              } else {
-                LOG.error("Error was encountered during validator client service start up.", error);
-              }
-              checkNoKeysLoaded(validatorConfig, validatorLoader);
+              ExceptionUtil.getCause(error, InvalidConfigurationException.class)
+                  .ifPresentOrElse(
+                      cause -> STATUS_LOG.failedToLoadValidatorKey(cause.getMessage()),
+                      () -> {
+                        STATUS_LOG.failedToStartValidatorClient(
+                            ExceptionUtil.getRootCauseMessage(error));
+                        LOG.error(
+                            "An error was encountered during validator client service start up.",
+                            error);
+                      });
+              // an unhandled exception getting this far means any number of above steps failed to
+              // complete,
+              // which is fatal, we don't know how to recover at this point, regardless of if we're
+              // in VC or BN mode.
+              System.exit(FATAL_EXIT_CODE);
               return null;
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
@@ -443,6 +450,8 @@ public class ValidatorClientService extends Service {
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
+    final boolean dvtSelectionsEndpointEnabled =
+        config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
     final DutyLoader<?> attestationDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -457,7 +466,8 @@ public class ValidatorClientService extends Service {
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
-                spec));
+                spec,
+                dvtSelectionsEndpointEnabled));
     final DutyLoader<?> blockDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -488,7 +498,8 @@ public class ValidatorClientService extends Service {
                   validatorApiChannel,
                   chainHeadTracker,
                   forkProvider,
-                  metricsSystem));
+                  metricsSystem,
+                  dvtSelectionsEndpointEnabled));
       validatorTimingChannels.add(
           new SyncCommitteeScheduler(
               metricsSystem, spec, syncCommitteeDutyLoader, new Random()::nextInt));

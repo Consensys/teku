@@ -27,6 +27,7 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -229,9 +230,34 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldSetShutdownWhenValidatorSlashedEnabled() {
     final ValidatorConfig config =
-        getTekuConfigurationFromArguments("--Xshut-down-when-validator-slashed-enabled=true")
+        getTekuConfigurationFromArguments("--shut-down-when-validator-slashed-enabled=true")
             .validatorClient()
             .getValidatorConfig();
     assertThat(config.isShutdownWhenValidatorSlashedEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldSetDefaultGraffitiClientAppend() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.getClientGraffitiAppendFormat()).isEqualTo(ClientGraffitiAppendFormat.AUTO);
+  }
+
+  @Test
+  public void shouldOverrideGraffitiClientAppend() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--validators-graffiti-client-append-format=CLIENT_CODES")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.getClientGraffitiAppendFormat())
+        .isEqualTo(ClientGraffitiAppendFormat.CLIENT_CODES);
+  }
+
+  @Test
+  public void shouldNotUseDvtSelectionsEndpointByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isFalse();
   }
 }

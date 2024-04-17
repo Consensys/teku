@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Call;
@@ -67,17 +68,23 @@ public class OkHttpRestClient implements RestClient {
       final String apiPath,
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition) {
-    return postAsyncInternal(apiPath, requestBodyObject, requestTypeDefinition, Optional.empty());
+    return postAsyncInternal(
+        apiPath, NO_HEADERS, requestBodyObject, requestTypeDefinition, Optional.empty());
   }
 
   @Override
   public <T, S> SafeFuture<Response<T>> postAsync(
       final String apiPath,
+      final Map<String, String> headers,
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition,
       final DeserializableTypeDefinition<T> responseTypeDefinition) {
     return postAsyncInternal(
-        apiPath, requestBodyObject, requestTypeDefinition, Optional.of(responseTypeDefinition));
+        apiPath,
+        headers,
+        requestBodyObject,
+        requestTypeDefinition,
+        Optional.of(responseTypeDefinition));
   }
 
   private <T> SafeFuture<Response<T>> getAsyncInternal(
@@ -90,16 +97,17 @@ public class OkHttpRestClient implements RestClient {
 
   private <T, S> SafeFuture<Response<T>> postAsyncInternal(
       final String apiPath,
+      final Map<String, String> headers,
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition,
       final Optional<DeserializableTypeDefinition<T>> responseTypeDefinitionMaybe) {
     final RequestBody requestBody = createRequestBody(requestBodyObject, requestTypeDefinition);
-    final Request request = createPostRequest(apiPath, requestBody);
+    final Request request = createPostRequest(apiPath, requestBody, headers);
     return makeAsyncRequest(request, responseTypeDefinitionMaybe);
   }
 
   private Request createGetRequest(final String apiPath, final Map<String, String> headers) {
-    final HttpUrl httpUrl = createHttpUrl(apiPath);
+    final URL httpUrl = createHttpUrl(apiPath);
     final Request.Builder requestBuilder = new Request.Builder().url(httpUrl);
     headers.forEach(requestBuilder::header);
     return requestBuilder.build();
@@ -122,14 +130,17 @@ public class OkHttpRestClient implements RestClient {
     };
   }
 
-  private Request createPostRequest(final String apiPath, final RequestBody requestBody) {
-    final HttpUrl httpUrl = createHttpUrl(apiPath);
-    return new Request.Builder().url(httpUrl).post(requestBody).build();
+  private Request createPostRequest(
+      final String apiPath, final RequestBody requestBody, final Map<String, String> headers) {
+    final URL httpUrl = createHttpUrl(apiPath);
+    final Request.Builder requestBuilder = new Request.Builder().url(httpUrl).post(requestBody);
+    headers.forEach(requestBuilder::header);
+    return requestBuilder.build();
   }
 
-  private HttpUrl createHttpUrl(final String apiPath) {
+  private URL createHttpUrl(final String apiPath) {
     final HttpUrl.Builder urlBuilder = baseEndpoint.newBuilder(apiPath);
-    return requireNonNull(urlBuilder).build();
+    return requireNonNull(urlBuilder).build().url();
   }
 
   private <T> SafeFuture<Response<T>> makeAsyncRequest(

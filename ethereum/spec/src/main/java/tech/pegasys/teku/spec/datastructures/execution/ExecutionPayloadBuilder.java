@@ -21,6 +21,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 
 public interface ExecutionPayloadBuilder {
   ExecutionPayloadBuilder parentHash(Bytes32 parentHash);
@@ -56,6 +58,10 @@ public interface ExecutionPayloadBuilder {
   ExecutionPayloadBuilder blobGasUsed(Supplier<UInt64> blobGasUsedSupplier);
 
   ExecutionPayloadBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
+
+  ExecutionPayloadBuilder depositReceipts(Supplier<List<DepositReceipt>> depositReceiptsSupplier);
+
+  ExecutionPayloadBuilder exits(Supplier<List<ExecutionLayerExit>> exitsSupplier);
 
   ExecutionPayload build();
 }

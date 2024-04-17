@@ -15,12 +15,16 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import java.io.File;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,12 +49,14 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorKeysOptions;
+import tech.pegasys.teku.cli.subcommand.debug.PrettyPrintCommand;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -82,6 +89,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class VoluntaryExitCommand implements Callable<Integer> {
+
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
   private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   private OkHttpValidatorRestApiClient apiClient;
@@ -150,6 +158,14 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       arity = "0..1")
   private boolean includeKeyManagerKeys = false;
 
+  @CommandLine.Option(
+      names = {"--save-exits-path"},
+      description =
+          "Save the generated exit messages to the specified path, don't validate exit epoch, and skip publishing them.",
+      paramLabel = "<FOLDER>",
+      arity = "1")
+  public File voluntaryExitsFolder;
+
   private AsyncRunnerFactory asyncRunnerFactory;
 
   @Override
@@ -157,12 +173,23 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     SUB_COMMAND_LOG.display("Loading configuration...");
     try {
       initialise();
-      if (confirmationEnabled) {
-        if (!confirmExits()) {
+
+      if (voluntaryExitsFolder != null) {
+        SUB_COMMAND_LOG.display(
+            "Saving exits to folder "
+                + voluntaryExitsFolder
+                + ", and not submitting to beacon-node.");
+        if (!saveExitsToFolder()) {
           return 1;
         }
+      } else {
+        if (confirmationEnabled) {
+          if (!confirmExits()) {
+            return 1;
+          }
+        }
+        getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
       }
-      getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
     } catch (Exception ex) {
       if (ExceptionUtil.hasCause(ex, ConnectException.class)) {
         SUB_COMMAND_LOG.error(getFailedToConnectMessage());
@@ -178,6 +205,30 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       }
     }
     return 0;
+  }
+
+  private boolean saveExitsToFolder() {
+    if (voluntaryExitsFolder.exists() && !voluntaryExitsFolder.isDirectory()) {
+      SUB_COMMAND_LOG.error(
+          String.format(
+              "%s exists and is not a directory, cannot export to this path.",
+              voluntaryExitsFolder));
+      return false;
+    } else if (!voluntaryExitsFolder.exists()) {
+      voluntaryExitsFolder.mkdirs();
+    }
+    final AtomicInteger failures = new AtomicInteger();
+    getValidatorIndices(validatorsMap)
+        .forEach(
+            (publicKey, validatorIndex) -> {
+              if (!storeExitForValidator(publicKey, validatorIndex)) {
+                failures.incrementAndGet();
+              }
+            });
+    if (failures.get() > 0) {
+      return false;
+    }
+    return true;
   }
 
   private boolean confirmExits() {
@@ -207,7 +258,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   }
 
   private Object2IntMap<BLSPublicKey> getValidatorIndices(
-      Map<BLSPublicKey, Validator> validatorsMap) {
+      final Map<BLSPublicKey, Validator> validatorsMap) {
     final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
         validatorsMap.keySet().stream().map(BLSPublicKey::toString).toList();
@@ -237,16 +288,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
   private void submitExitForValidator(final BLSPublicKey publicKey, final int validatorIndex) {
     try {
-      final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
-      final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
-      final BLSSignature signature =
-          Optional.ofNullable(validatorsMap.get(publicKey))
-              .orElseThrow()
-              .getSigner()
-              .signVoluntaryExit(message, forkInfo)
-              .join();
-      Optional<PostDataFailureResponse> response =
-          apiClient.sendVoluntaryExit(new SignedVoluntaryExit(message, signature));
+      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
+          generateSignedExit(publicKey, validatorIndex);
+      final Optional<PostDataFailureResponse> response =
+          apiClient.sendVoluntaryExit(new SignedVoluntaryExit(exit));
       if (response.isPresent()) {
         SUB_COMMAND_LOG.error(response.get().message);
       } else {
@@ -259,6 +304,52 @@ public class VoluntaryExitCommand implements Callable<Integer> {
           "Failed to submit exit for validator " + publicKey.toAbbreviatedString());
       SUB_COMMAND_LOG.error(ex.getMessage());
     }
+  }
+
+  private tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit generateSignedExit(
+      final BLSPublicKey publicKey, final int validatorIndex) {
+    final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
+    final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
+    final BLSSignature signature =
+        Optional.ofNullable(validatorsMap.get(publicKey))
+            .orElseThrow()
+            .getSigner()
+            .signVoluntaryExit(message, forkInfo)
+            .join();
+    return new tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit(
+        message, signature);
+  }
+
+  private boolean storeExitForValidator(
+      final BLSPublicKey blsPublicKey, final Integer validatorIndex) {
+    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
+        generateSignedExit(blsPublicKey, validatorIndex);
+    try {
+      SUB_COMMAND_LOG.display("Writing signed exit for " + blsPublicKey.toAbbreviatedString());
+      Files.writeString(
+          voluntaryExitsFolder.toPath().resolve(blsPublicKey.toAbbreviatedString() + "_exit.json"),
+          prettyExitMessage(exit));
+      return true;
+    } catch (IOException e) {
+      SUB_COMMAND_LOG.error("Failed to store exit for " + blsPublicKey.toAbbreviatedString());
+      return false;
+    }
+  }
+
+  private String prettyExitMessage(
+      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit
+          signedVoluntaryExit)
+      throws JsonProcessingException {
+    final PrettyPrintCommand.OutputFormat json = PrettyPrintCommand.OutputFormat.JSON;
+    return JsonUtil.serialize(
+        json.createFactory(),
+        gen -> {
+          gen.useDefaultPrettyPrinter();
+          signedVoluntaryExit
+              .getSchema()
+              .getJsonTypeDefinition()
+              .serialize(signedVoluntaryExit, gen);
+        });
   }
 
   private Optional<UInt64> getEpoch() {
@@ -367,7 +458,9 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             "Could not calculate epoch from latest block header, please specify --epoch");
       }
       epoch = maybeEpoch.orElseThrow();
-    } else if (maybeEpoch.isPresent() && epoch.isGreaterThan(maybeEpoch.get())) {
+    } else if (maybeEpoch.isPresent()
+        && epoch.isGreaterThan(maybeEpoch.get())
+        && voluntaryExitsFolder == null) {
       throw new InvalidConfigurationException(
           String.format(
               "The specified epoch %s is greater than current epoch %s, cannot continue.",

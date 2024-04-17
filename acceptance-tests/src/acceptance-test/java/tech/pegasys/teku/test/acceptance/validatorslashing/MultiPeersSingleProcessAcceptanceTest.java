@@ -18,7 +18,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 /**
  * Running 2 nodes with VC/BN running in a single process The slashing event is sent to the first
@@ -34,28 +35,28 @@ public class MultiPeersSingleProcessAcceptanceTest
       final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
-    final UInt64 altairEpoch = UInt64.valueOf(100);
 
-    final TekuNode firstTekuNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withRealNetwork()
-                    .withAltairEpoch(altairEpoch)
-                    .withInteropValidators(0, 32));
+    final TekuBeaconNode firstTekuNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withRealNetwork()
+                .withInteropValidators(0, 32)
+                .build());
 
     firstTekuNode.start();
 
     firstTekuNode.waitForEpochAtOrAbove(1);
 
-    final TekuNode secondTekuNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withAltairEpoch(altairEpoch)
-                    .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(32, 32)
-                    .withPeers(firstTekuNode));
+    final TekuBeaconNode secondTekuNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withRealNetwork()
+                .withStopVcWhenValidatorSlashedEnabled()
+                .withInteropValidators(32, 32)
+                .withPeers(firstTekuNode)
+                .build());
 
     secondTekuNode.start();
 

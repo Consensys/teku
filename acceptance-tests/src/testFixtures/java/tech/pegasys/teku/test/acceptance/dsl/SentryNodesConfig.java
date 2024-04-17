@@ -64,21 +64,27 @@ public class SentryNodesConfig {
     private List<String> blockHandlerNodes = new ArrayList<>();
     private List<String> attestationPublisherNodes = new ArrayList<>();
 
-    public Builder withDutiesProviders(TekuNode... nodes) {
+    public Builder withDutiesProviders(TekuBeaconNode... nodes) {
       dutiesProviderNodes =
-          Arrays.stream(nodes).map(TekuNode::getBeaconRestApiUrl).collect(Collectors.toList());
+          Arrays.stream(nodes)
+              .map(TekuBeaconNode::getBeaconRestApiUrl)
+              .collect(Collectors.toList());
       return this;
     }
 
-    public Builder withBlockHandlers(TekuNode... nodes) {
+    public Builder withBlockHandlers(TekuBeaconNode... nodes) {
       blockHandlerNodes =
-          Arrays.stream(nodes).map(TekuNode::getBeaconRestApiUrl).collect(Collectors.toList());
+          Arrays.stream(nodes)
+              .map(TekuBeaconNode::getBeaconRestApiUrl)
+              .collect(Collectors.toList());
       return this;
     }
 
-    public Builder withAttestationPublisher(TekuNode... nodes) {
+    public Builder withAttestationPublisher(TekuBeaconNode... nodes) {
       attestationPublisherNodes =
-          Arrays.stream(nodes).map(TekuNode::getBeaconRestApiUrl).collect(Collectors.toList());
+          Arrays.stream(nodes)
+              .map(TekuBeaconNode::getBeaconRestApiUrl)
+              .collect(Collectors.toList());
       return this;
     }
 

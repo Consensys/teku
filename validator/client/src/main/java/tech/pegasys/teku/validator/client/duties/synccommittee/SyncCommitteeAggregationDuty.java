@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -43,18 +42,21 @@ public class SyncCommitteeAggregationDuty {
   private final ValidatorApiChannel validatorApiChannel;
   private final ValidatorLogger validatorLogger;
   private final Collection<ValidatorAndCommitteeIndices> assignments;
+  private final SyncAggregatorSelectionProofProvider syncAggregatorSelectionProofProvider;
 
   public SyncCommitteeAggregationDuty(
       final Spec spec,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
       final ValidatorLogger validatorLogger,
-      final Collection<ValidatorAndCommitteeIndices> assignments) {
+      final Collection<ValidatorAndCommitteeIndices> assignments,
+      final SyncAggregatorSelectionProofProvider syncAggregatorSelectionProofProvider) {
     this.spec = spec;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.validatorLogger = validatorLogger;
     this.assignments = assignments;
+    this.syncAggregatorSelectionProofProvider = syncAggregatorSelectionProofProvider;
   }
 
   public SafeFuture<DutyResult> produceAggregates(
@@ -64,10 +66,31 @@ public class SyncCommitteeAggregationDuty {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtils.get();
+
     return forkProvider
         .getForkInfo(slot)
         .thenCompose(
             forkInfo ->
+                performAggregationsForSlot(slot, beaconBlockRoot, syncCommitteeUtil, forkInfo))
+        .thenCompose(this::sendAggregates)
+        .exceptionally(
+            error ->
+                DutyResult.forError(
+                    assignments.stream()
+                        .map(assignment -> assignment.getValidator().getPublicKey())
+                        .collect(Collectors.toSet()),
+                    error));
+  }
+
+  private SafeFuture<List<AggregationResult>> performAggregationsForSlot(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final ForkInfo forkInfo) {
+    return syncAggregatorSelectionProofProvider
+        .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
+        .thenCompose(
+            __ ->
                 SafeFuture.collectAll(
                     assignments.stream()
                         .flatMap(
@@ -77,15 +100,7 @@ public class SyncCommitteeAggregationDuty {
                                     beaconBlockRoot,
                                     syncCommitteeUtil,
                                     forkInfo,
-                                    assignment))))
-        .thenCompose(this::sendAggregates)
-        .exceptionally(
-            error ->
-                DutyResult.forError(
-                    assignments.stream()
-                        .map(assignment -> assignment.getValidator().getPublicKey())
-                        .collect(Collectors.toSet()),
-                    error));
+                                    assignment))));
   }
 
   private Stream<SafeFuture<AggregationResult>> performAggregationsForValidator(
@@ -116,13 +131,18 @@ public class SyncCommitteeAggregationDuty {
       final UInt64 slot,
       final Bytes32 beaconBlockRoot) {
 
-    final SyncAggregatorSelectionData selectionData =
-        syncCommitteeUtil.createSyncAggregatorSelectionData(
-            slot, UInt64.valueOf(subcommitteeIndex));
     final Validator validator = assignment.getValidator();
-    return validator
-        .getSigner()
-        .signSyncCommitteeSelectionProof(selectionData, forkInfo)
+    return syncAggregatorSelectionProofProvider
+        .getSelectionProofFuture(assignment.getValidatorIndex(), subcommitteeIndex)
+        .orElse(
+            SafeFuture.failedFuture(
+                new RuntimeException(
+                    "Can't find aggregation selection proof for validator = "
+                        + assignment.getValidatorIndex()
+                        + ", slot = "
+                        + slot
+                        + ", subcommittee index = "
+                        + subcommitteeIndex)))
         .thenCompose(
             selectionProof -> {
               if (syncCommitteeUtil.isSyncCommitteeAggregator(selectionProof)) {

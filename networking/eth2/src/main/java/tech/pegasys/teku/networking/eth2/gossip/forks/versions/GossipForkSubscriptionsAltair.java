@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0 {
@@ -62,7 +63,8 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
       final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
       final OperationProcessor<ValidatableSyncCommitteeMessage>
-          syncCommitteeMessageOperationProcessor) {
+          syncCommitteeMessageOperationProcessor,
+      final DebugDataDumper debugDataDumper) {
     super(
         fork,
         spec,
@@ -76,7 +78,8 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
         aggregateProcessor,
         attesterSlashingProcessor,
         proposerSlashingProcessor,
-        voluntaryExitProcessor);
+        voluntaryExitProcessor,
+        debugDataDumper);
     this.signedContributionAndProofOperationProcessor =
         signedContributionAndProofOperationProcessor;
     this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
@@ -95,7 +98,8 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             gossipEncoding,
             forkInfo,
             signedContributionAndProofOperationProcessor,
-            specConfig.getNetworkingConfig());
+            specConfig.getNetworkingConfig(),
+            debugDataDumper);
     addGossipManager(syncCommitteeContributionGossipManager);
   }
 
@@ -111,7 +115,8 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             schemaDefinitions,
             asyncRunner,
             syncCommitteeMessageOperationProcessor,
-            forkInfo);
+            forkInfo,
+            debugDataDumper);
     syncCommitteeMessageGossipManager =
         new SyncCommitteeMessageGossipManager(
             metricsSystem,

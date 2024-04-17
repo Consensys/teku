@@ -23,10 +23,6 @@ import java.util.stream.Collectors;
 
 public class SpecConfigAssertions {
 
-  static void assertAllPhase0FieldsSet(final SpecConfig config) throws Exception {
-    assertAllFieldsSet(config, SpecConfigPhase0.class);
-  }
-
   static void assertAllAltairFieldsSet(final SpecConfig config) throws Exception {
     assertAllFieldsSet(config, SpecConfigAltair.class);
   }

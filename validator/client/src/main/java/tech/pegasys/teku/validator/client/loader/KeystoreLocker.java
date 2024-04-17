@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,7 +47,10 @@ public class KeystoreLocker {
       }
       lockfilePath.toFile().deleteOnExit();
     } catch (FileAlreadyExistsException e) {
-      throw keystoreInUseException(keystoreFile);
+      keystoreInUseException(keystoreFile);
+    } catch (AccessDeniedException e) {
+      throw new InvalidConfigurationException(
+          String.format("Access Denied trying to access lock file %s", lockfilePath));
     } catch (IOException e) {
       throw new UncheckedIOException("Unexpected error when trying to lock a keystore file.", e);
     }
@@ -58,14 +62,14 @@ public class KeystoreLocker {
         final FileLock lock = channel.tryLock()) {
       if (lock == null) {
         // File is already locked, consider it a valid lock
-        throw keystoreInUseException(lockfilePath);
+        keystoreInUseException(lockfilePath);
       }
       if (channel.size() != Long.BYTES) {
-        throw keystoreInUseException(lockfilePath);
+        keystoreInUseException(lockfilePath);
       }
       final long pidFromFile = readPidFromFile(channel);
       if (processIsAlive(pidFromFile)) {
-        throw keystoreInUseException(lockfilePath);
+        keystoreInUseException(lockfilePath);
       }
 
       LOG.warn("Stale PID file for process ID {} detected. Overwriting.", pidFromFile);
@@ -82,7 +86,7 @@ public class KeystoreLocker {
   }
 
   private InvalidConfigurationException keystoreInUseException(final Path keystoreFile) {
-    return new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
+    throw new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
   }
 
   private long readPidFromFile(final FileChannel channel) throws IOException {
@@ -132,14 +136,14 @@ public class KeystoreLocker {
         final FileLock lock = channel.tryLock()) {
       if (lock == null) {
         // File is already locked, consider it a valid lock
-        throw keystoreInUseException(lockfilePath);
+        keystoreInUseException(lockfilePath);
       }
       if (channel.size() != Long.BYTES) {
-        throw keystoreInUseException(lockfilePath);
+        keystoreInUseException(lockfilePath);
       }
       final long pidFromFile = readPidFromFile(channel);
       if (!Arrays.equals(longPidToNativeByteArray(pidFromFile), getProcessPID())) {
-        throw keystoreInUseException(lockfilePath);
+        keystoreInUseException(lockfilePath);
       }
 
       lock.release();

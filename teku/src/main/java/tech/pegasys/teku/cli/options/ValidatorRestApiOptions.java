@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
@@ -49,6 +51,17 @@ public class ValidatorRestApiOptions {
   private boolean restApiSslEnabled = true;
 
   @CommandLine.Option(
+      names = {"--Xvalidator-api-unsafe-hosts-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      description =
+          "Disable the sanity check on localhost only for non ssl connections. Very unsafe to send bearer on unencrypted connection on a network! Should only be used for testing.",
+      hidden = true,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean validatorApiDisableSslHostRestrictionEnabled = false;
+
+  @CommandLine.Option(
       names = {"--validator-api-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
@@ -63,6 +76,13 @@ public class ValidatorRestApiOptions {
       description = "Interface of Validator Rest API",
       arity = "1")
   private String restApiInterface = ValidatorRestApiConfig.DEFAULT_REST_API_INTERFACE;
+
+  @CommandLine.Option(
+      names = {"--validator-api-bearer-file"},
+      paramLabel = "<FILENAME>",
+      description = "Use the specified file as the bearer token for the validator Rest API",
+      arity = "1")
+  private Path validatorApiBearerFile = null;
 
   @CommandLine.Option(
       names = {"--validator-api-host-allowlist"},
@@ -107,6 +127,9 @@ public class ValidatorRestApiOptions {
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .validatorApiKeystoreFile(keystoreFile)
                 .validatorApiKeystorePasswordFile(keystorePasswordFile)
+                .validatorApiBearerFile(Optional.ofNullable(validatorApiBearerFile))
+                .validatorApiDisableSslHostRestrictionEnabled(
+                    validatorApiDisableSslHostRestrictionEnabled)
                 .restApiHostAllowlist(restApiHostAllowlist));
   }
 }

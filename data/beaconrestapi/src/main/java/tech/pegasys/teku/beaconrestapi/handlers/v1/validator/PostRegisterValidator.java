@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -41,7 +40,8 @@ public class PostRegisterValidator extends RestApiEndpoint {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("registerValidator")
-            .summary("Register validators with builder")
+            .summary(
+                "Provide beacon node with registrations for the given validators to the external builder network.")
             .description(
                 "Prepares the beacon node for engaging with external builders."
                     + " The information must be sent by the beacon node to the builder network."
@@ -49,7 +49,7 @@ public class PostRegisterValidator extends RestApiEndpoint {
                     + " to ensure the beacon node has correct and timely registration information"
                     + " to provide to builders. The validator client should not sign blinded beacon"
                     + " blocks that do not adhere to their latest fee recipient and gas limit preferences.")
-            .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .tags(TAG_VALIDATOR)
             .requestBodyType(
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition(),
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA::sszDeserialize)

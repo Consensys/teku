@@ -53,18 +53,21 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED =
       true;
-  public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
+  public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 40_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED = true;
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
+  public static final ClientGraffitiAppendFormat DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT =
+      ClientGraffitiAppendFormat.AUTO;
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
   public static final boolean DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
+  public static final boolean DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -77,6 +80,7 @@ public class ValidatorConfig {
   private final Path validatorExternalSignerTruststore;
   private final Path validatorExternalSignerTruststorePasswordFile;
   private final GraffitiProvider graffitiProvider;
+  private final ClientGraffitiAppendFormat clientGraffitiAppendFormat;
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<List<URI>> beaconNodeApiEndpoints;
@@ -105,6 +109,7 @@ public class ValidatorConfig {
   private final int executorThreads;
 
   private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
+  private final boolean dvtSelectionsEndpointEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -118,6 +123,7 @@ public class ValidatorConfig {
       final Path validatorExternalSignerTruststorePasswordFile,
       final Optional<List<URI>> beaconNodeApiEndpoints,
       final GraffitiProvider graffitiProvider,
+      final ClientGraffitiAppendFormat clientGraffitiAppendFormat,
       final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode,
       final boolean validatorKeystoreLockingEnabled,
       final boolean validatorExternalSignerSlashingProtectionEnabled,
@@ -143,7 +149,8 @@ public class ValidatorConfig {
       final int executorMaxQueueSize,
       final int executorThreads,
       final Optional<String> sentryNodeConfigurationFile,
-      boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
+      boolean isLocalSlashingProtectionSynchronizedModeEnabled,
+      boolean dvtSelectionsEndpointEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -155,6 +162,7 @@ public class ValidatorConfig {
     this.validatorExternalSignerTruststorePasswordFile =
         validatorExternalSignerTruststorePasswordFile;
     this.graffitiProvider = graffitiProvider;
+    this.clientGraffitiAppendFormat = clientGraffitiAppendFormat;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.beaconNodeApiEndpoints = beaconNodeApiEndpoints;
     this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
@@ -186,6 +194,7 @@ public class ValidatorConfig {
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
     this.isLocalSlashingProtectionSynchronizedModeEnabled =
         isLocalSlashingProtectionSynchronizedModeEnabled;
+    this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
   }
 
   public static Builder builder() {
@@ -243,6 +252,10 @@ public class ValidatorConfig {
 
   public GraffitiProvider getGraffitiProvider() {
     return graffitiProvider;
+  }
+
+  public ClientGraffitiAppendFormat getClientGraffitiAppendFormat() {
+    return clientGraffitiAppendFormat;
   }
 
   public List<String> getValidatorKeys() {
@@ -348,6 +361,10 @@ public class ValidatorConfig {
     return isLocalSlashingProtectionSynchronizedModeEnabled;
   }
 
+  public boolean isDvtSelectionsEndpointEnabled() {
+    return dvtSelectionsEndpointEnabled;
+  }
+
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -362,6 +379,8 @@ public class ValidatorConfig {
     private Path validatorExternalSignerTruststorePasswordFile;
     private GraffitiProvider graffitiProvider =
         new FileBackedGraffitiProvider(DEFAULT_GRAFFITI, Optional.empty());
+    private ClientGraffitiAppendFormat clientGraffitiAppendFormat =
+        DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT;
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
         ValidatorPerformanceTrackingMode.DEFAULT_MODE;
     private boolean validatorKeystoreLockingEnabled = DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
@@ -395,11 +414,10 @@ public class ValidatorConfig {
     private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
-
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
-
     private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
         DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
+    private boolean dvtSelectionsEndpointEnabled = DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
 
     private Builder() {}
 
@@ -483,18 +501,24 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder graffitiProvider(GraffitiProvider graffitiProvider) {
+    public Builder graffitiProvider(final GraffitiProvider graffitiProvider) {
       this.graffitiProvider = graffitiProvider;
       return this;
     }
 
+    public Builder clientGraffitiAppendFormat(
+        final ClientGraffitiAppendFormat clientGraffitiAppendFormat) {
+      this.clientGraffitiAppendFormat = clientGraffitiAppendFormat;
+      return this;
+    }
+
     public Builder validatorPerformanceTrackingMode(
-        ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode) {
+        final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode) {
       this.validatorPerformanceTrackingMode = validatorPerformanceTrackingMode;
       return this;
     }
 
-    public Builder validatorKeystoreLockingEnabled(boolean validatorKeystoreLockingEnabled) {
+    public Builder validatorKeystoreLockingEnabled(final boolean validatorKeystoreLockingEnabled) {
       this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
       return this;
     }
@@ -640,6 +664,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder obolDvtSelectionsEndpointEnabled(final boolean dvtSelectionsEndpointEnabled) {
+      this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -658,6 +687,7 @@ public class ValidatorConfig {
           validatorExternalSignerTruststorePasswordFile,
           beaconNodeApiEndpoints,
           graffitiProvider,
+          clientGraffitiAppendFormat,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
           validatorExternalSignerSlashingProtectionEnabled,
@@ -683,7 +713,8 @@ public class ValidatorConfig {
           executorMaxQueueSize,
           executorThreads,
           sentryNodeConfigurationFile,
-          isLocalSlashingProtectionSynchronizedModeEnabled);
+          isLocalSlashingProtectionSynchronizedModeEnabled,
+          dvtSelectionsEndpointEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

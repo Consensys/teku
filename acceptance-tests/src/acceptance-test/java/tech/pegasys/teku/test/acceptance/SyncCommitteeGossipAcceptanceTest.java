@@ -13,13 +13,15 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
@@ -28,38 +30,35 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   private final String network = "swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
-  private TekuNode primaryNode;
-  private TekuNode secondaryNode;
+  private TekuBeaconNode primaryNode;
+  private TekuBeaconNode secondaryNode;
   private TekuValidatorNode validatorClient;
-  private TekuNode watcherNode;
+  private TekuBeaconNode watcherNode;
 
   @BeforeEach
-  public void setup() {
+  public void setup() throws IOException {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(15).intValue();
     primaryNode =
-        createTekuNode(
-            config -> configureNode(config, genesisTime).withInteropValidators(0, NODE_VALIDATORS));
+        createTekuBeaconNode(
+            configureNode(genesisTime).withInteropValidators(0, NODE_VALIDATORS).build());
     secondaryNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime)
-                    .withInteropValidators(0, 0)
-                    .withPeers(primaryNode));
+        createTekuBeaconNode(
+            configureNode(genesisTime).withInteropValidators(0, 0).withPeers(primaryNode).build());
     validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withNetwork(network)
-                    .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
-                    .withBeaconNode(secondaryNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withNetwork(network)
+                .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
+                .withBeaconNodes(secondaryNode)
+                .build());
 
     // Use a third node to watch for published aggregates.
     watcherNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime)
-                    .withPeers(primaryNode, secondaryNode)
-                    .withInteropValidators(0, 0));
+        createTekuBeaconNode(
+            configureNode(genesisTime)
+                .withPeers(primaryNode, secondaryNode)
+                .withInteropValidators(0, 0)
+                .build());
   }
 
   @Test
@@ -82,8 +81,9 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     primaryNode.stop();
   }
 
-  private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
-    return node.withNetwork(network)
+  private TekuNodeConfigBuilder configureNode(final int genesisTime) throws IOException {
+    return TekuNodeConfigBuilder.createBeaconNode()
+        .withNetwork(network)
         .withAltairEpoch(UInt64.ZERO)
         .withGenesisTime(genesisTime)
         .withInteropNumberOfValidators(TOTAL_VALIDATORS)

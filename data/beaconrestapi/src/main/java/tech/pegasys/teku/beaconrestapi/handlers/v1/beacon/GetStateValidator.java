@@ -60,7 +60,7 @@ public class GetStateValidator extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getStateValidator")
-            .summary("Get validator from state")
+            .summary("Get validator from state by id")
             .description("Retrieves data about the given peer.")
             .pathParam(PARAMETER_STATE_ID)
             .pathParam(PARAMETER_VALIDATOR_ID)

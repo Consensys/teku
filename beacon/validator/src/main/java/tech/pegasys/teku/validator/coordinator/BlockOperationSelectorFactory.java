@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -72,7 +74,7 @@ public class BlockOperationSelectorFactory {
   private final SyncCommitteeContributionPool contributionPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
-  private final Bytes32 graffiti;
+  private final GraffitiBuilder graffitiBuilder;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
 
@@ -86,7 +88,7 @@ public class BlockOperationSelectorFactory {
       final SyncCommitteeContributionPool contributionPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
-      final Bytes32 graffiti,
+      final GraffitiBuilder graffitiBuilder,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.spec = spec;
@@ -98,7 +100,7 @@ public class BlockOperationSelectorFactory {
     this.contributionPool = contributionPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
-    this.graffiti = graffiti;
+    this.graffitiBuilder = graffitiBuilder;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
   }
@@ -117,9 +119,7 @@ public class BlockOperationSelectorFactory {
 
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
-              blockSlotState,
-              new AttestationForkChecker(spec, blockSlotState),
-              spec.createAttestationWorthinessChecker(blockSlotState));
+              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
@@ -147,7 +147,7 @@ public class BlockOperationSelectorFactory {
       bodyBuilder
           .randaoReveal(randaoReveal)
           .eth1Data(eth1Data)
-          .graffiti(optionalGraffiti.orElse(graffiti))
+          .graffiti(graffitiBuilder.buildGraffiti(optionalGraffiti))
           .attestations(attestations)
           .proposerSlashings(proposerSlashings)
           .attesterSlashings(attesterSlashings)
@@ -206,6 +206,13 @@ public class BlockOperationSelectorFactory {
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
 
+    if (spec.isMergeTransitionComplete(blockSlotState) && executionPayloadContext.isEmpty()) {
+      throw new IllegalStateException(
+          String.format(
+              "ExecutionPayloadContext is not provided for production of post-merge block at slot %s",
+              blockSlotState.getSlot()));
+    }
+
     // if requestedBlinded has been specified, we strictly follow it otherwise, we should run
     // Builder
     // flow (blinded) only if we have a validator registration
@@ -246,10 +253,7 @@ public class BlockOperationSelectorFactory {
     // Post-Deneb: Execution Payload / Execution Payload Header + KZG Commitments
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
-            // kzg commitments are supported: we should have already merged by now, so we
-            // can safely assume we have an executionPayloadContext
-            executionPayloadContext.orElseThrow(
-                () -> new IllegalStateException("Cannot provide kzg commitments before The Merge")),
+            executionPayloadContext.orElseThrow(),
             blockSlotState,
             shouldTryBuilderFlow,
             requestedBuilderBoostFactor,
@@ -406,7 +410,8 @@ public class BlockOperationSelectorFactory {
         .thenAccept(bodyBuilder::blobKzgCommitments);
   }
 
-  public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector() {
+  public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
+      final BlockPublishingPerformance blockPublishingPerformance) {
     return bodyUnblinder -> {
       final SignedBeaconBlock signedBlindedBlock = bodyUnblinder.getSignedBlindedBeaconBlock();
 
@@ -429,7 +434,7 @@ public class BlockOperationSelectorFactory {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
                 executionLayerBlockProductionManager
-                    .getUnblindedPayload(signedBlindedBlock)
+                    .getUnblindedPayload(signedBlindedBlock, blockPublishingPerformance)
                     .thenApply(BuilderPayload::getExecutionPayload));
       }
     };
@@ -439,7 +444,8 @@ public class BlockOperationSelectorFactory {
     return block -> getCachedExecutionBlobsBundle(block.getSlot());
   }
 
-  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
+  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector(
+      final BlockPublishingPerformance blockPublishingPerformance) {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
@@ -449,31 +455,44 @@ public class BlockOperationSelectorFactory {
 
       final SszList<Blob> blobs;
       final SszList<SszKZGProof> proofs;
+      final SszList<SszKZGCommitment> blockCommitments =
+          block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
       if (blockContainer.isBlinded()) {
         // need to use the builder BlobsBundle for the blinded flow, because the
         // blobs and the proofs wouldn't be part of the BlockContainer
         final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
             getCachedBuilderBlobsBundle(slot);
-        // consistency check because the BlobsBundle comes from an external source (a builder)
-        final SszList<SszKZGCommitment> blockCommitments =
-            block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
-        Preconditions.checkState(
-            blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
-            "Commitments in the builder BlobsBundle don't match the commitments in the block");
+
         blobs = blobsBundle.getBlobs();
         proofs = blobsBundle.getProofs();
+
+        // consistency check because the BlobsBundle comes from an external source (a builder)
+        checkState(
+            blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
+            "Commitments in the builder BlobsBundle don't match the commitments in the block");
+        checkState(
+            blockCommitments.size() == proofs.size(),
+            "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
+        checkState(
+            blockCommitments.size() == blobs.size(),
+            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
       } else {
         blobs = blockContainer.getBlobs().orElseThrow();
         proofs = blockContainer.getKzgProofs().orElseThrow();
       }
 
-      return IntStream.range(0, blobs.size())
-          .mapToObj(
-              index ->
-                  miscHelpersDeneb.constructBlobSidecar(
-                      block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
-          .toList();
+      final List<BlobSidecar> blobSidecars =
+          IntStream.range(0, blobs.size())
+              .mapToObj(
+                  index ->
+                      miscHelpersDeneb.constructBlobSidecar(
+                          block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
+              .toList();
+
+      blockPublishingPerformance.blobSidecarsPrepared();
+
+      return blobSidecars;
     };
   }
 
