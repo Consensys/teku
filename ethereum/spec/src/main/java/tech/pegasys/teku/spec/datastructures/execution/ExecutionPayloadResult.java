@@ -72,6 +72,10 @@ public class ExecutionPayloadResult {
     return executionPayloadValueFuture;
   }
 
+  public boolean isFromNonBlindedFlow() {
+    return executionPayloadFuture.isPresent();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

@@ -171,8 +171,9 @@ public class BlockOperationSelectorFactory {
       // Execution Payload / Execution Payload Header / KZG Commitments
       final SafeFuture<Void> blockProductionComplete;
       if (bodyBuilder.supportsExecutionPayload()) {
-        final SchemaDefinitions schemaDefinitions =
-            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
+        final SchemaDefinitionsBellatrix schemaDefinitions =
+            SchemaDefinitionsBellatrix.required(
+                spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions());
         blockProductionComplete =
             forkChoiceNotifier
                 .getPayloadId(parentRoot, blockSlotState.getSlot())
@@ -201,7 +202,7 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor,
-      final SchemaDefinitions schemaDefinitions,
+      final SchemaDefinitionsBellatrix schemaDefinitions,
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
 
@@ -213,8 +214,7 @@ public class BlockOperationSelectorFactory {
     }
 
     // if requestedBlinded has been specified, we strictly follow it otherwise, we should run
-    // Builder
-    // flow (blinded) only if we have a validator registration
+    // Builder flow (blinded) only if we have a validator registration
     final boolean shouldTryBuilderFlow =
         requestedBlinded.orElseGet(
             () ->
@@ -226,14 +226,9 @@ public class BlockOperationSelectorFactory {
     if (executionPayloadContext.isEmpty()) {
       if (shouldTryBuilderFlow) {
         bodyBuilder.executionPayloadHeader(
-            SchemaDefinitionsBellatrix.required(schemaDefinitions)
-                .getExecutionPayloadHeaderSchema()
-                .getHeaderOfDefaultPayload());
+            schemaDefinitions.getExecutionPayloadHeaderSchema().getHeaderOfDefaultPayload());
       } else {
-        bodyBuilder.executionPayload(
-            SchemaDefinitionsBellatrix.required(schemaDefinitions)
-                .getExecutionPayloadSchema()
-                .getDefault());
+        bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
       }
       return SafeFuture.COMPLETE;
     }
@@ -283,17 +278,15 @@ public class BlockOperationSelectorFactory {
       final Function<BuilderBidWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final ExecutionPayloadResult executionPayloadResult) {
 
-    final boolean isLocalFlow = executionPayloadResult.getExecutionPayloadFuture().isPresent();
-
-    if (isLocalFlow) {
-      // local flow
+    if (executionPayloadResult.isFromNonBlindedFlow()) {
+      // non-blinded flow
       return executionPayloadResult
           .getExecutionPayloadFuture()
-          .get()
+          .orElseThrow()
           .thenAccept(bodyBuilder::executionPayload);
     }
 
-    // builder flow
+    // blinded flow
     return executionPayloadResult
         .getBuilderBidWithFallbackDataFuture()
         .orElseThrow()
@@ -323,16 +316,14 @@ public class BlockOperationSelectorFactory {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
 
-    final boolean isLocalFlow = executionPayloadResult.getExecutionPayloadFuture().isPresent();
-
-    if (isLocalFlow) {
-      // local flow
+    if (executionPayloadResult.isFromNonBlindedFlow()) {
+      // non-blinded flow
       return getExecutionBlobsBundle(executionPayloadResult)
           .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle)
           .thenAccept(bodyBuilder::blobKzgCommitments);
     }
 
-    // builder flow
+    // blinded flow
     return getBuilderBlobKzgCommitments(
             blobKzgCommitmentsSchema, executionPayloadResult, setUnblindedContentIfBuilderFallbacks)
         .thenAccept(bodyBuilder::blobKzgCommitments);
@@ -444,14 +435,14 @@ public class BlockOperationSelectorFactory {
                         "ExecutionPayloadResult hasn't been cached for slot " + slot));
 
     final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture;
-    if (executionPayloadResult.getExecutionPayloadFuture().isPresent()) {
-      // we performed a local flow, so the bundle must be in getBlobsBundleFuture
+    if (executionPayloadResult.isFromNonBlindedFlow()) {
+      // we performed a non-blinded flow, so the bundle must be in getBlobsBundleFuture
       blobsBundleFuture =
           executionPayloadResult
               .getBlobsBundleFuture()
               .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot));
     } else {
-      // we performed a builder flow, so the bundle must be in getBuilderBidWithFallbackDataFuture
+      // we performed a blinded flow, so the bundle must be in getBuilderBidWithFallbackDataFuture
       blobsBundleFuture =
           executionPayloadResult
               .getBuilderBidWithFallbackDataFuture()
