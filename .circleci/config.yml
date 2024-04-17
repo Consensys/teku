@@ -632,7 +632,6 @@ workflows:
                 - /^release-.*/
             tags:
               <<: *filters-release-tags
-            include_commit_hash: << parameters.include_commit_hash >>
           requires:
             - unitTests
             - propertyTests
@@ -652,7 +651,6 @@ workflows:
                 - /^release-.*/
             tags:
               <<: *filters-release-tags
-            include_commit_hash: << parameters.include_commit_hash >>
           requires:
             - unitTests
             - propertyTests
