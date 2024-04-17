@@ -174,7 +174,7 @@ public class ValidatorOptions {
       fallbackValue = "true")
   private boolean shutdownWhenValidatorSlashed = DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
             config
