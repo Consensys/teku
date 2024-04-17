@@ -22,14 +22,14 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-public class ExecutionLayerWithdrawRequest
-    extends Container3<ExecutionLayerWithdrawRequest, SszByteVector, SszPublicKey, SszUInt64> {
+public class ExecutionLayerWithdrawalRequest
+    extends Container3<ExecutionLayerWithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 
-  public static final ExecutionLayerWithdrawRequestSchema SSZ_SCHEMA =
-      new ExecutionLayerWithdrawRequestSchema();
+  public static final ExecutionLayerWithdrawalRequestSchema SSZ_SCHEMA =
+      new ExecutionLayerWithdrawalRequestSchema();
 
-  protected ExecutionLayerWithdrawRequest(
-      final ExecutionLayerWithdrawRequestSchema schema,
+  protected ExecutionLayerWithdrawalRequest(
+      final ExecutionLayerWithdrawalRequestSchema schema,
       final Bytes20 sourceAddress,
       final BLSPublicKey validatorPublicKey,
       final UInt64 amount) {
@@ -40,8 +40,8 @@ public class ExecutionLayerWithdrawRequest
         SszUInt64.of(amount));
   }
 
-  ExecutionLayerWithdrawRequest(
-      final ExecutionLayerWithdrawRequestSchema type, final TreeNode backingNode) {
+  ExecutionLayerWithdrawalRequest(
+      final ExecutionLayerWithdrawalRequestSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -58,7 +58,7 @@ public class ExecutionLayerWithdrawRequest
   }
 
   @Override
-  public ExecutionLayerWithdrawRequestSchema getSchema() {
-    return (ExecutionLayerWithdrawRequestSchema) super.getSchema();
+  public ExecutionLayerWithdrawalRequestSchema getSchema() {
+    return (ExecutionLayerWithdrawalRequestSchema) super.getSchema();
   }
 }

@@ -172,6 +172,6 @@ public class ExecutionPayloadHeaderSchemaElectra
         SszUInt64.of(executionPayload.getBlobGasUsed()),
         SszUInt64.of(executionPayload.getExcessBlobGas()),
         SszBytes32.of(executionPayload.getDepositReceipts().hashTreeRoot()),
-        SszBytes32.of(executionPayload.getWithdrawRequests().hashTreeRoot()));
+        SszBytes32.of(executionPayload.getWithdrawalRequests().hashTreeRoot()));
   }
 }

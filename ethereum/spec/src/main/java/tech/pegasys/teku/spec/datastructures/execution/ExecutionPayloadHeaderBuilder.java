@@ -57,8 +57,8 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder depositReceiptsRoot(Supplier<Bytes32> depositReceiptsRootSupplier);
 
-  ExecutionPayloadHeaderBuilder withdrawRequestsRoot(
-      Supplier<Bytes32> withdrawRequestsRootSupplier);
+  ExecutionPayloadHeaderBuilder withdrawalRequestsRoot(
+      Supplier<Bytes32> withdrawalRequestsRootSupplier);
 
   ExecutionPayloadHeader build();
 }

@@ -52,8 +52,8 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 
 public class ExecutionPayloadSchemaCapella
     extends ContainerSchema15<
@@ -136,16 +136,16 @@ public class ExecutionPayloadSchemaCapella
 
   @Override
   public SszListSchema<
-          ExecutionLayerWithdrawRequest, ? extends SszList<ExecutionLayerWithdrawRequest>>
-      getExecutionLayerWithdrawRequestsSchemaRequired() {
+          ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
+      getExecutionLayerWithdrawalRequestsSchemaRequired() {
     throw new IllegalStateException(
-        "Attempted to get execution layer withdraw requests schema from capella");
+        "Attempted to get execution layer withdrawal requests schema from capella");
   }
 
   @Override
-  public ExecutionLayerWithdrawRequestSchema getExecutionLayerWithdrawRequestSchemaRequired() {
+  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired() {
     throw new IllegalStateException(
-        "Attempted to get a execution layer withdraw request schema from capella");
+        "Attempted to get a execution layer withdrawal request schema from capella");
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

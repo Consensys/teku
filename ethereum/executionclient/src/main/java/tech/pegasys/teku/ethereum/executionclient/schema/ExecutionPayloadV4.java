@@ -33,12 +33,12 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
 public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   public final List<DepositReceiptV1> depositReceipts;
-  public final List<WithdrawRequestV1> withdrawRequests;
+  public final List<WithdrawalRequestV1> withdrawalRequests;
 
   public ExecutionPayloadV4(
       @JsonProperty("parentHash") Bytes32 parentHash,
@@ -59,7 +59,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
       @JsonProperty("blobGasUsed") UInt64 blobGasUsed,
       @JsonProperty("excessBlobGas") UInt64 excessBlobGas,
       @JsonProperty("depositReceipts") List<DepositReceiptV1> depositReceipts,
-      @JsonProperty("withdrawRequests") List<WithdrawRequestV1> withdrawRequests) {
+      @JsonProperty("withdrawalRequests") List<WithdrawalRequestV1> withdrawalRequests) {
     super(
         parentHash,
         feeRecipient,
@@ -79,7 +79,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         blobGasUsed,
         excessBlobGas);
     this.depositReceipts = depositReceipts;
-    this.withdrawRequests = withdrawRequests;
+    this.withdrawalRequests = withdrawalRequests;
   }
 
   public static ExecutionPayloadV4 fromInternalExecutionPayload(
@@ -106,8 +106,8 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getExcessBlobGas).orElse(null),
         getDepositReceipts(
             executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getDepositReceipts)),
-        getWithdrawRequests(
-            executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getWithdrawRequests)));
+        getWithdrawalRequests(
+            executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getWithdrawalRequests)));
   }
 
   @Override
@@ -122,14 +122,14 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
                         depositReceiptV1 ->
                             createInternalDepositReceipt(depositReceiptV1, executionPayloadSchema))
                     .toList())
-        .withdrawRequests(
+        .withdrawalRequests(
             () ->
-                checkNotNull(withdrawRequests, "withdrawRequests not provided when required")
+                checkNotNull(withdrawalRequests, "withdrawalRequests not provided when required")
                     .stream()
                     .map(
-                        withdrawRequestV1 ->
-                            createInternalWithdrawRequest(
-                                withdrawRequestV1, executionPayloadSchema))
+                        withdrawalRequestV1 ->
+                            createInternalWithdrawalRequest(
+                                withdrawalRequestV1, executionPayloadSchema))
                     .toList());
   }
 
@@ -146,15 +146,15 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
             depositReceiptV1.index);
   }
 
-  private ExecutionLayerWithdrawRequest createInternalWithdrawRequest(
-      final WithdrawRequestV1 withdrawRequestV1,
+  private ExecutionLayerWithdrawalRequest createInternalWithdrawalRequest(
+      final WithdrawalRequestV1 withdrawalRequestV1,
       final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
-        .getExecutionLayerWithdrawRequestSchemaRequired()
+        .getExecutionLayerWithdrawalRequestSchemaRequired()
         .create(
-            withdrawRequestV1.sourceAddress,
-            BLSPublicKey.fromBytesCompressed(withdrawRequestV1.validatorPublicKey),
-            withdrawRequestV1.amount);
+            withdrawalRequestV1.sourceAddress,
+            BLSPublicKey.fromBytesCompressed(withdrawalRequestV1.validatorPublicKey),
+            withdrawalRequestV1.amount);
   }
 
   public static List<DepositReceiptV1> getDepositReceipts(
@@ -177,21 +177,21 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
     return depositReceipts;
   }
 
-  public static List<WithdrawRequestV1> getWithdrawRequests(
-      final Optional<SszList<ExecutionLayerWithdrawRequest>> maybeWithdrawRequests) {
-    if (maybeWithdrawRequests.isEmpty()) {
+  public static List<WithdrawalRequestV1> getWithdrawalRequests(
+      final Optional<SszList<ExecutionLayerWithdrawalRequest>> maybeWithdrawalRequests) {
+    if (maybeWithdrawalRequests.isEmpty()) {
       return List.of();
     }
 
-    final List<WithdrawRequestV1> withdrawRequests = new ArrayList<>();
+    final List<WithdrawalRequestV1> withdrawalRequests = new ArrayList<>();
 
-    for (ExecutionLayerWithdrawRequest withdrawRequest : maybeWithdrawRequests.get()) {
-      withdrawRequests.add(
-          new WithdrawRequestV1(
-              withdrawRequest.getSourceAddress(),
-              withdrawRequest.getValidatorPublicKey().toBytesCompressed(),
-              withdrawRequest.getAmount()));
+    for (ExecutionLayerWithdrawalRequest withdrawalRequest : maybeWithdrawalRequests.get()) {
+      withdrawalRequests.add(
+          new WithdrawalRequestV1(
+              withdrawalRequest.getSourceAddress(),
+              withdrawalRequest.getValidatorPublicKey().toBytesCompressed(),
+              withdrawalRequest.getAmount()));
     }
-    return withdrawRequests;
+    return withdrawalRequests;
   }
 }

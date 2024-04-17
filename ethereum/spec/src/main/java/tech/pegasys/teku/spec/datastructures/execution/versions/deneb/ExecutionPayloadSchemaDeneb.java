@@ -56,8 +56,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 
 public class ExecutionPayloadSchemaDeneb
     extends ContainerSchema17<
@@ -144,16 +144,16 @@ public class ExecutionPayloadSchemaDeneb
 
   @Override
   public SszListSchema<
-          ExecutionLayerWithdrawRequest, ? extends SszList<ExecutionLayerWithdrawRequest>>
-      getExecutionLayerWithdrawRequestsSchemaRequired() {
+          ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
+      getExecutionLayerWithdrawalRequestsSchemaRequired() {
     throw new IllegalStateException(
-        "Attempted to get execution layer withdraw requests schema from deneb");
+        "Attempted to get execution layer withdrawal requests schema from deneb");
   }
 
   @Override
-  public ExecutionLayerWithdrawRequestSchema getExecutionLayerWithdrawRequestSchemaRequired() {
+  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired() {
     throw new IllegalStateException(
-        "Attempted to get a execution layer withdraw request schema from deneb");
+        "Attempted to get a execution layer withdrawal request schema from deneb");
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

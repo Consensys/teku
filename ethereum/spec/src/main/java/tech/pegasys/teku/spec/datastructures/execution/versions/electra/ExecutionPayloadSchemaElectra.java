@@ -78,7 +78,7 @@ public class ExecutionPayloadSchemaElectra
         SszUInt64,
         SszUInt64,
         SszList<DepositReceipt>,
-        SszList<ExecutionLayerWithdrawRequest>>
+        SszList<ExecutionLayerWithdrawalRequest>>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
   private final ExecutionPayloadElectraImpl defaultExecutionPayload;
@@ -115,8 +115,8 @@ public class ExecutionPayloadSchemaElectra
         namedSchema(
             WITHDRAW_REQUESTS,
             SszListSchema.create(
-                ExecutionLayerWithdrawRequest.SSZ_SCHEMA,
-                specConfig.getMaxExecutionLayerWithdrawRequests())));
+                ExecutionLayerWithdrawalRequest.SSZ_SCHEMA,
+                specConfig.getMaxExecutionLayerWithdrawalRequests())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -153,14 +153,14 @@ public class ExecutionPayloadSchemaElectra
 
   @Override
   public SszListSchema<
-          ExecutionLayerWithdrawRequest, ? extends SszList<ExecutionLayerWithdrawRequest>>
-      getExecutionLayerWithdrawRequestsSchemaRequired() {
-    return getExecutionLayerWithdrawRequestsSchema();
+          ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
+      getExecutionLayerWithdrawalRequestsSchemaRequired() {
+    return getExecutionLayerWithdrawalRequestsSchema();
   }
 
   @Override
-  public ExecutionLayerWithdrawRequestSchema getExecutionLayerWithdrawRequestSchemaRequired() {
-    return getExecutionLayerWithdrawRequestSchema();
+  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired() {
+    return getExecutionLayerWithdrawalRequestSchema();
   }
 
   public WithdrawalSchema getWithdrawalSchema() {
@@ -171,9 +171,9 @@ public class ExecutionPayloadSchemaElectra
     return (DepositReceiptSchema) getDepositReceiptsSchema().getElementSchema();
   }
 
-  public ExecutionLayerWithdrawRequestSchema getExecutionLayerWithdrawRequestSchema() {
-    return (ExecutionLayerWithdrawRequestSchema)
-        getExecutionLayerWithdrawRequestsSchema().getElementSchema();
+  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
+    return (ExecutionLayerWithdrawalRequestSchema)
+        getExecutionLayerWithdrawalRequestsSchema().getElementSchema();
   }
 
   @Override
@@ -219,8 +219,8 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<ExecutionLayerWithdrawRequest, ?> getExecutionLayerWithdrawRequestsSchema() {
-    return (SszListSchema<ExecutionLayerWithdrawRequest, ?>)
+  public SszListSchema<ExecutionLayerWithdrawalRequest, ?> getExecutionLayerWithdrawalRequestsSchema() {
+    return (SszListSchema<ExecutionLayerWithdrawalRequest, ?>)
         getChildSchema(getFieldIndex(WITHDRAW_REQUESTS));
   }
 }

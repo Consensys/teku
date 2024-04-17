@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -154,21 +154,21 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processExecutionLayerWithdrawRequest(
+  public void processExecutionLayerWithdrawalRequest(
       final MutableBeaconState state,
-      final ExecutionLayerWithdrawRequest executionLayerWithdrawRequest)
+      final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest)
       throws BlockProcessingException {
-    final SszList<ExecutionLayerWithdrawRequest> withdrawRequests =
+    final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests =
         BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
             .getExecutionPayloadSchema()
-            .getExecutionLayerWithdrawRequestsSchemaRequired()
-            .of(executionLayerWithdrawRequest);
+            .getExecutionLayerWithdrawalRequestsSchemaRequired()
+            .of(executionLayerWithdrawalRequest);
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         spec.atSlot(state.getSlot())
             .beaconStateMutators()
             .createValidatorExitContextSupplier(state);
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionLayerWithdrawRequests(
-            state, withdrawRequests, validatorExitContextSupplier);
+        .processExecutionLayerWithdrawalRequests(
+            state, withdrawalRequests, validatorExitContextSupplier);
   }
 }

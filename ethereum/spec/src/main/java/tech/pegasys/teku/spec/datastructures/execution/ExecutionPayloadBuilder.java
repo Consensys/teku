@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 
 public interface ExecutionPayloadBuilder {
   ExecutionPayloadBuilder parentHash(Bytes32 parentHash);
@@ -61,8 +61,8 @@ public interface ExecutionPayloadBuilder {
 
   ExecutionPayloadBuilder depositReceipts(Supplier<List<DepositReceipt>> depositReceiptsSupplier);
 
-  ExecutionPayloadBuilder withdrawRequests(
-      Supplier<List<ExecutionLayerWithdrawRequest>> withdrawRequestsSupplier);
+  ExecutionPayloadBuilder withdrawalRequests(
+      Supplier<List<ExecutionLayerWithdrawalRequest>> withdrawalRequestsSupplier);
 
   ExecutionPayload build();
 }

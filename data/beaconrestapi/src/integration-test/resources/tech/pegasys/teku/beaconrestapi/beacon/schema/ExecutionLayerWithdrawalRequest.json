@@ -1,5 +1,5 @@
 {
-  "title" : "ExecutionLayerWithdrawRequest",
+  "title" : "ExecutionLayerWithdrawalRequest",
   "type" : "object",
   "required" : [ "source_address", "validator_pubkey", "amount" ],
   "properties" : {

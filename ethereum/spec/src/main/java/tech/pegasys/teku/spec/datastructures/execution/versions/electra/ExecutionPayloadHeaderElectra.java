@@ -21,7 +21,7 @@ public interface ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDen
 
   Bytes32 getDepositReceiptsRoot();
 
-  Bytes32 getWithdrawRequestsRoot();
+  Bytes32 getWithdrawalRequestsRoot();
 
   @Override
   default Optional<ExecutionPayloadHeaderElectra> toVersionElectra() {

@@ -33,8 +33,8 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
   @JsonProperty("deposit_receipts")
   public final List<DepositReceipt> depositReceipts;
 
-  @JsonProperty("withdraw_requests")
-  public final List<ExecutionLayerWithdrawRequest> withdrawRequests;
+  @JsonProperty("withdrawal_requests")
+  public final List<ExecutionLayerWithdrawalRequest> withdrawalRequests;
 
   @JsonCreator
   public ExecutionPayloadElectra(
@@ -56,8 +56,8 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_receipts") final List<DepositReceipt> depositReceipts,
-      @JsonProperty("withdraw_requests")
-          final List<ExecutionLayerWithdrawRequest> withdrawRequests) {
+      @JsonProperty("withdrawal_requests")
+          final List<ExecutionLayerWithdrawalRequest> withdrawalRequests) {
     super(
         parentHash,
         feeRecipient,
@@ -77,7 +77,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         blobGasUsed,
         excessBlobGas);
     this.depositReceipts = depositReceipts;
-    this.withdrawRequests = withdrawRequests;
+    this.withdrawalRequests = withdrawalRequests;
   }
 
   public ExecutionPayloadElectra(
@@ -87,9 +87,9 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         executionPayload.toVersionElectra().orElseThrow().getDepositReceipts().stream()
             .map(DepositReceipt::new)
             .toList();
-    this.withdrawRequests =
-        executionPayload.toVersionElectra().orElseThrow().getWithdrawRequests().stream()
-            .map(ExecutionLayerWithdrawRequest::new)
+    this.withdrawalRequests =
+        executionPayload.toVersionElectra().orElseThrow().getWithdrawalRequests().stream()
+            .map(ExecutionLayerWithdrawalRequest::new)
             .toList();
   }
 
@@ -106,14 +106,14 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
                             depositReceipt.asInternalDepositReceipt(
                                 executionPayloadSchema.getDepositReceiptSchemaRequired()))
                     .toList())
-        .withdrawRequests(
+        .withdrawalRequests(
             () ->
-                withdrawRequests.stream()
+                withdrawalRequests.stream()
                     .map(
                         exit ->
-                            exit.asInternalExecutionLayerWithdrawRequest(
+                            exit.asInternalExecutionLayerWithdrawalRequest(
                                 executionPayloadSchema
-                                    .getExecutionLayerWithdrawRequestSchemaRequired()))
+                                    .getExecutionLayerWithdrawalRequestSchemaRequired()))
                     .toList());
   }
 

@@ -19,23 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra.ExecutionLayerWithdrawRequestSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra.ExecutionLayerWithdrawalRequestSupplier;
 
-public class ExecutionLayerWithdrawRequestPropertyTest {
+public class ExecutionLayerWithdrawalRequestPropertyTest {
 
   @Property
   void roundTrip(
-      @ForAll(supplier = ExecutionLayerWithdrawRequestSupplier.class)
-          final ExecutionLayerWithdrawRequest executionLayerWithdrawRequest)
+      @ForAll(supplier = ExecutionLayerWithdrawalRequestSupplier.class)
+          final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest)
       throws JsonProcessingException {
-    assertRoundTrip(executionLayerWithdrawRequest);
+    assertRoundTrip(executionLayerWithdrawalRequest);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = ExecutionLayerWithdrawRequestSupplier.class)
-          final ExecutionLayerWithdrawRequest executionLayerWithdrawRequest,
+      @ForAll(supplier = ExecutionLayerWithdrawalRequestSupplier.class)
+          final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(executionLayerWithdrawRequest, seed);
+    assertDeserializeMutatedThrowsExpected(executionLayerWithdrawalRequest, seed);
   }
 }

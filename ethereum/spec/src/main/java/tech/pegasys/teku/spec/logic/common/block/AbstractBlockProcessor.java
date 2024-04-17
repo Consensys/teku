@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -443,7 +443,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
-          processExecutionLayerWithdrawRequests(
+          processExecutionLayerWithdrawalRequests(
               state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
         });
   }
@@ -877,12 +877,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  protected void processExecutionLayerWithdrawRequests(
+  protected void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
       final Optional<ExecutionPayload> executionPayload,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    // No ExecutionLayerWithdrawRequests until Electra
+    // No ExecutionLayerWithdrawalRequests until Electra
   }
 
   @Override
@@ -893,12 +893,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void processExecutionLayerWithdrawRequests(
+  public void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<ExecutionLayerWithdrawRequest> withdrawRequests,
+      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    // No ExecutionLayerWithdrawRequests until Electra
+    // No ExecutionLayerWithdrawalRequests until Electra
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException

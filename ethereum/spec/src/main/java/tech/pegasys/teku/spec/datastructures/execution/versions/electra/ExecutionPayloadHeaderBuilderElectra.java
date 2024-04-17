@@ -29,7 +29,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   private ExecutionPayloadHeaderSchemaElectra schema;
 
   protected Bytes32 depositReceiptsRoot;
-  protected Bytes32 withdrawRequestsRoot;
+  protected Bytes32 withdrawalRequestsRoot;
 
   public ExecutionPayloadHeaderBuilderElectra schema(
       final ExecutionPayloadHeaderSchemaElectra schema) {
@@ -45,9 +45,9 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder withdrawRequestsRoot(
-      final Supplier<Bytes32> withdrawRequestsRootSupplier) {
-    this.withdrawRequestsRoot = withdrawRequestsRootSupplier.get();
+  public ExecutionPayloadHeaderBuilder withdrawalRequestsRoot(
+      final Supplier<Bytes32> withdrawalRequestsRootSupplier) {
+    this.withdrawalRequestsRoot = withdrawalRequestsRootSupplier.get();
     return this;
   }
 
@@ -60,7 +60,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   protected void validate() {
     super.validate();
     checkNotNull(depositReceiptsRoot, "depositReceiptsRoot must be specified");
-    checkNotNull(withdrawRequestsRoot, "withdrawRequestsRoot must be specified");
+    checkNotNull(withdrawalRequestsRoot, "withdrawalRequestsRoot must be specified");
   }
 
   @Override
@@ -86,6 +86,6 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas),
         SszBytes32.of(depositReceiptsRoot),
-        SszBytes32.of(withdrawRequestsRoot));
+        SszBytes32.of(withdrawalRequestsRoot));
   }
 }

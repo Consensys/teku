@@ -30,8 +30,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
   @JsonProperty("deposit_receipts_root")
   public final Bytes32 depositReceiptsRoot;
 
-  @JsonProperty("withdraw_requests_root")
-  public final Bytes32 withdrawRequestsRoot;
+  @JsonProperty("withdrawal_requests_root")
+  public final Bytes32 withdrawalRequestsRoot;
 
   @JsonCreator
   public ExecutionPayloadHeaderElectra(
@@ -53,7 +53,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_receipts_root") final Bytes32 depositReceiptsRoot,
-      @JsonProperty("withdraw_requests_root") final Bytes32 withdrawRequestsRoot) {
+      @JsonProperty("withdrawal_requests_root") final Bytes32 withdrawalRequestsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -73,7 +73,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         blobGasUsed,
         excessBlobGas);
     this.depositReceiptsRoot = depositReceiptsRoot;
-    this.withdrawRequestsRoot = withdrawRequestsRoot;
+    this.withdrawalRequestsRoot = withdrawalRequestsRoot;
   }
 
   public ExecutionPayloadHeaderElectra(final ExecutionPayloadHeader executionPayloadHeader) {
@@ -97,8 +97,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessBlobGas());
     this.depositReceiptsRoot =
         executionPayloadHeader.toVersionElectra().orElseThrow().getDepositReceiptsRoot();
-    this.withdrawRequestsRoot =
-        executionPayloadHeader.toVersionElectra().orElseThrow().getWithdrawRequestsRoot();
+    this.withdrawalRequestsRoot =
+        executionPayloadHeader.toVersionElectra().orElseThrow().getWithdrawalRequestsRoot();
   }
 
   @Override
@@ -125,7 +125,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
                 .blobGasUsed(() -> blobGasUsed)
                 .excessBlobGas(() -> excessBlobGas)
                 .depositReceiptsRoot(() -> depositReceiptsRoot)
-                .withdrawRequestsRoot(() -> withdrawRequestsRoot));
+                .withdrawalRequestsRoot(() -> withdrawalRequestsRoot));
   }
 
   @Override

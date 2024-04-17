@@ -26,7 +26,7 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSeria
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class WithdrawRequestV1 {
+public class WithdrawalRequestV1 {
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
   public final Bytes20 sourceAddress;
@@ -39,7 +39,7 @@ public class WithdrawRequestV1 {
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 amount;
 
-  public WithdrawRequestV1(
+  public WithdrawalRequestV1(
       @JsonProperty("sourceAddress") final Bytes20 sourceAddress,
       @JsonProperty("validatorPublicKey") final Bytes48 validatorPublicKey,
       @JsonProperty("amount") final UInt64 amount) {

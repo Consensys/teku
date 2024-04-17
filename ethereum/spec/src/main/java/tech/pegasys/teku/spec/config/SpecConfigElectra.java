@@ -64,7 +64,7 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxDepositReceiptsPerPayload();
 
-  int getMaxExecutionLayerWithdrawRequests();
+  int getMaxExecutionLayerWithdrawalRequests();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();

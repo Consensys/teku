@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -139,33 +139,33 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   @Override
-  protected void processExecutionLayerWithdrawRequests(
+  protected void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
       final Optional<ExecutionPayload> executionPayload,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    this.processExecutionLayerWithdrawRequests(
+    this.processExecutionLayerWithdrawalRequests(
         state,
-        getExecutionLayerWithdrawRequestsFromBlock(executionPayload),
+        getExecutionLayerWithdrawalRequestsFromBlock(executionPayload),
         validatorExitContextSupplier);
   }
 
   /**
-   * Implements process_execution_layer_withdraw_request from consensus-specs (EIP-7002 & EIP-7251).
+   * Implements process_execution_layer_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251).
    */
   @Override
-  public void processExecutionLayerWithdrawRequests(
+  public void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<ExecutionLayerWithdrawRequest> withdrawRequests,
+      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
-    withdrawRequests.forEach(
-        withdrawRequest -> {
+    withdrawalRequests.forEach(
+        withdrawalRequest -> {
           // If partial withdrawal queue is full, only full exits are processed
           final boolean isFullExitRequest =
-              withdrawRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
+              withdrawalRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
           final boolean partialWithdrawalsQueueFull =
               state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
                   >= specConfigElectra.getPendingPartialWithdrawalsLimit();
@@ -174,7 +174,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           }
 
           final Optional<Integer> maybeValidatorIndex =
-              validatorsUtil.getValidatorIndex(state, withdrawRequest.getValidatorPublicKey());
+              validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPublicKey());
           if (maybeValidatorIndex.isEmpty()) {
             return;
           }
@@ -189,11 +189,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             return;
           }
 
-          // Check withdrawRequest source_address matches validator eth1 withdrawal credentials
+          // Check withdrawalRequest source_address matches validator eth1 withdrawal credentials
           final Bytes20 executionAddress =
               new Bytes20(validator.getWithdrawalCredentials().slice(12));
           final boolean isCorrectSourceAddress =
-              executionAddress.equals(withdrawRequest.getSourceAddress());
+              executionAddress.equals(withdrawalRequest.getSourceAddress());
           if (!isCorrectSourceAddress) {
             return;
           }
@@ -245,7 +245,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                 validatorBalance
                     .min(minActivationBalance)
                     .minus(pendingBalanceToWithdraw)
-                    .min(withdrawRequest.getAmount());
+                    .min(withdrawalRequest.getAmount());
             final UInt64 exitQueueEpoch =
                 beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(
                     MutableBeaconStateElectra.required(state), toWithdraw);
@@ -270,15 +270,15 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         });
   }
 
-  private SszList<ExecutionLayerWithdrawRequest> getExecutionLayerWithdrawRequestsFromBlock(
+  private SszList<ExecutionLayerWithdrawalRequest> getExecutionLayerWithdrawalRequestsFromBlock(
       final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
     return maybeExecutionPayload
         .flatMap(ExecutionPayload::toVersionElectra)
-        .map(ExecutionPayloadElectra::getWithdrawRequests)
+        .map(ExecutionPayloadElectra::getWithdrawalRequests)
         .orElseThrow(
             () ->
                 new BlockProcessingException(
-                    "Execution layer withdraw requests were not found during block processing."));
+                    "Execution layer withdrawal requests were not found during block processing."));
   }
 
   /*

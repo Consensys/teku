@@ -1,7 +1,7 @@
 {
   "title" : "ExecutionPayloadElectra",
   "type" : "object",
-  "required" : [ "parent_hash", "fee_recipient", "state_root", "receipts_root", "logs_bloom", "prev_randao", "block_number", "gas_limit", "gas_used", "timestamp", "extra_data", "base_fee_per_gas", "block_hash", "transactions", "withdrawals", "blob_gas_used", "excess_blob_gas", "deposit_receipts", "withdraw_requests" ],
+  "required" : [ "parent_hash", "fee_recipient", "state_root", "receipts_root", "logs_bloom", "prev_randao", "block_number", "gas_limit", "gas_used", "timestamp", "extra_data", "base_fee_per_gas", "block_hash", "transactions", "withdrawals", "blob_gas_used", "excess_blob_gas", "deposit_receipts", "withdrawal_requests" ],
   "properties" : {
     "parent_hash" : {
       "type" : "string",
@@ -114,10 +114,10 @@
         "$ref" : "#/components/schemas/DepositReceipt"
       }
     },
-    "withdraw_requests" : {
+    "withdrawal_requests" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/ExecutionLayerWithdrawRequest"
+        "$ref" : "#/components/schemas/ExecutionLayerWithdrawalRequest"
       }
     }
   }
