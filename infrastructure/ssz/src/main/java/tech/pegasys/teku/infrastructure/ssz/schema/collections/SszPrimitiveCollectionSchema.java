@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 
 public interface SszPrimitiveCollectionSchema<
         ElementT,
-        SszElementT extends SszPrimitive<ElementT, SszElementT>,
+        SszElementT extends SszPrimitive<ElementT>,
         SszCollectionT extends SszPrimitiveCollection<ElementT, SszElementT>>
     extends SszCollectionSchema<SszElementT, SszCollectionT> {
 
