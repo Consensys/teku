@@ -32,8 +32,6 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private UInt64 electraForkEpoch;
   // TODO: remove default when EIP-7251 become part of the Electra
   private UInt64 minPerEpochChurnLimitElectra = UInt64.ZERO;
-  // TODO: remove default when EIP-7251 become part of the Electra
-  private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.ZERO;
   private Integer maxDepositReceiptsPerPayload;
   private Integer maxExecutionLayerWithdrawalRequests;
   private UInt64 minActivationBalance;
@@ -44,6 +42,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer whistleblowerRewardQuotientElectra;
   private Integer minSlashingPenaltyQuotientElectra;
   private Integer maxPartialWithdrawalsPerPayload;
+  private Integer maxWithdrawalRequestsPerPayload;
   private Integer maxAttesterSlashingsElectra;
   private Integer maxAttestationsElectra;
   private Integer maxConsolidations;
@@ -59,7 +58,6 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         maxDepositReceiptsPerPayload,
         maxExecutionLayerWithdrawalRequests,
         minPerEpochChurnLimitElectra,
-        maxPerEpochActivationExitChurnLimit,
         minActivationBalance,
         maxEffectiveBalanceElectra,
         pendingBalanceDepositsLimit,
@@ -70,7 +68,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         maxPartialWithdrawalsPerPayload,
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
-        maxConsolidations);
+        maxConsolidations,
+        maxWithdrawalRequestsPerPayload);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -101,13 +100,6 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   public ElectraBuilder minPerEpochChurnLimitElectra(final UInt64 minPerEpochChurnLimitElectra) {
     checkNotNull(minPerEpochChurnLimitElectra);
     this.minPerEpochChurnLimitElectra = minPerEpochChurnLimitElectra;
-    return this;
-  }
-
-  public ElectraBuilder maxPerEpochActivationExitChurnLimit(
-      final UInt64 maxPerEpochActivationExitChurnLimit) {
-    checkNotNull(maxPerEpochActivationExitChurnLimit);
-    this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
     return this;
   }
 
@@ -160,6 +152,13 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
       final Integer maxPartialWithdrawalsPerPayload) {
     checkNotNull(maxPartialWithdrawalsPerPayload);
     this.maxPartialWithdrawalsPerPayload = maxPartialWithdrawalsPerPayload;
+    return this;
+  }
+
+  public ElectraBuilder maxWithdrawalRequestsPerPayload(
+      final Integer maxWithdrawalRequestsPerPayload) {
+    checkNotNull(maxWithdrawalRequestsPerPayload);
+    this.maxWithdrawalRequestsPerPayload = maxWithdrawalRequestsPerPayload;
     return this;
   }
 

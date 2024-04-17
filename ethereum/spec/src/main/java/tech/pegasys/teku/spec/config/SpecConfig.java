@@ -62,6 +62,8 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getMinPerEpochChurnLimit();
 
+  UInt64 getMaxPerEpochActivationExitChurnLimit();
+
   int getChurnLimitQuotient();
 
   // Config: Fork choice

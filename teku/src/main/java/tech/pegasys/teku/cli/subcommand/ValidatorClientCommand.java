@@ -119,11 +119,11 @@ public class ValidatorClientCommand implements Callable<Integer> {
     }
   }
 
-  private boolean isAutoDetectNetworkOption(String option) {
+  private boolean isAutoDetectNetworkOption(final String option) {
     return AUTO_NETWORK_OPTION.equalsIgnoreCase(option);
   }
 
-  private void configureEth2Network(TekuConfiguration.Builder builder) {
+  private void configureEth2Network(final TekuConfiguration.Builder builder) {
     if (parentCommand.isOptionSpecified("--network")) {
       throw new InvalidConfigurationException(
           "--network option should not be specified before the validator-client command");

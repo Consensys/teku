@@ -54,9 +54,9 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxPartialWithdrawalsPerPayload();
 
-  UInt64 getMinPerEpochChurnLimitElectra();
+  int getMaxWithdrawalRequestsPerPayload();
 
-  UInt64 getMaxPerEpochActivationExitChurnLimit();
+  UInt64 getMinPerEpochChurnLimitElectra();
 
   Bytes4 getElectraForkVersion();
 

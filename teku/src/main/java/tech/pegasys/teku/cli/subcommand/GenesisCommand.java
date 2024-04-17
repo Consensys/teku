@@ -54,7 +54,8 @@ public class GenesisCommand {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public void generate(
-      @Mixin MockGenesisParams genesisParams, @Mixin MinimalEth2NetworkOptions networkOptions)
+      @Mixin final MockGenesisParams genesisParams,
+      @Mixin final MinimalEth2NetworkOptions networkOptions)
       throws IOException {
     // Output to stdout if no file is specified
     final Spec spec = networkOptions.getSpec();

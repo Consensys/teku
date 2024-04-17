@@ -62,7 +62,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
-      final PredicatesElectra predicates,
+      final Predicates predicates,
       final MiscHelpersDeneb miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
@@ -86,10 +86,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         validatorsUtil,
         operationValidator,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
-    specConfigElectra = specConfig;
-    predicatesElectra = predicates;
-    beaconStateMutatorsElectra = beaconStateMutators;
-    schemaDefinitionsElectra = schemaDefinitions;
+    this.specConfigElectra = specConfig;
+    this.predicatesElectra = PredicatesElectra.required(predicates);
+    this.beaconStateMutatorsElectra = beaconStateMutators;
+    this.schemaDefinitionsElectra = schemaDefinitions;
   }
 
   @Override
