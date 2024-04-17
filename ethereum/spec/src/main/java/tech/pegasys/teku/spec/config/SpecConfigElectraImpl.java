@@ -25,7 +25,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final UInt64 minPerEpochChurnLimitElectra;
 
   private final int maxDepositReceiptsPerPayload;
-  private final int maxExecutionLayerExits;
+  private final int maxExecutionLayerWithdrawalRequests;
   private final UInt64 minActivationBalance;
   private final UInt64 maxEffectiveBalanceElectra;
   private final int pendingBalanceDepositsLimit;
@@ -45,7 +45,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final Bytes4 electraForkVersion,
       final UInt64 electraForkEpoch,
       final int maxDepositReceiptsPerPayload,
-      final int maxExecutionLayerExits,
+      final int maxExecutionLayerWithdrawalRequests,
       final UInt64 minPerEpochChurnLimitElectra,
       final UInt64 minActivationBalance,
       final UInt64 maxEffectiveBalanceElectra,
@@ -63,7 +63,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
     this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
-    this.maxExecutionLayerExits = maxExecutionLayerExits;
+    this.maxExecutionLayerWithdrawalRequests = maxExecutionLayerWithdrawalRequests;
     this.minPerEpochChurnLimitElectra = minPerEpochChurnLimitElectra;
     this.minActivationBalance = minActivationBalance;
     this.maxEffectiveBalanceElectra = maxEffectiveBalanceElectra;
@@ -95,8 +95,8 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public int getMaxExecutionLayerExits() {
-    return maxExecutionLayerExits;
+  public int getMaxExecutionLayerWithdrawalRequests() {
+    return maxExecutionLayerWithdrawalRequests;
   }
 
   @Override
@@ -182,7 +182,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         && Objects.equals(electraForkVersion, that.electraForkVersion)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && maxDepositReceiptsPerPayload == that.maxDepositReceiptsPerPayload
-        && maxExecutionLayerExits == that.maxExecutionLayerExits;
+        && maxExecutionLayerWithdrawalRequests == that.maxExecutionLayerWithdrawalRequests;
   }
 
   @Override
@@ -192,6 +192,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         electraForkVersion,
         electraForkEpoch,
         maxDepositReceiptsPerPayload,
-        maxExecutionLayerExits);
+        maxExecutionLayerWithdrawalRequests);
   }
 }

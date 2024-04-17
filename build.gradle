@@ -532,6 +532,16 @@ def executableAndArg = System.getProperty('os.name').toLowerCase().contains('win
 task distDocker  {
   dependsOn dockerDistUntar
   def dockerBuildVersion = 'develop'
+
+  if (project.hasProperty('includeCommitHash') && project.property('includeCommitHash').toBoolean()) {
+    def commitHash = new ByteArrayOutputStream()
+    exec {
+      commandLine 'git', 'rev-parse', '--short', 'HEAD'
+      standardOutput = commitHash
+    }
+    dockerBuildVersion += '-' + commitHash
+  }
+
   doLast {
     for (def variant in dockerJdkVariants) {
       copy {

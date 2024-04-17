@@ -16,29 +16,34 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
-public class ExecutionLayerExitSchema
-    extends ContainerSchema2<ExecutionLayerExit, SszByteVector, SszPublicKey> {
+public class ExecutionLayerWithdrawalRequestSchema
+    extends ContainerSchema3<
+        ExecutionLayerWithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 
-  public ExecutionLayerExitSchema() {
+  public ExecutionLayerWithdrawalRequestSchema() {
     super(
-        "ExecutionLayerExit",
+        "ExecutionLayerWithdrawalRequest",
         namedSchema("source_address", SszByteVectorSchema.create(Bytes20.SIZE)),
-        namedSchema("validator_pubkey", SszPublicKeySchema.INSTANCE));
+        namedSchema("validator_pubkey", SszPublicKeySchema.INSTANCE),
+        namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
-  public ExecutionLayerExit create(
-      final Bytes20 sourceAddress, final BLSPublicKey validatorPublicKey) {
-    return new ExecutionLayerExit(this, sourceAddress, validatorPublicKey);
+  public ExecutionLayerWithdrawalRequest create(
+      final Bytes20 sourceAddress, final BLSPublicKey validatorPublicKey, final UInt64 amount) {
+    return new ExecutionLayerWithdrawalRequest(this, sourceAddress, validatorPublicKey, amount);
   }
 
   @Override
-  public ExecutionLayerExit createFromBackingNode(final TreeNode node) {
-    return new ExecutionLayerExit(this, node);
+  public ExecutionLayerWithdrawalRequest createFromBackingNode(final TreeNode node) {
+    return new ExecutionLayerWithdrawalRequest(this, node);
   }
 }
