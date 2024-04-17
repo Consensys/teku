@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -55,6 +56,11 @@ public class Validator {
 
   public boolean isReadOnly() {
     return readOnly;
+  }
+
+  @VisibleForTesting
+  public GraffitiProvider getGraffitiProvider() {
+    return graffitiProvider;
   }
 
   @Override

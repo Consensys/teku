@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.api.UpdatableGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ExternalValidatorImportResult;
 import tech.pegasys.teku.validator.client.LocalValidatorImportResult;
@@ -51,7 +52,7 @@ public class ValidatorLoader {
   private final Optional<ValidatorSource> mutableLocalValidatorSource;
   private final Optional<ValidatorSource> mutableExternalValidatorSource;
   private final OwnedValidators ownedValidators = new OwnedValidators();
-  private final GraffitiProvider graffitiProvider;
+  private final GraffitiProvider defaultGraffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
   private final SlashingProtectionLogger slashingProtectionLogger;
 
@@ -59,13 +60,13 @@ public class ValidatorLoader {
       final List<ValidatorSource> validatorSources,
       final Optional<ValidatorSource> mutableLocalValidatorSource,
       final Optional<ValidatorSource> mutableExternalValidatorSource,
-      final GraffitiProvider graffitiProvider,
+      final GraffitiProvider defaultGraffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger) {
     this.validatorSources = validatorSources;
     this.mutableLocalValidatorSource = mutableLocalValidatorSource;
     this.mutableExternalValidatorSource = mutableExternalValidatorSource;
-    this.graffitiProvider = graffitiProvider;
+    this.defaultGraffitiProvider = defaultGraffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
   }
@@ -75,7 +76,7 @@ public class ValidatorLoader {
     final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
-        ownedValidators, validatorProviders, graffitiProvider);
+        ownedValidators, validatorProviders, defaultGraffitiProvider, maybeDataDirLayout);
     slashingProtectionLogger.protectionSummary(ownedValidators.getValidators());
   }
 
@@ -198,6 +199,13 @@ public class ValidatorLoader {
   }
 
   private void addToOwnedValidators(final Signer signer, final BLSPublicKey publicKey) {
+    final GraffitiProvider graffitiProvider =
+        maybeDataDirLayout
+            .<GraffitiProvider>map(
+                dataDirLayout ->
+                    new UpdatableGraffitiProvider(
+                        dataDirLayout, publicKey, defaultGraffitiProvider))
+            .orElse(defaultGraffitiProvider);
     ownedValidators.addValidator(
         new Validator(publicKey, new DeletableSigner(signer), graffitiProvider, false));
     LOG.info("Added validator: {}", publicKey.toString());
