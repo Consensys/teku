@@ -46,10 +46,14 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlockProcessorElectra extends BlockProcessorDeneb {
+
+  @SuppressWarnings("unused")
+  private final PredicatesElectra predicatesElectra;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
@@ -77,6 +81,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         validatorsUtil,
         operationValidator,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
+    this.predicatesElectra = PredicatesElectra.required(predicates);
   }
 
   @Override
