@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_RECEIPTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXITS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -32,6 +31,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWAL_REQUESTS;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -78,7 +78,7 @@ public class ExecutionPayloadSchemaElectra
         SszUInt64,
         SszUInt64,
         SszList<DepositReceipt>,
-        SszList<ExecutionLayerExit>>
+        SszList<ExecutionLayerWithdrawalRequest>>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
   private final ExecutionPayloadElectraImpl defaultExecutionPayload;
@@ -113,9 +113,10 @@ public class ExecutionPayloadSchemaElectra
             SszListSchema.create(
                 DepositReceipt.SSZ_SCHEMA, specConfig.getMaxDepositReceiptsPerPayload())),
         namedSchema(
-            EXITS,
+            WITHDRAWAL_REQUESTS,
             SszListSchema.create(
-                ExecutionLayerExit.SSZ_SCHEMA, specConfig.getMaxExecutionLayerExits())));
+                ExecutionLayerWithdrawalRequest.SSZ_SCHEMA,
+                specConfig.getMaxExecutionLayerWithdrawalRequests())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -151,14 +152,15 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @Override
-  public SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>>
-      getExecutionLayerExitsSchemaRequired() {
-    return getExecutionLayerExitsSchema();
+  public SszListSchema<
+          ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
+      getExecutionLayerWithdrawalRequestsSchemaRequired() {
+    return getExecutionLayerWithdrawalRequestsSchema();
   }
 
   @Override
-  public ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired() {
-    return getExecutionLayerExitSchema();
+  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired() {
+    return getExecutionLayerWithdrawalRequestSchema();
   }
 
   public WithdrawalSchema getWithdrawalSchema() {
@@ -169,8 +171,9 @@ public class ExecutionPayloadSchemaElectra
     return (DepositReceiptSchema) getDepositReceiptsSchema().getElementSchema();
   }
 
-  public ExecutionLayerExitSchema getExecutionLayerExitSchema() {
-    return (ExecutionLayerExitSchema) getExecutionLayerExitsSchema().getElementSchema();
+  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
+    return (ExecutionLayerWithdrawalRequestSchema)
+        getExecutionLayerWithdrawalRequestsSchema().getElementSchema();
   }
 
   @Override
@@ -179,7 +182,7 @@ public class ExecutionPayloadSchemaElectra
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
         getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS)),
-        getChildGeneralizedIndex(getFieldIndex(EXITS)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)));
   }
 
   @Override
@@ -216,7 +219,9 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<ExecutionLayerExit, ?> getExecutionLayerExitsSchema() {
-    return (SszListSchema<ExecutionLayerExit, ?>) getChildSchema(getFieldIndex(EXITS));
+  public SszListSchema<ExecutionLayerWithdrawalRequest, ?>
+      getExecutionLayerWithdrawalRequestsSchema() {
+    return (SszListSchema<ExecutionLayerWithdrawalRequest, ?>)
+        getChildSchema(getFieldIndex(WITHDRAWAL_REQUESTS));
   }
 }

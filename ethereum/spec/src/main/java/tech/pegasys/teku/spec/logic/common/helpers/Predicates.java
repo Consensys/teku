@@ -82,7 +82,7 @@ public class Predicates {
   }
 
   /**
-   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella Helper function. <br>
+   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella helper function. <br>
    * Checks if validator has a 0x01 prefixed "eth1" withdrawal credential.
    *
    * @param validator the validator being checked

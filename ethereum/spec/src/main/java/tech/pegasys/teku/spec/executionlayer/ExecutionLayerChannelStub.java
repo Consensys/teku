@@ -287,7 +287,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .blobGasUsed(() -> UInt64.ZERO)
                         .excessBlobGas(() -> UInt64.ZERO)
                         .depositReceipts(() -> generateDepositReceipts(state))
-                        .exits(List::of));
+                        .withdrawalRequests(List::of));
 
     // we assume all blocks are produced locally
     lastValidBlock =
