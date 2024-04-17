@@ -143,16 +143,12 @@ commands:
 
   docker_publish_images:
     description: "Upload the docker images"
-    parameters:
-      include_commit_hash:
-        type: boolean
-        default: false
     steps:
       - run:
           name: "Publish Docker Images"
           command: |
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
-            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH} -PincludeCommitHash=<< parameters.include_commit_hash >>" uploadDocker
+            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH} -PincludeCommitHash=<< pipeline.parameters.include_commit_hash >>" uploadDocker
 
   notify:
     description: "Notify Slack"
@@ -451,8 +447,7 @@ jobs:
       - attach_workspace:
           at: ~/project
       - docker_trust_sign
-      - docker_publish_images:
-          include_commit_hash: << parameters.include_commit_hash >>
+      - docker_publish_images
       - notify
 
   publishDockerArm64:
@@ -466,8 +461,7 @@ jobs:
       - attach_workspace:
           at: ~/project
       - docker_trust_sign
-      - docker_publish_images:
-          include_commit_hash: << parameters.include_commit_hash >>
+      - docker_publish_images
       - notify
 
   manifestDocker:
@@ -638,7 +632,6 @@ workflows:
                 - /^release-.*/
             tags:
               <<: *filters-release-tags
-            include_commit_hash: << parameters.include_commit_hash >>
           requires:
             - unitTests
             - propertyTests
@@ -658,7 +651,6 @@ workflows:
                 - /^release-.*/
             tags:
               <<: *filters-release-tags
-            include_commit_hash: << parameters.include_commit_hash >>
           requires:
             - unitTests
             - propertyTests
