@@ -37,6 +37,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
     assertThat(p2pConfig.getPeerRateLimit()).isEqualTo(100);
     assertThat(p2pConfig.getPeerRequestLimit()).isEqualTo(101);
+    assertThat(p2pConfig.isP2pDumpsToFileEnabled()).isFalse();
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();
     assertThat(discoConfig.isDiscoveryEnabled()).isTrue();
@@ -137,6 +138,26 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
     assertThat(tekuConfig.discovery().getAdvertisedUdpPort())
         .isEqualTo(tekuConfig.network().getAdvertisedPort());
+  }
+
+  @Test
+  void p2pDumpsToFileEnabled_shouldDefaultFalse() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
+    assertThat(tekuConfig.p2p().isP2pDumpsToFileEnabled()).isEqualTo(false);
+  }
+
+  @Test
+  void p2pDumpsToFileEnabled_shouldTrue() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--Xp2p-dumps-to-file-enabled=true");
+    assertThat(tekuConfig.p2p().isP2pDumpsToFileEnabled()).isEqualTo(true);
+  }
+
+  @Test
+  void p2pDumpsToFileEnabled_shouldNotRequireAValue() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--Xp2p-dumps-to-file-enabled");
+    assertThat(tekuConfig.p2p().isP2pDumpsToFileEnabled()).isEqualTo(true);
   }
 
   @Test
