@@ -145,7 +145,7 @@ commands:
     description: "Upload the docker images"
     parameters:
       include_commit_hash:
-        type: Boolean
+        type: boolean
         default: false
     steps:
       - run:
@@ -437,7 +437,7 @@ jobs:
   publishDockerAmd64:
     parameters:
       include_commit_hash:
-        type: Boolean
+        type: boolean
         default: false
     executor: machine_executor_amd64
     steps:
@@ -452,7 +452,7 @@ jobs:
   publishDockerArm64:
     parameters:
       include_commit_hash:
-        type: Boolean
+        type: boolean
         default: false
     executor: machine_executor_arm64
     steps:
