@@ -176,7 +176,7 @@ public class DatabaseMigrater {
   }
 
   @VisibleForTesting
-  KvStoreDatabase createDatabase(final Path databasePath, DatabaseVersion databaseVersion)
+  KvStoreDatabase createDatabase(final Path databasePath, final DatabaseVersion databaseVersion)
       throws DatabaseMigraterError {
     final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
     final VersionedDatabaseFactory databaseFactory =

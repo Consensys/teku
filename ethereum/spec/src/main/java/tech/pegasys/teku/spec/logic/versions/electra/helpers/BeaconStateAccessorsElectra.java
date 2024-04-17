@@ -49,7 +49,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    * @return Return the churn limit for the current epoch dedicated to activations and exits.
    */
   public UInt64 getActivationExitChurnLimit(final BeaconStateElectra state) {
-    return getChurnLimit(state).min(configElectra.getMaxPerEpochActivationExitChurnLimit());
+    return getBalanceChurnLimit(state).min(configElectra.getMaxPerEpochActivationExitChurnLimit());
   }
 
   /**
@@ -84,12 +84,12 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   }
 
   /**
-   * get_churn_limit
+   * get_balance_churn_limit
    *
    * @param state the state to read active balance from
    * @return Return the churn limit for the current epoch.
    */
-  public UInt64 getChurnLimit(final BeaconStateElectra state) {
+  public UInt64 getBalanceChurnLimit(final BeaconStateElectra state) {
     final UInt64 churn =
         configElectra
             .getMinPerEpochChurnLimitElectra()
@@ -104,7 +104,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    * @return
    */
   public UInt64 getConsolidationChurnLimit(final BeaconStateElectra state) {
-    return getChurnLimit(state).minusMinZero(getActivationExitChurnLimit(state));
+    return getBalanceChurnLimit(state).minusMinZero(getActivationExitChurnLimit(state));
   }
 
   public static BeaconStateAccessorsElectra required(

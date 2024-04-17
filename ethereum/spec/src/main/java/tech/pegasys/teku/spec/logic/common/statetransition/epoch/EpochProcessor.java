@@ -99,4 +99,8 @@ public interface EpochProcessor {
   void processHistoricalSummariesUpdate(MutableBeaconState state);
 
   void processSyncCommitteeUpdates(MutableBeaconState state);
+
+  void processPendingBalanceDeposits(MutableBeaconState state);
+
+  void processPendingConsolidations(MutableBeaconState state);
 }

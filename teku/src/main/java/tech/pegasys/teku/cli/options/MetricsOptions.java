@@ -155,7 +155,7 @@ public class MetricsOptions {
   private boolean blobSidecarsStorageCountersEnabled =
       MetricsConfig.DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.metrics(
         b ->
             b.metricsEnabled(metricsEnabled)
