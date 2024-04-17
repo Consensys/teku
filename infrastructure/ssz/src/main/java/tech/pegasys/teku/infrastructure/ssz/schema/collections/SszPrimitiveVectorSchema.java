@@ -23,19 +23,19 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszPrimitive
 
 public interface SszPrimitiveVectorSchema<
         ElementT,
-        SszElementT extends SszPrimitive<ElementT, SszElementT>,
+        SszElementT extends SszPrimitive<ElementT>,
         SszVectorT extends SszPrimitiveVector<ElementT, SszElementT>>
     extends SszPrimitiveCollectionSchema<ElementT, SszElementT, SszVectorT>,
         SszVectorSchema<SszElementT, SszVectorT> {
 
-  static <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+  static <ElementT, SszElementT extends SszPrimitive<ElementT>>
       SszPrimitiveVectorSchema<ElementT, SszElementT, ?> create(
           SszPrimitiveSchema<ElementT, SszElementT> elementSchema, int length) {
     return create(elementSchema, length, SszSchemaHints.none());
   }
 
   @SuppressWarnings("unchecked")
-  static <PrimT, SszPrimT extends SszPrimitive<PrimT, SszPrimT>>
+  static <PrimT, SszPrimT extends SszPrimitive<PrimT>>
       SszPrimitiveVectorSchema<PrimT, SszPrimT, ?> create(
           SszPrimitiveSchema<PrimT, SszPrimT> elementSchema, long length, SszSchemaHints hints) {
     if (elementSchema.equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
