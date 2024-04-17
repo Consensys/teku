@@ -72,6 +72,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public UInt64 getMaxPerEpochActivationExitChurnLimit() {
+    return specConfig.getMaxPerEpochActivationExitChurnLimit();
+  }
+
+  @Override
   public int getChurnLimitQuotient() {
     return specConfig.getChurnLimitQuotient();
   }

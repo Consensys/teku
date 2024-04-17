@@ -104,7 +104,7 @@ public class ValidatorKeysOptions {
   private int validatorExternalSignerConcurrentRequestLimit =
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
             config

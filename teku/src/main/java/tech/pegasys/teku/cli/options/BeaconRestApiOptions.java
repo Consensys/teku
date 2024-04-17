@@ -101,7 +101,7 @@ public class BeaconRestApiOptions {
       defaultValue = "65535",
       showDefaultValue = Visibility.ALWAYS,
       hidden = true)
-  public void setMaxUrlLength(int maxUrlLength) {
+  public void setMaxUrlLength(final int maxUrlLength) {
     if (maxUrlLength < 4096 || maxUrlLength > 1052672) {
       throw new CommandLine.ParameterException(
           cliSpec.commandLine(),
