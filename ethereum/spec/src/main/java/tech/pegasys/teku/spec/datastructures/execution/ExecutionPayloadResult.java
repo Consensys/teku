@@ -13,20 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 
 /**
- * In blinded flow, {@link #builderBidWithFallbackDataFuture} would be present
+ * In non-blinded flow, both {@link #executionPayloadFuture} and {@link #blobsBundleFuture} would be
+ * present. The {@link #blobsBundleFuture} will have a value when the future is complete only after
+ * Deneb, otherwise it will be empty.
  *
- * <p>In non-blinded flow, both {@link #executionPayloadFuture} and {@link #blobsBundleFuture} would
- * be present. The {@link #blobsBundleFuture} will have a value when the future is complete only
- * after Deneb, otherwise it will be empty.
+ * <p>In blinded flow, {@link #builderBidWithFallbackDataFuture} would be present
  */
 public class ExecutionPayloadResult {
 
@@ -34,17 +33,14 @@ public class ExecutionPayloadResult {
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
   private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
   private final Optional<SafeFuture<BuilderBidWithFallbackData>> builderBidWithFallbackDataFuture;
-  private final Optional<SafeFuture<UInt256>> executionPayloadValueFuture;
+  private final SafeFuture<UInt256> executionPayloadValueFuture;
 
-  public ExecutionPayloadResult(
+  private ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
       final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
       final Optional<SafeFuture<BuilderBidWithFallbackData>> builderBidWithFallbackDataFuture,
-      final Optional<SafeFuture<UInt256>> executionPayloadValueFuture) {
-    checkArgument(
-        executionPayloadFuture.isPresent() != builderBidWithFallbackDataFuture.isPresent(),
-        "Either executionPayloadFuture or builderBidWithFallbackDataFuture must be present");
+      final SafeFuture<UInt256> executionPayloadValueFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.blobsBundleFuture = blobsBundleFuture;
@@ -56,11 +52,11 @@ public class ExecutionPayloadResult {
     return executionPayloadContext;
   }
 
-  public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFuture() {
+  public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFutureFromNonBlindedFlow() {
     return executionPayloadFuture;
   }
 
-  public Optional<SafeFuture<Optional<BlobsBundle>>> getBlobsBundleFuture() {
+  public Optional<SafeFuture<Optional<BlobsBundle>>> getBlobsBundleFutureFromNonBlindedFlow() {
     return blobsBundleFuture;
   }
 
@@ -68,12 +64,43 @@ public class ExecutionPayloadResult {
     return builderBidWithFallbackDataFuture;
   }
 
-  public Optional<SafeFuture<UInt256>> getExecutionPayloadValueFuture() {
+  /**
+   * @return the value from the local payload, the builder bid or the local fallback payload
+   */
+  public SafeFuture<UInt256> getExecutionPayloadValueFuture() {
     return executionPayloadValueFuture;
   }
 
   public boolean isFromNonBlindedFlow() {
     return executionPayloadFuture.isPresent();
+  }
+
+  public static ExecutionPayloadResult createForNonBlindedFlow(
+      final ExecutionPayloadContext executionPayloadContext,
+      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
+    final SafeFuture<UInt256> executionPayloadValueFuture =
+        getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
+    return new ExecutionPayloadResult(
+        executionPayloadContext,
+        Optional.of(getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload)),
+        Optional.of(getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle)),
+        Optional.empty(),
+        executionPayloadValueFuture);
+  }
+
+  public static ExecutionPayloadResult createForBlindedFlow(
+      final ExecutionPayloadContext executionPayloadContext,
+      final SafeFuture<BuilderBidWithFallbackData> builderBidWithFallbackDataFuture) {
+    final SafeFuture<UInt256> executionPayloadValueFuture =
+        builderBidWithFallbackDataFuture
+            .thenApply(BuilderBidWithFallbackData::getBuilderBid)
+            .thenApply(BuilderBid::getValue);
+    return new ExecutionPayloadResult(
+        executionPayloadContext,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.of(builderBidWithFallbackDataFuture),
+        executionPayloadValueFuture);
   }
 
   @Override

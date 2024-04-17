@@ -398,12 +398,8 @@ class ExecutionLayerManagerImplTest {
                 signedBlindedBeaconBlock,
                 (aSlot) ->
                     Optional.of(
-                        new ExecutionPayloadResult(
-                            executionPayloadContext,
-                            Optional.empty(),
-                            Optional.empty(),
-                            Optional.of(SafeFuture.completedFuture(expectedResult)),
-                            Optional.empty()))))
+                        ExecutionPayloadResult.createForBlindedFlow(
+                            executionPayloadContext, SafeFuture.completedFuture(expectedResult)))))
         .isCompletedWithValue(getPayloadResponse.getExecutionPayload());
 
     // we expect no additional calls
@@ -428,7 +424,7 @@ class ExecutionLayerManagerImplTest {
     prepareBuilderGetHeaderResponse(executionPayloadContext, false, builderExecutionPayloadValue);
 
     final GetPayloadResponse getPayloadResponse =
-        prepareEngineGetPayloadResponse(
+        prepareEngineGetPayloadResponseWithBlobs(
             executionPayloadContext, localExecutionPayloadValue, true, slot);
 
     // we expect local engine header as result
@@ -770,12 +766,9 @@ class ExecutionLayerManagerImplTest {
                 signedBlindedBeaconBlock,
                 (aSlot) ->
                     Optional.of(
-                        new ExecutionPayloadResult(
+                        ExecutionPayloadResult.createForBlindedFlow(
                             executionPayloadContext,
-                            Optional.empty(),
-                            Optional.empty(),
-                            Optional.of(SafeFuture.completedFuture(builderBidWithFallbackData)),
-                            Optional.empty()))))
+                            SafeFuture.completedFuture(builderBidWithFallbackData)))))
         .isCompletedWithValue(builderPayload);
 
     // we expect no additional calls
@@ -827,7 +820,7 @@ class ExecutionLayerManagerImplTest {
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("")));
   }
 
-  private GetPayloadResponse prepareEngineGetPayloadResponse(
+  private GetPayloadResponse prepareEngineGetPayloadResponseWithBlobs(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt256 blockValue,
       final boolean shouldOverrideBuilder,

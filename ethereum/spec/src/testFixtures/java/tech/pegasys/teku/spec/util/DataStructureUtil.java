@@ -609,26 +609,22 @@ public final class DataStructureUtil {
     return randomBuilderBid(__ -> {});
   }
 
-  public BuilderBid randomBuilderBid(final ExecutionPayload executionPayload) {
-    final ExecutionPayloadHeader header =
-        getBellatrixSchemaDefinitions(randomUInt64())
-            .getExecutionPayloadHeaderSchema()
-            .createFromExecutionPayload(executionPayload);
-    return randomBuilderBid(builder -> builder.header(header));
-  }
-
   public BuilderBid randomBuilderBid(
-      final ExecutionPayload executionPayload, final BlobsBundle blobsBundle) {
+      final ExecutionPayload executionPayload,
+      final Optional<BlobsBundle> maybeBlobsBundle,
+      final Consumer<BuilderBidBuilder> builderModifier) {
     final ExecutionPayloadHeader header =
         getBellatrixSchemaDefinitions(randomUInt64())
             .getExecutionPayloadHeaderSchema()
             .createFromExecutionPayload(executionPayload);
-    final SszList<SszKZGCommitment> blobKzgCommitments =
-        getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle);
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
+        maybeBlobsBundle.map(
+            blobsBundle -> getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
     return randomBuilderBid(
         builder -> {
           builder.header(header);
-          builder.blobKzgCommitments(blobKzgCommitments);
+          blobKzgCommitments.ifPresent(builder::blobKzgCommitments);
+          builderModifier.accept(builder);
         });
   }
 
