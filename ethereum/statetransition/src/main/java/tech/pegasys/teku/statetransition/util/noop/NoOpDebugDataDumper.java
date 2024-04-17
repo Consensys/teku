@@ -16,8 +16,8 @@ package tech.pegasys.teku.statetransition.util.noop;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 
 public class NoOpDebugDataDumper extends DebugDataDumper {
@@ -42,9 +42,7 @@ public class NoOpDebugDataDumper extends DebugDataDumper {
 
   @Override
   public void saveInvalidBlockToFile(
-      final UInt64 slot,
-      final Bytes32 blockRoot,
-      final Bytes blockSsz,
+      final SignedBeaconBlock block,
       final String failureReason,
       final Optional<Throwable> failureCause) {}
 }

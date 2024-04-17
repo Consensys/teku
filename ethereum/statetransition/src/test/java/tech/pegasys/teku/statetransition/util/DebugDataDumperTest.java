@@ -83,12 +83,7 @@ class DebugDataDumperTest {
   void saveInvalidBlockToFile_shouldSaveToFile(@TempDir Path tempDir) {
     final DebugDataDumper manager = new DebugDataDumper(tempDir);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    manager.saveInvalidBlockToFile(
-        block.getSlot(),
-        block.getRoot(),
-        block.sszSerialize(),
-        "reason",
-        Optional.of(new Throwable()));
+    manager.saveInvalidBlockToFile(block, "reason", Optional.of(new Throwable()));
 
     final String fileName =
         String.format("%s_%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());

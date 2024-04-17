@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class DebugDataDumper {
   private static final Logger LOG = LogManager.getLogger();
@@ -101,17 +102,18 @@ public class DebugDataDumper {
   }
 
   public void saveInvalidBlockToFile(
-      final UInt64 slot,
-      final Bytes32 blockRoot,
-      final Bytes blockSsz,
+      final SignedBeaconBlock block,
       final String failureReason,
       final Optional<Throwable> failureCause) {
     if (!enabled) {
       return;
     }
+    final UInt64 slot = block.getSlot();
+    final Bytes32 blockRoot = block.getRoot();
     final String fileName = String.format("%s_%s.ssz", slot, blockRoot.toUnprefixedHexString());
     final boolean success =
-        saveBytesToFile("invalid block", Path.of(INVALID_BLOCK_DIR).resolve(fileName), blockSsz);
+        saveBytesToFile(
+            "invalid block", Path.of(INVALID_BLOCK_DIR).resolve(fileName), block.sszSerialize());
     if (success) {
       LOG.warn(
           "Rejecting invalid block at slot {} with root {} because {}",

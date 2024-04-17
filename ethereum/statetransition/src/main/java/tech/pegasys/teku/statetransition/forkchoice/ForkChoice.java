@@ -761,11 +761,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return;
     }
     debugDataDumper.saveInvalidBlockToFile(
-        block.getSlot(),
-        block.getRoot(),
-        block.sszSerialize(),
-        result.getFailureReason().name(),
-        result.getFailureCause());
+        block, result.getFailureReason().name(), result.getFailureCause());
     P2P_LOG.onInvalidBlock(
         block.getSlot(),
         block.getRoot(),

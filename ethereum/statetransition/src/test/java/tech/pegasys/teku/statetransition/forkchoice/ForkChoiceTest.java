@@ -315,9 +315,7 @@ class ForkChoiceTest {
 
     verify(debugDataDumper)
         .saveInvalidBlockToFile(
-            eq(blockAndState.getSlot()),
-            eq(blockAndState.getBlock().getRoot()),
-            eq(blockAndState.getBlock().sszSerialize()),
+            eq(blockAndState.getBlock()),
             eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
             eq(Optional.of(blockException)));
     verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
@@ -351,8 +349,7 @@ class ForkChoiceTest {
     payloadStatusSafeFuture.complete(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
     assertBlockImportFailure(importResult, FailureReason.FAILED_STATE_TRANSITION);
     verify(debugDataDumper)
-        .saveInvalidBlockToFile(
-            any(), any(), any(), eq(FailureReason.FAILED_STATE_TRANSITION.toString()), any());
+        .saveInvalidBlockToFile(any(), eq(FailureReason.FAILED_STATE_TRANSITION.toString()), any());
   }
 
   @Test
@@ -754,9 +751,7 @@ class ForkChoiceTest {
         chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
     verify(debugDataDumper)
         .saveInvalidBlockToFile(
-            eq(slotToImport.increment()),
-            any(),
-            any(),
+            eq(chainBuilder.getLatestBlockAndState().getBlock()),
             eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
             any());
   }
@@ -797,9 +792,7 @@ class ForkChoiceTest {
     assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
     verify(debugDataDumper)
         .saveInvalidBlockToFile(
-            eq(invalidBlock.getSlot()),
-            eq(invalidBlock.getRoot()),
-            eq(invalidBlock.getBlock().sszSerialize()),
+            eq(invalidBlock.getBlock()),
             eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
             any());
     assertHeadIsOptimistic(maybeValidBlock);
