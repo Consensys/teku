@@ -865,7 +865,7 @@ class BlockOperationSelectorFactoryTest {
                     .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
   }
 
   @Test
@@ -890,7 +890,7 @@ class BlockOperationSelectorFactoryTest {
                     .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
   }
 
   @Test
