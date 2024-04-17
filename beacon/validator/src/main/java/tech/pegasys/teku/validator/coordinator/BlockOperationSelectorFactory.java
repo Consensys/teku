@@ -253,11 +253,7 @@ public class BlockOperationSelectorFactory {
         setPayloadPostMerge(
             bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
         // KZG Commitments
-        setKzgCommitments(
-            bodyBuilder,
-            setUnblindedContentIfBuilderFallbacks,
-            schemaDefinitions,
-            executionPayloadResult));
+        setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
   }
 
   private SafeFuture<Void> cacheExecutionPayloadValue(
@@ -304,26 +300,37 @@ public class BlockOperationSelectorFactory {
 
   private SafeFuture<Void> setKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final Function<BuilderBidWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final SchemaDefinitions schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsKzgCommitments()) {
       return SafeFuture.COMPLETE;
     }
-    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
-        SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
-
+    final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
     if (executionPayloadResult.isFromNonBlindedFlow()) {
       // non-blinded flow
-      return getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult)
-          .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle)
-          .thenAccept(bodyBuilder::blobKzgCommitments);
+      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+          SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
+      blobKzgCommitments =
+          getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult)
+              .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
+    } else {
+      // blinded flow
+      blobKzgCommitments =
+          executionPayloadResult
+              .getBuilderBidWithFallbackDataFuture()
+              .orElseThrow()
+              .thenApply(
+                  builderBidWithFallbackData ->
+                      builderBidWithFallbackData
+                          .getBuilderBid()
+                          .getOptionalBlobKzgCommitments()
+                          .orElseThrow(
+                              () ->
+                                  new IllegalStateException(
+                                      "builder BlobKzgCommitments are not available")));
     }
 
-    // blinded flow
-    return getBuilderBlobKzgCommitments(
-            blobKzgCommitmentsSchema, executionPayloadResult, setUnblindedContentIfBuilderFallbacks)
-        .thenAccept(bodyBuilder::blobKzgCommitments);
+    return blobKzgCommitments.thenAccept(bodyBuilder::blobKzgCommitments);
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
@@ -389,10 +396,10 @@ public class BlockOperationSelectorFactory {
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
         checkState(
             blockCommitments.size() == proofs.size(),
-            "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
         checkState(
             blockCommitments.size() == blobs.size(),
-            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
       } else {
         blobs = blockContainer.getBlobs().orElseThrow();
         proofs = blockContainer.getKzgProofs().orElseThrow();
@@ -457,34 +464,6 @@ public class BlockOperationSelectorFactory {
 
   private IllegalStateException executionBlobsBundleIsNotAvailableException(final UInt64 slot) {
     return new IllegalStateException("execution BlobsBundle is not available for slot " + slot);
-  }
-
-  private SafeFuture<SszList<SszKZGCommitment>> getBuilderBlobKzgCommitments(
-      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
-      final ExecutionPayloadResult executionPayloadResult,
-      final Function<BuilderBidWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks) {
-
-    return executionPayloadResult
-        .getBuilderBidWithFallbackDataFuture()
-        .orElseThrow()
-        .thenApply(
-            builderBidWithFallbackData -> {
-              if (setUnblindedContentIfBuilderFallbacks.apply(builderBidWithFallbackData)) {
-                return blobKzgCommitmentsSchema.createFromBlobsBundle(
-                    builderBidWithFallbackData
-                        .getFallbackData()
-                        .orElseThrow()
-                        .getBlobsBundle()
-                        .orElseThrow());
-              }
-              return builderBidWithFallbackData
-                  .getBuilderBid()
-                  .getOptionalBlobKzgCommitments()
-                  .orElseThrow(
-                      () ->
-                          new IllegalStateException(
-                              "builder BlobKzgCommitments are not available"));
-            });
   }
 
   private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle getCachedBuilderBlobsBundle(

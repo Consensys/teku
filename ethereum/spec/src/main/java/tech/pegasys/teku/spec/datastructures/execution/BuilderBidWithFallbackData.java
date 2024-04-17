@@ -19,8 +19,8 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 
 /**
- * {@link #builderBid} would be either a real builder bid or a local "mimicked" builder bid (if
- * there has been a local fallback)
+ * {@link #builderBid} would be either a real builder bid or a local "mimicked" bid (if there has
+ * been a local fallback)
  *
  * <p>If there has been a local fallback, {@link #fallbackData} will contain the local payload.
  */
@@ -44,6 +44,9 @@ public class BuilderBidWithFallbackData {
     return new BuilderBidWithFallbackData(builderBid, Optional.of(fallbackData));
   }
 
+  /**
+   * @return the bid from a real builder or a local EL (if there has been a fallback)
+   */
   public BuilderBid getBuilderBid() {
     return builderBid;
   }
