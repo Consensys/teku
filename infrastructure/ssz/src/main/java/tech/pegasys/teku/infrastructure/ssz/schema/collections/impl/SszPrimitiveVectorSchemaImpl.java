@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPrimitiveVectorSchemaImpl<
         ElementT,
-        SszElementT extends SszPrimitive<ElementT, SszElementT>,
+        SszElementT extends SszPrimitive<ElementT>,
         SszVectorT extends SszPrimitiveVector<ElementT, SszElementT>>
     extends AbstractSszVectorSchema<SszElementT, SszVectorT>
     implements SszPrimitiveVectorSchema<ElementT, SszElementT, SszVectorT> {

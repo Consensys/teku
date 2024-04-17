@@ -15,9 +15,10 @@ package tech.pegasys.teku.infrastructure.ssz.primitive;
 
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszUInt64Schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SszUInt64 extends AbstractSszPrimitive<UInt64, SszUInt64> {
+public class SszUInt64 extends AbstractSszPrimitive<UInt64> {
 
   public static final SszUInt64 ZERO = new SszUInt64(UInt64.ZERO);
   public static final SszUInt64 THIRTY_TWO_ETH = new SszUInt64(UInt64.THIRTY_TWO_ETH);
@@ -38,6 +39,10 @@ public class SszUInt64 extends AbstractSszPrimitive<UInt64, SszUInt64> {
 
   private SszUInt64(final UInt64 val) {
     super(val, SszPrimitiveSchemas.UINT64_SCHEMA);
+  }
+
+  protected SszUInt64(final UInt64 val, final AbstractSszUInt64Schema<? extends SszUInt64> schema) {
+    super(val, schema);
   }
 
   public long longValue() {

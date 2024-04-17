@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUpdates;
 
 public abstract class AbstractSszMutablePrimitiveCollection<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+        ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends AbstractSszMutableCollection<SszElementT, SszElementT>
     implements SszMutablePrimitiveCollection<ElementT, SszElementT> {
 
@@ -116,8 +116,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
     throw new UnsupportedOperationException();
   }
 
-  private static class NodeUpdate<
-      ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>> {
+  private static class NodeUpdate<ElementT, SszElementT extends SszPrimitive<ElementT>> {
     private final List<PackedNodeUpdate<ElementT, SszElementT>> updates;
     private final long nodeGIndex;
 

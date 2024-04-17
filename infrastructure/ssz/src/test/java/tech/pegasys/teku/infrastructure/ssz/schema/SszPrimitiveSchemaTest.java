@@ -59,7 +59,7 @@ public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  <V, SszV extends SszPrimitive<V, SszV>> void boxed_roundtrip(SszPrimitiveSchema<V, SszV> schema) {
+  <V, SszV extends SszPrimitive<V>> void boxed_roundtrip(SszPrimitiveSchema<V, SszV> schema) {
     SszV d = randomSsz.randomData(schema);
     V v = d.get();
     SszV d1 = schema.boxed(v);
