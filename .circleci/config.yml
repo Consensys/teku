@@ -161,6 +161,12 @@ commands:
           mentions: "team-centaur"
           fail_only: true
           only_for_branches: 'master'
+
+parameters:
+  include_commit_hash:
+    type: boolean
+    default: false
+
 jobs:
   assemble:
     executor: large_executor
@@ -511,7 +517,7 @@ jobs:
           paths:
             - .openapidoc/spec/teku.json
 
-  # longish story here: we store the openapi json spec in the `gh-pages` branch of teku on Github 
+  # longish story here: we store the openapi json spec in the `gh-pages` branch of teku on Github
   # The reason we don't use GHA and instead use Circle to push to GHA is:
   # 1. We need assemble -> extractAPISpec -> publishAPISpec and this takes circa 10 mins to build in GHA,
   # 2. We publish artifacts (openapi, docker, binaries etc) only after ALL tests and we can't check for all the jobs passing to kick this one off
@@ -632,6 +638,7 @@ workflows:
                 - /^release-.*/
             tags:
               <<: *filters-release-tags
+            include_commit_hash: << parameters.include_commit_hash >>
           requires:
             - unitTests
             - propertyTests
@@ -651,6 +658,7 @@ workflows:
                 - /^release-.*/
             tags:
               <<: *filters-release-tags
+            include_commit_hash: << parameters.include_commit_hash >>
           requires:
             - unitTests
             - propertyTests
