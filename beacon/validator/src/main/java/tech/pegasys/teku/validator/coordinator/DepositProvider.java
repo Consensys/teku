@@ -323,7 +323,7 @@ public class DepositProvider
   private static class DepositsSchemaCache {
     private SszListSchema<Deposit, ?> cachedSchema;
 
-    public SszListSchema<Deposit, ?> get(long maxDeposits) {
+    public SszListSchema<Deposit, ?> get(final long maxDeposits) {
       SszListSchema<Deposit, ?> cachedSchemaLoc = cachedSchema;
       if (cachedSchemaLoc == null || maxDeposits != cachedSchemaLoc.getMaxLength()) {
         cachedSchemaLoc = SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits);
