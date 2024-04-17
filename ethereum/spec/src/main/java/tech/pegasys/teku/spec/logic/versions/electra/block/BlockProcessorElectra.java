@@ -87,10 +87,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         validatorsUtil,
         operationValidator,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
-    this.specConfigElectra = SpecConfigElectra.required(specConfig);
+    this.specConfigElectra = specConfig;
     this.predicatesElectra = PredicatesElectra.required(predicates);
     this.beaconStateMutatorsElectra = beaconStateMutators;
-    this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
+    this.schemaDefinitionsElectra = schemaDefinitions;
   }
 
   @Override
