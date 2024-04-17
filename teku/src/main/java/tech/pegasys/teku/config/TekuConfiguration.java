@@ -386,7 +386,7 @@ public class TekuConfiguration {
     }
 
     public Builder beaconChainControllerFactory(
-            final BeaconChainControllerFactory beaconChainControllerFactory) {
+        final BeaconChainControllerFactory beaconChainControllerFactory) {
       this.beaconChainControllerFactory = beaconChainControllerFactory;
       return this;
     }

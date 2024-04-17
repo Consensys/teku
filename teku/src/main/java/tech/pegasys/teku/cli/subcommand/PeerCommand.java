@@ -78,7 +78,7 @@ public class PeerCommand {
               arity = "1",
               required = true,
               description = "number of peerIDs to generate")
-      final int number) {
+          final int number) {
     try {
       validateParamsAndGenerate(params.outputFile, number);
       spec.commandLine().getOut().println("Generated file " + params.outputFile);

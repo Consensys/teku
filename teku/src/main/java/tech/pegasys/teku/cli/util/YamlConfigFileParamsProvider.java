@@ -85,7 +85,7 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
 
   @Override
   protected Map.Entry<String, String> translateToArg(
-          final  OptionSpec matchedOption, final  Map.Entry<String, Object> yamlEntry) {
+      final OptionSpec matchedOption, final Map.Entry<String, Object> yamlEntry) {
     final Object value = yamlEntry.getValue();
 
     final String translatedValue;

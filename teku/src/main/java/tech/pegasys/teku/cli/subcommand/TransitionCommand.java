@@ -78,7 +78,7 @@ public class TransitionCommand implements Runnable {
   public int blocks(
       @Mixin final InAndOutParams params,
       @Parameters(paramLabel = "block", description = "Files to read blocks from (ssz or hex)")
-      final List<String> blockPaths) {
+          final List<String> blockPaths) {
     return processStateTransition(
         params,
         (spec, state) -> {
@@ -116,9 +116,9 @@ public class TransitionCommand implements Runnable {
               showDefaultValue = Visibility.ALWAYS,
               fallbackValue = "true",
               description = "to interpret the slot number as a delta from the pre-state")
-      final boolean delta,
+          final boolean delta,
       @Parameters(paramLabel = "<number>", description = "Number of slots to process")
-      final long number) {
+          final long number) {
     return processStateTransition(
         params,
         (specProvider, state) -> {
