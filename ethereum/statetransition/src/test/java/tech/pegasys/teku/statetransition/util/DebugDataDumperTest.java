@@ -47,7 +47,7 @@ class DebugDataDumperTest {
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
     manager.saveGossipMessageDecodingError(
-        "/eth/test/topic", arrivalTimestamp, messageBytes, new Throwable());
+        "/eth/test/topic", arrivalTimestamp, () -> messageBytes, new Throwable());
 
     final String fileName =
         String.format("%s.ssz", formatTimestamp(timeProvider.getTimeInMillis().longValue()));
@@ -66,7 +66,7 @@ class DebugDataDumperTest {
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
     manager.saveGossipRejectedMessageToFile(
-        "/eth/test/topic", arrivalTimestamp, messageBytes, Optional.of("reason"));
+        "/eth/test/topic", arrivalTimestamp, () -> messageBytes, Optional.of("reason"));
 
     final String fileName =
         String.format("%s.ssz", formatTimestamp(timeProvider.getTimeInMillis().longValue()));

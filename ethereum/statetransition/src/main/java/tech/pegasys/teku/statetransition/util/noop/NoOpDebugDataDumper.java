@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.util.noop;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -30,14 +31,14 @@ public class NoOpDebugDataDumper extends DebugDataDumper {
   public void saveGossipMessageDecodingError(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
-      final Bytes originalMessage,
+      final Supplier<Bytes> originalMessage,
       final Throwable error) {}
 
   @Override
   public void saveGossipRejectedMessageToFile(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
-      final Bytes decodedMessage,
+      final Supplier<Bytes> decodedMessage,
       final Optional<String> reason) {}
 
   @Override

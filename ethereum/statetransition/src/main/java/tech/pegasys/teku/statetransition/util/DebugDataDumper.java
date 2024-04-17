@@ -22,6 +22,7 @@ import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -60,7 +61,7 @@ public class DebugDataDumper {
   public void saveGossipMessageDecodingError(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
-      final Bytes originalMessage,
+      final Supplier<Bytes> originalMessage,
       final Throwable error) {
     if (!enabled) {
       return;
@@ -73,7 +74,9 @@ public class DebugDataDumper {
             .resolve(topic.replaceAll("/", "_"));
     final boolean success =
         saveBytesToFile(
-            "gossip message with decoding error", topicPath.resolve(fileName), originalMessage);
+            "gossip message with decoding error",
+            topicPath.resolve(fileName),
+            originalMessage.get());
     if (success) {
       LOG.warn("Failed to decode gossip message on topic {}", topic, error);
     }
@@ -82,7 +85,7 @@ public class DebugDataDumper {
   public void saveGossipRejectedMessageToFile(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
-      final Bytes decodedMessage,
+      final Supplier<Bytes> decodedMessage,
       final Optional<String> reason) {
     if (!enabled) {
       return;
@@ -92,7 +95,8 @@ public class DebugDataDumper {
     final Path topicPath =
         Path.of(GOSSIP_MESSAGES_DIR).resolve(REJECTED_SUB_DIR).resolve(topic.replaceAll("/", "_"));
     final boolean success =
-        saveBytesToFile("rejected gossip message", topicPath.resolve(fileName), decodedMessage);
+        saveBytesToFile(
+            "rejected gossip message", topicPath.resolve(fileName), decodedMessage.get());
     if (success) {
       LOG.warn(
           "Rejecting gossip message on topic {}, reason: {}",
