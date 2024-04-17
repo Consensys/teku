@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
@@ -37,9 +38,25 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
  *
  * @param <SszDataT> Class of the basic view of this type
  */
-public abstract class AbstractSszPrimitiveSchema<
-        DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
+public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT>>
     implements SszPrimitiveSchema<DataT, SszDataT> {
+
+  protected static Bytes updateExtending(
+      final Bytes origBytes, final int origOff, final Bytes newBytes) {
+    if (origOff == origBytes.size()) {
+      return Bytes.wrap(origBytes, newBytes);
+    } else {
+      final MutableBytes dest;
+      if (origOff + newBytes.size() > origBytes.size()) {
+        dest = MutableBytes.create(origOff + newBytes.size());
+        origBytes.copyTo(dest, 0);
+      } else {
+        dest = origBytes.mutableCopy();
+      }
+      newBytes.copyTo(dest, origOff);
+      return dest;
+    }
+  }
 
   private final int bitsSize;
   private final int sszSize;
@@ -93,7 +110,7 @@ public abstract class AbstractSszPrimitiveSchema<
 
   protected abstract DataT createFromLeafBackingNode(LeafDataNode node, int internalIndex);
 
-  public TreeNode createBackingNode(SszDataT newValue) {
+  public TreeNode createBackingNode(final SszData newValue) {
     return updateBackingNode(LeafNode.EMPTY_LEAF, 0, newValue);
   }
 

@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 
-public class SszBytes32 extends AbstractSszPrimitive<Bytes32, SszBytes32> {
+public class SszBytes32 extends AbstractSszPrimitive<Bytes32> {
 
   public static SszBytes32 of(Bytes32 val) {
     return new SszBytes32(val);

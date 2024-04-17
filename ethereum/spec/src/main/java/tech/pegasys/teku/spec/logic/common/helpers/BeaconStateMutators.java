@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 
 public class BeaconStateMutators {
   private final SpecConfig specConfig;
-  private final MiscHelpers miscHelpers;
+  protected final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
 
   public BeaconStateMutators(

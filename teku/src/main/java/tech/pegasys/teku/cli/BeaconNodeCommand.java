@@ -212,7 +212,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private CommandLine getCommandLine() {
-    return configureCommandLine(new CommandLine(this)).addSubcommand(validatorClientSubcommand);
+    return configureCommandLine(new CommandLine(this).addSubcommand(validatorClientSubcommand));
   }
 
   public int parse(final String[] args) {

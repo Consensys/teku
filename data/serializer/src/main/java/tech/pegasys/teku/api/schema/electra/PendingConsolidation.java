@@ -47,7 +47,7 @@ public class PendingConsolidation {
         spec.getSchemaDefinitions().toVersionElectra();
     if (schemaDefinitionsElectra.isEmpty()) {
       throw new IllegalArgumentException(
-          "Could not create PendingBalanceDeposit for pre-electra spec");
+          "Could not create PendingConsolidation for pre-electra spec");
     }
     return schemaDefinitionsElectra
         .get()

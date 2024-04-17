@@ -158,7 +158,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final Validator validator = state.getValidators().get(validatorIndex);
 
           // Check if validator has eth1 credentials
-          boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
+          final boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
           if (!isExecutionAddress) {
             return;
           }
@@ -166,7 +166,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           // Check exit source_address matches validator eth1 withdrawal credentials
           final Bytes20 executionAddress =
               new Bytes20(validator.getWithdrawalCredentials().slice(12));
-          boolean isCorrectSourceAddress = executionAddress.equals(exit.getSourceAddress());
+          final boolean isCorrectSourceAddress = executionAddress.equals(exit.getSourceAddress());
           if (!isCorrectSourceAddress) {
             return;
           }
@@ -178,16 +178,16 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           }
 
           // Check if validator has already initiated exit
-          boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
+          final boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
           if (hasInitiatedExit) {
             return;
           }
 
           // Check if validator has been active long enough
           final boolean validatorActiveLongEnough =
-              currentEpoch.isLessThan(
+              currentEpoch.isGreaterThanOrEqualTo(
                   validator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()));
-          if (validatorActiveLongEnough) {
+          if (!validatorActiveLongEnough) {
             return;
           }
 

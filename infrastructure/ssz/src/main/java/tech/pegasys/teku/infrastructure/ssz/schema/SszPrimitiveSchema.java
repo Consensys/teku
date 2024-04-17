@@ -17,7 +17,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
+public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT>>
     extends SszSchema<SszDataT> {
 
   int getBitsSize();
@@ -47,7 +47,7 @@ public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, 
    */
   TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate<DataT, SszDataT>> updates);
 
-  final class PackedNodeUpdate<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>> {
+  final class PackedNodeUpdate<DataT, SszDataT extends SszPrimitive<DataT>> {
 
     private final int internalIndex;
     private final SszDataT newValue;

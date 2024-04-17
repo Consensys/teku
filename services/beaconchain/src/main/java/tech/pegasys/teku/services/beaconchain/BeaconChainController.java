@@ -149,9 +149,11 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
+import tech.pegasys.teku.statetransition.util.noop.NoOpDebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
@@ -287,6 +289,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected PoolFactory poolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
+  protected DebugDataDumper debugDataDumper;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -318,6 +321,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
+    this.debugDataDumper =
+        beaconConfig.p2pConfig().isP2pDumpsToFileEnabled()
+            ? new DebugDataDumper(serviceConfig.getDataDirLayout().getDebugDataDirectory())
+            : new NoOpDebugDataDumper();
     this.futureItemsMetric =
         SettableLabelledGauge.create(
             metricsSystem,
@@ -791,6 +798,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
+            debugDataDumper,
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
@@ -890,12 +898,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new GraffitiBuilder(
             beaconConfig.validatorConfig().getClientGraffitiAppendFormat(),
             beaconConfig.validatorConfig().getGraffitiProvider().get());
+    eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
             executionLayer,
             eventChannels.getPublisher(ExecutionClientVersionChannel.class),
             graffitiBuilder.getConsensusClientVersion());
-    eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final BlockOperationSelectorFactory operationSelector =
         new BlockOperationSelectorFactory(
             spec,
@@ -1106,6 +1114,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .specProvider(spec)
             .kzg(kzg)
             .recordMessageArrival(true)
+            .debugDataDumper(debugDataDumper)
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(
