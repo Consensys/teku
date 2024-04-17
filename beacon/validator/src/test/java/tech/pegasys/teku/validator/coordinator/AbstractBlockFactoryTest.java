@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -53,12 +54,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
-import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -197,7 +199,7 @@ public abstract class AbstractBlockFactoryTest {
             SafeFuture.completedFuture(
                 Optional.of(dataStructureUtil.randomPayloadExecutionContext(false))));
 
-    setupExecutionLayerBlockAndBlobsProduction();
+    setupExecutionLayerBlockAndBlobsProduction(spec);
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
@@ -446,38 +448,9 @@ public abstract class AbstractBlockFactoryTest {
     return builderPayload;
   }
 
-  private void setupExecutionLayerBlockAndBlobsProduction() {
-    // pre Deneb
+  private void setupExecutionLayerBlockAndBlobsProduction(final Spec spec) {
+    // non-blinded
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any(), any()))
-        .thenAnswer(
-            args -> {
-              final ExecutionPayloadResult executionPayloadResult =
-                  new ExecutionPayloadResult(
-                      args.getArgument(0),
-                      Optional.of(SafeFuture.completedFuture(executionPayload)),
-                      Optional.empty(),
-                      Optional.empty(),
-                      Optional.empty());
-              cachedExecutionPayloadResult = executionPayloadResult;
-              return executionPayloadResult;
-            });
-    when(executionLayer.initiateBlockProduction(any(), any(), eq(true), any(), any()))
-        .thenAnswer(
-            args -> {
-              final ExecutionPayloadResult executionPayloadResult =
-                  new ExecutionPayloadResult(
-                      args.getArgument(0),
-                      Optional.empty(),
-                      Optional.empty(),
-                      Optional.of(
-                          SafeFuture.completedFuture(
-                              HeaderWithFallbackData.create(executionPayloadHeader))),
-                      Optional.empty());
-              cachedExecutionPayloadResult = executionPayloadResult;
-              return executionPayloadResult;
-            });
-    // post Deneb
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -490,9 +463,21 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(true), any(), any()))
+    // blinded
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(true), any(), any()))
         .thenAnswer(
             args -> {
+              final BuilderBid builderBid =
+                  SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+                      .getBuilderBidSchema()
+                      .createBuilderBid(
+                          builder -> {
+                            builder.header(executionPayloadHeader);
+                            builderBlobKzgCommitments.ifPresent(builder::blobKzgCommitments);
+                            // stub values
+                            builder.value(UInt256.ZERO);
+                            builder.publicKey(BLSPublicKey.empty());
+                          });
               final ExecutionPayloadResult executionPayloadResult =
                   new ExecutionPayloadResult(
                       args.getArgument(0),
@@ -500,8 +485,7 @@ public abstract class AbstractBlockFactoryTest {
                       Optional.empty(),
                       Optional.of(
                           SafeFuture.completedFuture(
-                              HeaderWithFallbackData.create(
-                                  executionPayloadHeader, builderBlobKzgCommitments))),
+                              BuilderBidWithFallbackData.create(builderBid))),
                       Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;

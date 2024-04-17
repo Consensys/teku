@@ -21,27 +21,34 @@ import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
+/**
+ * In blinded flow, {@link #builderBidWithFallbackDataFuture} would be present
+ *
+ * <p>In non-blinded flow, both {@link #executionPayloadFuture} and {@link #blobsBundleFuture} would
+ * be present. The {@link #blobsBundleFuture} will have a value when the future is complete only
+ * after Deneb, otherwise it will be empty.
+ */
 public class ExecutionPayloadResult {
 
   private final ExecutionPayloadContext executionPayloadContext;
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
   private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
-  private final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture;
+  private final Optional<SafeFuture<BuilderBidWithFallbackData>> builderBidWithFallbackDataFuture;
   private final Optional<SafeFuture<UInt256>> executionPayloadValueFuture;
 
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
       final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
-      final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture,
+      final Optional<SafeFuture<BuilderBidWithFallbackData>> builderBidWithFallbackDataFuture,
       final Optional<SafeFuture<UInt256>> executionPayloadValueFuture) {
     checkArgument(
-        executionPayloadFuture.isPresent() != headerWithFallbackDataFuture.isPresent(),
-        "Either executionPayloadFuture or headerWithFallbackDataFuture must be present");
+        executionPayloadFuture.isPresent() != builderBidWithFallbackDataFuture.isPresent(),
+        "Either executionPayloadFuture or builderBidWithFallbackDataFuture must be present");
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.blobsBundleFuture = blobsBundleFuture;
-    this.headerWithFallbackDataFuture = headerWithFallbackDataFuture;
+    this.builderBidWithFallbackDataFuture = builderBidWithFallbackDataFuture;
     this.executionPayloadValueFuture = executionPayloadValueFuture;
   }
 
@@ -57,8 +64,8 @@ public class ExecutionPayloadResult {
     return blobsBundleFuture;
   }
 
-  public Optional<SafeFuture<HeaderWithFallbackData>> getHeaderWithFallbackDataFuture() {
-    return headerWithFallbackDataFuture;
+  public Optional<SafeFuture<BuilderBidWithFallbackData>> getBuilderBidWithFallbackDataFuture() {
+    return builderBidWithFallbackDataFuture;
   }
 
   public Optional<SafeFuture<UInt256>> getExecutionPayloadValueFuture() {
@@ -77,7 +84,7 @@ public class ExecutionPayloadResult {
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
         && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
         && Objects.equals(blobsBundleFuture, that.blobsBundleFuture)
-        && Objects.equals(headerWithFallbackDataFuture, that.headerWithFallbackDataFuture)
+        && Objects.equals(builderBidWithFallbackDataFuture, that.builderBidWithFallbackDataFuture)
         && Objects.equals(executionPayloadValueFuture, that.executionPayloadValueFuture);
   }
 
@@ -87,7 +94,7 @@ public class ExecutionPayloadResult {
         executionPayloadContext,
         executionPayloadFuture,
         blobsBundleFuture,
-        headerWithFallbackDataFuture,
+        builderBidWithFallbackDataFuture,
         executionPayloadValueFuture);
   }
 
@@ -97,7 +104,7 @@ public class ExecutionPayloadResult {
         .add("executionPayloadContext", executionPayloadContext)
         .add("executionPayloadFuture", executionPayloadFuture)
         .add("blobsBundleFuture", blobsBundleFuture)
-        .add("headerWithFallbackDataFuture", headerWithFallbackDataFuture)
+        .add("builderBidWithFallbackDataFuture", builderBidWithFallbackDataFuture)
         .add("executionPayloadValueFuture", executionPayloadValueFuture)
         .toString();
   }

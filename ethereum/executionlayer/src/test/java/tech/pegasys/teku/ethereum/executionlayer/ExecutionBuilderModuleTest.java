@@ -44,11 +44,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -71,7 +71,6 @@ public class ExecutionBuilderModuleTest {
   private final EventLogger eventLogger = mock(EventLogger.class);
 
   private final BeaconState state = dataStructureUtil.randomBeaconState(slot);
-  private final SafeFuture<UInt256> payloadValueResult = new SafeFuture<>();
 
   private ExecutionPayloadContext executionPayloadContext;
   private ExecutionBuilderModule executionBuilderModule;
@@ -105,18 +104,14 @@ public class ExecutionBuilderModuleTest {
 
     final BuilderBid builderBid = prepareBuilderGetHeaderResponse(false, builderValue);
 
-    final SafeFuture<HeaderWithFallbackData> result =
+    final SafeFuture<BuilderBidWithFallbackData> result =
         callBuilderGetHeader(requestedComparisonFactor);
 
     if (localShouldWin) {
       assertGetHeaderResultFallbacksToLocal(
           result, localFallback, FallbackReason.LOCAL_BLOCK_VALUE_WON);
-
-      assertThatSafeFuture(payloadValueResult).isCompletedWithValue(localValue);
     } else {
       assertGetHeaderResultIsFromBuilder(result, builderBid);
-
-      assertThatSafeFuture(payloadValueResult).isCompletedWithValue(builderValue);
     }
 
     logCaptor.assertInfoLog(comparisonLogMessage);
@@ -192,12 +187,11 @@ public class ExecutionBuilderModuleTest {
             "Local execution payload (0.000000 ETH) is chosen over builder bid (333.000001 ETH) - builder compare factor: PREFER_EXECUTION, source: BN."));
   }
 
-  private SafeFuture<HeaderWithFallbackData> callBuilderGetHeader(
+  private SafeFuture<BuilderBidWithFallbackData> callBuilderGetHeader(
       final Optional<UInt64> requestedBuilderBoostFactor) {
     return executionBuilderModule.builderGetHeader(
         executionPayloadContext,
         state,
-        payloadValueResult,
         requestedBuilderBoostFactor,
         BlockProductionPerformance.NOOP);
   }
@@ -242,7 +236,7 @@ public class ExecutionBuilderModuleTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
     final BuilderBid builderBid =
-        dataStructureUtil.randomBuilderBid(dataStructureUtil.randomPublicKey(), builderBlockValue);
+        dataStructureUtil.randomBuilderBid(builder -> builder.value(builderBlockValue));
     final SignedBuilderBid signedBuilderBid = dataStructureUtil.randomSignedBuilderBid(builderBid);
 
     doAnswer(
@@ -265,25 +259,33 @@ public class ExecutionBuilderModuleTest {
   }
 
   void assertGetHeaderResultIsFromBuilder(
-      final SafeFuture<HeaderWithFallbackData> result, final BuilderBid builderBid) {
+      final SafeFuture<BuilderBidWithFallbackData> result, final BuilderBid builderBid) {
     assertThatSafeFuture(result)
         .isCompletedWithValueMatching(
-            headerWithFallbackData -> headerWithFallbackData.getFallbackData().isEmpty(),
+            builderBidWithFallbackData -> builderBidWithFallbackData.getFallbackData().isEmpty(),
             "no fallback")
         .isCompletedWithValueMatching(
-            headerWithFallbackData ->
-                headerWithFallbackData.getExecutionPayloadHeader().equals(builderBid.getHeader()),
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
+                    .getBuilderBid()
+                    .getHeader()
+                    .equals(builderBid.getHeader()),
             "header from builder")
         .isCompletedWithValueMatching(
-            headerWithFallbackData ->
-                headerWithFallbackData
-                    .getBlobKzgCommitments()
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
+                    .getBuilderBid()
+                    .getOptionalBlobKzgCommitments()
                     .equals(builderBid.getOptionalBlobKzgCommitments()),
-            "kzg commitments from builder");
+            "kzg commitments from builder")
+        .isCompletedWithValueMatching(
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData.getBuilderBid().getValue().equals(builderBid.getValue()),
+            "value from builder");
   }
 
   void assertGetHeaderResultFallbacksToLocal(
-      final SafeFuture<HeaderWithFallbackData> result,
+      final SafeFuture<BuilderBidWithFallbackData> result,
       final GetPayloadResponse localFallback,
       final FallbackReason reason) {
     final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
@@ -304,35 +306,52 @@ public class ExecutionBuilderModuleTest {
 
     assertThatSafeFuture(result)
         .isCompletedWithValueMatching(
-            headerWithFallbackData -> headerWithFallbackData.getFallbackData().isPresent(),
+            builderBidWithFallbackData -> builderBidWithFallbackData.getFallbackData().isPresent(),
             "fallback is present")
         .isCompletedWithValueMatching(
-            headerWithFallbackData ->
-                headerWithFallbackData
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
                     .getFallbackData()
                     .orElseThrow()
                     .getExecutionPayload()
                     .equals(localFallback.getExecutionPayload()),
             "fallback payload equals local payload")
         .isCompletedWithValueMatching(
-            headerWithFallbackData ->
-                headerWithFallbackData
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
                     .getFallbackData()
                     .orElseThrow()
                     .getBlobsBundle()
                     .equals(localFallback.getBlobsBundle()),
             "fallback bundle equals local bundle")
         .isCompletedWithValueMatching(
-            headerWithFallbackData ->
-                headerWithFallbackData.getFallbackData().orElseThrow().getReason().equals(reason),
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
+                    .getFallbackData()
+                    .orElseThrow()
+                    .getReason()
+                    .equals(reason),
             "fallback reason matches")
         .isCompletedWithValueMatching(
-            headerWithFallbackData ->
-                headerWithFallbackData.getExecutionPayloadHeader().equals(executionPayloadHeader),
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
+                    .getBuilderBid()
+                    .getHeader()
+                    .equals(executionPayloadHeader),
             "header from local")
         .isCompletedWithValueMatching(
-            headerWithFallbackData ->
-                headerWithFallbackData.getBlobKzgCommitments().equals(blobKzgCommitments),
-            "kzg commitments from local");
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
+                    .getBuilderBid()
+                    .getOptionalBlobKzgCommitments()
+                    .equals(blobKzgCommitments),
+            "kzg commitments from local")
+        .isCompletedWithValueMatching(
+            builderBidWithFallbackData ->
+                builderBidWithFallbackData
+                    .getBuilderBid()
+                    .getValue()
+                    .equals(localFallback.getExecutionPayloadValue()),
+            "value from local");
   }
 }
