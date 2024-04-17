@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLINDED_BLOCK;
@@ -109,7 +110,13 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
       // application/octet-stream is preferred, but will accept application/json
       headers.put("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     }
-    return get(apiMethod, Map.of("slot", slot.toString()), queryParams, headers, responseHandler)
+    return get(
+            apiMethod,
+            Map.of("slot", slot.toString()),
+            queryParams,
+            emptyMap(),
+            headers,
+            responseHandler)
         .map(
             response ->
                 new BlockContainerAndMetaData(

@@ -48,6 +48,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
@@ -75,6 +78,12 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final DepositReceiptSchema depositReceiptSchema;
 
   private final ExecutionLayerExitSchema executionLayerExitSchema;
+
+  private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
+
+  private final PendingPartialWithdrawal.PendingPartialWithdrawalSchema
+      pendingPartialWithdrawalSchema;
+  private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
 
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
@@ -126,12 +135,16 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
     this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
     this.executionLayerExitSchema = ExecutionLayerExit.SSZ_SCHEMA;
+    this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
+    this.pendingPartialWithdrawalSchema =
+        new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
+    this.pendingConsolidationSchema = new PendingConsolidation.PendingConsolidationSchema();
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
     checkArgument(
         schemaDefinitions instanceof SchemaDefinitionsElectra,
-        "Expected definitions of type %s by got %s",
+        "Expected definitions of type %s but got %s",
         SchemaDefinitionsElectra.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsElectra) schemaDefinitions;
@@ -251,8 +264,21 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return executionLayerExitSchema;
   }
 
+  public PendingBalanceDeposit.PendingBalanceDepositSchema getPendingBalanceDepositSchema() {
+    return pendingBalanceDepositSchema;
+  }
+
+  public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
+      getPendingPartialWithdrawalSchema() {
+    return pendingPartialWithdrawalSchema;
+  }
+
   @Override
   public Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
+    return pendingConsolidationSchema;
   }
 }

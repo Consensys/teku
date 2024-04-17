@@ -81,7 +81,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {
     checkArgument(
         schemaDefinitions instanceof SchemaDefinitionsBellatrix,
-        "Expected definitions of type %s by got %s",
+        "Expected definitions of type %s but got %s",
         SchemaDefinitionsBellatrix.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsBellatrix) schemaDefinitions;

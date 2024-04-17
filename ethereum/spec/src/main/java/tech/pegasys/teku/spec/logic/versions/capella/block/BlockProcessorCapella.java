@@ -275,8 +275,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       if (predicates.hasEth1WithdrawalCredential(validator)) {
         final UInt64 balance = balances.get(validatorIndex).get();
 
-        if (predicates.isFullyWithdrawableValidatorEth1CredentialsChecked(
-            validator, balance, epoch)) {
+        if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
           expectedWithdrawals.add(
               withdrawalSchema.create(
                   withdrawalIndex,

@@ -42,6 +42,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.GetGasLimit;
+import tech.pegasys.teku.validator.client.restapi.apis.GetGraffiti;
 import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
@@ -57,6 +58,7 @@ public class ValidatorRestApi {
   public static final String TAG_KEY_MANAGEMENT = "Key Management";
   public static final String TAG_FEE_RECIPIENT = "Fee Recipient";
   public static final String TAG_GAS_LIMIT = "Gas Limit";
+  public static final String TAG_GRAFFITI = "Graffiti";
 
   public static RestApi create(
       final Spec spec,
@@ -128,6 +130,7 @@ public class ValidatorRestApi {
         .endpoint(new DeleteFeeRecipient(proposerConfigManager))
         .endpoint(new DeleteGasLimit(proposerConfigManager))
         .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
+        .endpoint(new GetGraffiti())
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(validatorApiBearerFile)
         .build();

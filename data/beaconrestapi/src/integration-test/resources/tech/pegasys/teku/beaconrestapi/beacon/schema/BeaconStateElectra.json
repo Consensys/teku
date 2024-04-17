@@ -1,7 +1,7 @@
 {
   "title" : "BeaconStateElectra",
   "type" : "object",
-  "required" : [ "genesis_time", "genesis_validators_root", "slot", "fork", "latest_block_header", "block_roots", "state_roots", "historical_roots", "eth1_data", "eth1_data_votes", "eth1_deposit_index", "validators", "balances", "randao_mixes", "slashings", "previous_epoch_participation", "current_epoch_participation", "justification_bits", "previous_justified_checkpoint", "current_justified_checkpoint", "finalized_checkpoint", "inactivity_scores", "current_sync_committee", "next_sync_committee", "latest_execution_payload_header", "next_withdrawal_index", "next_withdrawal_validator_index", "historical_summaries", "deposit_receipts_start_index" ],
+  "required" : [ "genesis_time", "genesis_validators_root", "slot", "fork", "latest_block_header", "block_roots", "state_roots", "historical_roots", "eth1_data", "eth1_data_votes", "eth1_deposit_index", "validators", "balances", "randao_mixes", "slashings", "previous_epoch_participation", "current_epoch_participation", "justification_bits", "previous_justified_checkpoint", "current_justified_checkpoint", "finalized_checkpoint", "inactivity_scores", "current_sync_committee", "next_sync_committee", "latest_execution_payload_header", "next_withdrawal_index", "next_withdrawal_validator_index", "historical_summaries", "deposit_receipts_start_index", "deposit_balance_to_consume", "exit_balance_to_consume", "earliest_exit_epoch", "consolidation_balance_to_consume", "earliest_consolidation_epoch", "pending_balance_deposits", "pending_partial_withdrawals", "pending_consolidations" ],
   "properties" : {
     "genesis_time" : {
       "type" : "string",
@@ -176,6 +176,54 @@
       "description" : "unsigned 64 bit integer",
       "example" : "1",
       "format" : "uint64"
+    },
+    "deposit_balance_to_consume" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "exit_balance_to_consume" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "earliest_exit_epoch" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "consolidation_balance_to_consume" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "earliest_consolidation_epoch" : {
+      "type" : "string",
+      "description" : "unsigned 64 bit integer",
+      "example" : "1",
+      "format" : "uint64"
+    },
+    "pending_balance_deposits" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/PendingBalanceDeposit"
+      }
+    },
+    "pending_partial_withdrawals" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/PendingPartialWithdrawal"
+      }
+    },
+    "pending_consolidations" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/PendingConsolidation"
+      }
     }
   }
 }
