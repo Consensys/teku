@@ -2457,7 +2457,8 @@ public final class DataStructureUtil {
         .create(sourceAddress, validatorPubKey, amount);
   }
 
-  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(final Validator validator) {
+  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
+      final Validator validator) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
         .getExecutionLayerWithdrawalRequestSchema()

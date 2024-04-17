@@ -219,7 +219,8 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<ExecutionLayerWithdrawalRequest, ?> getExecutionLayerWithdrawalRequestsSchema() {
+  public SszListSchema<ExecutionLayerWithdrawalRequest, ?>
+      getExecutionLayerWithdrawalRequestsSchema() {
     return (SszListSchema<ExecutionLayerWithdrawalRequest, ?>)
         getChildSchema(getFieldIndex(WITHDRAW_REQUESTS));
   }

@@ -151,7 +151,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /**
-   * Implements process_execution_layer_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251).
+   * Implements process_execution_layer_withdrawal_request from consensus-specs (EIP-7002 &
+   * EIP-7251).
    */
   @Override
   public void processExecutionLayerWithdrawalRequests(

@@ -51,7 +51,8 @@ class ExecutionLayerWithdrawalRequestTest {
         executionLayerWithdrawalRequestSchema.create(sourceAddress, validatorPublicKey, amount);
 
     assertThat(executionLayerWithdrawalRequest.getSourceAddress()).isEqualTo(sourceAddress);
-    assertThat(executionLayerWithdrawalRequest.getValidatorPublicKey()).isEqualTo(validatorPublicKey);
+    assertThat(executionLayerWithdrawalRequest.getValidatorPublicKey())
+        .isEqualTo(validatorPublicKey);
   }
 
   @Test

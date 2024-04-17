@@ -51,7 +51,8 @@ public class ExecutionLayerWithdrawalRequest {
 
   public final tech.pegasys.teku.spec.datastructures.execution.versions.electra
           .ExecutionLayerWithdrawalRequest
-      asInternalExecutionLayerWithdrawalRequest(final ExecutionLayerWithdrawalRequestSchema schema) {
+      asInternalExecutionLayerWithdrawalRequest(
+          final ExecutionLayerWithdrawalRequestSchema schema) {
     return schema.create(sourceAddress, validatorPublicKey, amount);
   }
 }

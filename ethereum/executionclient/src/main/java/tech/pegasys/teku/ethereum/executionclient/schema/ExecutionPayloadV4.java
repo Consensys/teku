@@ -107,7 +107,9 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         getDepositReceipts(
             executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getDepositReceipts)),
         getWithdrawalRequests(
-            executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getWithdrawalRequests)));
+            executionPayload
+                .toVersionElectra()
+                .map(ExecutionPayloadElectra::getWithdrawalRequests)));
   }
 
   @Override
