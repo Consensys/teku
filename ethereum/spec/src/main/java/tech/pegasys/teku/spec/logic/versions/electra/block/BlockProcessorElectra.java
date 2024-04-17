@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -86,10 +87,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         validatorsUtil,
         operationValidator,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
-    this.specConfigElectra = specConfig;
+    this.specConfigElectra = SpecConfigElectra.required(specConfig);
     this.predicatesElectra = PredicatesElectra.required(predicates);
     this.beaconStateMutatorsElectra = beaconStateMutators;
-    this.schemaDefinitionsElectra = schemaDefinitions;
+    this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
   }
 
   @Override
