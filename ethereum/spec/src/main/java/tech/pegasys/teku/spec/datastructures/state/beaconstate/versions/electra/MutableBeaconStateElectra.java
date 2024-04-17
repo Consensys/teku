@@ -75,18 +75,19 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, SszUInt64.of(earliestConsolidationEpoch));
   }
 
-  default void setPendingBalanceDeposits(SszList<PendingBalanceDeposit> pendingBalanceDeposits) {
+  default void setPendingBalanceDeposits(
+      final SszList<PendingBalanceDeposit> pendingBalanceDeposits) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_BALANCE_DEPOSITS);
     set(fieldIndex, pendingBalanceDeposits);
   }
 
   default void setPendingPartialWithdrawals(
-      SszList<PendingPartialWithdrawal> pendingPartialWithdrawals) {
+      final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS);
     set(fieldIndex, pendingPartialWithdrawals);
   }
 
-  default void setPendingConsolidations(SszList<PendingConsolidation> pendingConsolidations) {
+  default void setPendingConsolidations(final SszList<PendingConsolidation> pendingConsolidations) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS);
     set(fieldIndex, pendingConsolidations);
   }

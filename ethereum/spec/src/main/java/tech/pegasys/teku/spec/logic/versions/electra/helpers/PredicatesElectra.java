@@ -94,7 +94,7 @@ public class PredicatesElectra extends Predicates {
    * @param validator
    * @return
    */
-  protected boolean hasCompoundingWithdrawalCredential(final Validator validator) {
+  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
     return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
   }
 
@@ -104,7 +104,7 @@ public class PredicatesElectra extends Predicates {
    * @param withdrawalCredentials
    * @return
    */
-  protected boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
+  public boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
   }
 
