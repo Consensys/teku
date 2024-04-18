@@ -213,7 +213,7 @@ public class BlockOperationSelectorFactory {
               blockSlotState.getSlot()));
     }
 
-    // if requestedBlinded has been specified, we strictly follow it otherwise, we should run
+    // if requestedBlinded has been specified, we strictly follow it, otherwise we should run
     // Builder flow (blinded) only if we have a validator registration
     final boolean shouldTryBuilderFlow =
         requestedBlinded.orElseGet(
@@ -250,7 +250,7 @@ public class BlockOperationSelectorFactory {
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
         // Execution Payload / Execution Payload Header
-        setPayloadPostMerge(
+        setPayloadOrPayloadHeader(
             bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
         // KZG Commitments
         setKzgCommitments(
@@ -267,7 +267,7 @@ public class BlockOperationSelectorFactory {
                     .setBlockExecutionValue(blockExecutionValue));
   }
 
-  private SafeFuture<Void> setPayloadPostMerge(
+  private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
       final Function<BuilderBidWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final ExecutionPayloadResult executionPayloadResult) {
