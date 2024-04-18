@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -36,6 +37,8 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.consolidations.Consolidation;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
@@ -236,6 +239,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return new BeaconBlockBodyBuilderElectra(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
+  public SszListSchema<SignedConsolidation, ?> getConsolidationsSchema() {
+    return beaconBlockBodySchema.getConsolidationsSchema();
+  }
+
   @Override
   public BlockContentsSchema getBlockContentsSchema() {
     return blockContentsSchema;
@@ -280,5 +287,13 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
     return pendingConsolidationSchema;
+  }
+
+  public Consolidation.ConsolidationSchema getConsolidationSchema() {
+    return Consolidation.SSZ_SCHEMA;
+  }
+
+  public SignedConsolidation.SignedConsolidationSchema getSignedConsolidationSchema() {
+    return SignedConsolidation.SSZ_SCHEMA;
   }
 }

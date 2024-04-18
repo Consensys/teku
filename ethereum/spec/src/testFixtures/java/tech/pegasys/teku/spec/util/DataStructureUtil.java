@@ -116,6 +116,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBun
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -1319,6 +1320,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsConsolidations()) {
+                builder.consolidations(emptyConsolidations());
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1358,6 +1362,9 @@ public final class DataStructureUtil {
                       1));
           if (builder.supportsExecutionPayload()) {
             builder.executionPayload(randomExecutionPayload(proposalSlot));
+          }
+          if (builder.supportsConsolidations()) {
+            builder.consolidations(emptyConsolidations());
           }
         });
   }
@@ -1420,6 +1427,9 @@ public final class DataStructureUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
+              }
+              if (builder.supportsConsolidations()) {
+                builder.consolidations(emptyConsolidations());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -2364,6 +2374,13 @@ public final class DataStructureUtil {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
+  }
+
+  public SszList<SignedConsolidation> emptyConsolidations() {
+    return SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+        .getConsolidationsSchema()
+        .createFromElements(List.of());
   }
 
   public class RandomBlobSidecarBuilder {

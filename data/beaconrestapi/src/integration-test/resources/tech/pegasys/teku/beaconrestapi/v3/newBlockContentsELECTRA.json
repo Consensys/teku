@@ -404,7 +404,8 @@
         "blob_kzg_commitments": [
           "0x02f65546365f449dbedb4d15903f8d2af483cbcc493fa0a9a6d1d982e0a353b81d20fe781245e513126d1f941ef3f17d",
           "0xc8926746567ca6cede12189315a54fc3e17ace1626e5257b1d4e0f2a51812d1856c1ab5c2322444a3c24568fc99bc6ca"
-        ]
+        ],
+        "consolidations": []
       }
     },
     "kzg_proofs": [
