@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 public class AttesterDutiesGenerator {
   private final Spec spec;
 
-  public AttesterDutiesGenerator(Spec spec) {
+  public AttesterDutiesGenerator(final Spec spec) {
     this.spec = spec;
   }
 

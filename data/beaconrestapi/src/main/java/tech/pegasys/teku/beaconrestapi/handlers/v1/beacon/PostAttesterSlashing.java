@@ -56,7 +56,7 @@ public class PostAttesterSlashing extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final AttesterSlashing attesterSlashing = request.getRequestBody();
     final SafeFuture<InternalValidationResult> future =
         nodeDataProvider.postAttesterSlashing(attesterSlashing);
@@ -79,7 +79,7 @@ public class PostAttesterSlashing extends RestApiEndpoint {
   }
 
   private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(
-      SpecConfig specConfig) {
+      final SpecConfig specConfig) {
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
         new IndexedAttestation.IndexedAttestationSchema(specConfig);
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =

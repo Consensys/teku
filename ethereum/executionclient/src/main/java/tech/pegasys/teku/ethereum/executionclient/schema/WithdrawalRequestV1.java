@@ -21,9 +21,12 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deseriali
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes48Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ExitV1 {
+public class WithdrawalRequestV1 {
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
   public final Bytes20 sourceAddress;
@@ -32,10 +35,16 @@ public class ExitV1 {
   @JsonDeserialize(using = Bytes48Deserializer.class)
   public final Bytes48 validatorPublicKey;
 
-  public ExitV1(
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
+  public final UInt64 amount;
+
+  public WithdrawalRequestV1(
       @JsonProperty("sourceAddress") final Bytes20 sourceAddress,
-      @JsonProperty("validatorPublicKey") final Bytes48 validatorPublicKey) {
+      @JsonProperty("validatorPublicKey") final Bytes48 validatorPublicKey,
+      @JsonProperty("amount") final UInt64 amount) {
     this.sourceAddress = sourceAddress;
     this.validatorPublicKey = validatorPublicKey;
+    this.amount = amount;
   }
 }

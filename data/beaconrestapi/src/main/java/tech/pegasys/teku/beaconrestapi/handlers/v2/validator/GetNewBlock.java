@@ -108,7 +108,7 @@ public class GetNewBlock extends RestApiEndpoint {
 
   @Override
   @SuppressWarnings("deprecation")
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot =
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);

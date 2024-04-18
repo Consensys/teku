@@ -41,11 +41,11 @@ public class Eth1VotingSummarySchema {
 
   @JsonCreator
   public Eth1VotingSummarySchema(
-      @JsonProperty("state_eth1_data") Eth1Data stateEth1Data,
-      @JsonProperty("eth1_data_votes") List<Eth1DataWithVotesSchema> eth1DataVotes,
-      @JsonProperty("votes_required") UInt64 votesRequired,
-      @JsonProperty("voting_period_slots") UInt64 votingPeriodSlots,
-      @JsonProperty("voting_period_slots_left") UInt64 votingPeriodSlotsLeft) {
+      final @JsonProperty("state_eth1_data") Eth1Data stateEth1Data,
+      final @JsonProperty("eth1_data_votes") List<Eth1DataWithVotesSchema> eth1DataVotes,
+      final @JsonProperty("votes_required") UInt64 votesRequired,
+      final @JsonProperty("voting_period_slots") UInt64 votingPeriodSlots,
+      final @JsonProperty("voting_period_slots_left") UInt64 votingPeriodSlotsLeft) {
     this.stateEth1Data = stateEth1Data;
     this.eth1DataVotes = eth1DataVotes;
     this.votesRequired = votesRequired;

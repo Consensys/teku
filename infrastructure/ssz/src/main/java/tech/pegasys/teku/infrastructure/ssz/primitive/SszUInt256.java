@@ -17,7 +17,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 
-public class SszUInt256 extends AbstractSszPrimitive<UInt256, SszUInt256> {
+public class SszUInt256 extends AbstractSszPrimitive<UInt256> {
 
   public static final SszUInt256 ZERO = SszUInt256.of(UInt256.ZERO);
 

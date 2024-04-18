@@ -28,8 +28,8 @@ public class PendingConsolidation {
   public final int targetIndex;
 
   PendingConsolidation(
-      @JsonProperty("source_index") int sourceIndex,
-      @JsonProperty("target_index") int targetIndex) {
+      final @JsonProperty("source_index") int sourceIndex,
+      final @JsonProperty("target_index") int targetIndex) {
     this.sourceIndex = sourceIndex;
     this.targetIndex = targetIndex;
   }
@@ -47,7 +47,7 @@ public class PendingConsolidation {
         spec.getSchemaDefinitions().toVersionElectra();
     if (schemaDefinitionsElectra.isEmpty()) {
       throw new IllegalArgumentException(
-          "Could not create PendingBalanceDeposit for pre-electra spec");
+          "Could not create PendingConsolidation for pre-electra spec");
     }
     return schemaDefinitionsElectra
         .get()

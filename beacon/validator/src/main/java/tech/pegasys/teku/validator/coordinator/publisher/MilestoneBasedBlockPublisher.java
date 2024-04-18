@@ -81,7 +81,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel,
-      BlockPublishingPerformance blockPublishingPerformance) {
+      final BlockPublishingPerformance blockPublishingPerformance) {
     final SpecMilestone blockMilestone = spec.atSlot(blockContainer.getSlot()).getMilestone();
     return registeredPublishers
         .get(blockMilestone)

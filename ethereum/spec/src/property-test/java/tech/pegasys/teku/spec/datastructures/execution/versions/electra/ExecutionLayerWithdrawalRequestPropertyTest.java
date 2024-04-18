@@ -19,23 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra.ExecutionLayerExitSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra.ExecutionLayerWithdrawalRequestSupplier;
 
-public class ExecutionLayerExitPropertyTest {
+public class ExecutionLayerWithdrawalRequestPropertyTest {
 
   @Property
   void roundTrip(
-      @ForAll(supplier = ExecutionLayerExitSupplier.class)
-          final ExecutionLayerExit executionLayerExit)
+      @ForAll(supplier = ExecutionLayerWithdrawalRequestSupplier.class)
+          final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest)
       throws JsonProcessingException {
-    assertRoundTrip(executionLayerExit);
+    assertRoundTrip(executionLayerWithdrawalRequest);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = ExecutionLayerExitSupplier.class)
-          final ExecutionLayerExit executionLayerExit,
+      @ForAll(supplier = ExecutionLayerWithdrawalRequestSupplier.class)
+          final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(executionLayerExit, seed);
+    assertDeserializeMutatedThrowsExpected(executionLayerWithdrawalRequest, seed);
   }
 }

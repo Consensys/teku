@@ -37,15 +37,15 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
   @Override
   BeaconStateElectra commitChanges();
 
+  @Override
+  default Optional<MutableBeaconStateElectra> toMutableVersionElectra() {
+    return Optional.of(this);
+  }
+
   default void setDepositReceiptsStartIndex(final UInt64 depositReceiptsStartIndex) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX);
     set(fieldIndex, SszUInt64.of(depositReceiptsStartIndex));
-  }
-
-  @Override
-  default Optional<MutableBeaconStateElectra> toMutableVersionElectra() {
-    return Optional.of(this);
   }
 
   default void setDepositBalanceToConsume(final UInt64 depositBalanceToConsume) {
@@ -75,18 +75,19 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, SszUInt64.of(earliestConsolidationEpoch));
   }
 
-  default void setPendingBalanceDeposits(SszList<PendingBalanceDeposit> pendingBalanceDeposits) {
+  default void setPendingBalanceDeposits(
+      final SszList<PendingBalanceDeposit> pendingBalanceDeposits) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_BALANCE_DEPOSITS);
     set(fieldIndex, pendingBalanceDeposits);
   }
 
   default void setPendingPartialWithdrawals(
-      SszList<PendingPartialWithdrawal> pendingPartialWithdrawals) {
+      final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS);
     set(fieldIndex, pendingPartialWithdrawals);
   }
 
-  default void setPendingConsolidations(SszList<PendingConsolidation> pendingConsolidations) {
+  default void setPendingConsolidations(final SszList<PendingConsolidation> pendingConsolidations) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS);
     set(fieldIndex, pendingConsolidations);
   }

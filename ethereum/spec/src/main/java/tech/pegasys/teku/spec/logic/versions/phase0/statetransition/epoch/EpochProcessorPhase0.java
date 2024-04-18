@@ -81,4 +81,10 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   public void processSyncCommitteeUpdates(final MutableBeaconState state) {
     // Nothing to do
   }
+
+  @Override
+  public void processPendingBalanceDeposits(final MutableBeaconState state) {}
+
+  @Override
+  public void processPendingConsolidations(final MutableBeaconState state) {}
 }

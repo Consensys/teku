@@ -51,7 +51,7 @@ public class GetSpec extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     try {
       final SpecConfigData responseContext = new SpecConfigData(configProvider.getGenesisSpec());
       request.respondOk(responseContext.getConfigMap());

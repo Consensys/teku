@@ -96,7 +96,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   @Override
   public List<BlobSidecar> createBlobSidecars(
       final SignedBlockContainer blockContainer,
-      BlockPublishingPerformance blockPublishingPerformance) {
+      final BlockPublishingPerformance blockPublishingPerformance) {
     final SpecMilestone milestone = getMilestone(blockContainer.getSlot());
     return registeredFactories
         .get(milestone)

@@ -32,10 +32,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private UInt64 electraForkEpoch;
   // TODO: remove default when EIP-7251 become part of the Electra
   private UInt64 minPerEpochChurnLimitElectra = UInt64.ZERO;
-  // TODO: remove default when EIP-7251 become part of the Electra
-  private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.ZERO;
   private Integer maxDepositReceiptsPerPayload;
-  private Integer maxExecutionLayerExits;
+  private Integer maxExecutionLayerWithdrawalRequests;
   private UInt64 minActivationBalance;
   private UInt64 maxEffectiveBalanceElectra;
   private Integer pendingBalanceDepositsLimit;
@@ -44,6 +42,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer whistleblowerRewardQuotientElectra;
   private Integer minSlashingPenaltyQuotientElectra;
   private Integer maxPartialWithdrawalsPerPayload;
+  private Integer maxWithdrawalRequestsPerPayload;
   private Integer maxAttesterSlashingsElectra;
   private Integer maxAttestationsElectra;
   private Integer maxConsolidations;
@@ -57,9 +56,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         electraForkVersion,
         electraForkEpoch,
         maxDepositReceiptsPerPayload,
-        maxExecutionLayerExits,
+        maxExecutionLayerWithdrawalRequests,
         minPerEpochChurnLimitElectra,
-        maxPerEpochActivationExitChurnLimit,
         minActivationBalance,
         maxEffectiveBalanceElectra,
         pendingBalanceDepositsLimit,
@@ -70,7 +68,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         maxPartialWithdrawalsPerPayload,
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
-        maxConsolidations);
+        maxConsolidations,
+        maxWithdrawalRequestsPerPayload);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -91,22 +90,16 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
-  public ElectraBuilder maxExecutionLayerExits(final Integer maxExecutionLayerExits) {
-    checkNotNull(maxExecutionLayerExits);
-    this.maxExecutionLayerExits = maxExecutionLayerExits;
+  public ElectraBuilder maxExecutionLayerWithdrawalRequests(
+      final Integer maxExecutionLayerWithdrawalRequests) {
+    checkNotNull(maxExecutionLayerWithdrawalRequests);
+    this.maxExecutionLayerWithdrawalRequests = maxExecutionLayerWithdrawalRequests;
     return this;
   }
 
   public ElectraBuilder minPerEpochChurnLimitElectra(final UInt64 minPerEpochChurnLimitElectra) {
     checkNotNull(minPerEpochChurnLimitElectra);
     this.minPerEpochChurnLimitElectra = minPerEpochChurnLimitElectra;
-    return this;
-  }
-
-  public ElectraBuilder maxPerEpochActivationExitChurnLimit(
-      final UInt64 maxPerEpochActivationExitChurnLimit) {
-    checkNotNull(maxPerEpochActivationExitChurnLimit);
-    this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
     return this;
   }
 
@@ -162,6 +155,13 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
+  public ElectraBuilder maxWithdrawalRequestsPerPayload(
+      final Integer maxWithdrawalRequestsPerPayload) {
+    checkNotNull(maxWithdrawalRequestsPerPayload);
+    this.maxWithdrawalRequestsPerPayload = maxWithdrawalRequestsPerPayload;
+    return this;
+  }
+
   public ElectraBuilder maxAttesterSlashingsElectra(final Integer maxAttesterSlashingsElectra) {
     checkNotNull(maxAttesterSlashingsElectra);
     this.maxAttesterSlashingsElectra = maxAttesterSlashingsElectra;
@@ -203,7 +203,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("electraForkVersion", electraForkVersion);
     constants.put("maxDepositReceiptsPerPayload", maxDepositReceiptsPerPayload);
     constants.put("minPerEpochChurnLimitElectra", minPerEpochChurnLimitElectra);
-    constants.put("maxExecutionLayerExits", maxExecutionLayerExits);
+    constants.put("maxExecutionLayerWithdrawalRequests", maxExecutionLayerWithdrawalRequests);
     constants.put("minActivationBalance", minActivationBalance);
     constants.put("maxEffectiveBalanceElectra", maxEffectiveBalanceElectra);
     constants.put("pendingBalanceDepositsLimit", pendingBalanceDepositsLimit);

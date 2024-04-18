@@ -15,9 +15,12 @@ dependencies {
   referenceTestImplementation project(':storage')
   referenceTestImplementation testFixtures(project(':storage'))
   referenceTestImplementation project(':infrastructure:async')
+  referenceTestImplementation project(':infrastructure:io')
   referenceTestImplementation testFixtures(project(':infrastructure:async'))
   referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
   referenceTestImplementation project(':infrastructure:time')
+  referenceTestImplementation project(':data:dataexchange')
+  referenceTestImplementation project(':data:serializer')
 
   referenceTestImplementation 'org.hyperledger.besu:plugin-api'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'

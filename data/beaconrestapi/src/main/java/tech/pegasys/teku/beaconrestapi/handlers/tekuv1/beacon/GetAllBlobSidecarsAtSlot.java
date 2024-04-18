@@ -72,7 +72,7 @@ public class GetAllBlobSidecarsAtSlot extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<UInt64> indices = request.getQueryParameterList(BLOB_INDICES_PARAMETER);
     final SafeFuture<Optional<List<BlobSidecar>>> future =
         chainDataProvider.getAllBlobSidecarsAtSlot(
