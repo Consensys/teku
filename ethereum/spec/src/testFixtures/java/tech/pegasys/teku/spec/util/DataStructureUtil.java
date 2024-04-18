@@ -1277,6 +1277,9 @@ public final class DataStructureUtil {
           if (builder.supportsKzgCommitments()) {
             builder.blobKzgCommitments(commitments);
           }
+          if (builder.supportsConsolidations()) {
+            builder.consolidations(emptyConsolidations());
+          }
         });
   }
 
@@ -1384,6 +1387,9 @@ public final class DataStructureUtil {
           if (builder.supportsKzgCommitments()) {
             builder.blobKzgCommitments(commitments);
           }
+          if (builder.supportsConsolidations()) {
+            builder.consolidations(emptyConsolidations());
+          }
         });
   }
 
@@ -1484,6 +1490,9 @@ public final class DataStructureUtil {
                     randomFullSszList(
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
                         this::randomSszKZGCommitment));
+              }
+              if (builder.supportsConsolidations()) {
+                builder.consolidations(emptyConsolidations());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
