@@ -23,10 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -47,6 +50,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.signatures.LocalSlashingProtector;
 import tech.pegasys.teku.spec.signatures.LocalSlashingProtectorConcurrentAccess;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
+import tech.pegasys.teku.validator.api.GraffitiManager;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -153,8 +157,16 @@ public class ValidatorClientService extends Service {
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
-    final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
+    final GraffitiManager graffitiManager = new GraffitiManager(services.getDataDirLayout());
+    final ValidatorLoader validatorLoader =
+        createValidatorLoader(
+            services,
+            config,
+            asyncRunner,
+            validatorApiConfig.isRestApiEnabled()
+                ? graffitiManager::getGraffitiFromStorage
+                : (publicKey) -> Optional.empty());
     final ValidatorStatusProvider validatorStatusProvider =
         new OwnedValidatorStatusProvider(
             services.getMetricsSystem(),
@@ -391,7 +403,8 @@ public class ValidatorClientService extends Service {
   private static ValidatorLoader createValidatorLoader(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         config.getValidatorConfig().isLocalSlashingProtectionSynchronizedModeEnabled()
@@ -418,7 +431,8 @@ public class ValidatorClientService extends Service {
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()
             ? Optional.of(services.getDataDirLayout())
-            : Optional.empty());
+            : Optional.empty(),
+        updatableGraffitiProvider);
   }
 
   private void initializeValidators(

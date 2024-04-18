@@ -20,9 +20,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -53,6 +55,7 @@ public class ValidatorLoader {
   private final Optional<ValidatorSource> mutableExternalValidatorSource;
   private final OwnedValidators ownedValidators = new OwnedValidators();
   private final GraffitiProvider defaultGraffitiProvider;
+  private final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
   private final SlashingProtectionLogger slashingProtectionLogger;
 
@@ -61,12 +64,14 @@ public class ValidatorLoader {
       final Optional<ValidatorSource> mutableLocalValidatorSource,
       final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider defaultGraffitiProvider,
+      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger) {
     this.validatorSources = validatorSources;
     this.mutableLocalValidatorSource = mutableLocalValidatorSource;
     this.mutableExternalValidatorSource = mutableExternalValidatorSource;
     this.defaultGraffitiProvider = defaultGraffitiProvider;
+    this.updatableGraffitiProvider = updatableGraffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
   }
@@ -76,7 +81,11 @@ public class ValidatorLoader {
     final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
-        ownedValidators, validatorProviders, defaultGraffitiProvider, maybeDataDirLayout);
+        ownedValidators,
+        validatorProviders,
+        defaultGraffitiProvider,
+        updatableGraffitiProvider,
+        maybeDataDirLayout);
     slashingProtectionLogger.protectionSummary(ownedValidators.getValidators());
   }
 
@@ -204,7 +213,7 @@ public class ValidatorLoader {
             .<GraffitiProvider>map(
                 dataDirLayout ->
                     new UpdatableGraffitiProvider(
-                        dataDirLayout, publicKey, defaultGraffitiProvider))
+                        () -> updatableGraffitiProvider.apply(publicKey), defaultGraffitiProvider))
             .orElse(defaultGraffitiProvider);
     ownedValidators.addValidator(
         new Validator(publicKey, new DeletableSigner(signer), graffitiProvider, false));
@@ -231,7 +240,8 @@ public class ValidatorLoader {
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final Optional<DataDirLayout> maybeMutableDir) {
+      final Optional<DataDirLayout> maybeMutableDir,
+      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider) {
     final ValidatorSourceFactory validatorSources =
         new ValidatorSourceFactory(
             spec,
@@ -250,6 +260,7 @@ public class ValidatorLoader {
         validatorSources.getMutableLocalValidatorSource(),
         validatorSources.getMutableExternalValidatorSource(),
         config.getGraffitiProvider(),
+        updatableGraffitiProvider,
         maybeMutableDir,
         slashingProtectionLogger);
   }
@@ -267,6 +278,7 @@ public class ValidatorLoader {
         mutableLocalValidatorSource,
         mutableExternalValidatorSource,
         graffitiProvider,
+        (publicKey) -> Optional.empty(),
         maybeDataDirLayout,
         slashingProtectionLogger);
   }

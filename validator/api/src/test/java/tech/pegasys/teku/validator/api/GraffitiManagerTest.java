@@ -14,12 +14,13 @@
 package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_DIR;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -59,7 +60,7 @@ class GraffitiManagerTest {
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
     assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
-    checkGraffitiFile(publicKey, graffiti);
+    checkStoredGraffitiFile(publicKey, graffiti);
   }
 
   @Test
@@ -71,7 +72,7 @@ class GraffitiManagerTest {
         .isTrue();
 
     assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
-    checkGraffitiFile(publicKey, graffiti);
+    checkStoredGraffitiFile(publicKey, graffiti);
   }
 
   @Test
@@ -96,9 +97,8 @@ class GraffitiManagerTest {
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
-    assertThatThrownBy(() -> manager.setGraffiti(publicKey, invalidGraffiti))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(
+    assertThat(manager.setGraffiti(publicKey, invalidGraffiti))
+        .hasValue(
             "'This graffiti is a bit too long!!' converts to 33 bytes. Input must be 32 bytes or less.");
   }
 
@@ -121,7 +121,7 @@ class GraffitiManagerTest {
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
-    checkGraffitiFile(publicKey, "");
+    checkStoredGraffitiFile(publicKey, "");
   }
 
   @Test
@@ -134,7 +134,7 @@ class GraffitiManagerTest {
         .isTrue();
 
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
-    checkGraffitiFile(publicKey, "");
+    checkStoredGraffitiFile(publicKey, "");
   }
 
   @Test
@@ -160,21 +160,69 @@ class GraffitiManagerTest {
     manager = new GraffitiManager(dataDirLayout);
 
     assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
-    checkGraffitiFile(publicKey, graffiti);
+    checkStoredGraffitiFile(publicKey, graffiti);
 
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
-    checkGraffitiFile(publicKey, "");
+    checkStoredGraffitiFile(publicKey, "");
   }
 
-  private void checkGraffitiFile(final BLSPublicKey publicKey, final String graffiti) {
+  private void checkStoredGraffitiFile(final BLSPublicKey publicKey, final String graffiti) {
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
     try {
-      final Bytes32 expectedBytes = Bytes32Parser.toBytes32(graffiti);
-      final Bytes32 parsedBytes = GraffitiParser.loadFromFile(filePath);
-      assertThat(parsedBytes).isEqualTo(expectedBytes);
-    } catch (GraffitiLoaderException e) {
-      fail(e.toString());
+      final byte[] readBytes = Files.readAllBytes(filePath);
+      assertThat(readBytes).isEqualTo(graffiti.getBytes(StandardCharsets.UTF_8));
+    } catch (IOException e) {
+      fail("Unable to check graffiti file.", e);
     }
+  }
+
+  @Test
+  void getGraffitiFromStorage_shouldGetGraffitiFromStorage(@TempDir final Path tempDir)
+      throws IOException {
+    dataDirLayout = new SimpleDataDirLayout(tempDir);
+    manager = new GraffitiManager(dataDirLayout);
+    final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
+    Files.writeString(filePath, graffiti);
+
+    final Bytes32 expectedBytes = Bytes32Parser.toBytes32(graffiti);
+    assertThat(manager.getGraffitiFromStorage(publicKey)).hasValue(expectedBytes);
+  }
+
+  @Test
+  void getGraffitiFromStorage_shouldReturnEmptyWhenFileTooBig(@TempDir final Path tempDir)
+      throws IOException {
+    dataDirLayout = new SimpleDataDirLayout(tempDir);
+    manager = new GraffitiManager(dataDirLayout);
+
+    final String invalidGraffiti = "This graffiti is a bit too long!!";
+    final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
+    Files.writeString(filePath, invalidGraffiti);
+
+    assertThat(manager.getGraffitiFromStorage(publicKey)).isEmpty();
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
+  void getGraffitiFromStorage_shouldReturnEmptyWhenNotReadableFile(@TempDir final Path tempDir)
+      throws IOException {
+    dataDirLayout = new SimpleDataDirLayout(tempDir);
+    manager = new GraffitiManager(dataDirLayout);
+    final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
+    Files.writeString(filePath, graffiti);
+    assertThat(filePath.toFile().setReadable(false)).isTrue();
+
+    assertThat(manager.getGraffitiFromStorage(publicKey)).isEmpty();
+  }
+
+  @Test
+  void getGraffitiFromStorage_shouldReturnEmptyWhenFileEmpty(@TempDir final Path tempDir)
+      throws IOException {
+    dataDirLayout = new SimpleDataDirLayout(tempDir);
+    manager = new GraffitiManager(dataDirLayout);
+    final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
+    assertThat(filePath.toFile().createNewFile()).isTrue();
+
+    assertThat(manager.getGraffitiFromStorage(publicKey)).isEmpty();
   }
 
   private Path getGraffitiManagementDir() {
