@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_MANAGEMENT_DIR;
 
 import java.io.File;
 import java.io.IOException;
@@ -149,6 +150,21 @@ class GraffitiManagerTest {
         .hasValue("java.nio.file.AccessDeniedException: " + file);
   }
 
+  @Test
+  void shouldSetAndDeleteGraffitiWhenManagementPreexisting(@TempDir final Path tempDir) {
+    dataDirLayout = new SimpleDataDirLayout(tempDir);
+    final Path managementDir = getGraffitiManagementDir();
+    assertThat(managementDir.toFile().mkdirs()).isTrue();
+
+    manager = new GraffitiManager(dataDirLayout);
+
+    assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
+    checkGraffitiFile(publicKey, graffiti);
+
+    assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
+    checkGraffitiFile(publicKey, "");
+  }
+
   private void checkGraffitiFile(final BLSPublicKey publicKey, final String graffiti) {
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
     try {
@@ -161,7 +177,7 @@ class GraffitiManagerTest {
   }
 
   private Path getGraffitiManagementDir() {
-    return dataDirLayout.getValidatorDataDirectory().resolve("graffiti-management");
+    return dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_MANAGEMENT_DIR);
   }
 
   private String getFileName(final BLSPublicKey publicKey) {
