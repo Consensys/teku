@@ -35,7 +35,8 @@ public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
-  public Attestation(tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
+  public Attestation(
+      final tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
     this.aggregation_bits = attestation.getAggregationBits().sszSerialize();
     this.data = new AttestationData(attestation.getData());
     this.signature = new BLSSignature(attestation.getAggregateSignature());
@@ -67,7 +68,7 @@ public class Attestation {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

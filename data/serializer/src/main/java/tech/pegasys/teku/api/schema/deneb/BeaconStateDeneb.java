@@ -151,7 +151,7 @@ public class BeaconStateDeneb extends BeaconStateAltair {
       final MutableBeaconStateDeneb state,
       final SyncCommitteeSchema syncCommitteeSchema,
       final ExecutionPayloadHeaderSchemaDeneb executionPayloadHeaderSchema,
-      SszListSchema<
+      final SszListSchema<
               tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
           historicalSummariesSchema,
       final BeaconStateDeneb instance) {

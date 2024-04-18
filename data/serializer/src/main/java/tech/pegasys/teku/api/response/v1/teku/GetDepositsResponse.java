@@ -27,7 +27,7 @@ public class GetDepositsResponse {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

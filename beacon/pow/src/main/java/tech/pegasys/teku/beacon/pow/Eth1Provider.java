@@ -34,7 +34,7 @@ public interface Eth1Provider {
   SafeFuture<Optional<Block>> getEth1BlockWithRetry(
       UInt64 blockNumber, Duration retryDelay, int maxRetries);
 
-  default SafeFuture<Optional<Block>> getEth1BlockWithRetry(UInt64 blockNumber) {
+  default SafeFuture<Optional<Block>> getEth1BlockWithRetry(final UInt64 blockNumber) {
     return getEth1BlockWithRetry(blockNumber, Duration.ofSeconds(5), 2);
   }
 
@@ -43,7 +43,7 @@ public interface Eth1Provider {
   SafeFuture<Optional<Block>> getEth1BlockWithRetry(
       String blockHash, Duration retryDelay, int maxRetries);
 
-  default SafeFuture<Optional<Block>> getEth1BlockWithRetry(String blockHash) {
+  default SafeFuture<Optional<Block>> getEth1BlockWithRetry(final String blockHash) {
     return getEth1BlockWithRetry(blockHash, Duration.ofSeconds(5), 2);
   }
 

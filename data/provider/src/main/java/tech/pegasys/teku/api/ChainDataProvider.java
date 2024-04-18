@@ -124,7 +124,7 @@ public class ChainDataProvider {
   }
 
   public UInt64 getCurrentEpoch(
-      tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     return spec.getCurrentEpoch(state);
   }
 
@@ -676,7 +676,7 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<List<Withdrawal>>>> getExpectedWithdrawals(
-      String stateIdParam, Optional<UInt64> optionalProposalSlot) {
+      final String stateIdParam, final Optional<UInt64> optionalProposalSlot) {
     return stateSelectorFactory
         .createSelectorForStateId(stateIdParam)
         .getState()
@@ -697,8 +697,8 @@ public class ChainDataProvider {
   }
 
   List<Withdrawal> getExpectedWithdrawalsFromState(
-      tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState data,
-      Optional<UInt64> optionalProposalSlot) {
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState data,
+      final Optional<UInt64> optionalProposalSlot) {
     final UInt64 proposalSlot = optionalProposalSlot.orElse(data.getSlot().increment());
     // Apply some sanity checks prior to computing pre-state
     if (!spec.atSlot(proposalSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {

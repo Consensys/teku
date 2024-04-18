@@ -78,7 +78,7 @@ public class GetBlockRewards extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.respondAsync(
         chainDataProvider
             .getBlockRewardsFromBlockId(request.getPathParameter(PARAMETER_BLOCK_ID))

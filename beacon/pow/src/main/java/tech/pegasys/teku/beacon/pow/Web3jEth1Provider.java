@@ -181,7 +181,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
 
   @Override
   public SafeFuture<EthCall> ethCall(
-      final String from, String to, String data, final UInt64 blockNumber) {
+      final String from, final String to, final String data, final UInt64 blockNumber) {
     return SafeFuture.of(
         web3j
             .ethCall(
@@ -203,7 +203,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
 
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
+  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(final EthFilter ethFilter) {
     return sendAsync(web3j.ethGetLogs(ethFilter))
         .thenApply(EthLog::getLogs)
         .thenApply(logs -> (List<EthLog.LogResult<?>>) (List) logs);

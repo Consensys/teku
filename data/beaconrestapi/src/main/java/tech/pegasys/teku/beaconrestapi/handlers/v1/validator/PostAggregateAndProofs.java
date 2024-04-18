@@ -60,7 +60,7 @@ public class PostAggregateAndProofs extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<SignedAggregateAndProof> signedAggregateAndProofs = request.getRequestBody();
     final SafeFuture<List<SubmitDataError>> future =
         provider.sendAggregateAndProofs(signedAggregateAndProofs);

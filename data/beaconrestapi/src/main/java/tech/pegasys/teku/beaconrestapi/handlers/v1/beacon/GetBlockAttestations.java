@@ -40,11 +40,11 @@ public class GetBlockAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}/attestations";
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlockAttestations(final DataProvider dataProvider, Spec spec) {
+  public GetBlockAttestations(final DataProvider dataProvider, final Spec spec) {
     this(dataProvider.getChainDataProvider(), spec);
   }
 
-  public GetBlockAttestations(final ChainDataProvider chainDataProvider, Spec spec) {
+  public GetBlockAttestations(final ChainDataProvider chainDataProvider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getBlockAttestations")
@@ -59,7 +59,7 @@ public class GetBlockAttestations extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> future =
         chainDataProvider.getBlockAttestations(request.getPathParameter(PARAMETER_BLOCK_ID));
 
@@ -72,7 +72,7 @@ public class GetBlockAttestations extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
-      Spec spec) {
+      final Spec spec) {
     Attestation.AttestationSchema dataSchema =
         new Attestation.AttestationSchema(spec.getGenesisSpecConfig());
 

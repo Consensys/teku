@@ -49,7 +49,7 @@ public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>,
   private final AsyncRunner asyncRunner;
   private final int maxConcurrentRequests;
 
-  protected AbstractFetchService(final AsyncRunner asyncRunner, int maxConcurrentRequests) {
+  protected AbstractFetchService(final AsyncRunner asyncRunner, final int maxConcurrentRequests) {
     this.asyncRunner = asyncRunner;
     this.maxConcurrentRequests = maxConcurrentRequests;
   }

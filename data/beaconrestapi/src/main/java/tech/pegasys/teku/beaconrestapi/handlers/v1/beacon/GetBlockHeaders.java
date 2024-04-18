@@ -73,7 +73,7 @@ public class GetBlockHeaders extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<Bytes32> parentRoot = request.getOptionalQueryParameter(PARENT_ROOT_PARAMETER);
     final Optional<UInt64> slot =
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));

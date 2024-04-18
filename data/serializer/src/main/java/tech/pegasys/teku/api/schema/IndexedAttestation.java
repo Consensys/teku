@@ -37,7 +37,8 @@ public class IndexedAttestation {
   public final BLSSignature signature;
 
   public IndexedAttestation(
-      tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
+      final tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
+          indexedAttestation) {
     this.attesting_indices = indexedAttestation.getAttestingIndices().streamUnboxed().toList();
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());
@@ -69,7 +70,7 @@ public class IndexedAttestation {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
