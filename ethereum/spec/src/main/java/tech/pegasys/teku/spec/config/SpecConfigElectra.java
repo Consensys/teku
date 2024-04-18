@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface SpecConfigElectra extends SpecConfigDeneb {
 
   UInt64 UNSET_DEPOSIT_RECEIPTS_START_INDEX = UInt64.MAX_VALUE;
+  UInt64 FULL_EXIT_REQUEST_AMOUNT = UInt64.ZERO;
 
   static SpecConfigElectra required(final SpecConfig specConfig) {
     return specConfig
@@ -53,9 +54,9 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxPartialWithdrawalsPerPayload();
 
-  UInt64 getMinPerEpochChurnLimitElectra();
+  int getMaxWithdrawalRequestsPerPayload();
 
-  UInt64 getMaxPerEpochActivationExitChurnLimit();
+  UInt64 getMinPerEpochChurnLimitElectra();
 
   Bytes4 getElectraForkVersion();
 
@@ -63,7 +64,7 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxDepositReceiptsPerPayload();
 
-  int getMaxExecutionLayerExits();
+  int getMaxExecutionLayerWithdrawalRequests();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();

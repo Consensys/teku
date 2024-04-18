@@ -45,7 +45,7 @@ public class GetEth1DataCache extends RestApiEndpoint {
 
   private final Eth1DataProvider eth1DataProvider;
 
-  public GetEth1DataCache(Eth1DataProvider eth1DataProvider) {
+  public GetEth1DataCache(final Eth1DataProvider eth1DataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getTekuV1BeaconPoolEth1cache")
@@ -60,7 +60,7 @@ public class GetEth1DataCache extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     Collection<Eth1Data> eth1CachedBlocks = this.eth1DataProvider.getEth1CachedBlocks();
     if (eth1CachedBlocks.isEmpty()) {

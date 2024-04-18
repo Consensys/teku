@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class BeaconBlockCapella extends BeaconBlockAltair {
 
-  public BeaconBlockCapella(BeaconBlock message) {
+  public BeaconBlockCapella(final BeaconBlock message) {
     super(
         message.getSlot(),
         message.getProposerIndex(),
@@ -35,7 +35,7 @@ public class BeaconBlockCapella extends BeaconBlockAltair {
   }
 
   @Override
-  public BeaconBlock asInternalBeaconBlock(Spec spec) {
+  public BeaconBlock asInternalBeaconBlock(final Spec spec) {
     final SpecVersion specVersion = spec.atSlot(slot);
     return SchemaDefinitionsCapella.required(specVersion.getSchemaDefinitions())
         .getBeaconBlockSchema()

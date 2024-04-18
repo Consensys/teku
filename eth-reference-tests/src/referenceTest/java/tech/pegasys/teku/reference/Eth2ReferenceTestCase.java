@@ -31,6 +31,7 @@ import tech.pegasys.teku.reference.phase0.kzg.KzgTests;
 import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutorPhase0;
 import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
+import tech.pegasys.teku.reference.phase0.slashing_protection_interchange.SlashingProtectionInterchangeTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_generic.SszGenericTests;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
 
@@ -48,6 +49,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(SszGenericTests.SSZ_GENERIC_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
+          .put("slashing-protection-interchange", new SlashingProtectionInterchangeTestExecutor())
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
           .put("light_client/update_ranking", TestExecutor.IGNORE_TESTS)

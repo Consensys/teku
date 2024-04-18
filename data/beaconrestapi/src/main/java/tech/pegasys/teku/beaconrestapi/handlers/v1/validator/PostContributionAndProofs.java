@@ -58,7 +58,7 @@ public class PostContributionAndProofs extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Void> future = provider.sendContributionAndProofs(request.getRequestBody());
     request.respondAsync(future.thenApply(v -> AsyncApiResponse.respondWithCode(SC_OK)));
   }

@@ -37,21 +37,21 @@ public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatr
 
   @JsonCreator
   public ExecutionPayloadHeaderCapella(
-      @JsonProperty("parent_hash") Bytes32 parentHash,
-      @JsonProperty("fee_recipient") Bytes20 feeRecipient,
-      @JsonProperty("state_root") Bytes32 stateRoot,
-      @JsonProperty("receipts_root") Bytes32 receiptsRoot,
-      @JsonProperty("logs_bloom") Bytes logsBloom,
-      @JsonProperty("prev_randao") Bytes32 prevRandao,
-      @JsonProperty("block_number") UInt64 blockNumber,
-      @JsonProperty("gas_limit") UInt64 gasLimit,
-      @JsonProperty("gas_used") UInt64 gasUsed,
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("extra_data") Bytes extraData,
-      @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
-      @JsonProperty("block_hash") Bytes32 blockHash,
-      @JsonProperty("transactions_root") Bytes32 transactionsRoot,
-      @JsonProperty("withdrawals_root") Bytes32 withdrawalsRoot) {
+      final @JsonProperty("parent_hash") Bytes32 parentHash,
+      final @JsonProperty("fee_recipient") Bytes20 feeRecipient,
+      final @JsonProperty("state_root") Bytes32 stateRoot,
+      final @JsonProperty("receipts_root") Bytes32 receiptsRoot,
+      final @JsonProperty("logs_bloom") Bytes logsBloom,
+      final @JsonProperty("prev_randao") Bytes32 prevRandao,
+      final @JsonProperty("block_number") UInt64 blockNumber,
+      final @JsonProperty("gas_limit") UInt64 gasLimit,
+      final @JsonProperty("gas_used") UInt64 gasUsed,
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("extra_data") Bytes extraData,
+      final @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
+      final @JsonProperty("block_hash") Bytes32 blockHash,
+      final @JsonProperty("transactions_root") Bytes32 transactionsRoot,
+      final @JsonProperty("withdrawals_root") Bytes32 withdrawalsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -70,7 +70,7 @@ public class ExecutionPayloadHeaderCapella extends ExecutionPayloadHeaderBellatr
     this.withdrawalsRoot = withdrawalsRoot;
   }
 
-  public ExecutionPayloadHeaderCapella(ExecutionPayloadHeader executionPayloadHeader) {
+  public ExecutionPayloadHeaderCapella(final ExecutionPayloadHeader executionPayloadHeader) {
     super(
         executionPayloadHeader.getParentHash(),
         executionPayloadHeader.getFeeRecipient(),

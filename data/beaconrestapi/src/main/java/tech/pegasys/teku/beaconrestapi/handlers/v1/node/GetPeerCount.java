@@ -68,7 +68,7 @@ public class GetPeerCount extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     request.respondOk(new ResponseData(network.getEth2Peers()));
   }
@@ -77,7 +77,7 @@ public class GetPeerCount extends RestApiEndpoint {
     final UInt64 disconnected;
     final UInt64 connected;
 
-    ResponseData(List<Eth2Peer> peers) {
+    ResponseData(final List<Eth2Peer> peers) {
       long disconnected = 0;
       long connected = 0;
 

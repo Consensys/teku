@@ -81,7 +81,7 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<PostSyncCommitteeData> requestData = request.getRequestBody();
     final List<SyncCommitteeSubnetSubscription> subscriptions =
         requestData.stream().map(PostSyncCommitteeData::toSyncCommitteeSubnetSubscription).toList();
@@ -113,7 +113,7 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
       return validatorIndex;
     }
 
-    public void setValidatorIndex(int validatorIndex) {
+    public void setValidatorIndex(final int validatorIndex) {
       this.validatorIndex = validatorIndex;
     }
 
@@ -121,7 +121,7 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
       return new IntArrayList(syncCommitteeIndices);
     }
 
-    public void setSyncCommitteeIndices(List<Integer> syncCommitteeIndices) {
+    public void setSyncCommitteeIndices(final List<Integer> syncCommitteeIndices) {
       this.syncCommitteeIndices = new IntOpenHashSet(syncCommitteeIndices);
     }
 
@@ -129,12 +129,12 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
       return untilEpoch;
     }
 
-    public void setUntilEpoch(UInt64 untilEpoch) {
+    public void setUntilEpoch(final UInt64 untilEpoch) {
       this.untilEpoch = untilEpoch;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) {
         return true;
       }

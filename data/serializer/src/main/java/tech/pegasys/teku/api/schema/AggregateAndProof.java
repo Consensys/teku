@@ -44,7 +44,7 @@ public class AggregateAndProof {
   }
 
   public AggregateAndProof(
-      tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof aggregateAndProof) {
+      final tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof aggregateAndProof) {
     aggregator_index = aggregateAndProof.getIndex();
     aggregate = new Attestation(aggregateAndProof.getAggregate());
     selection_proof = new BLSSignature(aggregateAndProof.getSelectionProof());

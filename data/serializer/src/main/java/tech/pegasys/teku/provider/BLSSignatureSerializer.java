@@ -22,7 +22,8 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 
 public class BLSSignatureSerializer extends JsonSerializer<BLSSignature> {
   @Override
-  public void serialize(BLSSignature value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final BLSSignature value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
   }

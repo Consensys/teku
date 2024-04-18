@@ -20,13 +20,13 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 
 public interface FetchTaskFactory {
 
-  default FetchBlockTask createFetchBlockTask(Bytes32 blockRoot) {
+  default FetchBlockTask createFetchBlockTask(final Bytes32 blockRoot) {
     return createFetchBlockTask(blockRoot, Optional.empty());
   }
 
   FetchBlockTask createFetchBlockTask(Bytes32 blockRoot, Optional<Eth2Peer> preferredPeer);
 
-  default FetchBlobSidecarTask createFetchBlobSidecarTask(BlobIdentifier blobIdentifier) {
+  default FetchBlobSidecarTask createFetchBlobSidecarTask(final BlobIdentifier blobIdentifier) {
     return createFetchBlobSidecarTask(blobIdentifier, Optional.empty());
   }
 

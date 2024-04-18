@@ -277,7 +277,7 @@ public class Eth2NetworkOptions {
     return builder.build();
   }
 
-  private void configureEth2Network(Eth2NetworkConfiguration.Builder builder) {
+  private void configureEth2Network(final Eth2NetworkConfiguration.Builder builder) {
     builder.applyNetworkDefaults(network);
     if (startupTargetPeerCount != null) {
       builder.startupTargetPeerCount(startupTargetPeerCount);

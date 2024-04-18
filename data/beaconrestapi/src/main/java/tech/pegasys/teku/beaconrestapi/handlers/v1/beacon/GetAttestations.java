@@ -41,7 +41,7 @@ public class GetAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
   private final NodeDataProvider nodeDataProvider;
 
-  public GetAttestations(final DataProvider dataProvider, Spec spec) {
+  public GetAttestations(final DataProvider dataProvider, final Spec spec) {
     this(dataProvider.getNodeDataProvider(), spec);
   }
 
@@ -61,7 +61,7 @@ public class GetAttestations extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     final Optional<UInt64> slot =
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
@@ -72,7 +72,7 @@ public class GetAttestations extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<List<Attestation>> getResponseType(
-      SpecConfig specConfig) {
+      final SpecConfig specConfig) {
     return SerializableTypeDefinition.<List<Attestation>>object()
         .name("GetPoolAttestationsResponse")
         .withField(

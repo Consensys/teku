@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 
 public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder {
   private ExecutionPayloadSchemaBellatrix schema;
@@ -161,7 +161,8 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
   }
 
   @Override
-  public ExecutionPayloadBuilder exits(final Supplier<List<ExecutionLayerExit>> exitsSupplier) {
+  public ExecutionPayloadBuilder withdrawalRequests(
+      final Supplier<List<ExecutionLayerWithdrawalRequest>> withdrawalRequestsSupplier) {
     return this;
   }
 

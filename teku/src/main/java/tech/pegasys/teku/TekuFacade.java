@@ -31,15 +31,15 @@ public final class TekuFacade {
    *     start a Node (e.g. <code>--help</code> command)
    * @throws RuntimeException if invalid args supplied or an internal error while starting a Node
    */
-  public static Optional<? extends NodeFacade> startFromCLIArgs(String[] cliArgs) {
+  public static Optional<? extends NodeFacade> startFromCLIArgs(final String[] cliArgs) {
     return Teku.startFromCLIArgs(cliArgs);
   }
 
-  public static BeaconNodeFacade startBeaconNode(TekuConfiguration config) {
+  public static BeaconNodeFacade startBeaconNode(final TekuConfiguration config) {
     return Teku.startBeaconNode(config);
   }
 
-  public static ValidatorNodeFacade startValidatorNode(TekuConfiguration config) {
+  public static ValidatorNodeFacade startValidatorNode(final TekuConfiguration config) {
     return Teku.startValidatorNode(config);
   }
 }

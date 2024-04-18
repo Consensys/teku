@@ -28,7 +28,7 @@ public class VoluntaryExit {
   public final UInt64 validator_index;
 
   public VoluntaryExit(
-      tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit voluntaryExit) {
+      final tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit voluntaryExit) {
     this.epoch = voluntaryExit.getEpoch();
     this.validator_index = voluntaryExit.getValidatorIndex();
   }
@@ -47,7 +47,7 @@ public class VoluntaryExit {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

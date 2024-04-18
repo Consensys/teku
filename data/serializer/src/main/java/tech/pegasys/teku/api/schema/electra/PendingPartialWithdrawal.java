@@ -31,9 +31,9 @@ public class PendingPartialWithdrawal {
   public final UInt64 withdrawableEpoch;
 
   public PendingPartialWithdrawal(
-      @JsonProperty("index") int index,
-      @JsonProperty("amount") UInt64 amount,
-      @JsonProperty("withdrawable_epoch") UInt64 withdrawableEpoch) {
+      final @JsonProperty("index") int index,
+      final @JsonProperty("amount") UInt64 amount,
+      final @JsonProperty("withdrawable_epoch") UInt64 withdrawableEpoch) {
     this.index = index;
     this.amount = amount;
     this.withdrawableEpoch = withdrawableEpoch;
@@ -53,7 +53,7 @@ public class PendingPartialWithdrawal {
         spec.getSchemaDefinitions().toVersionElectra();
     if (schemaDefinitionsElectra.isEmpty()) {
       throw new IllegalArgumentException(
-          "Could not create PendingBalanceDeposit for pre-electra spec");
+          "Could not create PendingPartialWithdrawal for pre-electra spec");
     }
     return schemaDefinitionsElectra
         .get()

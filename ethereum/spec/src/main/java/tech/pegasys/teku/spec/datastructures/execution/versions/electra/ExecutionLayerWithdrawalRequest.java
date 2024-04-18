@@ -16,26 +16,32 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-public class ExecutionLayerExit
-    extends Container2<ExecutionLayerExit, SszByteVector, SszPublicKey> {
+public class ExecutionLayerWithdrawalRequest
+    extends Container3<ExecutionLayerWithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 
-  public static final ExecutionLayerExitSchema SSZ_SCHEMA = new ExecutionLayerExitSchema();
+  public static final ExecutionLayerWithdrawalRequestSchema SSZ_SCHEMA =
+      new ExecutionLayerWithdrawalRequestSchema();
 
-  protected ExecutionLayerExit(
-      final ExecutionLayerExitSchema schema,
+  protected ExecutionLayerWithdrawalRequest(
+      final ExecutionLayerWithdrawalRequestSchema schema,
       final Bytes20 sourceAddress,
-      final BLSPublicKey validatorPublicKey) {
+      final BLSPublicKey validatorPublicKey,
+      final UInt64 amount) {
     super(
         schema,
         SszByteVector.fromBytes(sourceAddress.getWrappedBytes()),
-        new SszPublicKey(validatorPublicKey));
+        new SszPublicKey(validatorPublicKey),
+        SszUInt64.of(amount));
   }
 
-  ExecutionLayerExit(final ExecutionLayerExitSchema type, final TreeNode backingNode) {
+  ExecutionLayerWithdrawalRequest(
+      final ExecutionLayerWithdrawalRequestSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -47,8 +53,12 @@ public class ExecutionLayerExit
     return getField1().getBLSPublicKey();
   }
 
+  public UInt64 getAmount() {
+    return getField2().get();
+  }
+
   @Override
-  public ExecutionLayerExitSchema getSchema() {
-    return (ExecutionLayerExitSchema) super.getSchema();
+  public ExecutionLayerWithdrawalRequestSchema getSchema() {
+    return (ExecutionLayerWithdrawalRequestSchema) super.getSchema();
   }
 }
