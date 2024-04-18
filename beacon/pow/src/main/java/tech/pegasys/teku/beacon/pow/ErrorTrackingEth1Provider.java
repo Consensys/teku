@@ -96,7 +96,7 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
+  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(final EthFilter ethFilter) {
     return logStatus(delegate.ethGetLogs(ethFilter));
   }
 

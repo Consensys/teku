@@ -147,7 +147,7 @@ public class ReconstructHistoricalStatesService extends Service {
             });
   }
 
-  private SafeFuture<Void> applyNextBlock(Context context) {
+  private SafeFuture<Void> applyNextBlock(final Context context) {
     if (context.checkStopApplyBlock()) {
       statusLogger.reconstructHistoricalStatesServiceComplete();
       stopped.complete(null);
@@ -188,7 +188,7 @@ public class ReconstructHistoricalStatesService extends Service {
     private UInt64 slot;
     private final UInt64 anchorSlot;
 
-    Context(BeaconState currentState, UInt64 slot, UInt64 anchorSlot) {
+    Context(final BeaconState currentState, final UInt64 slot, final UInt64 anchorSlot) {
       this.currentState = currentState;
       this.slot = slot;
       this.anchorSlot = anchorSlot;
