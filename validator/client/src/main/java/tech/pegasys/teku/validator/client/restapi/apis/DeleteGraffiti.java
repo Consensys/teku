@@ -45,7 +45,7 @@ public class DeleteGraffiti extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     throw new NotImplementedException("Not Implemented");
   }
 }
