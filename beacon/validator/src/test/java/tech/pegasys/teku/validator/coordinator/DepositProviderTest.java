@@ -482,6 +482,33 @@ public class DepositProviderTest {
         .isEqualTo(UInt64.valueOf(30));
   }
 
+  @Test
+  void whenUsingTransitionedAnchorPoint_FinalizationIsNotFailed() throws Exception {
+    setup(16);
+    Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
+    updateStateEth1DepositIndex(10);
+    updateStateEth1DataDepositCount(10);
+    mockDepositsFromEth1Block(0, 20);
+    final AnchorPoint anchorPoint = mock(AnchorPoint.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getLatestFinalized()).thenReturn(anchorPoint);
+    final BeaconState transitionedState = spec.processSlots(state, state.getSlot().plus(2));
+    when(anchorPoint.getState()).thenAnswer(__ -> transitionedState);
+    when(eth1DataCache.getEth1DataAndHeight(eq(transitionedState.getEth1Data())))
+        .thenReturn(Optional.empty());
+
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
+
+    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot), false);
+
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
+    List<DepositWithIndex> availableDeposits = depositProvider.getAvailableDeposits();
+    assertThat(availableDeposits.size()).isEqualTo(10);
+
+    verify(eth1DataCache).getEth1DataAndHeight(eq(transitionedState.getEth1Data()));
+  }
+
   private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     deposits.forEach(

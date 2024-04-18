@@ -456,6 +456,16 @@ public class TekuBeaconNode extends TekuNode {
         MINUTES);
   }
 
+  public void waitForFinalizationAfter(final UInt64 newFinalizedEpoch) {
+    LOG.debug("Wait for finalized block");
+    waitFor(
+        () ->
+            assertThat(fetchStateFinalityCheckpoints().orElseThrow().finalized.epoch)
+                .isGreaterThanOrEqualTo(newFinalizedEpoch),
+        9,
+        MINUTES);
+  }
+
   public void waitForMilestone(final SpecMilestone expectedMilestone) {
     waitForLogMessageContaining("Activating network upgrade: " + expectedMilestone.name());
   }
@@ -778,5 +788,14 @@ public class TekuBeaconNode extends TekuNode {
 
   public void expectElOnline() throws IOException {
     assertThat(fetchSyncStatus().data.elOffline).isFalse();
+  }
+
+  public BeaconState fetchFinalizedState() throws IOException {
+    final Bytes beaconStateBytes =
+        httpClient.getAsBytes(
+            getRestApiUrl(),
+            "eth/v2/debug/beacon/states/finalized",
+            Map.of("Accept", "application/octet-stream"));
+    return spec.deserializeBeaconState(Bytes.wrap(beaconStateBytes));
   }
 }

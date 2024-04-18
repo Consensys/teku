@@ -38,6 +38,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   private final Spec spec;
   private final Checkpoint checkpoint;
   private final boolean isGenesis;
+  private final boolean isTransitioned;
 
   private AnchorPoint(
       final Spec spec,
@@ -48,6 +49,7 @@ public class AnchorPoint extends StateAndBlockSummary {
     this.spec = spec;
     this.checkpoint = checkpoint;
     this.isGenesis = checkpoint.getEpoch().equals(SpecConfig.GENESIS_EPOCH);
+    this.isTransitioned = state.getSlot().isGreaterThan(blockSummary.getSlot());
     verifyAnchor();
   }
 
@@ -175,6 +177,10 @@ public class AnchorPoint extends StateAndBlockSummary {
 
   public UInt64 getEpochStartSlot() {
     return checkpoint.getEpochStartSlot(spec);
+  }
+
+  public boolean isTransitioned() {
+    return isTransitioned;
   }
 
   @Override

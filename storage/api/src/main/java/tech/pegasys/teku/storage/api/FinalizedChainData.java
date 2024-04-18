@@ -98,7 +98,9 @@ public class FinalizedChainData {
           latestFinalized
               .getSignedBeaconBlock()
               .orElseThrow(() -> new IllegalStateException("Missing newly finalized block")));
-      this.finalizedStates.put(latestFinalized.getRoot(), latestFinalized.getState());
+      if (!latestFinalized.isTransitioned()) {
+        this.finalizedStates.put(latestFinalized.getRoot(), latestFinalized.getState());
+      }
       finalizedChildAndParent(latestFinalized.getRoot(), latestFinalized.getParentRoot());
       return this;
     }
