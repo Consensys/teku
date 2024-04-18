@@ -147,7 +147,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.pendingConsolidationSchema = new PendingConsolidation.PendingConsolidationSchema();
 
     this.dataColumnSchema = new DataColumnSchema(specConfig);
-    this.dataColumnSidecarSchema = DataColumnSidecarSchema.create(SignedBeaconBlockHeader.SSZ_SCHEMA, dataColumnSchema, specConfig);
+    this.dataColumnSidecarSchema =
+        DataColumnSidecarSchema.create(
+            SignedBeaconBlockHeader.SSZ_SCHEMA, dataColumnSchema, specConfig);
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {

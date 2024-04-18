@@ -25,12 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.IntStream;
-
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-
-import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
 
 class CKZG4844Utils {
 

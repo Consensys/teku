@@ -84,11 +84,13 @@ public class GossipTopics {
         topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
       }
     }
-    spec.getNetworkingConfigElectra().ifPresent(electraNetworkConfig -> {
-      for (int i = 0; i < electraNetworkConfig.getDataColumnSidecarSubnetCount(); i++) {
-        topics.add(getDataColumnSidecarSubnetTopic(forkDigest, i, gossipEncoding));
-      }
-    });
+    spec.getNetworkingConfigElectra()
+        .ifPresent(
+            electraNetworkConfig -> {
+              for (int i = 0; i < electraNetworkConfig.getDataColumnSidecarSubnetCount(); i++) {
+                topics.add(getDataColumnSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+              }
+            });
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }

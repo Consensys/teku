@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -29,55 +28,57 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public class DataColumnSidecar
     extends Container6<
-    DataColumnSidecar,
-    SszUInt64,
-    DataColumn,
-    SszList<SszKZGCommitment>,
-    SszList<SszKZGProof>,
-    SignedBeaconBlockHeader,
-    SszBytes32Vector> {
+        DataColumnSidecar,
+        SszUInt64,
+        DataColumn,
+        SszList<SszKZGCommitment>,
+        SszList<SszKZGProof>,
+        SignedBeaconBlockHeader,
+        SszBytes32Vector> {
 
-  DataColumnSidecar(final DataColumnSidecarSchema dataColumnSidecarSchema, final TreeNode backingTreeNode) {
+  DataColumnSidecar(
+      final DataColumnSidecarSchema dataColumnSidecarSchema, final TreeNode backingTreeNode) {
     super(dataColumnSidecarSchema, backingTreeNode);
   }
 
-//  public DataColumnSidecar(
-//      final DataColumnSidecarSchema schema,
-//      final UInt64 index,
-//      final Blob blob,
-//      final SszKZGCommitment sszKzgCommitment,
-//      final SszKZGProof sszKzgProof,
-//      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-//      final List<Bytes32> kzgCommitmentInclusionProof) {
-//    super(
-//        schema,
-//        SszUInt64.of(index),
-//        schema.getDataColumnSszSchema().create(blob.getBytes()),
-//        sszKzgCommitment,
-//        sszKzgProof,
-//        signedBeaconBlockHeader,
-//        schema
-//            .getKzgCommitmentInclusionProofSchema()
-//            .createFromElements(kzgCommitmentInclusionProof.stream().map(SszBytes32::of).toList()));
-//  }
-//
-//  public DataColumnSidecar(
-//      final DataColumnSidecarSchema schema,
-//      final UInt64 index,
-//      final Blob blob,
-//      final KZGCommitment kzgCommitment,
-//      final KZGProof kzgProof,
-//      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-//      final List<Bytes32> kzgCommitmentInclusionProof) {
-//    this(
-//        schema,
-//        index,
-//        blob,
-//        new SszKZGCommitment(kzgCommitment),
-//        new SszKZGProof(kzgProof),
-//        signedBeaconBlockHeader,
-//        kzgCommitmentInclusionProof);
-//  }
+  //  public DataColumnSidecar(
+  //      final DataColumnSidecarSchema schema,
+  //      final UInt64 index,
+  //      final Blob blob,
+  //      final SszKZGCommitment sszKzgCommitment,
+  //      final SszKZGProof sszKzgProof,
+  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //    super(
+  //        schema,
+  //        SszUInt64.of(index),
+  //        schema.getDataColumnSszSchema().create(blob.getBytes()),
+  //        sszKzgCommitment,
+  //        sszKzgProof,
+  //        signedBeaconBlockHeader,
+  //        schema
+  //            .getKzgCommitmentInclusionProofSchema()
+  //
+  // .createFromElements(kzgCommitmentInclusionProof.stream().map(SszBytes32::of).toList()));
+  //  }
+  //
+  //  public DataColumnSidecar(
+  //      final DataColumnSidecarSchema schema,
+  //      final UInt64 index,
+  //      final Blob blob,
+  //      final KZGCommitment kzgCommitment,
+  //      final KZGProof kzgProof,
+  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //    this(
+  //        schema,
+  //        index,
+  //        blob,
+  //        new SszKZGCommitment(kzgCommitment),
+  //        new SszKZGProof(kzgProof),
+  //        signedBeaconBlockHeader,
+  //        kzgCommitmentInclusionProof);
+  //  }
 
   public UInt64 getIndex() {
     return getField0().get();

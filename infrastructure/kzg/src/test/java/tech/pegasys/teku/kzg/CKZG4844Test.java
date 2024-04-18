@@ -26,7 +26,6 @@ import com.google.common.collect.Streams;
 import ethereum.ckzg4844.CKZG4844JNI;
 import ethereum.ckzg4844.CKZGException;
 import ethereum.ckzg4844.CKZGException.CKZGError;
-
 import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -34,7 +33,6 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
@@ -118,7 +116,7 @@ public final class CKZG4844Test {
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
 
     assertThat(
-        CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
+            CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
@@ -174,7 +172,7 @@ public final class CKZG4844Test {
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
 
     assertThat(
-        CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
+            CKZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
@@ -223,9 +221,9 @@ public final class CKZG4844Test {
   @ParameterizedTest(name = "blob={0}")
   @ValueSource(
       strings = {
-          "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
-          "0x",
-          "0x925668a49d06f4"
+        "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
+        "0x",
+        "0x925668a49d06f4"
       })
   public void testComputingProofWithIncorrectLengthBlobDoesNotCauseSegfault(final String blobHex) {
     final Bytes blob = Bytes.fromHexString(blobHex);
@@ -251,15 +249,15 @@ public final class CKZG4844Test {
   @ParameterizedTest(name = "trusted_setup={0}")
   @ValueSource(
       strings = {
-          "broken/trusted_setup_g1_length.txt",
-          "broken/trusted_setup_g2_length.txt",
-          "broken/trusted_setup_g2_bytesize.txt"
+        "broken/trusted_setup_g1_length.txt",
+        "broken/trusted_setup_g2_length.txt",
+        "broken/trusted_setup_g2_bytesize.txt"
       })
   public void incorrectTrustedSetupFilesShouldThrow(final String filename) {
     final Throwable cause =
         assertThrows(
-            KZGException.class,
-            () -> CKZG.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(filename)))
+                KZGException.class,
+                () -> CKZG.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(filename)))
             .getCause();
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
   }
@@ -294,9 +292,10 @@ public final class CKZG4844Test {
     List<KZGCell> cells = CKZG.computeCells(blob);
     assertThat(cells).hasSize(CELLS_PER_EXT_BLOB);
 
-    List<KZGCellWithID> cellsToRecover = IntStream.range(CELLS_PER_ORIG_BLOB, CELLS_PER_EXT_BLOB)
-        .mapToObj(i -> new KZGCellWithID(cells.get(i), KZGCellID.fromCellColumnIndex(i)))
-        .toList();
+    List<KZGCellWithID> cellsToRecover =
+        IntStream.range(CELLS_PER_ORIG_BLOB, CELLS_PER_EXT_BLOB)
+            .mapToObj(i -> new KZGCellWithID(cells.get(i), KZGCellID.fromCellColumnIndex(i)))
+            .toList();
 
     List<KZGCell> recoveredCells = CKZG.recoverCells(cellsToRecover);
     assertThat(recoveredCells).isEqualTo(cells);
@@ -314,12 +313,18 @@ public final class CKZG4844Test {
 
     for (int i = 0; i < cellAndProofs.size(); i++) {
       assertThat(
-          CKZG.verifyCellProof(kzgCommitment, KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), cellAndProofs.get(i).proof())
-      ).isTrue();
+              CKZG.verifyCellProof(
+                  kzgCommitment,
+                  KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
+                  cellAndProofs.get(i).proof()))
+          .isTrue();
       var invalidProof = cellAndProofs.get((i + 1) % cellAndProofs.size()).proof();
       assertThat(
-          CKZG.verifyCellProof(kzgCommitment, KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i), invalidProof)
-      ).isFalse();
+              CKZG.verifyCellProof(
+                  kzgCommitment,
+                  KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
+                  invalidProof))
+          .isFalse();
     }
   }
 

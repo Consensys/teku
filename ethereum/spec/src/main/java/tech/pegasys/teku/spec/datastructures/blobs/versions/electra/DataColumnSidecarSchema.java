@@ -32,13 +32,13 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
 public class DataColumnSidecarSchema
     extends ContainerSchema6<
-    DataColumnSidecar,
-    SszUInt64,
-    DataColumn,
-    SszList<SszKZGCommitment>,
-    SszList<SszKZGProof>,
-    SignedBeaconBlockHeader,
-    SszBytes32Vector> {
+        DataColumnSidecar,
+        SszUInt64,
+        DataColumn,
+        SszList<SszKZGCommitment>,
+        SszList<SszKZGProof>,
+        SignedBeaconBlockHeader,
+        SszBytes32Vector> {
 
   static final SszFieldName FIELD_BLOB = () -> "column";
   static final SszFieldName FIELD_SIGNED_BLOCK_HEADER = () -> "signed_block_header";
@@ -53,16 +53,14 @@ public class DataColumnSidecarSchema
         "DataColumnSidecar",
         namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(FIELD_BLOB, dataColumnSchema),
-        namedSchema("kzg_commitments",
+        namedSchema(
+            "kzg_commitments",
             SszListSchema.create(
-                SszKZGCommitmentSchema.INSTANCE,
-                specConfig.getMaxBlobCommitmentsPerBlock()
-            )),
-        namedSchema("kzg_proofs",
+                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
+        namedSchema(
+            "kzg_proofs",
             SszListSchema.create(
-                SszKZGProofSchema.INSTANCE,
-                specConfig.getMaxBlobCommitmentsPerBlock()
-            )),
+                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(FIELD_SIGNED_BLOCK_HEADER, signedBeaconBlockHeaderSchema),
         namedSchema(
             FIELD_KZG_COMMITMENT_INCLUSION_PROOF,
@@ -83,62 +81,61 @@ public class DataColumnSidecarSchema
         getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENT_INCLUSION_PROOF));
   }
 
-//  public DataColumnSidecar create(
-//      final UInt64 index,
-//      final Blob blob,
-//      final SszKZGCommitment sszKzgCommitment,
-//      final SszKZGProof sszKzgProof,
-//      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-//      final List<Bytes32> kzgCommitmentInclusionProof) {
-//    return new DataColumnSidecar(
-//        this,
-//        index,
-//        blob,
-//        sszKzgCommitment,
-//        sszKzgProof,
-//        signedBeaconBlockHeader,
-//        kzgCommitmentInclusionProof);
-//  }
-//
-//  public DataColumnSidecar create(
-//      final UInt64 index,
-//      final Bytes blob,
-//      final Bytes48 kzgCommitment,
-//      final Bytes48 kzgProof,
-//      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-//      final List<Bytes32> kzgCommitmentInclusionProof) {
-//    return create(
-//        index,
-//        new Blob(getBlobSchema(), blob),
-//        KZGCommitment.fromBytesCompressed(kzgCommitment),
-//        KZGProof.fromBytesCompressed(kzgProof),
-//        signedBeaconBlockHeader,
-//        kzgCommitmentInclusionProof);
-//  }
-//
-//  public DataColumnSidecar create(
-//      final UInt64 index,
-//      final Blob blob,
-//      final KZGCommitment kzgCommitment,
-//      final KZGProof kzgProof,
-//      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-//      final List<Bytes32> kzgCommitmentInclusionProof) {
-//    return new DataColumnSidecar(
-//        this,
-//        index,
-//        blob,
-//        kzgCommitment,
-//        kzgProof,
-//        signedBeaconBlockHeader,
-//        kzgCommitmentInclusionProof);
-//  }
-//
+  //  public DataColumnSidecar create(
+  //      final UInt64 index,
+  //      final Blob blob,
+  //      final SszKZGCommitment sszKzgCommitment,
+  //      final SszKZGProof sszKzgProof,
+  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //    return new DataColumnSidecar(
+  //        this,
+  //        index,
+  //        blob,
+  //        sszKzgCommitment,
+  //        sszKzgProof,
+  //        signedBeaconBlockHeader,
+  //        kzgCommitmentInclusionProof);
+  //  }
+  //
+  //  public DataColumnSidecar create(
+  //      final UInt64 index,
+  //      final Bytes blob,
+  //      final Bytes48 kzgCommitment,
+  //      final Bytes48 kzgProof,
+  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //    return create(
+  //        index,
+  //        new Blob(getBlobSchema(), blob),
+  //        KZGCommitment.fromBytesCompressed(kzgCommitment),
+  //        KZGProof.fromBytesCompressed(kzgProof),
+  //        signedBeaconBlockHeader,
+  //        kzgCommitmentInclusionProof);
+  //  }
+  //
+  //  public DataColumnSidecar create(
+  //      final UInt64 index,
+  //      final Blob blob,
+  //      final KZGCommitment kzgCommitment,
+  //      final KZGProof kzgProof,
+  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //    return new DataColumnSidecar(
+  //        this,
+  //        index,
+  //        blob,
+  //        kzgCommitment,
+  //        kzgProof,
+  //        signedBeaconBlockHeader,
+  //        kzgCommitmentInclusionProof);
+  //  }
+  //
   public static DataColumnSidecarSchema create(
       final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
       final DataColumnSchema dataColumnSchema,
       final SpecConfigElectra specConfig) {
-    return new DataColumnSidecarSchema(
-        signedBeaconBlockHeaderSchema, dataColumnSchema, specConfig);
+    return new DataColumnSidecarSchema(signedBeaconBlockHeaderSchema, dataColumnSchema, specConfig);
   }
 
   @Override

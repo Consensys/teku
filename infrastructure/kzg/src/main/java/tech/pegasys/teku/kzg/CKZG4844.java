@@ -13,18 +13,16 @@
 
 package tech.pegasys.teku.kzg;
 
-import ethereum.ckzg4844.CKZG4844JNI;
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
 
+import ethereum.ckzg4844.CKZG4844JNI;
+import ethereum.ckzg4844.CellsAndProofs;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
-
-import ethereum.ckzg4844.CellsAndProofs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-
-import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
 
 /**
  * Wrapper around jc-kzg-4844
@@ -55,9 +53,7 @@ final class CKZG4844 implements KZG {
     }
   }
 
-  /**
-   * Only one trusted setup at a time can be loaded.
-   */
+  /** Only one trusted setup at a time can be loaded. */
   @Override
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     if (loadedTrustedSetupFile.isPresent()
@@ -172,7 +168,8 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
-  public boolean verifyCellProof(KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof) {
+  public boolean verifyCellProof(
+      KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof) {
     return CKZG4844JNI.verifyCellProof(
         commitment.toArrayUnsafe(),
         cellWithID.id().id().longValue(),
@@ -183,10 +180,9 @@ final class CKZG4844 implements KZG {
   @Override
   public List<KZGCell> recoverCells(List<KZGCellWithID> cells) {
     long[] cellIds = cells.stream().mapToLong(c -> c.id().id().longValue()).toArray();
-    byte[] cellBytes = CKZG4844Utils.flattenBytes(
-        cells.stream().map(c -> c.cell().bytes()).toList(),
-        cells.size() * BYTES_PER_CELL
-    );
+    byte[] cellBytes =
+        CKZG4844Utils.flattenBytes(
+            cells.stream().map(c -> c.cell().bytes()).toList(), cells.size() * BYTES_PER_CELL);
     byte[] recovered = CKZG4844JNI.recoverCells(cellIds, cellBytes);
     return KZGCell.splitBytes(Bytes.wrap(recovered));
   }

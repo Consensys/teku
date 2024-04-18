@@ -187,7 +187,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     return custodyRequirement;
   }
 
-
   @Override
   public Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.of(this);

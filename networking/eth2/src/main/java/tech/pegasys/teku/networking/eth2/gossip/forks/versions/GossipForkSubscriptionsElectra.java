@@ -61,8 +61,7 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
-      final OperationProcessor<DataColumnSidecar>
-          dataColumnSidecarOperationProcessor) {
+      final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
     super(
         fork,
         spec,
@@ -100,10 +99,10 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
             gossipEncoding,
             recentChainData,
             dataColumnSidecarOperationProcessor,
-            forkInfo
-        );
+            forkInfo);
 
-    dataColumnSidecarGossipManager = new DataColumnSidecarGossipManager(dataColumnSidecarSubnetSubscriptions);
+    dataColumnSidecarGossipManager =
+        new DataColumnSidecarGossipManager(dataColumnSidecarSubnetSubscriptions);
 
     addGossipManager(dataColumnSidecarGossipManager);
   }

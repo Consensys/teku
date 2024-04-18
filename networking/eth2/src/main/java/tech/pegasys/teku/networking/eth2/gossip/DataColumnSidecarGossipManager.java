@@ -15,15 +15,8 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 public class DataColumnSidecarGossipManager implements GossipManager {
   private static final Logger LOG = LogManager.getLogger();
@@ -44,8 +37,7 @@ public class DataColumnSidecarGossipManager implements GossipManager {
                   "Successfully published data column sidecar for slot {}", dataColumnSidecar);
             },
             error -> {
-              LOG.warn(
-                  "Error publishing data column sidecar for slot {}", dataColumnSidecar);
+              LOG.warn("Error publishing data column sidecar for slot {}", dataColumnSidecar);
             });
   }
 

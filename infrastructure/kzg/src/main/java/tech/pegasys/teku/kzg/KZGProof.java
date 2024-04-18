@@ -14,10 +14,7 @@
 package tech.pegasys.teku.kzg;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_PROOF;
-
-import ethereum.ckzg4844.CKZG4844JNI;
 
 import java.util.List;
 import java.util.Objects;
@@ -37,8 +34,7 @@ public final class KZGProof {
         "Expected " + BYTES_PER_PROOF + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
-        bytes,
-        reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(BYTES_PER_PROOF))));
+        bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(BYTES_PER_PROOF))));
   }
 
   public static KZGProof fromBytesCompressed(final Bytes48 bytes) throws IllegalArgumentException {
@@ -50,8 +46,7 @@ public final class KZGProof {
   }
 
   static List<KZGProof> splitBytes(Bytes bytes) {
-    return CKZG4844Utils.bytesChunked(bytes, BYTES_PER_PROOF)
-        .stream()
+    return CKZG4844Utils.bytesChunked(bytes, BYTES_PER_PROOF).stream()
         .map(b -> new KZGProof(Bytes48.wrap(b)))
         .toList();
   }

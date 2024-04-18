@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.kzg;
 
+import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_BLOB;
+
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
-
-import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_BLOB;
 
 /**
  * This interface specifies all the KZG functions needed for the Deneb specification and is the
@@ -35,12 +34,10 @@ public interface KZG {
       new KZG() {
 
         @Override
-        public void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
-        }
+        public void loadTrustedSetup(final String trustedSetupFile) throws KZGException {}
 
         @Override
-        public void freeTrustedSetup() throws KZGException {
-        }
+        public void freeTrustedSetup() throws KZGException {}
 
         @Override
         public boolean verifyBlobKzgProof(
@@ -73,21 +70,20 @@ public interface KZG {
         public List<KZGCell> computeCells(Bytes blob) {
           List<KZGCell> blobCells = KZGCell.splitBytes(blob);
           return Stream.concat(
-              blobCells.stream(),
-              Stream.generate(() -> KZGCell.ZERO).limit(blobCells.size())
-          ).toList();
+                  blobCells.stream(), Stream.generate(() -> KZGCell.ZERO).limit(blobCells.size()))
+              .toList();
         }
 
         @Override
         public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
-          return computeCells(blob)
-              .stream()
+          return computeCells(blob).stream()
               .map(cell -> new KZGCellAndProof(cell, KZGProof.fromBytesCompressed(Bytes48.ZERO)))
               .toList();
         }
 
         @Override
-        public boolean verifyCellProof(KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof) {
+        public boolean verifyCellProof(
+            KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof) {
           return true;
         }
 
@@ -95,10 +91,7 @@ public interface KZG {
         public List<KZGCell> recoverCells(List<KZGCellWithID> cells) {
           if (cells.size() < CELLS_PER_BLOB)
             throw new IllegalArgumentException("Can't recover from " + cells.size() + " cells");
-          return cells.stream()
-              .map(KZGCellWithID::cell)
-              .limit(CELLS_PER_BLOB)
-              .toList();
+          return cells.stream().map(KZGCellWithID::cell).limit(CELLS_PER_BLOB).toList();
         }
       };
 

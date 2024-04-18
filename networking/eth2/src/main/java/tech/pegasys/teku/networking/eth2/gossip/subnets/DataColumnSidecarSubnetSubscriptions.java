@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -22,7 +23,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
@@ -31,12 +31,9 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.Optional;
 
 public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
@@ -63,10 +60,11 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
     this.processor = processor;
     this.forkInfo = forkInfo;
     SpecVersion specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
-    this.dataColumnSidecarSchema = SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
-        .getDataColumnSidecarSchema();
-    this.subnetCount = SpecConfigElectra.required(specVersion.getConfig())
-        .getDataColumnSidecarSubnetCount();
+    this.dataColumnSidecarSchema =
+        SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+            .getDataColumnSidecarSchema();
+    this.subnetCount =
+        SpecConfigElectra.required(specVersion.getConfig()).getDataColumnSidecarSubnetCount();
   }
 
   public SafeFuture<?> gossip(final DataColumnSidecar sidecar) {
@@ -94,9 +92,7 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
         forkInfo.getForkDigest(spec),
         topicName,
         new OperationMilestoneValidator<>(
-            spec,
-            forkInfo.getFork(),
-            message -> spec.computeEpochAtSlot(message.getSlot())),
+            spec, forkInfo.getFork(), message -> spec.computeEpochAtSlot(message.getSlot())),
         dataColumnSidecarSchema,
         spec.getNetworkingConfig());
   }

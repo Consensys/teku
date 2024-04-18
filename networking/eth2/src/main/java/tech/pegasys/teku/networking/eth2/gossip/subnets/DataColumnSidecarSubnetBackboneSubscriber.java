@@ -15,6 +15,8 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.util.Collection;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -24,9 +26,6 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-
-import java.util.Collection;
-import java.util.List;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -49,8 +48,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
     this.extraVoluntarySubnetCount = extraVoluntarySubnetCount;
   }
 
-  private void subscribeToSubnets(
-      final Collection<Integer> newSubscriptions) {
+  private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
 
     IntOpenHashSet newSubscriptionsSet = new IntOpenHashSet(newSubscriptions);
 
@@ -71,12 +69,19 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
 
   private void onEpoch(final UInt64 epoch) {
     SpecVersion specVersion = spec.atEpoch(epoch);
-    specVersion.miscHelpers().toVersionElectra().ifPresent(electraSpec -> {
-      int totalSubnetCount = SpecConfigElectra.required(specVersion.getConfig())
-          .getCustodyRequirement() + extraVoluntarySubnetCount;
-      List<UInt64> subnets = electraSpec.computeDataColumnSidecarBackboneSubnets(nodeId, epoch, totalSubnetCount);
-      subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
-    });
+    specVersion
+        .miscHelpers()
+        .toVersionElectra()
+        .ifPresent(
+            electraSpec -> {
+              int totalSubnetCount =
+                  SpecConfigElectra.required(specVersion.getConfig()).getCustodyRequirement()
+                      + extraVoluntarySubnetCount;
+              List<UInt64> subnets =
+                  electraSpec.computeDataColumnSidecarBackboneSubnets(
+                      nodeId, epoch, totalSubnetCount);
+              subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
+            });
   }
 
   @Override

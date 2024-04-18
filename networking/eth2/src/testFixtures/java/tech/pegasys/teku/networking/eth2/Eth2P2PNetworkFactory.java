@@ -666,7 +666,8 @@ public class Eth2P2PNetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder gossipedDataColumnSidecarOperationProcessor(OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
+    public Eth2P2PNetworkBuilder gossipedDataColumnSidecarOperationProcessor(
+        OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
       checkNotNull(dataColumnSidecarOperationProcessor);
       this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
       return this;
