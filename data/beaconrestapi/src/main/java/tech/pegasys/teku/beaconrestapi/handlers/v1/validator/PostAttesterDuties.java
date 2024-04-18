@@ -78,7 +78,7 @@ public class PostAttesterDuties extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       request.respondError(
           SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing and not serving requests.");

@@ -45,7 +45,7 @@ public class ContributionAndProof {
   }
 
   public ContributionAndProof(
-      tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof
+      final tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof
           contributionAndProof) {
     this(
         contributionAndProof.getAggregatorIndex(),

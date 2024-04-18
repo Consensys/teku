@@ -72,7 +72,7 @@ public class GetState extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<StateAndMetaData>> future =
         chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
 
@@ -91,7 +91,7 @@ public class GetState extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
-      SchemaDefinitionCache schemaDefinitionCache) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<StateAndMetaData>object()
         .name("GetStateV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)

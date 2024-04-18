@@ -118,7 +118,7 @@ public class GetPeers extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.respondOk(new PeersData(network.getEth2Peers()), NO_CACHE);
   }
 

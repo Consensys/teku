@@ -28,8 +28,8 @@ public class PendingConsolidation {
   public final int targetIndex;
 
   PendingConsolidation(
-      @JsonProperty("source_index") int sourceIndex,
-      @JsonProperty("target_index") int targetIndex) {
+      final @JsonProperty("source_index") int sourceIndex,
+      final @JsonProperty("target_index") int targetIndex) {
     this.sourceIndex = sourceIndex;
     this.targetIndex = targetIndex;
   }

@@ -64,7 +64,7 @@ public class PostStateValidators extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<StateValidatorRequestBodyType> requestBody;
 
     try {

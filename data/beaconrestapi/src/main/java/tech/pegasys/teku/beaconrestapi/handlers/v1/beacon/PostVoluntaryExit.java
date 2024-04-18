@@ -57,7 +57,7 @@ public class PostVoluntaryExit extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SignedVoluntaryExit exit = request.getRequestBody();
     final SafeFuture<InternalValidationResult> future = nodeDataProvider.postVoluntaryExit(exit);
 

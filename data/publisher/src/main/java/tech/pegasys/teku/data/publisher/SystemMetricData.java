@@ -83,7 +83,7 @@ public class SystemMetricData extends BaseMetricData {
   @JsonProperty("misc_os")
   private final String miscOs = getNormalizedOSVersion();
 
-  public SystemMetricData(long timestamp, final File beaconNodeDirectory) {
+  public SystemMetricData(final long timestamp, final File beaconNodeDirectory) {
     super(timestamp, SYSTEM.getDisplayName());
 
     SystemInfo systemInfo = new SystemInfo();

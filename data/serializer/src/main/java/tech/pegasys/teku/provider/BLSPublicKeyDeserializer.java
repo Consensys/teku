@@ -21,7 +21,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class BLSPublicKeyDeserializer extends JsonDeserializer<BLSPublicKey> {
   @Override
-  public BLSPublicKey deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public BLSPublicKey deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     return BLSPublicKey.fromHexString(p.getValueAsString());
   }
 }

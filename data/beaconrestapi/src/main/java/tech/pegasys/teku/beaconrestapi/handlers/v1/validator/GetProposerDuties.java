@@ -71,7 +71,7 @@ public class GetProposerDuties extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
       return;

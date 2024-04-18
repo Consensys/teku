@@ -79,7 +79,7 @@ public class GetExpectedWithdrawals extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<List<Withdrawal>>>> future =
         chainDataProvider.getExpectedWithdrawals(
             request.getPathParameter(PARAMETER_STATE_ID),

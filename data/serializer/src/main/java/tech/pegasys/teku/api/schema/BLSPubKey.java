@@ -27,7 +27,7 @@ public class BLSPubKey {
 
   private final Bytes bytes;
 
-  public BLSPubKey(Bytes bytes) {
+  public BLSPubKey(final Bytes bytes) {
     checkArgument(
         bytes.size() == SIZE,
         "Bytes%s should be %s bytes, but was %s bytes.",
@@ -37,7 +37,7 @@ public class BLSPubKey {
     this.bytes = bytes;
   }
 
-  public BLSPubKey(BLSPublicKey publicKey) {
+  public BLSPubKey(final BLSPublicKey publicKey) {
     this(publicKey.toSSZBytes());
   }
 
@@ -63,7 +63,7 @@ public class BLSPubKey {
     return bytes.toString();
   }
 
-  public static BLSPubKey fromHexString(String value) {
+  public static BLSPubKey fromHexString(final String value) {
     try {
       return new BLSPubKey(BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)));
     } catch (IllegalArgumentException e) {
