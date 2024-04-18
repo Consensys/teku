@@ -24,7 +24,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 
 public class GraffitiManager {
-  static final String GRAFFITI_MANAGEMENT_DIR = "graffiti-management";
+  static final String GRAFFITI_DIR = "graffiti";
 
   private static final Logger LOG = LogManager.getLogger();
   private final Optional<Path> graffitiPath;
@@ -42,12 +42,11 @@ public class GraffitiManager {
   }
 
   private Optional<Path> createManagementDirectory(final DataDirLayout dataDirLayout) {
-    final Path graffitiDirectory =
-        dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_MANAGEMENT_DIR);
+    final Path graffitiDirectory = dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_DIR);
     if (!graffitiDirectory.toFile().exists() && !graffitiDirectory.toFile().mkdirs()) {
       LOG.error(
           "Unable to create {} directory. Updating graffiti through the validator API is disabled.",
-          GRAFFITI_MANAGEMENT_DIR);
+          GRAFFITI_DIR);
       return Optional.empty();
     }
     return Optional.of(graffitiDirectory);
@@ -56,7 +55,7 @@ public class GraffitiManager {
   private Optional<String> updateGraffiti(
       final BLSPublicKey publicKey, final Supplier<byte[]> graffiti) {
     if (graffitiPath.isEmpty()) {
-      return Optional.of("graffiti-management directory does not exist to handle update.");
+      return Optional.of(GRAFFITI_DIR + " directory does not exist to handle update.");
     }
 
     try {

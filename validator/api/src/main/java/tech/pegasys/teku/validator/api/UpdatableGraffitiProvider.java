@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.api;
 
-import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_MANAGEMENT_DIR;
+import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_DIR;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -36,7 +36,7 @@ public class UpdatableGraffitiProvider implements GraffitiProvider {
     this.graffitiPath =
         dataDirLayout
             .getValidatorDataDirectory()
-            .resolve(GRAFFITI_MANAGEMENT_DIR)
+            .resolve(GRAFFITI_DIR)
             .resolve(GraffitiManager.resolveFileName(publicKey));
     this.defaultProvider = defaultProvider;
   }

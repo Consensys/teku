@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_MANAGEMENT_DIR;
+import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_DIR;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +48,7 @@ class GraffitiManagerTest {
 
     assertThat(getGraffitiManagementDir().toFile().exists()).isFalse();
     assertThat(manager.setGraffiti(dataStructureUtil.randomPublicKey(), graffiti))
-        .hasValue("graffiti-management directory does not exist to handle update.");
+        .hasValue(GRAFFITI_DIR + " directory does not exist to handle update.");
   }
 
   @Test
@@ -110,7 +110,7 @@ class GraffitiManagerTest {
 
     assertThat(getGraffitiManagementDir().toFile().exists()).isFalse();
     assertThat(manager.deleteGraffiti(dataStructureUtil.randomPublicKey()))
-        .hasValue("graffiti-management directory does not exist to handle update.");
+        .hasValue(GRAFFITI_DIR + " directory does not exist to handle update.");
   }
 
   @Test
@@ -177,7 +177,7 @@ class GraffitiManagerTest {
   }
 
   private Path getGraffitiManagementDir() {
-    return dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_MANAGEMENT_DIR);
+    return dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_DIR);
   }
 
   private String getFileName(final BLSPublicKey publicKey) {

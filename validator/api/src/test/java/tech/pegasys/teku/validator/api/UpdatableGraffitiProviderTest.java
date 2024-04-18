@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_MANAGEMENT_DIR;
+import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_DIR;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -90,7 +90,7 @@ class UpdatableGraffitiProviderTest {
     final Path path =
         dataDirLayout
             .getValidatorDataDirectory()
-            .resolve(GRAFFITI_MANAGEMENT_DIR)
+            .resolve(GRAFFITI_DIR)
             .resolve(GraffitiManager.resolveFileName(publicKey));
     final Bytes32 storedGraffiti = Bytes32Parser.toBytes32("Test graffiti");
     assertThat(path.getParent().toFile().mkdirs()).isTrue();
@@ -114,7 +114,7 @@ class UpdatableGraffitiProviderTest {
     final Path path =
         dataDirLayout
             .getValidatorDataDirectory()
-            .resolve(GRAFFITI_MANAGEMENT_DIR)
+            .resolve(GRAFFITI_DIR)
             .resolve(GraffitiManager.resolveFileName(publicKey));
     assertThat(path.getParent().toFile().mkdirs()).isTrue();
     Files.write(path, graffiti.toArray());
