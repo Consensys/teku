@@ -24,11 +24,10 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class DeleteGraffiti extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/{pubkey}/graffiti";
 
   public DeleteGraffiti() {
     super(
-        EndpointMetadata.delete(ROUTE)
+        EndpointMetadata.delete(GetGraffiti.ROUTE)
             .operationId("deleteGraffiti")
             .summary("Delete Configured Graffiti")
             .description("Delete the configured graffiti for the specified public key.")
