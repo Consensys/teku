@@ -25,11 +25,10 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class SetGraffiti extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/validator/{pubkey}/graffiti";
 
   public SetGraffiti() {
     super(
-        EndpointMetadata.post(ROUTE)
+        EndpointMetadata.post(GetGraffiti.ROUTE)
             .operationId("setGraffiti")
             .summary("Set Graffiti")
             .description("Set the graffiti for an individual validator.")
@@ -45,7 +44,7 @@ public class SetGraffiti extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     throw new NotImplementedException("Not Implemented");
   }
 }
