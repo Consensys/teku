@@ -67,7 +67,6 @@ class GraffitiManagerTest {
   void setGraffiti_shouldSetGraffitiWhenFileExist(@TempDir final Path tempDir) throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
-
     assertThat(getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile().createNewFile())
         .isTrue();
 
@@ -81,6 +80,7 @@ class GraffitiManagerTest {
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
+    assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
     final File file = getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile();
     assertThat(file.createNewFile()).isTrue();
@@ -108,7 +108,6 @@ class GraffitiManagerTest {
     assertThat(tempDir.toFile().setWritable(false)).isTrue();
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
-
     assertThat(getGraffitiManagementDir().toFile().exists()).isFalse();
     assertThat(manager.deleteGraffiti(dataStructureUtil.randomPublicKey()))
         .hasValue(GRAFFITI_DIR + " directory does not exist to handle update.");
@@ -119,7 +118,6 @@ class GraffitiManagerTest {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
-
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
     checkStoredGraffitiFile(publicKey, "");
   }
@@ -129,7 +127,6 @@ class GraffitiManagerTest {
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
-
     assertThat(getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile().createNewFile())
         .isTrue();
 
@@ -156,7 +153,6 @@ class GraffitiManagerTest {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     final Path managementDir = getGraffitiManagementDir();
     assertThat(managementDir.toFile().mkdirs()).isTrue();
-
     manager = new GraffitiManager(dataDirLayout);
 
     assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
