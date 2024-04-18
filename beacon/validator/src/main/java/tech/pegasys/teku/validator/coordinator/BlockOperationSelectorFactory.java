@@ -253,7 +253,8 @@ public class BlockOperationSelectorFactory {
         setPayloadPostMerge(
             bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
         // KZG Commitments
-        setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
+        setKzgCommitments(
+            bodyBuilder, schemaDefinitions, executionPayloadResult, blockSlotState.getSlot()));
   }
 
   private SafeFuture<Void> cacheExecutionPayloadValue(
@@ -301,7 +302,8 @@ public class BlockOperationSelectorFactory {
   private SafeFuture<Void> setKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
-      final ExecutionPayloadResult executionPayloadResult) {
+      final ExecutionPayloadResult executionPayloadResult,
+      final UInt64 slot) {
     if (!bodyBuilder.supportsKzgCommitments()) {
       return SafeFuture.COMPLETE;
     }
@@ -311,7 +313,7 @@ public class BlockOperationSelectorFactory {
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
           SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
       blobKzgCommitments =
-          getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult)
+          getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot)
               .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
     } else {
       // blinded flow
@@ -364,7 +366,39 @@ public class BlockOperationSelectorFactory {
   }
 
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
-    return block -> getCachedExecutionBlobsBundle(block.getSlot());
+    return block -> {
+      final UInt64 slot = block.getSlot();
+      final ExecutionPayloadResult executionPayloadResult =
+          executionLayerBlockProductionManager
+              .getCachedPayloadResult(slot)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+
+      if (executionPayloadResult.isFromNonBlindedFlow()) {
+        // we performed a non-blinded flow, so the bundle must be in getPayloadResponseFuture
+        return getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot);
+      } else {
+        // we performed a blinded flow, so the bundle must be in getBuilderBidWithFallbackDataFuture
+        return executionPayloadResult
+            .getBuilderBidWithFallbackDataFuture()
+            .orElseThrow()
+            .thenApply(
+                builderBidWithFallbackData ->
+                    builderBidWithFallbackData
+                        .getFallbackData()
+                        .orElseThrow(
+                            () ->
+                                new IllegalStateException(
+                                    "There is no FallbackData available for slot " + slot))
+                        .getBlobsBundle())
+            .thenApply(
+                blobsBundle ->
+                    blobsBundle.orElseThrow(
+                        () -> executionBlobsBundleIsNotAvailableException(slot)));
+      }
+    };
   }
 
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector(
@@ -383,7 +417,8 @@ public class BlockOperationSelectorFactory {
 
       if (blockContainer.isBlinded()) {
         // need to use the builder BlobsBundle for the blinded flow, because the
-        // blobs and the proofs wouldn't be part of the BlockContainer
+        // blobs and the proofs wouldn't be part of the BlockContainer. Keep in mind, the builder
+        // BlobsBundle could also be a local fallback.
         final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
             getCachedBuilderBlobsBundle(slot);
 
@@ -420,46 +455,13 @@ public class BlockOperationSelectorFactory {
   }
 
   private SafeFuture<BlobsBundle> getExecutionBlobsBundleFromNonBlindedFlow(
-      final ExecutionPayloadResult executionPayloadResult) {
+      final ExecutionPayloadResult executionPayloadResult, final UInt64 slot) {
     return executionPayloadResult
         .getBlobsBundleFutureFromNonBlindedFlow()
-        .orElseThrow(this::executionBlobsBundleIsNotAvailableException)
+        .orElseThrow()
         .thenApply(
             blobsBundle ->
-                blobsBundle.orElseThrow(this::executionBlobsBundleIsNotAvailableException));
-  }
-
-  private SafeFuture<BlobsBundle> getCachedExecutionBlobsBundle(final UInt64 slot) {
-    final ExecutionPayloadResult executionPayloadResult =
-        executionLayerBlockProductionManager
-            .getCachedPayloadResult(slot)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "ExecutionPayloadResult hasn't been cached for slot " + slot));
-
-    if (executionPayloadResult.isFromNonBlindedFlow()) {
-      // we performed a non-blinded flow, so the bundle must be in getPayloadResponseFuture
-      return getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult);
-    } else {
-      // we performed a blinded flow, so the bundle must be in getBuilderBidWithFallbackDataFuture
-      return executionPayloadResult
-          .getBuilderBidWithFallbackDataFuture()
-          .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
-          .thenApply(
-              builderBidWithFallbackData ->
-                  builderBidWithFallbackData
-                      .getFallbackData()
-                      .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
-                      .getBlobsBundle())
-          .thenApply(
-              blobsBundle ->
-                  blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
-    }
-  }
-
-  private IllegalStateException executionBlobsBundleIsNotAvailableException() {
-    return new IllegalStateException("execution BlobsBundle is not available");
+                blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
   }
 
   private IllegalStateException executionBlobsBundleIsNotAvailableException(final UInt64 slot) {
