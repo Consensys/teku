@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_DIR;
 
@@ -75,7 +76,7 @@ class GraffitiManagerTest {
 
   @Test
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
-  void setGraffiti_shouldThrowExceptionWhenUnableToWriteFile(@TempDir final Path tempDir)
+  void setGraffiti_shouldReturnErrorMessageWhenUnableToWriteFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
@@ -85,7 +86,7 @@ class GraffitiManagerTest {
     assertThat(file.setWritable(false)).isTrue();
 
     assertThat(manager.setGraffiti(publicKey, graffiti))
-        .hasValue("java.nio.file.AccessDeniedException: " + file);
+        .hasValue("Unable to update graffiti for validator " + publicKey);
   }
 
   @Test
@@ -95,10 +96,10 @@ class GraffitiManagerTest {
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
-    assertThat(manager.setGraffiti(publicKey, invalidGraffiti))
-        .hasValue(
-            "java.lang.IllegalArgumentException: "
-                + "'This graffiti is a bit too long!!' converts to 33 bytes. Input must be 32 bytes or less.");
+    assertThatThrownBy(() -> manager.setGraffiti(publicKey, invalidGraffiti))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "'This graffiti is a bit too long!!' converts to 33 bytes. Input must be 32 bytes or less.");
   }
 
   @Test
@@ -137,7 +138,7 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void deleteGraffiti_shouldThrowExceptionWhenUnableToWriteFile(@TempDir final Path tempDir)
+  void deleteGraffiti_shouldReturnErrorMessageWhenUnableToWriteFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
@@ -147,7 +148,7 @@ class GraffitiManagerTest {
     assertThat(file.setWritable(false)).isTrue();
 
     assertThat(manager.deleteGraffiti(publicKey))
-        .hasValue("java.nio.file.AccessDeniedException: " + file);
+        .hasValue("Unable to update graffiti for validator " + publicKey);
   }
 
   @Test

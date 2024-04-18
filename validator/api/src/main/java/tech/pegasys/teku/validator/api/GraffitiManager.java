@@ -61,8 +61,11 @@ public class GraffitiManager {
     try {
       final Path file = graffitiPath.get().resolve(resolveFileName(publicKey));
       Files.write(file, graffiti.get());
-    } catch (IOException | IllegalArgumentException e) {
-      return Optional.of(e.toString());
+    } catch (IOException e) {
+      final String errorMessage =
+          String.format("Unable to update graffiti for validator %s", publicKey);
+      LOG.error(errorMessage, e);
+      return Optional.of(errorMessage);
     }
     return Optional.empty();
   }
