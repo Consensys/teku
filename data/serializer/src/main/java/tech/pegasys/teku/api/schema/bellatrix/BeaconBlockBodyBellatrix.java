@@ -66,7 +66,7 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
   }
 
   public BeaconBlockBodyBellatrix(
-      tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
               .BeaconBlockBodyBellatrix
           message) {
     super(message);

@@ -91,7 +91,7 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     // Validator identifier might be the validator's public key or index. If empty we query all
     // validators.
     final Optional<List<String>> maybeList = request.getOptionalRequestBody();

@@ -26,7 +26,7 @@ public class AttesterSlashing {
   public final IndexedAttestation attestation_2;
 
   public AttesterSlashing(
-      tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing attesterSlashing) {
+      final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing attesterSlashing) {
     this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation1());
     this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation2());
   }
@@ -54,7 +54,7 @@ public class AttesterSlashing {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

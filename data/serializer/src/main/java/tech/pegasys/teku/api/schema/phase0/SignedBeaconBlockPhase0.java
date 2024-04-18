@@ -23,7 +23,7 @@ import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 public class SignedBeaconBlockPhase0 extends SignedBeaconBlock implements SignedBlock {
 
   public SignedBeaconBlockPhase0(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     super(internalBlock);
   }
 

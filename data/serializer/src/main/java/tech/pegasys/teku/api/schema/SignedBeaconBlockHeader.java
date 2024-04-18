@@ -28,7 +28,7 @@ public class SignedBeaconBlockHeader {
   public final BLSSignature signature;
 
   public SignedBeaconBlockHeader(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader signedHeader) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader signedHeader) {
     this.message = new BeaconBlockHeader(signedHeader.getMessage());
     this.signature = new BLSSignature(signedHeader.getSignature());
   }

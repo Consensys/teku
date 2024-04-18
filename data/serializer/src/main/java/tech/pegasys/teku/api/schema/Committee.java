@@ -29,7 +29,7 @@ public class Committee {
 
   public final List<Integer> committee;
 
-  public Committee(CommitteeAssignment committeeAssignment) {
+  public Committee(final CommitteeAssignment committeeAssignment) {
     this.slot = committeeAssignment.getSlot();
     this.index = committeeAssignment.getCommitteeIndex();
     this.committee = committeeAssignment.getCommittee();

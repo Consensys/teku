@@ -14,11 +14,11 @@
 package tech.pegasys.teku.api.exceptions;
 
 public class RemoteServiceNotAvailableException extends RuntimeException {
-  public RemoteServiceNotAvailableException(String message, Throwable cause) {
+  public RemoteServiceNotAvailableException(final String message, final Throwable cause) {
     super(message, cause);
   }
 
-  public RemoteServiceNotAvailableException(String message) {
+  public RemoteServiceNotAvailableException(final String message) {
     super(message);
   }
 }

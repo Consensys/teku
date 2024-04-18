@@ -22,7 +22,8 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 
 public class SszBitvectorSerializer extends JsonSerializer<SszBitvector> {
   @Override
-  public void serialize(SszBitvector value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final SszBitvector value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(value.sszSerialize().toHexString().toLowerCase(Locale.ROOT));
   }

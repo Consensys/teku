@@ -22,7 +22,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
   @Override
-  public void serialize(BLSPublicKey value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final BLSPublicKey value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
   }
