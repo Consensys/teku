@@ -148,7 +148,7 @@ commands:
           name: "Publish Docker Images"
           command: |
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
-            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH} -PincludeCommitHash=<< pipeline.parameters.include_commit_hash >>" uploadDocker
+            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH} -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >>" uploadDocker
 
   notify:
     description: "Notify Slack"
@@ -159,7 +159,7 @@ commands:
           only_for_branches: 'master'
 
 parameters:
-  include_commit_hash:
+  include_commit_hash_in_docker_tag:
     type: boolean
     default: false
 
@@ -437,10 +437,6 @@ jobs:
       - notify
 
   publishDockerAmd64:
-    parameters:
-      include_commit_hash:
-        type: boolean
-        default: false
     executor: machine_executor_amd64
     steps:
       - prepare
@@ -451,10 +447,6 @@ jobs:
       - notify
 
   publishDockerArm64:
-    parameters:
-      include_commit_hash:
-        type: boolean
-        default: false
     executor: machine_executor_arm64
     steps:
       - prepare
