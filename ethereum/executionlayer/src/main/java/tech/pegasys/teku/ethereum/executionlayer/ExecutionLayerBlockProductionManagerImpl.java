@@ -115,18 +115,14 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   private ExecutionPayloadResult processBlindedFlow(
-      final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState state,
+      final ExecutionPayloadContext context,
+      final BeaconState blockSlotState,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final SafeFuture<BuilderBidWithFallbackData> builderBidWithFallbackDataFuture =
         executionLayerChannel.builderGetHeader(
-            executionPayloadContext,
-            state,
-            requestedBuilderBoostFactor,
-            blockProductionPerformance);
+            context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
 
-    return ExecutionPayloadResult.createForBlindedFlow(
-        executionPayloadContext, builderBidWithFallbackDataFuture);
+    return ExecutionPayloadResult.createForBlindedFlow(context, builderBidWithFallbackDataFuture);
   }
 }
