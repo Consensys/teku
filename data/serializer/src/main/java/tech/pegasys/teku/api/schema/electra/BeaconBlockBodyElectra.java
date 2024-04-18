@@ -88,7 +88,8 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
   }
 
   public BeaconBlockBodyElectra(
-      tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+              .BeaconBlockBodyElectra
           message) {
     super(message);
     checkNotNull(message.getExecutionPayload(), "Execution Payload is required for Electra blocks");

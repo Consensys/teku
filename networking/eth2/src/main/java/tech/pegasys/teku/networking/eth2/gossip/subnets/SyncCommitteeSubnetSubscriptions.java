@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptions {
@@ -37,6 +38,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   private final AsyncRunner asyncRunner;
   private final OperationProcessor<ValidatableSyncCommitteeMessage> processor;
   private final ForkInfo forkInfo;
+  private final DebugDataDumper debugDataDumper;
 
   public SyncCommitteeSubnetSubscriptions(
       final Spec spec,
@@ -46,7 +48,8 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
       final SchemaDefinitionsAltair schemaDefinitions,
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidatableSyncCommitteeMessage> processor,
-      final ForkInfo forkInfo) {
+      final ForkInfo forkInfo,
+      final DebugDataDumper debugDataDumper) {
     super(gossipNetwork, gossipEncoding);
     this.spec = spec;
     this.recentChainData = recentChainData;
@@ -54,6 +57,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.forkInfo = forkInfo;
+    this.debugDataDumper = debugDataDumper;
   }
 
   public SafeFuture<?> gossip(final SyncCommitteeMessage message, final int subnetId) {
@@ -81,6 +85,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
             forkInfo.getFork(),
             message -> spec.computeEpochAtSlot(message.getSlot())),
         schemaDefinitions.getSyncCommitteeMessageSchema(),
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        debugDataDumper);
   }
 }

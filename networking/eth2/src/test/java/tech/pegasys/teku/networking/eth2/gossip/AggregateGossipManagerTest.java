@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -70,7 +71,8 @@ public class AggregateGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            processor);
+            processor,
+            mock(DebugDataDumper.class));
     gossipManager.subscribe();
   }
 

@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.CachingTreeAccessor;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszListImpl<SszElementT> implements SszPrimitiveList<ElementT, SszElementT> {
 
   protected final int elementsPerChunk;

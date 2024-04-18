@@ -86,7 +86,7 @@ public class PostValidatorLiveness extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (!chainDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       throw new ServiceUnavailableException();
     }

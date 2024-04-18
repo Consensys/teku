@@ -46,9 +46,9 @@ public class MinimumGenesisTimeBlockFinder {
   private final Optional<UInt64> eth1DepositContractDeployBlock;
 
   public MinimumGenesisTimeBlockFinder(
-      SpecConfig config,
-      Eth1Provider eth1Provider,
-      Optional<UInt64> eth1DepositContractDeployBlock) {
+      final SpecConfig config,
+      final Eth1Provider eth1Provider,
+      final Optional<UInt64> eth1DepositContractDeployBlock) {
     this.config = config;
     this.eth1Provider = eth1Provider;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
@@ -191,12 +191,15 @@ public class MinimumGenesisTimeBlockFinder {
   }
 
   private void traceWithBlock(
-      final String message, final EthBlock.Block block, Object... otherArgs) {
+      final String message, final EthBlock.Block block, final Object... otherArgs) {
     logWithBlock(Level.TRACE, message, block, otherArgs);
   }
 
   private void logWithBlock(
-      final Level level, final String message, final EthBlock.Block block, Object... otherArgs) {
+      final Level level,
+      final String message,
+      final EthBlock.Block block,
+      final Object... otherArgs) {
     final Object[] args = new Object[otherArgs.length + 3];
     System.arraycopy(otherArgs, 0, args, 0, otherArgs.length);
 
@@ -211,16 +214,18 @@ public class MinimumGenesisTimeBlockFinder {
     return config.getMinGenesisTime().minusMinZero(config.getGenesisDelay());
   }
 
-  static UInt64 calculateCandidateGenesisTimestamp(SpecConfig config, BigInteger eth1Timestamp) {
+  static UInt64 calculateCandidateGenesisTimestamp(
+      final SpecConfig config, final BigInteger eth1Timestamp) {
     return UInt64.valueOf(eth1Timestamp).plus(config.getGenesisDelay());
   }
 
-  static int compareBlockTimestampToMinGenesisTime(SpecConfig config, EthBlock.Block block) {
+  static int compareBlockTimestampToMinGenesisTime(
+      final SpecConfig config, final EthBlock.Block block) {
     return calculateCandidateGenesisTimestamp(config, block.getTimestamp())
         .compareTo(config.getMinGenesisTime());
   }
 
-  static Boolean isBlockAfterMinGenesis(SpecConfig config, EthBlock.Block block) {
+  static Boolean isBlockAfterMinGenesis(final SpecConfig config, final EthBlock.Block block) {
     int comparison = compareBlockTimestampToMinGenesisTime(config, block);
     // If block timestamp is greater than min genesis time,
     // min genesis block must be in the future
@@ -228,7 +233,7 @@ public class MinimumGenesisTimeBlockFinder {
   }
 
   static void notifyMinGenesisTimeBlockReached(
-      Eth1EventsChannel eth1EventsChannel, EthBlock.Block block) {
+      final Eth1EventsChannel eth1EventsChannel, final EthBlock.Block block) {
     MinGenesisTimeBlockEvent event =
         new MinGenesisTimeBlockEvent(
             UInt64.valueOf(block.getTimestamp()),

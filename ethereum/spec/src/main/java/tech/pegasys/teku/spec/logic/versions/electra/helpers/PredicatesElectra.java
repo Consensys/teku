@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -28,6 +29,21 @@ public class PredicatesElectra extends Predicates {
   public PredicatesElectra(SpecConfig specConfig) {
     super(specConfig);
     this.configElectra = SpecConfigElectra.required(specConfig);
+  }
+
+  public static PredicatesElectra required(final Predicates predicates) {
+    return predicates
+        .toVersionElectra()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected Electra predicates but got "
+                        + predicates.getClass().getSimpleName()));
+  }
+
+  @Override
+  public Optional<PredicatesElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 
   /**
@@ -78,7 +94,7 @@ public class PredicatesElectra extends Predicates {
    * @param validator
    * @return
    */
-  protected boolean hasCompoundingWithdrawalCredential(final Validator validator) {
+  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
     return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
   }
 
@@ -88,7 +104,7 @@ public class PredicatesElectra extends Predicates {
    * @param withdrawalCredentials
    * @return
    */
-  protected boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
+  public boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
   }
 

@@ -14,11 +14,11 @@
 package tech.pegasys.teku.api.exceptions;
 
 public class BadRequestException extends RuntimeException {
-  public BadRequestException(String message, Throwable cause) {
+  public BadRequestException(final String message, final Throwable cause) {
     super(message, cause);
   }
 
-  public BadRequestException(String message) {
+  public BadRequestException(final String message) {
     super(message);
   }
 }

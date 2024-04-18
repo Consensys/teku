@@ -16,12 +16,14 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_BYTE;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
 public class Predicates {
 
@@ -80,7 +82,7 @@ public class Predicates {
   }
 
   /**
-   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella Helper function. <br>
+   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella helper function. <br>
    * Checks if validator has a 0x01 prefixed "eth1" withdrawal credential.
    *
    * @param validator the validator being checked
@@ -132,5 +134,9 @@ public class Predicates {
     final boolean hasExcessBalance = balance.isGreaterThan(maxEffectiveBalance);
 
     return hasMaxEffectiveBalance && hasExcessBalance;
+  }
+
+  public Optional<PredicatesElectra> toVersionElectra() {
+    return Optional.empty();
   }
 }

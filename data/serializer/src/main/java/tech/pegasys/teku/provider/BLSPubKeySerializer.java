@@ -22,7 +22,8 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 
 public class BLSPubKeySerializer extends JsonSerializer<BLSPubKey> {
   @Override
-  public void serialize(BLSPubKey value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final BLSPubKey value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
   }

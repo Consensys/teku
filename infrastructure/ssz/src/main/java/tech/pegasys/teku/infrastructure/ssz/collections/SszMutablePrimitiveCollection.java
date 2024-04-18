@@ -17,8 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableComposite;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 
-public interface SszMutablePrimitiveCollection<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public interface SszMutablePrimitiveCollection<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszPrimitiveCollection<ElementT, SszElementT>, SszMutableComposite<SszElementT> {
 
   @SuppressWarnings("unchecked")

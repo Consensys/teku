@@ -15,25 +15,28 @@ package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_AMOUNT;
 
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -46,10 +49,16 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlockProcessorElectra extends BlockProcessorDeneb {
+
+  private final SpecConfigElectra specConfigElectra;
+  private final PredicatesElectra predicatesElectra;
+  private final BeaconStateMutatorsElectra beaconStateMutatorsElectra;
+  private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
@@ -57,7 +66,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final MiscHelpersDeneb miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
-      final BeaconStateMutators beaconStateMutators,
+      final BeaconStateMutatorsElectra beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
@@ -76,7 +85,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         attestationUtil,
         validatorsUtil,
         operationValidator,
-        SchemaDefinitionsDeneb.required(schemaDefinitions));
+        schemaDefinitions);
+    this.specConfigElectra = specConfig;
+    this.predicatesElectra = PredicatesElectra.required(predicates);
+    this.beaconStateMutatorsElectra = beaconStateMutators;
+    this.schemaDefinitionsElectra = schemaDefinitions;
   }
 
   @Override
@@ -126,30 +139,43 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   @Override
-  protected void processExecutionLayerExits(
+  protected void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
       final Optional<ExecutionPayload> executionPayload,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    processExecutionLayerExits(
-        state, getExecutionLayerExitsFromBlock(executionPayload), validatorExitContextSupplier);
+    this.processExecutionLayerWithdrawalRequests(
+        state,
+        getExecutionLayerWithdrawalRequestsFromBlock(executionPayload),
+        validatorExitContextSupplier);
   }
 
-  /*
-    Implements process_execution_layer_exit from consensus-specs (EIP-7002)
-  */
+  /**
+   * Implements process_execution_layer_withdrawal_request from consensus-specs (EIP-7002 &
+   * EIP-7251).
+   */
   @Override
-  public void processExecutionLayerExits(
+  public void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<ExecutionLayerExit> exits,
+      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
-    exits.forEach(
-        exit -> {
+    withdrawalRequests.forEach(
+        withdrawalRequest -> {
+          // If partial withdrawal queue is full, only full exits are processed
+          final boolean isFullExitRequest =
+              withdrawalRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
+          final boolean partialWithdrawalsQueueFull =
+              state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
+                  >= specConfigElectra.getPendingPartialWithdrawalsLimit();
+          if (partialWithdrawalsQueueFull && !isFullExitRequest) {
+            return;
+          }
+
           final Optional<Integer> maybeValidatorIndex =
-              validatorsUtil.getValidatorIndex(state, exit.getValidatorPublicKey());
+              validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPublicKey());
           if (maybeValidatorIndex.isEmpty()) {
             return;
           }
@@ -157,16 +183,18 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final int validatorIndex = maybeValidatorIndex.get();
           final Validator validator = state.getValidators().get(validatorIndex);
 
-          // Check if validator has eth1 credentials
-          final boolean isExecutionAddress = predicates.hasEth1WithdrawalCredential(validator);
-          if (!isExecutionAddress) {
+          // Check if validator has an execution address set
+          final boolean hasExecutionAddress =
+              predicatesElectra.hasExecutionWithdrawalCredential(validator);
+          if (!hasExecutionAddress) {
             return;
           }
 
-          // Check exit source_address matches validator eth1 withdrawal credentials
+          // Check withdrawalRequest source_address matches validator eth1 withdrawal credentials
           final Bytes20 executionAddress =
               new Bytes20(validator.getWithdrawalCredentials().slice(12));
-          final boolean isCorrectSourceAddress = executionAddress.equals(exit.getSourceAddress());
+          final boolean isCorrectSourceAddress =
+              executionAddress.equals(withdrawalRequest.getSourceAddress());
           if (!isCorrectSourceAddress) {
             return;
           }
@@ -191,21 +219,67 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             return;
           }
 
-          // If all conditions are ok, initiate exit
-          beaconStateMutators.initiateValidatorExit(
-              state, validatorIndex, validatorExitContextSupplier);
+          final UInt64 pendingBalanceToWithdraw =
+              validatorsUtil.getPendingBalanceToWithdraw(state, validatorIndex);
+          if (isFullExitRequest) {
+            // Only exit validator if it has no pending withdrawals in the queue
+            if (pendingBalanceToWithdraw.isZero()) {
+              beaconStateMutators.initiateValidatorExit(
+                  state, validatorIndex, validatorExitContextSupplier);
+              return;
+            }
+          }
+
+          final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
+          final UInt64 minActivationBalance = specConfigElectra.getMinActivationBalance();
+
+          final boolean hasCompoundingWithdrawalCredential =
+              predicatesElectra.hasCompoundingWithdrawalCredential(validator);
+          final boolean hasSufficientEffectiveBalance =
+              validator.getEffectiveBalance().isGreaterThanOrEqualTo(minActivationBalance);
+          final boolean hasExcessBalance =
+              validatorBalance.isGreaterThan(minActivationBalance.plus(pendingBalanceToWithdraw));
+          if (hasCompoundingWithdrawalCredential
+              && hasSufficientEffectiveBalance
+              && hasExcessBalance) {
+            final UInt64 toWithdraw =
+                validatorBalance
+                    .min(minActivationBalance)
+                    .minus(pendingBalanceToWithdraw)
+                    .min(withdrawalRequest.getAmount());
+            final UInt64 exitQueueEpoch =
+                beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(
+                    MutableBeaconStateElectra.required(state), toWithdraw);
+            final UInt64 withdrawableEpoch =
+                exitQueueEpoch.plus(specConfigElectra.getMinValidatorWithdrawabilityDelay());
+
+            // Add the partial withdrawal to the pending queue
+            final SszMutableList<PendingPartialWithdrawal> newPendingPartialWithdrawals =
+                MutableBeaconStateElectra.required(state)
+                    .getPendingPartialWithdrawals()
+                    .createWritableCopy();
+            newPendingPartialWithdrawals.append(
+                schemaDefinitionsElectra
+                    .getPendingPartialWithdrawalSchema()
+                    .create(
+                        SszUInt64.of(UInt64.fromLongBits(validatorIndex)),
+                        SszUInt64.of(toWithdraw),
+                        SszUInt64.of(withdrawableEpoch)));
+            MutableBeaconStateElectra.required(state)
+                .setPendingPartialWithdrawals(newPendingPartialWithdrawals);
+          }
         });
   }
 
-  private SszList<ExecutionLayerExit> getExecutionLayerExitsFromBlock(
+  private SszList<ExecutionLayerWithdrawalRequest> getExecutionLayerWithdrawalRequestsFromBlock(
       final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
     return maybeExecutionPayload
         .flatMap(ExecutionPayload::toVersionElectra)
-        .map(ExecutionPayloadElectra::getExits)
+        .map(ExecutionPayloadElectra::getWithdrawalRequests)
         .orElseThrow(
             () ->
                 new BlockProcessingException(
-                    "Execution layer exits were not found during block processing."));
+                    "Execution layer withdrawal requests were not found during block processing."));
   }
 
   /*

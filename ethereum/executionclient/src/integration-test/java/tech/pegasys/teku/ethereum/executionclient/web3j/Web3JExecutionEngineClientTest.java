@@ -347,9 +347,9 @@ public class Web3JExecutionEngineClientTest {
     assertThat(executionPayloadV4Parameter.get("depositReceipts"))
         .asInstanceOf(InstanceOfAssertFactories.LIST)
         .hasSameSizeAs(executionPayloadV4.depositReceipts);
-    assertThat(executionPayloadV4Parameter.get("exits"))
+    assertThat(executionPayloadV4Parameter.get("withdrawalRequests"))
         .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.exits);
+        .hasSameSizeAs(executionPayloadV4.withdrawalRequests);
     assertThat(((List<Object>) requestData.get("params")).get(1))
         .asInstanceOf(LIST)
         .containsExactlyElementsOf(

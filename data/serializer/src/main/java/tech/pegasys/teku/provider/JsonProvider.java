@@ -117,15 +117,16 @@ public class JsonProvider {
     addTekuMappers();
   }
 
-  public <T> String objectToJSON(T object) throws JsonProcessingException {
+  public <T> String objectToJSON(final T object) throws JsonProcessingException {
     return objectMapper.writeValueAsString(object);
   }
 
-  public <T> String objectToPrettyJSON(T object) throws JsonProcessingException {
+  public <T> String objectToPrettyJSON(final T object) throws JsonProcessingException {
     return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
   }
 
-  public <T> T jsonToObject(String json, Class<T> clazz) throws JsonProcessingException {
+  public <T> T jsonToObject(final String json, final Class<T> clazz)
+      throws JsonProcessingException {
     return objectMapper.readValue(json, clazz);
   }
 

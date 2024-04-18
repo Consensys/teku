@@ -45,7 +45,7 @@ public class DutyMetrics {
       final RecentChainData recentChainData,
       final MetricsCountersByIntervals attestationTimings,
       final MetricsCountersByIntervals blockTimings,
-      LabelledMetric<OperationTimer> validatorDutyMetric,
+      final LabelledMetric<OperationTimer> validatorDutyMetric,
       final Spec spec) {
     this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;

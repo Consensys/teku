@@ -30,7 +30,7 @@ public class Deposit {
 
   public final DepositData data;
 
-  public Deposit(tech.pegasys.teku.spec.datastructures.operations.Deposit deposit) {
+  public Deposit(final tech.pegasys.teku.spec.datastructures.operations.Deposit deposit) {
     this.proof = deposit.getProof().streamUnboxed().toList();
     this.data = new DepositData(deposit.getData());
   }
@@ -52,7 +52,7 @@ public class Deposit {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

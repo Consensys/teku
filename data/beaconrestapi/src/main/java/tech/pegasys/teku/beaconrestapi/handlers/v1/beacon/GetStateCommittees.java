@@ -89,7 +89,7 @@ public class GetStateCommittees extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
     final Optional<UInt64> committeeIndex = request.getOptionalQueryParameter(INDEX_PARAMETER);
     final Optional<UInt64> slot =

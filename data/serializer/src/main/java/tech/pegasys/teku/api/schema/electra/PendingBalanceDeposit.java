@@ -29,7 +29,7 @@ public class PendingBalanceDeposit {
   public final UInt64 amount;
 
   public PendingBalanceDeposit(
-      @JsonProperty("index") int index, @JsonProperty("amount") UInt64 amount) {
+      final @JsonProperty("index") int index, final @JsonProperty("amount") UInt64 amount) {
     this.index = index;
     this.amount = amount;
   }

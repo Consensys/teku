@@ -36,11 +36,11 @@ public class GetAttesterSlashings extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/attester_slashings";
   private final NodeDataProvider nodeDataProvider;
 
-  public GetAttesterSlashings(final DataProvider dataProvider, Spec spec) {
+  public GetAttesterSlashings(final DataProvider dataProvider, final Spec spec) {
     this(dataProvider.getNodeDataProvider(), spec);
   }
 
-  GetAttesterSlashings(final NodeDataProvider provider, Spec spec) {
+  GetAttesterSlashings(final NodeDataProvider provider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getPoolAttesterSlashings")
@@ -54,13 +54,14 @@ public class GetAttesterSlashings extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<AttesterSlashing> attesterSlashings = nodeDataProvider.getAttesterSlashings();
     request.respondOk(attesterSlashings);
   }
 
-  private static SerializableTypeDefinition<List<AttesterSlashing>> getResponseType(Spec spec) {
+  private static SerializableTypeDefinition<List<AttesterSlashing>> getResponseType(
+      final Spec spec) {
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
         new IndexedAttestation.IndexedAttestationSchema(spec.getGenesisSpecConfig());
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
