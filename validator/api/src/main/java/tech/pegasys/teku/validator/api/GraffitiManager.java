@@ -91,7 +91,7 @@ public class GraffitiManager {
     final Path filePath = graffitiPath.get().resolve(resolveFileName(publicKey));
     try {
       return Optional.of(GraffitiParser.loadFromFile(filePath)).filter(this::graffitiNotEmpty);
-    } catch (GraffitiLoaderException e) {
+    } catch (GraffitiLoaderException | IllegalArgumentException e) {
       LOG.error("Unable to read graffiti from storage.", e);
       return Optional.empty();
     }
