@@ -65,12 +65,12 @@ public interface ExecutionLayerBlockProductionManager {
    * Initiates block (and sidecar blobs after Deneb) production flow with execution client or
    * builder
    *
-   * @param context Payload context
-   * @param blockSlotState pre state
-   * @param isBlind Block type. Use blind for builder building
-   * @param requestedBuilderBoostFactor The proposer boost factor requested by vc
+   * @param context context required for the production flow
+   * @param blockSlotState pre-state
+   * @param isBlind block type (use blind for builder building)
+   * @param requestedBuilderBoostFactor The proposer boost factor requested by VC
    * @param blockProductionPerformance Block production performance tracker
-   * @return Container with filled Payload or Payload Header futures
+   * @return {@link ExecutionPayloadResult} coming from local, builder or a local fallback
    */
   ExecutionPayloadResult initiateBlockProduction(
       ExecutionPayloadContext context,
@@ -86,6 +86,9 @@ public interface ExecutionLayerBlockProductionManager {
    */
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
+  /**
+   * @return a payload which is either a builder or a local fallback
+   */
   SafeFuture<BuilderPayload> getUnblindedPayload(
       SignedBeaconBlock signedBeaconBlock, BlockPublishingPerformance blockPublishingPerformance);
 
