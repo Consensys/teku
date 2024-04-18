@@ -43,7 +43,7 @@ public class UpdatableGraffitiProvider implements GraffitiProvider {
 
   @Override
   public Optional<Bytes32> get() {
-    return getGraffitiFromStorage().filter(this::graffitiNotEmpty).or(defaultProvider::get);
+    return getGraffitiFromStorage().or(defaultProvider::get);
   }
 
   private Optional<Bytes32> getGraffitiFromStorage() {
@@ -52,7 +52,7 @@ public class UpdatableGraffitiProvider implements GraffitiProvider {
     }
 
     try {
-      return Optional.of(GraffitiParser.loadFromFile(graffitiPath));
+      return Optional.of(GraffitiParser.loadFromFile(graffitiPath)).filter(this::graffitiNotEmpty);
     } catch (GraffitiLoaderException | IllegalArgumentException e) {
       LOG.warn("Unable to read graffiti from storage", e);
       return Optional.empty();
