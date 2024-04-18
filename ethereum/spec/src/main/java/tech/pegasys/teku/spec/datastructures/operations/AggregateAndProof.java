@@ -44,7 +44,7 @@ public class AggregateAndProof
     }
 
     @Override
-    public AggregateAndProof createFromBackingNode(TreeNode node) {
+    public AggregateAndProof createFromBackingNode(final TreeNode node) {
       return new AggregateAndProof(this, node);
     }
 
@@ -54,15 +54,15 @@ public class AggregateAndProof
     }
   }
 
-  private AggregateAndProof(AggregateAndProofSchema type, TreeNode backingNode) {
+  private AggregateAndProof(final AggregateAndProofSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   private AggregateAndProof(
-      AggregateAndProofSchema schema,
-      UInt64 index,
-      Attestation aggregate,
-      BLSSignature selectionProof) {
+      final AggregateAndProofSchema schema,
+      final UInt64 index,
+      final Attestation aggregate,
+      final BLSSignature selectionProof) {
     super(schema, SszUInt64.of(index), aggregate, new SszSignature(selectionProof));
   }
 

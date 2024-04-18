@@ -24,7 +24,7 @@ public class SignedBeaconBlockHeader
   public static final SignedBeaconBlockHeaderSchema SSZ_SCHEMA =
       new SignedBeaconBlockHeaderSchema();
 
-  SignedBeaconBlockHeader(SignedBeaconBlockHeaderSchema type, TreeNode backingNode) {
+  SignedBeaconBlockHeader(final SignedBeaconBlockHeaderSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

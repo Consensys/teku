@@ -38,7 +38,7 @@ public interface EpochProcessor {
    * @see tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator
    */
   default RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
-      BeaconState state, ValidatorStatuses validatorStatuses) {
+      final BeaconState state, final ValidatorStatuses validatorStatuses) {
     return getRewardAndPenaltyDeltas(
         state, validatorStatuses, RewardsAndPenaltiesCalculator::getDeltas);
   }
@@ -67,7 +67,7 @@ public interface EpochProcessor {
   BeaconState processEpoch(BeaconState preState) throws EpochProcessingException;
 
   default void initProgressiveTotalBalancesIfRequired(
-      BeaconState state, TotalBalances totalBalances) {}
+      final BeaconState state, final TotalBalances totalBalances) {}
 
   BlockCheckpoints calculateBlockCheckpoints(BeaconState state);
 

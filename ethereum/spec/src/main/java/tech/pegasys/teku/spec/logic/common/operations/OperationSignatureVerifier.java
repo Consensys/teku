@@ -49,10 +49,10 @@ public class OperationSignatureVerifier {
   }
 
   public boolean verifyProposerSlashingSignature(
-      Fork fork,
-      BeaconState state,
-      ProposerSlashing proposerSlashing,
-      BLSSignatureVerifier signatureVerifier) {
+      final Fork fork,
+      final BeaconState state,
+      final ProposerSlashing proposerSlashing,
+      final BLSSignatureVerifier signatureVerifier) {
 
     final BeaconBlockHeader header1 = proposerSlashing.getHeader1().getMessage();
     final BeaconBlockHeader header2 = proposerSlashing.getHeader2().getMessage();

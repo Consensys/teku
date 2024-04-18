@@ -36,18 +36,18 @@ public class RpcErrorMessage extends SszListImpl<SszByte> implements SszList<Ssz
     }
 
     @Override
-    public RpcErrorMessage createFromBackingNode(TreeNode node) {
+    public RpcErrorMessage createFromBackingNode(final TreeNode node) {
       return new RpcErrorMessage(node);
     }
   }
 
   public static final RpcErrorMessageSchema SSZ_SCHEMA = new RpcErrorMessageSchema();
 
-  public RpcErrorMessage(Bytes bytes) {
+  public RpcErrorMessage(final Bytes bytes) {
     super(SSZ_SCHEMA, SszUtils.toSszByteList(SSZ_SCHEMA, bytes).getBackingNode());
   }
 
-  private RpcErrorMessage(TreeNode node) {
+  private RpcErrorMessage(final TreeNode node) {
     super(SSZ_SCHEMA, node);
   }
 

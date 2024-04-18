@@ -21,7 +21,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 
 public class UInt256AsHexSerializer extends JsonSerializer<UInt256> {
   @Override
-  public void serialize(UInt256 value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final UInt256 value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(value.toMinimalBytes().toQuantityHexString());
   }

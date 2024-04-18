@@ -188,7 +188,7 @@ public class SimpleOperationPool<T extends SszData> implements OperationPool<T> 
     return Collections.unmodifiableSet(operations);
   }
 
-  private SafeFuture<InternalValidationResult> add(T item, boolean fromNetwork) {
+  private SafeFuture<InternalValidationResult> add(final T item, final boolean fromNetwork) {
     return operationValidator
         .validateForGossip(item)
         .thenApply(

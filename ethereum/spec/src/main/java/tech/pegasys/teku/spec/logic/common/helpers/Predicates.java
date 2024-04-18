@@ -42,11 +42,12 @@ public class Predicates {
    * @see <a
    *     href="https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator</a>
    */
-  public boolean isActiveValidator(Validator validator, UInt64 epoch) {
+  public boolean isActiveValidator(final Validator validator, final UInt64 epoch) {
     return isActiveValidator(validator.getActivationEpoch(), validator.getExitEpoch(), epoch);
   }
 
-  public boolean isActiveValidator(UInt64 activationEpoch, UInt64 exitEpoch, UInt64 epoch) {
+  public boolean isActiveValidator(
+      final UInt64 activationEpoch, final UInt64 exitEpoch, final UInt64 epoch) {
     return activationEpoch.compareTo(epoch) <= 0 && epoch.compareTo(exitEpoch) < 0;
   }
 
@@ -54,17 +55,18 @@ public class Predicates {
       final Bytes32 leaf,
       final SszBytes32Vector branch,
       final int depth,
-      int index,
+      final int index,
       final Bytes32 root) {
     final Sha256 sha256 = getSha256Instance();
     Bytes32 value = leaf;
+    int indexCopy = index;
     for (int i = 0; i < depth; i++) {
-      if ((index & 1) == 1) {
+      if ((indexCopy & 1) == 1) {
         value = sha256.wrappedDigest(branch.getElement(i), value);
       } else {
         value = sha256.wrappedDigest(value, branch.getElement(i));
       }
-      index >>>= 1;
+      indexCopy >>>= 1;
     }
     return value.equals(root);
   }
@@ -75,7 +77,7 @@ public class Predicates {
    * @see <a
    *     href="https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator">is_slashable_validator</a>
    */
-  public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
+  public boolean isSlashableValidator(final Validator validator, final UInt64 epoch) {
     return !validator.isSlashed()
         && (validator.getActivationEpoch().compareTo(epoch) <= 0
             && epoch.compareTo(validator.getWithdrawableEpoch()) < 0);

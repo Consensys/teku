@@ -39,9 +39,9 @@ public class ForkChoiceStateV1 {
   private final Bytes32 finalizedBlockHash;
 
   public ForkChoiceStateV1(
-      @JsonProperty("headBlockHash") Bytes32 headBlockHash,
-      @JsonProperty("safeBlockHash") Bytes32 safeBlockHash,
-      @JsonProperty("finalizedBlockHash") Bytes32 finalizedBlockHash) {
+      final @JsonProperty("headBlockHash") Bytes32 headBlockHash,
+      final @JsonProperty("safeBlockHash") Bytes32 safeBlockHash,
+      final @JsonProperty("finalizedBlockHash") Bytes32 finalizedBlockHash) {
     checkNotNull(headBlockHash, "headBlockHash");
     checkNotNull(safeBlockHash, "safeBlockHash");
     checkNotNull(finalizedBlockHash, "finalizedBlockHash");
@@ -50,7 +50,8 @@ public class ForkChoiceStateV1 {
     this.finalizedBlockHash = finalizedBlockHash;
   }
 
-  public static ForkChoiceStateV1 fromInternalForkChoiceState(ForkChoiceState forkChoiceState) {
+  public static ForkChoiceStateV1 fromInternalForkChoiceState(
+      final ForkChoiceState forkChoiceState) {
     return new ForkChoiceStateV1(
         forkChoiceState.getHeadExecutionBlockHash(),
         forkChoiceState.getSafeExecutionBlockHash(),

@@ -24,12 +24,12 @@ public class LightClientHeaderSchema
     super("LightClientHeader", namedSchema("beacon", BeaconBlockHeader.SSZ_SCHEMA));
   }
 
-  public LightClientHeader create(BeaconBlockHeader beaconBlockHeader) {
+  public LightClientHeader create(final BeaconBlockHeader beaconBlockHeader) {
     return new LightClientHeader(this, beaconBlockHeader);
   }
 
   @Override
-  public LightClientHeader createFromBackingNode(TreeNode node) {
+  public LightClientHeader createFromBackingNode(final TreeNode node) {
     return new LightClientHeader(this, node);
   }
 }

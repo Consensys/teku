@@ -40,7 +40,7 @@ public class SyncCommittee
     }
 
     @Override
-    public SyncCommittee createFromBackingNode(TreeNode node) {
+    public SyncCommittee createFromBackingNode(final TreeNode node) {
       return new SyncCommittee(this, node);
     }
 

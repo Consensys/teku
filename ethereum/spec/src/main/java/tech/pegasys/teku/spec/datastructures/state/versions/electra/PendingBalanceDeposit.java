@@ -55,7 +55,7 @@ public class PendingBalanceDeposit extends Container2<PendingBalanceDeposit, Ssz
   }
 
   private PendingBalanceDeposit(
-      PendingBalanceDepositSchema type, final SszUInt64 index, final SszUInt64 amount) {
+      final PendingBalanceDepositSchema type, final SszUInt64 index, final SszUInt64 amount) {
     super(type, index, amount);
   }
 

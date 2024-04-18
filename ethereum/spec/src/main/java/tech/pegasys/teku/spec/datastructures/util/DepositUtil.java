@@ -27,7 +27,7 @@ public class DepositUtil {
     this.spec = spec;
   }
 
-  public DepositWithIndex convertDepositEventToOperationDeposit(Deposit event) {
+  public DepositWithIndex convertDepositEventToOperationDeposit(final Deposit event) {
     checkArgument(
         event.getAmount().isGreaterThanOrEqualTo(spec.getGenesisSpecConfig().getMinDepositAmount()),
         "Deposit amount too low");

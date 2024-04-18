@@ -35,16 +35,16 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
   }
 
   BeaconStatePhase0Impl(
-      SszCompositeSchema<?> type,
-      TreeNode backingNode,
-      IntCache<SszData> cache,
-      TransitionCaches transitionCaches,
-      SlotCaches slotCaches) {
+      final SszCompositeSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStatePhase0Impl(
-      AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
+      final AbstractSszContainerSchema<? extends SszContainer> type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -55,7 +55,7 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
+      BeaconStatePhase0 updatedPhase0(final Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
           throws E1, E2, E3 {
     MutableBeaconStatePhase0 writableCopy = createWritableCopy();
     mutator.mutate(writableCopy);
@@ -68,11 +68,12 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
   }
 
   @Override
-  protected void describeCustomFields(ToStringHelper stringBuilder) {
+  protected void describeCustomFields(final ToStringHelper stringBuilder) {
     describeCustomFields(stringBuilder, this);
   }
 
-  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStatePhase0 state) {
+  static void describeCustomFields(
+      final ToStringHelper stringBuilder, final BeaconStatePhase0 state) {
     stringBuilder
         .add("previous_epoch_attestations", state.getPreviousEpochAttestations())
         .add("current_epoch_attestations", state.getCurrentEpochAttestations());

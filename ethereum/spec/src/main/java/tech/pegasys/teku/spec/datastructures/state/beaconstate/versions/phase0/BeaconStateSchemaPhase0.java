@@ -88,7 +88,7 @@ public class BeaconStateSchemaPhase0
   }
 
   @Override
-  public BeaconStatePhase0 createFromBackingNode(TreeNode node) {
+  public BeaconStatePhase0 createFromBackingNode(final TreeNode node) {
     return new BeaconStatePhase0Impl(this, node);
   }
 

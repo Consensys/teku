@@ -48,7 +48,7 @@ public class BlockRewardCalculatorUtil {
   private final Spec spec;
   private static final Logger LOG = LogManager.getLogger();
 
-  public BlockRewardCalculatorUtil(Spec spec) {
+  public BlockRewardCalculatorUtil(final Spec spec) {
     this.spec = spec;
   }
 
@@ -123,7 +123,8 @@ public class BlockRewardCalculatorUtil {
   }
 
   @VisibleForTesting
-  long calculateProposerSyncAggregateBlockRewards(long proposerReward, SyncAggregate aggregate) {
+  long calculateProposerSyncAggregateBlockRewards(
+      final long proposerReward, final SyncAggregate aggregate) {
     final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
     return proposerReward * syncCommitteeBits.getBitCount();
   }

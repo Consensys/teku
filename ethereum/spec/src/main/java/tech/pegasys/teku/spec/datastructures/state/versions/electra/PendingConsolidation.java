@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class PendingConsolidation extends Container2<PendingConsolidation, SszUInt64, SszUInt64> {
   protected PendingConsolidation(
-      ContainerSchema2<PendingConsolidation, SszUInt64, SszUInt64> schema) {
+      final ContainerSchema2<PendingConsolidation, SszUInt64, SszUInt64> schema) {
     super(schema);
   }
 
@@ -42,7 +42,7 @@ public class PendingConsolidation extends Container2<PendingConsolidation, SszUI
     }
 
     @Override
-    public PendingConsolidation createFromBackingNode(TreeNode node) {
+    public PendingConsolidation createFromBackingNode(final TreeNode node) {
       return new PendingConsolidation(this, node);
     }
 

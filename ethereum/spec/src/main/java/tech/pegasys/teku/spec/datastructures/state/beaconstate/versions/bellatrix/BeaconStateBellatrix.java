@@ -47,14 +47,14 @@ public interface BeaconStateBellatrix extends BeaconStateAltair {
 
   default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
       BeaconStateBellatrix updatedBellatrix(
-          Mutator<MutableBeaconStateBellatrix, E1, E2, E3> mutator) throws E1, E2, E3 {
+          final Mutator<MutableBeaconStateBellatrix, E1, E2, E3> mutator) throws E1, E2, E3 {
     MutableBeaconStateBellatrix writableCopy = createWritableCopy();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
   }
 
   static void describeCustomBellatrixFields(
-      MoreObjects.ToStringHelper stringBuilder, final BeaconStateBellatrix state) {
+      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateBellatrix state) {
     stringBuilder.add("execution_payload_header", state.getLatestExecutionPayloadHeader());
   }
 }

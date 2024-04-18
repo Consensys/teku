@@ -47,7 +47,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     // NOOP
   }
 

@@ -36,18 +36,18 @@ public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
     }
 
     @Override
-    public Checkpoint createFromBackingNode(TreeNode node) {
+    public Checkpoint createFromBackingNode(final TreeNode node) {
       return new Checkpoint(this, node);
     }
   }
 
   public static final CheckpointSchema SSZ_SCHEMA = new CheckpointSchema();
 
-  private Checkpoint(CheckpointSchema type, TreeNode backingNode) {
+  private Checkpoint(final CheckpointSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public Checkpoint(UInt64 epoch, Bytes32 root) {
+  public Checkpoint(final UInt64 epoch, final Bytes32 root) {
     super(SSZ_SCHEMA, SszUInt64.of(epoch), SszBytes32.of(root));
   }
 

@@ -24,7 +24,8 @@ public interface ValidatorStats {
     private final int numberOfCorrectValidators;
     private final int numberOfLiveValidators;
 
-    public CorrectAndLiveValidators(int numberOfCorrectValidators, int numberOfLiveValidators) {
+    public CorrectAndLiveValidators(
+        final int numberOfCorrectValidators, final int numberOfLiveValidators) {
       this.numberOfCorrectValidators = numberOfCorrectValidators;
       this.numberOfLiveValidators = numberOfLiveValidators;
     }

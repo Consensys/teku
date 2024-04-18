@@ -60,16 +60,16 @@ public class BeaconBlockBodySchemaBellatrixImpl
 
   private BeaconBlockBodySchemaBellatrixImpl(
       final String containerName,
-      NamedSchema<SszSignature> randaoRevealSchema,
-      NamedSchema<Eth1Data> eth1DataSchema,
-      NamedSchema<SszBytes32> graffitiSchema,
-      NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
-      NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
-      NamedSchema<SszList<Attestation>> attestationsSchema,
-      NamedSchema<SszList<Deposit>> depositsSchema,
-      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
-      NamedSchema<SyncAggregate> syncAggregateSchema,
-      NamedSchema<ExecutionPayloadBellatrix> executionPayloadSchema) {
+      final NamedSchema<SszSignature> randaoRevealSchema,
+      final NamedSchema<Eth1Data> eth1DataSchema,
+      final NamedSchema<SszBytes32> graffitiSchema,
+      final NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
+      final NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
+      final NamedSchema<SszList<Attestation>> attestationsSchema,
+      final NamedSchema<SszList<Deposit>> depositsSchema,
+      final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
+      final NamedSchema<SyncAggregate> syncAggregateSchema,
+      final NamedSchema<ExecutionPayloadBellatrix> executionPayloadSchema) {
     super(
         containerName,
         randaoRevealSchema,
@@ -167,7 +167,7 @@ public class BeaconBlockBodySchemaBellatrixImpl
   }
 
   @Override
-  public BeaconBlockBodyBellatrixImpl createFromBackingNode(TreeNode node) {
+  public BeaconBlockBodyBellatrixImpl createFromBackingNode(final TreeNode node) {
     return new BeaconBlockBodyBellatrixImpl(this, node);
   }
 

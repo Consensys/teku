@@ -24,7 +24,7 @@ public class SubnetSubscription implements Comparable<SubnetSubscription> {
   private final int subnetId;
   private final UInt64 unsubscriptionSlot;
 
-  public SubnetSubscription(int subnetId, UInt64 unsubscriptionSlot) {
+  public SubnetSubscription(final int subnetId, final UInt64 unsubscriptionSlot) {
     this.subnetId = subnetId;
     this.unsubscriptionSlot = unsubscriptionSlot;
   }

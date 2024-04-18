@@ -69,7 +69,7 @@ public class OperationValidatorPhase0 implements OperationValidator {
       final Fork fork,
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
-      SlashedIndicesCaptor slashedIndicesCaptor) {
+      final SlashedIndicesCaptor slashedIndicesCaptor) {
     return attesterSlashingValidator.validate(fork, state, attesterSlashing, slashedIndicesCaptor);
   }
 

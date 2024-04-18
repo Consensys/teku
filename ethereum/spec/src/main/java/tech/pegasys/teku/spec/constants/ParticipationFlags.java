@@ -25,11 +25,11 @@ public class ParticipationFlags {
   private static final int ALL_FLAGS =
       combineFlags(TIMELY_HEAD_FLAG, TIMELY_SOURCE_FLAG, TIMELY_TARGET_FLAG);
 
-  public static boolean isTimelyTarget(int value) {
+  public static boolean isTimelyTarget(final int value) {
     return checkIfAnyFlagIsSet(value, TIMELY_TARGET_FLAG);
   }
 
-  public static boolean isAnyFlagSet(int value) {
+  public static boolean isAnyFlagSet(final int value) {
     return checkIfAnyFlagIsSet(value, ALL_FLAGS);
   }
 

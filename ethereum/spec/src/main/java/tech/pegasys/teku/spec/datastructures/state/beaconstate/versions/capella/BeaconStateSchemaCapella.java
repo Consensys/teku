@@ -143,7 +143,7 @@ public class BeaconStateSchemaCapella
   }
 
   @Override
-  public BeaconStateCapella createFromBackingNode(TreeNode node) {
+  public BeaconStateCapella createFromBackingNode(final TreeNode node) {
     return new BeaconStateCapellaImpl(this, node);
   }
 }
