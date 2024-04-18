@@ -43,7 +43,7 @@ public class UpdatableGraffitiProvider implements GraffitiProvider {
 
   @Override
   public Optional<Bytes32> get() {
-    return getGraffitiFromStorage().or(defaultProvider::get).filter(this::graffitiNotEmpty);
+    return getGraffitiFromStorage().filter(this::graffitiNotEmpty).or(defaultProvider::get);
   }
 
   private Optional<Bytes32> getGraffitiFromStorage() {

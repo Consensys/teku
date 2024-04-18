@@ -101,12 +101,13 @@ class UpdatableGraffitiProviderTest {
   }
 
   @Test
-  void get_shouldReturnEmptyWhenEmptyFileAvailable(@TempDir final Path tempDir) throws IOException {
+  void get_shouldReturnDefaultWhenEmptyFileAvailable(@TempDir final Path tempDir)
+      throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     provider = new UpdatableGraffitiProvider(dataDirLayout, publicKey, defaultProvider);
     storeGraffiti(publicKey, Bytes32.EMPTY);
 
-    assertThat(provider.get()).isEmpty();
+    assertThat(provider.get()).hasValue(defaultGraffiti);
   }
 
   private void storeGraffiti(final BLSPublicKey publicKey, final Bytes graffiti)
