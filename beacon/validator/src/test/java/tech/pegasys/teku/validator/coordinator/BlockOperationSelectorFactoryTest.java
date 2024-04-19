@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSig
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -1193,6 +1194,9 @@ class BlockOperationSelectorFactoryTest {
     protected ExecutionPayloadHeader executionPayloadHeader;
     protected SszList<SszKZGCommitment> blobKzgCommitments;
 
+    @SuppressWarnings("unused")
+    protected SszList<SignedConsolidation> consolidations;
+
     public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
       this.supportsKzgCommitments = supportsKzgCommitments;
     }
@@ -1295,6 +1299,13 @@ class BlockOperationSelectorFactoryTest {
     public BeaconBlockBodyBuilder blobKzgCommitments(
         final SszList<SszKZGCommitment> blobKzgCommitments) {
       this.blobKzgCommitments = blobKzgCommitments;
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder consolidations(
+        final SszList<SignedConsolidation> consolidations) {
+      this.consolidations = consolidations;
       return this;
     }
 
