@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -418,7 +419,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<BuilderPayload> builderGetPayload(
+  public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
     offlineCheck();
@@ -478,7 +479,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             // pre Deneb
             .orElse(lastBuilderPayloadToBeUnblinded.get());
 
-    return SafeFuture.completedFuture(builderPayload);
+    return SafeFuture.completedFuture(BuilderPayloadOrFallbackData.create(builderPayload));
   }
 
   public void setPayloadStatus(PayloadStatus payloadStatus) {
