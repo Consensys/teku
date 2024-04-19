@@ -18,14 +18,10 @@ import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G1;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G2;
 
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 
-final class TrustedSetup {
-  private final List<Bytes> g1Points;
-  private final List<Bytes> g2Points;
-
-  public TrustedSetup(final List<Bytes> g1Points, final List<Bytes> g2Points) {
+record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
+  TrustedSetup(final List<Bytes> g1Points, final List<Bytes> g2Points) {
     this.g1Points = g1Points;
     this.g2Points = g2Points;
     g1Points.forEach(this::validateG1Point);
@@ -38,32 +34,6 @@ final class TrustedSetup {
 
   private void validateG2Point(final Bytes g2Point) {
     checkArgument(g2Point.size() == BYTES_PER_G2, "Expected G2 point to be %s bytes", BYTES_PER_G2);
-  }
-
-  public List<Bytes> g1Points() {
-    return g1Points;
-  }
-
-  public List<Bytes> g2Points() {
-    return g2Points;
-  }
-
-  @Override
-  public boolean equals(final Object obj) {
-    if (obj == this) {
-      return true;
-    }
-    if (obj == null || obj.getClass() != this.getClass()) {
-      return false;
-    }
-    var that = (TrustedSetup) obj;
-    return Objects.equals(this.g1Points, that.g1Points)
-        && Objects.equals(this.g2Points, that.g2Points);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(g1Points, g2Points);
   }
 
   @Override
