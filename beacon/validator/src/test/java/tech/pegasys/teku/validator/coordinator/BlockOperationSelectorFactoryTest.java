@@ -58,7 +58,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -1005,7 +1005,7 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(
             ExecutionPayloadResult.createForBlindedFlow(
                 executionPayloadContext,
-                SafeFuture.completedFuture(BuilderBidWithFallbackData.create(builderBid))));
+                SafeFuture.completedFuture(BuilderBidOrFallbackData.create(builderBid))));
   }
 
   private void prepareBlindedBlockProductionWithFallBack(
@@ -1013,15 +1013,10 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
       final UInt256 executionPayloadValue) {
-    final BuilderBidWithFallbackData builderBidWithFallbackData =
-        BuilderBidWithFallbackData.create(
-            dataStructureUtil.randomBuilderBid(
-                executionPayload,
-                Optional.empty(),
-                builder -> builder.value(executionPayloadValue)),
+    final BuilderBidOrFallbackData builderBidOrFallbackData =
+        BuilderBidOrFallbackData.create(
             new FallbackData(
-                executionPayload,
-                Optional.empty(),
+                new GetPayloadResponse(executionPayload, executionPayloadValue),
                 FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
     when(executionLayer.initiateBlockProduction(
             executionPayloadContext,
@@ -1031,7 +1026,7 @@ class BlockOperationSelectorFactoryTest {
             BlockProductionPerformance.NOOP))
         .thenReturn(
             ExecutionPayloadResult.createForBlindedFlow(
-                executionPayloadContext, SafeFuture.completedFuture(builderBidWithFallbackData)));
+                executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
   private void prepareBlockAndBlobsProduction(
@@ -1060,8 +1055,8 @@ class BlockOperationSelectorFactoryTest {
       final BeaconState blockSlotState,
       final SszList<SszKZGCommitment> blobKzgCommitments,
       final UInt256 executionPayloadValue) {
-    final BuilderBidWithFallbackData builderBidWithFallbackData =
-        BuilderBidWithFallbackData.create(
+    final BuilderBidOrFallbackData builderBidOrFallbackData =
+        BuilderBidOrFallbackData.create(
             dataStructureUtil.randomBuilderBid(
                 builder -> {
                   builder.header(executionPayloadHeader);
@@ -1076,7 +1071,7 @@ class BlockOperationSelectorFactoryTest {
             BlockProductionPerformance.NOOP))
         .thenReturn(
             ExecutionPayloadResult.createForBlindedFlow(
-                executionPayloadContext, SafeFuture.completedFuture(builderBidWithFallbackData)));
+                executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
   private void prepareBlindedBlockAndBlobsProductionWithFallBack(
@@ -1085,15 +1080,10 @@ class BlockOperationSelectorFactoryTest {
       final BeaconState blockSlotState,
       final BlobsBundle blobsBundle,
       final UInt256 executionPayloadValue) {
-    final BuilderBidWithFallbackData builderBidWithFallbackData =
-        BuilderBidWithFallbackData.create(
-            dataStructureUtil.randomBuilderBid(
-                executionPayload,
-                Optional.of(blobsBundle),
-                builder -> builder.value(executionPayloadValue)),
+    final BuilderBidOrFallbackData builderBidOrFallbackData =
+        BuilderBidOrFallbackData.create(
             new FallbackData(
-                executionPayload,
-                Optional.of(blobsBundle),
+                new GetPayloadResponse(executionPayload, executionPayloadValue, blobsBundle, false),
                 FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
 
     when(executionLayer.initiateBlockProduction(
@@ -1104,7 +1094,7 @@ class BlockOperationSelectorFactoryTest {
             BlockProductionPerformance.NOOP))
         .thenReturn(
             ExecutionPayloadResult.createForBlindedFlow(
-                executionPayloadContext, SafeFuture.completedFuture(builderBidWithFallbackData)));
+                executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
   private void prepareCachedPayloadResult(
@@ -1127,20 +1117,17 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
       final BlobsBundle blobsBundle) {
-    final BuilderBidWithFallbackData builderBidWithFallbackData =
-        BuilderBidWithFallbackData.create(
-            dataStructureUtil.randomBuilderBid(
-                executionPayload, Optional.of(blobsBundle), __ -> {}),
+    final BuilderBidOrFallbackData builderBidOrFallbackData =
+        BuilderBidOrFallbackData.create(
             new FallbackData(
-                executionPayload,
-                Optional.of(blobsBundle),
+                new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle, false),
                 FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(
             Optional.of(
                 ExecutionPayloadResult.createForBlindedFlow(
                     executionPayloadContext,
-                    SafeFuture.completedFuture(builderBidWithFallbackData))));
+                    SafeFuture.completedFuture(builderBidOrFallbackData))));
   }
 
   private void prepareCachedBuilderPayload(

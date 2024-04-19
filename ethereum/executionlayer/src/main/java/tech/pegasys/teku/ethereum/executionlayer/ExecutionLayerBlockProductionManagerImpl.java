@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -119,10 +119,10 @@ public class ExecutionLayerBlockProductionManagerImpl
       final BeaconState blockSlotState,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
-    final SafeFuture<BuilderBidWithFallbackData> builderBidWithFallbackDataFuture =
+    final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
         executionLayerChannel.builderGetHeader(
             context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
 
-    return ExecutionPayloadResult.createForBlindedFlow(context, builderBidWithFallbackDataFuture);
+    return ExecutionPayloadResult.createForBlindedFlow(context, builderBidOrFallbackDataFuture);
   }
 }

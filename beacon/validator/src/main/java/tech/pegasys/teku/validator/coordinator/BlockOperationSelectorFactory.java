@@ -39,10 +39,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -243,15 +246,18 @@ public class BlockOperationSelectorFactory {
 
     // we should try to return unblinded content only if no explicit "blindness" has been requested
     // and builder flow fallbacks to local
-    final Function<BuilderBidWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks =
-        builderBidWithFallbackData ->
-            builderBidWithFallbackData.getFallbackData().isPresent() && requestedBlinded.isEmpty();
+    final Function<BuilderBidOrFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks =
+        builderBidOrFallbackData ->
+            builderBidOrFallbackData.getFallbackData().isPresent() && requestedBlinded.isEmpty();
 
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
         // Execution Payload / Execution Payload Header
         setPayloadOrPayloadHeader(
-            bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
+            bodyBuilder,
+            schemaDefinitions,
+            setUnblindedContentIfBuilderFallbacks,
+            executionPayloadResult),
         // KZG Commitments
         setKzgCommitments(
             bodyBuilder, schemaDefinitions, executionPayloadResult, blockSlotState.getSlot()));
@@ -269,7 +275,8 @@ public class BlockOperationSelectorFactory {
 
   private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final Function<BuilderBidWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
+      final SchemaDefinitionsBellatrix schemaDefinitions,
+      final Function<BuilderBidOrFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final ExecutionPayloadResult executionPayloadResult) {
 
     if (executionPayloadResult.isFromNonBlindedFlow()) {
@@ -282,19 +289,31 @@ public class BlockOperationSelectorFactory {
 
     // blinded flow
     return executionPayloadResult
-        .getBuilderBidWithFallbackDataFuture()
+        .getBuilderBidOrFallbackDataFuture()
         .orElseThrow()
         .thenAccept(
-            builderBidWithFallbackData -> {
-              if (setUnblindedContentIfBuilderFallbacks.apply(builderBidWithFallbackData)) {
+            builderBidOrFallbackData -> {
+              if (setUnblindedContentIfBuilderFallbacks.apply(builderBidOrFallbackData)) {
                 bodyBuilder.executionPayload(
-                    builderBidWithFallbackData
-                        .getFallbackData()
-                        .orElseThrow()
-                        .getExecutionPayload());
+                    builderBidOrFallbackData.getFallbackDataRequired().getExecutionPayload());
               } else {
-                bodyBuilder.executionPayloadHeader(
-                    builderBidWithFallbackData.getBuilderBid().getHeader());
+                final ExecutionPayloadHeader executionPayloadHeader =
+                    builderBidOrFallbackData
+                        .getBuilderBid()
+                        // from the builder bid
+                        .map(BuilderBid::getHeader)
+                        // from the local fallback
+                        .orElseGet(
+                            () -> {
+                              final ExecutionPayload localExecutionPayload =
+                                  builderBidOrFallbackData
+                                      .getFallbackDataRequired()
+                                      .getExecutionPayload();
+                              return schemaDefinitions
+                                  .getExecutionPayloadHeaderSchema()
+                                  .createFromExecutionPayload(localExecutionPayload);
+                            });
+                bodyBuilder.executionPayloadHeader(executionPayloadHeader);
               }
             });
   }
@@ -307,11 +326,11 @@ public class BlockOperationSelectorFactory {
     if (!bodyBuilder.supportsKzgCommitments()) {
       return SafeFuture.COMPLETE;
     }
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
     if (executionPayloadResult.isFromNonBlindedFlow()) {
       // non-blinded flow
-      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
-          SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
       blobKzgCommitments =
           getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot)
               .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
@@ -319,20 +338,32 @@ public class BlockOperationSelectorFactory {
       // blinded flow
       blobKzgCommitments =
           executionPayloadResult
-              .getBuilderBidWithFallbackDataFuture()
+              .getBuilderBidOrFallbackDataFuture()
               .orElseThrow()
               .thenApply(
-                  builderBidWithFallbackData ->
-                      builderBidWithFallbackData
-                          .getBuilderBid()
-                          .getOptionalBlobKzgCommitments()
-                          .orElseThrow(
-                              () ->
-                                  new IllegalStateException(
-                                      "builder BlobKzgCommitments are not available")));
+                  builderBidOrFallbackData ->
+                      getBlobKzgCommitmentsFromBlindedFlow(
+                          builderBidOrFallbackData, blobKzgCommitmentsSchema));
     }
 
     return blobKzgCommitments.thenAccept(bodyBuilder::blobKzgCommitments);
+  }
+
+  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBlindedFlow(
+      final BuilderBidOrFallbackData builderBidOrFallbackData,
+      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
+    return builderBidOrFallbackData
+        .getBuilderBid()
+        // from the builder bid
+        .map(BuilderBid::getOptionalBlobKzgCommitments)
+        // from the local fallback
+        .orElseGet(
+            () ->
+                builderBidOrFallbackData
+                    .getFallbackDataRequired()
+                    .getBlobsBundle()
+                    .map(blobKzgCommitmentsSchema::createFromBlobsBundle))
+        .orElseThrow();
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
@@ -380,19 +411,13 @@ public class BlockOperationSelectorFactory {
         // we performed a non-blinded flow, so the bundle must be in getPayloadResponseFuture
         return getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot);
       } else {
-        // we performed a blinded flow, so the bundle must be in getBuilderBidWithFallbackDataFuture
+        // we performed a blinded flow, so the bundle must be in getbuilderBidOrFallbackDataFuture
         return executionPayloadResult
-            .getBuilderBidWithFallbackDataFuture()
+            .getBuilderBidOrFallbackDataFuture()
             .orElseThrow()
             .thenApply(
-                builderBidWithFallbackData ->
-                    builderBidWithFallbackData
-                        .getFallbackData()
-                        .orElseThrow(
-                            () ->
-                                new IllegalStateException(
-                                    "There is no FallbackData available for slot " + slot))
-                        .getBlobsBundle())
+                builderBidOrFallbackData ->
+                    builderBidOrFallbackData.getFallbackDataRequired().getBlobsBundle())
             .thenApply(
                 blobsBundle ->
                     blobsBundle.orElseThrow(

@@ -25,26 +25,26 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
  * present. The {@link #blobsBundleFuture} will have a value when the future is complete only after
  * Deneb, otherwise it will be empty.
  *
- * <p>In blinded flow, {@link #builderBidWithFallbackDataFuture} would be present
+ * <p>In blinded flow, {@link #builderBidOrFallbackDataFuture} would be present
  */
 public class ExecutionPayloadResult {
 
   private final ExecutionPayloadContext executionPayloadContext;
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
   private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
-  private final Optional<SafeFuture<BuilderBidWithFallbackData>> builderBidWithFallbackDataFuture;
+  private final Optional<SafeFuture<BuilderBidOrFallbackData>> builderBidOrFallbackDataFuture;
   private final SafeFuture<UInt256> executionPayloadValueFuture;
 
   private ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
       final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
-      final Optional<SafeFuture<BuilderBidWithFallbackData>> builderBidWithFallbackDataFuture,
+      final Optional<SafeFuture<BuilderBidOrFallbackData>> builderBidOrFallbackDataFuture,
       final SafeFuture<UInt256> executionPayloadValueFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.blobsBundleFuture = blobsBundleFuture;
-    this.builderBidWithFallbackDataFuture = builderBidWithFallbackDataFuture;
+    this.builderBidOrFallbackDataFuture = builderBidOrFallbackDataFuture;
     this.executionPayloadValueFuture = executionPayloadValueFuture;
   }
 
@@ -60,8 +60,8 @@ public class ExecutionPayloadResult {
     return blobsBundleFuture;
   }
 
-  public Optional<SafeFuture<BuilderBidWithFallbackData>> getBuilderBidWithFallbackDataFuture() {
-    return builderBidWithFallbackDataFuture;
+  public Optional<SafeFuture<BuilderBidOrFallbackData>> getBuilderBidOrFallbackDataFuture() {
+    return builderBidOrFallbackDataFuture;
   }
 
   /**
@@ -90,16 +90,25 @@ public class ExecutionPayloadResult {
 
   public static ExecutionPayloadResult createForBlindedFlow(
       final ExecutionPayloadContext executionPayloadContext,
-      final SafeFuture<BuilderBidWithFallbackData> builderBidWithFallbackDataFuture) {
+      final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture) {
     final SafeFuture<UInt256> executionPayloadValueFuture =
-        builderBidWithFallbackDataFuture
-            .thenApply(BuilderBidWithFallbackData::getBuilderBid)
-            .thenApply(BuilderBid::getValue);
+        builderBidOrFallbackDataFuture.thenApply(
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
+                    // from the builder bid
+                    .getBuilderBid()
+                    .map(BuilderBid::getValue)
+                    // from the local fallback
+                    .orElseGet(
+                        () ->
+                            builderBidOrFallbackData
+                                .getFallbackDataRequired()
+                                .getExecutionPayloadValue()));
     return new ExecutionPayloadResult(
         executionPayloadContext,
         Optional.empty(),
         Optional.empty(),
-        Optional.of(builderBidWithFallbackDataFuture),
+        Optional.of(builderBidOrFallbackDataFuture),
         executionPayloadValueFuture);
   }
 
@@ -115,7 +124,7 @@ public class ExecutionPayloadResult {
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
         && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
         && Objects.equals(blobsBundleFuture, that.blobsBundleFuture)
-        && Objects.equals(builderBidWithFallbackDataFuture, that.builderBidWithFallbackDataFuture)
+        && Objects.equals(builderBidOrFallbackDataFuture, that.builderBidOrFallbackDataFuture)
         && Objects.equals(executionPayloadValueFuture, that.executionPayloadValueFuture);
   }
 
@@ -125,7 +134,7 @@ public class ExecutionPayloadResult {
         executionPayloadContext,
         executionPayloadFuture,
         blobsBundleFuture,
-        builderBidWithFallbackDataFuture,
+        builderBidOrFallbackDataFuture,
         executionPayloadValueFuture);
   }
 
@@ -135,7 +144,7 @@ public class ExecutionPayloadResult {
         .add("executionPayloadContext", executionPayloadContext)
         .add("executionPayloadFuture", executionPayloadFuture)
         .add("blobsBundleFuture", blobsBundleFuture)
-        .add("builderBidWithFallbackDataFuture", builderBidWithFallbackDataFuture)
+        .add("builderBidOrFallbackDataFuture", builderBidOrFallbackDataFuture)
         .add("executionPayloadValueFuture", executionPayloadValueFuture)
         .toString();
   }

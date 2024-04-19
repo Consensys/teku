@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
@@ -51,7 +51,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
   }
 
   @Override
-  public SafeFuture<BuilderBidWithFallbackData> builderGetHeader(
+  public SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final Optional<UInt64> requestedBuilderBoostFactor,
@@ -62,19 +62,16 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
     return super.builderGetHeader(
             executionPayloadContext, state, requestedBuilderBoostFactor, blockProductionPerformance)
         .thenCompose(
-            builderBidWithFallbackData -> {
+            builderBidOrFallbackData -> {
               if (builderCircuitBreakerEngaged) {
                 return engineGetPayload(executionPayloadContext, state)
                     .thenApply(
-                        payload ->
-                            BuilderBidWithFallbackData.create(
-                                builderBidWithFallbackData.getBuilderBid(),
+                        getPayloadResponse ->
+                            BuilderBidOrFallbackData.create(
                                 new FallbackData(
-                                    payload.getExecutionPayload(),
-                                    payload.getBlobsBundle(),
-                                    FallbackReason.CIRCUIT_BREAKER_ENGAGED)));
+                                    getPayloadResponse, FallbackReason.CIRCUIT_BREAKER_ENGAGED)));
               } else {
-                return SafeFuture.completedFuture(builderBidWithFallbackData);
+                return SafeFuture.completedFuture(builderBidOrFallbackData);
               }
             });
   }

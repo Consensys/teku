@@ -33,7 +33,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
@@ -42,7 +41,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -51,18 +49,15 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -234,7 +229,7 @@ class ExecutionLayerManagerImplTest {
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
-        .isCompletedWithValue(BuilderBidWithFallbackData.create(builderBid));
+        .isCompletedWithValue(BuilderBidOrFallbackData.create(builderBid));
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
@@ -276,7 +271,7 @@ class ExecutionLayerManagerImplTest {
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
-        .isCompletedWithValue(BuilderBidWithFallbackData.create(builderBid));
+        .isCompletedWithValue(BuilderBidOrFallbackData.create(builderBid));
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
@@ -318,11 +313,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localValueOverride, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.LOCAL_BLOCK_VALUE_WON));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.LOCAL_BLOCK_VALUE_WON));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -348,11 +341,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.BUILDER_ERROR));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.BUILDER_ERROR));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -375,11 +366,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
     // we expect local engine header as result
-    BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.BUILDER_ERROR));
+    BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.BUILDER_ERROR));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -428,13 +417,10 @@ class ExecutionLayerManagerImplTest {
             executionPayloadContext, localExecutionPayloadValue, true, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
             new FallbackData(
-                getPayloadResponse.getExecutionPayload(),
-                getPayloadResponse.getBlobsBundle(),
-                FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
+                getPayloadResponse, FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -458,11 +444,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.BUILDER_ERROR));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.BUILDER_ERROR));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -484,11 +468,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.BUILDER_NOT_AVAILABLE));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.BUILDER_NOT_AVAILABLE));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -513,12 +495,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(),
-                FallbackReason.BUILDER_HEADER_NOT_AVAILABLE));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -541,11 +520,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.TRANSITION_NOT_FINALIZED));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.TRANSITION_NOT_FINALIZED));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -570,11 +547,9 @@ class ExecutionLayerManagerImplTest {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(true);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.CIRCUIT_BREAKER_ENGAGED));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.CIRCUIT_BREAKER_ENGAGED));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -599,11 +574,9 @@ class ExecutionLayerManagerImplTest {
     when(builderCircuitBreaker.isEngaged(any())).thenThrow(new RuntimeException("error"));
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.CIRCUIT_BREAKER_ENGAGED));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.CIRCUIT_BREAKER_ENGAGED));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -626,11 +599,9 @@ class ExecutionLayerManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
     // we expect local engine header as result
-    final BuilderBidWithFallbackData expectedResult =
-        BuilderBidWithFallbackData.create(
-            createBuilderBid(getPayloadResponse),
-            new FallbackData(
-                getPayloadResponse.getExecutionPayload(), FallbackReason.VALIDATOR_NOT_REGISTERED));
+    final BuilderBidOrFallbackData expectedResult =
+        BuilderBidOrFallbackData.create(
+            new FallbackData(getPayloadResponse, FallbackReason.VALIDATOR_NOT_REGISTERED));
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext, state, Optional.empty(), BlockProductionPerformance.NOOP))
@@ -724,8 +695,8 @@ class ExecutionLayerManagerImplTest {
   private void verifyFallbackToLocalEL(
       final UInt64 slot,
       final ExecutionPayloadContext executionPayloadContext,
-      final BuilderBidWithFallbackData builderBidWithFallbackData) {
-    final FallbackData fallbackData = builderBidWithFallbackData.getFallbackData().orElseThrow();
+      final BuilderBidOrFallbackData builderBidOrFallbackData) {
+    final FallbackData fallbackData = builderBidOrFallbackData.getFallbackData().orElseThrow();
     final FallbackReason fallbackReason = fallbackData.getReason();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
@@ -768,7 +739,7 @@ class ExecutionLayerManagerImplTest {
                     Optional.of(
                         ExecutionPayloadResult.createForBlindedFlow(
                             executionPayloadContext,
-                            SafeFuture.completedFuture(builderBidWithFallbackData)))))
+                            SafeFuture.completedFuture(builderBidOrFallbackData)))))
         .isCompletedWithValue(builderPayload);
 
     // we expect no additional calls
@@ -908,32 +879,5 @@ class ExecutionLayerManagerImplTest {
             .getCounter(TekuMetricCategory.BEACON, "execution_payload_source")
             .getValue(source.toString(), reason.toString());
     assertThat(actualCount).isOne();
-  }
-
-  private BuilderBid createBuilderBid(final GetPayloadResponse getPayloadResponse) {
-    final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-        SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions());
-    final ExecutionPayloadHeader header =
-        schemaDefinitionsBellatrix
-            .getExecutionPayloadHeaderSchema()
-            .createFromExecutionPayload(getPayloadResponse.getExecutionPayload());
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-        getPayloadResponse
-            .getBlobsBundle()
-            .map(
-                blobsBundle ->
-                    SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-                        .getBlobKzgCommitmentsSchema()
-                        .createFromBlobsBundle(blobsBundle));
-    return schemaDefinitionsBellatrix
-        .getBuilderBidSchema()
-        .createBuilderBid(
-            builder -> {
-              builder.header(header);
-              blobKzgCommitments.ifPresent(builder::blobKzgCommitments);
-              builder.value(getPayloadResponse.getExecutionPayloadValue());
-              // public key is empty when local fallback is used
-              builder.publicKey(BLSPublicKey.empty());
-            });
   }
 }

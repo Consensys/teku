@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -483,7 +483,7 @@ public abstract class AbstractBlockFactoryTest {
               final ExecutionPayloadResult executionPayloadResult =
                   ExecutionPayloadResult.createForBlindedFlow(
                       args.getArgument(0),
-                      SafeFuture.completedFuture(BuilderBidWithFallbackData.create(builderBid)));
+                      SafeFuture.completedFuture(BuilderBidOrFallbackData.create(builderBid)));
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });

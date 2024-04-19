@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -354,7 +354,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<BuilderBidWithFallbackData> builderGetHeader(
+  public SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final Optional<UInt64> requestedBuilderBoostFactor,
@@ -412,7 +412,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                             // using an empty public key for the stub
                             builder.publicKey(BLSPublicKey.empty());
                           });
-              return BuilderBidWithFallbackData.create(builderBid);
+              return BuilderBidOrFallbackData.create(builderBid);
             })
         .thenPeek(__ -> blockProductionPerformance.builderGetHeader());
   }

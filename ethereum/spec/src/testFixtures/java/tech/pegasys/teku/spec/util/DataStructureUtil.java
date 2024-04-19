@@ -609,25 +609,6 @@ public final class DataStructureUtil {
     return randomBuilderBid(__ -> {});
   }
 
-  public BuilderBid randomBuilderBid(
-      final ExecutionPayload executionPayload,
-      final Optional<BlobsBundle> maybeBlobsBundle,
-      final Consumer<BuilderBidBuilder> builderModifier) {
-    final ExecutionPayloadHeader header =
-        getBellatrixSchemaDefinitions(randomUInt64())
-            .getExecutionPayloadHeaderSchema()
-            .createFromExecutionPayload(executionPayload);
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-        maybeBlobsBundle.map(
-            blobsBundle -> getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
-    return randomBuilderBid(
-        builder -> {
-          builder.header(header);
-          blobKzgCommitments.ifPresent(builder::blobKzgCommitments);
-          builderModifier.accept(builder);
-        });
-  }
-
   public BuilderBid randomBuilderBid(final Bytes32 withdrawalsRoot) {
     return randomBuilderBid(
         builder ->

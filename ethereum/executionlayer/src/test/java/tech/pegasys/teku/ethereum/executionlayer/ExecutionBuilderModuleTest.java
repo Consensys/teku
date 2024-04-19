@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
@@ -104,7 +104,7 @@ public class ExecutionBuilderModuleTest {
 
     final BuilderBid builderBid = prepareBuilderGetHeaderResponse(false, builderValue);
 
-    final SafeFuture<BuilderBidWithFallbackData> result =
+    final SafeFuture<BuilderBidOrFallbackData> result =
         callBuilderGetHeader(requestedComparisonFactor);
 
     if (localShouldWin) {
@@ -187,7 +187,7 @@ public class ExecutionBuilderModuleTest {
             "Local execution payload (0.000000 ETH) is chosen over builder bid (333.000001 ETH) - builder compare factor: PREFER_EXECUTION, source: BN."));
   }
 
-  private SafeFuture<BuilderBidWithFallbackData> callBuilderGetHeader(
+  private SafeFuture<BuilderBidOrFallbackData> callBuilderGetHeader(
       final Optional<UInt64> requestedBuilderBoostFactor) {
     return executionBuilderModule.builderGetHeader(
         executionPayloadContext,
@@ -259,33 +259,39 @@ public class ExecutionBuilderModuleTest {
   }
 
   void assertGetHeaderResultIsFromBuilder(
-      final SafeFuture<BuilderBidWithFallbackData> result, final BuilderBid builderBid) {
+      final SafeFuture<BuilderBidOrFallbackData> result, final BuilderBid builderBid) {
     assertThatSafeFuture(result)
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData -> builderBidWithFallbackData.getFallbackData().isEmpty(),
+            builderBidOrFallbackData -> builderBidOrFallbackData.getFallbackData().isEmpty(),
             "no fallback")
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
                     .getBuilderBid()
+                    .orElseThrow()
                     .getHeader()
                     .equals(builderBid.getHeader()),
             "header from builder")
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
                     .getBuilderBid()
+                    .orElseThrow()
                     .getOptionalBlobKzgCommitments()
                     .equals(builderBid.getOptionalBlobKzgCommitments()),
             "kzg commitments from builder")
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData.getBuilderBid().getValue().equals(builderBid.getValue()),
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
+                    .getBuilderBid()
+                    .orElseThrow()
+                    .getValue()
+                    .equals(builderBid.getValue()),
             "value from builder");
   }
 
   void assertGetHeaderResultFallbacksToLocal(
-      final SafeFuture<BuilderBidWithFallbackData> result,
+      final SafeFuture<BuilderBidOrFallbackData> result,
       final GetPayloadResponse localFallback,
       final FallbackReason reason) {
     final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
@@ -306,52 +312,35 @@ public class ExecutionBuilderModuleTest {
 
     assertThatSafeFuture(result)
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData -> builderBidWithFallbackData.getFallbackData().isPresent(),
-            "fallback is present")
+            builderBidOrFallbackData -> builderBidOrFallbackData.getBuilderBid().isEmpty(),
+            "no builder bid")
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
                     .getFallbackData()
                     .orElseThrow()
                     .getExecutionPayload()
                     .equals(localFallback.getExecutionPayload()),
             "fallback payload equals local payload")
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
                     .getFallbackData()
                     .orElseThrow()
                     .getBlobsBundle()
                     .equals(localFallback.getBlobsBundle()),
             "fallback bundle equals local bundle")
         .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
                     .getFallbackData()
                     .orElseThrow()
-                    .getReason()
-                    .equals(reason),
-            "fallback reason matches")
-        .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
-                    .getBuilderBid()
-                    .getHeader()
-                    .equals(executionPayloadHeader),
-            "header from local")
-        .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
-                    .getBuilderBid()
-                    .getOptionalBlobKzgCommitments()
-                    .equals(blobKzgCommitments),
-            "kzg commitments from local")
-        .isCompletedWithValueMatching(
-            builderBidWithFallbackData ->
-                builderBidWithFallbackData
-                    .getBuilderBid()
-                    .getValue()
+                    .getExecutionPayloadValue()
                     .equals(localFallback.getExecutionPayloadValue()),
-            "value from local");
+            "fallback payload value equals local payload value")
+        .isCompletedWithValueMatching(
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData.getFallbackData().orElseThrow().getReason().equals(reason),
+            "fallback reason matches");
   }
 }

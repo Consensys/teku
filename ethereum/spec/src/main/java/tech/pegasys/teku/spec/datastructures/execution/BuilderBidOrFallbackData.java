@@ -19,40 +19,39 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 
 /**
- * {@link #builderBid} would be either a real builder bid or a local "mimicked" bid (if there has
- * been a local fallback)
- *
- * <p>If there has been a local fallback, {@link #fallbackData} will contain the local payload.
+ * Either {@link #builderBid} or {@link #fallbackData} would be present, depending on if builder has
+ * been used or there has been a local fallback
  */
-public class BuilderBidWithFallbackData {
+public class BuilderBidOrFallbackData {
 
-  private final BuilderBid builderBid;
+  private final Optional<BuilderBid> builderBid;
   private final Optional<FallbackData> fallbackData;
 
-  private BuilderBidWithFallbackData(
-      final BuilderBid builderBid, final Optional<FallbackData> fallbackData) {
+  private BuilderBidOrFallbackData(
+      final Optional<BuilderBid> builderBid, final Optional<FallbackData> fallbackData) {
     this.builderBid = builderBid;
     this.fallbackData = fallbackData;
   }
 
-  public static BuilderBidWithFallbackData create(final BuilderBid builderBid) {
-    return new BuilderBidWithFallbackData(builderBid, Optional.empty());
+  public static BuilderBidOrFallbackData create(final BuilderBid builderBid) {
+    return new BuilderBidOrFallbackData(Optional.of(builderBid), Optional.empty());
   }
 
-  public static BuilderBidWithFallbackData create(
-      final BuilderBid builderBid, final FallbackData fallbackData) {
-    return new BuilderBidWithFallbackData(builderBid, Optional.of(fallbackData));
+  public static BuilderBidOrFallbackData create(final FallbackData fallbackData) {
+    return new BuilderBidOrFallbackData(Optional.empty(), Optional.of(fallbackData));
   }
 
-  /**
-   * @return the bid from a real builder or a local EL (if there has been a fallback)
-   */
-  public BuilderBid getBuilderBid() {
+  public Optional<BuilderBid> getBuilderBid() {
     return builderBid;
   }
 
   public Optional<FallbackData> getFallbackData() {
     return fallbackData;
+  }
+
+  public FallbackData getFallbackDataRequired() {
+    return fallbackData.orElseThrow(
+        () -> new IllegalStateException("FallbackData is not available in " + this));
   }
 
   @Override
@@ -63,7 +62,7 @@ public class BuilderBidWithFallbackData {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final BuilderBidWithFallbackData that = (BuilderBidWithFallbackData) o;
+    final BuilderBidOrFallbackData that = (BuilderBidOrFallbackData) o;
     return Objects.equals(builderBid, that.builderBid)
         && Objects.equals(fallbackData, that.fallbackData);
   }

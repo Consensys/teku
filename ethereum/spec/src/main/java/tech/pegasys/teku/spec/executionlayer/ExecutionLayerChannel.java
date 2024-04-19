@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.BuilderBidWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -92,7 +92,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<BuilderBidWithFallbackData> builderGetHeader(
+        public SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
             final Optional<UInt64> requestedBuilderBoostFactor,
@@ -146,7 +146,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * @param requestedBuilderBoostFactor The requested builder boost factor
    * @param blockProductionPerformance The performance tracker
    */
-  SafeFuture<BuilderBidWithFallbackData> builderGetHeader(
+  SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
       Optional<UInt64> requestedBuilderBoostFactor,
