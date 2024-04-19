@@ -84,7 +84,7 @@ public class DepositFetcher {
 
   // Inclusive on both sides
   public synchronized SafeFuture<Void> fetchDepositsInRange(
-      BigInteger fromBlockNumber, BigInteger toBlockNumber) {
+      final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
     checkArgument(
         fromBlockNumber.compareTo(toBlockNumber) <= 0,
         "From block number (%s) must be less than or equal to block number (%s)",
@@ -161,10 +161,11 @@ public class DepositFetcher {
   }
 
   private SafeFuture<Void> postDepositEvents(
-      List<SafeFuture<EthBlock.Block>> blockRequests,
-      Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>> depositEventsByBlock,
-      BigInteger fromBlock,
-      BigInteger toBlock) {
+      final List<SafeFuture<EthBlock.Block>> blockRequests,
+      final Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
+          depositEventsByBlock,
+      final BigInteger fromBlock,
+      final BigInteger toBlock) {
     LOG.trace("Posting deposit events for {} blocks", depositEventsByBlock.size());
     BigInteger from = fromBlock;
     // First process completed requests using iteration.
@@ -220,7 +221,7 @@ public class DepositFetcher {
   }
 
   private List<SafeFuture<EthBlock.Block>> getListOfEthBlockFutures(
-      Set<BlockNumberAndHash> neededBlockHashes) {
+      final Set<BlockNumberAndHash> neededBlockHashes) {
     return neededBlockHashes.stream()
         .map(BlockNumberAndHash::getHash)
         .map(eth1Provider::getGuaranteedEth1Block)
@@ -229,7 +230,7 @@ public class DepositFetcher {
 
   private NavigableMap<BlockNumberAndHash, List<DepositEventEventResponse>>
       groupDepositEventResponsesByBlockHash(
-          List<DepositContract.DepositEventEventResponse> events) {
+          final List<DepositContract.DepositEventEventResponse> events) {
     return events.stream()
         .collect(
             groupingBy(
@@ -239,7 +240,7 @@ public class DepositFetcher {
                 toList()));
   }
 
-  private void postDeposits(DepositsFromBlockEvent event) {
+  private void postDeposits(final DepositsFromBlockEvent event) {
     eth1EventsChannel.onDepositsFromBlock(event);
   }
 

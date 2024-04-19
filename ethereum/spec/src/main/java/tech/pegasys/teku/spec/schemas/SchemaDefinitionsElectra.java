@@ -40,8 +40,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -77,7 +77,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   private final DepositReceiptSchema depositReceiptSchema;
 
-  private final ExecutionLayerExitSchema executionLayerExitSchema;
+  private final ExecutionLayerWithdrawalRequestSchema executionLayerWithdrawalRequestSchema;
 
   private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
 
@@ -134,7 +134,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
 
     this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
-    this.executionLayerExitSchema = ExecutionLayerExit.SSZ_SCHEMA;
+    this.executionLayerWithdrawalRequestSchema = ExecutionLayerWithdrawalRequest.SSZ_SCHEMA;
     this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
     this.pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
@@ -260,8 +260,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return depositReceiptSchema;
   }
 
-  public ExecutionLayerExitSchema getExecutionLayerExitSchema() {
-    return executionLayerExitSchema;
+  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
+    return executionLayerWithdrawalRequestSchema;
   }
 
   public PendingBalanceDeposit.PendingBalanceDepositSchema getPendingBalanceDepositSchema() {

@@ -46,7 +46,7 @@ public class PutLogLevel extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final LogLevel requestBody = request.getRequestBody();
     final List<String> logFilters = requestBody.getLogFilter().orElse(List.of(""));
 
@@ -85,7 +85,7 @@ public class PutLogLevel extends RestApiEndpoint {
       return level;
     }
 
-    public void setLevel(Level level) {
+    public void setLevel(final Level level) {
       this.level = level;
     }
 
@@ -93,7 +93,7 @@ public class PutLogLevel extends RestApiEndpoint {
       return logFilter;
     }
 
-    public void setLogFilter(Optional<List<String>> logFilter) {
+    public void setLogFilter(final Optional<List<String>> logFilter) {
       this.logFilter = logFilter;
     }
 
@@ -111,7 +111,7 @@ public class PutLogLevel extends RestApiEndpoint {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) {
         return true;
       }

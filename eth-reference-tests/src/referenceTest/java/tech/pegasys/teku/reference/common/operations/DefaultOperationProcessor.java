@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -154,19 +154,21 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processExecutionLayerExit(
-      final MutableBeaconState state, final ExecutionLayerExit executionLayerExit)
+  public void processExecutionLayerWithdrawalRequest(
+      final MutableBeaconState state,
+      final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest)
       throws BlockProcessingException {
-    final SszList<ExecutionLayerExit> exits =
+    final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests =
         BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
             .getExecutionPayloadSchema()
-            .getExecutionLayerExitsSchemaRequired()
-            .of(executionLayerExit);
+            .getExecutionLayerWithdrawalRequestsSchemaRequired()
+            .of(executionLayerWithdrawalRequest);
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         spec.atSlot(state.getSlot())
             .beaconStateMutators()
             .createValidatorExitContextSupplier(state);
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionLayerExits(state, exits, validatorExitContextSupplier);
+        .processExecutionLayerWithdrawalRequests(
+            state, withdrawalRequests, validatorExitContextSupplier);
   }
 }

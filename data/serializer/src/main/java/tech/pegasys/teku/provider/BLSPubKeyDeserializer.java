@@ -22,7 +22,8 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 
 public class BLSPubKeyDeserializer extends JsonDeserializer<BLSPubKey> {
   @Override
-  public BLSPubKey deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public BLSPubKey deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     return new BLSPubKey(Bytes.fromHexString(p.getValueAsString()));
   }
 }

@@ -113,7 +113,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
     // Validator identifier might be the validator's public key or index. If empty we query all
     // validators.

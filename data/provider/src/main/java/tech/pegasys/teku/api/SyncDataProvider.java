@@ -24,7 +24,8 @@ public class SyncDataProvider {
   private final SyncService syncService;
   private final IntSupplier rejectedExecutionSupplier;
 
-  public SyncDataProvider(SyncService syncService, final IntSupplier rejectedExecutionSupplier) {
+  public SyncDataProvider(
+      final SyncService syncService, final IntSupplier rejectedExecutionSupplier) {
     this.syncService = syncService;
     this.rejectedExecutionSupplier = rejectedExecutionSupplier;
   }
@@ -37,11 +38,11 @@ public class SyncDataProvider {
     return rejectedExecutionSupplier.getAsInt();
   }
 
-  public long subscribeToSyncStateChanges(SyncStateProvider.SyncStateSubscriber subscriber) {
+  public long subscribeToSyncStateChanges(final SyncStateProvider.SyncStateSubscriber subscriber) {
     return syncService.subscribeToSyncStateChanges(subscriber);
   }
 
-  public boolean unsubscribeFromSyncStateChanges(long subscriberId) {
+  public boolean unsubscribeFromSyncStateChanges(final long subscriberId) {
     return syncService.unsubscribeFromSyncStateChanges(subscriberId);
   }
 

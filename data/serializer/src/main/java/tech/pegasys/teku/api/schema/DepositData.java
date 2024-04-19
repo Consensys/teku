@@ -38,7 +38,8 @@ public class DepositData {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
-  public DepositData(tech.pegasys.teku.spec.datastructures.operations.DepositData depositData) {
+  public DepositData(
+      final tech.pegasys.teku.spec.datastructures.operations.DepositData depositData) {
     this.pubkey = new BLSPubKey(depositData.getPubkey().toSSZBytes());
     this.withdrawal_credentials = depositData.getWithdrawalCredentials();
     this.amount = depositData.getAmount();
@@ -65,7 +66,7 @@ public class DepositData {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

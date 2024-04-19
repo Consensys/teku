@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVoluntaryExit> {
@@ -32,7 +33,8 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedVoluntaryExit> processor,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.VOLUNTARY_EXIT,
@@ -43,7 +45,8 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
         processor,
         SignedVoluntaryExit.SSZ_SCHEMA,
         exit -> exit.getMessage().getEpoch(),
-        networkingConfig);
+        networkingConfig,
+        debugDataDumper);
   }
 
   public void publishVoluntaryExit(final SignedVoluntaryExit message) {

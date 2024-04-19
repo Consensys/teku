@@ -22,7 +22,7 @@ public class ErrorResponse {
 
   @JsonCreator
   public ErrorResponse(
-      @JsonProperty("status") Integer status, @JsonProperty("message") String message) {
+      final @JsonProperty("status") Integer status, final @JsonProperty("message") String message) {
     this.status = status;
     this.message = message;
   }

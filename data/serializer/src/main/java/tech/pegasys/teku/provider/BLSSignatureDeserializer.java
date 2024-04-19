@@ -21,7 +21,8 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 
 public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
   @Override
-  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public BLSSignature deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     return BLSSignature.fromHexString(p.getValueAsString());
   }
 }

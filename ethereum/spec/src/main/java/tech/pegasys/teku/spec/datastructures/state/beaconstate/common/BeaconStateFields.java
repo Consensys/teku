@@ -71,7 +71,6 @@ public enum BeaconStateFields implements SszFieldName {
   HISTORICAL_SUMMARIES,
   // Electra fields
   DEPOSIT_RECEIPTS_START_INDEX,
-
   DEPOSIT_BALANCE_TO_CONSUME,
   EXIT_BALANCE_TO_CONSUME,
   EARLIEST_EXIT_EPOCH,

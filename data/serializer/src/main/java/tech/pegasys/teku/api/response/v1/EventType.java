@@ -32,7 +32,7 @@ public enum EventType {
   payload_attributes,
   block_gossip;
 
-  public static List<EventType> getTopics(List<String> topics) {
+  public static List<EventType> getTopics(final List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();
   }
 }

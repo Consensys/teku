@@ -69,7 +69,7 @@ public class GetAggregateAttestation extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Bytes32 beaconBlockRoot = request.getQueryParameter(ATTESTATION_DATA_ROOT_PARAMETER);
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
 
@@ -84,7 +84,8 @@ public class GetAggregateAttestation extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<Attestation> getResponseType(SpecConfig specConfig) {
+  private static SerializableTypeDefinition<Attestation> getResponseType(
+      final SpecConfig specConfig) {
     Attestation.AttestationSchema dataSchema = new Attestation.AttestationSchema(specConfig);
 
     return SerializableTypeDefinition.object(Attestation.class)

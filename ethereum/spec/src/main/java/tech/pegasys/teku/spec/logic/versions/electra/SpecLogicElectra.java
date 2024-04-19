@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
@@ -98,8 +99,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         new MiscHelpersElectra(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsElectra beaconStateAccessors =
         new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
-    final BeaconStateMutatorsBellatrix beaconStateMutators =
-        new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
+    final BeaconStateMutatorsElectra beaconStateMutators =
+        new BeaconStateMutatorsElectra(config, miscHelpers, beaconStateAccessors);
 
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =

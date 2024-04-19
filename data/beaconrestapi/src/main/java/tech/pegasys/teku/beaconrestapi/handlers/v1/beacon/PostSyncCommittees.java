@@ -72,7 +72,7 @@ public class PostSyncCommittees extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<SyncCommitteeMessage> messages = request.getRequestBody();
     final SafeFuture<List<SubmitDataError>> future = provider.submitCommitteeSignatures(messages);
 

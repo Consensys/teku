@@ -24,8 +24,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload>
     extends SszContainerSchema<T>, BuilderPayloadSchema<T> {
@@ -44,10 +44,10 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
 
   DepositReceiptSchema getDepositReceiptSchemaRequired();
 
-  SszListSchema<ExecutionLayerExit, ? extends SszList<ExecutionLayerExit>>
-      getExecutionLayerExitsSchemaRequired();
+  SszListSchema<ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
+      getExecutionLayerWithdrawalRequestsSchemaRequired();
 
-  ExecutionLayerExitSchema getExecutionLayerExitSchemaRequired();
+  ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired();
 
   LongList getBlindedNodeGeneralizedIndices();
 

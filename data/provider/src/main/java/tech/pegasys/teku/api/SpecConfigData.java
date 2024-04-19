@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.constants.ValidatorConstants;
 public class SpecConfigData {
   private final SpecConfig specConfig;
 
-  public SpecConfigData(SpecConfig specConfig) {
+  public SpecConfigData(final SpecConfig specConfig) {
     this.specConfig = specConfig;
   }
 
@@ -129,7 +129,7 @@ public class SpecConfigData {
     return getLegacyAltairConstant(Integer.toString(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT));
   }
 
-  private <T> Optional<T> getLegacyAltairConstant(T value) {
+  private <T> Optional<T> getLegacyAltairConstant(final T value) {
     return specConfig.toVersionAltair().isPresent() ? Optional.of(value) : Optional.empty();
   }
 }

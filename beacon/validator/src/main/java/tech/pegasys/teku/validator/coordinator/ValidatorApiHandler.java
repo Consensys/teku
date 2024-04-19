@@ -294,7 +294,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      Collection<BLSPublicKey> validatorIdentifiers) {
+      final Collection<BLSPublicKey> validatorIdentifiers) {
     return isSyncActive()
         ? SafeFuture.completedFuture(Optional.empty())
         : chainDataProvider
@@ -490,6 +490,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
     return SafeFuture.completedFuture(
         syncCommitteeMessagePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
   }
@@ -544,7 +547,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> subscribeToPersistentSubnets(
-      Set<SubnetSubscription> subnetSubscriptions) {
+      final Set<SubnetSubscription> subnetSubscriptions) {
     return SafeFuture.fromRunnable(
         () -> attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions));
   }

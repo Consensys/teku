@@ -423,7 +423,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void reportBlockProductionAttempt(UInt64 epoch) {
+  public void reportBlockProductionAttempt(final UInt64 epoch) {
     final AtomicInteger numberOfBlockProductionAttempts =
         blockProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
     numberOfBlockProductionAttempts.incrementAndGet();

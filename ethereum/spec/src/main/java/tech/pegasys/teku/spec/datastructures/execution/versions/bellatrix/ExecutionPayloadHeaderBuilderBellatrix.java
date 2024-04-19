@@ -159,7 +159,8 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder exitsRoot(final Supplier<Bytes32> exitsRootSupplier) {
+  public ExecutionPayloadHeaderBuilder withdrawalRequestsRoot(
+      final Supplier<Bytes32> withdrawalRequestsRootSupplier) {
     return this;
   }
 

@@ -126,7 +126,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -324,7 +324,7 @@ public final class DataStructureUtil {
         .collect(schema.collector());
   }
 
-  public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+  public <ElementT, SszElementT extends SszPrimitive<ElementT>>
       SszPrimitiveList<ElementT, SszElementT> randomSszPrimitiveList(
           final SszPrimitiveListSchema<ElementT, SszElementT, ?> schema,
           final long numItems,
@@ -356,7 +356,7 @@ public final class DataStructureUtil {
         .collect(schema.collectorUnboxed());
   }
 
-  public <ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+  public <ElementT, SszElementT extends SszPrimitive<ElementT>>
       SszPrimitiveVector<ElementT, SszElementT> randomSszPrimitiveVector(
           final SszPrimitiveVectorSchema<ElementT, SszElementT, ?> schema,
           final Supplier<ElementT> valueGenerator) {
@@ -591,7 +591,7 @@ public final class DataStructureUtil {
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64)
                     .depositReceiptsRoot(this::randomBytes32)
-                    .exitsRoot(this::randomBytes32));
+                    .withdrawalRequestsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -703,7 +703,7 @@ public final class DataStructureUtil {
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
                       .depositReceipts(this::randomExecutionPayloadDepositReceipts)
-                      .exits(this::randomExecutionPayloadExits);
+                      .withdrawalRequests(this::randomExecutionPayloadExits);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -734,9 +734,9 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<ExecutionLayerExit> randomExecutionPayloadExits() {
+  public List<ExecutionLayerWithdrawalRequest> randomExecutionPayloadExits() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_EXITS))
-        .mapToObj(__ -> randomExecutionLayerExit())
+        .mapToObj(__ -> randomExecutionLayerWithdrawalRequest())
         .collect(toList());
   }
 
@@ -2444,24 +2444,33 @@ public final class DataStructureUtil {
     return getBlobKzgCommitmentsSchema().of();
   }
 
-  public ExecutionLayerExit randomExecutionLayerExit() {
+  public ExecutionLayerWithdrawalRequest randomExecutionLayerWithdrawalRequest() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(randomEth1Address(), randomPublicKey());
+        .getExecutionLayerWithdrawalRequestSchema()
+        .create(randomEth1Address(), randomPublicKey(), randomUInt64());
   }
 
-  public ExecutionLayerExit executionLayerExit(
-      final Bytes20 sourceAddress, BLSPublicKey validatorPubKey) {
+  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
+      final Bytes20 sourceAddress, BLSPublicKey validatorPubKey, UInt64 amount) {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(sourceAddress, validatorPubKey);
+        .getExecutionLayerWithdrawalRequestSchema()
+        .create(sourceAddress, validatorPubKey, amount);
   }
 
-  public ExecutionLayerExit executionLayerExit(final Validator validator) {
+  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
+      final Validator validator) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(executionAddress, validator.getPublicKey());
+        .getExecutionLayerWithdrawalRequestSchema()
+        .create(executionAddress, validator.getPublicKey(), randomUInt64());
+  }
+
+  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
+      final Validator validator, final UInt64 amount) {
+    final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerWithdrawalRequestSchema()
+        .create(executionAddress, validator.getPublicKey(), amount);
   }
 
   public PendingBalanceDeposit randomPendingBalanceDeposit() {

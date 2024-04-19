@@ -22,9 +22,9 @@ public class GetAttestationRewardsResponse {
   private final AttestationRewardsData attestationRewardsData;
 
   public GetAttestationRewardsResponse(
-      boolean executionOptimistic,
-      boolean finalized,
-      AttestationRewardsData attestationRewardsData) {
+      final boolean executionOptimistic,
+      final boolean finalized,
+      final AttestationRewardsData attestationRewardsData) {
     this.executionOptimistic = executionOptimistic;
     this.finalized = finalized;
     this.attestationRewardsData = attestationRewardsData;
@@ -43,7 +43,7 @@ public class GetAttestationRewardsResponse {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
