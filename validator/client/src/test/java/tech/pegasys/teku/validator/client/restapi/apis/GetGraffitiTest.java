@@ -48,19 +48,20 @@ class GetGraffitiTest {
   private final GetGraffiti handler = new GetGraffiti(keyManager);
   private StubRestApiRequest request;
 
+  final String stringGraffiti = "Test graffiti";
+  final Bytes32 bytesGraffiti = Bytes32Parser.toBytes32(stringGraffiti);
+
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
   void shouldGetGraffiti() throws JsonProcessingException {
-    final String stringGraffiti = "Test graffiti";
-    final Bytes32 graffiti = Bytes32Parser.toBytes32(stringGraffiti);
-    checkGraffiti(() -> Optional.of(graffiti), stringGraffiti);
+    checkGraffiti(Optional.of(bytesGraffiti));
   }
 
   @Test
   void shouldGetEmptyGraffiti() throws JsonProcessingException {
-    checkGraffiti(Optional::empty, "");
+    checkGraffiti(Optional.empty());
   }
 
   @Test
@@ -82,7 +83,7 @@ class GetGraffitiTest {
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
     final GetGraffiti.GraffitiResponse response =
-        new GetGraffiti.GraffitiResponse(dataStructureUtil.randomPublicKey(), "Test graffiti");
+        new GetGraffiti.GraffitiResponse(dataStructureUtil.randomPublicKey(), bytesGraffiti);
     final String responseData = getResponseStringFromMetadata(handler, SC_OK, response);
     assertThat(responseData)
         .isEqualTo(
@@ -111,8 +112,8 @@ class GetGraffitiTest {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 
-  private void checkGraffiti(final GraffitiProvider graffitiProvider, final String expectedGraffiti)
-      throws JsonProcessingException {
+  private void checkGraffiti(final Optional<Bytes32> graffiti) throws JsonProcessingException {
+    final GraffitiProvider provider = () -> graffiti;
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     request =
         StubRestApiRequest.builder()
@@ -120,13 +121,13 @@ class GetGraffitiTest {
             .pathParameter("pubkey", publicKey.toHexString())
             .build();
 
-    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, graffitiProvider);
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
     handler.handleRequest(request);
 
     final GetGraffiti.GraffitiResponse expectedResponse =
-        new GetGraffiti.GraffitiResponse(publicKey, expectedGraffiti);
+        new GetGraffiti.GraffitiResponse(publicKey, graffiti);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
   }
