@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -32,6 +34,21 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         SpecConfigDeneb.required(specConfig),
         predicates,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
+  }
+
+  public static MiscHelpersElectra required(final MiscHelpers miscHelpers) {
+    return miscHelpers
+        .toVersionElectra()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected Electra misc helpers but got: "
+                        + miscHelpers.getClass().getSimpleName()));
+  }
+
+  @Override
+  public Optional<MiscHelpersElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 
   @Override
