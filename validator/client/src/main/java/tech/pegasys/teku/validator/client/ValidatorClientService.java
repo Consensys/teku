@@ -165,7 +165,7 @@ public class ValidatorClientService extends Service {
             config,
             asyncRunner,
             validatorApiConfig.isRestApiEnabled()
-                ? graffitiManager::getGraffitiFromStorage
+                ? graffitiManager::getGraffiti
                 : (publicKey) -> Optional.empty());
     final ValidatorStatusProvider validatorStatusProvider =
         new OwnedValidatorStatusProvider(

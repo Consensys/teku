@@ -170,7 +170,7 @@ class GraffitiManagerTest {
     Files.writeString(filePath, graffiti);
 
     final Bytes32 expectedBytes = Bytes32Parser.toBytes32(graffiti);
-    assertThat(manager.getGraffitiFromStorage(publicKey)).hasValue(expectedBytes);
+    assertThat(manager.getGraffiti(publicKey)).hasValue(expectedBytes);
   }
 
   @Test
@@ -183,7 +183,7 @@ class GraffitiManagerTest {
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
     Files.writeString(filePath, invalidGraffiti);
 
-    assertThat(manager.getGraffitiFromStorage(publicKey)).isEmpty();
+    assertThat(manager.getGraffiti(publicKey)).isEmpty();
   }
 
   @Test
@@ -196,7 +196,7 @@ class GraffitiManagerTest {
     Files.writeString(filePath, graffiti);
     assertThat(filePath.toFile().setReadable(false)).isTrue();
 
-    assertThat(manager.getGraffitiFromStorage(publicKey)).isEmpty();
+    assertThat(manager.getGraffiti(publicKey)).isEmpty();
   }
 
   @Test
@@ -207,7 +207,7 @@ class GraffitiManagerTest {
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
     assertThat(filePath.toFile().createNewFile()).isTrue();
 
-    assertThat(manager.getGraffitiFromStorage(publicKey)).isEmpty();
+    assertThat(manager.getGraffiti(publicKey)).isEmpty();
   }
 
   private Path getGraffitiManagementDir() {

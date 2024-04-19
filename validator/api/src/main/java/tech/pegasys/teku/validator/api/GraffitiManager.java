@@ -76,7 +76,7 @@ public class GraffitiManager {
     return Optional.empty();
   }
 
-  public Optional<Bytes32> getGraffitiFromStorage(final BLSPublicKey publicKey) {
+  public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {
     final Path filePath = graffitiPath.resolve(resolveFileName(publicKey));
     try {
       return Optional.of(GraffitiParser.loadFromFile(filePath)).filter(this::graffitiNotEmpty);
