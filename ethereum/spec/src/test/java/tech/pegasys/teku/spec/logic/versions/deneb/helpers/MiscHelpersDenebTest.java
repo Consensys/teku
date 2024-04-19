@@ -256,10 +256,7 @@ class MiscHelpersDenebTest {
                   new SignedBeaconBlockHeader(blockHeader, dataStructureUtil.randomSignature()))
               .index(blobSidecarIndex)
               .kzgCommitment(
-                  beaconBlockBody
-                      .getBlobKzgCommitments()
-                      .get(blobSidecarIndex.intValue())
-                      .getBytes())
+                  beaconBlockBody.getBlobKzgCommitments().get(blobSidecarIndex.intValue()))
               .kzgCommitmentInclusionProof(merkleProof)
               .build();
       assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
@@ -285,10 +282,7 @@ class MiscHelpersDenebTest {
                     new SignedBeaconBlockHeader(blockHeader, dataStructureUtil.randomSignature()))
                 .index(blobSidecarIndex)
                 .kzgCommitment(
-                    beaconBlockBody
-                        .getBlobKzgCommitments()
-                        .get(blobSidecarIndex.intValue())
-                        .getBytes())
+                    beaconBlockBody.getBlobKzgCommitments().get(blobSidecarIndex.intValue()))
                 .kzgCommitmentInclusionProof(merkleProofWrong)
                 .build();
         assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecarWrong)).isFalse();

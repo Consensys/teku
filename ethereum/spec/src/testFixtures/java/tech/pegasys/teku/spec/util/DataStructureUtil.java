@@ -108,7 +108,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -2169,7 +2171,7 @@ public final class DataStructureUtil {
               final RandomBlobSidecarBuilder builder =
                   createRandomBlobSidecarBuilder()
                       .signedBeaconBlockHeader(block.asHeader())
-                      .kzgCommitment(blobKzgCommitments.get(index).getBytes())
+                      .kzgCommitment(blobKzgCommitments.get(index))
                       .index(UInt64.valueOf(index));
 
               return blobSidecarBuilderModifier.apply(index, builder).build();
@@ -2257,13 +2259,23 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
-    final BlockContents blockContents = randomBlockContents();
-    return getDenebSchemaDefinitions(slot)
-        .getSignedBlockContentsSchema()
-        .create(
-            signedBlock(blockContents.getBlock()),
-            blockContents.getKzgProofs().orElseThrow(),
-            blockContents.getBlobs().orElseThrow());
+    final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
+    final SignedBlockContentsSchema signedBlockContentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getSignedBlockContentsSchema();
+    final int numberOfBlobs =
+        signedBeaconBlock
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow()
+            .size();
+    final SszList<Blob> blobs =
+        randomSszList(signedBlockContentsSchema.getBlobsSchema(), this::randomBlob, numberOfBlobs);
+    final SszList<KZGProof> kzgProofs =
+        randomSszList(
+            signedBlockContentsSchema.getKzgProofsSchema(), this::randomKZGProof, numberOfBlobs);
+    return signedBlockContentsSchema.create(signedBeaconBlock, kzgProofs, blobs);
   }
 
   public SignedBlockContents randomSignedBlockContents(final BlobsBundle blobsBundle) {
@@ -2285,15 +2297,17 @@ public final class DataStructureUtil {
 
   public BlockContents randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
+    final BlockContentsSchema blockContentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlockContentsSchema();
     final int numberOfBlobs =
         beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
-    final List<Blob> blobs =
-        IntStream.range(0, numberOfBlobs).mapToObj(__ -> randomBlob()).toList();
-    final List<KZGProof> kzgProofs =
-        IntStream.range(0, numberOfBlobs).mapToObj(__ -> randomKZGProof()).toList();
-    return getDenebSchemaDefinitions(slot)
-        .getBlockContentsSchema()
-        .create(beaconBlock, kzgProofs, blobs);
+    final SszList<Blob> blobs =
+        randomSszList(blockContentsSchema.getBlobsSchema(), this::randomBlob, numberOfBlobs);
+    final SszList<KZGProof> kzgProofs =
+        randomSszList(
+            blockContentsSchema.getKzgProofsSchema(), this::randomKZGProof, numberOfBlobs);
+    return blockContentsSchema.create(beaconBlock, kzgProofs, blobs);
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
@@ -2332,9 +2346,9 @@ public final class DataStructureUtil {
 
   public class RandomBlobSidecarBuilder {
     private Optional<UInt64> index = Optional.empty();
-    private Optional<Bytes> blob = Optional.empty();
-    private Optional<Bytes48> kzgCommitment = Optional.empty();
-    private Optional<Bytes48> kzgProof = Optional.empty();
+    private Optional<Blob> blob = Optional.empty();
+    private Optional<KZGCommitment> kzgCommitment = Optional.empty();
+    private Optional<KZGProof> kzgProof = Optional.empty();
     private Optional<SignedBeaconBlockHeader> signedBeaconBlockHeader = Optional.empty();
     private Optional<List<Bytes32>> kzgCommitmentInclusionProof = Optional.empty();
 
@@ -2343,17 +2357,17 @@ public final class DataStructureUtil {
       return this;
     }
 
-    public RandomBlobSidecarBuilder blob(final Bytes blob) {
+    public RandomBlobSidecarBuilder blob(final Blob blob) {
       this.blob = Optional.of(blob);
       return this;
     }
 
-    public RandomBlobSidecarBuilder kzgCommitment(final Bytes48 kzgCommitment) {
+    public RandomBlobSidecarBuilder kzgCommitment(final KZGCommitment kzgCommitment) {
       this.kzgCommitment = Optional.of(kzgCommitment);
       return this;
     }
 
-    public RandomBlobSidecarBuilder kzgProof(final Bytes48 kzgProof) {
+    public RandomBlobSidecarBuilder kzgProof(final KZGProof kzgProof) {
       this.kzgProof = Optional.of(kzgProof);
       return this;
     }
@@ -2380,9 +2394,9 @@ public final class DataStructureUtil {
 
       return blobSidecarSchema.create(
           index.orElse(randomBlobSidecarIndex()),
-          blob.orElse(randomBytes(blobSidecarSchema.getBlobSchema().getLength())),
-          kzgCommitment.orElse(randomBytes48()),
-          kzgProof.orElse(randomBytes48()),
+          blob.orElse(randomBlob()),
+          kzgCommitment.orElse(randomKZGCommitment()),
+          kzgProof.orElse(randomKZGProof()),
           signedBeaconBlockHeader.orElse(randomSignedBeaconBlockHeader()),
           kzgCommitmentInclusionProof.orElse(randomKzgCommitmentInclusionProof()));
     }

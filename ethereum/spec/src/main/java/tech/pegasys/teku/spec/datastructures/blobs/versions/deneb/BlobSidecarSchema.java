@@ -14,9 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -60,6 +58,11 @@ public class BlobSidecarSchema
             SszBytes32VectorSchema.create(kzgCommitmentInclusionProofDepth)));
   }
 
+  @Override
+  public BlobSidecar createFromBackingNode(TreeNode node) {
+    return new BlobSidecar(this, node);
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<Blob> getBlobSszSchema() {
     return (SszSchema<Blob>) getChildSchema(getFieldIndex(FIELD_BLOB));
@@ -72,22 +75,6 @@ public class BlobSidecarSchema
   public SszBytes32VectorSchema<?> getKzgCommitmentInclusionProofSchema() {
     return (SszBytes32VectorSchema<?>)
         getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENT_INCLUSION_PROOF));
-  }
-
-  public BlobSidecar create(
-      final UInt64 index,
-      final Bytes blob,
-      final Bytes48 kzgCommitment,
-      final Bytes48 kzgProof,
-      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-      final List<Bytes32> kzgCommitmentInclusionProof) {
-    return create(
-        index,
-        new Blob(getBlobSchema(), blob),
-        new KZGCommitment(kzgCommitment),
-        new KZGProof(kzgProof),
-        signedBeaconBlockHeader,
-        kzgCommitmentInclusionProof);
   }
 
   public BlobSidecar create(
@@ -113,10 +100,5 @@ public class BlobSidecarSchema
       final int kzgCommitmentInclusionProofDepth) {
     return new BlobSidecarSchema(
         signedBeaconBlockHeaderSchema, blobSchema, kzgCommitmentInclusionProofDepth);
-  }
-
-  @Override
-  public BlobSidecar createFromBackingNode(TreeNode node) {
-    return new BlobSidecar(this, node);
   }
 }
