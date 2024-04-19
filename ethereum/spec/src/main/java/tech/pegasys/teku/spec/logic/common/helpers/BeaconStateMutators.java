@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class BeaconStateMutators {
-  private final SpecConfig specConfig;
+  protected final SpecConfig specConfig;
   protected final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
 
@@ -194,6 +194,26 @@ public class BeaconStateMutators {
     private ValidatorExitContext(final UInt64 churnLimit) {
       this.churnLimit = churnLimit;
     }
+
+    public UInt64 getExitQueueEpoch() {
+      return exitQueueEpoch;
+    }
+
+    public UInt64 getExitQueueChurn() {
+      return exitQueueChurn;
+    }
+
+    public UInt64 getChurnLimit() {
+      return churnLimit;
+    }
+
+    public void setExitQueueEpoch(final UInt64 exitQueueEpoch) {
+      this.exitQueueEpoch = exitQueueEpoch;
+    }
+
+    public void setExitQueueChurn(final UInt64 exitQueueChurn) {
+      this.exitQueueChurn = exitQueueChurn;
+    }
   }
 
   public void slashValidator(
@@ -208,10 +228,10 @@ public class BeaconStateMutators {
       final int slashedIndex,
       int whistleblowerIndex,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
     initiateValidatorExit(state, slashedIndex, validatorExitContextSupplier);
 
-    Validator validator = state.getValidators().get(slashedIndex);
+    final Validator validator = state.getValidators().get(slashedIndex);
 
     state
         .getValidators()
@@ -257,5 +277,9 @@ public class BeaconStateMutators {
 
   protected int getMinSlashingPenaltyQuotient() {
     return specConfig.getMinSlashingPenaltyQuotient();
+  }
+
+  protected int getWhistleblowerRewardQuotient() {
+    return specConfig.getWhistleblowerRewardQuotient();
   }
 }
