@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -286,7 +285,7 @@ class StoreTest extends AbstractStoreTest {
                     .asList()
                     .containsAll(
                         blobSidecarsFromStore.get().stream()
-                            .map(blob -> new KZGCommitment(blob.getKZGCommitment()))
+                            .map(BlobSidecar::getKZGCommitment)
                             .toList()),
             "Blob sidecars must match");
   }
