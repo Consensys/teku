@@ -38,6 +38,7 @@ import tech.pegasys.teku.validator.client.VoluntaryExitDataProvider;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteGraffiti;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient;
@@ -133,6 +134,7 @@ public class ValidatorRestApi {
         .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
         .endpoint(new GetGraffiti())
         .endpoint(new SetGraffiti())
+        .endpoint(new DeleteGraffiti())
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(validatorApiBearerFile)
         .build();
