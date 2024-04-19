@@ -858,7 +858,8 @@ class BlockOperationSelectorFactoryTest {
 
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
-    when(blobsBundle.getBlobs()).thenReturn(dataStructureUtil.randomBlobs(2));
+    when(blobsBundle.getBlobs())
+        .thenReturn(dataStructureUtil.randomBuilderBlobsBundle(2).getBlobs());
 
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
@@ -883,7 +884,8 @@ class BlockOperationSelectorFactoryTest {
 
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
-    when(blobsBundle.getProofs()).thenReturn(dataStructureUtil.randomKZGProofs(2));
+    when(blobsBundle.getProofs())
+        .thenReturn(dataStructureUtil.randomBuilderBlobsBundle(2).getProofs());
 
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
