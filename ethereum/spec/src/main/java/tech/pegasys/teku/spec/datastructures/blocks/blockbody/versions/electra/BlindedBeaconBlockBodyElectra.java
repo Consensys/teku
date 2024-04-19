@@ -14,8 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 
 public interface BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
   static BlindedBeaconBlockBodyElectra required(final BeaconBlockBody body) {
@@ -34,4 +36,6 @@ public interface BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDen
 
   @Override
   BlindedBeaconBlockBodySchemaElectra<?> getSchema();
+
+  SszList<SignedConsolidation> getConsolidations();
 }
