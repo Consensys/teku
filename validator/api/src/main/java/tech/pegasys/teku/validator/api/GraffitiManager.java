@@ -28,7 +28,7 @@ public class GraffitiManager {
   static final String GRAFFITI_DIR = "graffiti";
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Optional<Path> graffitiPath;
+  private final Path graffitiPath;
 
   public GraffitiManager(final DataDirLayout dataDirLayout) {
     this.graffitiPath = createManagementDirectory(dataDirLayout);
@@ -42,15 +42,13 @@ public class GraffitiManager {
     return updateGraffiti(publicKey);
   }
 
-  private Optional<Path> createManagementDirectory(final DataDirLayout dataDirLayout) {
+  private Path createManagementDirectory(final DataDirLayout dataDirLayout) {
     final Path graffitiDirectory = dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_DIR);
     if (!graffitiDirectory.toFile().exists() && !graffitiDirectory.toFile().mkdirs()) {
-      LOG.error(
-          "Unable to create {} directory. Updating graffiti through the validator API is disabled.",
-          GRAFFITI_DIR);
-      return Optional.empty();
+      throw new IllegalStateException(
+          "Unable to create " + GRAFFITI_DIR + " directory for graffiti management.");
     }
-    return Optional.of(graffitiDirectory);
+    return graffitiDirectory;
   }
 
   private Optional<String> updateGraffiti(final BLSPublicKey publicKey) {
@@ -58,10 +56,6 @@ public class GraffitiManager {
   }
 
   private Optional<String> updateGraffiti(final BLSPublicKey publicKey, final String graffiti) {
-    if (graffitiPath.isEmpty()) {
-      return Optional.of(GRAFFITI_DIR + " directory does not exist to handle update.");
-    }
-
     final int graffitiSize = graffiti.getBytes(StandardCharsets.UTF_8).length;
     if (graffitiSize > 32) {
       return Optional.of(
@@ -71,7 +65,7 @@ public class GraffitiManager {
     }
 
     try {
-      final Path file = graffitiPath.get().resolve(resolveFileName(publicKey));
+      final Path file = graffitiPath.resolve(resolveFileName(publicKey));
       Files.writeString(file, graffiti);
     } catch (IOException e) {
       final String errorMessage =
@@ -83,12 +77,7 @@ public class GraffitiManager {
   }
 
   public Optional<Bytes32> getGraffitiFromStorage(final BLSPublicKey publicKey) {
-    if (graffitiPath.isEmpty()) {
-      LOG.error(GRAFFITI_DIR + " directory does not exist to get graffiti from storage.");
-      return Optional.empty();
-    }
-
-    final Path filePath = graffitiPath.get().resolve(resolveFileName(publicKey));
+    final Path filePath = graffitiPath.resolve(resolveFileName(publicKey));
     try {
       return Optional.of(GraffitiParser.loadFromFile(filePath)).filter(this::graffitiNotEmpty);
     } catch (GraffitiLoaderException | IllegalArgumentException e) {

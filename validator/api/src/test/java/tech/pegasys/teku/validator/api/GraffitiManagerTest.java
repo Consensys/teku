@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_DIR;
 
@@ -43,14 +44,13 @@ class GraffitiManagerTest {
 
   @Test
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
-  void setGraffiti_shouldThrowExceptionWhenNoDirectory(@TempDir final Path tempDir) {
+  void shouldThrowExceptionWhenUnableToCreateManagementDirectory(@TempDir final Path tempDir) {
     assertThat(tempDir.toFile().setWritable(false)).isTrue();
     dataDirLayout = new SimpleDataDirLayout(tempDir);
-    manager = new GraffitiManager(dataDirLayout);
 
-    assertThat(getGraffitiManagementDir().toFile().exists()).isFalse();
-    assertThat(manager.setGraffiti(dataStructureUtil.randomPublicKey(), graffiti))
-        .hasValue(GRAFFITI_DIR + " directory does not exist to handle update.");
+    assertThatThrownBy(() -> new GraffitiManager(dataDirLayout))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Unable to create graffiti directory for graffiti management.");
   }
 
   @Test
@@ -100,17 +100,6 @@ class GraffitiManagerTest {
     assertThat(manager.setGraffiti(publicKey, invalidGraffiti))
         .hasValue(
             "'This graffiti is a bit too long!!' converts to 33 bytes. Input must be 32 bytes or less.");
-  }
-
-  @Test
-  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
-  void deleteGraffiti_shouldThrowExceptionWhenNoDirectory(@TempDir final Path tempDir) {
-    assertThat(tempDir.toFile().setWritable(false)).isTrue();
-    dataDirLayout = new SimpleDataDirLayout(tempDir);
-    manager = new GraffitiManager(dataDirLayout);
-    assertThat(getGraffitiManagementDir().toFile().exists()).isFalse();
-    assertThat(manager.deleteGraffiti(dataStructureUtil.randomPublicKey()))
-        .hasValue(GRAFFITI_DIR + " directory does not exist to handle update.");
   }
 
   @Test
