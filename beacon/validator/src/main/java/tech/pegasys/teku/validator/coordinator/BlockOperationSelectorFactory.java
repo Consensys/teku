@@ -269,14 +269,14 @@ public class BlockOperationSelectorFactory {
       final Optional<Boolean> requestedBlinded,
       final ExecutionPayloadResult executionPayloadResult) {
 
-    if (executionPayloadResult.isFromNonBlindedFlow()) {
-      // non-blinded flow
+    if (executionPayloadResult.isFromLocalFlow()) {
+      // local, non-blinded flow
       return executionPayloadResult
-          .getExecutionPayloadFutureFromNonBlindedFlow()
+          .getExecutionPayloadFutureFromLocalFlow()
           .orElseThrow()
           .thenAccept(bodyBuilder::executionPayload);
     }
-    // blinded flow
+    // builder, blinded flow
     return executionPayloadResult
         .getBuilderBidOrFallbackDataFuture()
         .orElseThrow()
@@ -320,30 +320,30 @@ public class BlockOperationSelectorFactory {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
-    if (executionPayloadResult.isFromNonBlindedFlow()) {
-      // non-blinded flow
+    if (executionPayloadResult.isFromLocalFlow()) {
+      // local, non-blinded flow
       blobKzgCommitments =
           executionPayloadResult
-              .getBlobsBundleFutureFromNonBlindedFlow()
+              .getBlobsBundleFutureFromLocalFlow()
               .orElseThrow()
               .thenApply(Optional::orElseThrow)
               .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
     } else {
-      // blinded flow
+      // builder, blinded flow
       blobKzgCommitments =
           executionPayloadResult
               .getBuilderBidOrFallbackDataFuture()
               .orElseThrow()
               .thenApply(
                   builderBidOrFallbackData ->
-                      getBlobKzgCommitmentsFromBlindedFlow(
+                      getBlobKzgCommitmentsFromBuilderFlow(
                           builderBidOrFallbackData, blobKzgCommitmentsSchema));
     }
 
     return blobKzgCommitments.thenAccept(bodyBuilder::blobKzgCommitments);
   }
 
-  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBlindedFlow(
+  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBuilderFlow(
       final BuilderBidOrFallbackData builderBidOrFallbackData,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
     return builderBidOrFallbackData
@@ -385,12 +385,12 @@ public class BlockOperationSelectorFactory {
             () ->
                 executionLayerBlockProductionManager
                     .getUnblindedPayload(signedBlindedBlock, blockPublishingPerformance)
-                    .thenApply(this::getExecutionPayloadFromBlindedFlow));
+                    .thenApply(this::getExecutionPayloadFromBuilderFlow));
       }
     };
   }
 
-  private ExecutionPayload getExecutionPayloadFromBlindedFlow(
+  private ExecutionPayload getExecutionPayloadFromBuilderFlow(
       final BuilderPayloadOrFallbackData builderPayloadOrFallbackData) {
     return builderPayloadOrFallbackData
         .getBuilderPayload()
@@ -412,11 +412,11 @@ public class BlockOperationSelectorFactory {
                       new IllegalStateException(
                           "ExecutionPayloadResult hasn't been cached for slot " + slot));
 
-      if (executionPayloadResult.isFromNonBlindedFlow()) {
+      if (executionPayloadResult.isFromLocalFlow()) {
         // we performed a non-blinded flow, so the bundle must be in
         // getBlobsBundleFutureFromNonBlindedFlow
         return executionPayloadResult
-            .getBlobsBundleFutureFromNonBlindedFlow()
+            .getBlobsBundleFutureFromLocalFlow()
             .orElseThrow()
             .thenApply(Optional::orElseThrow);
       } else {

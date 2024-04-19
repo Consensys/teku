@@ -42,7 +42,7 @@ public interface ExecutionLayerBlockProductionManager {
         public ExecutionPayloadResult initiateBlockProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
-            final boolean isBlind,
+            final boolean attemptBuilderFlow,
             final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
           return null;
@@ -67,7 +67,7 @@ public interface ExecutionLayerBlockProductionManager {
    *
    * @param context context required for the production flow
    * @param blockSlotState pre-state
-   * @param isBlind block type (use blind for builder building)
+   * @param attemptBuilderFlow set if builder flow should be attempted
    * @param requestedBuilderBoostFactor The proposer boost factor requested by VC
    * @param blockProductionPerformance Block production performance tracker
    * @return {@link ExecutionPayloadResult} coming from local, builder or a local fallback
@@ -75,7 +75,7 @@ public interface ExecutionLayerBlockProductionManager {
   ExecutionPayloadResult initiateBlockProduction(
       ExecutionPayloadContext context,
       BeaconState blockSlotState,
-      boolean isBlind,
+      boolean attemptBuilderFlow,
       Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 

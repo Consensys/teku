@@ -69,16 +69,16 @@ public class ExecutionLayerBlockProductionManagerImpl
   public ExecutionPayloadResult initiateBlockProduction(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
-      final boolean isBlind,
+      final boolean attemptBuilderFlow,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
-    if (isBlind) {
+    if (attemptBuilderFlow) {
       result =
-          executeBlindedFlow(
+          executeBuilderFlow(
               context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
     } else {
-      result = executeNonBlindedFlow(context, blockSlotState, blockProductionPerformance);
+      result = executeLocalFlow(context, blockSlotState, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -102,7 +102,7 @@ public class ExecutionLayerBlockProductionManagerImpl
     return Optional.ofNullable(builderResultCache.get(slot));
   }
 
-  private ExecutionPayloadResult executeNonBlindedFlow(
+  private ExecutionPayloadResult executeLocalFlow(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
@@ -111,10 +111,10 @@ public class ExecutionLayerBlockProductionManagerImpl
             .engineGetPayload(context, blockSlotState)
             .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
 
-    return ExecutionPayloadResult.createForNonBlindedFlow(context, getPayloadResponseFuture);
+    return ExecutionPayloadResult.createForLocalFlow(context, getPayloadResponseFuture);
   }
 
-  private ExecutionPayloadResult executeBlindedFlow(
+  private ExecutionPayloadResult executeBuilderFlow(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final Optional<UInt64> requestedBuilderBoostFactor,
@@ -123,6 +123,6 @@ public class ExecutionLayerBlockProductionManagerImpl
         executionLayerChannel.builderGetHeader(
             context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
 
-    return ExecutionPayloadResult.createForBlindedFlow(context, builderBidOrFallbackDataFuture);
+    return ExecutionPayloadResult.createForBuilderFlow(context, builderBidOrFallbackDataFuture);
   }
 }

@@ -456,7 +456,7 @@ public abstract class AbstractBlockFactoryTest {
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
-                  ExecutionPayloadResult.createForNonBlindedFlow(
+                  ExecutionPayloadResult.createForLocalFlow(
                       args.getArgument(0),
                       SafeFuture.completedFuture(
                           blobsBundle
@@ -483,7 +483,7 @@ public abstract class AbstractBlockFactoryTest {
                             builder.publicKey(BLSPublicKey.empty());
                           });
               final ExecutionPayloadResult executionPayloadResult =
-                  ExecutionPayloadResult.createForBlindedFlow(
+                  ExecutionPayloadResult.createForBuilderFlow(
                       args.getArgument(0),
                       SafeFuture.completedFuture(BuilderBidOrFallbackData.create(builderBid)));
               cachedExecutionPayloadResult = executionPayloadResult;
