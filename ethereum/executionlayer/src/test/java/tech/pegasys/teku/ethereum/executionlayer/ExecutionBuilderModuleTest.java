@@ -38,7 +38,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -46,12 +45,9 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ExecutionBuilderModuleTest {
@@ -294,22 +290,6 @@ public class ExecutionBuilderModuleTest {
       final SafeFuture<BuilderBidOrFallbackData> result,
       final GetPayloadResponse localFallback,
       final FallbackReason reason) {
-    final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionDeneb().orElseThrow();
-
-    final ExecutionPayloadHeader executionPayloadHeader =
-        schemaDefinitionsDeneb
-            .getExecutionPayloadHeaderSchema()
-            .createFromExecutionPayload(localFallback.getExecutionPayload());
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-        localFallback
-            .getBlobsBundle()
-            .map(
-                blobsBundle ->
-                    schemaDefinitionsDeneb
-                        .getBlobKzgCommitmentsSchema()
-                        .createFromBlobsBundle(blobsBundle));
-
     assertThatSafeFuture(result)
         .isCompletedWithValueMatching(
             builderBidOrFallbackData -> builderBidOrFallbackData.getBuilderBid().isEmpty(),
