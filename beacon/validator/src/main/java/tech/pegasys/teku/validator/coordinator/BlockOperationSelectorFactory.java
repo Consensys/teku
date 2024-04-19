@@ -305,13 +305,13 @@ public class BlockOperationSelectorFactory {
                         // from the local fallback
                         .orElseGet(
                             () -> {
-                              final ExecutionPayload localExecutionPayload =
+                              final ExecutionPayload executionPayload =
                                   builderBidOrFallbackData
                                       .getFallbackDataRequired()
                                       .getExecutionPayload();
                               return schemaDefinitions
                                   .getExecutionPayloadHeaderSchema()
-                                  .createFromExecutionPayload(localExecutionPayload);
+                                  .createFromExecutionPayload(executionPayload);
                             });
                 bodyBuilder.executionPayloadHeader(executionPayloadHeader);
               }

@@ -95,8 +95,8 @@ public class ExecutionPayloadResult {
         builderBidOrFallbackDataFuture.thenApply(
             builderBidOrFallbackData ->
                 builderBidOrFallbackData
-                    // from the builder bid
                     .getBuilderBid()
+                    // from the builder bid
                     .map(BuilderBid::getValue)
                     // from the local fallback
                     .orElseGet(
