@@ -78,6 +78,10 @@ public class GraffitiManager {
 
   public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {
     final Path filePath = graffitiPath.resolve(resolveFileName(publicKey));
+    if (!filePath.toFile().exists()) {
+      return Optional.empty();
+    }
+
     try {
       return Optional.of(GraffitiParser.loadFromFile(filePath)).filter(this::graffitiNotEmpty);
     } catch (GraffitiLoaderException | IllegalArgumentException e) {

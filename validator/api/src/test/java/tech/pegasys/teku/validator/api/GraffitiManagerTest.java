@@ -162,8 +162,7 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void getGraffitiFromStorage_shouldGetGraffitiFromStorage(@TempDir final Path tempDir)
-      throws IOException {
+  void getGraffiti_shouldGetGraffitiFromStorage(@TempDir final Path tempDir) throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
@@ -174,8 +173,15 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void getGraffitiFromStorage_shouldReturnEmptyWhenFileTooBig(@TempDir final Path tempDir)
-      throws IOException {
+  void getGraffiti_shouldReturnEmptyWhenFileNotExist(@TempDir final Path tempDir) {
+    dataDirLayout = new SimpleDataDirLayout(tempDir);
+    manager = new GraffitiManager(dataDirLayout);
+
+    assertThat(manager.getGraffiti(publicKey)).isEmpty();
+  }
+
+  @Test
+  void getGraffiti_shouldReturnEmptyWhenFileTooBig(@TempDir final Path tempDir) throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
 
@@ -188,7 +194,7 @@ class GraffitiManagerTest {
 
   @Test
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
-  void getGraffitiFromStorage_shouldReturnEmptyWhenNotReadableFile(@TempDir final Path tempDir)
+  void getGraffiti_shouldReturnEmptyWhenNotReadableFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
@@ -200,8 +206,7 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void getGraffitiFromStorage_shouldReturnEmptyWhenFileEmpty(@TempDir final Path tempDir)
-      throws IOException {
+  void getGraffiti_shouldReturnEmptyWhenFileEmpty(@TempDir final Path tempDir) throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
