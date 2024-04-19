@@ -17,6 +17,7 @@ import static tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn.asCo
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BLOCK_ROOTS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranch
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
@@ -49,6 +51,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> blobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
+  private final KvStoreColumn<ColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -88,6 +91,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             finalizedOffset + 15,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
             BYTES_SERIALIZER);
+    sidecarByColumnSlotAndIdentifier =
+        KvStoreColumn.create(
+            finalizedOffset + 16, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
     deletedColumnIds =
         List.of(
             asColumnId(finalizedOffset + 9),
@@ -150,6 +156,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
+  public KvStoreColumn<ColumnSlotAndIdentifier, Bytes> getColumnSidecarByColumnSlotAndIdentifier() {
+    return sidecarByColumnSlotAndIdentifier;
+  }
+
+  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return ImmutableMap.<String, KvStoreVariable<?>>builder()
         .put("GENESIS_TIME", getVariableGenesisTime())
@@ -163,6 +174,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
+        .put("FIRST_INCOMPLETE_SLOT", getVariableFirstIncompleteSlot())
         .build();
   }
 
@@ -190,6 +202,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put(
             "NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex())
+        .put("SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER", getColumnSidecarByColumnSlotAndIdentifier())
         .build();
   }
 

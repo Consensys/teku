@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -236,4 +238,23 @@ public interface Database extends AutoCloseable {
    * @return actual last pruned slot
    */
   UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit);
+
+  // Sidecars
+  Optional<UInt64> getFirstIncompleteSlot();
+
+  Optional<DataColumnSidecar> getSidecar(ColumnSlotAndIdentifier identifier);
+
+  @MustBeClosed
+  Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(UInt64 firstSlot, UInt64 lastSlot);
+
+  @MustBeClosed
+  default Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(final UInt64 slot) {
+    return streamDataColumnIdentifiers(slot, slot);
+  }
+
+  void setFirstIncompleteSlot(UInt64 slot);
+
+  void addSidecar(DataColumnSidecar sidecar);
+
+  void pruneAllSidecars(UInt64 tillSlot);
 }

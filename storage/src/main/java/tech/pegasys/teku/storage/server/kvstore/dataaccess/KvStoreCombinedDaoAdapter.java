@@ -29,6 +29,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao.V4FinalizedUpdater;
@@ -301,6 +303,29 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @MustBeClosed
   public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedBlockRoots() {
     return finalizedDao.getFinalizedBlockRoots();
+  }
+
+  @Override
+  public Optional<UInt64> getFirstIncompleteSlot() {
+    return finalizedDao.getFirstIncompleteSlot();
+  }
+
+  @Override
+  public Optional<Bytes> getSidecar(final ColumnSlotAndIdentifier identifier) {
+    return finalizedDao.getSidecar(identifier);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamDataColumnIdentifiers(startSlot, endSlot);
+  }
+
+  @Override
+  public List<ColumnSlotAndIdentifier> getDataColumnIdentifiers(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return finalizedDao.getDataColumnIdentifiers(slotAndBlockRoot);
   }
 
   @Override
@@ -571,6 +596,21 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       finalizedUpdater.setEarliestBlobSidecarSlot(slot);
+    }
+
+    @Override
+    public void setFirstIncompleteSlot(final UInt64 slot) {
+      finalizedUpdater.setFirstIncompleteSlot(slot);
+    }
+
+    @Override
+    public void addSidecar(final DataColumnSidecar sidecar) {
+      finalizedUpdater.addSidecar(sidecar);
+    }
+
+    @Override
+    public void removeSidecar(final ColumnSlotAndIdentifier identifier) {
+      finalizedUpdater.removeSidecar(identifier);
     }
 
     @Override

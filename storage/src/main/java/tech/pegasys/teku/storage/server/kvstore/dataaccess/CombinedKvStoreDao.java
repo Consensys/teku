@@ -33,6 +33,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -515,6 +517,39 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.get(schema.getVariableFinalizedDepositSnapshot());
   }
 
+  @Override
+  public Optional<UInt64> getFirstIncompleteSlot() {
+    return db.get(schema.getVariableFirstIncompleteSlot());
+  }
+
+  @Override
+  public Optional<Bytes> getSidecar(final ColumnSlotAndIdentifier identifier) {
+    return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+      UInt64 startSlot, UInt64 endSlot) {
+    return db.streamKeys(
+        schema.getColumnSidecarByColumnSlotAndIdentifier(),
+        new ColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
+        new ColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
+  }
+
+  @Override
+  public List<ColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot) {
+    try (final Stream<ColumnSlotAndIdentifier> columnSlotAndIdentifierStream =
+        db.streamKeys(
+            schema.getColumnSidecarByColumnSlotAndIdentifier(),
+            new ColumnSlotAndIdentifier(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new ColumnSlotAndIdentifier(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE)); ) {
+      return columnSlotAndIdentifierStream.toList();
+    }
+  }
+
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
     private final KvStoreTransaction transaction;
 
@@ -772,6 +807,25 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void removeNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       transaction.delete(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
+    }
+
+    @Override
+    public void setFirstIncompleteSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableFirstIncompleteSlot(), slot);
+    }
+
+    @Override
+    public void addSidecar(final DataColumnSidecar sidecar) {
+      transaction.put(
+          schema.getColumnSidecarByColumnSlotAndIdentifier(),
+          new ColumnSlotAndIdentifier(
+              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+          sidecar.sszSerialize());
+    }
+
+    @Override
+    public void removeSidecar(final ColumnSlotAndIdentifier identifier) {
+      transaction.delete(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
     }
   }
 }

@@ -84,6 +84,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
   private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
+  private final KvStoreVariable<UInt64> firstIncompleteSlot;
 
   protected V6SchemaCombined(final Spec spec, final int finalizedOffset) {
     this.finalizedOffset = finalizedOffset;
@@ -100,6 +101,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
+    firstIncompleteSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
   }
 
   @Override
@@ -193,6 +195,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
+  public KvStoreVariable<UInt64> getVariableFirstIncompleteSlot() {
+    return firstIncompleteSlot;
+  }
+
+  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
@@ -227,6 +234,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
+        .put("FIRST_INCOMPLETE_SLOT", getVariableFirstIncompleteSlot())
         .build();
   }
 }

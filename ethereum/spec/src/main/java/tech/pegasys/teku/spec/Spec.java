@@ -421,6 +421,17 @@ public class Spec {
         .jsonDeserialize(objectMapper.createParser(jsonFile));
   }
 
+  public DataColumnSidecar deserializeSidecar(final Bytes serializedSidecar, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionElectra()
+        .orElseThrow(
+            () ->
+                new RuntimeException("Electra milestone is required to deserialize column sidecar"))
+        .getDataColumnSidecarSchema()
+        .sszDeserialize(serializedSidecar);
+  }
+
   // BeaconState
   public UInt64 getCurrentEpoch(final BeaconState state) {
     return atState(state).beaconStateAccessors().getCurrentEpoch(state);

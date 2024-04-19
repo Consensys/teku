@@ -49,6 +49,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -923,6 +925,49 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getFirstIncompleteSlot() {
+    return dao.getFirstIncompleteSlot();
+  }
+
+  @Override
+  public Optional<DataColumnSidecar> getSidecar(final ColumnSlotAndIdentifier identifier) {
+    final Optional<Bytes> maybePayload = dao.getSidecar(identifier);
+    return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+      final UInt64 firstSlot, final UInt64 lastSlot) {
+    return dao.streamDataColumnIdentifiers(firstSlot, lastSlot);
+  }
+
+  @Override
+  public void setFirstIncompleteSlot(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setFirstIncompleteSlot(slot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void addSidecar(final DataColumnSidecar sidecar) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addSidecar(sidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void pruneAllSidecars(final UInt64 tillSlotInclusive) {
+    try (final Stream<ColumnSlotAndIdentifier> prunableIdentifiers =
+            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
+        final FinalizedUpdater updater = finalizedUpdater()) {
+      prunableIdentifiers.forEach(updater::removeSidecar);
+    }
+  }
+
+  @Override
   public void close() throws Exception {
     dao.close();
   }
@@ -1109,6 +1154,33 @@ public class KvStoreDatabase implements Database {
         }
         updater.commit();
       }
+    }
+  }
+
+  // TODO: link on storage update when sidecars are enabled
+  @SuppressWarnings("UnusedMethod")
+  private void removeNonCanonicalSidecars(
+      final Map<Bytes32, UInt64> deletedHotBlocks,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
+
+    final Set<SlotAndBlockRoot> nonCanonicalBlocks =
+        deletedHotBlocks.entrySet().stream()
+            .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
+            .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
+            .collect(Collectors.toSet());
+
+    LOG.trace("Removing sidecars for non-canonical blocks");
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+        dao.getDataColumnIdentifiers(slotAndBlockRoot)
+            .forEach(
+                identifier -> {
+                  LOG.trace(
+                      "Removing sidecar with identifier {} for non-canonical block", identifier);
+                  updater.removeSidecar(identifier);
+                });
+      }
+      updater.commit();
     }
   }
 
