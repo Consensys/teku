@@ -158,15 +158,17 @@ public class ValidatorClientService extends Service {
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
-    final GraffitiManager graffitiManager = new GraffitiManager(services.getDataDirLayout());
+    final Optional<GraffitiManager> graffitiManager =
+        Optional.ofNullable(
+            validatorApiConfig.isRestApiEnabled()
+                ? new GraffitiManager(services.getDataDirLayout())
+                : null);
     final ValidatorLoader validatorLoader =
         createValidatorLoader(
             services,
             config,
             asyncRunner,
-            validatorApiConfig.isRestApiEnabled()
-                ? graffitiManager::getGraffiti
-                : (publicKey) -> Optional.empty());
+            (publicKey) -> graffitiManager.flatMap(manager -> manager.getGraffiti(publicKey)));
     final ValidatorStatusProvider validatorStatusProvider =
         new OwnedValidatorStatusProvider(
             services.getMetricsSystem(),
