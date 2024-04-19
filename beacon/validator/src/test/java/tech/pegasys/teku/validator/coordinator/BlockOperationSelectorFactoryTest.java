@@ -33,6 +33,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -59,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -651,15 +654,25 @@ class BlockOperationSelectorFactoryTest {
         .hasSameElementsAs(blobsBundle.getCommitments());
   }
 
-  @Test
-  void shouldUnblindSignedBlindedBeaconBlock() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void shouldUnblindSignedBlindedBeaconBlock(final boolean useLocalFallback) {
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
     final SignedBeaconBlock blindedSignedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
     final CapturingBeaconBlockUnblinder blockUnblinder =
         new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
 
+    final BuilderPayloadOrFallbackData builderPayloadOrFallbackData;
+    if (useLocalFallback) {
+      final FallbackData fallbackData =
+          new FallbackData(
+              new GetPayloadResponse(randomExecutionPayload), FallbackReason.BUILDER_ERROR);
+      builderPayloadOrFallbackData = BuilderPayloadOrFallbackData.create(fallbackData);
+    } else {
+      builderPayloadOrFallbackData = BuilderPayloadOrFallbackData.create(randomExecutionPayload);
+    }
     when(executionLayer.getUnblindedPayload(blindedSignedBlock, BlockPublishingPerformance.NOOP))
-        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+        .thenReturn(SafeFuture.completedFuture(builderPayloadOrFallbackData));
 
     factory.createBlockUnblinderSelector(BlockPublishingPerformance.NOOP).accept(blockUnblinder);
 
@@ -831,7 +844,7 @@ class BlockOperationSelectorFactoryTest {
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
-        Optional.of(blobsBundle));
+        blobsBundle);
 
     assertThatThrownBy(
             () ->
@@ -856,7 +869,7 @@ class BlockOperationSelectorFactoryTest {
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
-        Optional.of(blobsBundle));
+        blobsBundle);
 
     assertThatThrownBy(
             () ->
@@ -881,7 +894,7 @@ class BlockOperationSelectorFactoryTest {
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
-        Optional.of(blobsBundle));
+        blobsBundle);
 
     assertThatThrownBy(
             () ->
@@ -893,22 +906,31 @@ class BlockOperationSelectorFactoryTest {
             "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
   }
 
-  @Test
-  void shouldCreateBlobSidecarsForBlindedBlock() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void shouldCreateBlobSidecarsForBlindedBlock(final boolean useLocalFallback) {
     final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
+    final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
-    final MiscHelpersDeneb miscHelpersDeneb =
-        MiscHelpersDeneb.required(spec.atSlot(signedBlindedBeaconBlock.getSlot()).miscHelpers());
-
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         dataStructureUtil.randomBuilderBlobsBundle(commitments);
 
-    prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
-        Optional.of(blobsBundle));
+    if (useLocalFallback) {
+      final BlobsBundle localFallbackBlobsBundle =
+          new BlobsBundle(
+              blobsBundle.getCommitments().stream()
+                  .map(SszKZGCommitment::getKZGCommitment)
+                  .toList(),
+              blobsBundle.getProofs().stream().map(SszKZGProof::getKZGProof).toList(),
+              blobsBundle.getBlobs().stream().toList());
+      prepareCachedFallbackData(slot, executionPayload, localFallbackBlobsBundle);
+    } else {
+
+      prepareCachedBuilderPayload(slot, executionPayload, blobsBundle);
+    }
 
     final List<BlobSidecar> blobSidecars =
         factory
@@ -924,8 +946,10 @@ class BlockOperationSelectorFactoryTest {
             .getOptionalBlobKzgCommitments()
             .orElseThrow();
 
-    assertThat(blobSidecars).hasSize(expectedBlobs.size());
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
+    assertThat(blobSidecars).hasSize(expectedBlobs.size());
     IntStream.range(0, blobSidecars.size())
         .forEach(
             index -> {
@@ -981,7 +1005,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForNonBlindedFlow(
+            ExecutionPayloadResult.createForLocalFlow(
                 executionPayloadContext, SafeFuture.completedFuture(getPayloadResponse)));
   }
 
@@ -1003,7 +1027,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext,
                 SafeFuture.completedFuture(BuilderBidOrFallbackData.create(builderBid))));
   }
@@ -1025,7 +1049,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
@@ -1042,7 +1066,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForNonBlindedFlow(
+            ExecutionPayloadResult.createForLocalFlow(
                 executionPayloadContext,
                 SafeFuture.completedFuture(
                     new GetPayloadResponse(
@@ -1070,7 +1094,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
@@ -1093,7 +1117,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
@@ -1105,7 +1129,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(
             Optional.of(
-                ExecutionPayloadResult.createForNonBlindedFlow(
+                ExecutionPayloadResult.createForLocalFlow(
                     executionPayloadContext,
                     SafeFuture.completedFuture(
                         new GetPayloadResponse(
@@ -1125,7 +1149,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(
             Optional.of(
-                ExecutionPayloadResult.createForBlindedFlow(
+                ExecutionPayloadResult.createForBuilderFlow(
                     executionPayloadContext,
                     SafeFuture.completedFuture(builderBidOrFallbackData))));
   }
@@ -1133,17 +1157,24 @@ class BlockOperationSelectorFactoryTest {
   private void prepareCachedBuilderPayload(
       final UInt64 slot,
       final ExecutionPayload executionPayload,
-      final Optional<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle> blobsBundle) {
+      final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle) {
     final BuilderPayload builderPayload =
-        blobsBundle
-            .map(
-                bundle ->
-                    (BuilderPayload)
-                        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-                            .getExecutionPayloadAndBlobsBundleSchema()
-                            .create(executionPayload, bundle))
-            .orElse(executionPayload);
-    when(executionLayer.getCachedUnblindedPayload(slot)).thenReturn(Optional.of(builderPayload));
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getExecutionPayloadAndBlobsBundleSchema()
+            .create(executionPayload, blobsBundle);
+    when(executionLayer.getCachedUnblindedPayload(slot))
+        .thenReturn(Optional.of(BuilderPayloadOrFallbackData.create(builderPayload)));
+  }
+
+  private void prepareCachedFallbackData(
+      final UInt64 slot, final ExecutionPayload executionPayload, final BlobsBundle blobsBundle) {
+    when(executionLayer.getCachedUnblindedPayload(slot))
+        .thenReturn(
+            Optional.of(
+                BuilderPayloadOrFallbackData.create(
+                    new FallbackData(
+                        new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle, false),
+                        FallbackReason.BUILDER_ERROR))));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {

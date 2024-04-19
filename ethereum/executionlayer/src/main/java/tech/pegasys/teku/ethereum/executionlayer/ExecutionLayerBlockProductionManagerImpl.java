@@ -22,8 +22,8 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -40,7 +40,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
       new ConcurrentSkipListMap<>();
 
-  private final NavigableMap<UInt64, BuilderPayload> builderResultCache =
+  private final NavigableMap<UInt64, BuilderPayloadOrFallbackData> builderResultCache =
       new ConcurrentSkipListMap<>();
 
   private final ExecutionLayerChannel executionLayerChannel;
@@ -69,40 +69,40 @@ public class ExecutionLayerBlockProductionManagerImpl
   public ExecutionPayloadResult initiateBlockProduction(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
-      final boolean isBlind,
+      final boolean attemptBuilderFlow,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
-    if (isBlind) {
+    if (attemptBuilderFlow) {
       result =
-          processBlindedFlow(
+          executeBuilderFlow(
               context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
     } else {
-      result = processNonBlindedFlow(context, blockSlotState, blockProductionPerformance);
+      result = executeLocalFlow(context, blockSlotState, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
   }
 
   @Override
-  public SafeFuture<BuilderPayload> getUnblindedPayload(
+  public SafeFuture<BuilderPayloadOrFallbackData> getUnblindedPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final BlockPublishingPerformance blockPublishingPerformance) {
     return executionLayerChannel
         .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
-            builderPayload -> {
-              builderResultCache.put(signedBeaconBlock.getSlot(), builderPayload);
+            builderPayloadOrFallbackData -> {
+              builderResultCache.put(signedBeaconBlock.getSlot(), builderPayloadOrFallbackData);
               blockPublishingPerformance.builderGetPayload();
             });
   }
 
   @Override
-  public Optional<BuilderPayload> getCachedUnblindedPayload(final UInt64 slot) {
+  public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(final UInt64 slot) {
     return Optional.ofNullable(builderResultCache.get(slot));
   }
 
-  private ExecutionPayloadResult processNonBlindedFlow(
+  private ExecutionPayloadResult executeLocalFlow(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
@@ -111,10 +111,10 @@ public class ExecutionLayerBlockProductionManagerImpl
             .engineGetPayload(context, blockSlotState)
             .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
 
-    return ExecutionPayloadResult.createForNonBlindedFlow(context, getPayloadResponseFuture);
+    return ExecutionPayloadResult.createForLocalFlow(context, getPayloadResponseFuture);
   }
 
-  private ExecutionPayloadResult processBlindedFlow(
+  private ExecutionPayloadResult executeBuilderFlow(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final Optional<UInt64> requestedBuilderBoostFactor,
@@ -123,6 +123,6 @@ public class ExecutionLayerBlockProductionManagerImpl
         executionLayerChannel.builderGetHeader(
             context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
 
-    return ExecutionPayloadResult.createForBlindedFlow(context, builderBidOrFallbackDataFuture);
+    return ExecutionPayloadResult.createForBuilderFlow(context, builderBidOrFallbackDataFuture);
   }
 }

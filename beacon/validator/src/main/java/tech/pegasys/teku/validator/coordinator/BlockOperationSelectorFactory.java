@@ -39,10 +39,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -244,23 +246,11 @@ public class BlockOperationSelectorFactory {
             requestedBuilderBoostFactor,
             blockProductionPerformance);
 
-    // we should try to return unblinded content only if no explicit "blindness" has been requested
-    // and builder flow fallbacks to local
-    final Function<BuilderBidOrFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks =
-        builderBidOrFallbackData ->
-            builderBidOrFallbackData.getFallbackData().isPresent() && requestedBlinded.isEmpty();
-
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        // Execution Payload / Execution Payload Header
         setPayloadOrPayloadHeader(
-            bodyBuilder,
-            schemaDefinitions,
-            setUnblindedContentIfBuilderFallbacks,
-            executionPayloadResult),
-        // KZG Commitments
-        setKzgCommitments(
-            bodyBuilder, schemaDefinitions, executionPayloadResult, blockSlotState.getSlot()));
+            bodyBuilder, schemaDefinitions, requestedBlinded, executionPayloadResult),
+        setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
   }
 
   private SafeFuture<Void> cacheExecutionPayloadValue(
@@ -276,24 +266,26 @@ public class BlockOperationSelectorFactory {
   private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitionsBellatrix schemaDefinitions,
-      final Function<BuilderBidOrFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
+      final Optional<Boolean> requestedBlinded,
       final ExecutionPayloadResult executionPayloadResult) {
 
-    if (executionPayloadResult.isFromNonBlindedFlow()) {
-      // non-blinded flow
+    if (executionPayloadResult.isFromLocalFlow()) {
+      // local, non-blinded flow
       return executionPayloadResult
-          .getExecutionPayloadFutureFromNonBlindedFlow()
+          .getExecutionPayloadFutureFromLocalFlow()
           .orElseThrow()
           .thenAccept(bodyBuilder::executionPayload);
     }
-
-    // blinded flow
+    // builder, blinded flow
     return executionPayloadResult
         .getBuilderBidOrFallbackDataFuture()
         .orElseThrow()
         .thenAccept(
             builderBidOrFallbackData -> {
-              if (setUnblindedContentIfBuilderFallbacks.apply(builderBidOrFallbackData)) {
+              // we should try to return unblinded content only if no explicit "blindness" has been
+              // requested and builder flow fallbacks to local
+              if (requestedBlinded.isEmpty()
+                  && builderBidOrFallbackData.getFallbackData().isPresent()) {
                 bodyBuilder.executionPayload(
                     builderBidOrFallbackData.getFallbackDataRequired().getExecutionPayload());
               } else {
@@ -321,35 +313,37 @@ public class BlockOperationSelectorFactory {
   private SafeFuture<Void> setKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
-      final ExecutionPayloadResult executionPayloadResult,
-      final UInt64 slot) {
+      final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsKzgCommitments()) {
       return SafeFuture.COMPLETE;
     }
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
-    if (executionPayloadResult.isFromNonBlindedFlow()) {
-      // non-blinded flow
+    if (executionPayloadResult.isFromLocalFlow()) {
+      // local, non-blinded flow
       blobKzgCommitments =
-          getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot)
+          executionPayloadResult
+              .getBlobsBundleFutureFromLocalFlow()
+              .orElseThrow()
+              .thenApply(Optional::orElseThrow)
               .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
     } else {
-      // blinded flow
+      // builder, blinded flow
       blobKzgCommitments =
           executionPayloadResult
               .getBuilderBidOrFallbackDataFuture()
               .orElseThrow()
               .thenApply(
                   builderBidOrFallbackData ->
-                      getBlobKzgCommitmentsFromBlindedFlow(
+                      getBlobKzgCommitmentsFromBuilderFlow(
                           builderBidOrFallbackData, blobKzgCommitmentsSchema));
     }
 
     return blobKzgCommitments.thenAccept(bodyBuilder::blobKzgCommitments);
   }
 
-  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBlindedFlow(
+  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBuilderFlow(
       final BuilderBidOrFallbackData builderBidOrFallbackData,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
     return builderBidOrFallbackData
@@ -391,9 +385,20 @@ public class BlockOperationSelectorFactory {
             () ->
                 executionLayerBlockProductionManager
                     .getUnblindedPayload(signedBlindedBlock, blockPublishingPerformance)
-                    .thenApply(BuilderPayload::getExecutionPayload));
+                    .thenApply(this::getExecutionPayloadFromBuilderFlow));
       }
     };
+  }
+
+  private ExecutionPayload getExecutionPayloadFromBuilderFlow(
+      final BuilderPayloadOrFallbackData builderPayloadOrFallbackData) {
+    return builderPayloadOrFallbackData
+        .getBuilderPayload()
+        // from the builder payload
+        .map(BuilderPayload::getExecutionPayload)
+        // from the local fallback
+        .orElseGet(
+            () -> builderPayloadOrFallbackData.getFallbackDataRequired().getExecutionPayload());
   }
 
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
@@ -407,21 +412,23 @@ public class BlockOperationSelectorFactory {
                       new IllegalStateException(
                           "ExecutionPayloadResult hasn't been cached for slot " + slot));
 
-      if (executionPayloadResult.isFromNonBlindedFlow()) {
-        // we performed a non-blinded flow, so the bundle must be in getPayloadResponseFuture
-        return getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot);
+      if (executionPayloadResult.isFromLocalFlow()) {
+        // we performed a non-blinded flow, so the bundle must be in
+        // getBlobsBundleFutureFromNonBlindedFlow
+        return executionPayloadResult
+            .getBlobsBundleFutureFromLocalFlow()
+            .orElseThrow()
+            .thenApply(Optional::orElseThrow);
       } else {
-        // we performed a blinded flow, so the bundle must be in getbuilderBidOrFallbackDataFuture
+        // we performed a blinded flow, so the bundle must be in the FallbackData in
+        // getBuilderBidOrFallbackDataFuture
         return executionPayloadResult
             .getBuilderBidOrFallbackDataFuture()
             .orElseThrow()
             .thenApply(
                 builderBidOrFallbackData ->
                     builderBidOrFallbackData.getFallbackDataRequired().getBlobsBundle())
-            .thenApply(
-                blobsBundle ->
-                    blobsBundle.orElseThrow(
-                        () -> executionBlobsBundleIsNotAvailableException(slot)));
+            .thenApply(Optional::orElseThrow);
       }
     };
   }
@@ -432,38 +439,53 @@ public class BlockOperationSelectorFactory {
       final UInt64 slot = blockContainer.getSlot();
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
 
-      final MiscHelpersDeneb miscHelpersDeneb =
-          MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
-
       final SszList<Blob> blobs;
       final SszList<SszKZGProof> proofs;
-      final SszList<SszKZGCommitment> blockCommitments =
-          block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
       if (blockContainer.isBlinded()) {
-        // need to use the builder BlobsBundle for the blinded flow, because the
-        // blobs and the proofs wouldn't be part of the BlockContainer. Keep in mind, the builder
-        // BlobsBundle could also be a local fallback.
-        final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-            getCachedBuilderBlobsBundle(slot);
+        // need to use the builder BlobsBundle or the local fallback for the blinded flow, because
+        // the blobs and the proofs wouldn't be part of the BlockContainer.
+        final BuilderPayloadOrFallbackData builderPayloadOrFallbackData =
+            executionLayerBlockProductionManager
+                .getCachedUnblindedPayload(slot)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "BuilderPayloadOrFallbackData hasn't been cached for slot " + slot));
 
-        blobs = blobsBundle.getBlobs();
-        proofs = blobsBundle.getProofs();
+        final Optional<BuilderPayload> maybeBuilderPayload =
+            builderPayloadOrFallbackData.getBuilderPayload();
 
-        // consistency check because the BlobsBundle comes from an external source (a builder)
-        checkState(
-            blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
-            "Commitments in the builder BlobsBundle don't match the commitments in the block");
-        checkState(
-            blockCommitments.size() == proofs.size(),
-            "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
-        checkState(
-            blockCommitments.size() == blobs.size(),
-            "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
+        if (maybeBuilderPayload.isPresent()) {
+          // from the builder payload
+          final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+              maybeBuilderPayload.get().getOptionalBlobsBundle().orElseThrow();
+          // consistency checks because the BlobsBundle comes from an external source (a builder)
+          verifyBuilderBlobsBundle(blobsBundle, block);
+          blobs = blobsBundle.getBlobs();
+          proofs = blobsBundle.getProofs();
+        } else {
+          // from the local fallback
+          final BlobsBundle blobsBundle =
+              builderPayloadOrFallbackData.getFallbackDataRequired().getBlobsBundle().orElseThrow();
+          final BlockContentsSchema blockContentsSchema =
+              SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+                  .getBlockContentsSchema();
+          blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());
+          proofs =
+              blockContentsSchema
+                  .getKzgProofsSchema()
+                  .createFromElements(
+                      blobsBundle.getProofs().stream().map(SszKZGProof::new).toList());
+        }
+
       } else {
         blobs = blockContainer.getBlobs().orElseThrow();
         proofs = blockContainer.getKzgProofs().orElseThrow();
       }
+
+      final MiscHelpersDeneb miscHelpersDeneb =
+          MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
       final List<BlobSidecar> blobSidecars =
           IntStream.range(0, blobs.size())
@@ -479,29 +501,19 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  private SafeFuture<BlobsBundle> getExecutionBlobsBundleFromNonBlindedFlow(
-      final ExecutionPayloadResult executionPayloadResult, final UInt64 slot) {
-    return executionPayloadResult
-        .getBlobsBundleFutureFromNonBlindedFlow()
-        .orElseThrow()
-        .thenApply(
-            blobsBundle ->
-                blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
-  }
-
-  private IllegalStateException executionBlobsBundleIsNotAvailableException(final UInt64 slot) {
-    return new IllegalStateException("execution BlobsBundle is not available for slot " + slot);
-  }
-
-  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle getCachedBuilderBlobsBundle(
-      final UInt64 slot) {
-    return executionLayerBlockProductionManager
-        .getCachedUnblindedPayload(slot)
-        .orElseThrow(
-            () -> new IllegalStateException("BuilderPayload hasn't been cached for slot " + slot))
-        .getOptionalBlobsBundle()
-        .orElseThrow(
-            () ->
-                new IllegalStateException("builder BlobsBundle is not available for slot " + slot));
+  private void verifyBuilderBlobsBundle(
+      final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle,
+      final SignedBeaconBlock block) {
+    final SszList<SszKZGCommitment> blockCommitments =
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
+    checkState(
+        blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
+        "Commitments in the builder BlobsBundle don't match the commitments in the block");
+    checkState(
+        blockCommitments.size() == blobsBundle.getProofs().size(),
+        "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
+    checkState(
+        blockCommitments.size() == blobsBundle.getBlobs().size(),
+        "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
   }
 }

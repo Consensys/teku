@@ -24,9 +24,9 @@ import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -84,7 +84,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<BuilderPayload> builderGetPayload(
+        public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
             final SignedBeaconBlock signedBeaconBlock,
             final Function<UInt64, Optional<ExecutionPayloadResult>>
                 getCachedPayloadResultFunction) {
@@ -132,7 +132,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock,
    * BlockPublishingPerformance)} instead
    */
-  SafeFuture<BuilderPayload> builderGetPayload(
+  SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       SignedBeaconBlock signedBeaconBlock,
       Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction);
 
