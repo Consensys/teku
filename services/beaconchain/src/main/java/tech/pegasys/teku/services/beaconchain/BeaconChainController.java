@@ -134,6 +134,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -160,6 +161,8 @@ import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.DataColumnSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -275,6 +278,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile GossipValidationHelper gossipValidationHelper;
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
+  protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -489,6 +493,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initKzg();
     initBlockBlobSidecarsTrackersPool();
     initBlobSidecarManager();
+    initDataColumnSidecarManager();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
@@ -577,6 +582,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
       blobSidecarManager = blobSidecarManagerImpl;
     } else {
       blobSidecarManager = BlobSidecarManager.NOOP;
+    }
+  }
+
+  protected void initDataColumnSidecarManager() {
+    if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
+      DataColumnSidecarValidator dataColumnSidecarValidator = DataColumnSidecarValidator.create();
+      DataColumnSidecarGossipValidator gossipValidator =
+          DataColumnSidecarGossipValidator.create(dataColumnSidecarValidator);
+      dataColumnSidecarManager = DataColumnSidecarManager.create(gossipValidator);
+    } else {
+      dataColumnSidecarManager = DataColumnSidecarManager.NOOP;
     }
   }
 
@@ -1106,6 +1122,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
+            .gossipedDataColumnSidecarOperationProcessor(
+                dataColumnSidecarManager::onDataColumnSidecarGossip)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)

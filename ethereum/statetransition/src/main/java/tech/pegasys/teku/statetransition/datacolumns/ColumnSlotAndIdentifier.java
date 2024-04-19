@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.statetransition.datacolumns;
 
-/**
- * Networking constants
- *
- * <p>These constants are unified among forks and are not overridden, new constant name is used if
- * it's changed in the new fork
- */
-public interface NetworkingSpecConfigElectra extends NetworkingSpecConfig {
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
-  int getDataColumnSidecarSubnetCount();
-
-  int getCustodyRequirement();
-
-  int getMinEpochsForDataColumnSidecarsRequests();
-}
+public record ColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier) {}

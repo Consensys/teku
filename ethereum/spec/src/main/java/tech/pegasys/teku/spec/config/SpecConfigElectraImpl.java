@@ -41,6 +41,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int dataColumnSidecarSubnetCount;
   private final int custodyRequirement;
   private final UInt64 fieldElementsPerCell;
+  private final int minEpochsForDataColumnSidecarsRequests;
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
@@ -63,7 +64,8 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int maxConsolidations,
       final UInt64 fieldElementsPerCell,
       final int dataColumnSidecarSubnetCount,
-      final int custodyRequirement) {
+      final int custodyRequirement,
+      int minEpochsForDataColumnSidecarsRequests) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
@@ -85,6 +87,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.fieldElementsPerCell = fieldElementsPerCell;
     this.dataColumnSidecarSubnetCount = dataColumnSidecarSubnetCount;
     this.custodyRequirement = custodyRequirement;
+    this.minEpochsForDataColumnSidecarsRequests = minEpochsForDataColumnSidecarsRequests;
   }
 
   @Override
@@ -185,6 +188,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   @Override
   public int getCustodyRequirement() {
     return custodyRequirement;
+  }
+
+  @Override
+  public int getMinEpochsForDataColumnSidecarsRequests() {
+    return minEpochsForDataColumnSidecarsRequests;
   }
 
   @Override
