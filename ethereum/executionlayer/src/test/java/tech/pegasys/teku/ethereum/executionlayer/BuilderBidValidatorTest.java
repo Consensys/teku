@@ -209,7 +209,8 @@ public class BuilderBidValidatorTest {
 
   private void prepareValidSignedBuilderBid() {
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(1);
-    final BuilderBid builderBid = dataStructureUtil.randomBuilderBid(keyPair.getPublicKey());
+    final BuilderBid builderBid =
+        dataStructureUtil.randomBuilderBid(builder -> builder.publicKey(keyPair.getPublicKey()));
 
     final Bytes signingRoot =
         spec.computeBuilderApplicationSigningRoot(state.getSlot(), builderBid);

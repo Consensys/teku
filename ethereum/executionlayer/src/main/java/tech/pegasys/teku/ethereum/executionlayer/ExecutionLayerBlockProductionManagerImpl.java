@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -24,12 +23,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -76,61 +73,12 @@ public class ExecutionLayerBlockProductionManagerImpl
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
-    if (!isBlind) {
-      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
-          executionLayerChannel
-              .engineGetPayload(context, blockSlotState)
-              .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
-      final SafeFuture<ExecutionPayload> executionPayloadFuture =
-          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
-      final SafeFuture<UInt256> executionPayloadValueFuture =
-          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
+    if (isBlind) {
       result =
-          new ExecutionPayloadResult(
-              context,
-              Optional.of(executionPayloadFuture),
-              Optional.empty(),
-              Optional.empty(),
-              Optional.of(executionPayloadValueFuture));
-    } else {
-      result =
-          builderGetHeader(
+          processBlindedFlow(
               context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
-    }
-    executionResultCache.put(blockSlotState.getSlot(), result);
-    return result;
-  }
-
-  @Override
-  public ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      final ExecutionPayloadContext context,
-      final BeaconState blockSlotState,
-      final boolean isBlind,
-      final Optional<UInt64> requestedBuilderBoostFactor,
-      final BlockProductionPerformance blockProductionPerformance) {
-    final ExecutionPayloadResult result;
-    if (!isBlind) {
-      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
-          executionLayerChannel
-              .engineGetPayload(context, blockSlotState)
-              .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
-      final SafeFuture<ExecutionPayload> executionPayloadFuture =
-          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
-      final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
-          getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle);
-      final SafeFuture<UInt256> executionPayloadValueFuture =
-          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
-      result =
-          new ExecutionPayloadResult(
-              context,
-              Optional.of(executionPayloadFuture),
-              Optional.of(blobsBundleFuture),
-              Optional.empty(),
-              Optional.of(executionPayloadValueFuture));
     } else {
-      result =
-          builderGetHeader(
-              context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
+      result = processNonBlindedFlow(context, blockSlotState, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -154,29 +102,27 @@ public class ExecutionLayerBlockProductionManagerImpl
     return Optional.ofNullable(builderResultCache.get(slot));
   }
 
-  private ExecutionPayloadResult builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState state,
+  private ExecutionPayloadResult processNonBlindedFlow(
+      final ExecutionPayloadContext context,
+      final BeaconState blockSlotState,
+      final BlockProductionPerformance blockProductionPerformance) {
+    final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
+        executionLayerChannel
+            .engineGetPayload(context, blockSlotState)
+            .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
+
+    return ExecutionPayloadResult.createForNonBlindedFlow(context, getPayloadResponseFuture);
+  }
+
+  private ExecutionPayloadResult processBlindedFlow(
+      final ExecutionPayloadContext context,
+      final BeaconState blockSlotState,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
+    final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
+        executionLayerChannel.builderGetHeader(
+            context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
 
-    final SafeFuture<UInt256> executionPayloadValueFuture = new SafeFuture<>();
-
-    final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
-        executionLayerChannel
-            .builderGetHeader(
-                executionPayloadContext,
-                state,
-                executionPayloadValueFuture,
-                requestedBuilderBoostFactor,
-                blockProductionPerformance)
-            .whenException(executionPayloadValueFuture::completeExceptionally);
-
-    return new ExecutionPayloadResult(
-        executionPayloadContext,
-        Optional.empty(),
-        Optional.empty(),
-        Optional.of(headerWithFallbackDataFuture),
-        Optional.of(executionPayloadValueFuture));
+    return ExecutionPayloadResult.createForBlindedFlow(context, builderBidOrFallbackDataFuture);
   }
 }

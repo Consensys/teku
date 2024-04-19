@@ -39,11 +39,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
-import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -169,12 +172,12 @@ public class BlockOperationSelectorFactory {
       }
 
       // Execution Payload / Execution Payload Header / KZG Commitments
-      final SafeFuture<Void> completionFuture;
+      final SafeFuture<Void> blockProductionComplete;
       if (bodyBuilder.supportsExecutionPayload()) {
-        final SchemaDefinitions schemaDefinitions =
-            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
-
-        completionFuture =
+        final SchemaDefinitionsBellatrix schemaDefinitions =
+            SchemaDefinitionsBellatrix.required(
+                spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions());
+        blockProductionComplete =
             forkChoiceNotifier
                 .getPayloadId(parentRoot, blockSlotState.getSlot())
                 .thenCompose(
@@ -188,12 +191,12 @@ public class BlockOperationSelectorFactory {
                             blockSlotState,
                             blockProductionPerformance));
       } else {
-        completionFuture = SafeFuture.COMPLETE;
+        blockProductionComplete = SafeFuture.COMPLETE;
       }
 
       blockProductionPerformance.beaconBlockPrepared();
 
-      return completionFuture;
+      return blockProductionComplete;
     };
   }
 
@@ -202,7 +205,7 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor,
-      final SchemaDefinitions schemaDefinitions,
+      final SchemaDefinitionsBellatrix schemaDefinitions,
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
 
@@ -213,9 +216,8 @@ public class BlockOperationSelectorFactory {
               blockSlotState.getSlot()));
     }
 
-    // if requestedBlinded has been specified, we strictly follow it otherwise, we should run
-    // Builder
-    // flow (blinded) only if we have a validator registration
+    // if requestedBlinded has been specified, we strictly follow it, otherwise we should run
+    // Builder flow (blinded) only if we have a validator registration
     final boolean shouldTryBuilderFlow =
         requestedBlinded.orElseGet(
             () ->
@@ -223,191 +225,145 @@ public class BlockOperationSelectorFactory {
                     .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
                     .orElse(false));
 
-    // we should try to return unblinded content only if no explicit "blindness" has been requested
-    // and builder flow fallbacks to local
-    final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks =
-        headerWithFallbackData ->
-            headerWithFallbackData.getFallbackData().isPresent() && requestedBlinded.isEmpty();
-
-    // Pre-Deneb: Execution Payload / Execution Payload Header
-    if (!bodyBuilder.supportsKzgCommitments()) {
+    // pre-Merge Execution Payload / Execution Payload Header
+    if (executionPayloadContext.isEmpty()) {
       if (shouldTryBuilderFlow) {
-        return builderSetPayloadHeader(
-            setUnblindedContentIfBuilderFallbacks,
-            bodyBuilder,
-            schemaDefinitions,
-            blockSlotState,
-            executionPayloadContext,
-            requestedBuilderBoostFactor,
-            blockProductionPerformance);
+        bodyBuilder.executionPayloadHeader(
+            schemaDefinitions.getExecutionPayloadHeaderSchema().getHeaderOfDefaultPayload());
       } else {
-        return builderSetPayload(
-            bodyBuilder,
-            schemaDefinitions,
-            blockSlotState,
-            executionPayloadContext,
-            blockProductionPerformance);
+        bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
       }
+      return SafeFuture.COMPLETE;
     }
 
-    // Post-Deneb: Execution Payload / Execution Payload Header + KZG Commitments
     final ExecutionPayloadResult executionPayloadResult =
-        executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
+        executionLayerBlockProductionManager.initiateBlockProduction(
             executionPayloadContext.orElseThrow(),
             blockSlotState,
             shouldTryBuilderFlow,
             requestedBuilderBoostFactor,
             blockProductionPerformance);
 
+    // we should try to return unblinded content only if no explicit "blindness" has been requested
+    // and builder flow fallbacks to local
+    final Function<BuilderBidOrFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks =
+        builderBidOrFallbackData ->
+            builderBidOrFallbackData.getFallbackData().isPresent() && requestedBlinded.isEmpty();
+
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        builderSetPayloadPostMerge(
-            bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
-        builderSetKzgCommitments(
+        // Execution Payload / Execution Payload Header
+        setPayloadOrPayloadHeader(
             bodyBuilder,
-            setUnblindedContentIfBuilderFallbacks,
             schemaDefinitions,
-            executionPayloadResult));
+            setUnblindedContentIfBuilderFallbacks,
+            executionPayloadResult),
+        // KZG Commitments
+        setKzgCommitments(
+            bodyBuilder, schemaDefinitions, executionPayloadResult, blockSlotState.getSlot()));
   }
 
   private SafeFuture<Void> cacheExecutionPayloadValue(
       final ExecutionPayloadResult executionPayloadResult, final BeaconState blockSlotState) {
     return executionPayloadResult
         .getExecutionPayloadValueFuture()
-        .map(
-            futureValue ->
-                futureValue.thenAccept(
-                    value ->
-                        BeaconStateCache.getSlotCaches(blockSlotState)
-                            .setBlockExecutionValue(value)))
-        .orElse(SafeFuture.COMPLETE);
+        .thenAccept(
+            blockExecutionValue ->
+                BeaconStateCache.getSlotCaches(blockSlotState)
+                    .setBlockExecutionValue(blockExecutionValue));
   }
 
-  private SafeFuture<Void> builderSetPayloadPostMerge(
+  private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
+      final SchemaDefinitionsBellatrix schemaDefinitions,
+      final Function<BuilderBidOrFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final ExecutionPayloadResult executionPayloadResult) {
 
-    final boolean isLocalFlow = executionPayloadResult.getExecutionPayloadFuture().isPresent();
-
-    if (isLocalFlow) {
+    if (executionPayloadResult.isFromNonBlindedFlow()) {
+      // non-blinded flow
       return executionPayloadResult
-          .getExecutionPayloadFuture()
-          .get()
+          .getExecutionPayloadFutureFromNonBlindedFlow()
+          .orElseThrow()
           .thenAccept(bodyBuilder::executionPayload);
     }
 
-    // builder flow
+    // blinded flow
     return executionPayloadResult
-        .getHeaderWithFallbackDataFuture()
+        .getBuilderBidOrFallbackDataFuture()
         .orElseThrow()
         .thenAccept(
-            headerWithFallbackData -> {
-              if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
+            builderBidOrFallbackData -> {
+              if (setUnblindedContentIfBuilderFallbacks.apply(builderBidOrFallbackData)) {
                 bodyBuilder.executionPayload(
-                    headerWithFallbackData.getFallbackData().orElseThrow().getExecutionPayload());
+                    builderBidOrFallbackData.getFallbackDataRequired().getExecutionPayload());
               } else {
-                bodyBuilder.executionPayloadHeader(
-                    headerWithFallbackData.getExecutionPayloadHeader());
+                final ExecutionPayloadHeader executionPayloadHeader =
+                    builderBidOrFallbackData
+                        .getBuilderBid()
+                        // from the builder bid
+                        .map(BuilderBid::getHeader)
+                        // from the local fallback
+                        .orElseGet(
+                            () -> {
+                              final ExecutionPayload executionPayload =
+                                  builderBidOrFallbackData
+                                      .getFallbackDataRequired()
+                                      .getExecutionPayload();
+                              return schemaDefinitions
+                                  .getExecutionPayloadHeaderSchema()
+                                  .createFromExecutionPayload(executionPayload);
+                            });
+                bodyBuilder.executionPayloadHeader(executionPayloadHeader);
               }
             });
   }
 
-  private SafeFuture<Void> builderSetPayload(
+  private SafeFuture<Void> setKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
-      final BeaconState blockSlotState,
-      final Optional<ExecutionPayloadContext> executionPayloadContext,
-      final BlockProductionPerformance blockProductionPerformance) {
-    if (executionPayloadContext.isEmpty()) {
-      // preMergePayload
-      bodyBuilder.executionPayload(
-          SchemaDefinitionsBellatrix.required(schemaDefinitions)
-              .getExecutionPayloadSchema()
-              .getDefault());
+      final ExecutionPayloadResult executionPayloadResult,
+      final UInt64 slot) {
+    if (!bodyBuilder.supportsKzgCommitments()) {
       return SafeFuture.COMPLETE;
     }
-
-    final ExecutionPayloadResult executionPayloadResult =
-        executionLayerBlockProductionManager.initiateBlockProduction(
-            executionPayloadContext.get(),
-            blockSlotState,
-            false,
-            Optional.empty(),
-            blockProductionPerformance);
-
-    return SafeFuture.allOf(
-        cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        executionPayloadResult
-            .getExecutionPayloadFuture()
-            .orElseThrow()
-            .thenAccept(bodyBuilder::executionPayload));
-  }
-
-  private SafeFuture<Void> builderSetPayloadHeader(
-      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
-      final BeaconBlockBodyBuilder bodyBuilder,
-      final SchemaDefinitions schemaDefinitions,
-      final BeaconState blockSlotState,
-      final Optional<ExecutionPayloadContext> executionPayloadContext,
-      final Optional<UInt64> requestedBuilderBoostFactor,
-      final BlockProductionPerformance blockProductionPerformance) {
-    if (executionPayloadContext.isEmpty()) {
-      // preMergePayloadHeader
-      bodyBuilder.executionPayloadHeader(
-          SchemaDefinitionsBellatrix.required(schemaDefinitions)
-              .getExecutionPayloadHeaderSchema()
-              .getHeaderOfDefaultPayload());
-      return SafeFuture.COMPLETE;
-    }
-
-    final ExecutionPayloadResult executionPayloadResult =
-        executionLayerBlockProductionManager.initiateBlockProduction(
-            executionPayloadContext.get(),
-            blockSlotState,
-            true,
-            requestedBuilderBoostFactor,
-            blockProductionPerformance);
-
-    return SafeFuture.allOf(
-        cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        executionPayloadResult
-            .getHeaderWithFallbackDataFuture()
-            .orElseThrow()
-            .thenAccept(
-                headerWithFallbackData -> {
-                  if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
-                    bodyBuilder.executionPayload(
-                        headerWithFallbackData
-                            .getFallbackData()
-                            .orElseThrow()
-                            .getExecutionPayload());
-                    return;
-                  }
-                  bodyBuilder.executionPayloadHeader(
-                      headerWithFallbackData.getExecutionPayloadHeader());
-                }));
-  }
-
-  private SafeFuture<Void> builderSetKzgCommitments(
-      final BeaconBlockBodyBuilder bodyBuilder,
-      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
-      final SchemaDefinitions schemaDefinitions,
-      final ExecutionPayloadResult executionPayloadResult) {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
-
-    if (executionPayloadResult.getExecutionPayloadFuture().isPresent()) {
-      // local flow
-      return getExecutionBlobsBundle(executionPayloadResult)
-          .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle)
-          .thenAccept(bodyBuilder::blobKzgCommitments);
+    final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
+    if (executionPayloadResult.isFromNonBlindedFlow()) {
+      // non-blinded flow
+      blobKzgCommitments =
+          getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot)
+              .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
+    } else {
+      // blinded flow
+      blobKzgCommitments =
+          executionPayloadResult
+              .getBuilderBidOrFallbackDataFuture()
+              .orElseThrow()
+              .thenApply(
+                  builderBidOrFallbackData ->
+                      getBlobKzgCommitmentsFromBlindedFlow(
+                          builderBidOrFallbackData, blobKzgCommitmentsSchema));
     }
 
-    // builder flow
-    return getBuilderBlobKzgCommitments(
-            blobKzgCommitmentsSchema, executionPayloadResult, setUnblindedContentIfBuilderFallbacks)
-        .thenAccept(bodyBuilder::blobKzgCommitments);
+    return blobKzgCommitments.thenAccept(bodyBuilder::blobKzgCommitments);
+  }
+
+  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBlindedFlow(
+      final BuilderBidOrFallbackData builderBidOrFallbackData,
+      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
+    return builderBidOrFallbackData
+        .getBuilderBid()
+        // from the builder bid
+        .map(BuilderBid::getOptionalBlobKzgCommitments)
+        // from the local fallback
+        .orElseGet(
+            () ->
+                builderBidOrFallbackData
+                    .getFallbackDataRequired()
+                    .getBlobsBundle()
+                    .map(blobKzgCommitmentsSchema::createFromBlobsBundle))
+        .orElseThrow();
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
@@ -441,7 +397,33 @@ public class BlockOperationSelectorFactory {
   }
 
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
-    return block -> getCachedExecutionBlobsBundle(block.getSlot());
+    return block -> {
+      final UInt64 slot = block.getSlot();
+      final ExecutionPayloadResult executionPayloadResult =
+          executionLayerBlockProductionManager
+              .getCachedPayloadResult(slot)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+
+      if (executionPayloadResult.isFromNonBlindedFlow()) {
+        // we performed a non-blinded flow, so the bundle must be in getPayloadResponseFuture
+        return getExecutionBlobsBundleFromNonBlindedFlow(executionPayloadResult, slot);
+      } else {
+        // we performed a blinded flow, so the bundle must be in getbuilderBidOrFallbackDataFuture
+        return executionPayloadResult
+            .getBuilderBidOrFallbackDataFuture()
+            .orElseThrow()
+            .thenApply(
+                builderBidOrFallbackData ->
+                    builderBidOrFallbackData.getFallbackDataRequired().getBlobsBundle())
+            .thenApply(
+                blobsBundle ->
+                    blobsBundle.orElseThrow(
+                        () -> executionBlobsBundleIsNotAvailableException(slot)));
+      }
+    };
   }
 
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector(
@@ -460,7 +442,8 @@ public class BlockOperationSelectorFactory {
 
       if (blockContainer.isBlinded()) {
         // need to use the builder BlobsBundle for the blinded flow, because the
-        // blobs and the proofs wouldn't be part of the BlockContainer
+        // blobs and the proofs wouldn't be part of the BlockContainer. Keep in mind, the builder
+        // BlobsBundle could also be a local fallback.
         final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
             getCachedBuilderBlobsBundle(slot);
 
@@ -473,10 +456,10 @@ public class BlockOperationSelectorFactory {
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
         checkState(
             blockCommitments.size() == proofs.size(),
-            "The number of proofs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
         checkState(
             blockCommitments.size() == blobs.size(),
-            "The number of blobs in BlobsBundle doesn't match the number of commitments in the block");
+            "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
       } else {
         blobs = blockContainer.getBlobs().orElseThrow();
         proofs = blockContainer.getKzgProofs().orElseThrow();
@@ -496,84 +479,18 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  private SafeFuture<BlobsBundle> getExecutionBlobsBundle(
-      final ExecutionPayloadResult executionPayloadResult) {
+  private SafeFuture<BlobsBundle> getExecutionBlobsBundleFromNonBlindedFlow(
+      final ExecutionPayloadResult executionPayloadResult, final UInt64 slot) {
     return executionPayloadResult
-        .getBlobsBundleFuture()
-        .orElseThrow(this::executionBlobsBundleIsNotAvailableException)
+        .getBlobsBundleFutureFromNonBlindedFlow()
+        .orElseThrow()
         .thenApply(
             blobsBundle ->
-                blobsBundle.orElseThrow(this::executionBlobsBundleIsNotAvailableException));
-  }
-
-  private SafeFuture<BlobsBundle> getCachedExecutionBlobsBundle(final UInt64 slot) {
-    final ExecutionPayloadResult executionPayloadResult =
-        executionLayerBlockProductionManager
-            .getCachedPayloadResult(slot)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "ExecutionPayloadResult hasn't been cached for slot " + slot));
-
-    final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture;
-    if (executionPayloadResult.getExecutionPayloadFuture().isPresent()) {
-      // we performed a local flow, so the bundle must be in getBlobsBundleFuture
-      blobsBundleFuture =
-          executionPayloadResult
-              .getBlobsBundleFuture()
-              .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot));
-    } else {
-      // we performed a builder flow, so the bundle must be in getHeaderWithFallbackDataFuture
-      blobsBundleFuture =
-          executionPayloadResult
-              .getHeaderWithFallbackDataFuture()
-              .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
-              .thenApply(
-                  headerWithFallbackData ->
-                      headerWithFallbackData
-                          .getFallbackData()
-                          .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
-                          .getBlobsBundle());
-    }
-
-    return blobsBundleFuture.thenApply(
-        blobsBundle ->
-            blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
-  }
-
-  private IllegalStateException executionBlobsBundleIsNotAvailableException() {
-    return new IllegalStateException("execution BlobsBundle is not available");
+                blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
   }
 
   private IllegalStateException executionBlobsBundleIsNotAvailableException(final UInt64 slot) {
     return new IllegalStateException("execution BlobsBundle is not available for slot " + slot);
-  }
-
-  private SafeFuture<SszList<SszKZGCommitment>> getBuilderBlobKzgCommitments(
-      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
-      final ExecutionPayloadResult executionPayloadResult,
-      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks) {
-
-    return executionPayloadResult
-        .getHeaderWithFallbackDataFuture()
-        .orElseThrow()
-        .thenApply(
-            headerWithFallbackData -> {
-              if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
-                return blobKzgCommitmentsSchema.createFromBlobsBundle(
-                    headerWithFallbackData
-                        .getFallbackData()
-                        .orElseThrow()
-                        .getBlobsBundle()
-                        .orElseThrow());
-              }
-              return headerWithFallbackData
-                  .getBlobKzgCommitments()
-                  .orElseThrow(
-                      () ->
-                          new IllegalStateException(
-                              "builder BlobKzgCommitments are not available"));
-            });
   }
 
   private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle getCachedBuilderBlobsBundle(

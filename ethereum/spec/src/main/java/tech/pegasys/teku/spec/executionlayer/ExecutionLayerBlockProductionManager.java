@@ -49,16 +49,6 @@ public interface ExecutionLayerBlockProductionManager {
         }
 
         @Override
-        public ExecutionPayloadResult initiateBlockAndBlobsProduction(
-            final ExecutionPayloadContext context,
-            final BeaconState blockSlotState,
-            final boolean isBlind,
-            final Optional<UInt64> requestedBuilderBoostFactor,
-            final BlockProductionPerformance blockProductionPerformance) {
-          return null;
-        }
-
-        @Override
         public SafeFuture<BuilderPayload> getUnblindedPayload(
             final SignedBeaconBlock signedBeaconBlock,
             final BlockPublishingPerformance blockPublishingPerformance) {
@@ -72,14 +62,15 @@ public interface ExecutionLayerBlockProductionManager {
       };
 
   /**
-   * Initiates block production flow with execution client or builder
+   * Initiates block (and sidecar blobs after Deneb) production flow with execution client or
+   * builder
    *
-   * @param context Payload context
-   * @param blockSlotState pre state
-   * @param isBlind Block type. Use blind for builder building
-   * @param requestedBuilderBoostFactor The proposer boost factor requested by vc
+   * @param context context required for the production flow
+   * @param blockSlotState pre-state
+   * @param isBlind block type (use blind for builder building)
+   * @param requestedBuilderBoostFactor The proposer boost factor requested by VC
    * @param blockProductionPerformance Block production performance tracker
-   * @return Container with filled Payload or Payload Header futures
+   * @return {@link ExecutionPayloadResult} coming from local, builder or a local fallback
    */
   ExecutionPayloadResult initiateBlockProduction(
       ExecutionPayloadContext context,
@@ -89,31 +80,15 @@ public interface ExecutionLayerBlockProductionManager {
       BlockProductionPerformance blockProductionPerformance);
 
   /**
-   * Initiates block and sidecar blobs production flow with execution client or builder. Use since
-   * Deneb.
-   *
-   * @param context Payload context
-   * @param blockSlotState pre state
-   * @param isBlind Block type. Use blind for builder building
-   * @param requestedBuilderBoostFactor The proposer boost factor requested by vc
-   * @param blockProductionPerformance Block production performance tracker
-   * @return Container with filled Payload or Payload Header futures
-   */
-  ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      ExecutionPayloadContext context,
-      BeaconState blockSlotState,
-      boolean isBlind,
-      Optional<UInt64> requestedBuilderBoostFactor,
-      BlockProductionPerformance blockProductionPerformance);
-
-  /**
-   * Required {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean,
-   * Optional, BlockProductionPerformance)} or {@link
-   * #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState, boolean, Optional,
-   * BlockProductionPerformance)} to have been called first in order for a value to be present
+   * Requires {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean,
+   * Optional, BlockProductionPerformance)} to have been called first in order for a value to be
+   * present
    */
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
+  /**
+   * @return a payload which is either a builder or a local fallback
+   */
   SafeFuture<BuilderPayload> getUnblindedPayload(
       SignedBeaconBlock signedBeaconBlock, BlockPublishingPerformance blockPublishingPerformance);
 
