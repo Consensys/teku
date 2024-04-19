@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -293,7 +294,8 @@ public abstract class AbstractBlockFactoryTest {
 
     // no need to prepare blobs bundle when only testing block unblinding
     when(executionLayer.getUnblindedPayload(blindedBlock, BlockPublishingPerformance.NOOP))
-        .thenReturn(SafeFuture.completedFuture(executionPayload));
+        .thenReturn(
+            SafeFuture.completedFuture(BuilderPayloadOrFallbackData.create(executionPayload)));
 
     final SignedBeaconBlock unblindedBlock =
         blockFactory
@@ -367,7 +369,7 @@ public abstract class AbstractBlockFactoryTest {
 
     // simulate caching of the builder payload
     when(executionLayer.getCachedUnblindedPayload(signedBlockContainer.getSlot()))
-        .thenReturn(builderPayload);
+        .thenReturn(builderPayload.map(BuilderPayloadOrFallbackData::create));
 
     final List<BlobSidecar> blobSidecars =
         blockFactory.createBlobSidecars(signedBlockContainer, BlockPublishingPerformance.NOOP);

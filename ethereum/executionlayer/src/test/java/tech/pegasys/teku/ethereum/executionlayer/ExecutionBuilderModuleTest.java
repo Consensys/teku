@@ -217,7 +217,6 @@ public class ExecutionBuilderModuleTest {
 
     executionBuilderModule =
         new ExecutionBuilderModule(
-            spec,
             executionLayerManager,
             builderBidValidator,
             builderCircuitBreaker,

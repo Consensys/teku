@@ -22,8 +22,8 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -40,7 +40,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
       new ConcurrentSkipListMap<>();
 
-  private final NavigableMap<UInt64, BuilderPayload> builderResultCache =
+  private final NavigableMap<UInt64, BuilderPayloadOrFallbackData> builderResultCache =
       new ConcurrentSkipListMap<>();
 
   private final ExecutionLayerChannel executionLayerChannel;
@@ -75,34 +75,34 @@ public class ExecutionLayerBlockProductionManagerImpl
     final ExecutionPayloadResult result;
     if (isBlind) {
       result =
-          processBlindedFlow(
+          executeBlindedFlow(
               context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
     } else {
-      result = processNonBlindedFlow(context, blockSlotState, blockProductionPerformance);
+      result = executeNonBlindedFlow(context, blockSlotState, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
   }
 
   @Override
-  public SafeFuture<BuilderPayload> getUnblindedPayload(
+  public SafeFuture<BuilderPayloadOrFallbackData> getUnblindedPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final BlockPublishingPerformance blockPublishingPerformance) {
     return executionLayerChannel
         .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
-            builderPayload -> {
-              builderResultCache.put(signedBeaconBlock.getSlot(), builderPayload);
+            builderPayloadOrFallbackData -> {
+              builderResultCache.put(signedBeaconBlock.getSlot(), builderPayloadOrFallbackData);
               blockPublishingPerformance.builderGetPayload();
             });
   }
 
   @Override
-  public Optional<BuilderPayload> getCachedUnblindedPayload(final UInt64 slot) {
+  public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(final UInt64 slot) {
     return Optional.ofNullable(builderResultCache.get(slot));
   }
 
-  private ExecutionPayloadResult processNonBlindedFlow(
+  private ExecutionPayloadResult executeNonBlindedFlow(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
@@ -114,7 +114,7 @@ public class ExecutionLayerBlockProductionManagerImpl
     return ExecutionPayloadResult.createForNonBlindedFlow(context, getPayloadResponseFuture);
   }
 
-  private ExecutionPayloadResult processBlindedFlow(
+  private ExecutionPayloadResult executeBlindedFlow(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final Optional<UInt64> requestedBuilderBoostFactor,

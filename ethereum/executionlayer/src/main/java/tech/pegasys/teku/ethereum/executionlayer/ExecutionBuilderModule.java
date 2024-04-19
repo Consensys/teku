@@ -34,14 +34,13 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -50,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionBuilderModule {
 
@@ -61,7 +59,6 @@ public class ExecutionBuilderModule {
   public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_EXECUTION = UInt64.ZERO;
   public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_BUILDER = UInt64.MAX_VALUE;
 
-  private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
   private final ExecutionLayerManagerImpl executionLayerManager;
   private final BuilderBidValidator builderBidValidator;
@@ -72,7 +69,6 @@ public class ExecutionBuilderModule {
   private final boolean useShouldOverrideBuilderFlag;
 
   public ExecutionBuilderModule(
-      final Spec spec,
       final ExecutionLayerManagerImpl executionLayerManager,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
@@ -80,7 +76,6 @@ public class ExecutionBuilderModule {
       final EventLogger eventLogger,
       final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
-    this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
     this.builderBidValidator = builderBidValidator;
@@ -333,7 +328,7 @@ public class ExecutionBuilderModule {
                     signedValidatorRegistrations));
   }
 
-  public SafeFuture<BuilderPayload> builderGetPayload(
+  public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
 
@@ -387,7 +382,7 @@ public class ExecutionBuilderModule {
         });
   }
 
-  private SafeFuture<BuilderPayload> getPayloadFromBuilder(
+  private SafeFuture<BuilderPayloadOrFallbackData> getPayloadFromBuilder(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
@@ -411,10 +406,11 @@ public class ExecutionBuilderModule {
                   "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
                   signedBlindedBeaconBlock,
                   builderPayload);
-            });
+            })
+        .thenApply(BuilderPayloadOrFallbackData::create);
   }
 
-  private SafeFuture<BuilderPayload> getPayloadFromBuilderOrFallbackData(
+  private SafeFuture<BuilderPayloadOrFallbackData> getPayloadFromBuilderOrFallbackData(
       final SignedBeaconBlock signedBlindedBeaconBlock,
       final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
@@ -426,32 +422,11 @@ public class ExecutionBuilderModule {
           if (builderBidOrFallbackData.getFallbackData().isEmpty()) {
             return getPayloadFromBuilder(signedBlindedBeaconBlock);
           } else {
-            final FallbackData fallbackData = builderBidOrFallbackData.getFallbackData().get();
+            final FallbackData fallbackData = builderBidOrFallbackData.getFallbackDataRequired();
             LOG.debug(
                 "Using FallbackData to provide unblinded execution data (FallbackReason: {})",
                 fallbackData.getReason());
-            // we create a local version of BuilderPayload in order to support a blinded flow when
-            // there is a local fallback
-            final BuilderPayload builderPayload =
-                fallbackData
-                    .getBlobsBundle()
-                    .map(
-                        executionBlobsBundle -> {
-                          final SchemaDefinitionsDeneb schemaDefinitions =
-                              SchemaDefinitionsDeneb.required(
-                                  spec.atSlot(signedBlindedBeaconBlock.getSlot())
-                                      .getSchemaDefinitions());
-                          final BlobsBundle blobsBundle =
-                              schemaDefinitions
-                                  .getBlobsBundleSchema()
-                                  .createFromExecutionBlobsBundle(executionBlobsBundle);
-                          return (BuilderPayload)
-                              schemaDefinitions
-                                  .getExecutionPayloadAndBlobsBundleSchema()
-                                  .create(fallbackData.getExecutionPayload(), blobsBundle);
-                        })
-                    .orElseGet(fallbackData::getExecutionPayload);
-            return SafeFuture.completedFuture(builderPayload);
+            return SafeFuture.completedFuture(BuilderPayloadOrFallbackData.create(fallbackData));
           }
         });
   }
