@@ -161,7 +161,9 @@ final class CKZG4844 implements KZG {
     CellsAndProofs cellsAndProofs = CKZG4844JNI.computeCellsAndProofs(blob.toArrayUnsafe());
     List<KZGCell> cells = KZGCell.splitBytes(Bytes.wrap(cellsAndProofs.getCells()));
     List<KZGProof> proofs = KZGProof.splitBytes(Bytes.wrap(cellsAndProofs.getProofs()));
-    if (cells.size() != proofs.size()) throw new KZGException("Cells and proofs size differ");
+    if (cells.size() != proofs.size()) {
+      throw new KZGException("Cells and proofs size differ");
+    }
     return IntStream.range(0, cells.size())
         .mapToObj(i -> new KZGCellAndProof(cells.get(i), proofs.get(i)))
         .toList();

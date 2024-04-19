@@ -89,8 +89,9 @@ public interface KZG {
 
         @Override
         public List<KZGCell> recoverCells(List<KZGCellWithID> cells) {
-          if (cells.size() < CELLS_PER_BLOB)
+          if (cells.size() < CELLS_PER_BLOB) {
             throw new IllegalArgumentException("Can't recover from " + cells.size() + " cells");
+          }
           return cells.stream().map(KZGCellWithID::cell).limit(CELLS_PER_BLOB).toList();
         }
       };

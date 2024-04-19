@@ -884,7 +884,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .orElseThrow(
                 () ->
                     new InvalidConfigurationException(
-                        ("NodeID is required for DataColumnSidecarSubnetBackboneSubscriber")));
+                        "NodeID is required for DataColumnSidecarSubnetBackboneSubscriber"));
     DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
             spec, p2pNetwork, nodeId, beaconConfig.p2pConfig().getDasExtraCustodySubnetCount());

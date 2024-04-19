@@ -17,8 +17,6 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,7 +26,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
-  private static final Logger LOG = LogManager.getLogger();
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
   private final int extraVoluntarySubnetCount;
