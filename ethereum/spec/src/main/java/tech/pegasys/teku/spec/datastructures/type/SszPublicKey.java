@@ -49,7 +49,7 @@ public class SszPublicKey extends SszByteVectorImpl {
 
   @Override
   public Bytes48 getBytes() {
-    return Bytes48.wrap(super.getBytes());
+    return (Bytes48) super.getBytes();
   }
 
   @Override

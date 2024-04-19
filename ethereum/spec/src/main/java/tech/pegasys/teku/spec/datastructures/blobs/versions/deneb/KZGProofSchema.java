@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
-import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
@@ -26,11 +24,6 @@ public class KZGProofSchema extends SszByteVectorSchemaImpl<KZGProof> {
 
   private KZGProofSchema() {
     super(SszPrimitiveSchemas.BYTE_SCHEMA, SpecConfigDeneb.BYTES_PER_PROOF.longValue());
-  }
-
-  @Override
-  protected DeserializableTypeDefinition<KZGProof> createTypeDefinition() {
-    return SszPrimitiveTypeDefinitions.sszSerializedType(this, "Bytes48 hexadecimal");
   }
 
   @Override
