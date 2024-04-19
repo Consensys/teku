@@ -19,7 +19,7 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -49,14 +49,14 @@ public interface ExecutionLayerBlockProductionManager {
         }
 
         @Override
-        public SafeFuture<BuilderPayload> getUnblindedPayload(
+        public SafeFuture<BuilderPayloadOrFallbackData> getUnblindedPayload(
             final SignedBeaconBlock signedBeaconBlock,
             final BlockPublishingPerformance blockPublishingPerformance) {
           return SafeFuture.completedFuture(null);
         }
 
         @Override
-        public Optional<BuilderPayload> getCachedUnblindedPayload(final UInt64 slot) {
+        public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(final UInt64 slot) {
           return Optional.empty();
         }
       };
@@ -86,15 +86,12 @@ public interface ExecutionLayerBlockProductionManager {
    */
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
-  /**
-   * @return a payload which is either a builder or a local fallback
-   */
-  SafeFuture<BuilderPayload> getUnblindedPayload(
+  SafeFuture<BuilderPayloadOrFallbackData> getUnblindedPayload(
       SignedBeaconBlock signedBeaconBlock, BlockPublishingPerformance blockPublishingPerformance);
 
   /**
    * Requires {@link #getUnblindedPayload(SignedBeaconBlock, BlockPublishingPerformance)} to have
    * been called first in order for a value to be present
    */
-  Optional<BuilderPayload> getCachedUnblindedPayload(UInt64 slot);
+  Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(UInt64 slot);
 }

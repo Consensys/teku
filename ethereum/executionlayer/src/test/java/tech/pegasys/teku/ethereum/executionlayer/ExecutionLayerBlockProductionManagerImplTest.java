@@ -45,11 +45,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -120,7 +120,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
         executionPayloadResult.getBuilderBidOrFallbackDataFuture().orElseThrow();
     assertThat(builderBidOrFallbackDataFuture.get()).isEqualTo(expectedResult);
-    final BuilderPayload localPayload =
+    final FallbackData localFallback =
         verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
 
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
@@ -128,11 +128,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
     // wrong slot
     assertThat(blockProductionManager.getCachedPayloadResult(slot.plus(1))).isEmpty();
 
-    final SafeFuture<BuilderPayload> unblindedPayload =
+    final SafeFuture<BuilderPayloadOrFallbackData> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
             dataStructureUtil.randomSignedBlindedBeaconBlock(slot),
             BlockPublishingPerformance.NOOP);
-    assertThat(unblindedPayload.get()).isEqualTo(localPayload);
+    assertThat(unblindedPayload.get().getFallbackData()).hasValue(localFallback);
 
     // wrong slot, we will hit builder client by this call
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -188,7 +188,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(
             blockProductionManager.getUnblindedPayload(
                 signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP))
-        .isCompletedWithValue(payload);
+        .isCompletedWithValue(BuilderPayloadOrFallbackData.create(payload));
 
     // we expect both builder and local engine have been called
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
@@ -278,17 +278,17 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
         executionPayloadResult.getBuilderBidOrFallbackDataFuture().orElseThrow();
     assertThat(builderBidOrFallbackDataFuture.get()).isEqualTo(expectedResult);
-    final BuilderPayload localPayload =
+    final FallbackData localFallback =
         verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
 
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
         .contains(executionPayloadResult);
 
-    final SafeFuture<BuilderPayload> unblindedPayload =
+    final SafeFuture<BuilderPayloadOrFallbackData> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
             dataStructureUtil.randomSignedBlindedBeaconBlock(slot),
             BlockPublishingPerformance.NOOP);
-    assertThat(unblindedPayload.get()).isEqualTo(localPayload);
+    assertThat(unblindedPayload.get().getFallbackData()).hasValue(localFallback);
 
     verifyNoMoreInteractions(builderClient);
     verifyNoMoreInteractions(executionClientHandler);
@@ -340,7 +340,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(
             blockProductionManager.getUnblindedPayload(
                 signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP))
-        .isCompletedWithValue(payloadAndBlobsBundle);
+        .isCompletedWithValue(BuilderPayloadOrFallbackData.create(payloadAndBlobsBundle));
 
     // we expect both builder and local engine have been called
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
@@ -428,7 +428,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     return signedBuilderBid.getMessage();
   }
 
-  private BuilderPayload verifyFallbackToLocalEL(
+  private FallbackData verifyFallbackToLocalEL(
       final UInt64 slot,
       final ExecutionPayloadContext executionPayloadContext,
       final BuilderBidOrFallbackData builderBidOrFallbackData) {
@@ -448,24 +448,6 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
 
-    final BuilderPayload builderPayload =
-        spec.atSlot(slot)
-            .getSchemaDefinitions()
-            .toVersionDeneb()
-            .map(
-                schemaDefinitionsDeneb -> {
-                  final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-                      schemaDefinitionsDeneb
-                          .getBlobsBundleSchema()
-                          .createFromExecutionBlobsBundle(
-                              fallbackData.getBlobsBundle().orElseThrow());
-                  return (BuilderPayload)
-                      schemaDefinitionsDeneb
-                          .getExecutionPayloadAndBlobsBundleSchema()
-                          .create(fallbackData.getExecutionPayload(), blobsBundle);
-                })
-            .orElseGet(fallbackData::getExecutionPayload);
-
     // we expect result from the cached payload
     assertThat(
             executionLayerManager.builderGetPayload(
@@ -475,7 +457,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
                         ExecutionPayloadResult.createForBlindedFlow(
                             executionPayloadContext,
                             SafeFuture.completedFuture(builderBidOrFallbackData)))))
-        .isCompletedWithValue(builderPayload);
+        .isCompletedWithValue(BuilderPayloadOrFallbackData.create(fallbackData));
 
     // we expect no additional calls
     verifyNoMoreInteractions(builderClient);
@@ -483,7 +465,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     verifySourceCounter(Source.BUILDER_LOCAL_EL_FALLBACK, fallbackReason);
 
-    return builderPayload;
+    return fallbackData;
   }
 
   private ExecutionPayload prepareBuilderGetPayloadResponse(
