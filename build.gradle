@@ -621,6 +621,8 @@ task manifestDocker {
   }
 
   doLast {
+    def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
+    def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
     for (def variant in dockerJdkVariants) {
       def tags = []
       def cmd = ""
@@ -631,10 +633,10 @@ task manifestDocker {
       }
 
       for (def tag in tags) {
-        platforms.forEach { platform -> cmd += "${tag}-${platform} " }
+        platforms.forEach { platform -> cmd += "${tag}-${platform}${commitHashTag} " }
         exec {
           executable executableAndArg[0]
-          args executableAndArg[1], "docker manifest create ${tag} ${cmd} && docker manifest push ${tag}"
+          args executableAndArg[1], "docker manifest create ${tag}${commitHashTag} ${cmd} && docker manifest push ${tag}${commitHashTag}"
         }
       }
     }
