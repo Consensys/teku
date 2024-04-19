@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.api;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -34,14 +35,6 @@ public class GraffitiManager {
     this.graffitiPath = createManagementDirectory(dataDirLayout);
   }
 
-  public Optional<String> setGraffiti(final BLSPublicKey publicKey, final String graffiti) {
-    return updateGraffiti(publicKey, graffiti.strip());
-  }
-
-  public Optional<String> deleteGraffiti(final BLSPublicKey publicKey) {
-    return updateGraffiti(publicKey);
-  }
-
   private Path createManagementDirectory(final DataDirLayout dataDirLayout) {
     final Path graffitiDirectory = dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_DIR);
     if (!graffitiDirectory.toFile().exists() && !graffitiDirectory.toFile().mkdirs()) {
@@ -51,22 +44,19 @@ public class GraffitiManager {
     return graffitiDirectory;
   }
 
-  private Optional<String> updateGraffiti(final BLSPublicKey publicKey) {
-    return updateGraffiti(publicKey, "");
-  }
-
-  private Optional<String> updateGraffiti(final BLSPublicKey publicKey, final String graffiti) {
-    final int graffitiSize = graffiti.getBytes(StandardCharsets.UTF_8).length;
+  public Optional<String> setGraffiti(final BLSPublicKey publicKey, final String graffiti) {
+    final String strippedGraffiti = graffiti.strip();
+    final int graffitiSize = strippedGraffiti.getBytes(StandardCharsets.UTF_8).length;
     if (graffitiSize > 32) {
       throw new IllegalArgumentException(
           String.format(
               "'%s' converts to %s bytes. Input must be 32 bytes or less.",
-              graffiti, graffitiSize));
+              strippedGraffiti, graffitiSize));
     }
 
     try {
       final Path file = graffitiPath.resolve(resolveFileName(publicKey));
-      Files.writeString(file, graffiti);
+      Files.writeString(file, strippedGraffiti);
     } catch (IOException e) {
       final String errorMessage =
           String.format("Unable to update graffiti for validator %s", publicKey);
@@ -76,6 +66,23 @@ public class GraffitiManager {
     return Optional.empty();
   }
 
+  public Optional<String> deleteGraffiti(final BLSPublicKey publicKey) {
+    final Path file = graffitiPath.resolve(resolveFileName(publicKey));
+
+    try {
+      Files.delete(file);
+      return Optional.empty();
+    } catch (NoSuchFileException e) {
+      throw new IllegalArgumentException(
+          "Saved graffiti does not exist for validator " + publicKey);
+    } catch (IOException e) {
+      final String errorMessage =
+          String.format("Unable to delete graffiti for validator %s", publicKey);
+      LOG.error(errorMessage, e);
+      return Optional.of(errorMessage);
+    }
+  }
+
   public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {
     final Path filePath = graffitiPath.resolve(resolveFileName(publicKey));
     if (!filePath.toFile().exists()) {
@@ -83,16 +90,11 @@ public class GraffitiManager {
     }
 
     try {
-      return Optional.of(GraffitiParser.loadFromFile(filePath)).filter(this::graffitiNotEmpty);
+      return Optional.of(GraffitiParser.loadFromFile(filePath));
     } catch (GraffitiLoaderException | IllegalArgumentException e) {
       LOG.error("Unable to read graffiti from storage.", e);
       return Optional.empty();
     }
-  }
-
-  private boolean graffitiNotEmpty(final Bytes32 graffiti) {
-    final Bytes32 emptyBytesParsed = Bytes32Parser.toBytes32(new byte[0]);
-    return !graffiti.equals(emptyBytesParsed);
   }
 
   private String resolveFileName(final BLSPublicKey publicKey) {

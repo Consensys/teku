@@ -104,16 +104,19 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void deleteGraffiti_shouldSetGraffitiWhenFileNotExist(@TempDir final Path tempDir) {
+  void deleteGraffiti_shouldThrowIllegalArgumentWhenNoGraffitiToDelete(
+      @TempDir final Path tempDir) {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
-    assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
-    checkStoredGraffitiFile(publicKey, "");
+    assertThatThrownBy(() -> manager.deleteGraffiti(publicKey))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Saved graffiti does not exist for validator " + publicKey);
+    checkNoGraffitiFile(publicKey);
   }
 
   @Test
-  void deleteGraffiti_shouldSetGraffitiWhenFileExist(@TempDir final Path tempDir)
+  void deleteGraffiti_shouldDeleteGraffitiWhenFileExist(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
@@ -121,10 +124,11 @@ class GraffitiManagerTest {
         .isTrue();
 
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
-    checkStoredGraffitiFile(publicKey, "");
+    checkNoGraffitiFile(publicKey);
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void deleteGraffiti_shouldReturnErrorMessageWhenUnableToWriteFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
@@ -132,10 +136,11 @@ class GraffitiManagerTest {
 
     final File file = getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile();
     assertThat(file.createNewFile()).isTrue();
-    assertThat(file.setWritable(false)).isTrue();
+    assertThat(file.getParentFile().setWritable(false)).isTrue();
 
     assertThat(manager.deleteGraffiti(publicKey))
-        .hasValue("Unable to update graffiti for validator " + publicKey);
+        .hasValue("Unable to delete graffiti for validator " + publicKey);
+    assertThat(file.exists()).isTrue();
   }
 
   @Test
@@ -149,7 +154,7 @@ class GraffitiManagerTest {
     checkStoredGraffitiFile(publicKey, graffiti);
 
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
-    checkStoredGraffitiFile(publicKey, "");
+    checkNoGraffitiFile(publicKey);
   }
 
   private void checkStoredGraffitiFile(final BLSPublicKey publicKey, final String graffiti) {
@@ -160,6 +165,11 @@ class GraffitiManagerTest {
     } catch (IOException e) {
       fail("Unable to check graffiti file.", e);
     }
+  }
+
+  private void checkNoGraffitiFile(final BLSPublicKey publicKey) {
+    final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
+    assertThat(filePath.toFile().exists()).isFalse();
   }
 
   @Test
@@ -207,13 +217,14 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void getGraffiti_shouldReturnEmptyWhenFileEmpty(@TempDir final Path tempDir) throws IOException {
+  void getGraffiti_shouldReturnEmptyBytesWhenFileEmpty(@TempDir final Path tempDir)
+      throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
     assertThat(filePath.toFile().createNewFile()).isTrue();
 
-    assertThat(manager.getGraffiti(publicKey)).isEmpty();
+    assertThat(manager.getGraffiti(publicKey)).hasValue(Bytes32Parser.toBytes32(new byte[0]));
   }
 
   private Path getGraffitiManagementDir() {
