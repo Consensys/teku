@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
@@ -38,13 +37,11 @@ class CKZG4844Utils {
   }
 
   public static byte[] flattenCommitments(final List<Bytes48> commitments) {
-    return flattenBytes(
-        commitments, Bytes48::toArrayUnsafe, CKZG4844JNI.BYTES_PER_COMMITMENT * commitments.size());
+    return flattenBytes(commitments, CKZG4844JNI.BYTES_PER_COMMITMENT * commitments.size());
   }
 
   public static byte[] flattenProofs(final List<Bytes48> kzgProofs) {
-    return flattenBytes(
-        kzgProofs, Bytes48::toArrayUnsafe, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
+    return flattenBytes(kzgProofs, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
   }
 
   public static byte[] flattenG1Points(final List<Bytes> g1Points) {
@@ -89,12 +86,8 @@ class CKZG4844Utils {
     }
   }
 
-  private static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
-    return flattenBytes(toFlatten, Bytes::toArrayUnsafe, expectedSize);
-  }
-
-  private static <T> byte[] flattenBytes(
-      final List<T> toFlatten, final Function<T, byte[]> bytesConverter, final int expectedSize) {
+  private static byte[] flattenBytes(
+      final List<? extends Bytes> toFlatten, final int expectedSize) {
     Preconditions.checkArgument(
         expectedSize <= MAX_BYTES_TO_FLATTEN,
         "Maximum of %s bytes can be flattened, but %s were requested",
@@ -102,8 +95,8 @@ class CKZG4844Utils {
         expectedSize);
     final byte[] flattened = new byte[expectedSize];
     int destPos = 0;
-    for (final T data : toFlatten) {
-      final byte[] bytes = bytesConverter.apply(data);
+    for (final Bytes data : toFlatten) {
+      final byte[] bytes = data.toArrayUnsafe();
       System.arraycopy(bytes, 0, flattened, destPos, bytes.length);
       destPos += bytes.length;
     }
