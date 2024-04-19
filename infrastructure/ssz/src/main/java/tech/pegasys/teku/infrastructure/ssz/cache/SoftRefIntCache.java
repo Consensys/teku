@@ -30,12 +30,13 @@ public class SoftRefIntCache<V> implements IntCache<V> {
   private final Supplier<IntCache<V>> cacheCtor;
   private volatile SoftReference<IntCache<V>> delegate;
 
-  private SoftRefIntCache(IntCache<V> initialDelegate, Supplier<IntCache<V>> cacheCtor) {
+  private SoftRefIntCache(
+      final IntCache<V> initialDelegate, final Supplier<IntCache<V>> cacheCtor) {
     this.cacheCtor = cacheCtor;
     delegate = new SoftReference<>(initialDelegate);
   }
 
-  public SoftRefIntCache(Supplier<IntCache<V>> cacheCtor) {
+  public SoftRefIntCache(final Supplier<IntCache<V>> cacheCtor) {
     this(cacheCtor.get(), cacheCtor);
   }
 
@@ -49,12 +50,12 @@ public class SoftRefIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public V getInt(int key, IntFunction<V> fallback) {
+  public V getInt(final int key, final IntFunction<V> fallback) {
     return getDelegate().getInt(key, fallback);
   }
 
   @Override
-  public V get(Integer key, Function<Integer, V> fallback) {
+  public V get(final Integer key, final Function<Integer, V> fallback) {
     return getDelegate().get(key, fallback);
   }
 
@@ -69,22 +70,22 @@ public class SoftRefIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public void invalidateInt(int key) {
+  public void invalidateInt(final int key) {
     getDelegate().invalidateInt(key);
   }
 
   @Override
-  public void invalidate(Integer key) {
+  public void invalidate(final Integer key) {
     getDelegate().invalidate(key);
   }
 
   @Override
-  public void invalidateWithNewValueInt(int key, V newValue) {
+  public void invalidateWithNewValueInt(final int key, final V newValue) {
     getDelegate().invalidateWithNewValueInt(key, newValue);
   }
 
   @Override
-  public void invalidateWithNewValue(Integer key, V newValue) {
+  public void invalidateWithNewValue(final Integer key, final V newValue) {
     getDelegate().invalidateWithNewValue(key, newValue);
   }
 
@@ -94,7 +95,7 @@ public class SoftRefIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public Optional<V> getCached(Integer key) {
+  public Optional<V> getCached(final Integer key) {
     return getDelegate().getCached(key);
   }
 }

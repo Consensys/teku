@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface SszUInt64ListSchema<SszListT extends SszUInt64List>
     extends SszPrimitiveListSchema<UInt64, SszUInt64, SszListT> {
 
-  static SszUInt64ListSchema<SszUInt64List> create(long maxLength) {
+  static SszUInt64ListSchema<SszUInt64List> create(final long maxLength) {
     return new SszUInt64ListSchemaImpl<>(maxLength);
   }
 }

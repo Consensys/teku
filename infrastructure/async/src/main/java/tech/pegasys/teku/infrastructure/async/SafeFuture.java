@@ -46,13 +46,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return value -> ifExceptionGetsHereRaiseABug(action.apply(value));
   }
 
-  public static <U> SafeFuture<U> completedFuture(U value) {
+  public static <U> SafeFuture<U> completedFuture(final U value) {
     SafeFuture<U> future = new SafeFuture<>();
     future.complete(value);
     return future;
   }
 
-  public static <U> SafeFuture<U> failedFuture(Throwable ex) {
+  public static <U> SafeFuture<U> failedFuture(final Throwable ex) {
     SafeFuture<U> future = new SafeFuture<>();
     future.completeExceptionally(ex);
     return future;
@@ -89,7 +89,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    *
    * @see #orInterrupt(Interruptor...)
    */
-  public static SafeFuture<Void> notInterrupted(Interruptor... interruptors) {
+  public static SafeFuture<Void> notInterrupted(final Interruptor... interruptors) {
     SafeFuture<Void> delayedFuture = new SafeFuture<>();
     SafeFuture<Void> ret = delayedFuture.orInterrupt(interruptors);
     delayedFuture.complete(null);
@@ -112,7 +112,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @see #orInterrupt(Interruptor...)
    */
   public static Interruptor createInterruptor(
-      CompletableFuture<?> interruptFuture, Supplier<Exception> exceptionSupplier) {
+      final CompletableFuture<?> interruptFuture, final Supplier<Exception> exceptionSupplier) {
     return new Interruptor(interruptFuture, exceptionSupplier);
   }
 
@@ -122,7 +122,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @param loopBody A supplier for generating futures to be run in succession
    * @return A future that will complete when looping terminates
    */
-  public static SafeFuture<Void> asyncDoWhile(ExceptionThrowingFutureSupplier<Boolean> loopBody) {
+  public static SafeFuture<Void> asyncDoWhile(
+      final ExceptionThrowingFutureSupplier<Boolean> loopBody) {
     // Loop while futures complete immediately in order to avoid stack overflow due to recursion
     SafeFuture<Boolean> loopFuture = SafeFuture.of(loopBody);
     while (loopFuture.isCompletedNormally()) {
@@ -480,7 +481,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /** Shortcut to process the value when complete and return the same future */
-  public SafeFuture<T> thenPeek(Consumer<T> fn) {
+  public SafeFuture<T> thenPeek(final Consumer<T> fn) {
     return thenApply(
         v -> {
           fn.accept(v);
@@ -681,13 +682,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * future becomes complete when `waitForStage` completes. If the `waitForStage` completes
    * exceptionally the resulting future also completes exceptionally with the same exception
    */
-  public SafeFuture<T> thenWaitFor(Function<T, CompletionStage<?>> waitForStage) {
+  public SafeFuture<T> thenWaitFor(final Function<T, CompletionStage<?>> waitForStage) {
     return thenCompose(t -> waitForStage.apply(t).thenApply(__ -> t));
   }
 
   @SafeVarargs
   @SuppressWarnings("unchecked")
-  public final SafeFuture<T> or(SafeFuture<T>... others) {
+  public final SafeFuture<T> or(final SafeFuture<T>... others) {
     SafeFuture<T>[] futures = Arrays.copyOf(others, others.length + 1);
     futures[others.length] = this;
     return anyOf(futures).thenApply(o -> (T) o);
@@ -712,7 +713,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   // The result of anyOf() future is ignored since it is used just to handle completion
   // of any future. All possible outcomes are propagated to the returned future instance
   @SuppressWarnings("FutureReturnValueIgnored")
-  public SafeFuture<T> orInterrupt(Interruptor... interruptors) {
+  public SafeFuture<T> orInterrupt(final Interruptor... interruptors) {
     CompletableFuture<?>[] allFuts = new CompletableFuture<?>[interruptors.length + 1];
     allFuts[0] = this;
     for (int i = 0; i < interruptors.length; i++) {
@@ -766,7 +767,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     private final Supplier<Exception> exceptionSupplier;
 
     private Interruptor(
-        CompletableFuture<?> interruptFuture, Supplier<Exception> exceptionSupplier) {
+        final CompletableFuture<?> interruptFuture, final Supplier<Exception> exceptionSupplier) {
       this.interruptFuture = interruptFuture;
       this.exceptionSupplier = exceptionSupplier;
     }

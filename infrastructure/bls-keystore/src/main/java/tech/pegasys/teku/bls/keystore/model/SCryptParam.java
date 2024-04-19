@@ -129,7 +129,7 @@ public class SCryptParam extends KdfParam {
         .toString();
   }
 
-  private static boolean isPowerOf2(int x) {
+  private static boolean isPowerOf2(final int x) {
     return ((x & (x - 1)) == 0);
   }
 }
