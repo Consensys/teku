@@ -17,7 +17,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -47,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class BlindedBeaconBlockBodySchemaElectraImpl
-    extends ContainerSchema12<
+    extends ContainerSchema13<
         BlindedBeaconBlockBodyElectraImpl,
         SszSignature,
         Eth1Data,
@@ -60,7 +61,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         SyncAggregate,
         ExecutionPayloadHeaderElectraImpl,
         SszList<SignedBlsToExecutionChange>,
-        SszList<SszKZGCommitment>>
+        SszList<SszKZGCommitment>,
+        SszList<SignedConsolidation>>
     implements BlindedBeaconBlockBodySchemaElectra<BlindedBeaconBlockBodyElectraImpl> {
 
   private BlindedBeaconBlockBodySchemaElectraImpl(
@@ -76,7 +78,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
       final NamedSchema<SyncAggregate> syncAggregate,
       final NamedSchema<ExecutionPayloadHeaderElectraImpl> executionPayloadHeader,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
-      final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments,
+      final NamedSchema<SszList<SignedConsolidation>> consolidations) {
     super(
         containerName,
         randaoReveal,
@@ -90,7 +93,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         syncAggregate,
         executionPayloadHeader,
         blsToExecutionChanges,
-        blobKzgCommitments);
+        blobKzgCommitments,
+        consolidations);
   }
 
   public static BlindedBeaconBlockBodySchemaElectraImpl create(
@@ -132,7 +136,11 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
                 signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())),
-        namedSchema(BlockBodyFields.BLOB_KZG_COMMITMENTS, blobKzgCommitmentsSchema));
+        namedSchema(BlockBodyFields.BLOB_KZG_COMMITMENTS, blobKzgCommitmentsSchema),
+        namedSchema(
+            BlockBodyFields.CONSOLIDATIONS,
+            SszListSchema.create(
+                SignedConsolidation.SSZ_SCHEMA, specConfig.getMaxConsolidations())));
   }
 
   @Override
@@ -216,5 +224,12 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
     return GIndexUtil.gIdxComposeAll(
         getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER)),
         getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndices());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<SignedConsolidation, ?> getConsolidationsSchema() {
+    return (SszListSchema<SignedConsolidation, ?>)
+        getChildSchema(getFieldIndex(BlockBodyFields.CONSOLIDATIONS));
   }
 }
