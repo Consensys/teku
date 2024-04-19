@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.type;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -19,22 +19,23 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVecto
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszKZGProofSchema extends SszByteVectorSchemaImpl<SszKZGProof> {
-  private static final int KZG_PROOF_SIZE = 48;
+public class KZGCommitmentSchema extends SszByteVectorSchemaImpl<KZGCommitment> {
 
-  public static final SszKZGProofSchema INSTANCE = new SszKZGProofSchema();
+  private static final int KZG_COMMITMENT_SIZE = 48;
 
-  private SszKZGProofSchema() {
-    super(SszPrimitiveSchemas.BYTE_SCHEMA, KZG_PROOF_SIZE);
+  public static final KZGCommitmentSchema INSTANCE = new KZGCommitmentSchema();
+
+  private KZGCommitmentSchema() {
+    super(SszPrimitiveSchemas.BYTE_SCHEMA, KZG_COMMITMENT_SIZE);
   }
 
   @Override
-  protected DeserializableTypeDefinition<SszKZGProof> createTypeDefinition() {
+  protected DeserializableTypeDefinition<KZGCommitment> createTypeDefinition() {
     return SszPrimitiveTypeDefinitions.sszSerializedType(this, "Bytes48 hexadecimal");
   }
 
   @Override
-  public SszKZGProof createFromBackingNode(final TreeNode node) {
-    return new SszKZGProof(node);
+  public KZGCommitment createFromBackingNode(final TreeNode node) {
+    return new KZGCommitment(this, node);
   }
 }

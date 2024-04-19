@@ -23,25 +23,25 @@ import net.jqwik.api.Property;
 import net.jqwik.api.lifecycle.AddLifecycleHook;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarIndexSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.KZGCommitmentSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.KZGProofSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBeaconBlockSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersDenebPropertyTest {
@@ -115,7 +115,7 @@ public class MiscHelpersDenebPropertyTest {
       @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock,
       @ForAll(supplier = BlobSidecarIndexSupplier.class) final UInt64 index,
       @ForAll(supplier = BlobSupplier.class) final Blob blob,
-      @ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof proof) {
+      @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
     try {
       final BlobSidecar blobSidecar =
           miscHelpers.constructBlobSidecar(signedBeaconBlock, index, blob, proof);

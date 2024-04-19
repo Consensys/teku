@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -43,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -61,7 +61,7 @@ public class BeaconBlockBodySchemaDenebImpl
         SyncAggregate,
         ExecutionPayloadDenebImpl,
         SszList<SignedBlsToExecutionChange>,
-        SszList<SszKZGCommitment>>
+        SszList<KZGCommitment>>
     implements BeaconBlockBodySchemaDeneb<BeaconBlockBodyDenebImpl> {
 
   protected BeaconBlockBodySchemaDenebImpl(
@@ -77,7 +77,7 @@ public class BeaconBlockBodySchemaDenebImpl
       final NamedSchema<SyncAggregate> syncAggregateSchema,
       final NamedSchema<ExecutionPayloadDenebImpl> executionPayloadSchema,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final NamedSchema<SszList<KZGCommitment>> blobKzgCommitments) {
     super(
         containerName,
         randaoRevealSchema,
@@ -205,8 +205,8 @@ public class BeaconBlockBodySchemaDenebImpl
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
-    return (SszListSchema<SszKZGCommitment, ?>)
+  public SszListSchema<KZGCommitment, ?> getBlobKzgCommitmentsSchema() {
+    return (SszListSchema<KZGCommitment, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
   }
 

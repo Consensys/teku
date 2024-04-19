@@ -19,15 +19,15 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBidDenebImpl
     extends Container4<
         BuilderBidDenebImpl,
         ExecutionPayloadHeader,
-        SszList<SszKZGCommitment>,
+        SszList<KZGCommitment>,
         SszUInt256,
         SszPublicKey>
     implements BuilderBidDeneb {
@@ -39,7 +39,7 @@ public class BuilderBidDenebImpl
   public BuilderBidDenebImpl(
       final BuilderBidSchemaDeneb schema,
       final ExecutionPayloadHeader header,
-      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final SszList<KZGCommitment> blobKzgCommitments,
       final SszUInt256 value,
       final SszPublicKey publicKey) {
     super(schema, header, blobKzgCommitments, value, publicKey);
@@ -51,7 +51,7 @@ public class BuilderBidDenebImpl
   }
 
   @Override
-  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
+  public SszList<KZGCommitment> getBlobKzgCommitments() {
     return getField1();
   }
 

@@ -17,10 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 
 public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
 
@@ -32,8 +31,8 @@ public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
     Boolean actualVerificationResult;
     try {
       final Bytes blob = data.getInput().getBlob();
-      final KZGCommitment commitment = data.getInput().getCommitment();
-      final KZGProof proof = data.getInput().getProof();
+      final Bytes48 commitment = data.getInput().getCommitment();
+      final Bytes48 proof = data.getInput().getProof();
       actualVerificationResult = kzg.verifyBlobKzgProof(blob, commitment, proof);
     } catch (final RuntimeException ex) {
       actualVerificationResult = null;
@@ -70,12 +69,12 @@ public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
         return Bytes.fromHexString(blob);
       }
 
-      public KZGCommitment getCommitment() {
-        return KZGCommitment.fromHexString(commitment);
+      public Bytes48 getCommitment() {
+        return Bytes48.fromHexString(commitment);
       }
 
-      public KZGProof getProof() {
-        return KZGProof.fromHexString(proof);
+      public Bytes48 getProof() {
+        return Bytes48.fromHexString(proof);
       }
     }
   }

@@ -13,26 +13,35 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class Blob extends SszByteVectorImpl {
+public class KZGProof extends SszByteVectorImpl {
 
-  Blob(final BlobSchema schema, final TreeNode backingNode) {
+  public KZGProof(final Bytes48 bytes) {
+    super(KZGProofSchema.INSTANCE, bytes);
+  }
+
+  KZGProof(final KZGProofSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public Blob(final BlobSchema schema, final Bytes bytes) {
-    super(schema, bytes);
+  @Override
+  public Bytes48 getBytes() {
+    return (Bytes48) super.getBytes();
   }
 
   @Override
-  public BlobSchema getSchema() {
-    return (BlobSchema) super.getSchema();
+  public KZGProofSchema getSchema() {
+    return (KZGProofSchema) super.getSchema();
   }
 
-  public String toBriefString() {
+  public String toAbbreviatedString() {
     return getBytes().slice(0, 7).toUnprefixedHexString();
+  }
+
+  public static KZGProof fromHexString(final String hexString) {
+    return new KZGProof(Bytes48.fromHexString(hexString));
   }
 }

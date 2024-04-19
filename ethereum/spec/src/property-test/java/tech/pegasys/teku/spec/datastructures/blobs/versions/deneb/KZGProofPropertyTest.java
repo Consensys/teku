@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.type;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,20 +19,18 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGCommitmentSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.KZGProofSupplier;
 
-public class SszKZGCommitmentPropertyTest {
+public class KZGProofPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll(supplier = SszKZGCommitmentSupplier.class) final SszKZGCommitment sszKZGCommitment)
+  void roundTrip(@ForAll(supplier = KZGProofSupplier.class) final KZGProof kzgProof)
       throws JsonProcessingException {
-    assertRoundTrip(sszKZGCommitment);
+    assertRoundTrip(kzgProof);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SszKZGCommitmentSupplier.class) final SszKZGCommitment sszKZGCommitment,
-      @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(sszKZGCommitment, seed);
+      @ForAll(supplier = KZGProofSupplier.class) final KZGProof kzgProof, @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(kzgProof, seed);
   }
 }

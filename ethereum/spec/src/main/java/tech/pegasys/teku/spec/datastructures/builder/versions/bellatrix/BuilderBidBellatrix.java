@@ -20,9 +20,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBidBellatrix
@@ -47,7 +47,7 @@ public class BuilderBidBellatrix
   }
 
   @Override
-  public Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+  public Optional<SszList<KZGCommitment>> getOptionalBlobKzgCommitments() {
     return Optional.empty();
   }
 

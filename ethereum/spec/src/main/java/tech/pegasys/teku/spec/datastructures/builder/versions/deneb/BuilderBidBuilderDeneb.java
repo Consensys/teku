@@ -17,17 +17,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidBuilderBellatrix;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBidBuilderDeneb extends BuilderBidBuilderBellatrix {
 
   private BuilderBidSchemaDeneb schema;
 
-  protected SszList<SszKZGCommitment> blobKzgCommitments;
+  protected SszList<KZGCommitment> blobKzgCommitments;
 
   public BuilderBidBuilderDeneb schema(final BuilderBidSchemaDeneb schema) {
     this.schema = schema;
@@ -35,7 +35,7 @@ public class BuilderBidBuilderDeneb extends BuilderBidBuilderBellatrix {
   }
 
   @Override
-  public BuilderBidBuilder blobKzgCommitments(final SszList<SszKZGCommitment> blobKzgCommitments) {
+  public BuilderBidBuilder blobKzgCommitments(final SszList<KZGCommitment> blobKzgCommitments) {
     this.blobKzgCommitments = blobKzgCommitments;
     return this;
   }

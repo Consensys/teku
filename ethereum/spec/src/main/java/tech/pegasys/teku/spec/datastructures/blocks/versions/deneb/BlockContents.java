@@ -18,14 +18,13 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public class BlockContents
-    extends Container3<BlockContents, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+    extends Container3<BlockContents, BeaconBlock, SszList<KZGProof>, SszList<Blob>>
     implements BlockContainer {
 
   BlockContents(final BlockContentsSchema type, final TreeNode backingNode) {
@@ -37,13 +36,19 @@ public class BlockContents
       final BeaconBlock beaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
-    super(
+    this(
         schema,
         beaconBlock,
-        schema
-            .getKzgProofsSchema()
-            .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
+        schema.getKzgProofsSchema().createFromElements(kzgProofs),
         schema.getBlobsSchema().createFromElements(blobs));
+  }
+
+  public BlockContents(
+      final BlockContentsSchema schema,
+      final BeaconBlock beaconBlock,
+      final SszList<KZGProof> kzgProofs,
+      final SszList<Blob> blobs) {
+    super(schema, beaconBlock, kzgProofs, blobs);
   }
 
   @Override
@@ -52,7 +57,7 @@ public class BlockContents
   }
 
   @Override
-  public Optional<SszList<SszKZGProof>> getKzgProofs() {
+  public Optional<SszList<KZGProof>> getKzgProofs() {
     return Optional.of(getField1());
   }
 

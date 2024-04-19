@@ -47,6 +47,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -78,8 +80,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -649,9 +649,7 @@ class BlockOperationSelectorFactoryTest {
         .isEqualByComparingTo(blockExecutionValue);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
-    assertThat(bodyBuilder.blobKzgCommitments)
-        .map(SszKZGCommitment::getKZGCommitment)
-        .hasSameElementsAs(blobsBundle.getCommitments());
+    assertThat(bodyBuilder.blobKzgCommitments).hasSameElementsAs(blobsBundle.getCommitments());
   }
 
   @ParameterizedTest
@@ -713,9 +711,7 @@ class BlockOperationSelectorFactoryTest {
     assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
         .isEqualByComparingTo(blockExecutionValue);
 
-    assertThat(bodyBuilder.blobKzgCommitments)
-        .map(SszKZGCommitment::getKZGCommitment)
-        .hasSameElementsAs(blobsBundle.getCommitments());
+    assertThat(bodyBuilder.blobKzgCommitments).hasSameElementsAs(blobsBundle.getCommitments());
   }
 
   @Test
@@ -727,8 +723,7 @@ class BlockOperationSelectorFactoryTest {
 
     final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
 
-    final SszList<SszKZGCommitment> blobKzgCommitments =
-        dataStructureUtil.randomBlobKzgCommitments();
+    final SszList<KZGCommitment> blobKzgCommitments = dataStructureUtil.randomBlobKzgCommitments();
 
     prepareBlindedBlockAndBlobsProduction(
         randomExecutionPayloadHeader,
@@ -805,8 +800,8 @@ class BlockOperationSelectorFactoryTest {
             .apply(signedBlockContents);
 
     final SszList<Blob> expectedBlobs = signedBlockContents.getBlobs().orElseThrow();
-    final SszList<SszKZGProof> expectedProofs = signedBlockContents.getKzgProofs().orElseThrow();
-    final SszList<SszKZGCommitment> expectedCommitments =
+    final SszList<KZGProof> expectedProofs = signedBlockContents.getKzgProofs().orElseThrow();
+    final SszList<KZGCommitment> expectedCommitments =
         signedBlockContents
             .getSignedBlock()
             .getMessage()
@@ -824,9 +819,8 @@ class BlockOperationSelectorFactoryTest {
               assertThat(blobSidecar.getSignedBeaconBlockHeader())
                   .isEqualTo(signedBlockContents.getSignedBlock().asHeader());
               assertThat(blobSidecar.getBlob()).isEqualTo(expectedBlobs.get(index));
-              assertThat(blobSidecar.getSszKZGProof()).isEqualTo(expectedProofs.get(index));
-              assertThat(blobSidecar.getSszKZGCommitment())
-                  .isEqualTo(expectedCommitments.get(index));
+              assertThat(blobSidecar.getKZGProof()).isEqualTo(expectedProofs.get(index));
+              assertThat(blobSidecar.getKZGCommitment()).isEqualTo(expectedCommitments.get(index));
               // verify the merkle proof
               assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
             });
@@ -834,7 +828,7 @@ class BlockOperationSelectorFactoryTest {
 
   @Test
   void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleCommitmentsRootIsNotConsistent() {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SszList<KZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
@@ -858,13 +852,13 @@ class BlockOperationSelectorFactoryTest {
 
   @Test
   void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleProofsIsNotConsistent() {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SszList<KZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
-    when(blobsBundle.getBlobs()).thenReturn(dataStructureUtil.randomSszBlobs(2));
+    when(blobsBundle.getBlobs()).thenReturn(dataStructureUtil.randomBlobs(2));
 
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
@@ -883,13 +877,13 @@ class BlockOperationSelectorFactoryTest {
 
   @Test
   void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleBlobsIsNotConsistent() {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SszList<KZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
-    when(blobsBundle.getProofs()).thenReturn(dataStructureUtil.randomSszKZGProofs(2));
+    when(blobsBundle.getProofs()).thenReturn(dataStructureUtil.randomKZGProofs(2));
 
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
@@ -909,7 +903,7 @@ class BlockOperationSelectorFactoryTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void shouldCreateBlobSidecarsForBlindedBlock(final boolean useLocalFallback) {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SszList<KZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
@@ -921,11 +915,9 @@ class BlockOperationSelectorFactoryTest {
     if (useLocalFallback) {
       final BlobsBundle localFallbackBlobsBundle =
           new BlobsBundle(
-              blobsBundle.getCommitments().stream()
-                  .map(SszKZGCommitment::getKZGCommitment)
-                  .toList(),
-              blobsBundle.getProofs().stream().map(SszKZGProof::getKZGProof).toList(),
-              blobsBundle.getBlobs().stream().toList());
+              blobsBundle.getCommitments().asList(),
+              blobsBundle.getProofs().asList(),
+              blobsBundle.getBlobs().asList());
       prepareCachedFallbackData(slot, executionPayload, localFallbackBlobsBundle);
     } else {
 
@@ -938,8 +930,8 @@ class BlockOperationSelectorFactoryTest {
             .apply(signedBlindedBeaconBlock);
 
     final SszList<Blob> expectedBlobs = blobsBundle.getBlobs();
-    final SszList<SszKZGProof> expectedProofs = blobsBundle.getProofs();
-    final SszList<SszKZGCommitment> expectedCommitments =
+    final SszList<KZGProof> expectedProofs = blobsBundle.getProofs();
+    final SszList<KZGCommitment> expectedCommitments =
         signedBlindedBeaconBlock
             .getMessage()
             .getBody()
@@ -958,9 +950,8 @@ class BlockOperationSelectorFactoryTest {
               assertThat(blobSidecar.getSignedBeaconBlockHeader())
                   .isEqualTo(signedBlindedBeaconBlock.asHeader());
               assertThat(blobSidecar.getBlob()).isEqualTo(expectedBlobs.get(index));
-              assertThat(blobSidecar.getSszKZGProof()).isEqualTo(expectedProofs.get(index));
-              assertThat(blobSidecar.getSszKZGCommitment())
-                  .isEqualTo(expectedCommitments.get(index));
+              assertThat(blobSidecar.getKZGProof()).isEqualTo(expectedProofs.get(index));
+              assertThat(blobSidecar.getKZGCommitment()).isEqualTo(expectedCommitments.get(index));
               // verify the merkle proof
               assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
             });
@@ -1077,7 +1068,7 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadHeader executionPayloadHeader,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
-      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final SszList<KZGCommitment> blobKzgCommitments,
       final UInt256 executionPayloadValue) {
     final BuilderBidOrFallbackData builderBidOrFallbackData =
         BuilderBidOrFallbackData.create(
@@ -1190,7 +1181,7 @@ class BlockOperationSelectorFactoryTest {
     protected SyncAggregate syncAggregate;
     protected ExecutionPayload executionPayload;
     protected ExecutionPayloadHeader executionPayloadHeader;
-    protected SszList<SszKZGCommitment> blobKzgCommitments;
+    protected SszList<KZGCommitment> blobKzgCommitments;
 
     @SuppressWarnings("unused")
     protected SszList<SignedConsolidation> consolidations;
@@ -1295,7 +1286,7 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public BeaconBlockBodyBuilder blobKzgCommitments(
-        final SszList<SszKZGCommitment> blobKzgCommitments) {
+        final SszList<KZGCommitment> blobKzgCommitments) {
       this.blobKzgCommitments = blobKzgCommitments;
       return this;
     }

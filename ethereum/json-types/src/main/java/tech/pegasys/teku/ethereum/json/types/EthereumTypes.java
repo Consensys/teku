@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -70,17 +69,6 @@ public class EthereumTypes {
               "`BLSPublicKey Hex` The validator's BLS public key, uniquely identifying them. "
                   + "48-bytes, hex encoded with 0x prefix, case insensitive.")
           .format("string")
-          .build();
-
-  public static final StringValueTypeDefinition<KZGCommitment> KZG_COMMITMENT_TYPE =
-      DeserializableTypeDefinition.string(KZGCommitment.class)
-          .formatter(KZGCommitment::toHexString)
-          .parser(KZGCommitment::fromHexString)
-          .example(
-              "0xb09ce4964278eff81a976fbc552488cb84fc4a102f004c87"
-                  + "179cb912f49904d1e785ecaf5d184522a58e9035875440ef")
-          .description("KZG Commitment")
-          .format("byte")
           .build();
 
   public static final StringValueTypeDefinition<VersionedHash> VERSIONED_HASH_TYPE =

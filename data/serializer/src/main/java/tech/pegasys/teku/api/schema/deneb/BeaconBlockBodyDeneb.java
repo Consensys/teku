@@ -24,7 +24,6 @@ import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
-import tech.pegasys.teku.api.schema.KZGCommitment;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
@@ -33,9 +32,9 @@ import tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
 
@@ -46,7 +45,7 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonProperty("blob_kzg_commitments")
-  public final List<KZGCommitment> blobKZGCommitments;
+  public final List<tech.pegasys.teku.api.schema.KZGCommitment> blobKZGCommitments;
 
   @JsonCreator
   public BeaconBlockBodyDeneb(
@@ -62,7 +61,8 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
       @JsonProperty("execution_payload") final ExecutionPayloadDeneb executionPayload,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
-      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments) {
+      @JsonProperty("blob_kzg_commitments")
+          final List<tech.pegasys.teku.api.schema.KZGCommitment> blobKZGCommitments) {
     super(
         randaoReveal,
         eth1Data,
@@ -96,8 +96,7 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
         message.getBlobKzgCommitments(), "BlobKzgCommitments are required for Deneb blocks");
     this.blobKZGCommitments =
         message.getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .map(KZGCommitment::new)
+            .map(tech.pegasys.teku.api.schema.KZGCommitment::new)
             .toList();
   }
 
@@ -112,7 +111,7 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
             tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange, ?>
         blsToExecutionChangesSchema =
             getBeaconBlockBodySchema(spec).getBlsToExecutionChangesSchema();
-    final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
+    final SszListSchema<KZGCommitment, ?> blobKZGCommitmentsSchema =
         getBeaconBlockBodySchema(spec).getBlobKzgCommitmentsSchema();
     return super.asInternalBeaconBlockBody(
         spec,
@@ -124,8 +123,7 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
                   .collect(blsToExecutionChangesSchema.collector()));
           builder.blobKzgCommitments(
               this.blobKZGCommitments.stream()
-                  .map(KZGCommitment::asInternalKZGCommitment)
-                  .map(SszKZGCommitment::new)
+                  .map(tech.pegasys.teku.api.schema.KZGCommitment::asInternalKZGCommitment)
                   .collect(blobKZGCommitmentsSchema.collector()));
           return SafeFuture.COMPLETE;
         });

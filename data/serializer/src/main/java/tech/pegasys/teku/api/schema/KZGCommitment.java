@@ -34,8 +34,10 @@ public class KZGCommitment {
     this.bytes = bytes;
   }
 
-  public KZGCommitment(final tech.pegasys.teku.kzg.KZGCommitment kzgCommitment) {
-    this(kzgCommitment.toSSZBytes());
+  public KZGCommitment(
+      final tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment
+          kzgCommitment) {
+    this(kzgCommitment.getBytes());
   }
 
   @Override
@@ -60,28 +62,13 @@ public class KZGCommitment {
     return bytes.toString();
   }
 
-  public static KZGCommitment fromHexString(final String value) {
-    try {
-      return new KZGCommitment(tech.pegasys.teku.kzg.KZGCommitment.fromHexString(value));
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException(
-          "KZGCommitment " + value + " is invalid: " + e.getMessage(), e);
-    }
-  }
-
   public String toHexString() {
     return bytes.toHexString();
   }
 
-  public Bytes toBytes() {
-    return bytes;
-  }
-
-  public static KZGCommitment empty() {
-    return new KZGCommitment(Bytes.wrap(new byte[SIZE]));
-  }
-
-  public tech.pegasys.teku.kzg.KZGCommitment asInternalKZGCommitment() {
-    return tech.pegasys.teku.kzg.KZGCommitment.fromSSZBytes(bytes);
+  public tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment
+      asInternalKZGCommitment() {
+    return tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment.fromSSZBytes(
+        bytes);
   }
 }

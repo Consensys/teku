@@ -21,13 +21,11 @@ import net.jqwik.api.From;
 import net.jqwik.api.Property;
 import net.jqwik.api.lifecycle.AddLifecycleHook;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
-import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.propertytest.suppliers.type.Bytes48Supplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.DiverseBlobBytesSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGProofSupplier;
 
 @AddLifecycleHook(KzgResolver.class)
 public class CKZG4844PropertyTest {
@@ -36,8 +34,8 @@ public class CKZG4844PropertyTest {
   void fuzzVerifyBlobKzgProof(
       final KZG kzg,
       @ForAll(supplier = DiverseBlobBytesSupplier.class) final Bytes blob,
-      @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment,
-      @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
+      @ForAll(supplier = Bytes48Supplier.class) final Bytes48 commitment,
+      @ForAll(supplier = Bytes48Supplier.class) final Bytes48 proof) {
     try {
       kzg.verifyBlobKzgProof(blob, commitment, proof);
     } catch (Exception e) {
@@ -49,8 +47,8 @@ public class CKZG4844PropertyTest {
   void fuzzVerifyBlobKzgProofBatch(
       final KZG kzg,
       @ForAll final List<@From(supplier = DiverseBlobBytesSupplier.class) Bytes> blobs,
-      @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
-      @ForAll final List<@From(supplier = KZGProofSupplier.class) KZGProof> proofs) {
+      @ForAll final List<@From(supplier = Bytes48Supplier.class) Bytes48> commitments,
+      @ForAll final List<@From(supplier = Bytes48Supplier.class) Bytes48> proofs) {
     try {
       kzg.verifyBlobKzgProofBatch(blobs, commitments, proofs);
     } catch (Exception e) {
@@ -72,7 +70,7 @@ public class CKZG4844PropertyTest {
   void fuzzBlobToKzgProof(
       final KZG kzg, @ForAll(supplier = DiverseBlobBytesSupplier.class) final Bytes blob) {
     try {
-      final KZGCommitment kzgCommitment = kzg.blobToKzgCommitment(blob);
+      final Bytes48 kzgCommitment = kzg.blobToKzgCommitment(blob);
       kzg.computeBlobKzgProof(blob, kzgCommitment);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);

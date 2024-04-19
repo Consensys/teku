@@ -27,9 +27,9 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -110,7 +110,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
             BeaconBlockBodyDeneb.required(block.getMessage().getBody())
                 .getBlobKzgCommitments()
                 .stream()
-                .map(SszKZGCommitment::getKZGCommitment)
+                .map(KZGCommitment::getKZGCommitment)
                 .toList();
         final List<Bytes> blobs = blobsAndProofs.blobs.stream().map(Blob::getBytes).toList();
         try {

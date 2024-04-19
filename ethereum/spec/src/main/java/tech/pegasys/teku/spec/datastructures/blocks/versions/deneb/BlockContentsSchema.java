@@ -19,18 +19,17 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProofSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
 public class BlockContentsSchema
-    extends ContainerSchema3<BlockContents, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+    extends ContainerSchema3<BlockContents, BeaconBlock, SszList<KZGProof>, SszList<Blob>>
     implements BlockContainerSchema<BlockContents> {
 
   static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
@@ -46,7 +45,7 @@ public class BlockContentsSchema
         namedSchema("block", beaconBlockSchema),
         namedSchema(
             FIELD_KZG_PROOFS,
-            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+            SszListSchema.create(KZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
             FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
   }
@@ -64,14 +63,19 @@ public class BlockContentsSchema
     return new BlockContents(this, beaconBlock, kzgProofs, blobs);
   }
 
+  public BlockContents create(
+      final BeaconBlock beaconBlock, final SszList<KZGProof> kzgProofs, final SszList<Blob> blobs) {
+    return new BlockContents(this, beaconBlock, kzgProofs, blobs);
+  }
+
   @Override
   public BlockContents createFromBackingNode(final TreeNode node) {
     return new BlockContents(this, node);
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
-    return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
+  public SszListSchema<KZGProof, ?> getKzgProofsSchema() {
+    return (SszListSchema<KZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
   @SuppressWarnings("unchecked")

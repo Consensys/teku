@@ -42,13 +42,13 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
@@ -66,7 +66,6 @@ import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.datastructures.util.DepositReceiptsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -386,7 +385,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   schemaDefinitions
                       .getExecutionPayloadHeaderSchema()
                       .createFromExecutionPayload(executionPayload);
-              final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
+              final Optional<SszList<KZGCommitment>> blobKzgCommitments =
                   getPayloadResponse
                       .getBlobsBundle()
                       .map(
@@ -400,7 +399,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                         .createFromExecutionBlobsBundle(blobsBundle));
                             return schemaDefinitionsDeneb
                                 .getBlobKzgCommitmentsSchema()
-                                .createFromBlobsBundle(blobsBundle);
+                                .createFromElements(blobsBundle.getCommitments());
                           });
               final BuilderBid builderBid =
                   schemaDefinitions

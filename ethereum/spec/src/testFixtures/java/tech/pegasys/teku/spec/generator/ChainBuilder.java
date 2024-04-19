@@ -42,13 +42,13 @@ import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -71,7 +71,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -880,7 +879,7 @@ public class ChainBuilder {
     private Optional<ExecutionPayload> executionPayload = Optional.empty();
     private Optional<SyncAggregate> syncAggregate = Optional.empty();
     private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange = Optional.empty();
-    private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
+    private Optional<SszList<KZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
     private Optional<KZGProof> kzgProof = Optional.empty();
     private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
@@ -952,7 +951,7 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setKzgCommitments(final SszList<SszKZGCommitment> kzgCommitments) {
+    public BlockOptions setKzgCommitments(final SszList<KZGCommitment> kzgCommitments) {
       this.kzgCommitments = Optional.of(kzgCommitments);
       return this;
     }
@@ -1021,7 +1020,7 @@ public class ChainBuilder {
       return blsToExecutionChange;
     }
 
-    public Optional<SszList<SszKZGCommitment>> getKzgCommitments() {
+    public Optional<SszList<KZGCommitment>> getKzgCommitments() {
       return kzgCommitments;
     }
 

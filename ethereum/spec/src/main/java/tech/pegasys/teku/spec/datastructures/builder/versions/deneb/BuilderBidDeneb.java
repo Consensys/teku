@@ -15,15 +15,15 @@ package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BuilderBidDeneb extends BuilderBid {
 
-  SszList<SszKZGCommitment> getBlobKzgCommitments();
+  SszList<KZGCommitment> getBlobKzgCommitments();
 
   @Override
-  default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+  default Optional<SszList<KZGCommitment>> getOptionalBlobKzgCommitments() {
     return Optional.of(getBlobKzgCommitments());
   }
 }

@@ -26,14 +26,13 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
@@ -54,17 +53,19 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
     assertThat(blockContainer.getBlobs())
+        .isPresent()
         .map(SszCollection::asList)
         .hasValue(blobsBundle.getBlobs());
     assertThat(blockContainer.getKzgProofs())
-        .map(proofs -> proofs.stream().map(SszKZGProof::getKZGProof).toList())
+        .isPresent()
+        .map(SszCollection::asList)
         .hasValue(blobsBundle.getProofs());
   }
 
   @Test
   void shouldCreateBlindedBeaconBlockWhenBlindedBlockRequested() {
 
-    final SszList<SszKZGCommitment> blobKzgCommitments = prepareBuilderBlobKzgCommitments(spec, 3);
+    final SszList<KZGCommitment> blobKzgCommitments = prepareBuilderBlobKzgCommitments(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true)
@@ -116,7 +117,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
     verifyNoInteractions(executionLayer);
 
-    final SszList<SszKZGCommitment> expectedCommitments =
+    final SszList<KZGCommitment> expectedCommitments =
         blockAndBlobSidecars
             .block()
             .getSignedBlock()
@@ -134,8 +135,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
               // check sidecar is created using the prepared BlobsBundle
               assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
               assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
-              assertThat(blobSidecar.getSszKZGCommitment())
-                  .isEqualTo(expectedCommitments.get(index));
+              assertThat(blobSidecar.getKZGCommitment()).isEqualTo(expectedCommitments.get(index));
             });
   }
 
@@ -158,7 +158,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
     verify(executionLayer).getCachedUnblindedPayload(block.getSlot());
 
-    final SszList<SszKZGCommitment> expectedCommitments =
+    final SszList<KZGCommitment> expectedCommitments =
         block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
     assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
@@ -168,11 +168,9 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             index -> {
               final BlobSidecar blobSidecar = blobSidecars.get(index);
               // check sidecar is created using the cached BuilderPayload
-              assertThat(blobSidecar.getSszKZGProof())
-                  .isEqualTo(blobsBundle.getProofs().get(index));
+              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
               assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
-              assertThat(blobSidecar.getSszKZGCommitment())
-                  .isEqualTo(expectedCommitments.get(index));
+              assertThat(blobSidecar.getKZGCommitment()).isEqualTo(expectedCommitments.get(index));
             });
   }
 

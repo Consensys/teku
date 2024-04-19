@@ -27,11 +27,11 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 
 public class BlobsUtil {
 
@@ -69,17 +69,21 @@ public class BlobsUtil {
           Bytes.concatenate(
               blobTransaction,
               VERSIONED_HASH_VERSION_KZG,
-              Hash.sha256(kzgCommitment.getBytesCompressed()).slice(1));
+              Hash.sha256(kzgCommitment.getBytes()).slice(1));
     }
     return blobTransaction;
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final List<Blob> blobs) {
-    return blobs.stream().map(Blob::getBytes).map(kzg::blobToKzgCommitment).toList();
+    return blobs.stream()
+        .map(Blob::getBytes)
+        .map(kzg::blobToKzgCommitment)
+        .map(KZGCommitment::new)
+        .toList();
   }
 
   public KZGProof computeKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
-    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
+    return new KZGProof(kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment.getBytes()));
   }
 
   public List<KZGProof> computeKzgProofs(

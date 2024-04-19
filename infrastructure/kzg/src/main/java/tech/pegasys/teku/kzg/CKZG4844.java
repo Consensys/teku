@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 
 /**
  * Wrapper around jc-kzg-4844
@@ -94,8 +95,7 @@ final class CKZG4844 implements KZG {
 
   @Override
   public boolean verifyBlobKzgProof(
-      final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
-      throws KZGException {
+      final Bytes blob, final Bytes48 kzgCommitment, final Bytes48 kzgProof) throws KZGException {
     try {
       return CKZG4844JNI.verifyBlobKzgProof(
           blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe(), kzgProof.toArrayUnsafe());
@@ -107,9 +107,7 @@ final class CKZG4844 implements KZG {
 
   @Override
   public boolean verifyBlobKzgProofBatch(
-      final List<Bytes> blobs,
-      final List<KZGCommitment> kzgCommitments,
-      final List<KZGProof> kzgProofs)
+      final List<Bytes> blobs, final List<Bytes48> kzgCommitments, final List<Bytes48> kzgProofs)
       throws KZGException {
     try {
       final byte[] blobsBytes = CKZG4844Utils.flattenBlobs(blobs);
@@ -124,22 +122,22 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
-  public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
+  public Bytes48 blobToKzgCommitment(final Bytes blob) throws KZGException {
     try {
       final byte[] commitmentBytes = CKZG4844JNI.blobToKzgCommitment(blob.toArrayUnsafe());
-      return KZGCommitment.fromArray(commitmentBytes);
+      return Bytes48.wrap(commitmentBytes);
     } catch (final Exception ex) {
       throw new KZGException("Failed to produce KZG commitment from blob", ex);
     }
   }
 
   @Override
-  public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
+  public Bytes48 computeBlobKzgProof(final Bytes blob, final Bytes48 kzgCommitment)
       throws KZGException {
     try {
       final byte[] proof =
           CKZG4844JNI.computeBlobKzgProof(blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe());
-      return KZGProof.fromArray(proof);
+      return Bytes48.wrap(proof);
     } catch (final Exception ex) {
       throw new KZGException(
           "Failed to compute KZG proof for blob with commitment " + kzgCommitment, ex);

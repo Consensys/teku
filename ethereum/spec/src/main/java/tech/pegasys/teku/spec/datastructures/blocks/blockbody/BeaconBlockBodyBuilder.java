@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
@@ -27,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BeaconBlockBodyBuilder {
 
@@ -76,7 +76,7 @@ public interface BeaconBlockBodyBuilder {
     return false;
   }
 
-  BeaconBlockBodyBuilder blobKzgCommitments(SszList<SszKZGCommitment> blobKzgCommitments);
+  BeaconBlockBodyBuilder blobKzgCommitments(SszList<KZGCommitment> blobKzgCommitments);
 
   BeaconBlockBodyBuilder consolidations(SszList<SignedConsolidation> consolidations);
 

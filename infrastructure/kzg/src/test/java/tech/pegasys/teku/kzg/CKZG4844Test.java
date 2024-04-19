@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,9 +103,9 @@ public final class CKZG4844Test {
   public void testComputingAndVerifyingBatchProofs() {
     final int numberOfBlobs = 4;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
-    final List<KZGCommitment> kzgCommitments =
+    final List<Bytes48> kzgCommitments =
         blobs.stream().map(CKZG::blobToKzgCommitment).collect(Collectors.toList());
-    final List<KZGProof> kzgProofs =
+    final List<Bytes48> kzgProofs =
         Streams.zip(
                 kzgCommitments.stream(),
                 blobs.stream(),
@@ -117,7 +118,7 @@ public final class CKZG4844Test {
         .isFalse();
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
-    final List<KZGProof> invalidProofs =
+    final List<Bytes48> invalidProofs =
         getSampleBlobs(numberOfBlobs).stream()
             .map((Bytes blob) -> CKZG.computeBlobKzgProof(blob, CKZG.blobToKzgCommitment(blob)))
             .collect(Collectors.toList());
@@ -132,15 +133,15 @@ public final class CKZG4844Test {
   @Test
   public void testComputingAndVerifyingSingleProof() {
     final Bytes blob = getSampleBlob();
-    final KZGCommitment kzgCommitment = CKZG.blobToKzgCommitment(blob);
-    final KZGProof kzgProof = CKZG.computeBlobKzgProof(blob, kzgCommitment);
+    final Bytes48 kzgCommitment = CKZG.blobToKzgCommitment(blob);
+    final Bytes48 kzgProof = CKZG.computeBlobKzgProof(blob, kzgCommitment);
 
     assertThat(CKZG.verifyBlobKzgProof(blob, kzgCommitment, kzgProof)).isTrue();
 
     assertThat(CKZG.verifyBlobKzgProof(getSampleBlob(), kzgCommitment, kzgProof)).isFalse();
     assertThat(CKZG.verifyBlobKzgProof(blob, getSampleCommitment(), kzgProof)).isFalse();
     final Bytes randomBlob = getSampleBlob();
-    final KZGProof invalidProof =
+    final Bytes48 invalidProof =
         CKZG.computeBlobKzgProof(randomBlob, CKZG.blobToKzgCommitment(randomBlob));
     assertThat(CKZG.verifyBlobKzgProof(blob, kzgCommitment, invalidProof)).isFalse();
   }
@@ -149,9 +150,9 @@ public final class CKZG4844Test {
   public void testComputingAndVerifyingBatchSingleProof() {
     final int numberOfBlobs = 1;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
-    final List<KZGCommitment> kzgCommitments =
+    final List<Bytes48> kzgCommitments =
         blobs.stream().map(CKZG::blobToKzgCommitment).collect(Collectors.toList());
-    final List<KZGProof> kzgProofs =
+    final List<Bytes48> kzgProofs =
         Streams.zip(
                 kzgCommitments.stream(),
                 blobs.stream(),
@@ -165,7 +166,7 @@ public final class CKZG4844Test {
         .isFalse();
     assertThat(CKZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
-    final List<KZGProof> invalidProofs =
+    final List<Bytes48> invalidProofs =
         getSampleBlobs(numberOfBlobs).stream()
             .map((Bytes blob) -> CKZG.computeBlobKzgProof(blob, CKZG.blobToKzgCommitment(blob)))
             .collect(Collectors.toList());
@@ -176,9 +177,9 @@ public final class CKZG4844Test {
   public void testVerifyingBatchProofsThrowsIfSizesDoesntMatch() {
     final int numberOfBlobs = 4;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
-    final List<KZGCommitment> kzgCommitments =
+    final List<Bytes48> kzgCommitments =
         blobs.stream().map(CKZG::blobToKzgCommitment).collect(Collectors.toList());
-    final List<KZGProof> kzgProofs =
+    final List<Bytes48> kzgProofs =
         Streams.zip(
                 kzgCommitments.stream(),
                 blobs.stream(),
@@ -283,17 +284,17 @@ public final class CKZG4844Test {
         .orElse(Bytes.EMPTY);
   }
 
-  private List<KZGCommitment> getSampleCommitments(final int count) {
+  private List<Bytes48> getSampleCommitments(final int count) {
     return IntStream.range(0, count)
         .mapToObj(__ -> getSampleCommitment())
         .collect(Collectors.toList());
   }
 
-  private KZGCommitment getSampleCommitment() {
+  private Bytes48 getSampleCommitment() {
     return CKZG.blobToKzgCommitment(getSampleBlob());
   }
 
-  private KZGProof getSampleProof() {
+  private Bytes48 getSampleProof() {
     return CKZG.computeBlobKzgProof(getSampleBlob(), getSampleCommitment());
   }
 

@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -74,7 +74,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
@@ -118,7 +117,7 @@ public abstract class AbstractBlockFactoryTest {
 
   // builder context
   protected ExecutionPayloadHeader executionPayloadHeader = null;
-  protected Optional<SszList<SszKZGCommitment>> builderBlobKzgCommitments = Optional.empty();
+  protected Optional<SszList<KZGCommitment>> builderBlobKzgCommitments = Optional.empty();
   protected Optional<BuilderPayload> builderPayload = Optional.empty();
 
   protected ExecutionPayloadResult cachedExecutionPayloadResult = null;
@@ -350,7 +349,7 @@ public abstract class AbstractBlockFactoryTest {
 
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       if (blinded) {
-        final SszList<SszKZGCommitment> commitments = getCommitmentsFromBuilderPayload();
+        final SszList<KZGCommitment> commitments = getCommitmentsFromBuilderPayload();
         signedBlockContainer =
             dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
       } else {
@@ -420,10 +419,10 @@ public abstract class AbstractBlockFactoryTest {
     return blobsBundle;
   }
 
-  protected SszList<SszKZGCommitment> prepareBuilderBlobKzgCommitments(
+  protected SszList<KZGCommitment> prepareBuilderBlobKzgCommitments(
       final Spec spec, final int count) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SszList<SszKZGCommitment> blobKzgCommitments =
+    final SszList<KZGCommitment> blobKzgCommitments =
         dataStructureUtil.randomBlobKzgCommitments(count);
     this.builderBlobKzgCommitments = Optional.of(blobKzgCommitments);
     return blobKzgCommitments;
@@ -494,13 +493,9 @@ public abstract class AbstractBlockFactoryTest {
         .thenAnswer(__ -> Optional.of(cachedExecutionPayloadResult));
   }
 
-  private List<SszKZGCommitment> getCommitmentsFromBlobsBundleOrBuilderBlobKzgCommitments() {
+  private List<KZGCommitment> getCommitmentsFromBlobsBundleOrBuilderBlobKzgCommitments() {
     return blobsBundle
-        .map(
-            blobsBundle ->
-                blobsBundle.getCommitments().stream()
-                    .map(SszKZGCommitment::new)
-                    .collect(Collectors.toList()))
+        .map(BlobsBundle::getCommitments)
         .or(() -> builderBlobKzgCommitments.map(SszList::asList))
         .orElseThrow(
             () ->
@@ -508,7 +503,7 @@ public abstract class AbstractBlockFactoryTest {
                     "Neither BlobsBundle or builder BlobKzgCommitments were prepared"));
   }
 
-  private SszList<SszKZGCommitment> getCommitmentsFromBuilderPayload() {
+  private SszList<KZGCommitment> getCommitmentsFromBuilderPayload() {
     return builderPayload
         .flatMap(BuilderPayload::getOptionalBlobsBundle)
         .map(tech.pegasys.teku.spec.datastructures.builder.BlobsBundle::getCommitments)

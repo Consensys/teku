@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyDenebImpl
@@ -49,7 +49,7 @@ public class BeaconBlockBodyDenebImpl
         SyncAggregate,
         ExecutionPayloadDenebImpl,
         SszList<SignedBlsToExecutionChange>,
-        SszList<SszKZGCommitment>>
+        SszList<KZGCommitment>>
     implements BeaconBlockBodyDeneb {
 
   BeaconBlockBodyDenebImpl(
@@ -65,7 +65,7 @@ public class BeaconBlockBodyDenebImpl
       SyncAggregate syncAggregate,
       ExecutionPayloadDenebImpl executionPayload,
       SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
-      SszList<SszKZGCommitment> blobKzgCommitments) {
+      SszList<KZGCommitment> blobKzgCommitments) {
     super(
         type,
         randaoReveal,
@@ -164,7 +164,7 @@ public class BeaconBlockBodyDenebImpl
   }
 
   @Override
-  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
+  public SszList<KZGCommitment> getBlobKzgCommitments() {
     return getField11();
   }
 

@@ -19,19 +19,18 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProofSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
 public class SignedBlockContentsSchema
     extends ContainerSchema3<
-        SignedBlockContents, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+        SignedBlockContents, SignedBeaconBlock, SszList<KZGProof>, SszList<Blob>>
     implements SignedBlockContainerSchema<SignedBlockContents> {
 
   static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
@@ -47,7 +46,7 @@ public class SignedBlockContentsSchema
         namedSchema("signed_block", signedBeaconBlockSchema),
         namedSchema(
             FIELD_KZG_PROOFS,
-            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+            SszListSchema.create(KZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
             FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
   }
@@ -65,12 +64,16 @@ public class SignedBlockContentsSchema
       final SignedBeaconBlock signedBeaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
-    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
+    return new SignedBlockContents(
+        this,
+        signedBeaconBlock,
+        getKzgProofsSchema().createFromElements(kzgProofs),
+        getBlobsSchema().createFromElements(blobs));
   }
 
   public SignedBlockContents create(
       final SignedBeaconBlock signedBeaconBlock,
-      final SszList<SszKZGProof> kzgProofs,
+      final SszList<KZGProof> kzgProofs,
       final SszList<Blob> blobs) {
     return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
   }
@@ -85,8 +88,8 @@ public class SignedBlockContentsSchema
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
-    return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
+  public SszListSchema<KZGProof, ?> getKzgProofsSchema() {
+    return (SszListSchema<KZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
   @SuppressWarnings("unchecked")

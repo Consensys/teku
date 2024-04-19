@@ -23,24 +23,23 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
@@ -86,8 +85,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
     return kzg.verifyBlobKzgProof(
         blobSidecar.getBlob().getBytes(),
-        blobSidecar.getKZGCommitment(),
-        blobSidecar.getKZGProof());
+        blobSidecar.getKZGCommitment().getBytes(),
+        blobSidecar.getKZGProof().getBytes());
   }
 
   /**
@@ -102,14 +101,14 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   @Override
   public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
-    final List<KZGCommitment> kzgCommitments = new ArrayList<>();
-    final List<KZGProof> kzgProofs = new ArrayList<>();
+    final List<Bytes48> kzgCommitments = new ArrayList<>();
+    final List<Bytes48> kzgProofs = new ArrayList<>();
 
     blobSidecars.forEach(
         blobSidecar -> {
           blobs.add(blobSidecar.getBlob().getBytes());
-          kzgCommitments.add(blobSidecar.getKZGCommitment());
-          kzgProofs.add(blobSidecar.getKZGProof());
+          kzgCommitments.add(blobSidecar.getKZGCommitment().getBytes());
+          kzgProofs.add(blobSidecar.getKZGProof().getBytes());
         });
 
     return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
@@ -197,8 +196,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    */
   @Override
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    return VersionedHash.create(
-        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
+    return VersionedHash.create(VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytes()));
   }
 
   @Override
@@ -242,9 +240,9 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
       final SignedBeaconBlock signedBeaconBlock,
       final UInt64 index,
       final Blob blob,
-      final SszKZGProof proof) {
+      final KZGProof proof) {
     final BeaconBlockBody beaconBlockBody = signedBeaconBlock.getMessage().getBody();
-    final SszKZGCommitment commitment;
+    final KZGCommitment commitment;
     try {
       commitment =
           beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow().get(index.intValue());
@@ -263,7 +261,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
 
   public boolean verifyBlobSidecarMerkleProof(final BlobSidecar blobSidecar) {
     return predicates.isValidMerkleBranch(
-        blobSidecar.getSszKZGCommitment().hashTreeRoot(),
+        blobSidecar.getKZGCommitment().hashTreeRoot(),
         blobSidecar.getKzgCommitmentInclusionProof(),
         SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
         getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),

@@ -21,13 +21,13 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProofSchema;
 
 public class BlobsBundleSchema
     extends ContainerSchema3<
-        BlobsBundle, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
+        BlobsBundle, SszList<KZGCommitment>, SszList<KZGProof>, SszList<Blob>> {
 
   public BlobsBundleSchema(
       final String containerName,
@@ -40,19 +40,19 @@ public class BlobsBundleSchema
         namedSchema(
             "proofs",
             SszListSchema.create(
-                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
+                KZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(
             "blobs", SszListSchema.create(blobSchema, specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<SszKZGCommitment, ?> getCommitmentsSchema() {
-    return (SszListSchema<SszKZGCommitment, ?>) getChildSchema(getFieldIndex("commitments"));
+  public SszListSchema<KZGCommitment, ?> getCommitmentsSchema() {
+    return (SszListSchema<KZGCommitment, ?>) getChildSchema(getFieldIndex("commitments"));
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<SszKZGProof, ?> getProofsSchema() {
-    return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex("proofs"));
+  public SszListSchema<KZGProof, ?> getProofsSchema() {
+    return (SszListSchema<KZGProof, ?>) getChildSchema(getFieldIndex("proofs"));
   }
 
   @SuppressWarnings("unchecked")
@@ -69,11 +69,8 @@ public class BlobsBundleSchema
       final tech.pegasys.teku.spec.datastructures.execution.BlobsBundle blobsBundle) {
     return new BlobsBundle(
         this,
-        getCommitmentsSchema()
-            .createFromElements(
-                blobsBundle.getCommitments().stream().map(SszKZGCommitment::new).toList()),
-        getProofsSchema()
-            .createFromElements(blobsBundle.getProofs().stream().map(SszKZGProof::new).toList()),
+        getCommitmentsSchema().createFromElements(blobsBundle.getCommitments()),
+        getProofsSchema().createFromElements(blobsBundle.getProofs()),
         getBlobsSchema().createFromElements(blobsBundle.getBlobs()));
   }
 }

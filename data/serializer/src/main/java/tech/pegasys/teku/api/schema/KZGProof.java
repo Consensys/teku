@@ -34,8 +34,9 @@ public class KZGProof {
     this.bytes = bytes;
   }
 
-  public KZGProof(final tech.pegasys.teku.kzg.KZGProof kzgProof) {
-    this(kzgProof.toSSZBytes());
+  public KZGProof(
+      final tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof kzgProof) {
+    this(kzgProof.getBytes());
   }
 
   @Override
@@ -60,27 +61,7 @@ public class KZGProof {
     return bytes.toString();
   }
 
-  public static KZGProof fromHexString(final String value) {
-    try {
-      return new KZGProof(tech.pegasys.teku.kzg.KZGProof.fromHexString(value));
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("KZGProof " + value + " is invalid: " + e.getMessage(), e);
-    }
-  }
-
   public String toHexString() {
     return bytes.toHexString();
-  }
-
-  public Bytes toBytes() {
-    return bytes;
-  }
-
-  public static KZGProof empty() {
-    return new KZGProof(Bytes.wrap(new byte[SIZE]));
-  }
-
-  public tech.pegasys.teku.kzg.KZGProof asInternalKZGProof() {
-    return tech.pegasys.teku.kzg.KZGProof.fromSSZBytes(bytes);
   }
 }

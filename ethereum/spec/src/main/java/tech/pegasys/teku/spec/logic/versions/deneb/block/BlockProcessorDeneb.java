@@ -18,11 +18,11 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -77,7 +77,7 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final int maxBlobsPerBlock = SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
-    final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
+    final SszList<KZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
     if (blobKzgCommitments.size() > maxBlobsPerBlock) {
       throw new BlockProcessingException(
           "Number of kzg commitments in block exceeds max blobs per block");
@@ -90,17 +90,14 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
       final BeaconState state, final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
-    final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
+    final SszList<KZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
     final List<VersionedHash> versionedHashes =
-        blobKzgCommitments.stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .map(miscHelpers::kzgCommitmentToVersionedHash)
-            .toList();
+        blobKzgCommitments.stream().map(miscHelpers::kzgCommitmentToVersionedHash).toList();
     final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
     return new NewPayloadRequest(executionPayload, versionedHashes, parentBeaconBlockRoot);
   }
 
-  public SszList<SszKZGCommitment> extractBlobKzgCommitments(final BeaconBlockBody beaconBlockBody)
+  public SszList<KZGCommitment> extractBlobKzgCommitments(final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
     return beaconBlockBody
         .getOptionalBlobKzgCommitments()

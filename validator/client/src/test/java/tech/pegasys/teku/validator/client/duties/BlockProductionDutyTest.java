@@ -50,6 +50,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -59,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockCo
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -196,7 +196,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
     final List<Blob> blobsFromUnsignedBlockContents =
         unsignedBlockContents.getBlobs().orElseThrow().asList();
-    final List<SszKZGProof> kzgProofsFromUnsignedBlockContents =
+    final List<KZGProof> kzgProofsFromUnsignedBlockContents =
         unsignedBlockContents.getKzgProofs().orElseThrow().asList();
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
@@ -238,7 +238,7 @@ class BlockProductionDutyTest {
 
     assertThat(signedBlockContents.getKzgProofs()).isPresent();
 
-    final SszList<SszKZGProof> kzgProofsFromSignedBlockContent =
+    final SszList<KZGProof> kzgProofsFromSignedBlockContent =
         signedBlockContents.getKzgProofs().get();
 
     assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();
@@ -612,7 +612,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
     final List<Blob> blobsFromUnsignedBlockContents =
         unsignedBlockContents.getBlobs().orElseThrow().asList();
-    final List<SszKZGProof> kzgProofsFromUnsignedBlockContents =
+    final List<KZGProof> kzgProofsFromUnsignedBlockContents =
         unsignedBlockContents.getKzgProofs().orElseThrow().asList();
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
@@ -656,7 +656,7 @@ class BlockProductionDutyTest {
 
     assertThat(signedBlockContents.getKzgProofs()).isPresent();
 
-    final SszList<SszKZGProof> kzgProofsFromSignedBlockContent =
+    final SszList<KZGProof> kzgProofsFromSignedBlockContent =
         signedBlockContents.getKzgProofs().get();
 
     assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();

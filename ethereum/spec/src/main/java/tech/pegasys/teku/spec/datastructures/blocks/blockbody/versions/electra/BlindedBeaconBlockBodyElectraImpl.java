@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -33,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 class BlindedBeaconBlockBodyElectraImpl
@@ -50,7 +50,7 @@ class BlindedBeaconBlockBodyElectraImpl
         SyncAggregate,
         ExecutionPayloadHeaderElectraImpl,
         SszList<SignedBlsToExecutionChange>,
-        SszList<SszKZGCommitment>,
+        SszList<KZGCommitment>,
         SszList<SignedConsolidation>>
     implements BlindedBeaconBlockBodyElectra {
 
@@ -76,7 +76,7 @@ class BlindedBeaconBlockBodyElectraImpl
       final SyncAggregate syncAggregate,
       final ExecutionPayloadHeaderElectraImpl executionPayloadHeader,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
-      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final SszList<KZGCommitment> blobKzgCommitments,
       SszList<SignedConsolidation> consolidations) {
     super(
         type,
@@ -169,7 +169,7 @@ class BlindedBeaconBlockBodyElectraImpl
   }
 
   @Override
-  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
+  public SszList<KZGCommitment> getBlobKzgCommitments() {
     return getField11();
   }
 

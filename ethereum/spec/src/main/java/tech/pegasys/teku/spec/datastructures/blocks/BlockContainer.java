@@ -19,8 +19,8 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
  * Interface used to represent both {@link BeaconBlock} and {@link BlockContents} and their blinded
@@ -35,7 +35,7 @@ public interface BlockContainer extends SszData, SszContainer {
     return getBlock().getSlot();
   }
 
-  default Optional<SszList<SszKZGProof>> getKzgProofs() {
+  default Optional<SszList<KZGProof>> getKzgProofs() {
     return Optional.empty();
   }
 

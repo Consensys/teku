@@ -75,8 +75,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -90,6 +88,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitm
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -180,8 +180,6 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -414,23 +412,11 @@ public final class DataStructureUtil {
   }
 
   public KZGCommitment randomKZGCommitment() {
-    return KZGCommitment.fromBytesCompressed(randomBytes48());
-  }
-
-  public SszKZGCommitment randomSszKZGCommitment() {
-    return new SszKZGCommitment(randomKZGCommitment());
-  }
-
-  public List<KZGProof> randomKZGProofs(final int size) {
-    return IntStream.range(0, size).mapToObj(__ -> randomKZGProof()).collect(toList());
+    return new KZGCommitment(randomBytes48());
   }
 
   public KZGProof randomKZGProof() {
-    return KZGProof.fromBytesCompressed(randomBytes48());
-  }
-
-  public SszKZGProof randomSszKZGProof() {
-    return new SszKZGProof(randomKZGProof());
+    return new KZGProof(randomBytes48());
   }
 
   public Bytes48 randomPublicKeyBytes() {
@@ -923,7 +909,7 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBlindedBeaconBlockWithCommitments(
-      final SszList<SszKZGCommitment> commitments) {
+      final SszList<KZGCommitment> commitments) {
     final UInt64 proposerIndex = randomUInt64();
     final UInt64 slot = randomUInt64();
     final Bytes32 stateRoot = randomBytes32();
@@ -990,7 +976,7 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
-      final SszList<SszKZGCommitment> commitments) {
+      final SszList<KZGCommitment> commitments) {
     final UInt64 proposerIndex = randomUInt64();
     final UInt64 slot = randomUInt64();
     final Bytes32 stateRoot = randomBytes32();
@@ -1255,7 +1241,7 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBlindedBeaconBlockBodyWithCommitments(
-      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
+      final UInt64 slot, final SszList<KZGCommitment> commitments) {
     return randomBlindedBeaconBlockBody(
         slot,
         builder -> {
@@ -1366,7 +1352,7 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(
-      final SszList<SszKZGCommitment> commitments) {
+      final SszList<KZGCommitment> commitments) {
     return randomBeaconBlockBody(
         builder -> {
           if (builder.supportsKzgCommitments()) {
@@ -1474,7 +1460,7 @@ public final class DataStructureUtil {
                 builder.blobKzgCommitments(
                     randomFullSszList(
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
-                        this::randomSszKZGCommitment));
+                        this::randomKZGCommitment));
               }
               if (builder.supportsConsolidations()) {
                 builder.consolidations(emptyConsolidations());
@@ -2173,7 +2159,7 @@ public final class DataStructureUtil {
       final SignedBeaconBlock block,
       final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder>
           blobSidecarBuilderModifier) {
-    final SszList<SszKZGCommitment> blobKzgCommitments =
+    final SszList<KZGCommitment> blobKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
             .getBlobKzgCommitments();
 
@@ -2201,15 +2187,6 @@ public final class DataStructureUtil {
         .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
         .index(UInt64.valueOf(index))
         .build();
-  }
-
-  public List<Blob> randomBlobs(final int count, final UInt64 slot) {
-    final List<Blob> blobs = new ArrayList<>();
-    final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
-    for (int i = 0; i < count; i++) {
-      blobs.add(new Blob(blobSchema, randomBytes(blobSchema.getLength())));
-    }
-    return blobs;
   }
 
   public List<BlobSidecar> randomBlobSidecars(final int count) {
@@ -2241,16 +2218,13 @@ public final class DataStructureUtil {
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
-      final SszList<SszKZGCommitment> commitments) {
+      final SszList<KZGCommitment> commitments) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
     final BlobsBundleSchema schema = schemaDefinitions.getBlobsBundleSchema();
 
     return new tech.pegasys.teku.spec.datastructures.builder.BlobsBundle(
-        schema,
-        commitments,
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, commitments.size()),
-        randomSszList(schema.getBlobsSchema(), this::randomBlob, commitments.size()));
+        schema, commitments, randomKZGProofs(commitments.size()), randomBlobs(commitments.size()));
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
@@ -2258,17 +2232,17 @@ public final class DataStructureUtil {
   }
 
   public BlobsBundle randomBlobsBundle() {
-    return randomBlobsBundle(Optional.empty(), randomSlot());
+    return randomBlobsBundle(Optional.empty());
   }
 
-  public SszList<SszKZGProof> randomSszKZGProofs(final int count) {
+  public SszList<KZGProof> randomKZGProofs(final int count) {
     return randomSszList(
         getDenebSchemaDefinitions(UInt64.ZERO).getBlobsBundleSchema().getProofsSchema(),
-        this::randomSszKZGProof,
+        this::randomKZGProof,
         count);
   }
 
-  public SszList<Blob> randomSszBlobs(final int count) {
+  public SszList<Blob> randomBlobs(final int count) {
     return randomSszList(
         getDenebSchemaDefinitions(UInt64.ZERO).getBlobsBundleSchema().getBlobsSchema(),
         this::randomBlob,
@@ -2276,23 +2250,18 @@ public final class DataStructureUtil {
   }
 
   public BlobsBundle randomBlobsBundle(final int count) {
-    return randomBlobsBundle(Optional.of(count), randomSlot());
+    return randomBlobsBundle(Optional.of(count));
   }
 
-  private BlobsBundle randomBlobsBundle(final Optional<Integer> count, final UInt64 slot) {
-    final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
+  private BlobsBundle randomBlobsBundle(final Optional<Integer> count) {
     final List<KZGCommitment> commitments =
-        count.map(this::randomBlobKzgCommitments).orElse(randomBlobKzgCommitments()).stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList();
+        count.map(this::randomBlobKzgCommitments).orElse(randomBlobKzgCommitments()).asList();
     final List<KZGProof> proofs =
-        IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
+        IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).toList();
     return new BlobsBundle(
         commitments,
         proofs,
-        IntStream.range(0, commitments.size())
-            .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
-            .collect(toList()));
+        IntStream.range(0, commitments.size()).mapToObj(__ -> randomBlob()).collect(toList()));
   }
 
   public SignedBlockContents randomSignedBlockContents() {
@@ -2308,8 +2277,8 @@ public final class DataStructureUtil {
             .getOptionalBlobKzgCommitments()
             .orElseThrow()
             .size();
-    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+    final SszList<Blob> blobs = randomBlobs(numberOfBlobs);
+    final SszList<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
         .create(signedBeaconBlock, kzgProofs, blobs);
@@ -2322,7 +2291,7 @@ public final class DataStructureUtil {
             .getBlobKzgCommitmentsSchema();
     final SignedBeaconBlock signedBeaconBlock =
         randomSignedBeaconBlockWithCommitments(
-            blobKzgCommitmentsSchema.createFromBlobsBundle(blobsBundle));
+            blobKzgCommitmentsSchema.createFromElements(blobsBundle.getCommitments()));
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
         .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
@@ -2336,8 +2305,8 @@ public final class DataStructureUtil {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     final int numberOfBlobs =
         beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
-    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+    final SszList<Blob> blobs = randomBlobs(numberOfBlobs);
+    final SszList<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
         .create(beaconBlock, kzgProofs, blobs);
@@ -2442,16 +2411,16 @@ public final class DataStructureUtil {
     return IntStream.range(0, depth).mapToObj(__ -> randomBytes32()).toList();
   }
 
-  public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
+  public SszList<KZGCommitment> randomBlobKzgCommitments() {
     // use MAX_BLOBS_PER_BLOCK as a limit
     return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
   }
 
-  public SszList<SszKZGCommitment> randomBlobKzgCommitments(final int count) {
-    return randomSszList(getBlobKzgCommitmentsSchema(), count, this::randomSszKZGCommitment);
+  public SszList<KZGCommitment> randomBlobKzgCommitments(final int count) {
+    return randomSszList(getBlobKzgCommitmentsSchema(), count, this::randomKZGCommitment);
   }
 
-  public SszList<SszKZGCommitment> emptyBlobKzgCommitments() {
+  public SszList<KZGCommitment> emptyBlobKzgCommitments() {
     return getBlobKzgCommitmentsSchema().of();
   }
 

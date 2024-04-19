@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.spec.propertytest.suppliers.type;
 
-import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.ArbitrarySupplier;
+import org.apache.tuweni.bytes.Bytes48;
 
-public class KZGProofSupplier extends DataStructureUtilSupplier<KZGProof> {
-  public KZGProofSupplier() {
-    super(DataStructureUtil::randomKZGProof, SpecMilestone.DENEB);
+public class Bytes48Supplier implements ArbitrarySupplier<Bytes48> {
+  @Override
+  public Arbitrary<Bytes48> get() {
+    return Arbitraries.bytes().array(byte[].class).ofSize(48).map(Bytes48::wrap);
   }
 }

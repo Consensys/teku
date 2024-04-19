@@ -19,12 +19,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 
 public class BlobsBundle
-    extends Container3<
-        BlobsBundle, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
+    extends Container3<BlobsBundle, SszList<KZGCommitment>, SszList<KZGProof>, SszList<Blob>> {
 
   BlobsBundle(final BlobsBundleSchema type, final TreeNode backingTreeNode) {
     super(type, backingTreeNode);
@@ -32,8 +31,8 @@ public class BlobsBundle
 
   public BlobsBundle(
       final BlobsBundleSchema schema,
-      final SszList<SszKZGCommitment> commitments,
-      final SszList<SszKZGProof> proofs,
+      final SszList<KZGCommitment> commitments,
+      final SszList<KZGProof> proofs,
       final SszList<Blob> blobs) {
     super(schema, commitments, proofs, blobs);
     checkArgument(
@@ -48,11 +47,11 @@ public class BlobsBundle
         proofs.size());
   }
 
-  public SszList<SszKZGCommitment> getCommitments() {
+  public SszList<KZGCommitment> getCommitments() {
     return getField0();
   }
 
-  public SszList<SszKZGProof> getProofs() {
+  public SszList<KZGProof> getProofs() {
     return getField1();
   }
 

@@ -16,14 +16,14 @@ package tech.pegasys.teku.spec.datastructures.builder;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BuilderBidBuilder {
 
   BuilderBidBuilder header(ExecutionPayloadHeader header);
 
-  BuilderBidBuilder blobKzgCommitments(SszList<SszKZGCommitment> blobKzgCommitments);
+  BuilderBidBuilder blobKzgCommitments(SszList<KZGCommitment> blobKzgCommitments);
 
   BuilderBidBuilder value(UInt256 value);
 

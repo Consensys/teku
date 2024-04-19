@@ -38,7 +38,7 @@ public interface KZG {
 
         @Override
         public boolean verifyBlobKzgProof(
-            final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
+            final Bytes blob, final Bytes48 kzgCommitment, final Bytes48 kzgProof)
             throws KZGException {
           return true;
         }
@@ -46,21 +46,21 @@ public interface KZG {
         @Override
         public boolean verifyBlobKzgProofBatch(
             final List<Bytes> blobs,
-            final List<KZGCommitment> kzgCommitments,
-            final List<KZGProof> kzgProofs)
+            final List<Bytes48> kzgCommitments,
+            final List<Bytes48> kzgProofs)
             throws KZGException {
           return true;
         }
 
         @Override
-        public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-          return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
+        public Bytes48 blobToKzgCommitment(final Bytes blob) throws KZGException {
+          return Bytes48.ZERO;
         }
 
         @Override
-        public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
+        public Bytes48 computeBlobKzgProof(final Bytes blob, final Bytes48 kzgCommitment)
             throws KZGException {
-          return KZGProof.fromBytesCompressed(Bytes48.ZERO);
+          return Bytes48.ZERO;
         }
       };
 
@@ -68,14 +68,13 @@ public interface KZG {
 
   void freeTrustedSetup() throws KZGException;
 
-  boolean verifyBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment, KZGProof kzgProof)
+  boolean verifyBlobKzgProof(Bytes blob, Bytes48 kzgCommitment, Bytes48 kzgProof)
       throws KZGException;
 
   boolean verifyBlobKzgProofBatch(
-      List<Bytes> blobs, List<KZGCommitment> kzgCommitments, List<KZGProof> kzgProofs)
-      throws KZGException;
+      List<Bytes> blobs, List<Bytes48> kzgCommitments, List<Bytes48> kzgProofs) throws KZGException;
 
-  KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException;
+  Bytes48 blobToKzgCommitment(Bytes blob) throws KZGException;
 
-  KZGProof computeBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment) throws KZGException;
+  Bytes48 computeBlobKzgProof(Bytes blob, Bytes48 kzgCommitment) throws KZGException;
 }

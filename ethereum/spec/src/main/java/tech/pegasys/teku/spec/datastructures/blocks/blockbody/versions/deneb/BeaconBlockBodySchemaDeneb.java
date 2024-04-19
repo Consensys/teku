@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BeaconBlockBodySchemaDeneb<T extends BeaconBlockBodyDeneb>
     extends BeaconBlockBodySchemaCapella<T> {
@@ -32,7 +32,7 @@ public interface BeaconBlockBodySchemaDeneb<T extends BeaconBlockBodyDeneb>
     return (BeaconBlockBodySchemaDeneb<?>) schema;
   }
 
-  SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema();
+  SszListSchema<KZGCommitment, ?> getBlobKzgCommitmentsSchema();
 
   long getBlobKzgCommitmentsGeneralizedIndex();
 

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
@@ -36,16 +37,14 @@ class CKZG4844Utils {
     return flattenBytes(blobs, CKZG4844JNI.BYTES_PER_BLOB * blobs.size());
   }
 
-  public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {
+  public static byte[] flattenCommitments(final List<Bytes48> commitments) {
     return flattenBytes(
-        commitments,
-        KZGCommitment::toArrayUnsafe,
-        CKZG4844JNI.BYTES_PER_COMMITMENT * commitments.size());
+        commitments, Bytes48::toArrayUnsafe, CKZG4844JNI.BYTES_PER_COMMITMENT * commitments.size());
   }
 
-  public static byte[] flattenProofs(final List<KZGProof> kzgProofs) {
+  public static byte[] flattenProofs(final List<Bytes48> kzgProofs) {
     return flattenBytes(
-        kzgProofs, KZGProof::toArrayUnsafe, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
+        kzgProofs, Bytes48::toArrayUnsafe, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
   }
 
   public static byte[] flattenG1Points(final List<Bytes> g1Points) {

@@ -75,8 +75,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -89,6 +87,8 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -107,8 +107,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -1338,7 +1336,7 @@ class ValidatorApiHandlerTest {
                 return List.of();
               }
               final SszList<Blob> blobs = blockContainer.getBlobs().orElseThrow();
-              final SszList<SszKZGProof> proofs = blockContainer.getKzgProofs().orElseThrow();
+              final SszList<KZGProof> proofs = blockContainer.getKzgProofs().orElseThrow();
               return IntStream.range(0, blobs.size())
                   .mapToObj(
                       index ->
@@ -1364,21 +1362,15 @@ class ValidatorApiHandlerTest {
       Blob blob, KZGProof kzgProof, KZGCommitment commitment, Bytes32 blockRoot) {
     static List<BlobSidecarSummary> fromSignedBlockContents(
         final SignedBlockContents signedBlockContents) {
-      final List<Blob> blobs = signedBlockContents.getBlobs().orElseThrow().asList();
-      final List<KZGProof> proofs =
-          signedBlockContents.getKzgProofs().orElseThrow().stream()
-              .map(SszKZGProof::getKZGProof)
-              .toList();
-      final List<KZGCommitment> commitments =
+      final SszList<Blob> blobs = signedBlockContents.getBlobs().orElseThrow();
+      final SszList<KZGProof> proofs = signedBlockContents.getKzgProofs().orElseThrow();
+      final SszList<KZGCommitment> commitments =
           signedBlockContents
               .getSignedBlock()
               .getMessage()
               .getBody()
               .getOptionalBlobKzgCommitments()
-              .orElseThrow()
-              .stream()
-              .map(SszKZGCommitment::getKZGCommitment)
-              .toList();
+              .orElseThrow();
       return IntStream.range(0, blobs.size())
           .mapToObj(
               index ->

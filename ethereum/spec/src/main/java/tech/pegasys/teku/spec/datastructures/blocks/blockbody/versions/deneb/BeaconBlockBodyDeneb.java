@@ -15,10 +15,10 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BeaconBlockBodyDeneb extends BeaconBlockBodyCapella {
   static BeaconBlockBodyDeneb required(final BeaconBlockBody body) {
@@ -29,10 +29,10 @@ public interface BeaconBlockBodyDeneb extends BeaconBlockBodyCapella {
                     "Expected Deneb block body but got " + body.getClass().getSimpleName()));
   }
 
-  SszList<SszKZGCommitment> getBlobKzgCommitments();
+  SszList<KZGCommitment> getBlobKzgCommitments();
 
   @Override
-  default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+  default Optional<SszList<KZGCommitment>> getOptionalBlobKzgCommitments() {
     return Optional.of(getBlobKzgCommitments());
   }
 

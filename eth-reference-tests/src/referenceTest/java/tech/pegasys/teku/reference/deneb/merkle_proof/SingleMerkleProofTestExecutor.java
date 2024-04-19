@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
@@ -112,11 +112,11 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
         .isTrue();
 
     // Find which commitment is in puzzle by hash root
-    final SszList<SszKZGCommitment> sszKZGCommitments =
+    final SszList<KZGCommitment> kzgCommitments =
         beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow();
     Optional<Integer> kzgCommitmentIndexFound = Optional.empty();
-    for (int i = 0; i < sszKZGCommitments.size(); ++i) {
-      if (sszKZGCommitments.get(i).hashTreeRoot().equals(kzgCommitmentHash)) {
+    for (int i = 0; i < kzgCommitments.size(); ++i) {
+      if (kzgCommitments.get(i).hashTreeRoot().equals(kzgCommitmentHash)) {
         kzgCommitmentIndexFound = Optional.of(i);
         break;
       }

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
@@ -28,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyDeneb> {
 
@@ -36,7 +36,7 @@ class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   protected ExecutionPayload executionPayload;
   protected ExecutionPayloadHeader executionPayloadHeader;
   protected SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
-  protected SszList<SszKZGCommitment> blobKzgCommitments;
+  protected SszList<KZGCommitment> blobKzgCommitments;
 
   @BeforeEach
   void setup() {

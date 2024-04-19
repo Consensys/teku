@@ -17,18 +17,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
 
-  private SszList<SszKZGCommitment> blobKzgCommitments;
+  private SszList<KZGCommitment> blobKzgCommitments;
 
   public BeaconBlockBodyBuilderDeneb(
       final BeaconBlockBodySchema<? extends BeaconBlockBodyDeneb> schema,
@@ -36,7 +36,7 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
     super(schema, blindedSchema);
   }
 
-  protected SszList<SszKZGCommitment> getBlobKzgCommitments() {
+  protected SszList<KZGCommitment> getBlobKzgCommitments() {
     return blobKzgCommitments;
   }
 
@@ -47,7 +47,7 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
 
   @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
-      final SszList<SszKZGCommitment> blobKzgCommitments) {
+      final SszList<KZGCommitment> blobKzgCommitments) {
     this.blobKzgCommitments = blobKzgCommitments;
     return this;
   }

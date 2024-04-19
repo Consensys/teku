@@ -14,25 +14,40 @@
 package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class Blob extends SszByteVectorImpl {
+public class KZGCommitment extends SszByteVectorImpl {
 
-  Blob(final BlobSchema schema, final TreeNode backingNode) {
+  public KZGCommitment(final Bytes48 bytes) {
+    super(KZGCommitmentSchema.INSTANCE, bytes);
+  }
+
+  KZGCommitment(final KZGCommitmentSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public Blob(final BlobSchema schema, final Bytes bytes) {
-    super(schema, bytes);
+  @Override
+  public Bytes48 getBytes() {
+    return (Bytes48) super.getBytes();
   }
 
   @Override
-  public BlobSchema getSchema() {
-    return (BlobSchema) super.getSchema();
+  public KZGCommitmentSchema getSchema() {
+    return (KZGCommitmentSchema) super.getSchema();
   }
 
-  public String toBriefString() {
+  public String toAbbreviatedString() {
     return getBytes().slice(0, 7).toUnprefixedHexString();
+  }
+
+  public static KZGCommitment fromSSZBytes(final Bytes bytes) {
+    return SSZ.decode(bytes, reader -> new KZGCommitment(Bytes48.wrap(reader.readBytes())));
+  }
+
+  public static KZGCommitment fromHexString(final String hexString) {
+    return new KZGCommitment(Bytes48.fromHexString(hexString));
   }
 }

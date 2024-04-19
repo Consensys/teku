@@ -23,19 +23,18 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -81,7 +80,6 @@ class MiscHelpersDenebTest {
         blobSidecars,
         block.getMessage(),
         BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
             .toList());
   }
 
@@ -92,7 +90,6 @@ class MiscHelpersDenebTest {
 
     final List<KZGCommitment> kzgCommitments =
         BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
             .toList();
 
     // make sure we are testing something
@@ -131,7 +128,6 @@ class MiscHelpersDenebTest {
 
     final List<KZGCommitment> kzgCommitments =
         BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
             .toList();
 
     // make sure we are testing something
@@ -192,19 +188,19 @@ class MiscHelpersDenebTest {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
     final Blob blob = dataStructureUtil.randomBlob();
-    final SszKZGCommitment expectedCommitment =
+    final KZGCommitment expectedCommitment =
         BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments()
             .get(0);
-    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
+    final KZGProof proof = dataStructureUtil.randomKZGProof();
 
     final BlobSidecar blobSidecar =
         miscHelpersDeneb.constructBlobSidecar(signedBeaconBlock, UInt64.ZERO, blob, proof);
 
     assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
     assertThat(blobSidecar.getBlob()).isEqualTo(blob);
-    assertThat(blobSidecar.getSszKZGProof()).isEqualTo(proof);
-    assertThat(blobSidecar.getSszKZGCommitment()).isEqualTo(expectedCommitment);
+    assertThat(blobSidecar.getKZGProof()).isEqualTo(proof);
+    assertThat(blobSidecar.getKZGCommitment()).isEqualTo(expectedCommitment);
     assertThat(blobSidecar.getSignedBeaconBlockHeader()).isEqualTo(signedBeaconBlock.asHeader());
     // verify the merkle proof
     assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
@@ -215,7 +211,7 @@ class MiscHelpersDenebTest {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
     final Blob blob = dataStructureUtil.randomBlob();
-    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
+    final KZGProof proof = dataStructureUtil.randomKZGProof();
 
     assertThatThrownBy(
             () ->

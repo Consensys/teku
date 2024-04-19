@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -56,8 +58,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -319,7 +319,7 @@ public class BlockOperationSelectorFactory {
     }
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
-    final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
+    final SafeFuture<SszList<KZGCommitment>> blobKzgCommitments;
     if (executionPayloadResult.isFromLocalFlow()) {
       // local, non-blinded flow
       blobKzgCommitments =
@@ -327,7 +327,9 @@ public class BlockOperationSelectorFactory {
               .getBlobsBundleFutureFromLocalFlow()
               .orElseThrow()
               .thenApply(Optional::orElseThrow)
-              .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
+              .thenApply(
+                  blobsBundle ->
+                      blobKzgCommitmentsSchema.createFromElements(blobsBundle.getCommitments()));
     } else {
       // builder, blinded flow
       blobKzgCommitments =
@@ -343,7 +345,7 @@ public class BlockOperationSelectorFactory {
     return blobKzgCommitments.thenAccept(bodyBuilder::blobKzgCommitments);
   }
 
-  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBuilderFlow(
+  private SszList<KZGCommitment> getBlobKzgCommitmentsFromBuilderFlow(
       final BuilderBidOrFallbackData builderBidOrFallbackData,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
     return builderBidOrFallbackData
@@ -356,7 +358,10 @@ public class BlockOperationSelectorFactory {
                 builderBidOrFallbackData
                     .getFallbackDataRequired()
                     .getBlobsBundle()
-                    .map(blobKzgCommitmentsSchema::createFromBlobsBundle))
+                    .map(
+                        blobsBundle ->
+                            blobKzgCommitmentsSchema.createFromElements(
+                                blobsBundle.getCommitments())))
         .orElseThrow();
   }
 
@@ -440,7 +445,7 @@ public class BlockOperationSelectorFactory {
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
 
       final SszList<Blob> blobs;
-      final SszList<SszKZGProof> proofs;
+      final SszList<KZGProof> proofs;
 
       if (blockContainer.isBlinded()) {
         // need to use the builder BlobsBundle or the local fallback for the blinded flow, because
@@ -473,10 +478,7 @@ public class BlockOperationSelectorFactory {
                   .getBlockContentsSchema();
           blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());
           proofs =
-              blockContentsSchema
-                  .getKzgProofsSchema()
-                  .createFromElements(
-                      blobsBundle.getProofs().stream().map(SszKZGProof::new).toList());
+              blockContentsSchema.getKzgProofsSchema().createFromElements(blobsBundle.getProofs());
         }
 
       } else {
@@ -504,7 +506,7 @@ public class BlockOperationSelectorFactory {
   private void verifyBuilderBlobsBundle(
       final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle,
       final SignedBeaconBlock block) {
-    final SszList<SszKZGCommitment> blockCommitments =
+    final SszList<KZGCommitment> blockCommitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
     checkState(
         blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),

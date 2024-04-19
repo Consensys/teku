@@ -28,11 +28,11 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -85,7 +84,7 @@ public class BlockProposalTestUtil {
       final Optional<ExecutionPayload> executionPayload,
       final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final Optional<SszList<SszKZGCommitment>> kzgCommitments)
+      final Optional<SszList<KZGCommitment>> kzgCommitments)
       throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -164,7 +163,7 @@ public class BlockProposalTestUtil {
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final Optional<SszList<SszKZGCommitment>> kzgCommitments)
+      final Optional<SszList<KZGCommitment>> kzgCommitments)
       throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -299,7 +298,7 @@ public class BlockProposalTestUtil {
       final Optional<ExecutionPayload> executionPayload,
       final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final Optional<SszList<SszKZGCommitment>> kzgCommitments,
+      final Optional<SszList<KZGCommitment>> kzgCommitments,
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -363,15 +362,13 @@ public class BlockProposalTestUtil {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     final List<KZGCommitment> generatedBlobKzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
 
-    final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
+    final SszListSchema<KZGCommitment, ?> blobKZGCommitmentsSchema =
         ((BeaconBlockBodySchemaDeneb<?>)
                 spec.atSlot(newSlot).getSchemaDefinitions().getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsSchema();
 
-    final SszList<SszKZGCommitment> kzgCommitments =
-        generatedBlobKzgCommitments.stream()
-            .map(SszKZGCommitment::new)
-            .collect(blobKZGCommitmentsSchema.collector());
+    final SszList<KZGCommitment> kzgCommitments =
+        blobKZGCommitmentsSchema.createFromElements(generatedBlobKzgCommitments);
 
     if (skipStateTransition) {
       return createNewBlockSkippingStateTransition(

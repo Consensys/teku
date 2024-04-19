@@ -18,10 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 
 public class KzgVerifyBlobProofBatchTestExecutor extends KzgTestExecutor {
 
@@ -32,8 +31,8 @@ public class KzgVerifyBlobProofBatchTestExecutor extends KzgTestExecutor {
     Boolean actualVerificationResult;
     try {
       final List<Bytes> blobs = data.getInput().getBlobs();
-      final List<KZGCommitment> commitments = data.getInput().getCommitments();
-      final List<KZGProof> proofs = data.getInput().getProofs();
+      final List<Bytes48> commitments = data.getInput().getCommitments();
+      final List<Bytes48> proofs = data.getInput().getProofs();
       actualVerificationResult = kzg.verifyBlobKzgProofBatch(blobs, commitments, proofs);
     } catch (final RuntimeException ex) {
       actualVerificationResult = null;
@@ -70,12 +69,12 @@ public class KzgVerifyBlobProofBatchTestExecutor extends KzgTestExecutor {
         return blobs.stream().map(Bytes::fromHexString).toList();
       }
 
-      public List<KZGCommitment> getCommitments() {
-        return commitments.stream().map(KZGCommitment::fromHexString).toList();
+      public List<Bytes48> getCommitments() {
+        return commitments.stream().map(Bytes48::fromHexString).toList();
       }
 
-      public List<KZGProof> getProofs() {
-        return proofs.stream().map(KZGProof::fromHexString).toList();
+      public List<Bytes48> getProofs() {
+        return proofs.stream().map(Bytes48::fromHexString).toList();
       }
     }
   }

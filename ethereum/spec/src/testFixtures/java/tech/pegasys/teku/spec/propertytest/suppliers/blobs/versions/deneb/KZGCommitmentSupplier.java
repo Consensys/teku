@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.type;
+package tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SszKZGCommitmentSupplier extends DataStructureUtilSupplier<SszKZGCommitment> {
-  public SszKZGCommitmentSupplier() {
-    super(DataStructureUtil::randomSszKZGCommitment, SpecMilestone.DENEB);
+public class KZGCommitmentSupplier extends DataStructureUtilSupplier<KZGCommitment> {
+  public KZGCommitmentSupplier() {
+    super(DataStructureUtil::randomKZGCommitment, SpecMilestone.DENEB);
   }
 }

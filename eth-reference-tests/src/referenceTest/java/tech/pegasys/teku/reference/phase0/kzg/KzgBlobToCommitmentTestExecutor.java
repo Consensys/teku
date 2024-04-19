@@ -17,17 +17,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
 
 public class KzgBlobToCommitmentTestExecutor extends KzgTestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
-    final KZGCommitment expectedKzgCommitment = data.getOutput();
-    KZGCommitment actualKzgCommitment;
+    final Bytes48 expectedKzgCommitment = data.getOutput();
+    Bytes48 actualKzgCommitment;
     try {
       final Bytes blob = data.getInput().getBlob();
       actualKzgCommitment = kzg.blobToKzgCommitment(blob);
@@ -48,8 +48,8 @@ public class KzgBlobToCommitmentTestExecutor extends KzgTestExecutor {
       return input;
     }
 
-    public KZGCommitment getOutput() {
-      return output == null ? null : KZGCommitment.fromHexString(output);
+    public Bytes48 getOutput() {
+      return output == null ? null : Bytes48.fromHexString(output);
     }
 
     private static class Input {
