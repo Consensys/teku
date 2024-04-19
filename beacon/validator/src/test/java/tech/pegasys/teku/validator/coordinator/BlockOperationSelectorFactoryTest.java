@@ -1005,7 +1005,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForNonBlindedFlow(
+            ExecutionPayloadResult.createForLocalFlow(
                 executionPayloadContext, SafeFuture.completedFuture(getPayloadResponse)));
   }
 
@@ -1027,7 +1027,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext,
                 SafeFuture.completedFuture(BuilderBidOrFallbackData.create(builderBid))));
   }
@@ -1049,7 +1049,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
@@ -1066,7 +1066,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForNonBlindedFlow(
+            ExecutionPayloadResult.createForLocalFlow(
                 executionPayloadContext,
                 SafeFuture.completedFuture(
                     new GetPayloadResponse(
@@ -1094,7 +1094,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
@@ -1117,7 +1117,7 @@ class BlockOperationSelectorFactoryTest {
             Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(
-            ExecutionPayloadResult.createForBlindedFlow(
+            ExecutionPayloadResult.createForBuilderFlow(
                 executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
   }
 
@@ -1129,7 +1129,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(
             Optional.of(
-                ExecutionPayloadResult.createForNonBlindedFlow(
+                ExecutionPayloadResult.createForLocalFlow(
                     executionPayloadContext,
                     SafeFuture.completedFuture(
                         new GetPayloadResponse(
@@ -1149,7 +1149,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(
             Optional.of(
-                ExecutionPayloadResult.createForBlindedFlow(
+                ExecutionPayloadResult.createForBuilderFlow(
                     executionPayloadContext,
                     SafeFuture.completedFuture(builderBidOrFallbackData))));
   }

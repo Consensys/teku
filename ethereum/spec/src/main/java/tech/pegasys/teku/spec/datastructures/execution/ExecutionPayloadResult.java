@@ -52,11 +52,11 @@ public class ExecutionPayloadResult {
     return executionPayloadContext;
   }
 
-  public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFutureFromNonBlindedFlow() {
+  public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFutureFromLocalFlow() {
     return executionPayloadFuture;
   }
 
-  public Optional<SafeFuture<Optional<BlobsBundle>>> getBlobsBundleFutureFromNonBlindedFlow() {
+  public Optional<SafeFuture<Optional<BlobsBundle>>> getBlobsBundleFutureFromLocalFlow() {
     return blobsBundleFuture;
   }
 
@@ -71,11 +71,11 @@ public class ExecutionPayloadResult {
     return executionPayloadValueFuture;
   }
 
-  public boolean isFromNonBlindedFlow() {
+  public boolean isFromLocalFlow() {
     return executionPayloadFuture.isPresent();
   }
 
-  public static ExecutionPayloadResult createForNonBlindedFlow(
+  public static ExecutionPayloadResult createForLocalFlow(
       final ExecutionPayloadContext executionPayloadContext,
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
     final SafeFuture<UInt256> executionPayloadValueFuture =
@@ -88,7 +88,7 @@ public class ExecutionPayloadResult {
         executionPayloadValueFuture);
   }
 
-  public static ExecutionPayloadResult createForBlindedFlow(
+  public static ExecutionPayloadResult createForBuilderFlow(
       final ExecutionPayloadContext executionPayloadContext,
       final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture) {
     final SafeFuture<UInt256> executionPayloadValueFuture =

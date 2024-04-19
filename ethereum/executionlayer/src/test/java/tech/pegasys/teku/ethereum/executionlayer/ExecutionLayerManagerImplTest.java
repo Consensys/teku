@@ -386,7 +386,7 @@ class ExecutionLayerManagerImplTest {
                 signedBlindedBeaconBlock,
                 (aSlot) ->
                     Optional.of(
-                        ExecutionPayloadResult.createForBlindedFlow(
+                        ExecutionPayloadResult.createForBuilderFlow(
                             executionPayloadContext, SafeFuture.completedFuture(expectedResult)))))
         .isCompletedWithValue(BuilderPayloadOrFallbackData.create(fallbackData));
 
@@ -718,7 +718,7 @@ class ExecutionLayerManagerImplTest {
                 signedBlindedBeaconBlock,
                 (aSlot) ->
                     Optional.of(
-                        ExecutionPayloadResult.createForBlindedFlow(
+                        ExecutionPayloadResult.createForBuilderFlow(
                             executionPayloadContext,
                             SafeFuture.completedFuture(builderBidOrFallbackData)))))
         .isCompletedWithValue(BuilderPayloadOrFallbackData.create(fallbackData));

@@ -107,8 +107,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
             BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
-    assertThat(executionPayloadResult.getExecutionPayloadFutureFromNonBlindedFlow()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundleFutureFromNonBlindedFlow()).isEmpty();
+    assertThat(executionPayloadResult.getExecutionPayloadFutureFromLocalFlow()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFutureFromLocalFlow()).isEmpty();
     assertThat(executionPayloadResult.getExecutionPayloadValueFuture().get())
         .isEqualTo(executionPayloadValue);
     verify(executionClientHandler).engineGetPayload(any(), any());
@@ -167,8 +167,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
             BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
-    assertThat(executionPayloadResult.getExecutionPayloadFutureFromNonBlindedFlow()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundleFutureFromNonBlindedFlow()).isEmpty();
+    assertThat(executionPayloadResult.getExecutionPayloadFutureFromLocalFlow()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFutureFromLocalFlow()).isEmpty();
     final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
         executionPayloadResult.getBuilderBidOrFallbackDataFuture().orElseThrow();
     assertThat(builderBidOrFallbackDataFuture.get()).isEqualTo(expectedResult);
@@ -223,11 +223,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     // no blobs before Deneb
     final Optional<BlobsBundle> blobsBundle =
-        executionPayloadResult.getBlobsBundleFutureFromNonBlindedFlow().orElseThrow().get();
+        executionPayloadResult.getBlobsBundleFutureFromLocalFlow().orElseThrow().get();
     assertThat(blobsBundle).isEmpty();
 
     final ExecutionPayload executionPayload =
-        executionPayloadResult.getExecutionPayloadFutureFromNonBlindedFlow().orElseThrow().get();
+        executionPayloadResult.getExecutionPayloadFutureFromLocalFlow().orElseThrow().get();
     assertThat(executionPayload).isEqualTo(getPayloadResponse.getExecutionPayload());
 
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
@@ -266,8 +266,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
             BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
-    assertThat(executionPayloadResult.getExecutionPayloadFutureFromNonBlindedFlow()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundleFutureFromNonBlindedFlow()).isEmpty();
+    assertThat(executionPayloadResult.getExecutionPayloadFutureFromLocalFlow()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFutureFromLocalFlow()).isEmpty();
     assertThat(executionPayloadResult.getExecutionPayloadValueFuture().get())
         .isEqualTo(executionPayloadValue);
 
@@ -319,8 +319,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
             BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
-    assertThat(executionPayloadResult.getExecutionPayloadFutureFromNonBlindedFlow()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundleFutureFromNonBlindedFlow()).isEmpty();
+    assertThat(executionPayloadResult.getExecutionPayloadFutureFromLocalFlow()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFutureFromLocalFlow()).isEmpty();
 
     final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
         executionPayloadResult.getBuilderBidOrFallbackDataFuture().orElseThrow();
@@ -376,10 +376,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isEqualTo(executionPayloadValue);
 
     final ExecutionPayload executionPayload =
-        executionPayloadResult.getExecutionPayloadFutureFromNonBlindedFlow().orElseThrow().get();
+        executionPayloadResult.getExecutionPayloadFutureFromLocalFlow().orElseThrow().get();
     assertThat(executionPayload).isEqualTo(getPayloadResponse.getExecutionPayload());
     final Optional<BlobsBundle> blobsBundle =
-        executionPayloadResult.getBlobsBundleFutureFromNonBlindedFlow().orElseThrow().get();
+        executionPayloadResult.getBlobsBundleFutureFromLocalFlow().orElseThrow().get();
     assertThat(blobsBundle).isEqualTo(getPayloadResponse.getBlobsBundle());
 
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
@@ -454,7 +454,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
                 signedBlindedBeaconBlock,
                 (aSlot) ->
                     Optional.of(
-                        ExecutionPayloadResult.createForBlindedFlow(
+                        ExecutionPayloadResult.createForBuilderFlow(
                             executionPayloadContext,
                             SafeFuture.completedFuture(builderBidOrFallbackData)))))
         .isCompletedWithValue(BuilderPayloadOrFallbackData.create(fallbackData));
