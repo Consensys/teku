@@ -97,8 +97,9 @@ class GraffitiManagerTest {
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
-    assertThat(manager.setGraffiti(publicKey, invalidGraffiti))
-        .hasValue(
+    assertThatThrownBy(() -> manager.setGraffiti(publicKey, invalidGraffiti))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
             "'This graffiti is a bit too long!!' converts to 33 bytes. Input must be 32 bytes or less.");
   }
 

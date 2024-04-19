@@ -58,7 +58,7 @@ public class GraffitiManager {
   private Optional<String> updateGraffiti(final BLSPublicKey publicKey, final String graffiti) {
     final int graffitiSize = graffiti.getBytes(StandardCharsets.UTF_8).length;
     if (graffitiSize > 32) {
-      return Optional.of(
+      throw new IllegalArgumentException(
           String.format(
               "'%s' converts to %s bytes. Input must be 32 bytes or less.",
               graffiti, graffitiSize));
