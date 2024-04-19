@@ -37,7 +37,7 @@ public class KZGCommitment {
   public KZGCommitment(
       final tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment
           kzgCommitment) {
-    this(kzgCommitment.getBytes());
+    this(kzgCommitment.sszSerialize());
   }
 
   @Override

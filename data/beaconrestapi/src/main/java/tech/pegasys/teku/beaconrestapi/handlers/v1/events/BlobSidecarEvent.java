@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.KZG_COMMITMENT_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.VERSIONED_HASH_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -22,9 +21,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.BlobSidecarEvent.BlobSidecarData;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitmentSchema;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class BlobSidecarEvent extends Event<BlobSidecarData> {
@@ -35,7 +35,10 @@ public class BlobSidecarEvent extends Event<BlobSidecarData> {
           .withField("block_root", BYTES32_TYPE, BlobSidecarData::getBlockRoot)
           .withField("index", UINT64_TYPE, BlobSidecarData::getIndex)
           .withField("slot", UINT64_TYPE, BlobSidecarData::getSlot)
-          .withField("kzg_commitment", KZG_COMMITMENT_TYPE, BlobSidecarData::getKzgCommitment)
+          .withField(
+              "kzg_commitment",
+              KZGCommitmentSchema.INSTANCE.getJsonTypeDefinition(),
+              BlobSidecarData::getKzgCommitment)
           .withField("versioned_hash", VERSIONED_HASH_TYPE, BlobSidecarData::getVersionedHash)
           .build();
 

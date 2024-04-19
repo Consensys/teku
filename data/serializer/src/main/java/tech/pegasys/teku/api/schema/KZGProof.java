@@ -36,7 +36,7 @@ public class KZGProof {
 
   public KZGProof(
       final tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof kzgProof) {
-    this(kzgProof.getBytes());
+    this(kzgProof.sszSerialize());
   }
 
   @Override

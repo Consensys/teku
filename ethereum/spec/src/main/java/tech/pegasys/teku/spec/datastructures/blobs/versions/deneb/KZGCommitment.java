@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public class KZGCommitment extends SszByteVectorImpl {
 
@@ -44,7 +45,12 @@ public class KZGCommitment extends SszByteVectorImpl {
   }
 
   public static KZGCommitment fromSSZBytes(final Bytes bytes) {
-    return SSZ.decode(bytes, reader -> new KZGCommitment(Bytes48.wrap(reader.readBytes())));
+    return SSZ.decode(
+        bytes,
+        reader ->
+            new KZGCommitment(
+                Bytes48.wrap(
+                    reader.readFixedBytes(SpecConfigDeneb.BYTES_PER_COMMITMENT.intValue()))));
   }
 
   public static KZGCommitment fromHexString(final String hexString) {

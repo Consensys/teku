@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -63,7 +62,6 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
     final MiscHelpers miscHelpers = spec.atSlot(UInt64.ONE).miscHelpers();
     final List<VersionedHash> expectedVersionedHashes =
         blockBody.getOptionalBlobKzgCommitments().orElseThrow().stream()
-            .map(KZGCommitment::getKZGCommitment)
             .map(miscHelpers::kzgCommitmentToVersionedHash)
             .collect(Collectors.toList());
 
