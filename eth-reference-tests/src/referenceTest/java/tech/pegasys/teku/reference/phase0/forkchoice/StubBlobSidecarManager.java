@@ -20,14 +20,14 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGCommitment;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
@@ -106,15 +106,17 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
       private BlobSidecarsAndValidationResult validateImmediately(
           final SignedBeaconBlock block, final BlobsAndProofs blobsAndProofs) {
-        final List<KZGCommitment> kzgCommitments =
+        final List<Bytes> blobs = blobsAndProofs.blobs.stream().map(Blob::getBytes).toList();
+        final List<Bytes48> kzgCommitments =
             BeaconBlockBodyDeneb.required(block.getMessage().getBody())
                 .getBlobKzgCommitments()
                 .stream()
-                .map(KZGCommitment::getKZGCommitment)
+                .map(KZGCommitment::getBytes)
                 .toList();
-        final List<Bytes> blobs = blobsAndProofs.blobs.stream().map(Blob::getBytes).toList();
+        final List<Bytes48> kzgProofs =
+            blobsAndProofs.proofs.stream().map(KZGProof::getBytes).toList();
         try {
-          if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, blobsAndProofs.proofs)) {
+          if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)) {
             return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList());
           }
         } catch (final Exception ex) {
