@@ -18,15 +18,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public class KZGCommitmentSchema extends SszByteVectorSchemaImpl<KZGCommitment> {
-
-  private static final int KZG_COMMITMENT_SIZE = 48;
 
   public static final KZGCommitmentSchema INSTANCE = new KZGCommitmentSchema();
 
   private KZGCommitmentSchema() {
-    super(SszPrimitiveSchemas.BYTE_SCHEMA, KZG_COMMITMENT_SIZE);
+    super(SszPrimitiveSchemas.BYTE_SCHEMA, SpecConfigDeneb.BYTES_PER_COMMITMENT.longValue());
   }
 
   @Override

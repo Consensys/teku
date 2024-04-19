@@ -24,6 +24,8 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
       new BigInteger(
           "52435875175126190479447740508185965837690552500527637822603658699938581184513");
   Bytes VERSIONED_HASH_VERSION_KZG = Bytes.fromHexString("0x01");
+  UInt64 BYTES_PER_COMMITMENT = UInt64.valueOf(48);
+  UInt64 BYTES_PER_PROOF = UInt64.valueOf(48);
   UInt64 BYTES_PER_FIELD_ELEMENT = UInt64.valueOf(32);
 
   static SpecConfigDeneb required(final SpecConfig specConfig) {

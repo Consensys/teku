@@ -18,15 +18,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public class KZGProofSchema extends SszByteVectorSchemaImpl<KZGProof> {
-
-  private static final int KZG_PROOF_SIZE = 48;
 
   public static final KZGProofSchema INSTANCE = new KZGProofSchema();
 
   private KZGProofSchema() {
-    super(SszPrimitiveSchemas.BYTE_SCHEMA, KZG_PROOF_SIZE);
+    super(SszPrimitiveSchemas.BYTE_SCHEMA, SpecConfigDeneb.BYTES_PER_PROOF.longValue());
   }
 
   @Override

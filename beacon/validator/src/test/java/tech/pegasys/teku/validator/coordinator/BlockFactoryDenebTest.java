@@ -53,11 +53,9 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
     assertThat(blockContainer.getBlobs())
-        .isPresent()
         .map(SszCollection::asList)
         .hasValue(blobsBundle.getBlobs());
     assertThat(blockContainer.getKzgProofs())
-        .isPresent()
         .map(SszCollection::asList)
         .hasValue(blobsBundle.getProofs());
   }
