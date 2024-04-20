@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -168,11 +169,21 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
+      final SchemaDefinitions schemaDefinitions =
+          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
+
+      // Post-electra: consolidations supported
+      if (bodyBuilder.supportsConsolidations()) {
+        // devnet0 blocks are empty of consolidations, so just default their list.
+        bodyBuilder.consolidations(
+            SchemaDefinitionsElectra.required(schemaDefinitions)
+                .getConsolidationsSchema()
+                .createFromElements(List.of()));
+      }
+
       // Execution Payload / Execution Payload Header / KZG Commitments
       final SafeFuture<Void> completionFuture;
       if (bodyBuilder.supportsExecutionPayload()) {
-        final SchemaDefinitions schemaDefinitions =
-            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
         completionFuture =
             forkChoiceNotifier

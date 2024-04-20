@@ -462,14 +462,20 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
               hysteresisUpwardMultiplier,
               maxEffectiveBalance)) {
         final Validator validator = validators.get(index);
+        final UInt64 effectiveBalanceLimit = getEffectiveBalanceLimitForValidator(validator);
         final UInt64 newEffectiveBalance =
-            balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance);
+            effectiveBalanceLimit.min(
+                balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance));
         BeaconStateCache.getTransitionCaches(state)
             .getProgressiveTotalBalances()
             .onEffectiveBalanceChange(status, newEffectiveBalance);
         validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));
       }
     }
+  }
+
+  protected UInt64 getEffectiveBalanceLimitForValidator(final Validator validator) {
+    return specConfig.getMaxEffectiveBalance();
   }
 
   private boolean shouldIncreaseEffectiveBalance(

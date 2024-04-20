@@ -115,6 +115,7 @@ public class PredicatesElectra extends Predicates {
    * @return the max effective balance for the specified validator based on its withdrawal
    *     credentials.
    */
+  @Override
   public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
     return hasCompoundingWithdrawalCredential(validator)
         ? configElectra.getMaxEffectiveBalanceElectra()
