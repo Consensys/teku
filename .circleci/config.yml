@@ -464,7 +464,7 @@ jobs:
       - run:
           name: Create and publish docker manifest
           command: |
-            ./gradlew --no-daemon --parallel manifestDocker
+            ./gradlew --no-daemon --parallel "-PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >>" manifestDocker
       - notify
 
   extractAPISpec:
