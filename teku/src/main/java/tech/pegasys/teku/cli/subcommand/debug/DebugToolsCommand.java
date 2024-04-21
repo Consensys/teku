@@ -41,6 +41,7 @@ import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayou
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.validator.api.GraffitiManager;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
@@ -165,7 +166,8 @@ public class DebugToolsCommand implements Runnable {
             dataDirLayout,
             new SystemTimeProvider(),
             Optional.empty(),
-            new DoppelgangerDetectionAlert());
+            new DoppelgangerDetectionAlert(),
+            new GraffitiManager(dataDirLayout));
 
     if (api.getRestApiDocs().isPresent()) {
       final String docs = api.getRestApiDocs().get();

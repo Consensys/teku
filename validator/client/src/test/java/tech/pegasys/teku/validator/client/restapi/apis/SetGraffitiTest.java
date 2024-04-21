@@ -13,20 +13,106 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
+import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.GraffitiManager;
+import tech.pegasys.teku.validator.client.OwnedKeyManager;
+import tech.pegasys.teku.validator.client.Validator;
 
 class SetGraffitiTest {
-  private final SetGraffiti handler = new SetGraffiti();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
+
+  private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
+  private final GraffitiManager graffitiManager = mock(GraffitiManager.class);
+  private final SetGraffiti handler = new SetGraffiti(keyManager, graffitiManager);
+
+  private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+
+  private final StubRestApiRequest request =
+      StubRestApiRequest.builder()
+          .metadata(handler.getMetadata())
+          .pathParameter("pubkey", publicKey.toHexString())
+          .build();
+
+  @Test
+  void shouldSuccessfullySetGraffiti() throws JsonProcessingException {
+    request.setRequestBody("Test graffiti");
+
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
+    when(graffitiManager.setGraffiti(any(), any())).thenReturn(Optional.empty());
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
+    assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  void shouldReturnErrorWhenIssueSetting() throws JsonProcessingException {
+    request.setRequestBody("Test graffiti");
+
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
+    when(graffitiManager.setGraffiti(any(), eq("Test graffiti")))
+        .thenReturn(Optional.of("Error deleting graffiti"));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, "Error deleting graffiti"));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenInvalidGraffitiInput() {
+    final String invalidGraffiti = "This graffiti is a bit too long!!";
+    final String errorMessage =
+        String.format(
+            "'%s' converts to 33 bytes. Input must be 32 bytes or less.", invalidGraffiti);
+    request.setRequestBody(invalidGraffiti);
+
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
+    when(graffitiManager.setGraffiti(any(), eq(invalidGraffiti)))
+        .thenThrow(new IllegalArgumentException(errorMessage));
+
+    assertThatThrownBy(() -> handler.handleRequest(request))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(errorMessage);
+  }
+
+  @Test
+  void shouldRespondNotFoundWhenNoValidator() throws JsonProcessingException {
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
+  }
 
   @Test
   void metadata_shouldHandle204() {
@@ -51,10 +137,5 @@ class SetGraffitiTest {
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
-  }
-
-  @Test
-  void metadata_shouldHandle501() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
   }
 }

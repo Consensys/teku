@@ -267,7 +267,8 @@ public class ValidatorClientService extends Service {
                         services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
                     services.getDataDirLayout(),
                     services.getTimeProvider(),
-                    validatorClientService.maybeDoppelgangerDetector);
+                    validatorClientService.maybeDoppelgangerDetector,
+                    graffitiManager.orElseThrow());
               } else {
                 LOG.info("validator-api-enabled is false, not starting rest api.");
               }
@@ -343,7 +344,8 @@ public class ValidatorClientService extends Service {
       final OwnedKeyManager keyManager,
       final DataDirLayout dataDirLayout,
       final TimeProvider timeProvider,
-      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
+      final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
+      final GraffitiManager graffitiManager) {
     final RestApi validatorRestApi =
         ValidatorRestApi.create(
             spec,
@@ -355,7 +357,8 @@ public class ValidatorClientService extends Service {
             dataDirLayout,
             timeProvider,
             maybeDoppelgangerDetector,
-            new DoppelgangerDetectionAlert());
+            new DoppelgangerDetectionAlert(),
+            graffitiManager);
     maybeValidatorRestApi = Optional.of(validatorRestApi);
   }
 

@@ -13,19 +13,27 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GRAFFITI;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.commons.lang3.NotImplementedException;
+import java.util.Optional;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.validator.api.GraffitiManager;
+import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.Validator;
 
 public class DeleteGraffiti extends RestApiEndpoint {
+  private final KeyManager keyManager;
+  private final GraffitiManager graffitiManager;
 
-  public DeleteGraffiti() {
+  public DeleteGraffiti(final KeyManager keyManager, final GraffitiManager graffitiManager) {
     super(
         EndpointMetadata.delete(GetGraffiti.ROUTE)
             .operationId("deleteGraffiti")
@@ -39,12 +47,26 @@ public class DeleteGraffiti extends RestApiEndpoint {
                 "Successfully removed the graffiti, or there was no graffiti set for the requested public key.")
             .withAuthenticationResponses()
             .withNotFoundResponse()
-            .withNotImplementedResponse()
             .build());
+    this.keyManager = keyManager;
+    this.graffitiManager = graffitiManager;
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    throw new NotImplementedException("Not Implemented");
+    final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
+
+    final Optional<Validator> maybeValidator = keyManager.getValidatorByPublicKey(publicKey);
+    if (maybeValidator.isEmpty()) {
+      request.respondError(SC_NOT_FOUND, "Validator not found");
+      return;
+    }
+
+    final Optional<String> error = graffitiManager.deleteGraffiti(publicKey);
+    if (error.isPresent()) {
+      request.respondError(SC_INTERNAL_SERVER_ERROR, error.get());
+    } else {
+      request.respondWithCode(SC_NO_CONTENT);
+    }
   }
 }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.GraffitiManager;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
@@ -72,7 +73,8 @@ public class ValidatorRestApi {
       final DataDirLayout dataDirLayout,
       final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final SlashingRiskAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction,
+      final GraffitiManager graffitiManager) {
     final VoluntaryExitDataProvider voluntaryExitDataProvider =
         new VoluntaryExitDataProvider(
             spec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
@@ -133,8 +135,8 @@ public class ValidatorRestApi {
         .endpoint(new DeleteGasLimit(proposerConfigManager))
         .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
         .endpoint(new GetGraffiti())
-        .endpoint(new SetGraffiti())
-        .endpoint(new DeleteGraffiti())
+        .endpoint(new SetGraffiti(keyManager, graffitiManager))
+        .endpoint(new DeleteGraffiti(keyManager, graffitiManager))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(validatorApiBearerFile)
         .build();
