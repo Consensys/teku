@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
@@ -55,10 +56,10 @@ class DeleteGraffitiTest {
           .build();
 
   @Test
-  void shouldSuccessfullyDeleteGraffiti() throws JsonProcessingException {
+  void shouldSuccessfullyDeleteGraffiti() throws IOException {
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    when(graffitiManager.deleteGraffiti(any())).thenReturn(Optional.empty());
+    graffitiManager.deleteGraffiti(any());
 
     handler.handleRequest(request);
 
@@ -67,16 +68,18 @@ class DeleteGraffitiTest {
   }
 
   @Test
-  void shouldReturnErrorWhenIssueDeleting() throws JsonProcessingException {
+  void shouldReturnErrorWhenIssueDeleting() throws IOException {
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    when(graffitiManager.deleteGraffiti(any())).thenReturn(Optional.of("Error deleting graffiti"));
+    doThrow(IOException.class).when(graffitiManager).deleteGraffiti(any());
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, "Error deleting graffiti"));
+        .isEqualTo(
+            new HttpErrorResponse(
+                SC_INTERNAL_SERVER_ERROR, "Unable to delete graffiti for validator " + publicKey));
   }
 
   @Test

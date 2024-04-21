@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.validator.api.GraffitiManager.GRAFFITI_DIR;
 
 import java.io.File;
@@ -105,14 +106,12 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void deleteGraffiti_shouldThrowIllegalArgumentWhenNoGraffitiToDelete(
-      @TempDir final Path tempDir) {
+  void deleteGraffiti_shouldSucceedWhenNoGraffitiToDelete(@TempDir final Path tempDir) {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
-    assertThatThrownBy(() -> manager.deleteGraffiti(publicKey))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Saved graffiti does not exist for validator " + publicKey);
+
+    assertDoesNotThrow(() -> manager.deleteGraffiti(publicKey));
     checkNoGraffitiFile(publicKey);
   }
 
@@ -124,7 +123,7 @@ class GraffitiManagerTest {
     assertThat(getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile().createNewFile())
         .isTrue();
 
-    assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
+    manager.deleteGraffiti(publicKey);
     checkNoGraffitiFile(publicKey);
   }
 
@@ -139,8 +138,7 @@ class GraffitiManagerTest {
     assertThat(file.createNewFile()).isTrue();
     assertThat(file.getParentFile().setWritable(false)).isTrue();
 
-    assertThat(manager.deleteGraffiti(publicKey))
-        .hasValue("Unable to delete graffiti for validator " + publicKey);
+    assertThatThrownBy(() -> manager.deleteGraffiti(publicKey)).isInstanceOf(IOException.class);
     assertThat(file.exists()).isTrue();
   }
 
@@ -155,7 +153,7 @@ class GraffitiManagerTest {
     manager.setGraffiti(publicKey, graffiti);
     checkStoredGraffitiFile(publicKey);
 
-    assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
+    manager.deleteGraffiti(publicKey);
     checkNoGraffitiFile(publicKey);
   }
 

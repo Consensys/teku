@@ -20,6 +20,7 @@ import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GR
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -62,11 +63,12 @@ public class DeleteGraffiti extends RestApiEndpoint {
       return;
     }
 
-    final Optional<String> error = graffitiManager.deleteGraffiti(publicKey);
-    if (error.isPresent()) {
-      request.respondError(SC_INTERNAL_SERVER_ERROR, error.get());
-    } else {
+    try {
+      graffitiManager.deleteGraffiti(publicKey);
       request.respondWithCode(SC_NO_CONTENT);
+    } catch (IOException e) {
+      request.respondError(
+          SC_INTERNAL_SERVER_ERROR, "Unable to delete graffiti for validator " + publicKey);
     }
   }
 }

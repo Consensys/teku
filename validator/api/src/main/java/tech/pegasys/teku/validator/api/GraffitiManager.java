@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.api;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -55,21 +54,13 @@ public class GraffitiManager {
     Files.writeString(file, strippedGraffiti);
   }
 
-  public Optional<String> deleteGraffiti(final BLSPublicKey publicKey) {
+  public void deleteGraffiti(final BLSPublicKey publicKey) throws IOException {
     final Path file = directory.resolve(resolveFileName(publicKey));
-
-    try {
-      Files.delete(file);
-      return Optional.empty();
-    } catch (NoSuchFileException e) {
-      throw new IllegalArgumentException(
-          "Saved graffiti does not exist for validator " + publicKey);
-    } catch (IOException e) {
-      final String errorMessage =
-          String.format("Unable to delete graffiti for validator %s", publicKey);
-      LOG.error(errorMessage, e);
-      return Optional.of(errorMessage);
+    if (!file.toFile().exists()) {
+      return;
     }
+
+    Files.delete(file);
   }
 
   public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {

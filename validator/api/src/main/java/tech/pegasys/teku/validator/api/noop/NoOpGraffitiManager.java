@@ -28,9 +28,7 @@ public class NoOpGraffitiManager extends GraffitiManager {
   public void setGraffiti(final BLSPublicKey publicKey, final String graffiti) {}
 
   @Override
-  public Optional<String> deleteGraffiti(final BLSPublicKey publicKey) {
-    return Optional.empty();
-  }
+  public void deleteGraffiti(final BLSPublicKey publicKey) {}
 
   @Override
   public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {
