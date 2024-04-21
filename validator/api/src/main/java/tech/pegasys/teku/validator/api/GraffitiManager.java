@@ -28,16 +28,15 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 public class GraffitiManager {
   private static final Logger LOG = LogManager.getLogger();
   static final String GRAFFITI_DIR = "graffiti";
-
-  private final Path graffitiPath;
+  private final Path directory;
 
   public GraffitiManager(final DataDirLayout dataDirLayout) {
     this(dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_DIR));
   }
 
-  public GraffitiManager(final Path graffitiPath) {
-    this.graffitiPath = graffitiPath;
-    if (!graffitiPath.toFile().exists() && !graffitiPath.toFile().mkdirs()) {
+  public GraffitiManager(final Path directory) {
+    this.directory = directory;
+    if (!directory.toFile().exists() && !directory.toFile().mkdirs()) {
       throw new IllegalStateException("Unable to create directory for graffiti management.");
     }
   }
@@ -53,7 +52,7 @@ public class GraffitiManager {
     }
 
     try {
-      final Path file = graffitiPath.resolve(resolveFileName(publicKey));
+      final Path file = directory.resolve(resolveFileName(publicKey));
       Files.writeString(file, strippedGraffiti);
     } catch (IOException e) {
       final String errorMessage =
@@ -65,7 +64,7 @@ public class GraffitiManager {
   }
 
   public Optional<String> deleteGraffiti(final BLSPublicKey publicKey) {
-    final Path file = graffitiPath.resolve(resolveFileName(publicKey));
+    final Path file = directory.resolve(resolveFileName(publicKey));
 
     try {
       Files.delete(file);
@@ -82,7 +81,7 @@ public class GraffitiManager {
   }
 
   public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {
-    final Path filePath = graffitiPath.resolve(resolveFileName(publicKey));
+    final Path filePath = directory.resolve(resolveFileName(publicKey));
     if (!filePath.toFile().exists()) {
       return Optional.empty();
     }
