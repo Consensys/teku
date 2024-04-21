@@ -44,13 +44,12 @@ import tech.pegasys.teku.validator.client.Validator;
 class SetGraffitiTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
+  private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+  private final String graffiti = "Test graffiti";
 
   private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
   private final GraffitiManager graffitiManager = mock(GraffitiManager.class);
   private final SetGraffiti handler = new SetGraffiti(keyManager, graffitiManager);
-
-  private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-
   private final StubRestApiRequest request =
       StubRestApiRequest.builder()
           .metadata(handler.getMetadata())
@@ -59,7 +58,7 @@ class SetGraffitiTest {
 
   @Test
   void shouldSuccessfullySetGraffiti() throws JsonProcessingException {
-    request.setRequestBody("Test graffiti");
+    request.setRequestBody(graffiti);
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
@@ -73,11 +72,11 @@ class SetGraffitiTest {
 
   @Test
   void shouldReturnErrorWhenIssueSetting() throws JsonProcessingException {
-    request.setRequestBody("Test graffiti");
+    request.setRequestBody(graffiti);
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    when(graffitiManager.setGraffiti(any(), eq("Test graffiti")))
+    when(graffitiManager.setGraffiti(any(), eq(graffiti)))
         .thenReturn(Optional.of("Error deleting graffiti"));
 
     handler.handleRequest(request);

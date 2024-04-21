@@ -44,15 +44,19 @@ import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
 class GetGraffitiTest {
-  private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
-  private final GetGraffiti handler = new GetGraffiti(keyManager);
-  private StubRestApiRequest request;
-
-  final String stringGraffiti = "Test graffiti";
-  final Bytes32 bytesGraffiti = Bytes32Parser.toBytes32(stringGraffiti);
-
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
+  private final String stringGraffiti = "Test graffiti";
+  private final Bytes32 bytesGraffiti = Bytes32Parser.toBytes32(stringGraffiti);
+  private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+
+  private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
+  private final GetGraffiti handler = new GetGraffiti(keyManager);
+  private final StubRestApiRequest request =
+      StubRestApiRequest.builder()
+          .metadata(handler.getMetadata())
+          .pathParameter("pubkey", publicKey.toHexString())
+          .build();
 
   @Test
   void shouldGetGraffiti() throws JsonProcessingException {
@@ -66,15 +70,10 @@ class GetGraffitiTest {
 
   @Test
   void shouldHandleValidatorNotFound() throws IOException {
-    request =
-        StubRestApiRequest.builder()
-            .metadata(handler.getMetadata())
-            .pathParameter("pubkey", dataStructureUtil.randomPublicKey().toHexString())
-            .build();
-
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
 
     handler.handleRequest(request);
+
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
     assertThat(request.getResponseBody())
         .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Validator not found"));
@@ -83,13 +82,13 @@ class GetGraffitiTest {
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
     final GetGraffiti.GraffitiResponse response =
-        new GetGraffiti.GraffitiResponse(dataStructureUtil.randomPublicKey(), bytesGraffiti);
+        new GetGraffiti.GraffitiResponse(publicKey, bytesGraffiti);
     final String responseData = getResponseStringFromMetadata(handler, SC_OK, response);
-    assertThat(responseData)
-        .isEqualTo(
-            "{\"data\":{\"pubkey\":"
-                + "\"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\","
-                + "\"graffiti\":\"Test graffiti\"}}");
+    final String expectedResponse =
+        String.format(
+            "{\"data\":{\"pubkey\":\"%s\",\"graffiti\":\"%s\"}}",
+            publicKey.toHexString(), stringGraffiti);
+    assertThat(responseData).isEqualTo(expectedResponse);
   }
 
   @Test
@@ -114,13 +113,6 @@ class GetGraffitiTest {
 
   private void checkGraffiti(final Optional<Bytes32> graffiti) throws JsonProcessingException {
     final GraffitiProvider provider = () -> graffiti;
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    request =
-        StubRestApiRequest.builder()
-            .metadata(handler.getMetadata())
-            .pathParameter("pubkey", publicKey.toHexString())
-            .build();
-
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 

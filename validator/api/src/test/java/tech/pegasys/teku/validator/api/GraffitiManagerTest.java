@@ -60,7 +60,7 @@ class GraffitiManagerTest {
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
     assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
-    checkStoredGraffitiFile(publicKey, graffiti);
+    checkStoredGraffitiFile(publicKey);
   }
 
   @Test
@@ -71,7 +71,7 @@ class GraffitiManagerTest {
         .isTrue();
 
     assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
-    checkStoredGraffitiFile(publicKey, graffiti);
+    checkStoredGraffitiFile(publicKey);
   }
 
   @Test
@@ -129,7 +129,7 @@ class GraffitiManagerTest {
 
   @Test
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
-  void deleteGraffiti_shouldReturnErrorMessageWhenUnableToWriteFile(@TempDir final Path tempDir)
+  void deleteGraffiti_shouldReturnErrorMessageWhenUnableToDeleteFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
@@ -151,13 +151,13 @@ class GraffitiManagerTest {
     manager = new GraffitiManager(dataDirLayout);
 
     assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
-    checkStoredGraffitiFile(publicKey, graffiti);
+    checkStoredGraffitiFile(publicKey);
 
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();
     checkNoGraffitiFile(publicKey);
   }
 
-  private void checkStoredGraffitiFile(final BLSPublicKey publicKey, final String graffiti) {
+  private void checkStoredGraffitiFile(final BLSPublicKey publicKey) {
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
     try {
       final byte[] readBytes = Files.readAllBytes(filePath);

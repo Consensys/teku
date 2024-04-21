@@ -43,13 +43,11 @@ import tech.pegasys.teku.validator.client.Validator;
 class DeleteGraffitiTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
+  private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
 
   private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
   private final GraffitiManager graffitiManager = mock(GraffitiManager.class);
   private final DeleteGraffiti handler = new DeleteGraffiti(keyManager, graffitiManager);
-
-  private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-
   private final StubRestApiRequest request =
       StubRestApiRequest.builder()
           .metadata(handler.getMetadata())
