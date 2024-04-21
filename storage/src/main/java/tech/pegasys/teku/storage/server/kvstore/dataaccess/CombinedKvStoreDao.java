@@ -336,16 +336,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<Bytes> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    return db.get(
-        schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-        new SlotAndBlockRootAndBlobIndex(key.getSlot(), key.getBlockRoot(), key.getBlobIndex()));
+    return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
   }
 
   @Override
   public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    return db.get(
-        schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
-        new SlotAndBlockRootAndBlobIndex(key.getSlot(), key.getBlockRoot(), key.getBlobIndex()));
+    return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
   }
 
   @MustBeClosed

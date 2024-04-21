@@ -134,7 +134,7 @@ public class ValidatorRestApi {
         .endpoint(new DeleteFeeRecipient(proposerConfigManager))
         .endpoint(new DeleteGasLimit(proposerConfigManager))
         .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
-        .endpoint(new GetGraffiti())
+        .endpoint(new GetGraffiti(keyManager))
         .endpoint(new SetGraffiti(keyManager, graffitiManager))
         .endpoint(new DeleteGraffiti(keyManager, graffitiManager))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())

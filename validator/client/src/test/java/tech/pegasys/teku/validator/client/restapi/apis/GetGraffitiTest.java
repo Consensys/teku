@@ -14,30 +14,76 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
+import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.Bytes32Parser;
+import tech.pegasys.teku.validator.api.GraffitiProvider;
+import tech.pegasys.teku.validator.client.OwnedKeyManager;
+import tech.pegasys.teku.validator.client.Validator;
 
 class GetGraffitiTest {
-  private final GetGraffiti handler = new GetGraffiti();
+  private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
+  private final GetGraffiti handler = new GetGraffiti(keyManager);
+  private StubRestApiRequest request;
+
+  final String stringGraffiti = "Test graffiti";
+  final Bytes32 bytesGraffiti = Bytes32Parser.toBytes32(stringGraffiti);
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
+  void shouldGetGraffiti() throws JsonProcessingException {
+    checkGraffiti(Optional.of(bytesGraffiti));
+  }
+
+  @Test
+  void shouldGetEmptyGraffiti() throws JsonProcessingException {
+    checkGraffiti(Optional.empty());
+  }
+
+  @Test
+  void shouldHandleValidatorNotFound() throws IOException {
+    request =
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("pubkey", dataStructureUtil.randomPublicKey().toHexString())
+            .build();
+
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
+
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Validator not found"));
+  }
+
+  @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
     final GetGraffiti.GraffitiResponse response =
-        new GetGraffiti.GraffitiResponse(dataStructureUtil.randomPublicKey(), "Test graffiti");
+        new GetGraffiti.GraffitiResponse(dataStructureUtil.randomPublicKey(), bytesGraffiti);
     final String responseData = getResponseStringFromMetadata(handler, SC_OK, response);
     assertThat(responseData)
         .isEqualTo(
@@ -66,8 +112,23 @@ class GetGraffitiTest {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 
-  @Test
-  void metadata_shouldHandle501() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+  private void checkGraffiti(final Optional<Bytes32> graffiti) throws JsonProcessingException {
+    final GraffitiProvider provider = () -> graffiti;
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    request =
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("pubkey", publicKey.toHexString())
+            .build();
+
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
+    when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
+
+    handler.handleRequest(request);
+
+    final GetGraffiti.GraffitiResponse expectedResponse =
+        new GetGraffiti.GraffitiResponse(publicKey, graffiti);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
   }
 }
