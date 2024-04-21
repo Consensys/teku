@@ -44,6 +44,9 @@ public class GetGraffiti extends RestApiEndpoint {
       DeserializableTypeDefinition.string(Bytes32.class)
           .formatter(GetGraffiti::processGraffitiString)
           .parser(Bytes32Parser::toBytes32)
+          .example("Example graffiti")
+          .description("Bytes32 string")
+          .format("byte")
           .build();
 
   private static final SerializableTypeDefinition<GraffitiResponse> GRAFFITI_RESPONSE_TYPE =
