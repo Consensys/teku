@@ -24,7 +24,8 @@ public abstract class AbstractSszMutableCollection<
 
   private final SszSchema<SszElementT> elementSchema;
 
-  protected AbstractSszMutableCollection(AbstractSszComposite<SszElementT> backingImmutableData) {
+  protected AbstractSszMutableCollection(
+      final AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
     elementSchema = getSchema().getElementSchema();
   }
@@ -40,7 +41,7 @@ public abstract class AbstractSszMutableCollection<
   }
 
   @Override
-  protected void validateChildSchema(int index, SszElementT value) {
+  protected void validateChildSchema(final int index, final SszElementT value) {
     if (!value.getSchema().equals(getElementSchema())) {
       throw new InvalidValueSchemaException(
           "Expected element to have schema "

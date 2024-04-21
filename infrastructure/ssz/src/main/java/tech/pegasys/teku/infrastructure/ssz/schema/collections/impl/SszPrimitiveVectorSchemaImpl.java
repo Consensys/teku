@@ -29,13 +29,13 @@ public class SszPrimitiveVectorSchemaImpl<
     implements SszPrimitiveVectorSchema<ElementT, SszElementT, SszVectorT> {
 
   public SszPrimitiveVectorSchemaImpl(
-      SszPrimitiveSchema<ElementT, SszElementT> elementSchema, long vectorLength) {
+      final SszPrimitiveSchema<ElementT, SszElementT> elementSchema, final long vectorLength) {
     super(elementSchema, vectorLength);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszVectorT createFromBackingNode(TreeNode node) {
+  public SszVectorT createFromBackingNode(final TreeNode node) {
     return (SszVectorT) new SszPrimitiveVectorImpl<ElementT, SszElementT>(this, node);
   }
 }

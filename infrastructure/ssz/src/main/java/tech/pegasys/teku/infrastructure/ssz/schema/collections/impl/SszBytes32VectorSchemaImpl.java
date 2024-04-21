@@ -25,13 +25,13 @@ public class SszBytes32VectorSchemaImpl<SszVectorT extends SszBytes32Vector>
     extends AbstractSszVectorSchema<SszBytes32, SszVectorT>
     implements SszBytes32VectorSchema<SszVectorT> {
 
-  public SszBytes32VectorSchemaImpl(long vectorLength) {
+  public SszBytes32VectorSchemaImpl(final long vectorLength) {
     super(SszPrimitiveSchemas.BYTES32_SCHEMA, vectorLength);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszVectorT createFromBackingNode(TreeNode node) {
+  public SszVectorT createFromBackingNode(final TreeNode node) {
     return (SszVectorT) new SszBytes32VectorImpl(this, node);
   }
 }

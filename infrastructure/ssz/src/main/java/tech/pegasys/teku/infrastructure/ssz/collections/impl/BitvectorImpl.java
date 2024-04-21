@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 
 class BitvectorImpl {
 
-  public static BitvectorImpl fromBytes(Bytes bytes, int size) {
+  public static BitvectorImpl fromBytes(final Bytes bytes, final int size) {
     checkArgument(
         bytes.size() == sszSerializationLength(size),
         "Incorrect data size (%s) for Bitvector of size %s",
@@ -50,17 +50,17 @@ class BitvectorImpl {
   private final BitSet data;
   private final int size;
 
-  private BitvectorImpl(BitSet bitSet, int size) {
+  private BitvectorImpl(final BitSet bitSet, final int size) {
     this.data = bitSet;
     this.size = size;
   }
 
-  public BitvectorImpl(int size) {
+  public BitvectorImpl(final int size) {
     this.data = new BitSet(size);
     this.size = size;
   }
 
-  public BitvectorImpl(int size, Iterable<Integer> indicesToSet) {
+  public BitvectorImpl(final int size, final Iterable<Integer> indicesToSet) {
     this(size);
     for (int i : indicesToSet) {
       checkElementIndex(i, size);
@@ -68,7 +68,7 @@ class BitvectorImpl {
     }
   }
 
-  public BitvectorImpl(int size, int... indicesToSet) {
+  public BitvectorImpl(final int size, final int... indicesToSet) {
     this(size, Arrays.stream(indicesToSet).boxed().toList());
   }
 
@@ -76,7 +76,7 @@ class BitvectorImpl {
     return data.stream().boxed().toList();
   }
 
-  public BitvectorImpl withBit(int i) {
+  public BitvectorImpl withBit(final int i) {
     checkElementIndex(i, size);
     BitSet newSet = (BitSet) data.clone();
     newSet.set(i);
@@ -87,7 +87,7 @@ class BitvectorImpl {
     return data.cardinality();
   }
 
-  public boolean getBit(int i) {
+  public boolean getBit(final int i) {
     checkElementIndex(i, size);
     return data.get(i);
   }
@@ -107,7 +107,7 @@ class BitvectorImpl {
     return Bytes.wrap(array);
   }
 
-  public BitvectorImpl rightShift(int i) {
+  public BitvectorImpl rightShift(final int i) {
     int length = this.getSize();
     BitSet newData = new BitSet(getSize());
     for (int j = 0; j < length - i; j++) {
@@ -119,7 +119,7 @@ class BitvectorImpl {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

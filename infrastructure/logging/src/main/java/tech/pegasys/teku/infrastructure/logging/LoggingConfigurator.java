@@ -296,7 +296,7 @@ public class LoggingConfigurator {
 
   @VisibleForTesting
   static PatternLayout consoleAppenderLayout(
-      AbstractConfiguration configuration, final boolean omitStackTraces) {
+      final AbstractConfiguration configuration, final boolean omitStackTraces) {
     final Pattern logReplacement =
         Pattern.compile(isColorEnabled() ? COLOR_LOG_REGEX : NO_COLOR_LOG_REGEX);
     return PatternLayout.newBuilder()
@@ -324,7 +324,7 @@ public class LoggingConfigurator {
   }
 
   @VisibleForTesting
-  static PatternLayout fileAppenderLayout(AbstractConfiguration configuration) {
+  static PatternLayout fileAppenderLayout(final AbstractConfiguration configuration) {
     final Pattern logReplacement =
         Pattern.compile(isColorEnabled() ? COLOR_LOG_REGEX : NO_COLOR_LOG_REGEX);
     return PatternLayout.newBuilder()

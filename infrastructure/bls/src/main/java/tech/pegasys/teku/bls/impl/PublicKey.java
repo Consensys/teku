@@ -33,7 +33,7 @@ public interface PublicKey {
    * @param signature The signature, not null
    * @return True if the verification is successful, false otherwise.
    */
-  default boolean verifySignature(Signature signature, Bytes message) {
+  default boolean verifySignature(final Signature signature, final Bytes message) {
     return signature.verify(this, message);
   }
 
@@ -45,7 +45,8 @@ public interface PublicKey {
    * @param dst The domain separation tag, not null
    * @return True if the verification is successful, false otherwise.
    */
-  default boolean verifySignature(Signature signature, Bytes message, String dst) {
+  default boolean verifySignature(
+      final Signature signature, final Bytes message, final String dst) {
     return signature.verify(this, message, dst);
   }
 

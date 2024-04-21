@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszMutableBytes32VectorImpl extends SszMutablePrimitiveVectorImpl<Bytes32, SszBytes32>
     implements SszMutableBytes32Vector {
 
-  public SszMutableBytes32VectorImpl(AbstractSszComposite<SszBytes32> backingImmutableData) {
+  public SszMutableBytes32VectorImpl(final AbstractSszComposite<SszBytes32> backingImmutableData) {
     super(backingImmutableData);
   }
 
@@ -35,7 +35,7 @@ public class SszMutableBytes32VectorImpl extends SszMutablePrimitiveVectorImpl<B
 
   @Override
   protected SszBytes32VectorImpl createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszBytes32> childrenCache) {
+      final TreeNode backingNode, final IntCache<SszBytes32> childrenCache) {
     return new SszBytes32VectorImpl(getSchema(), backingNode);
   }
 

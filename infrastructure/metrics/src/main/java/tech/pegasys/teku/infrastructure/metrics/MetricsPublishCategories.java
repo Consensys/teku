@@ -20,7 +20,7 @@ public enum MetricsPublishCategories {
 
   private final String displayName;
 
-  MetricsPublishCategories(String displayName) {
+  MetricsPublishCategories(final String displayName) {
     this.displayName = displayName;
   }
 

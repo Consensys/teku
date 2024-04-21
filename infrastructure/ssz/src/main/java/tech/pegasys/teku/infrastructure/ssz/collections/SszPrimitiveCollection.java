@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszCollectionSchema;
 public interface SszPrimitiveCollection<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszCollection<SszElementT> {
 
-  default ElementT getElement(int index) {
+  default ElementT getElement(final int index) {
     return get(index).get();
   }
 

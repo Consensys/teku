@@ -57,7 +57,7 @@ public class WeakSubjectivityLogger {
   }
 
   public void finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-      Level level, final UInt64 latestFinalizedCheckpointEpoch) {
+      final Level level, final UInt64 latestFinalizedCheckpointEpoch) {
     final String msg =
         String.format(
             "The latest finalized checkpoint at epoch %s is outside of the weak subjectivity period.  Please supply a recent weak subjectivity checkpoint using --ws-checkpoint=<BLOCK_ROOT>:<EPOCH>.",
