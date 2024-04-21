@@ -26,22 +26,20 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 
 public class GraffitiManager {
+  private static final Logger LOG = LogManager.getLogger();
   static final String GRAFFITI_DIR = "graffiti";
 
-  private static final Logger LOG = LogManager.getLogger();
   private final Path graffitiPath;
 
   public GraffitiManager(final DataDirLayout dataDirLayout) {
-    this.graffitiPath = createManagementDirectory(dataDirLayout);
+    this(dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_DIR));
   }
 
-  private Path createManagementDirectory(final DataDirLayout dataDirLayout) {
-    final Path graffitiDirectory = dataDirLayout.getValidatorDataDirectory().resolve(GRAFFITI_DIR);
-    if (!graffitiDirectory.toFile().exists() && !graffitiDirectory.toFile().mkdirs()) {
-      throw new IllegalStateException(
-          "Unable to create " + GRAFFITI_DIR + " directory for graffiti management.");
+  public GraffitiManager(final Path graffitiPath) {
+    this.graffitiPath = graffitiPath;
+    if (!graffitiPath.toFile().exists() && !graffitiPath.toFile().mkdirs()) {
+      throw new IllegalStateException("Unable to create directory for graffiti management.");
     }
-    return graffitiDirectory;
   }
 
   public Optional<String> setGraffiti(final BLSPublicKey publicKey, final String graffiti) {

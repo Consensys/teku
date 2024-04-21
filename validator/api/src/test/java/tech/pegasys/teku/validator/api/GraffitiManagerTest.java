@@ -50,7 +50,7 @@ class GraffitiManagerTest {
 
     assertThatThrownBy(() -> new GraffitiManager(dataDirLayout))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Unable to create graffiti directory for graffiti management.");
+        .hasMessage("Unable to create directory for graffiti management.");
   }
 
   @Test

@@ -31,8 +31,8 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.validator.api.GraffitiManager;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.noop.NoOpGraffitiManager;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
@@ -71,7 +71,7 @@ class ValidatorOpenApiTest {
             new SystemTimeProvider(),
             Optional.empty(),
             doppelgangerDetectionAction,
-            new GraffitiManager(dataDirLayout));
+            new NoOpGraffitiManager());
     final Optional<String> maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();
     jsonNode = util.parseSwagger(maybeJson.orElseThrow());
