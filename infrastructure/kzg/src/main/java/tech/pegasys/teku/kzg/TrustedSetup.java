@@ -35,9 +35,4 @@ record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
   private void validateG2Point(final Bytes g2Point) {
     checkArgument(g2Point.size() == BYTES_PER_G2, "Expected G2 point to be %s bytes", BYTES_PER_G2);
   }
-
-  @Override
-  public String toString() {
-    return "TrustedSetup[" + "g1Points=" + g1Points + ", " + "g2Points=" + g2Points + ']';
-  }
 }
