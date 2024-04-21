@@ -17,20 +17,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -84,7 +84,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<BuilderPayload> builderGetPayload(
+        public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
             final SignedBeaconBlock signedBeaconBlock,
             final Function<UInt64, Optional<ExecutionPayloadResult>>
                 getCachedPayloadResultFunction) {
@@ -92,13 +92,11 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<HeaderWithFallbackData> builderGetHeader(
+        public SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
-            final SafeFuture<UInt256> payloadValueResult,
             final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
-          payloadValueResult.complete(null);
           return SafeFuture.completedFuture(null);
         }
       };
@@ -131,9 +129,10 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   /**
    * This is low level method, use {@link
-   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock)} instead
+   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock,
+   * BlockPublishingPerformance)} instead
    */
-  SafeFuture<BuilderPayload> builderGetPayload(
+  SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       SignedBeaconBlock signedBeaconBlock,
       Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction);
 
@@ -144,14 +143,12 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    *
    * @param executionPayloadContext The execution payload context
    * @param state The beacon state
-   * @param payloadValueResult A callback that will contain the payload execution value (local or
-   *     builder, whichever payload is chosen)
+   * @param requestedBuilderBoostFactor The requested builder boost factor
    * @param blockProductionPerformance The performance tracker
    */
-  SafeFuture<HeaderWithFallbackData> builderGetHeader(
+  SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
-      SafeFuture<UInt256> payloadValueResult,
       Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 }
