@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
@@ -30,6 +31,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -57,12 +59,11 @@ class SetGraffitiTest {
           .build();
 
   @Test
-  void shouldSuccessfullySetGraffiti() throws JsonProcessingException {
+  void shouldSuccessfullySetGraffiti() throws IOException {
     request.setRequestBody(graffiti);
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    when(graffitiManager.setGraffiti(any(), any())).thenReturn(Optional.empty());
 
     handler.handleRequest(request);
 
@@ -71,23 +72,24 @@ class SetGraffitiTest {
   }
 
   @Test
-  void shouldReturnErrorWhenIssueSetting() throws JsonProcessingException {
+  void shouldReturnErrorWhenIssueSetting() throws IOException {
     request.setRequestBody(graffiti);
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    when(graffitiManager.setGraffiti(any(), eq(graffiti)))
-        .thenReturn(Optional.of("Error deleting graffiti"));
+    doThrow(IOException.class).when(graffitiManager).setGraffiti(any(), eq(graffiti));
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, "Error deleting graffiti"));
+        .isEqualTo(
+            new HttpErrorResponse(
+                SC_INTERNAL_SERVER_ERROR, "Unable to update graffiti for validator " + publicKey));
   }
 
   @Test
-  void shouldThrowExceptionWhenInvalidGraffitiInput() {
+  void shouldThrowExceptionWhenInvalidGraffitiInput() throws IOException {
     final String invalidGraffiti = "This graffiti is a bit too long!!";
     final String errorMessage =
         String.format(
@@ -96,8 +98,9 @@ class SetGraffitiTest {
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    when(graffitiManager.setGraffiti(any(), eq(invalidGraffiti)))
-        .thenThrow(new IllegalArgumentException(errorMessage));
+    doThrow(new IllegalArgumentException(errorMessage))
+        .when(graffitiManager)
+        .setGraffiti(any(), eq(invalidGraffiti));
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(IllegalArgumentException.class)

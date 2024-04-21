@@ -54,12 +54,13 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void setGraffiti_shouldSetGraffitiWhenFileNotExist(@TempDir final Path tempDir) {
+  void setGraffiti_shouldSetGraffitiWhenFileNotExist(@TempDir final Path tempDir)
+      throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
 
-    assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
+    manager.setGraffiti(publicKey, graffiti);
     checkStoredGraffitiFile(publicKey);
   }
 
@@ -70,7 +71,7 @@ class GraffitiManagerTest {
     assertThat(getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile().createNewFile())
         .isTrue();
 
-    assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
+    manager.setGraffiti(publicKey, graffiti);
     checkStoredGraffitiFile(publicKey);
   }
 
@@ -86,8 +87,8 @@ class GraffitiManagerTest {
     assertThat(file.createNewFile()).isTrue();
     assertThat(file.setWritable(false)).isTrue();
 
-    assertThat(manager.setGraffiti(publicKey, graffiti))
-        .hasValue("Unable to update graffiti for validator " + publicKey);
+    assertThatThrownBy(() -> manager.setGraffiti(publicKey, graffiti))
+        .isInstanceOf(IOException.class);
   }
 
   @Test
@@ -144,13 +145,14 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void shouldSetAndDeleteGraffitiWhenManagementPreexisting(@TempDir final Path tempDir) {
+  void shouldSetAndDeleteGraffitiWhenManagementPreexisting(@TempDir final Path tempDir)
+      throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     final Path managementDir = getGraffitiManagementDir();
     assertThat(managementDir.toFile().mkdirs()).isTrue();
     manager = new GraffitiManager(dataDirLayout);
 
-    assertThat(manager.setGraffiti(publicKey, graffiti)).isEmpty();
+    manager.setGraffiti(publicKey, graffiti);
     checkStoredGraffitiFile(publicKey);
 
     assertThat(manager.deleteGraffiti(publicKey)).isEmpty();

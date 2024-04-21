@@ -41,7 +41,7 @@ public class GraffitiManager {
     }
   }
 
-  public Optional<String> setGraffiti(final BLSPublicKey publicKey, final String graffiti) {
+  public void setGraffiti(final BLSPublicKey publicKey, final String graffiti) throws IOException {
     final String strippedGraffiti = graffiti.strip();
     final int graffitiSize = strippedGraffiti.getBytes(StandardCharsets.UTF_8).length;
     if (graffitiSize > 32) {
@@ -51,16 +51,8 @@ public class GraffitiManager {
               strippedGraffiti, graffitiSize));
     }
 
-    try {
-      final Path file = directory.resolve(resolveFileName(publicKey));
-      Files.writeString(file, strippedGraffiti);
-    } catch (IOException e) {
-      final String errorMessage =
-          String.format("Unable to update graffiti for validator %s", publicKey);
-      LOG.error(errorMessage, e);
-      return Optional.of(errorMessage);
-    }
-    return Optional.empty();
+    final Path file = directory.resolve(resolveFileName(publicKey));
+    Files.writeString(file, strippedGraffiti);
   }
 
   public Optional<String> deleteGraffiti(final BLSPublicKey publicKey) {
