@@ -111,11 +111,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -604,48 +606,32 @@ public final class DataStructureUtil {
   }
 
   public BuilderBid randomBuilderBid() {
-    return randomBuilderBid(randomPublicKey());
-  }
-
-  public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey) {
-    // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
-    // overflows in
-    // computation
-    final UInt256 value = randomUInt256().divide(1000);
-    return randomBuilderBid(builderPublicKey, value);
-  }
-
-  public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey, final UInt256 value) {
-    final SchemaDefinitionsBellatrix schemaDefinitions =
-        getBellatrixSchemaDefinitions(randomSlot());
-    return schemaDefinitions
-        .getBuilderBidSchema()
-        .createBuilderBid(
-            builder -> {
-              builder
-                  .header(randomExecutionPayloadHeader(spec.getGenesisSpec()))
-                  .value(value)
-                  .publicKey(builderPublicKey);
-              schemaDefinitions
-                  .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
-            });
+    return randomBuilderBid(__ -> {});
   }
 
   public BuilderBid randomBuilderBid(final Bytes32 withdrawalsRoot) {
+    return randomBuilderBid(
+        builder ->
+            builder.header(randomExecutionPayloadHeader(spec.getGenesisSpec(), withdrawalsRoot)));
+  }
+
+  public BuilderBid randomBuilderBid(final Consumer<BuilderBidBuilder> builderModifier) {
     final SchemaDefinitionsBellatrix schemaDefinitions =
         getBellatrixSchemaDefinitions(randomSlot());
     return schemaDefinitions
         .getBuilderBidSchema()
         .createBuilderBid(
             builder -> {
-              builder
-                  .header(randomExecutionPayloadHeader(spec.getGenesisSpec(), withdrawalsRoot))
-                  .value(randomUInt256())
-                  .publicKey(randomPublicKey());
+              builder.header(randomExecutionPayloadHeader());
               schemaDefinitions
                   .toVersionDeneb()
                   .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
+              // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
+              // overflows in
+              // computation
+              builder.value(randomUInt256().divide(1000));
+              builder.publicKey(randomPublicKey());
+              builderModifier.accept(builder);
             });
   }
 
@@ -1276,6 +1262,9 @@ public final class DataStructureUtil {
           if (builder.supportsKzgCommitments()) {
             builder.blobKzgCommitments(commitments);
           }
+          if (builder.supportsConsolidations()) {
+            builder.consolidations(emptyConsolidations());
+          }
         });
   }
 
@@ -1319,6 +1308,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsConsolidations()) {
+                builder.consolidations(emptyConsolidations());
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1359,6 +1351,9 @@ public final class DataStructureUtil {
           if (builder.supportsExecutionPayload()) {
             builder.executionPayload(randomExecutionPayload(proposalSlot));
           }
+          if (builder.supportsConsolidations()) {
+            builder.consolidations(emptyConsolidations());
+          }
         });
   }
 
@@ -1376,6 +1371,9 @@ public final class DataStructureUtil {
         builder -> {
           if (builder.supportsKzgCommitments()) {
             builder.blobKzgCommitments(commitments);
+          }
+          if (builder.supportsConsolidations()) {
+            builder.consolidations(emptyConsolidations());
           }
         });
   }
@@ -1420,6 +1418,9 @@ public final class DataStructureUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
+              }
+              if (builder.supportsConsolidations()) {
+                builder.consolidations(emptyConsolidations());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -1474,6 +1475,9 @@ public final class DataStructureUtil {
                     randomFullSszList(
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
                         this::randomSszKZGCommitment));
+              }
+              if (builder.supportsConsolidations()) {
+                builder.consolidations(emptyConsolidations());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -2364,6 +2368,13 @@ public final class DataStructureUtil {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
+  }
+
+  public SszList<SignedConsolidation> emptyConsolidations() {
+    return SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+        .getConsolidationsSchema()
+        .createFromElements(List.of());
   }
 
   public class RandomBlobSidecarBuilder {
