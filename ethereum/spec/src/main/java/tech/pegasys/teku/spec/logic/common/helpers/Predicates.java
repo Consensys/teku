@@ -55,18 +55,18 @@ public class Predicates {
       final Bytes32 leaf,
       final SszBytes32Vector branch,
       final int depth,
-      final int index,
+      final int startingIndex,
       final Bytes32 root) {
     final Sha256 sha256 = getSha256Instance();
     Bytes32 value = leaf;
-    int indexCopy = index;
+    int index = startingIndex;
     for (int i = 0; i < depth; i++) {
-      if ((indexCopy & 1) == 1) {
+      if ((index & 1) == 1) {
         value = sha256.wrappedDigest(branch.getElement(i), value);
       } else {
         value = sha256.wrappedDigest(value, branch.getElement(i));
       }
-      indexCopy >>>= 1;
+      index >>>= 1;
     }
     return value.equals(root);
   }
