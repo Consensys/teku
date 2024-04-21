@@ -59,12 +59,12 @@ public interface SszData extends Merkleizable, SimpleOffsetSerializable {
   }
 
   @Override
-  default int sszSerialize(SszWriter writer) {
+  default int sszSerialize(final SszWriter writer) {
     return getSchema().sszSerializeTree(getBackingNode(), writer);
   }
 
   @Override
-  default int sszSerialize(OutputStream out) {
+  default int sszSerialize(final OutputStream out) {
     return sszSerialize(new SszOutputStreamWriter(out));
   }
 }

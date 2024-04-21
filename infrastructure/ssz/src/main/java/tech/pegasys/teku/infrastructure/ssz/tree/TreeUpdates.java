@@ -33,7 +33,7 @@ public class TreeUpdates {
     private final long generalizedIndex;
     private final TreeNode newNode;
 
-    public Update(long generalizedIndex, TreeNode newNode) {
+    public Update(final long generalizedIndex, final TreeNode newNode) {
       this.generalizedIndex = generalizedIndex;
       this.newNode = newNode;
     }
@@ -72,27 +72,34 @@ public class TreeUpdates {
    *
    * @throws IllegalArgumentException if the list doesn't conform to above restrictions
    */
-  public TreeUpdates(List<Update> updates) {
+  public TreeUpdates(final List<Update> updates) {
     this(
         updates.stream().map(Update::getGeneralizedIndex).toList(),
         updates.stream().map(Update::getNewNode).toList());
   }
 
-  public TreeUpdates(List<Long> gIndices, List<TreeNode> nodes) {
+  public TreeUpdates(final List<Long> gIndices, final List<TreeNode> nodes) {
     this(gIndices, nodes, 1, getDepthAndValidate(gIndices));
   }
 
-  public TreeUpdates(List<Long> gIndices, List<TreeNode> nodes, int depth) {
+  public TreeUpdates(final List<Long> gIndices, final List<TreeNode> nodes, final int depth) {
     this(gIndices, nodes, 1, depth);
     assert depth == getDepthAndValidate(gIndices);
   }
 
   private static TreeUpdates create(
-      List<Long> gIndices, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+      final List<Long> gIndices,
+      final List<TreeNode> nodes,
+      final long prefix,
+      final int heightFromLeaf) {
     return new TreeUpdates(gIndices, nodes, prefix, heightFromLeaf);
   }
 
-  private TreeUpdates(List<Long> gIndices, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+  private TreeUpdates(
+      final List<Long> gIndices,
+      final List<TreeNode> nodes,
+      final long prefix,
+      final int heightFromLeaf) {
     assert gIndices.size() == nodes.size();
 
     this.gIndices = gIndices;
@@ -138,21 +145,21 @@ public class TreeUpdates {
 
   /** Gets generalized index for update at position [index] */
   @VisibleForTesting
-  long getGIndex(int index) {
+  long getGIndex(final int index) {
     return gIndices.get(index);
   }
 
   /** Calculates and returns relative generalized index */
-  public long getRelativeGIndex(int index) {
+  public long getRelativeGIndex(final int index) {
     return GIndexUtil.gIdxGetRelativeGIndex(gIndices.get(index), GIndexUtil.gIdxGetDepth(prefix));
   }
 
   /** Gets new tree node for update at position [index] */
-  public TreeNode getNode(int index) {
+  public TreeNode getNode(final int index) {
     return nodes.get(index);
   }
 
-  private static int getDepthAndValidate(List<Long> gIndices) {
+  private static int getDepthAndValidate(final List<Long> gIndices) {
     if (gIndices.isEmpty()) {
       return 0;
     }

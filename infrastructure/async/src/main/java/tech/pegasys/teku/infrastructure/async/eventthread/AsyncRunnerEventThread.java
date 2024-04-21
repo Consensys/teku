@@ -85,7 +85,7 @@ public class AsyncRunnerEventThread implements EventThread {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public <T> SafeFuture<T> executeFuture(Supplier<SafeFuture<T>> task) {
+  public <T> SafeFuture<T> executeFuture(final Supplier<SafeFuture<T>> task) {
     // Note: started is only set to true after thread has been initialized so if it is true, thread
     // must be initialized.
     if (!started.get()) {

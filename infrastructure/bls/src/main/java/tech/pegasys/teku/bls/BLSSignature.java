@@ -51,11 +51,11 @@ public class BLSSignature {
     return BLSSignature.fromBytesCompressed(INFINITY_BYTES);
   }
 
-  public static BLSSignature fromBytesCompressed(Bytes bytes) {
+  public static BLSSignature fromBytesCompressed(final Bytes bytes) {
     return new BLSSignature(bytes);
   }
 
-  public static BLSSignature fromSSZBytes(Bytes bytes) {
+  public static BLSSignature fromSSZBytes(final Bytes bytes) {
     try {
       return SSZ.decode(
           bytes, reader -> new BLSSignature(reader.readFixedBytes(SSZ_BLS_SIGNATURE_SIZE)));
@@ -76,17 +76,17 @@ public class BLSSignature {
    *
    * @param signature An implementation-specific Signature
    */
-  BLSSignature(Signature signature) {
+  BLSSignature(final Signature signature) {
     this(() -> signature, Suppliers.memoize(signature::toBytesCompressed));
   }
 
-  BLSSignature(Bytes signatureBytes) {
+  BLSSignature(final Bytes signatureBytes) {
     this(
         Suppliers.memoize(() -> BLS.getBlsImpl().signatureFromCompressed(signatureBytes)),
         () -> signatureBytes);
   }
 
-  private BLSSignature(Supplier<Signature> signature, Supplier<Bytes> bytesCompressed) {
+  private BLSSignature(final Supplier<Signature> signature, final Supplier<Bytes> bytesCompressed) {
     this.signature = signature;
     this.bytesCompressed = bytesCompressed;
   }
@@ -138,7 +138,7 @@ public class BLSSignature {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final Object obj) {
     if (isNull(obj)) {
       return false;
     }

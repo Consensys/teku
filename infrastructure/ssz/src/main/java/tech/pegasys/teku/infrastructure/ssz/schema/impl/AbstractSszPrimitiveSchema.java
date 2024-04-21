@@ -62,7 +62,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   private final int sszSize;
   private final SszLengthBounds sszLengthBounds;
 
-  protected AbstractSszPrimitiveSchema(int bitsSize) {
+  protected AbstractSszPrimitiveSchema(final int bitsSize) {
     checkArgument(
         bitsSize == 0 || (bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0),
         "Invalid bitsize: %s",
@@ -78,7 +78,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
-  public SszDataT createFromBackingNode(TreeNode node) {
+  public SszDataT createFromBackingNode(final TreeNode node) {
     return createFromPackedNode(node, 0);
   }
 
@@ -103,7 +103,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
-  public final DataT createFromPackedNodeUnboxed(TreeNode node, int internalIndex) {
+  public final DataT createFromPackedNodeUnboxed(final TreeNode node, final int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
   }
@@ -116,7 +116,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
 
   @Override
   public TreeNode updatePackedNode(
-      TreeNode srcNode, List<PackedNodeUpdate<DataT, SszDataT>> updates) {
+      final TreeNode srcNode, final List<PackedNodeUpdate<DataT, SszDataT>> updates) {
     TreeNode res = srcNode;
     for (PackedNodeUpdate<DataT, SszDataT> update : updates) {
       res = updateBackingNode(res, update.getInternalIndex(), update.getNewValue());
@@ -142,12 +142,12 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
-  public int getSszVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(final TreeNode node) {
     return 0;
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     final Bytes nodeData;
     if (node instanceof LeafDataNode) {
       // small perf optimization
@@ -160,7 +160,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
+  public TreeNode sszDeserializeTree(final SszReader reader) {
     Bytes bytes = reader.read(sszSize);
     if (reader.getAvailableBytes() > 0) {
       throw new SszDeserializeException("Extra " + reader.getAvailableBytes() + " bytes found");

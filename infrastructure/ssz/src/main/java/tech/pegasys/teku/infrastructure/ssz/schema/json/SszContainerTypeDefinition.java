@@ -61,7 +61,7 @@ public class SszContainerTypeDefinition {
       this.values = new SszData[schema.getFieldsCount()];
     }
 
-    public void setValue(int childIndex, final SszData value) {
+    public void setValue(final int childIndex, final SszData value) {
       values[childIndex] = value;
     }
 

@@ -58,19 +58,19 @@ public class YamlProvider {
     objectMapper.registerModule(module).writer(new DefaultPrettyPrinter());
   }
 
-  public <T> T read(InputStream data, Class<T> clazz) throws IOException {
+  public <T> T read(final InputStream data, final Class<T> clazz) throws IOException {
     return objectMapper.readValue(data, clazz);
   }
 
-  public <T> T read(Bytes data, Class<T> clazz) throws IOException {
+  public <T> T read(final Bytes data, final Class<T> clazz) throws IOException {
     return objectMapper.readValue(data.toArrayUnsafe(), clazz);
   }
 
-  public <T> void write(final OutputStream out, T object) throws IOException {
+  public <T> void write(final OutputStream out, final T object) throws IOException {
     objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
   }
 
-  public <T> Bytes write(T object) {
+  public <T> Bytes write(final T object) {
     try (final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
       return Bytes.wrap(out.toByteArray());
@@ -81,7 +81,7 @@ public class YamlProvider {
     }
   }
 
-  public <T> String writeString(T object) {
+  public <T> String writeString(final T object) {
     try (final StringWriter out = new StringWriter()) {
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
       return out.toString();
@@ -99,14 +99,16 @@ public class YamlProvider {
   public static class UInt64Deserializer extends JsonDeserializer<UInt64> {
 
     @Override
-    public UInt64 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public UInt64 deserialize(final JsonParser p, final DeserializationContext ctxt)
+        throws IOException {
       return UInt64.valueOf(p.getValueAsString());
     }
   }
 
   public static class UInt64Serializer extends JsonSerializer<UInt64> {
     @Override
-    public void serialize(UInt64 value, JsonGenerator gen, SerializerProvider serializers)
+    public void serialize(
+        final UInt64 value, final JsonGenerator gen, final SerializerProvider serializers)
         throws IOException {
       gen.writeNumber(value.bigIntegerValue());
     }

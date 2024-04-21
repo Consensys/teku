@@ -42,7 +42,7 @@ public interface Signature {
    * @param message The message data to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  default boolean verify(List<PublicKey> publicKeys, Bytes message) {
+  default boolean verify(final List<PublicKey> publicKeys, final Bytes message) {
     return verify(publicKeys.stream().map(pk -> new PublicKeyMessagePair(pk, message)).toList());
   }
 
@@ -53,7 +53,7 @@ public interface Signature {
    * @param message the message data to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  default boolean verify(PublicKey publicKey, Bytes message) {
+  default boolean verify(final PublicKey publicKey, final Bytes message) {
     return verify(Collections.singletonList(publicKey), message);
   }
 

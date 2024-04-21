@@ -45,7 +45,7 @@ public interface SszMutableRefList<
   }
 
   /** Just a functional style helper for {@link #append()} */
-  default void append(Consumer<SszMutableElementT> mutator) {
+  default void append(final Consumer<SszMutableElementT> mutator) {
     mutator.accept(append());
   }
 }
