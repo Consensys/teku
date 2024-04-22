@@ -74,19 +74,18 @@ class DeleteGraffitiTest {
   @Test
   void shouldReturnErrorWhenIssueDeletingGraffiti()
       throws IOException, GraffitiManagementException {
-    final String errorMessage = "Unable to delete graffiti for validator " + publicKey;
+    final GraffitiManagementException exception =
+        new GraffitiManagementException("Unable to delete graffiti for validator " + publicKey);
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    doThrow(new GraffitiManagementException(errorMessage))
-        .when(graffitiManager)
-        .deleteGraffiti(any());
+    doThrow(exception).when(graffitiManager).deleteGraffiti(any());
 
     handler.handleRequest(request);
 
     verify(graffitiManager).deleteGraffiti(eq(publicKey));
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, errorMessage));
+        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, exception.getMessage()));
   }
 
   @Test

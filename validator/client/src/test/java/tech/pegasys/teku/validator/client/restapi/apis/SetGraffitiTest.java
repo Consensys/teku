@@ -77,21 +77,20 @@ class SetGraffitiTest {
 
   @Test
   void shouldReturnErrorWhenIssueSettingGraffiti() throws IOException, GraffitiManagementException {
-    final String errorMessage = "Unable to update graffiti for validator " + publicKey;
+    final GraffitiManagementException exception =
+        new GraffitiManagementException("Unable to update graffiti for validator " + publicKey);
     request.setRequestBody(graffiti);
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    doThrow(new GraffitiManagementException(errorMessage))
-        .when(graffitiManager)
-        .setGraffiti(any(), eq(graffiti));
+    doThrow(exception).when(graffitiManager).setGraffiti(any(), eq(graffiti));
 
     handler.handleRequest(request);
 
     verify(graffitiManager).setGraffiti(eq(publicKey), eq(graffiti));
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, errorMessage));
+        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, exception.getMessage()));
   }
 
   @Test

@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,16 +72,11 @@ class GetGraffitiTest {
   }
 
   @Test
-  void shouldHandleGraffitiManagementException() throws JsonProcessingException {
+  void shouldHandleGraffitiManagementException() throws Throwable {
     final GraffitiManagementException exception =
         new GraffitiManagementException("Unable to retrieve graffiti from storage");
-    final UpdatableGraffitiProvider provider =
-        new UpdatableGraffitiProvider(
-            () -> {
-              throw exception;
-            },
-            Optional::empty);
-
+    final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
+    doThrow(exception).when(provider).getWithThrowable();
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
@@ -89,6 +85,7 @@ class GetGraffitiTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
         .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, exception.getMessage()));
+    verify(provider).getWithThrowable();
   }
 
   @Test
