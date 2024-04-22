@@ -50,7 +50,6 @@ public class OperationValidatorPhase0 implements OperationValidator {
     this.proposerSlashingValidator =
         new ProposerSlashingValidator(predicates, beaconStateAccessors);
     this.voluntaryExitValidator = voluntaryExitValidator;
-    //        new VoluntaryExitValidator(specConfig, predicates, beaconStateAccessors);
   }
 
   @Override
