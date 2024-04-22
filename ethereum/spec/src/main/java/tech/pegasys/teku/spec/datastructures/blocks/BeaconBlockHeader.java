@@ -42,19 +42,23 @@ public class BeaconBlockHeader
     }
 
     @Override
-    public BeaconBlockHeader createFromBackingNode(TreeNode node) {
+    public BeaconBlockHeader createFromBackingNode(final TreeNode node) {
       return new BeaconBlockHeader(this, node);
     }
   }
 
   public static final BeaconBlockHeaderSchema SSZ_SCHEMA = new BeaconBlockHeaderSchema();
 
-  private BeaconBlockHeader(BeaconBlockHeaderSchema type, TreeNode backingNode) {
+  private BeaconBlockHeader(final BeaconBlockHeaderSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BeaconBlockHeader(
-      UInt64 slot, UInt64 proposerIndex, Bytes32 parentRoot, Bytes32 stateRoot, Bytes32 bodyRoot) {
+      final UInt64 slot,
+      final UInt64 proposerIndex,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final Bytes32 bodyRoot) {
     super(
         SSZ_SCHEMA,
         SszUInt64.of(slot),
@@ -64,7 +68,7 @@ public class BeaconBlockHeader
         SszBytes32.of(bodyRoot));
   }
 
-  public BeaconBlockHeader(BeaconBlockHeader header) {
+  public BeaconBlockHeader(final BeaconBlockHeader header) {
     super(SSZ_SCHEMA, header.getBackingNode());
   }
 

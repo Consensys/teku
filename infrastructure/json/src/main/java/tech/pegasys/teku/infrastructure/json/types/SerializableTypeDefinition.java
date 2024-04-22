@@ -32,7 +32,8 @@ public interface SerializableTypeDefinition<T> extends OpenApiTypeDefinition {
     return new SerializableObjectTypeDefinitionBuilder<>();
   }
 
-  static <T> SerializableTypeDefinition<List<T>> listOf(SerializableTypeDefinition<T> itemType) {
+  static <T> SerializableTypeDefinition<List<T>> listOf(
+      final SerializableTypeDefinition<T> itemType) {
     return new SerializableArrayTypeDefinition<>(itemType);
   }
 }

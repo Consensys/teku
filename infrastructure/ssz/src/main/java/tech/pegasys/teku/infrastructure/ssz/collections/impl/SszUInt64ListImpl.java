@@ -25,12 +25,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class SszUInt64ListImpl extends SszPrimitiveListImpl<UInt64, SszUInt64>
     implements SszUInt64List {
 
-  public SszUInt64ListImpl(SszUInt64ListSchema<?> schema, TreeNode backingNode) {
+  public SszUInt64ListImpl(final SszUInt64ListSchema<?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   SszUInt64ListImpl(
-      SszListSchema<SszUInt64, ?> schema, TreeNode backingNode, IntCache<SszUInt64> cache) {
+      final SszListSchema<SszUInt64, ?> schema,
+      final TreeNode backingNode,
+      final IntCache<SszUInt64> cache) {
     super(schema, backingNode, cache);
   }
 

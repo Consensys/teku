@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitlistSc
 public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
     extends SszPrimitiveListSchema<Boolean, SszBit, SszBitlistT> {
 
-  static SszBitlistSchema<SszBitlist> create(long maxLength) {
+  static SszBitlistSchema<SszBitlist> create(final long maxLength) {
     return new SszBitlistSchemaImpl(maxLength);
   }
 

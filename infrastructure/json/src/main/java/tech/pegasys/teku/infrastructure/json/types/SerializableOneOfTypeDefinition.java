@@ -84,7 +84,7 @@ public class SerializableOneOfTypeDefinition<TObject>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public void serialize(TObject value, final JsonGenerator gen) throws IOException {
+  public void serialize(final TObject value, final JsonGenerator gen) throws IOException {
     SerializableTypeDefinition typeDefinition = null;
     // entryset
     for (Predicate<TObject> predicate : types.keySet()) {

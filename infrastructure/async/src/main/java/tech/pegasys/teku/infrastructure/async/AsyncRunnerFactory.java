@@ -21,12 +21,12 @@ public interface AsyncRunnerFactory {
   int DEFAULT_THREAD_PRIORITY = Thread.NORM_PRIORITY;
   Pattern ASYNC_RUNNER_NAME_PATTERN = Pattern.compile("[a-zA-Z][a-zA-Z0-9_]*");
 
-  default AsyncRunner create(String name, int maxThreads) {
+  default AsyncRunner create(final String name, final int maxThreads) {
     validateAsyncRunnerName(name);
     return create(name, maxThreads, DEFAULT_MAX_QUEUE_SIZE);
   }
 
-  default void validateAsyncRunnerName(String asyncRunnerName) {
+  default void validateAsyncRunnerName(final String asyncRunnerName) {
     if (!ASYNC_RUNNER_NAME_PATTERN.matcher(asyncRunnerName).matches()) {
       throw new IllegalArgumentException(
           String.format(
@@ -35,7 +35,7 @@ public interface AsyncRunnerFactory {
     }
   }
 
-  default AsyncRunner create(String name, int maxThreads, int maxQueueSize) {
+  default AsyncRunner create(final String name, final int maxThreads, final int maxQueueSize) {
     return create(name, maxThreads, maxQueueSize, DEFAULT_THREAD_PRIORITY);
   }
 

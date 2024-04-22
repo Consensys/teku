@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes;
 public class PublicKeyMessagePair {
 
   public static List<PublicKeyMessagePair> fromLists(
-      List<PublicKey> publicKeys, List<Bytes> messages) {
+      final List<PublicKey> publicKeys, final List<Bytes> messages) {
     checkArgument(publicKeys.size() == messages.size());
     return Streams.zip(publicKeys.stream(), messages.stream(), PublicKeyMessagePair::new).toList();
   }
@@ -35,7 +35,7 @@ public class PublicKeyMessagePair {
   private final PublicKey publicKey;
   private final Bytes message;
 
-  public PublicKeyMessagePair(PublicKey publicKey, Bytes message) {
+  public PublicKeyMessagePair(final PublicKey publicKey, final Bytes message) {
     this.publicKey = publicKey;
     this.message = message;
   }

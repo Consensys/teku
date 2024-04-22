@@ -45,11 +45,12 @@ public class BlstBLS12381 implements BLS12381 {
     return RANDOM;
   }
 
-  public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {
+  public static BlstSignature sign(final BlstSecretKey secretKey, final Bytes message) {
     return sign(secretKey, message, HashToCurve.ETH2_DST);
   }
 
-  public static BlstSignature sign(BlstSecretKey secretKey, Bytes message, String dst) {
+  public static BlstSignature sign(
+      final BlstSecretKey secretKey, final Bytes message, final String dst) {
     if (secretKey.isZero()) {
       throw new IllegalArgumentException("Signing with zero private key is prohibited");
     }
@@ -61,51 +62,58 @@ public class BlstBLS12381 implements BLS12381 {
     return new BlstSignature(p2Affine);
   }
 
-  public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
+  public static boolean verify(
+      final BlstPublicKey publicKey, final Bytes message, final BlstSignature signature) {
     return verify(publicKey, message, signature, HashToCurve.ETH2_DST);
   }
 
   public static boolean verify(
-      BlstPublicKey publicKey, Bytes message, BlstSignature signature, String dst) {
+      final BlstPublicKey publicKey,
+      final Bytes message,
+      final BlstSignature signature,
+      final String dst) {
     BLST_ERROR res =
         signature.ec2Point.core_verify(publicKey.ecPoint, true, message.toArrayUnsafe(), dst);
     return res == BLST_ERROR.BLST_SUCCESS;
   }
 
   @Override
-  public KeyPair generateKeyPair(Random random) {
+  public KeyPair generateKeyPair(final Random random) {
     BlstSecretKey secretKey = BlstSecretKey.generateNew(random);
     return new KeyPair(secretKey);
   }
 
   @Override
-  public BlstPublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes) {
+  public BlstPublicKey publicKeyFromCompressed(final Bytes48 compressedPublicKeyBytes) {
     return BlstPublicKey.fromBytes(compressedPublicKeyBytes);
   }
 
   @Override
-  public BlstSignature signatureFromCompressed(Bytes compressedSignatureBytes) {
+  public BlstSignature signatureFromCompressed(final Bytes compressedSignatureBytes) {
     return BlstSignature.fromBytes(compressedSignatureBytes);
   }
 
   @Override
-  public BlstSecretKey secretKeyFromBytes(Bytes32 secretKeyBytes) {
+  public BlstSecretKey secretKeyFromBytes(final Bytes32 secretKeyBytes) {
     return BlstSecretKey.fromBytes(secretKeyBytes);
   }
 
   @Override
-  public BlstPublicKey aggregatePublicKeys(List<? extends PublicKey> publicKeys) {
+  public BlstPublicKey aggregatePublicKeys(final List<? extends PublicKey> publicKeys) {
     return BlstPublicKey.aggregate(publicKeys.stream().map(BlstPublicKey::fromPublicKey).toList());
   }
 
   @Override
-  public BlstSignature aggregateSignatures(List<? extends Signature> signatures) {
+  public BlstSignature aggregateSignatures(final List<? extends Signature> signatures) {
     return BlstSignature.aggregate(signatures.stream().map(BlstSignature::fromSignature).toList());
   }
 
   @Override
   public BlstSemiAggregate prepareBatchVerify(
-      int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
+      final int index,
+      final List<? extends PublicKey> publicKeys,
+      final Bytes message,
+      final Signature signature) {
 
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
     BlstSignature blstSignature = BlstSignature.fromSignature(signature);
@@ -114,7 +122,7 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   BlstSemiAggregate blstPrepareBatchVerify(
-      BlstPublicKey pubKey, Bytes message, BlstSignature blstSignature) {
+      final BlstPublicKey pubKey, final Bytes message, final BlstSignature blstSignature) {
 
     Pairing ctx = new Pairing(true, ETH2_DST);
     BLST_ERROR ret =
@@ -136,13 +144,13 @@ public class BlstBLS12381 implements BLS12381 {
 
   @Override
   public BatchSemiAggregate prepareBatchVerify2(
-      int index,
-      List<? extends PublicKey> publicKeys1,
-      Bytes message1,
-      Signature signature1,
-      List<? extends PublicKey> publicKeys2,
-      Bytes message2,
-      Signature signature2) {
+      final int index,
+      final List<? extends PublicKey> publicKeys1,
+      final Bytes message1,
+      final Signature signature1,
+      final List<? extends PublicKey> publicKeys2,
+      final Bytes message2,
+      final Signature signature2) {
     BlstSemiAggregate aggregate1 = prepareBatchVerify(index, publicKeys1, message1, signature1);
     BlstSemiAggregate aggregate2 = prepareBatchVerify(index + 1, publicKeys2, message2, signature2);
 
@@ -151,7 +159,7 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   @Override
-  public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
+  public boolean completeBatchVerify(final List<? extends BatchSemiAggregate> preparedList) {
     if (preparedList.isEmpty()) {
       return true;
     }

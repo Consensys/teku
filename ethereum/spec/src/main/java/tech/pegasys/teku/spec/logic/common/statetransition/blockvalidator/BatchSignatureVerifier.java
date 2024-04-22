@@ -43,7 +43,11 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
     final Bytes message;
     final BLSSignature signature;
 
-    public Job(int idx, List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+    public Job(
+        final int idx,
+        final List<BLSPublicKey> publicKeys,
+        final Bytes message,
+        final BLSSignature signature) {
       this.idx = idx;
       this.publicKeys = publicKeys;
       this.message = message;
@@ -56,7 +60,7 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
 
   @Override
   public synchronized boolean verify(
-      List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+      final List<BLSPublicKey> publicKeys, final Bytes message, final BLSSignature signature) {
     if (complete) {
       throw new IllegalStateException("Reuse of disposable instance");
     }

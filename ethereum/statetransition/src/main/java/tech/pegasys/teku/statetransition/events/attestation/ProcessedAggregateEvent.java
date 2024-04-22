@@ -21,7 +21,7 @@ public class ProcessedAggregateEvent {
 
   private final Attestation attestation;
 
-  public ProcessedAggregateEvent(Attestation attestation) {
+  public ProcessedAggregateEvent(final Attestation attestation) {
     this.attestation = attestation;
   }
 

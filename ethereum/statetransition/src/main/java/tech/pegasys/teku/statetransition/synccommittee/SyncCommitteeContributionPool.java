@@ -51,7 +51,7 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
   }
 
   public void subscribeOperationAdded(
-      OperationAddedSubscriber<SignedContributionAndProof> subscriber) {
+      final OperationAddedSubscriber<SignedContributionAndProof> subscriber) {
     subscribers.subscribe(subscriber);
   }
 
@@ -94,7 +94,7 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
   }
 
   private SyncCommitteeContribution betterContribution(
-      final SyncCommitteeContribution a, SyncCommitteeContribution b) {
+      final SyncCommitteeContribution a, final SyncCommitteeContribution b) {
     if (a == null) {
       return b;
     } else if (b == null) {

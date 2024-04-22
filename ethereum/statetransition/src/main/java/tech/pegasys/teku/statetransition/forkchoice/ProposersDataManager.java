@@ -85,7 +85,7 @@ public class ProposersDataManager implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     // do clean up in the middle of the epoch
     final int slotsPerEpoch = spec.getSlotsPerEpoch(slot);
     final UInt64 slotInCurrentEpoch = slot.mod(slotsPerEpoch).plus(UInt64.ONE);

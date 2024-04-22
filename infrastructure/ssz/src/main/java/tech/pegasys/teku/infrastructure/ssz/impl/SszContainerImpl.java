@@ -27,21 +27,21 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszContainerImpl extends AbstractSszComposite<SszData> implements SszContainer {
 
-  public SszContainerImpl(SszContainerSchema<?> type) {
+  public SszContainerImpl(final SszContainerSchema<?> type) {
     this(type, type.getDefaultTree());
   }
 
-  public SszContainerImpl(SszContainerSchema<?> type, TreeNode backingNode) {
+  public SszContainerImpl(final SszContainerSchema<?> type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public SszContainerImpl(
-      SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
+      final SszCompositeSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
   @Override
-  protected SszData getImpl(int index) {
+  protected SszData getImpl(final int index) {
     SszCompositeSchema<?> type = this.getSchema();
     TreeNode node = getBackingNode().get(type.getChildGeneralizedIndex(index));
     return type.getChildSchema(index).createFromBackingNode(node);
@@ -68,7 +68,7 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
   }
 
   @Override
-  protected void checkIndex(int index) {
+  protected void checkIndex(final int index) {
     if (index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for container with size " + size());

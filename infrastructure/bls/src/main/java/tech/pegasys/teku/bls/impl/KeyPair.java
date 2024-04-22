@@ -18,12 +18,12 @@ public class KeyPair {
   private final SecretKey secretKey;
   private final PublicKey publicKey;
 
-  public KeyPair(SecretKey secretKey, PublicKey publicKey) {
+  public KeyPair(final SecretKey secretKey, final PublicKey publicKey) {
     this.secretKey = secretKey;
     this.publicKey = publicKey;
   }
 
-  public KeyPair(SecretKey secretKey) {
+  public KeyPair(final SecretKey secretKey) {
     this(secretKey, secretKey.derivePublicKey());
   }
 

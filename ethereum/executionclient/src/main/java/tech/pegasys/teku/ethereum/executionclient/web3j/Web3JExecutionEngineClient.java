@@ -60,7 +60,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<PowBlock> getPowBlock(Bytes32 blockHash) {
+  public SafeFuture<PowBlock> getPowBlock(final Bytes32 blockHash) {
     return web3JClient
         .doRequest(
             web3JClient.getEth1Web3j().ethGetBlockByHash(blockHash.toHexString(), false),
@@ -79,7 +79,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
 
-  private static PowBlock eth1BlockToPowBlock(EthBlock.Block eth1Block) {
+  private static PowBlock eth1BlockToPowBlock(final EthBlock.Block eth1Block) {
     return eth1Block == null
         ? null
         : new PowBlock(
@@ -90,7 +90,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayloadV1>> getPayloadV1(Bytes8 payloadId) {
+  public SafeFuture<Response<ExecutionPayloadV1>> getPayloadV1(final Bytes8 payloadId) {
     final Request<?, ExecutionPayloadV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getPayloadV1",
@@ -134,7 +134,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<PayloadStatusV1>> newPayloadV1(ExecutionPayloadV1 executionPayload) {
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV1(
+      final ExecutionPayloadV1 executionPayload) {
     final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV1",
@@ -192,7 +193,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
-      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes) {
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV1> payloadAttributes) {
     final Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdatedV1",

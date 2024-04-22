@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class PendingPartialWithdrawal
     extends Container3<PendingPartialWithdrawal, SszUInt64, SszUInt64, SszUInt64> {
   protected PendingPartialWithdrawal(
-      ContainerSchema3<PendingPartialWithdrawal, SszUInt64, SszUInt64, SszUInt64> schema) {
+      final ContainerSchema3<PendingPartialWithdrawal, SszUInt64, SszUInt64, SszUInt64> schema) {
     super(schema);
   }
 
@@ -63,13 +63,14 @@ public class PendingPartialWithdrawal
     }
 
     @Override
-    public PendingPartialWithdrawal createFromBackingNode(TreeNode node) {
+    public PendingPartialWithdrawal createFromBackingNode(final TreeNode node) {
       return new PendingPartialWithdrawal(this, node);
     }
   }
 
   private PendingPartialWithdrawal(
-      PendingPartialWithdrawal.PendingPartialWithdrawalSchema type, final TreeNode backingNode) {
+      final PendingPartialWithdrawal.PendingPartialWithdrawalSchema type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

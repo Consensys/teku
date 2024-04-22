@@ -77,7 +77,7 @@ public abstract class ResourceLoader {
 
   abstract Optional<InputStream> loadSource(String source) throws IOException;
 
-  public Optional<Bytes> loadBytes(String... sources) throws IOException {
+  public Optional<Bytes> loadBytes(final String... sources) throws IOException {
     final Optional<InputStream> maybeStream = load(sources);
     if (maybeStream.isEmpty()) {
       return Optional.empty();

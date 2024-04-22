@@ -32,7 +32,7 @@ public interface BlockProvider {
 
   BlockProvider NOOP = (roots) -> SafeFuture.completedFuture(Collections.emptyMap());
 
-  static BlockProvider fromDynamicMap(Supplier<Map<Bytes32, SignedBeaconBlock>> mapSupplier) {
+  static BlockProvider fromDynamicMap(final Supplier<Map<Bytes32, SignedBeaconBlock>> mapSupplier) {
     return (roots) -> fromMap(mapSupplier.get()).getBlocks(roots);
   }
 

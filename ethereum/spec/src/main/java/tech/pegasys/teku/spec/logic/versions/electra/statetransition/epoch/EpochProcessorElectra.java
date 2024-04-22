@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WI
 import java.util.List;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -38,6 +40,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -46,6 +49,9 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
   private final UInt64 minActivationBalance;
   private final SchemaDefinitionsElectra definitionsElectra;
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
+
+  private final BeaconStateMutatorsElectra stateMutatorsElectra;
+  private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
   public EpochProcessorElectra(
       final SpecConfigBellatrix specConfig,
@@ -69,6 +75,8 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
     this.definitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
+    this.stateMutatorsElectra = BeaconStateMutatorsElectra.required(beaconStateMutators);
+    this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
   }
 
   /**
@@ -186,12 +194,99 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
   }
 
   @Override
-  public void processPendingBalanceDeposits(final MutableBeaconState state) {
-    // TODO EIP-7251
+  protected UInt64 getEffectiveBalanceLimitForValidator(final Validator validator) {
+    return stateAccessorsElectra.getValidatorMaxEffectiveBalance(validator);
   }
 
+  /**
+   * process_pending_balance_deposits
+   *
+   * @param state
+   */
+  @Override
+  public void processPendingBalanceDeposits(final MutableBeaconState state) {
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+    final UInt64 availableForProcessing =
+        stateElectra
+            .getDepositBalanceToConsume()
+            .plus(stateAccessorsElectra.getActivationExitChurnLimit(stateElectra));
+
+    UInt64 processedAmount = UInt64.ZERO;
+    int nextDepositIndex = 0;
+
+    final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
+        stateElectra.getPendingBalanceDeposits();
+    for (int i = 0; i < pendingBalanceDeposits.size(); i++) {
+      final PendingBalanceDeposit deposit = pendingBalanceDeposits.get(i);
+      if (processedAmount.plus(deposit.getAmount()).isGreaterThan(availableForProcessing)) {
+        break;
+      }
+      stateMutatorsElectra.increaseBalance(state, deposit.getIndex(), deposit.getAmount());
+      processedAmount = processedAmount.plus(deposit.getAmount());
+      nextDepositIndex++;
+    }
+
+    if (pendingBalanceDeposits.size() >= nextDepositIndex) {
+      stateElectra.setPendingBalanceDeposits(
+          schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(List.of()));
+      stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
+    } else {
+      final List<PendingBalanceDeposit> newList =
+          pendingBalanceDeposits
+              .asList()
+              .subList(nextDepositIndex, pendingBalanceDeposits.size() - 1);
+      stateElectra.setPendingBalanceDeposits(
+          schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(newList));
+      stateElectra.setDepositBalanceToConsume(availableForProcessing.minusMinZero(processedAmount));
+    }
+  }
+
+  /**
+   * process_pending_consolidations
+   *
+   * @param state
+   */
   @Override
   public void processPendingConsolidations(final MutableBeaconState state) {
-    // TODO EIP-7251
+
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+    int nextPendingBalanceConsolidation = 0;
+    final SszList<PendingConsolidation> pendingConsolidations =
+        stateElectra.getPendingConsolidations();
+    final UInt64 currentEpoch = stateAccessorsElectra.getCurrentEpoch(state);
+
+    for (int i = 0; i < pendingConsolidations.size(); i++) {
+      final PendingConsolidation pendingConsolidation = pendingConsolidations.get(i);
+      final Validator sourceValidator =
+          state.getValidators().get(pendingConsolidation.getSourceIndex());
+      if (sourceValidator.isSlashed()) {
+        nextPendingBalanceConsolidation++;
+        continue;
+      }
+      if (sourceValidator.getWithdrawableEpoch().isGreaterThan(currentEpoch)) {
+        break;
+      }
+
+      switchToCompoundingValidator(stateElectra, pendingConsolidation.getTargetIndex());
+      final UInt64 activeBalance =
+          stateAccessorsElectra.getActiveBalance(state, pendingConsolidation.getSourceIndex());
+      beaconStateMutators.decreaseBalance(
+          state, pendingConsolidation.getSourceIndex(), activeBalance);
+      beaconStateMutators.increaseBalance(
+          state, pendingConsolidation.getTargetIndex(), activeBalance);
+
+      nextPendingBalanceConsolidation++;
+    }
+    if (pendingConsolidations.size() >= nextPendingBalanceConsolidation) {
+      stateElectra.setPendingConsolidations(
+          schemaDefinitionsElectra.getPendingConsolidationsSchema().createFromElements(List.of()));
+    } else {
+      final List<PendingConsolidation> newList =
+          pendingConsolidations
+              .asList()
+              .subList(nextPendingBalanceConsolidation, pendingConsolidations.size() - 1);
+      stateElectra.setPendingConsolidations(
+          schemaDefinitionsElectra.getPendingConsolidationsSchema().createFromElements(newList));
+    }
   }
 }

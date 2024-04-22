@@ -21,11 +21,11 @@ public class SszUInt256 extends AbstractSszPrimitive<UInt256> {
 
   public static final SszUInt256 ZERO = SszUInt256.of(UInt256.ZERO);
 
-  public static SszUInt256 of(UInt256 val) {
+  public static SszUInt256 of(final UInt256 val) {
     return new SszUInt256(val);
   }
 
-  private SszUInt256(UInt256 val) {
+  private SszUInt256(final UInt256 val) {
     super(val, SszPrimitiveSchemas.UINT256_SCHEMA);
   }
 }

@@ -34,11 +34,11 @@ public class VoteTracker {
   }
 
   public VoteTracker(
-      Bytes32 currentRoot,
-      Bytes32 nextRoot,
-      UInt64 nextEpoch,
-      boolean nextEquivocating,
-      boolean currentEquivocating) {
+      final Bytes32 currentRoot,
+      final Bytes32 nextRoot,
+      final UInt64 nextEpoch,
+      final boolean nextEquivocating,
+      final boolean currentEquivocating) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
@@ -75,7 +75,7 @@ public class VoteTracker {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

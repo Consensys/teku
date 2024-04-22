@@ -21,8 +21,9 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
-
-  public TrustedSetup {
+  TrustedSetup(final List<Bytes> g1Points, final List<Bytes> g2Points) {
+    this.g1Points = g1Points;
+    this.g2Points = g2Points;
     g1Points.forEach(this::validateG1Point);
     g2Points.forEach(this::validateG2Point);
   }

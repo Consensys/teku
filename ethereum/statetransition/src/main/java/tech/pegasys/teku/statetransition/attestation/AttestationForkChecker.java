@@ -25,7 +25,7 @@ public class AttestationForkChecker {
 
   private final Set<Bytes32> validCommitteeShufflingSeeds = new HashSet<>();
 
-  public AttestationForkChecker(final Spec spec, BeaconState state) {
+  public AttestationForkChecker(final Spec spec, final BeaconState state) {
 
     UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
     Bytes32 currentEpochSeed = spec.getSeed(state, epoch, Domain.BEACON_ATTESTER);

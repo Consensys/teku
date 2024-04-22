@@ -14,7 +14,7 @@
 package tech.pegasys.teku.infrastructure.http;
 
 public class ContentTypeNotSupportedException extends RuntimeException {
-  public ContentTypeNotSupportedException(String message) {
+  public ContentTypeNotSupportedException(final String message) {
     super(message);
   }
 }

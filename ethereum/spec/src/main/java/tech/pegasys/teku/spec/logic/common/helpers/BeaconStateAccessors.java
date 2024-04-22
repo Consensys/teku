@@ -49,11 +49,11 @@ public abstract class BeaconStateAccessors {
     this.miscHelpers = miscHelpers;
   }
 
-  public UInt64 getCurrentEpoch(BeaconState state) {
+  public UInt64 getCurrentEpoch(final BeaconState state) {
     return miscHelpers.computeEpochAtSlot(state.getSlot());
   }
 
-  public UInt64 getPreviousEpoch(BeaconState state) {
+  public UInt64 getPreviousEpoch(final BeaconState state) {
     UInt64 currentEpoch = getCurrentEpoch(state);
     return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
   }
@@ -73,7 +73,8 @@ public abstract class BeaconStateAccessors {
     return getValidatorChurnLimit(state);
   }
 
-  public Optional<BLSPublicKey> getValidatorPubKey(BeaconState state, UInt64 validatorIndex) {
+  public Optional<BLSPublicKey> getValidatorPubKey(
+      final BeaconState state, final UInt64 validatorIndex) {
     if (state.getValidators().size() <= validatorIndex.longValue()
         || validatorIndex.longValue() < 0) {
       return Optional.empty();
@@ -101,7 +102,7 @@ public abstract class BeaconStateAccessors {
    * @param epoch - The epoch under consideration.
    * @return A list of indices representing the active validators for the given epoch.
    */
-  public IntList getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
+  public IntList getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
     final UInt64 stateEpoch = getCurrentEpoch(state);
     final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(
@@ -130,7 +131,7 @@ public abstract class BeaconStateAccessors {
     return stateEpoch.plus(config.getMaxSeedLookahead());
   }
 
-  public UInt64 getTotalBalance(BeaconState state, Collection<Integer> indices) {
+  public UInt64 getTotalBalance(final BeaconState state, final Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
     SszList<Validator> validatorRegistry = state.getValidators();
     for (Integer index : indices) {
@@ -139,7 +140,7 @@ public abstract class BeaconStateAccessors {
     return sum.max(config.getEffectiveBalanceIncrement());
   }
 
-  public UInt64 getTotalActiveBalance(BeaconState state) {
+  public UInt64 getTotalActiveBalance(final BeaconState state) {
     return BeaconStateCache.getTransitionCaches(state)
         .getTotalActiveBalance()
         .get(
@@ -153,7 +154,7 @@ public abstract class BeaconStateAccessors {
     return committeeWeight.times(config.getProposerScoreBoost()).dividedBy(100);
   }
 
-  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domainType)
+  public Bytes32 getSeed(final BeaconState state, final UInt64 epoch, final Bytes4 domainType)
       throws IllegalArgumentException {
     UInt64 randaoIndex =
         epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
@@ -183,7 +184,7 @@ public abstract class BeaconStateAccessors {
    * @param epoch
    * @return
    */
-  public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
+  public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
     IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     return getCommitteeCountPerSlot(activeValidatorIndices.size());
   }
@@ -199,16 +200,16 @@ public abstract class BeaconStateAccessors {
                     config.getTargetCommitteeSize()))));
   }
 
-  public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
+  public Bytes32 getRandaoMix(final BeaconState state, final UInt64 epoch) {
     int index = epoch.mod(config.getEpochsPerHistoricalVector()).intValue();
     return state.getRandaoMixes().getElement(index);
   }
 
-  public int getBeaconProposerIndex(BeaconState state) {
+  public int getBeaconProposerIndex(final BeaconState state) {
     return getBeaconProposerIndex(state, state.getSlot());
   }
 
-  public int getBeaconProposerIndex(BeaconState state, UInt64 requestedSlot) {
+  public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconProposerIndex()
@@ -248,7 +249,7 @@ public abstract class BeaconStateAccessors {
         stateEpoch);
   }
 
-  public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
+  public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot)
       throws IllegalArgumentException {
     checkArgument(
         isBlockRootAvailableFromState(state, slot),
@@ -259,11 +260,12 @@ public abstract class BeaconStateAccessors {
     return state.getBlockRoots().getElement(latestBlockRootIndex);
   }
 
-  public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
+  public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch)
+      throws IllegalArgumentException {
     return getBlockRootAtSlot(state, miscHelpers.computeStartSlotAtEpoch(epoch));
   }
 
-  private boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
+  private boolean isBlockRootAvailableFromState(final BeaconState state, final UInt64 slot) {
     UInt64 slotPlusHistoricalRoot = slot.plus(config.getSlotsPerHistoricalRoot());
     return slot.isLessThan(state.getSlot())
         && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
@@ -284,7 +286,8 @@ public abstract class BeaconStateAccessors {
     return Integer.MAX_VALUE;
   }
 
-  public IntList getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+  public IntList getBeaconCommittee(
+      final BeaconState state, final UInt64 slot, final UInt64 index) {
     // Make sure state is within range of the slot being queried
     validateStateForCommitteeQuery(state, slot);
 
@@ -310,7 +313,7 @@ public abstract class BeaconStateAccessors {
             });
   }
 
-  public void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
+  public void validateStateForCommitteeQuery(final BeaconState state, final UInt64 slot) {
     final UInt64 oldestQueryableSlot =
         miscHelpers.getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(slot);
     checkArgument(

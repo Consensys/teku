@@ -20,7 +20,7 @@ public class SimpleSszReader implements SszReader {
   private final Bytes bytes;
   protected int offset = 0;
 
-  public SimpleSszReader(Bytes bytes) {
+  public SimpleSszReader(final Bytes bytes) {
     this.bytes = bytes;
   }
 
@@ -30,7 +30,7 @@ public class SimpleSszReader implements SszReader {
   }
 
   @Override
-  public SszReader slice(int size) {
+  public SszReader slice(final int size) {
     checkIfAvailable(size);
     SimpleSszReader ret = new SimpleSszReader(bytes.slice(offset, size));
     offset += size;
@@ -38,14 +38,14 @@ public class SimpleSszReader implements SszReader {
   }
 
   @Override
-  public Bytes read(int length) {
+  public Bytes read(final int length) {
     checkIfAvailable(length);
     Bytes ret = bytes.slice(offset, length);
     offset += length;
     return ret;
   }
 
-  private void checkIfAvailable(int size) {
+  private void checkIfAvailable(final int size) {
     if (getAvailableBytes() < size) {
       throw new SszDeserializeException("Invalid SSZ: trying to read more bytes than available");
     }

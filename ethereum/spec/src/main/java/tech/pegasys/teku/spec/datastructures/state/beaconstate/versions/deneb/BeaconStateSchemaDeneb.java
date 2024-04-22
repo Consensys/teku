@@ -143,7 +143,7 @@ public class BeaconStateSchemaDeneb
   }
 
   @Override
-  public BeaconStateDeneb createFromBackingNode(TreeNode node) {
+  public BeaconStateDeneb createFromBackingNode(final TreeNode node) {
     return new BeaconStateDenebImpl(this, node);
   }
 }

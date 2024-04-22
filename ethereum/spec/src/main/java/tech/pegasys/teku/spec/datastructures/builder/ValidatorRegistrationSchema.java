@@ -51,7 +51,7 @@ public class ValidatorRegistrationSchema
   }
 
   @Override
-  public ValidatorRegistration createFromBackingNode(TreeNode node) {
+  public ValidatorRegistration createFromBackingNode(final TreeNode node) {
     return new ValidatorRegistration(this, node);
   }
 }
