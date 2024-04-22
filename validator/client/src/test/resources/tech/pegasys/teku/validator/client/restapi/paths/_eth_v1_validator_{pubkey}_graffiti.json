@@ -99,8 +99,14 @@
       "content" : {
         "application/json" : {
           "schema" : {
-            "type" : "string",
-            "description" : "Graffiti string"
+            "type" : "object",
+            "required" : [ "graffiti" ],
+            "properties" : {
+              "graffiti" : {
+                "type" : "string",
+                "description" : "Arbitrary data to set in the graffiti field of BeaconBlockBody"
+              }
+            }
           }
         }
       }

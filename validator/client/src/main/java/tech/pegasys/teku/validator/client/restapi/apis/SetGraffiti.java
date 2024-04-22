@@ -23,7 +23,9 @@ import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PU
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -35,6 +37,18 @@ public class SetGraffiti extends RestApiEndpoint {
   private final KeyManager keyManager;
   private final GraffitiManager graffitiManager;
 
+  public static final DeserializableTypeDefinition<String> GRAFFITI_REQUEST_TYPE =
+      DeserializableTypeDefinition.object(String.class, StringBuilder.class)
+          .initializer(StringBuilder::new)
+          .finisher(StringBuilder::toString)
+          .withField(
+              "graffiti",
+              STRING_TYPE.withDescription(
+                  "Arbitrary data to set in the graffiti field of BeaconBlockBody"),
+              Function.identity(),
+              StringBuilder::append)
+          .build();
+
   public SetGraffiti(final KeyManager keyManager, final GraffitiManager graffitiManager) {
     super(
         EndpointMetadata.post(GetGraffiti.ROUTE)
@@ -44,7 +58,7 @@ public class SetGraffiti extends RestApiEndpoint {
             .tags(TAG_GRAFFITI)
             .withBearerAuthSecurity()
             .pathParam(PARAM_PUBKEY_TYPE)
-            .requestBodyType(STRING_TYPE.withDescription("Graffiti string"))
+            .requestBodyType(GRAFFITI_REQUEST_TYPE)
             .response(SC_NO_CONTENT, "Successfully updated graffiti.")
             .withAuthenticationResponses()
             .withNotFoundResponse()
