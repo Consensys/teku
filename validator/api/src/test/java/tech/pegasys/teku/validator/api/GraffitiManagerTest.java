@@ -56,7 +56,7 @@ class GraffitiManagerTest {
 
   @Test
   void setGraffiti_shouldSetGraffitiWhenFileNotExist(@TempDir final Path tempDir)
-      throws IOException {
+      throws GraffitiManagementException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().toFile().exists()).isTrue();
@@ -66,7 +66,8 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void setGraffiti_shouldSetGraffitiWhenFileExist(@TempDir final Path tempDir) throws IOException {
+  void setGraffiti_shouldSetGraffitiWhenFileExist(@TempDir final Path tempDir)
+      throws IOException, GraffitiManagementException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile().createNewFile())
@@ -117,7 +118,7 @@ class GraffitiManagerTest {
 
   @Test
   void deleteGraffiti_shouldDeleteGraffitiWhenFileExist(@TempDir final Path tempDir)
-      throws IOException {
+      throws IOException, GraffitiManagementException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     assertThat(getGraffitiManagementDir().resolve(getFileName(publicKey)).toFile().createNewFile())
@@ -145,7 +146,7 @@ class GraffitiManagerTest {
 
   @Test
   void shouldSetAndDeleteGraffitiWhenManagementPreexisting(@TempDir final Path tempDir)
-      throws IOException {
+      throws GraffitiManagementException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     final Path managementDir = getGraffitiManagementDir();
     assertThat(managementDir.toFile().mkdirs()).isTrue();
@@ -174,7 +175,8 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void getGraffiti_shouldGetGraffitiFromStorage(@TempDir final Path tempDir) throws IOException {
+  void getGraffiti_shouldGetGraffitiFromStorage(@TempDir final Path tempDir)
+      throws IOException, GraffitiManagementException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
@@ -185,7 +187,8 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void getGraffiti_shouldReturnEmptyWhenFileNotExist(@TempDir final Path tempDir) {
+  void getGraffiti_shouldReturnEmptyWhenFileNotExist(@TempDir final Path tempDir)
+      throws GraffitiManagementException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
 
@@ -193,7 +196,8 @@ class GraffitiManagerTest {
   }
 
   @Test
-  void getGraffiti_shouldReturnEmptyWhenFileTooBig(@TempDir final Path tempDir) throws IOException {
+  void getGraffiti_shouldThrowExceptionWhenGraffitiOver32Bytes(@TempDir final Path tempDir)
+      throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
 
@@ -201,12 +205,29 @@ class GraffitiManagerTest {
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
     Files.writeString(filePath, invalidGraffiti);
 
-    assertThat(manager.getGraffiti(publicKey)).isEmpty();
+    assertThatThrownBy(() -> manager.getGraffiti(publicKey))
+        .isInstanceOf(GraffitiManagementException.class)
+        .hasMessage("Unable to retrieve stored graffiti for validator " + publicKey);
+  }
+
+  @Test
+  void getGraffiti_shouldThrowExceptionWhenFileOver40Bytes(@TempDir final Path tempDir)
+      throws IOException {
+    dataDirLayout = new SimpleDataDirLayout(tempDir);
+    manager = new GraffitiManager(dataDirLayout);
+
+    final String invalidGraffiti = "This graffiti is a bit too long to get from file!!";
+    final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));
+    Files.writeString(filePath, invalidGraffiti);
+
+    assertThatThrownBy(() -> manager.getGraffiti(publicKey))
+        .isInstanceOf(GraffitiManagementException.class)
+        .hasMessage("Unable to retrieve stored graffiti for validator " + publicKey);
   }
 
   @Test
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
-  void getGraffiti_shouldReturnEmptyWhenNotReadableFile(@TempDir final Path tempDir)
+  void getGraffiti_shouldThrowExceptionWhenNotReadableFile(@TempDir final Path tempDir)
       throws IOException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
@@ -214,12 +235,14 @@ class GraffitiManagerTest {
     Files.writeString(filePath, graffiti);
     assertThat(filePath.toFile().setReadable(false)).isTrue();
 
-    assertThat(manager.getGraffiti(publicKey)).isEmpty();
+    assertThatThrownBy(() -> manager.getGraffiti(publicKey))
+        .isInstanceOf(GraffitiManagementException.class)
+        .hasMessage("Unable to retrieve stored graffiti for validator " + publicKey);
   }
 
   @Test
   void getGraffiti_shouldReturnEmptyBytesWhenFileEmpty(@TempDir final Path tempDir)
-      throws IOException {
+      throws IOException, GraffitiManagementException {
     dataDirLayout = new SimpleDataDirLayout(tempDir);
     manager = new GraffitiManager(dataDirLayout);
     final Path filePath = getGraffitiManagementDir().resolve(getFileName(publicKey));

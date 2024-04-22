@@ -74,7 +74,8 @@ public class GraffitiManager {
     }
   }
 
-  public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {
+  public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey)
+      throws GraffitiManagementException {
     final Path filePath = directory.resolve(resolveFileName(publicKey));
     if (!filePath.toFile().exists()) {
       return Optional.empty();
@@ -83,8 +84,9 @@ public class GraffitiManager {
     try {
       return Optional.of(GraffitiParser.loadFromFile(filePath));
     } catch (GraffitiLoaderException | IllegalArgumentException e) {
-      LOG.error("Unable to read graffiti from storage.", e);
-      return Optional.empty();
+      LOG.error("Loading graffiti from graffiti storage failed.", e);
+      throw new GraffitiManagementException(
+          "Unable to retrieve stored graffiti for validator " + publicKey, e);
     }
   }
 

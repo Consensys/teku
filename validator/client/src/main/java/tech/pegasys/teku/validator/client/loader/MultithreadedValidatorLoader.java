@@ -24,9 +24,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
@@ -49,7 +49,7 @@ public class MultithreadedValidatorLoader {
       final OwnedValidators ownedValidators,
       final Map<BLSPublicKey, ValidatorProvider> providers,
       final GraffitiProvider defaultGraffitiProvider,
-      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider,
+      final ExceptionThrowingFunction<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout) {
     final int totalValidatorCount = providers.size();
     STATUS_LOG.loadingValidators(totalValidatorCount);

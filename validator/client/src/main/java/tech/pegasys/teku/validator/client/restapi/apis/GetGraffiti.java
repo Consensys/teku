@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.PUBKEY_API_TYPE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_GRAFFITI;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.api.Bytes32Parser;
+import tech.pegasys.teku.validator.api.UpdatableGraffitiProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -88,7 +90,13 @@ public class GetGraffiti extends RestApiEndpoint {
       return;
     }
 
-    request.respondOk(new GraffitiResponse(publicKey, maybeValidator.get().getGraffiti()));
+    try {
+      final UpdatableGraffitiProvider provider =
+          (UpdatableGraffitiProvider) maybeValidator.get().getGraffitiProvider();
+      request.respondOk(new GraffitiResponse(publicKey, provider.getGraffitiWithThrowable()));
+    } catch (Throwable e) {
+      request.respondError(SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    }
   }
 
   private static String processGraffitiString(final Bytes32 graffiti) {

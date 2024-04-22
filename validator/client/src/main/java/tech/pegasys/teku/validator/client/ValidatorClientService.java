@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -163,12 +163,17 @@ public class ValidatorClientService extends Service {
             validatorApiConfig.isRestApiEnabled()
                 ? new GraffitiManager(services.getDataDirLayout())
                 : null);
+    final ExceptionThrowingFunction<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider =
+        (publicKey) -> {
+          if (graffitiManager.isPresent()) {
+            final GraffitiManager manager = graffitiManager.get();
+            return manager.getGraffiti(publicKey);
+          }
+          return Optional.empty();
+        };
+
     final ValidatorLoader validatorLoader =
-        createValidatorLoader(
-            services,
-            config,
-            asyncRunner,
-            (publicKey) -> graffitiManager.flatMap(manager -> manager.getGraffiti(publicKey)));
+        createValidatorLoader(services, config, asyncRunner, updatableGraffitiProvider);
     final ValidatorStatusProvider validatorStatusProvider =
         new OwnedValidatorStatusProvider(
             services.getMetricsSystem(),
@@ -409,7 +414,7 @@ public class ValidatorClientService extends Service {
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
       final AsyncRunner asyncRunner,
-      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider) {
+      final ExceptionThrowingFunction<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         config.getValidatorConfig().isLocalSlashingProtectionSynchronizedModeEnabled()

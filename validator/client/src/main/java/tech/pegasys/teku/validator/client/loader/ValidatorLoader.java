@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
@@ -55,7 +55,8 @@ public class ValidatorLoader {
   private final Optional<ValidatorSource> mutableExternalValidatorSource;
   private final OwnedValidators ownedValidators = new OwnedValidators();
   private final GraffitiProvider defaultGraffitiProvider;
-  private final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider;
+  private final ExceptionThrowingFunction<BLSPublicKey, Optional<Bytes32>>
+      updatableGraffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
   private final SlashingProtectionLogger slashingProtectionLogger;
 
@@ -64,7 +65,7 @@ public class ValidatorLoader {
       final Optional<ValidatorSource> mutableLocalValidatorSource,
       final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider defaultGraffitiProvider,
-      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider,
+      final ExceptionThrowingFunction<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger) {
     this.validatorSources = validatorSources;
@@ -241,7 +242,7 @@ public class ValidatorLoader {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Optional<DataDirLayout> maybeMutableDir,
-      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider) {
+      final ExceptionThrowingFunction<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider) {
     final ValidatorSourceFactory validatorSources =
         new ValidatorSourceFactory(
             spec,

@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.validator.api;
 
-import java.io.IOException;
-
-public class GraffitiManagementException extends IOException {
+public class GraffitiManagementException extends Exception {
 
   public GraffitiManagementException(final String message) {
     super(message);

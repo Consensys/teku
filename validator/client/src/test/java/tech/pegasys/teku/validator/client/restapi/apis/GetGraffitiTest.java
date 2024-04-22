@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
@@ -39,7 +40,8 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.Bytes32Parser;
-import tech.pegasys.teku.validator.api.GraffitiProvider;
+import tech.pegasys.teku.validator.api.GraffitiManagementException;
+import tech.pegasys.teku.validator.api.UpdatableGraffitiProvider;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -59,13 +61,34 @@ class GetGraffitiTest {
           .build();
 
   @Test
-  void shouldGetGraffiti() throws JsonProcessingException {
+  void shouldGetGraffiti() throws Throwable {
     checkGraffiti(Optional.of(bytesGraffiti));
   }
 
   @Test
-  void shouldGetEmptyGraffiti() throws JsonProcessingException {
+  void shouldGetEmptyGraffiti() throws Throwable {
     checkGraffiti(Optional.empty());
+  }
+
+  @Test
+  void shouldHandleGraffitiManagementException() throws JsonProcessingException {
+    final GraffitiManagementException exception =
+        new GraffitiManagementException("Unable to retrieve graffiti from storage");
+    final UpdatableGraffitiProvider provider =
+        new UpdatableGraffitiProvider(
+            () -> {
+              throw exception;
+            },
+            Optional::empty);
+
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
+    when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, exception.getMessage()));
   }
 
   @Test
@@ -111,8 +134,9 @@ class GetGraffitiTest {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 
-  private void checkGraffiti(final Optional<Bytes32> graffiti) throws JsonProcessingException {
-    final GraffitiProvider provider = () -> graffiti;
+  private void checkGraffiti(final Optional<Bytes32> graffiti) throws Throwable {
+    final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
+    when(provider.getGraffitiWithThrowable()).thenReturn(graffiti);
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
@@ -122,5 +146,6 @@ class GetGraffitiTest {
         new GetGraffiti.GraffitiResponse(publicKey, graffiti);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+    verify(provider).getGraffitiWithThrowable();
   }
 }
