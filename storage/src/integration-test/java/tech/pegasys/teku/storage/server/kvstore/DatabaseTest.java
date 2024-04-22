@@ -243,7 +243,8 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
-            true));
+            true,
+            false));
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -258,7 +259,8 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
-            true));
+            true,
+            false));
     // Will not be overridden from Database interface, only initial set
     assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
@@ -387,7 +389,8 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
-            true));
+            true,
+            false));
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -402,7 +405,8 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
-            true));
+            true,
+            false));
 
     // check all non-canonical blobs are present
     List.of(blobSidecar1_0, blobSidecar2_0, blobSidecar2_1, blobSidecar3_0, blobSidecar5_0)

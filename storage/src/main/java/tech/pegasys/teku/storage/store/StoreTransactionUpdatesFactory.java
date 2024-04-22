@@ -257,6 +257,8 @@ class StoreTransactionUpdatesFactory {
         stateRoots,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
-        spec.isMilestoneSupported(SpecMilestone.DENEB));
+        // FIXME: suboptimal criteria, doesn't fade out when blobs are over
+        spec.isMilestoneSupported(SpecMilestone.DENEB),
+        spec.isMilestoneSupported(SpecMilestone.ELECTRA));
   }
 }

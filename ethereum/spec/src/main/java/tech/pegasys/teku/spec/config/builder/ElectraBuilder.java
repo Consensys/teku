@@ -47,7 +47,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer maxAttesterSlashingsElectra;
   private Integer maxAttestationsElectra;
   private Integer maxConsolidations;
-  private UInt64 fieldElementsPerCell;
+  // TODO: Remove default when EIP-7459 becomes part of the Electra
+  private UInt64 fieldElementsPerCell = UInt64.ONE;
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
   private Integer minEpochsForDataColumnSidecarsRequests;

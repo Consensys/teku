@@ -29,7 +29,7 @@ public interface DataColumnSidecarGossipValidator {
                 (__, err) ->
                     err == null
                         ? InternalValidationResult.ACCEPT
-                        : InternalValidationResult.reject(err.toString()));
+                        : InternalValidationResult.reject("Error: %s", err));
   }
 
   SafeFuture<InternalValidationResult> validate(DataColumnSidecar dataColumnSidecar);

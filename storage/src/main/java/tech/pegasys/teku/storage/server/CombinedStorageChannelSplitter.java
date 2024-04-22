@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
@@ -243,5 +245,21 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecarKeys(slotAndBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getFirstIncompleteSlot() {
+    return asyncRunner.runAsync(queryDelegate::getFirstIncompleteSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
+      final ColumnSlotAndIdentifier identifier) {
+    return asyncRunner.runAsync(() -> queryDelegate.getSidecar(identifier));
+  }
+
+  @Override
+  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+    return asyncRunner.runAsync(() -> queryDelegate.getDataColumnIdentifiers(slot));
   }
 }

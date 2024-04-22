@@ -993,6 +993,10 @@ public class KvStoreDatabase implements Database {
           update.getEarliestBlobSidecarSlot(),
           update.getBlobSidecars().values().stream().flatMap(Collection::stream));
     }
+    if (update.isSidecarsEnabled()) {
+      removeNonCanonicalSidecars(
+          update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
+    }
     long finalizedDataUpdatedTime = System.currentTimeMillis();
 
     LOG.trace("Applying hot updates");
@@ -1157,8 +1161,6 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  // TODO: link on storage update when sidecars are enabled
-  @SuppressWarnings("UnusedMethod")
   private void removeNonCanonicalSidecars(
       final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap) {

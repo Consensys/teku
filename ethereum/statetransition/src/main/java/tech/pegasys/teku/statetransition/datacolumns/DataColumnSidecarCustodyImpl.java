@@ -27,8 +27,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, SlotEventsChannel {
 
@@ -79,13 +81,19 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
 
   public DataColumnSidecarCustodyImpl(
       Spec spec,
+      CombinedChainDataClient combinedChainDataClient,
       DataColumnSidecarDB db,
-      BlockChainAccessor blockChainAccessor,
       UInt256 nodeId,
       int totalCustodySubnetCount) {
     this.spec = spec;
     this.db = db;
-    this.blockChainAccessor = blockChainAccessor;
+    // FIXME: I stink!
+    this.blockChainAccessor =
+        slot ->
+            combinedChainDataClient
+                .getBlockAtSlotExact(slot)
+                .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getRoot))
+                .join();
     this.nodeId = nodeId;
     this.totalCustodySubnetCount = totalCustodySubnetCount;
     this.electraStartEpoch = spec.getForkSchedule().getFork(SpecMilestone.ELECTRA).getEpoch();
@@ -171,6 +179,7 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
             });
   }
 
+  @Override
   public Stream<ColumnSlotAndIdentifier> streamMissingColumns() {
     return streamSlotCustodies()
         .flatMap(

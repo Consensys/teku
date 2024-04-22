@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -42,12 +43,14 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -821,5 +824,37 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<Checkpoint>> getInitialAnchor() {
     return historicalChainData.getAnchor();
+  }
+
+  public SafeFuture<Optional<UInt64>> getFirstIncompleteSlot() {
+    return historicalChainData.getFirstIncompleteSlot();
+  }
+
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(final DataColumnIdentifier identifier) {
+    final Optional<UInt64> hotSlotForBlockRoot =
+        recentChainData.getSlotForBlockRoot(identifier.getBlockRoot());
+    if (hotSlotForBlockRoot.isPresent()) {
+      return getSidecar(new ColumnSlotAndIdentifier(hotSlotForBlockRoot.get(), identifier));
+    }
+    return historicalChainData
+        .getBlockByBlockRoot(identifier.getBlockRoot())
+        .thenCompose(
+            blockOptional -> {
+              if (blockOptional.isPresent()) {
+                return getSidecar(
+                    new ColumnSlotAndIdentifier(blockOptional.get().getSlot(), identifier));
+              } else {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+            });
+  }
+
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
+      final ColumnSlotAndIdentifier identifier) {
+    return historicalChainData.getSidecar(identifier);
+  }
+
+  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+    return historicalChainData.getDataColumnIdentifiers(slot);
   }
 }

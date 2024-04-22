@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -38,9 +39,11 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.ChainStorageFacade;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -51,7 +54,11 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 
 public class ChainStorage
-    implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel, ChainStorageFacade {
+    implements StorageUpdateChannel,
+        StorageQueryChannel,
+        VoteUpdateChannel,
+        SidecarUpdateChannel,
+        ChainStorageFacade {
   private static final Logger LOG = LogManager.getLogger();
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
@@ -358,5 +365,42 @@ public class ChainStorage
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(() -> database.getBlobSidecarKeys(slotAndBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getFirstIncompleteSlot() {
+    return SafeFuture.of(database::getFirstIncompleteSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
+      final ColumnSlotAndIdentifier identifier) {
+    return SafeFuture.of(() -> database.getSidecar(identifier));
+  }
+
+  @Override
+  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+              database.streamDataColumnIdentifiers(slot)) {
+            return dataColumnIdentifiersStream.toList();
+          }
+        });
+  }
+
+  @Override
+  public void onFirstIncompleteSlot(final UInt64 slot) {
+    database.setFirstIncompleteSlot(slot);
+  }
+
+  @Override
+  public void onNewSidecar(final DataColumnSidecar sidecar) {
+    database.addSidecar(sidecar);
+  }
+
+  @Override
+  public void onSidecarsAvailabilitySlot(final UInt64 earliestSlotRequired) {
+    database.pruneAllSidecars(earliestSlotRequired.minusMinZero(1));
   }
 }

@@ -28,9 +28,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.StubSidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -43,6 +45,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
+      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
@@ -58,6 +61,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         EarliestBlobSidecarSlotProvider.NOOP,
         storageUpdateChannel,
         voteUpdateChannel,
+        sidecarUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
         validatorIsConnectedProvider,
@@ -84,6 +88,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     private StoreConfig storeConfig = StoreConfig.createDefault();
     private Spec spec = TestSpecFactory.createMinimalPhase0();
     private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
+    private SidecarUpdateChannel sidecarUpdateChannel = new StubSidecarUpdateChannel();
     private FinalizedCheckpointChannel finalizedCheckpointChannel =
         new StubFinalizedCheckpointChannel();
     private ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
@@ -98,6 +103,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           storeConfig,
           storageUpdateChannel,
           votes -> {},
+          sidecarUpdateChannel,
           finalizedCheckpointChannel,
           chainHeadChannel,
           validatorIsConnectedProvider,
@@ -119,6 +125,12 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     public Builder storageUpdateChannel(final StorageUpdateChannel storageUpdateChannel) {
       checkNotNull(storageUpdateChannel);
       this.storageUpdateChannel = storageUpdateChannel;
+      return this;
+    }
+
+    public Builder sidecarsUpdateChannel(final SidecarUpdateChannel sidecarUpdateChannel) {
+      checkNotNull(sidecarUpdateChannel);
+      this.sidecarUpdateChannel = sidecarUpdateChannel;
       return this;
     }
 

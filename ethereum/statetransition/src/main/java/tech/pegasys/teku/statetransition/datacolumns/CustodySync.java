@@ -41,7 +41,7 @@ public class CustodySync implements SlotEventsChannel {
   private synchronized void onRequestComplete(PendingRequest request) {
     DataColumnSidecar result = request.columnPromise.join();
     custody.onNewValidatedDataColumnSidecar(result);
-    pendingRequests.remove(request.columnId.identifier());
+    pendingRequests.remove(request.columnId);
     fillUpIfNeeded();
   }
 
@@ -56,7 +56,7 @@ public class CustodySync implements SlotEventsChannel {
     Set<ColumnSlotAndIdentifier> missingColumnsToRequest =
         custody
             .streamMissingColumns()
-            .filter(c -> !pendingRequests.containsKey(c.identifier()))
+            .filter(c -> !pendingRequests.containsKey(c))
             .limit(newRequestCount)
             .collect(Collectors.toSet());
 
@@ -75,7 +75,7 @@ public class CustodySync implements SlotEventsChannel {
       SafeFuture<DataColumnSidecar> promise = retriever.retrieve(missingColumn);
       PendingRequest request = new PendingRequest(missingColumn, promise);
       pendingRequests.put(missingColumn, request);
-      promise.thenAccept(__ -> onRequestComplete(request));
+      promise.thenAccept(__ -> onRequestComplete(request)).ifExceptionGetsHereRaiseABug();
     }
   }
 

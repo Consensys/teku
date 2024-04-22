@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -58,6 +59,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
+      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
@@ -73,6 +75,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storageQueryChannel::getEarliestAvailableBlobSidecarSlot,
         storageUpdateChannel,
         voteUpdateChannel,
+        sidecarUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
         validatorIsConnectedProvider,
@@ -93,6 +96,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
+      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
@@ -108,6 +112,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
+            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,
@@ -127,6 +132,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
+      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
@@ -142,6 +148,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
+            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,
