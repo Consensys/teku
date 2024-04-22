@@ -90,7 +90,8 @@ class GraffitiManagerTest {
     assertThat(file.setWritable(false)).isTrue();
 
     assertThatThrownBy(() -> manager.setGraffiti(publicKey, graffiti))
-        .isInstanceOf(IOException.class);
+        .isInstanceOf(GraffitiManagementException.class)
+        .hasMessage("Unable to update graffiti for validator " + publicKey);
   }
 
   @Test

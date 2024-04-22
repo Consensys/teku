@@ -62,7 +62,7 @@ class SetGraffitiTest {
           .build();
 
   @Test
-  void shouldSuccessfullySetGraffiti() throws IOException {
+  void shouldSuccessfullySetGraffiti() throws IOException, GraffitiManagementException {
     request.setRequestBody(graffiti);
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
@@ -76,7 +76,7 @@ class SetGraffitiTest {
   }
 
   @Test
-  void shouldReturnErrorWhenIssueSettingGraffiti() throws IOException {
+  void shouldReturnErrorWhenIssueSettingGraffiti() throws IOException, GraffitiManagementException {
     final String errorMessage = "Unable to update graffiti for validator " + publicKey;
     request.setRequestBody(graffiti);
 
@@ -95,7 +95,7 @@ class SetGraffitiTest {
   }
 
   @Test
-  void shouldThrowExceptionWhenInvalidGraffitiInput() throws IOException {
+  void shouldThrowExceptionWhenInvalidGraffitiInput() throws GraffitiManagementException {
     final String invalidGraffiti = "This graffiti is a bit too long!!";
     final String errorMessage =
         String.format(

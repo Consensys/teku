@@ -93,7 +93,7 @@ public class GetGraffiti extends RestApiEndpoint {
     try {
       final UpdatableGraffitiProvider provider =
           (UpdatableGraffitiProvider) maybeValidator.get().getGraffitiProvider();
-      request.respondOk(new GraffitiResponse(publicKey, provider.getGraffitiWithThrowable()));
+      request.respondOk(new GraffitiResponse(publicKey, provider.getWithThrowable()));
     } catch (Throwable e) {
       request.respondError(SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }

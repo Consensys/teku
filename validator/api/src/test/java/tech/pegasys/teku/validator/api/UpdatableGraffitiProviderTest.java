@@ -14,10 +14,14 @@
 package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -29,13 +33,13 @@ class UpdatableGraffitiProviderTest {
   private UpdatableGraffitiProvider provider;
 
   @Test
-  void shouldGetStorageGraffitiWhenAvailable() {
+  void get_shouldGetStorageGraffitiWhenAvailable() {
     provider = new UpdatableGraffitiProvider(() -> Optional.of(storageGraffiti), Optional::empty);
     assertThat(provider.get()).hasValue(storageGraffiti);
   }
 
   @Test
-  void shouldGetStorageGraffitiWhenBothAvailable() {
+  void get_shouldGetStorageGraffitiWhenBothAvailable() {
     provider =
         new UpdatableGraffitiProvider(
             () -> Optional.of(storageGraffiti), () -> Optional.of(defaultGraffiti));
@@ -43,14 +47,63 @@ class UpdatableGraffitiProviderTest {
   }
 
   @Test
-  void shouldGetDefaultGraffitiWhenStorageEmpty() {
+  void get_shouldGetDefaultGraffitiWhenStorageEmpty() {
     provider = new UpdatableGraffitiProvider(Optional::empty, () -> Optional.of(defaultGraffiti));
     assertThat(provider.get()).hasValue(defaultGraffiti);
   }
 
   @Test
-  void shouldBeEmptyWhenBothEmpty() {
+  void get_shouldBeEmptyWhenBothEmpty() {
     provider = new UpdatableGraffitiProvider(Optional::empty, Optional::empty);
     assertThat(provider.get()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void get_shouldDelegateToDefaultProviderWhenStorageProviderFails() throws Throwable {
+    final ExceptionThrowingSupplier<Optional<Bytes32>> storageProvider =
+        mock(ExceptionThrowingSupplier.class);
+    when(storageProvider.get()).thenThrow(new RuntimeException("Error"));
+
+    provider = new UpdatableGraffitiProvider(storageProvider, () -> Optional.of(defaultGraffiti));
+    assertThat(provider.get()).hasValue(defaultGraffiti);
+  }
+
+  @Test
+  void getWithThrowable_shouldGetStorageGraffitiWhenAvailable() {
+    provider = new UpdatableGraffitiProvider(() -> Optional.of(storageGraffiti), Optional::empty);
+    assertThat(provider.get()).hasValue(storageGraffiti);
+  }
+
+  @Test
+  void getWithThrowable_shouldGetStorageGraffitiWhenBothAvailable() {
+    provider =
+        new UpdatableGraffitiProvider(
+            () -> Optional.of(storageGraffiti), () -> Optional.of(defaultGraffiti));
+    assertThat(provider.get()).hasValue(storageGraffiti);
+  }
+
+  @Test
+  void getWithThrowable_shouldGetDefaultGraffitiWhenStorageEmpty() {
+    provider = new UpdatableGraffitiProvider(Optional::empty, () -> Optional.of(defaultGraffiti));
+    assertThat(provider.get()).hasValue(defaultGraffiti);
+  }
+
+  @Test
+  void getWithThrowable_shouldBeEmptyWhenBothEmpty() {
+    provider = new UpdatableGraffitiProvider(Optional::empty, Optional::empty);
+    assertThat(provider.get()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void getWithThrowable_shouldThrowExceptionWhenStorageProviderFails() throws Throwable {
+    final RuntimeException exception = new RuntimeException("Error");
+    final ExceptionThrowingSupplier<Optional<Bytes32>> storageProvider =
+        mock(ExceptionThrowingSupplier.class);
+    when(storageProvider.get()).thenThrow(exception);
+
+    provider = new UpdatableGraffitiProvider(storageProvider, () -> Optional.of(defaultGraffiti));
+    assertThatThrownBy(() -> provider.getWithThrowable()).isEqualTo(exception);
   }
 }

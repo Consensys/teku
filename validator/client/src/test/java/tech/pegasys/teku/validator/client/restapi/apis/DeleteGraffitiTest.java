@@ -60,7 +60,7 @@ class DeleteGraffitiTest {
           .build();
 
   @Test
-  void shouldSuccessfullyDeleteGraffiti() throws IOException {
+  void shouldSuccessfullyDeleteGraffiti() throws IOException, GraffitiManagementException {
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
 
@@ -72,7 +72,8 @@ class DeleteGraffitiTest {
   }
 
   @Test
-  void shouldReturnErrorWhenIssueDeletingGraffiti() throws IOException {
+  void shouldReturnErrorWhenIssueDeletingGraffiti()
+      throws IOException, GraffitiManagementException {
     final String errorMessage = "Unable to delete graffiti for validator " + publicKey;
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));

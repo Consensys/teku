@@ -136,7 +136,7 @@ class GetGraffitiTest {
 
   private void checkGraffiti(final Optional<Bytes32> graffiti) throws Throwable {
     final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
-    when(provider.getGraffitiWithThrowable()).thenReturn(graffiti);
+    when(provider.getWithThrowable()).thenReturn(graffiti);
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
@@ -146,6 +146,6 @@ class GetGraffitiTest {
         new GetGraffiti.GraffitiResponse(publicKey, graffiti);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
-    verify(provider).getGraffitiWithThrowable();
+    verify(provider).getWithThrowable();
   }
 }
