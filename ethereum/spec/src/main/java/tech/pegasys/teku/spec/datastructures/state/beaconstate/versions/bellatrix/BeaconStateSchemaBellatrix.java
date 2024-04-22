@@ -101,7 +101,7 @@ public class BeaconStateSchemaBellatrix
   }
 
   @Override
-  public BeaconStateBellatrix createFromBackingNode(TreeNode node) {
+  public BeaconStateBellatrix createFromBackingNode(final TreeNode node) {
     return new BeaconStateBellatrixImpl(this, node);
   }
 

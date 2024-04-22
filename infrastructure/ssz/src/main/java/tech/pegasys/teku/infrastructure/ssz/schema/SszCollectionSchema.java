@@ -32,17 +32,20 @@ public interface SszCollectionSchema<
 
   @Override
   default void storeChildNode(
-      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long gIndex, TreeNode node) {
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long gIndex,
+      final TreeNode node) {
     getElementSchema().storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
   }
 
   @SuppressWarnings("unchecked")
-  default SszCollectionT of(SszElementT... elements) {
+  default SszCollectionT of(final SszElementT... elements) {
     return createFromElements(List.of(elements));
   }
 
   @SuppressWarnings("unchecked")
-  default SszCollectionT createFromElements(List<? extends SszElementT> elements) {
+  default SszCollectionT createFromElements(final List<? extends SszElementT> elements) {
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
     SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
     int idx = 0;
@@ -52,7 +55,7 @@ public interface SszCollectionSchema<
     return (SszCollectionT) writableCopy.commitChanges();
   }
 
-  default TreeNode createTreeFromElements(List<SszElementT> elements) {
+  default TreeNode createTreeFromElements(final List<SszElementT> elements) {
     // TODO: suboptimal
     return createFromElements(elements).getBackingNode();
   }

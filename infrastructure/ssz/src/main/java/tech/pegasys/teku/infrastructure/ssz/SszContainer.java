@@ -27,7 +27,7 @@ public interface SszContainer extends SszComposite<SszData> {
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   // container is heterogeneous by its nature so making unsafe cast here
   // is more convenient and is not less safe
-  default <C extends SszData> C getAny(int index) {
+  default <C extends SszData> C getAny(final int index) {
     return (C) get(index);
   }
 }

@@ -36,10 +36,10 @@ public class ClientVersionV1 {
   public final Bytes4 commit;
 
   public ClientVersionV1(
-      @JsonProperty("code") String code,
-      @JsonProperty("name") String name,
-      @JsonProperty("version") String version,
-      @JsonProperty("commit") Bytes4 commit) {
+      final @JsonProperty("code") String code,
+      final @JsonProperty("name") String name,
+      final @JsonProperty("version") String version,
+      final @JsonProperty("commit") Bytes4 commit) {
     checkNotNull(code, "code");
     checkNotNull(name, "name");
     checkNotNull(version, "version");

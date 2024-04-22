@@ -29,12 +29,12 @@ public interface SszType {
   int SSZ_LENGTH_SIZE = 4;
 
   // serializes int length to SSZ 4 bytes
-  static Bytes sszLengthToBytes(int length) {
+  static Bytes sszLengthToBytes(final int length) {
     return Bytes.ofUnsignedInt(length, ByteOrder.LITTLE_ENDIAN);
   }
 
   // deserializes int length from SSZ 4 bytes
-  static int sszBytesToLength(Bytes bytes) {
+  static int sszBytesToLength(final Bytes bytes) {
     if (!bytes.slice(SSZ_LENGTH_SIZE).isZero()) {
       throw new SszDeserializeException("Invalid length bytes: " + bytes);
     }
@@ -55,12 +55,12 @@ public interface SszType {
   int getSszVariablePartSize(TreeNode node);
 
   /** Calculates the full SSZ size in bytes for this type and specified backing subtree */
-  default int getSszSize(TreeNode node) {
+  default int getSszSize(final TreeNode node) {
     return getSszFixedPartSize() + getSszVariablePartSize(node);
   }
 
   /** SSZ serializes the backing tree instance of this type */
-  default Bytes sszSerializeTree(TreeNode node) {
+  default Bytes sszSerializeTree(final TreeNode node) {
     SszByteArrayWriter writer = new SszByteArrayWriter(getSszSize(node));
     sszSerializeTree(node, writer);
     return writer.toBytes();

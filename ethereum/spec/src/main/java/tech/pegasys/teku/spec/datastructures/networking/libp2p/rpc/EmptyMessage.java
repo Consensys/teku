@@ -27,7 +27,7 @@ public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
     }
 
     @Override
-    public EmptyMessage createFromBackingNode(TreeNode node) {
+    public EmptyMessage createFromBackingNode(final TreeNode node) {
       return EMPTY_MESSAGE;
     }
   }

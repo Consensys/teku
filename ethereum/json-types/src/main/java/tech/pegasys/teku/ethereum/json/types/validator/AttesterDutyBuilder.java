@@ -65,37 +65,37 @@ public class AttesterDutyBuilder {
   private int validatorCommitteeIndex;
   private UInt64 slot;
 
-  public AttesterDutyBuilder publicKey(BLSPublicKey publicKey) {
+  public AttesterDutyBuilder publicKey(final BLSPublicKey publicKey) {
     this.publicKey = publicKey;
     return this;
   }
 
-  public AttesterDutyBuilder validatorIndex(int validatorIndex) {
+  public AttesterDutyBuilder validatorIndex(final int validatorIndex) {
     this.validatorIndex = validatorIndex;
     return this;
   }
 
-  public AttesterDutyBuilder committeeLength(int committeeLength) {
+  public AttesterDutyBuilder committeeLength(final int committeeLength) {
     this.committeeLength = committeeLength;
     return this;
   }
 
-  public AttesterDutyBuilder committeeIndex(int committeeIndex) {
+  public AttesterDutyBuilder committeeIndex(final int committeeIndex) {
     this.committeeIndex = committeeIndex;
     return this;
   }
 
-  public AttesterDutyBuilder committeesAtSlot(int committeesAtSlot) {
+  public AttesterDutyBuilder committeesAtSlot(final int committeesAtSlot) {
     this.committeesAtSlot = committeesAtSlot;
     return this;
   }
 
-  public AttesterDutyBuilder validatorCommitteeIndex(int validatorCommitteeIndex) {
+  public AttesterDutyBuilder validatorCommitteeIndex(final int validatorCommitteeIndex) {
     this.validatorCommitteeIndex = validatorCommitteeIndex;
     return this;
   }
 
-  public AttesterDutyBuilder slot(UInt64 slot) {
+  public AttesterDutyBuilder slot(final UInt64 slot) {
     this.slot = slot;
     return this;
   }

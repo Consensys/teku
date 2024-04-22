@@ -30,18 +30,18 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvector {
 
-  public static SszBitvectorImpl ofBits(SszBitvectorSchema<?> schema, int... bits) {
+  public static SszBitvectorImpl ofBits(final SszBitvectorSchema<?> schema, final int... bits) {
     return new SszBitvectorImpl(schema, new BitvectorImpl(schema.getLength(), bits));
   }
 
   private final BitvectorImpl value;
 
-  public SszBitvectorImpl(SszVectorSchema<SszBit, ?> schema, TreeNode backingNode) {
+  public SszBitvectorImpl(final SszVectorSchema<SszBit, ?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
     value = BitvectorImpl.fromBytes(sszSerialize(), size());
   }
 
-  public SszBitvectorImpl(SszBitvectorSchema<?> schema, BitvectorImpl value) {
+  public SszBitvectorImpl(final SszBitvectorSchema<?> schema, final BitvectorImpl value) {
     super(schema, () -> schema.sszDeserializeTree(SszReader.fromBytes(value.serialize())));
     checkNotNull(value);
     this.value = value;
@@ -60,7 +60,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public boolean getBit(int i) {
+  public boolean getBit(final int i) {
     return value.getBit(i);
   }
 
@@ -70,7 +70,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public SszBitvector rightShift(int n) {
+  public SszBitvector rightShift(final int n) {
     return new SszBitvectorImpl(getSchema(), value.rightShift(n));
   }
 
@@ -85,7 +85,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public SszBitvector withBit(int i) {
+  public SszBitvector withBit(final int i) {
     return new SszBitvectorImpl(getSchema(), value.withBit(i));
   }
 

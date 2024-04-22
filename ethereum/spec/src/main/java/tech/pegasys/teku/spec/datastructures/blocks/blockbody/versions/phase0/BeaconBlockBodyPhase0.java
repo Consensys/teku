@@ -42,24 +42,24 @@ public class BeaconBlockBodyPhase0
         SszList<SignedVoluntaryExit>>
     implements BeaconBlockBody {
 
-  BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type) {
+  BeaconBlockBodyPhase0(final BeaconBlockBodySchemaPhase0 type) {
     super(type);
   }
 
-  BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type, TreeNode backingNode) {
+  BeaconBlockBodyPhase0(final BeaconBlockBodySchemaPhase0 type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   BeaconBlockBodyPhase0(
-      BeaconBlockBodySchemaPhase0 type,
-      SszSignature randaoReveal,
-      Eth1Data eth1Data,
-      SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits) {
+      final BeaconBlockBodySchemaPhase0 type,
+      final SszSignature randaoReveal,
+      final Eth1Data eth1Data,
+      final SszBytes32 graffiti,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Attestation> attestations,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits) {
     super(
         type,
         randaoReveal,

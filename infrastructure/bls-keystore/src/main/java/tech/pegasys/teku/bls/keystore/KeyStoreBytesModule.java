@@ -45,7 +45,8 @@ class KeyStoreBytesModule extends SimpleModule {
 
   private static class BytesSerializer extends JsonSerializer<Bytes> {
     @Override
-    public void serialize(Bytes bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
+    public void serialize(
+        final Bytes bytes, final JsonGenerator jGen, final SerializerProvider serializerProvider)
         throws IOException {
       // write bytes in hex without 0x
       jGen.writeString(bytes.appendHexTo(new StringBuilder()).toString());
@@ -54,14 +55,16 @@ class KeyStoreBytesModule extends SimpleModule {
 
   private static class BytesDeserializer extends JsonDeserializer<Bytes> {
     @Override
-    public Bytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public Bytes deserialize(final JsonParser p, final DeserializationContext ctxt)
+        throws IOException {
       return Bytes.fromHexString(p.getValueAsString());
     }
   }
 
   private static class Bytes32Serializer extends JsonSerializer<Bytes32> {
     @Override
-    public void serialize(Bytes32 bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
+    public void serialize(
+        final Bytes32 bytes, final JsonGenerator jGen, final SerializerProvider serializerProvider)
         throws IOException {
       // write bytes in hex without 0x
       jGen.writeString(bytes.appendHexTo(new StringBuilder()).toString());
@@ -70,7 +73,8 @@ class KeyStoreBytesModule extends SimpleModule {
 
   private static class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
     @Override
-    public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public Bytes32 deserialize(final JsonParser p, final DeserializationContext ctxt)
+        throws IOException {
       return Bytes32.fromHexString(p.getValueAsString());
     }
   }

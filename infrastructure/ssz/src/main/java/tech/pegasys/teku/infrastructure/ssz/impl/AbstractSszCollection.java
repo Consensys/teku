@@ -27,16 +27,18 @@ public abstract class AbstractSszCollection<SszElementT extends SszData>
     extends AbstractSszComposite<SszElementT> implements SszCollection<SszElementT> {
 
   protected AbstractSszCollection(
-      SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+      final SszCompositeSchema<?> schema, final Supplier<TreeNode> lazyBackingNode) {
     super(schema, lazyBackingNode);
   }
 
-  protected AbstractSszCollection(SszCompositeSchema<?> schema, TreeNode backingNode) {
+  protected AbstractSszCollection(final SszCompositeSchema<?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   protected AbstractSszCollection(
-      SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+      final SszCompositeSchema<?> schema,
+      final TreeNode backingNode,
+      final IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
   }
 
@@ -48,7 +50,7 @@ public abstract class AbstractSszCollection<SszElementT extends SszData>
 
   @SuppressWarnings("unchecked")
   @Override
-  protected SszElementT getImpl(int index) {
+  protected SszElementT getImpl(final int index) {
     SszCollectionSchema<SszElementT, ?> type = this.getSchema();
     SszSchema<?> elementType = type.getElementSchema();
     if (elementType.isPrimitive()) {

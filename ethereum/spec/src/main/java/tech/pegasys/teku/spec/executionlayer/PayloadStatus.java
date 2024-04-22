@@ -44,7 +44,7 @@ public class PayloadStatus {
   }
 
   public static PayloadStatus invalid(
-      Optional<Bytes32> latestValidHash, Optional<String> validationError) {
+      final Optional<Bytes32> latestValidHash, final Optional<String> validationError) {
     return new PayloadStatus(
         Optional.of(ExecutionPayloadStatus.INVALID),
         latestValidHash,
@@ -53,7 +53,7 @@ public class PayloadStatus {
   }
 
   public static PayloadStatus valid(
-      Optional<Bytes32> latestValidHash, Optional<String> validationError) {
+      final Optional<Bytes32> latestValidHash, final Optional<String> validationError) {
     return new PayloadStatus(
         Optional.of(ExecutionPayloadStatus.VALID),
         latestValidHash,
@@ -62,9 +62,9 @@ public class PayloadStatus {
   }
 
   public static PayloadStatus create(
-      ExecutionPayloadStatus status,
-      Optional<Bytes32> latestValidHash,
-      Optional<String> validationError) {
+      final ExecutionPayloadStatus status,
+      final Optional<Bytes32> latestValidHash,
+      final Optional<String> validationError) {
     return new PayloadStatus(
         Optional.of(status), latestValidHash, validationError, Optional.empty());
   }
@@ -75,10 +75,10 @@ public class PayloadStatus {
   private final Optional<Throwable> failureCause;
 
   private PayloadStatus(
-      Optional<ExecutionPayloadStatus> status,
-      Optional<Bytes32> latestValidHash,
-      Optional<String> validationError,
-      Optional<Throwable> failureCause) {
+      final Optional<ExecutionPayloadStatus> status,
+      final Optional<Bytes32> latestValidHash,
+      final Optional<String> validationError,
+      final Optional<Throwable> failureCause) {
     this.status = status;
     this.latestValidHash = latestValidHash;
     this.validationError = validationError;
@@ -97,7 +97,7 @@ public class PayloadStatus {
     return status;
   }
 
-  public boolean hasStatus(ExecutionPayloadStatus status) {
+  public boolean hasStatus(final ExecutionPayloadStatus status) {
     return this.status.map(s -> s == status).orElse(false);
   }
 

@@ -43,25 +43,26 @@ public class BeaconBlockBodyAltairImpl
         SyncAggregate>
     implements BeaconBlockBodyAltair {
 
-  BeaconBlockBodyAltairImpl(BeaconBlockBodySchemaAltairImpl type) {
+  BeaconBlockBodyAltairImpl(final BeaconBlockBodySchemaAltairImpl type) {
     super(type);
   }
 
-  BeaconBlockBodyAltairImpl(BeaconBlockBodySchemaAltairImpl type, TreeNode backingNode) {
+  BeaconBlockBodyAltairImpl(
+      final BeaconBlockBodySchemaAltairImpl type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   BeaconBlockBodyAltairImpl(
-      BeaconBlockBodySchemaAltairImpl type,
-      SszSignature randaoReveal,
-      Eth1Data eth1Data,
-      SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits,
-      SyncAggregate syncAggregate) {
+      final BeaconBlockBodySchemaAltairImpl type,
+      final SszSignature randaoReveal,
+      final Eth1Data eth1Data,
+      final SszBytes32 graffiti,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Attestation> attestations,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits,
+      final SyncAggregate syncAggregate) {
     super(
         type,
         randaoReveal,

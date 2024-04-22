@@ -41,7 +41,7 @@ public class SettableLabelledGauge {
     return new SettableLabelledGauge(labelledGauge);
   }
 
-  public void set(double value, String... labels) {
+  public void set(final double value, final String... labels) {
     final AtomicDouble valueHolder =
         valueHolders.computeIfAbsent(
             List.of(labels),

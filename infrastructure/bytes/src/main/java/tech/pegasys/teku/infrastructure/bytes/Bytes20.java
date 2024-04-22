@@ -26,13 +26,13 @@ public class Bytes20 {
 
   private final Bytes bytes;
 
-  public Bytes20(Bytes bytes) {
+  public Bytes20(final Bytes bytes) {
     checkArgument(
         bytes.size() == SIZE, "Bytes20 should be 20 bytes, but was %s bytes.", bytes.size());
     this.bytes = bytes;
   }
 
-  public static Bytes20 fromHexString(String value) {
+  public static Bytes20 fromHexString(final String value) {
     return new Bytes20(Bytes.fromHexString(value));
   }
 
@@ -47,7 +47,7 @@ public class Bytes20 {
    * @return A {@link Bytes20} that exposes the left-padded bytes of {@code value}.
    * @throws IllegalArgumentException if {@code value.size() > 20}.
    */
-  public static Bytes20 leftPad(Bytes value) {
+  public static Bytes20 leftPad(final Bytes value) {
     checkNotNull(value);
     if (value instanceof Bytes20) {
       return (Bytes20) value;
@@ -65,7 +65,7 @@ public class Bytes20 {
    * @return A {@link Bytes20} that exposes the right-padded bytes of {@code value}.
    * @throws IllegalArgumentException if {@code value.size() > 20}.
    */
-  public static Bytes20 rightPad(Bytes value) {
+  public static Bytes20 rightPad(final Bytes value) {
     checkNotNull(value);
     if (value instanceof Bytes20) {
       return (Bytes20) value;

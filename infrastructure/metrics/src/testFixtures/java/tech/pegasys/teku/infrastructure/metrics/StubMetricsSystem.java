@@ -124,7 +124,7 @@ public class StubMetricsSystem implements MetricsSystem {
             () -> new IllegalArgumentException("Unknown labelled timer: " + category + " " + name));
   }
 
-  private void validateMetricName(String metricName) {
+  private void validateMetricName(final String metricName) {
     if (!METRIC_NAME_PATTERN.matcher(metricName).matches()) {
       throw new IllegalArgumentException(
           String.format(
@@ -133,7 +133,7 @@ public class StubMetricsSystem implements MetricsSystem {
     }
   }
 
-  private void validateLabelName(String... labelNames) {
+  private void validateLabelName(final String... labelNames) {
     for (String labelName : labelNames) {
       if (!LABEL_NAME_PATTERN.matcher(labelName).matches()) {
         throw new IllegalArgumentException(

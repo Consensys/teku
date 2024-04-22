@@ -23,7 +23,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 public class UInt256Deserializer extends JsonDeserializer<UInt256> {
 
   @Override
-  public UInt256 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public UInt256 deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     String value = p.getValueAsString();
     if (value.startsWith("0x")) {
       return UInt256.fromHexString(p.getValueAsString());

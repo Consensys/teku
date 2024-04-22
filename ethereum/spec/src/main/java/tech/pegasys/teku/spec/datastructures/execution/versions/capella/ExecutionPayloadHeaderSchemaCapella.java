@@ -152,7 +152,7 @@ public class ExecutionPayloadHeaderSchemaCapella
   }
 
   @Override
-  public ExecutionPayloadHeaderCapellaImpl createFromBackingNode(TreeNode node) {
+  public ExecutionPayloadHeaderCapellaImpl createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadHeaderCapellaImpl(this, node);
   }
 

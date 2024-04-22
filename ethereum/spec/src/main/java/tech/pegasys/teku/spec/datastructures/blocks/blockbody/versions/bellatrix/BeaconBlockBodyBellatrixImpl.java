@@ -49,26 +49,27 @@ class BeaconBlockBodyBellatrixImpl
         ExecutionPayloadBellatrix>
     implements BeaconBlockBodyBellatrix {
 
-  BeaconBlockBodyBellatrixImpl(BeaconBlockBodySchemaBellatrixImpl type) {
+  BeaconBlockBodyBellatrixImpl(final BeaconBlockBodySchemaBellatrixImpl type) {
     super(type);
   }
 
-  BeaconBlockBodyBellatrixImpl(BeaconBlockBodySchemaBellatrixImpl type, TreeNode backingNode) {
+  BeaconBlockBodyBellatrixImpl(
+      final BeaconBlockBodySchemaBellatrixImpl type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   BeaconBlockBodyBellatrixImpl(
-      BeaconBlockBodySchemaBellatrixImpl type,
-      SszSignature randaoReveal,
-      Eth1Data eth1Data,
-      SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits,
-      SyncAggregate syncAggregate,
-      ExecutionPayloadBellatrix executionPayload) {
+      final BeaconBlockBodySchemaBellatrixImpl type,
+      final SszSignature randaoReveal,
+      final Eth1Data eth1Data,
+      final SszBytes32 graffiti,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Attestation> attestations,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits,
+      final SyncAggregate syncAggregate,
+      final ExecutionPayloadBellatrix executionPayload) {
     super(
         type,
         randaoReveal,

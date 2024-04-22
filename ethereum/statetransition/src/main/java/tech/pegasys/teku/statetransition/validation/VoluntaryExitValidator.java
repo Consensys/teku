@@ -40,13 +40,13 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   private final Set<UInt64> receivedValidExitSet =
       LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
 
-  public VoluntaryExitValidator(final Spec spec, RecentChainData recentChainData) {
+  public VoluntaryExitValidator(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateForGossip(SignedVoluntaryExit exit) {
+  public SafeFuture<InternalValidationResult> validateForGossip(final SignedVoluntaryExit exit) {
     if (!isFirstValidExitForValidator(exit)) {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
@@ -89,7 +89,8 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     return getFailureReason(stateAtBlockSlot, exit);
   }
 
-  private SafeFuture<Optional<OperationInvalidReason>> getFailureReason(SignedVoluntaryExit exit) {
+  private SafeFuture<Optional<OperationInvalidReason>> getFailureReason(
+      final SignedVoluntaryExit exit) {
     return getState().thenApply(state -> getFailureReason(state, exit));
   }
 
@@ -106,7 +107,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     return Optional.empty();
   }
 
-  private boolean isFirstValidExitForValidator(SignedVoluntaryExit exit) {
+  private boolean isFirstValidExitForValidator(final SignedVoluntaryExit exit) {
     return !receivedValidExitSet.contains(exit.getMessage().getValidatorIndex());
   }
 

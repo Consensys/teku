@@ -107,7 +107,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
-  public UInt64 computeParticipantReward(BeaconStateAltair state) {
+  public UInt64 computeParticipantReward(final BeaconStateAltair state) {
     return UInt64.ZERO;
   }
 

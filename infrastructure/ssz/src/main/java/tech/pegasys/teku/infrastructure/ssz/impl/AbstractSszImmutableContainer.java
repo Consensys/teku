@@ -30,17 +30,19 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
 
   protected AbstractSszImmutableContainer(
-      AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema) {
+      final AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema) {
     this(schema, schema.getDefaultTree());
   }
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> schema, TreeNode backingNode) {
+      final SszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+      final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   protected AbstractSszImmutableContainer(
-      SszContainerSchema<? extends AbstractSszImmutableContainer> schema, SszData... memberValues) {
+      final SszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+      final SszData... memberValues) {
     super(
         schema,
         schema.createTreeFromFieldValues(Arrays.asList(memberValues)),
@@ -59,7 +61,7 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
     }
   }
 
-  private static IntCache<SszData> createCache(SszData... memberValues) {
+  private static IntCache<SszData> createCache(final SszData... memberValues) {
     ArrayIntCache<SszData> cache = new ArrayIntCache<>(memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       cache.invalidateWithNewValue(i, memberValues[i]);
@@ -79,7 +81,7 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final Object obj) {
     if (Objects.isNull(obj)) {
       return false;
     }

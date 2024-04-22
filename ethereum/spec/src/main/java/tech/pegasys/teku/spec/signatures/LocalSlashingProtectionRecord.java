@@ -68,12 +68,13 @@ class LocalSlashingProtectionRecord {
     return true;
   }
 
-  Optional<ValidatorSigningRecord> maySignBlock(Bytes32 genesisValidatorsRoot, UInt64 slot) {
+  Optional<ValidatorSigningRecord> maySignBlock(
+      final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return signingRecord.maySignBlock(genesisValidatorsRoot, slot);
   }
 
   Optional<ValidatorSigningRecord> maySignAttestation(
-      Bytes32 genesisValidatorsRoot, UInt64 sourceEpoch, UInt64 targetEpoch) {
+      final Bytes32 genesisValidatorsRoot, final UInt64 sourceEpoch, final UInt64 targetEpoch) {
     return signingRecord.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch);
   }
 }

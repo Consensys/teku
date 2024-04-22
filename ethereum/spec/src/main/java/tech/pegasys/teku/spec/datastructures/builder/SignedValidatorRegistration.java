@@ -21,7 +21,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 public class SignedValidatorRegistration
     extends Container2<SignedValidatorRegistration, ValidatorRegistration, SszSignature> {
 
-  SignedValidatorRegistration(SignedValidatorRegistrationSchema type, TreeNode backingNode) {
+  SignedValidatorRegistration(
+      final SignedValidatorRegistrationSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

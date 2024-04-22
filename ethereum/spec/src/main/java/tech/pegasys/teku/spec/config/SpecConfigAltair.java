@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigAltair extends SpecConfig {
 
-  static SpecConfigAltair required(SpecConfig specConfig) {
+  static SpecConfigAltair required(final SpecConfig specConfig) {
     return specConfig
         .toVersionAltair()
         .orElseThrow(

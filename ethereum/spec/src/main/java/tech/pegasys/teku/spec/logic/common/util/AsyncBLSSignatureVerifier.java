@@ -22,7 +22,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface AsyncBLSSignatureVerifier {
-  static AsyncBLSSignatureVerifier wrap(BLSSignatureVerifier syncVerifier) {
+  static AsyncBLSSignatureVerifier wrap(final BLSSignatureVerifier syncVerifier) {
     return new AsyncBLSSignatureVerifier() {
       @Override
       public SafeFuture<Boolean> verify(
@@ -55,7 +55,7 @@ public interface AsyncBLSSignatureVerifier {
 
   /** Shortcut to {@link #verify(List, Bytes, BLSSignature)} for non-aggregate case */
   default SafeFuture<Boolean> verify(
-      BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
+      final BLSPublicKey publicKey, final Bytes message, final BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
   }
 

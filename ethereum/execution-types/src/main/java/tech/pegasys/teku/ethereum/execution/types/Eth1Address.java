@@ -30,23 +30,24 @@ public class Eth1Address extends Bytes20 {
 
   private final String encodedAddress;
 
-  private Eth1Address(String value) {
+  private Eth1Address(final String value) {
     super(Bytes.fromHexString(value));
+    String valueWithPrefix = value;
     if (!value.startsWith("0x")) {
-      value = "0x" + value;
+      valueWithPrefix = "0x" + value;
     }
-    this.encodedAddress = toChecksumAddress(value);
-    validate(value);
+    this.encodedAddress = toChecksumAddress(valueWithPrefix);
+    validate(valueWithPrefix);
   }
 
-  private Eth1Address(Bytes bytes) {
+  private Eth1Address(final Bytes bytes) {
     super(bytes);
     final String value = bytes.toHexString();
     this.encodedAddress = toChecksumAddress(value);
     validate(value);
   }
 
-  private void validate(String value) {
+  private void validate(final String value) {
     if (isMixedCase(value.substring("0x".length()))) {
       checkArgument(
           value.equals(encodedAddress),
@@ -56,11 +57,11 @@ public class Eth1Address extends Bytes20 {
     }
   }
 
-  public static Eth1Address fromBytes(Bytes value) {
+  public static Eth1Address fromBytes(final Bytes value) {
     return new Eth1Address(value);
   }
 
-  public static Eth1Address fromHexString(String value) {
+  public static Eth1Address fromHexString(final String value) {
     try {
       return new Eth1Address(value);
     } catch (RuntimeException ex) {
@@ -75,7 +76,7 @@ public class Eth1Address extends Bytes20 {
    * @param value The string representation of an Ethereum address.
    * @return The encoded address with mixed-case checksum.
    */
-  private static String toChecksumAddress(String value) {
+  private static String toChecksumAddress(final String value) {
     final String address = value.replace("0x", "").toLowerCase(Locale.ROOT);
     final String hashString =
         Hash.keccak256(Bytes.wrap(address.getBytes(StandardCharsets.US_ASCII)))
