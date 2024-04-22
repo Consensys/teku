@@ -102,6 +102,7 @@ import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 class BlockOperationSelectorFactoryTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final Spec specBellatrix = TestSpecFactory.createMinimalBellatrix();
+  final Spec specElectra = TestSpecFactory.createMinimalElectra();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
@@ -182,11 +183,25 @@ class BlockOperationSelectorFactoryTest {
           .getHeaderOfDefaultPayload();
 
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
-      new CapturingBeaconBlockBodyBuilder(false);
+      new CapturingBeaconBlockBodyBuilder(false, false);
 
   private final GraffitiBuilder graffitiBuilder =
       new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED, Optional.empty());
 
+  private final BlockOperationSelectorFactory factoryElectra =
+      new BlockOperationSelectorFactory(
+          specElectra,
+          attestationPool,
+          attesterSlashingPool,
+          proposerSlashingPool,
+          voluntaryExitPool,
+          blsToExecutionChangePool,
+          contributionPool,
+          depositProvider,
+          eth1DataCache,
+          graffitiBuilder,
+          forkChoiceNotifier,
+          executionLayer);
   private final BlockOperationSelectorFactory factory =
       new BlockOperationSelectorFactory(
           spec,
@@ -622,7 +637,8 @@ class BlockOperationSelectorFactoryTest {
 
     final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(true, false);
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
@@ -696,7 +712,8 @@ class BlockOperationSelectorFactoryTest {
         blobsBundle,
         blockExecutionValue);
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(true, false);
 
     safeJoin(
         factory
@@ -719,6 +736,37 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
+  void shouldIncludeConsolidationsInBlock() {
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+
+    prepareBlockAndBlobsProduction(
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        blobsBundle,
+        blockExecutionValue);
+
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(true, true);
+    safeJoin(
+        factoryElectra
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.of(false),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
+
+    assertThat(bodyBuilder.consolidations).isEmpty();
+  }
+
+  @Test
   void shouldIncludeKzgCommitmentsInBlindedBlock() {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
 
@@ -737,7 +785,8 @@ class BlockOperationSelectorFactoryTest {
         blobKzgCommitments,
         blockExecutionValue);
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(true, false);
 
     safeJoin(
         factory
@@ -1180,6 +1229,7 @@ class BlockOperationSelectorFactoryTest {
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
 
     private final boolean supportsKzgCommitments;
+    private final boolean supportsConsolidations;
 
     protected BLSSignature randaoReveal;
     protected Bytes32 graffiti;
@@ -1195,8 +1245,10 @@ class BlockOperationSelectorFactoryTest {
     @SuppressWarnings("unused")
     protected SszList<SignedConsolidation> consolidations;
 
-    public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
+    public CapturingBeaconBlockBodyBuilder(
+        final boolean supportsKzgCommitments, final boolean supportsConsolidations) {
       this.supportsKzgCommitments = supportsKzgCommitments;
+      this.supportsConsolidations = supportsConsolidations;
     }
 
     @Override
@@ -1291,6 +1343,11 @@ class BlockOperationSelectorFactoryTest {
     @Override
     public Boolean supportsKzgCommitments() {
       return supportsKzgCommitments;
+    }
+
+    @Override
+    public Boolean supportsConsolidations() {
+      return supportsConsolidations;
     }
 
     @Override
