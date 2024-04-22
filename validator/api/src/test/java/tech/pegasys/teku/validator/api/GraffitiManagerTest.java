@@ -141,7 +141,8 @@ class GraffitiManagerTest {
     assertThat(file.getParentFile().setWritable(false)).isTrue();
 
     assertThatThrownBy(() -> manager.deleteGraffiti(publicKey))
-        .isInstanceOf(GraffitiManagementException.class);
+        .isInstanceOf(GraffitiManagementException.class)
+        .hasMessage("Unable to delete graffiti for validator " + publicKey);
     assertThat(file.exists()).isTrue();
   }
 
