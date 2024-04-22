@@ -36,16 +36,16 @@ class BeaconStateBellatrixImpl extends AbstractBeaconState<MutableBeaconStateBel
   }
 
   BeaconStateBellatrixImpl(
-      SszCompositeSchema<?> type,
-      TreeNode backingNode,
-      IntCache<SszData> cache,
-      TransitionCaches transitionCaches,
-      SlotCaches slotCaches) {
+      final SszCompositeSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateBellatrixImpl(
-      AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
+      final AbstractSszContainerSchema<? extends SszContainer> type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -60,7 +60,7 @@ class BeaconStateBellatrixImpl extends AbstractBeaconState<MutableBeaconStateBel
   }
 
   @Override
-  protected void describeCustomFields(ToStringHelper stringBuilder) {
+  protected void describeCustomFields(final ToStringHelper stringBuilder) {
     BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, this);
   }
 }

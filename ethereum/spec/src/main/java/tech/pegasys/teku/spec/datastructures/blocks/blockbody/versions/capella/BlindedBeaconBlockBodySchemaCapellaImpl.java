@@ -62,17 +62,17 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
 
   private BlindedBeaconBlockBodySchemaCapellaImpl(
       final String containerName,
-      NamedSchema<SszSignature> randaoReveal,
-      NamedSchema<Eth1Data> eth1Data,
-      NamedSchema<SszBytes32> graffiti,
-      NamedSchema<SszList<ProposerSlashing>> proposerSlashings,
-      NamedSchema<SszList<AttesterSlashing>> attesterSlashings,
-      NamedSchema<SszList<Attestation>> attestations,
-      NamedSchema<SszList<Deposit>> deposits,
-      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
-      NamedSchema<SyncAggregate> syncAggregate,
-      NamedSchema<ExecutionPayloadHeaderCapellaImpl> executionPayloadHeader,
-      NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
+      final NamedSchema<SszSignature> randaoReveal,
+      final NamedSchema<Eth1Data> eth1Data,
+      final NamedSchema<SszBytes32> graffiti,
+      final NamedSchema<SszList<ProposerSlashing>> proposerSlashings,
+      final NamedSchema<SszList<AttesterSlashing>> attesterSlashings,
+      final NamedSchema<SszList<Attestation>> attestations,
+      final NamedSchema<SszList<Deposit>> deposits,
+      final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
+      final NamedSchema<SyncAggregate> syncAggregate,
+      final NamedSchema<ExecutionPayloadHeaderCapellaImpl> executionPayloadHeader,
+      final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
     super(
         containerName,
         randaoReveal,
@@ -176,7 +176,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public BlindedBeaconBlockBodyCapellaImpl createFromBackingNode(TreeNode node) {
+  public BlindedBeaconBlockBodyCapellaImpl createFromBackingNode(final TreeNode node) {
     return new BlindedBeaconBlockBodyCapellaImpl(this, node);
   }
 

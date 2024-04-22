@@ -176,7 +176,7 @@ public class BeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public BeaconBlockBodyCapellaImpl createFromBackingNode(TreeNode node) {
+  public BeaconBlockBodyCapellaImpl createFromBackingNode(final TreeNode node) {
     return new BeaconBlockBodyCapellaImpl(this, node);
   }
 

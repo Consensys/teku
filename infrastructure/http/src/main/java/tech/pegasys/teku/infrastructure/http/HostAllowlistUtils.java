@@ -22,7 +22,7 @@ import java.util.Optional;
 
 public class HostAllowlistUtils {
 
-  public static boolean isHostAuthorized(final List<String> allowlist, String hostHeader) {
+  public static boolean isHostAuthorized(final List<String> allowlist, final String hostHeader) {
     Optional<String> optionalHost = getAndValidateHostHeader(hostHeader);
     return allowlist.contains("*")
         || (optionalHost.isPresent() && hostIsInAllowlist(allowlist, optionalHost.get()));

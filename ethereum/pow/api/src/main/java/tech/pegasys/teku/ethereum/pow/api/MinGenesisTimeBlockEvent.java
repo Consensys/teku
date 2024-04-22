@@ -23,7 +23,8 @@ public class MinGenesisTimeBlockEvent {
   private final UInt64 blockNumber;
   private final Bytes32 blockHash;
 
-  public MinGenesisTimeBlockEvent(UInt64 timestamp, UInt64 blockNumber, Bytes32 blockHash) {
+  public MinGenesisTimeBlockEvent(
+      final UInt64 timestamp, final UInt64 blockNumber, final Bytes32 blockHash) {
     this.timestamp = timestamp;
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;

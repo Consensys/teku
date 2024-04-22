@@ -40,14 +40,14 @@ public class DepositMessage
     }
 
     @Override
-    public DepositMessage createFromBackingNode(TreeNode node) {
+    public DepositMessage createFromBackingNode(final TreeNode node) {
       return new DepositMessage(this, node);
     }
   }
 
   public static final DepositMessageSchema SSZ_SCHEMA = new DepositMessageSchema();
 
-  private DepositMessage(DepositMessageSchema type, TreeNode backingNode) {
+  private DepositMessage(final DepositMessageSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

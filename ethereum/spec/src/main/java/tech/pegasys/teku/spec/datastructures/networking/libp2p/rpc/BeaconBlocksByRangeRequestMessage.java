@@ -36,7 +36,7 @@ public final class BeaconBlocksByRangeRequestMessage
     }
 
     @Override
-    public BeaconBlocksByRangeRequestMessage createFromBackingNode(TreeNode node) {
+    public BeaconBlocksByRangeRequestMessage createFromBackingNode(final TreeNode node) {
       return new BeaconBlocksByRangeRequestMessage(this, node);
     }
   }
@@ -45,7 +45,7 @@ public final class BeaconBlocksByRangeRequestMessage
       new BeaconBlocksByRangeRequestMessageSchema();
 
   private BeaconBlocksByRangeRequestMessage(
-      BeaconBlocksByRangeRequestMessageSchema type, TreeNode backingNode) {
+      final BeaconBlocksByRangeRequestMessageSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

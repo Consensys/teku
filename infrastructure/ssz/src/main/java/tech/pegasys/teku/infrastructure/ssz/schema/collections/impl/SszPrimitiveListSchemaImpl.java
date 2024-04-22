@@ -29,13 +29,13 @@ public class SszPrimitiveListSchemaImpl<
     implements SszPrimitiveListSchema<ElementT, SszElementT, SszListT> {
 
   public SszPrimitiveListSchemaImpl(
-      SszPrimitiveSchema<ElementT, SszElementT> elementSchema, long maxLength) {
+      final SszPrimitiveSchema<ElementT, SszElementT> elementSchema, final long maxLength) {
     super(elementSchema, maxLength);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszListT createFromBackingNode(TreeNode node) {
+  public SszListT createFromBackingNode(final TreeNode node) {
     return (SszListT) new SszPrimitiveListImpl<>(this, node);
   }
 }

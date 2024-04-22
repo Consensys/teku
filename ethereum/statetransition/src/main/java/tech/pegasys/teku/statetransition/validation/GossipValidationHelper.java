@@ -32,7 +32,7 @@ public class GossipValidationHelper {
   private final RecentChainData recentChainData;
   private final UInt64 maxOffsetTimeInSeconds;
 
-  public GossipValidationHelper(final Spec spec, RecentChainData recentChainData) {
+  public GossipValidationHelper(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.maxOffsetTimeInSeconds =

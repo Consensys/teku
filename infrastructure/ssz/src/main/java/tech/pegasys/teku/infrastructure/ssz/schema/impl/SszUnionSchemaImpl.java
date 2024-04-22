@@ -54,15 +54,16 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   private static final int MAX_SELECTOR = 127;
   private static final int DEFAULT_SELECTOR = 0;
 
-  private static LeafNode createSelectorNode(int selector) {
+  private static LeafNode createSelectorNode(final int selector) {
     assert selector <= MAX_SELECTOR;
     return LeafNode.create(Bytes.of((byte) selector));
   }
 
-  public static SszUnionSchema<SszUnion> createGenericSchema(List<SszSchema<?>> childrenSchemas) {
+  public static SszUnionSchema<SszUnion> createGenericSchema(
+      final List<SszSchema<?>> childrenSchemas) {
     return new SszUnionSchemaImpl<>(childrenSchemas) {
       @Override
-      public SszUnion createFromBackingNode(TreeNode node) {
+      public SszUnion createFromBackingNode(final TreeNode node) {
         return new SszUnionImpl(this, node);
       }
     };
@@ -73,7 +74,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   private final Supplier<SszLengthBounds> lengthBounds =
       Suppliers.memoize(this::calcSszLengthBounds);
 
-  public SszUnionSchemaImpl(List<SszSchema<?>> childrenSchemas) {
+  public SszUnionSchemaImpl(final List<SszSchema<?>> childrenSchemas) {
     // Because of zero indexing, the max selector is one less than the maximum list size.
     checkArgument(childrenSchemas.size() <= MAX_SELECTOR + 1, "Too many child types");
     checkArgument(
@@ -150,7 +151,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   public abstract SszUnionT createFromBackingNode(TreeNode node);
 
   @Override
-  public SszUnionT createFromValue(int selector, SszData value) {
+  public SszUnionT createFromValue(final int selector, final SszData value) {
     checkArgument(selector < getTypesCount(), "Selector is out of bounds");
     checkArgument(
         getChildSchema(selector).equals(value.getSchema()),
@@ -159,13 +160,13 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   }
 
   @Override
-  public int getSszVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(final TreeNode node) {
     int selector = getSelector(node);
     return childrenSchemas.get(selector).getSszSize(getValueNode(node));
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int selector = getSelector(node);
     writer.write(Bytes.of(selector));
     SszSchema<?> valueSchema = childrenSchemas.get(selector);
@@ -174,7 +175,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) throws SszDeserializeException {
+  public TreeNode sszDeserializeTree(final SszReader reader) throws SszDeserializeException {
     int selector = reader.read(1).get(0) & 0xFF;
     if (selector >= getTypesCount()) {
       throw new SszDeserializeException(
@@ -186,7 +187,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
     return createUnionNode(valueNode, selector);
   }
 
-  public int getSelectorFromSelectorNode(TreeNode selectorNode) {
+  public int getSelectorFromSelectorNode(final TreeNode selectorNode) {
     checkArgument(selectorNode instanceof LeafDataNode, "Invalid selector node");
     LeafDataNode dataNode = (LeafDataNode) selectorNode;
     Bytes bytes = dataNode.getData();
@@ -196,27 +197,30 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
     return selector;
   }
 
-  public TreeNode getValueNode(TreeNode unionNode) {
+  public final TreeNode getValueNode(final TreeNode unionNode) {
     return unionNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
-  private TreeNode getSelectorNode(TreeNode unionNode) {
+  private TreeNode getSelectorNode(final TreeNode unionNode) {
     return unionNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
   }
 
-  public int getSelector(TreeNode unionNode) {
+  public int getSelector(final TreeNode unionNode) {
     int selector = getSelectorFromSelectorNode(getSelectorNode(unionNode));
     checkArgument(selector < getTypesCount(), "Selector is out of bounds");
     return selector;
   }
 
-  private TreeNode createUnionNode(TreeNode valueNode, int selector) {
+  private TreeNode createUnionNode(final TreeNode valueNode, final int selector) {
     return BranchNode.create(valueNode, createSelectorNode(selector));
   }
 
   @Override
   public void storeBackingNodes(
-      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node) {
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
     TreeNode selectorNode = getSelectorNode(node);
     TreeNode valueNode = getValueNode(node);
     int selector = getSelectorFromSelectorNode(selectorNode);
@@ -234,7 +238,8 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   }
 
   @Override
-  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
     if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
       return getDefaultTree();
     }
@@ -272,7 +277,7 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

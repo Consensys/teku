@@ -45,11 +45,12 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private final Supplier<TreeNode> backingNode;
 
   /** Creates an instance from a schema and a backing node */
-  protected AbstractSszComposite(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+  protected AbstractSszComposite(
+      final SszCompositeSchema<?> schema, final Supplier<TreeNode> lazyBackingNode) {
     this(schema, lazyBackingNode, Optional.empty());
   }
 
-  protected AbstractSszComposite(SszCompositeSchema<?> schema, TreeNode backingNode) {
+  protected AbstractSszComposite(final SszCompositeSchema<?> schema, final TreeNode backingNode) {
     this(schema, () -> backingNode, Optional.empty());
   }
 
@@ -60,14 +61,16 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
    * from backing nodes. The cache should correspond to the supplied backing tree.
    */
   protected AbstractSszComposite(
-      SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszChildT> cache) {
+      final SszCompositeSchema<?> schema,
+      final TreeNode backingNode,
+      final IntCache<SszChildT> cache) {
     this(schema, () -> backingNode, Optional.of(cache));
   }
 
   protected AbstractSszComposite(
-      SszCompositeSchema<?> schema,
-      Supplier<TreeNode> lazyBackingNode,
-      Optional<IntCache<SszChildT>> cache) {
+      final SszCompositeSchema<?> schema,
+      final Supplier<TreeNode> lazyBackingNode,
+      final Optional<IntCache<SszChildT>> cache) {
     this.schema = schema;
     this.backingNode = Suppliers.memoize(lazyBackingNode::get);
     this.childrenViewCache = cache.orElseGet(this::createCache);
@@ -92,11 +95,11 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   }
 
   @Override
-  public final SszChildT get(int index) {
+  public final SszChildT get(final int index) {
     return childrenViewCache.getInt(index, this::getImplWithIndexCheck);
   }
 
-  private SszChildT getImplWithIndexCheck(int index) {
+  private SszChildT getImplWithIndexCheck(final int index) {
     checkIndex(index);
     return getImpl(index);
   }
@@ -133,7 +136,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   protected abstract void checkIndex(int index);
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

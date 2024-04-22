@@ -22,7 +22,7 @@ public abstract class AbstractSszPrimitive<C> implements SszPrimitive<C> {
   private final AbstractSszPrimitiveSchema<C, ?> schema;
   private final C value;
 
-  protected AbstractSszPrimitive(C value, AbstractSszPrimitiveSchema<C, ?> schema) {
+  protected AbstractSszPrimitive(final C value, final AbstractSszPrimitiveSchema<C, ?> schema) {
     this.schema = schema;
     this.value = value;
   }
@@ -43,7 +43,7 @@ public abstract class AbstractSszPrimitive<C> implements SszPrimitive<C> {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

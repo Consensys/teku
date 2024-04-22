@@ -186,7 +186,7 @@ public class BlockImporter {
                         Objects.equals(curVal, finalizedCheckpoint) ? updatedCheckpoint : curVal));
   }
 
-  private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
+  private void notifyBlockOperationSubscribers(final SignedBeaconBlock block) {
     final BeaconBlockBody blockBody = block.getMessage().getBody();
 
     attestationSubscribers.forEach(
@@ -206,27 +206,30 @@ public class BlockImporter {
   }
 
   public void subscribeToVerifiedBlockAttestations(
-      VerifiedBlockAttestationListener verifiedBlockAttestationsListener) {
+      final VerifiedBlockAttestationListener verifiedBlockAttestationsListener) {
     attestationSubscribers.subscribe(verifiedBlockAttestationsListener);
   }
 
   public void subscribeToVerifiedBlockAttesterSlashings(
-      VerifiedBlockOperationsListener<AttesterSlashing> verifiedBlockAttesterSlashingsListener) {
+      final VerifiedBlockOperationsListener<AttesterSlashing>
+          verifiedBlockAttesterSlashingsListener) {
     attesterSlashingSubscribers.subscribe(verifiedBlockAttesterSlashingsListener);
   }
 
   public void subscribeToVerifiedBlockProposerSlashings(
-      VerifiedBlockOperationsListener<ProposerSlashing> verifiedBlockProposerSlashingsListener) {
+      final VerifiedBlockOperationsListener<ProposerSlashing>
+          verifiedBlockProposerSlashingsListener) {
     proposerSlashingSubscribers.subscribe(verifiedBlockProposerSlashingsListener);
   }
 
   public void subscribeToVerifiedBlockVoluntaryExits(
-      VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
+      final VerifiedBlockOperationsListener<SignedVoluntaryExit>
+          verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
   }
 
   public void subscribeToVerifiedBlockBlsToExecutionChanges(
-      VerifiedBlockOperationsListener<SignedBlsToExecutionChange>
+      final VerifiedBlockOperationsListener<SignedBlsToExecutionChange>
           verifiedBlockBlsToExecutionChangeListener) {
     blsToExecutionChangeSubscribers.subscribe(verifiedBlockBlsToExecutionChangeListener);
   }

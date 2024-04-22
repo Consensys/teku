@@ -119,7 +119,7 @@ public class BeaconStateSchemaAltair
   }
 
   @Override
-  public BeaconStateAltair createFromBackingNode(TreeNode node) {
+  public BeaconStateAltair createFromBackingNode(final TreeNode node) {
     return new BeaconStateAltairImpl(this, node);
   }
 

@@ -23,7 +23,8 @@ public class CommitteeAssignment {
   private final UInt64 committeeIndex;
   private final UInt64 slot;
 
-  public CommitteeAssignment(IntList committee, UInt64 committeeIndex, UInt64 slot) {
+  public CommitteeAssignment(
+      final IntList committee, final UInt64 committeeIndex, final UInt64 slot) {
     this.committee = committee;
     this.committeeIndex = committeeIndex;
     this.slot = slot;
@@ -54,7 +55,7 @@ public class CommitteeAssignment {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

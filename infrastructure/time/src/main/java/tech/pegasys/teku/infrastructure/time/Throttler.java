@@ -28,7 +28,7 @@ public class Throttler<TResource> {
     this.throttlingPeriod = throttlingPeriod;
   }
 
-  public void invoke(final UInt64 currentTime, Consumer<TResource> invocation) {
+  public void invoke(final UInt64 currentTime, final Consumer<TResource> invocation) {
     if (updateLastInvoked(currentTime)) {
       invocation.accept(resource);
     }

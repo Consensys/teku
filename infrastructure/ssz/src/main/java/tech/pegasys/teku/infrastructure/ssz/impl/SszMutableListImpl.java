@@ -32,7 +32,7 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   private int cachedSize;
   private final long cachedMaxLength;
 
-  public SszMutableListImpl(SszListImpl<SszElementT> backingImmutableList) {
+  public SszMutableListImpl(final SszListImpl<SszElementT> backingImmutableList) {
     super(backingImmutableList);
     cachedSize = backingImmutableList.size();
     cachedMaxLength = getSchema().getMaxLength();
@@ -40,12 +40,12 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
 
   @Override
   protected SszListImpl<SszElementT> createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszElementT> childrenCache) {
+      final TreeNode backingNode, final IntCache<SszElementT> childrenCache) {
     return new SszListImpl<>(getSchema(), backingNode, childrenCache);
   }
 
   @Override
-  protected TreeNode doFinalTreeUpdates(TreeNode updatedTree) {
+  protected TreeNode doFinalTreeUpdates(final TreeNode updatedTree) {
     return updateSize(updatedTree);
   }
 
@@ -54,7 +54,7 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
     return cachedSize;
   }
 
-  private TreeNode updateSize(TreeNode root) {
+  private TreeNode updateSize(final TreeNode root) {
     return BranchNode.create(root.get(GIndexUtil.LEFT_CHILD_G_INDEX), createSizeNode());
   }
 
@@ -63,7 +63,7 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   }
 
   @Override
-  public void set(int index, SszElementT value) {
+  public void set(final int index, final SszElementT value) {
     super.set(index, value);
     if (index == size()) {
       cachedSize++;
@@ -77,7 +77,7 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   }
 
   @Override
-  protected void checkIndex(int index, boolean set) {
+  protected void checkIndex(final int index, final boolean set) {
     if (index < 0
         || (!set && index >= size())
         || (set && (index > size() || index >= cachedMaxLength))) {

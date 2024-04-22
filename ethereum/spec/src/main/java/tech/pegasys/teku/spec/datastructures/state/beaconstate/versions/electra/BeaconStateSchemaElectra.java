@@ -224,7 +224,7 @@ public class BeaconStateSchemaElectra
   }
 
   @Override
-  public BeaconStateElectraImpl createFromBackingNode(TreeNode node) {
+  public BeaconStateElectraImpl createFromBackingNode(final TreeNode node) {
     return new BeaconStateElectraImpl(this, node);
   }
 

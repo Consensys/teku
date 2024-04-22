@@ -103,18 +103,18 @@ public class TransitionCaches {
   }
 
   private TransitionCaches(
-      Cache<UInt64, IntList> activeValidators,
-      Cache<UInt64, Integer> beaconProposerIndex,
-      Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee,
-      Cache<UInt64, UInt64> attestersTotalBalance,
-      Cache<UInt64, UInt64> totalActiveBalance,
-      Cache<UInt64, BLSPublicKey> validatorsPubKeys,
-      ValidatorIndexCache validatorIndexCache,
-      Cache<Bytes32, IntList> committeeShuffle,
-      Cache<UInt64, List<UInt64>> effectiveBalances,
-      Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
-      Cache<UInt64, UInt64> baseRewardPerIncrement,
-      ProgressiveTotalBalancesUpdates progressiveTotalBalances) {
+      final Cache<UInt64, IntList> activeValidators,
+      final Cache<UInt64, Integer> beaconProposerIndex,
+      final Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee,
+      final Cache<UInt64, UInt64> attestersTotalBalance,
+      final Cache<UInt64, UInt64> totalActiveBalance,
+      final Cache<UInt64, BLSPublicKey> validatorsPubKeys,
+      final ValidatorIndexCache validatorIndexCache,
+      final Cache<Bytes32, IntList> committeeShuffle,
+      final Cache<UInt64, List<UInt64>> effectiveBalances,
+      final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
+      final Cache<UInt64, UInt64> baseRewardPerIncrement,
+      final ProgressiveTotalBalancesUpdates progressiveTotalBalances) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
@@ -129,7 +129,7 @@ public class TransitionCaches {
     this.progressiveTotalBalances = progressiveTotalBalances;
   }
 
-  public void setLatestTotalBalances(TotalBalances totalBalances) {
+  public void setLatestTotalBalances(final TotalBalances totalBalances) {
     this.latestTotalBalances = Optional.of(totalBalances);
   }
 

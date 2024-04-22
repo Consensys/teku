@@ -18,5 +18,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added hidden option `--Xdeposit-contract-logs-syncing-enabled` to allow disabling the syncing of the deposit contract logs from the EL. This is useful when running a non-validating node. It is advisable to be used alongside with `--Xeth1-missing-deposits-event-logging-enabled=false` to avoid unnecessary logging of missing deposits.
 - Updated the bootnodes for Chiado and Gnosis networks.
 - Added hidden option `--Xp2p-dumps-to-file-enabled` to enable saving p2p dumps to file.
+- Appends consensus layer (CL) and execution layer (EL) clients' information to the validator graffiti. Check [documentation](https://docs.teku.consensys.io/development/reference/cli#validators-graffiti-client-append-format) for available configuration options.
 
 ### Bug Fixes

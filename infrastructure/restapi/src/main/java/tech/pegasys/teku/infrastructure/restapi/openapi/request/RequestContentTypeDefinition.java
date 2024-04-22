@@ -22,7 +22,8 @@ public interface RequestContentTypeDefinition<T> extends OpenApiTypeDefinition {
 
   T deserialize(InputStream in) throws IOException;
 
-  default T deserialize(InputStream in, final Map<String, String> headers) throws IOException {
+  default T deserialize(final InputStream in, final Map<String, String> headers)
+      throws IOException {
     return deserialize(in);
   }
 }
