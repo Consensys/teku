@@ -37,7 +37,7 @@ public class VoluntaryExitValidator
   private final Predicates predicates;
   private final BeaconStateAccessors beaconStateAccessors;
 
-  VoluntaryExitValidator(
+  public VoluntaryExitValidator(
       final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors) {
@@ -70,7 +70,7 @@ public class VoluntaryExitValidator
                 beaconStateAccessors.getCurrentEpoch(state).isGreaterThanOrEqualTo(exit.getEpoch()),
                 ExitInvalidReason.submittedTooEarly()),
         () -> {
-          UInt64 exitEpoch =
+          final UInt64 exitEpoch =
               getValidator(state, exit)
                   .getActivationEpoch()
                   .plus(specConfig.getShardCommitteePeriod());
@@ -108,6 +108,11 @@ public class VoluntaryExitValidator
 
     public static OperationInvalidReason invalidSignature() {
       return () -> "Signature is invalid";
+    }
+
+    public static OperationInvalidReason pendingWithdrawalsInQueue() {
+      return () ->
+          "Validator cannot be exited while there are pending withdrawals in the withdrawal queue";
     }
   }
 }

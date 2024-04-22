@@ -1651,7 +1651,7 @@ public final class DataStructureUtil {
   }
 
   public SignedVoluntaryExit randomSignedVoluntaryExit() {
-    return randomSignedVoluntaryExit(randomUInt64());
+    return randomSignedVoluntaryExit(randomValidatorIndex());
   }
 
   public SignedVoluntaryExit randomSignedVoluntaryExit(final UInt64 validatorIndex) {

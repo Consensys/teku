@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,27 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.capella.operations.validation;
+package tech.pegasys.teku.spec.logic.versions.electra.operations.validation;
 
-import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
-import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
+import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 
-public class OperationValidatorCapella extends OperationValidatorPhase0 {
-
-  private final BlsToExecutionChangesValidator blsToExecutionChangesValidator =
-      new BlsToExecutionChangesValidator();
-
-  public OperationValidatorCapella(
+public class OperationValidatorElectra extends OperationValidatorCapella {
+  public OperationValidatorElectra(
       final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors,
@@ -45,11 +36,5 @@ public class OperationValidatorCapella extends OperationValidatorPhase0 {
         attestationDataValidator,
         attestationUtil,
         voluntaryExitValidator);
-  }
-
-  @Override
-  public Optional<OperationInvalidReason> validateBlsToExecutionChange(
-      final Fork fork, final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
-    return blsToExecutionChangesValidator.validate(fork, state, blsToExecutionChange);
   }
 }

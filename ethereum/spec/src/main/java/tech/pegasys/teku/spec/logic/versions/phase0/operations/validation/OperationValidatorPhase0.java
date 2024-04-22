@@ -35,21 +35,22 @@ public class OperationValidatorPhase0 implements OperationValidator {
   private final AttestationDataValidator attestationDataValidator;
   private final AttesterSlashingValidator attesterSlashingValidator;
   private final ProposerSlashingValidator proposerSlashingValidator;
-  private final VoluntaryExitValidator voluntaryExitValidator;
+  protected final VoluntaryExitValidator voluntaryExitValidator;
 
   public OperationValidatorPhase0(
       final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors,
       final AttestationDataValidator attestationDataValidator,
-      final AttestationUtil attestationUtil) {
+      final AttestationUtil attestationUtil,
+      final VoluntaryExitValidator voluntaryExitValidator) {
     this.attestationDataValidator = attestationDataValidator;
     this.attesterSlashingValidator =
         new AttesterSlashingValidator(predicates, beaconStateAccessors, attestationUtil);
     this.proposerSlashingValidator =
         new ProposerSlashingValidator(predicates, beaconStateAccessors);
-    this.voluntaryExitValidator =
-        new VoluntaryExitValidator(specConfig, predicates, beaconStateAccessors);
+    this.voluntaryExitValidator = voluntaryExitValidator;
+    //        new VoluntaryExitValidator(specConfig, predicates, beaconStateAccessors);
   }
 
   @Override

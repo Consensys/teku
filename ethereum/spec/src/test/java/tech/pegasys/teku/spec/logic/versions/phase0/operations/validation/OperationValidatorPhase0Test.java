@@ -38,13 +38,15 @@ public class OperationValidatorPhase0Test {
     final BeaconStateAccessors beaconStateAccessors = mock(BeaconStateAccessors.class);
     final AttestationDataValidator attestationDataValidator = mock(AttestationDataValidator.class);
     final AttestationUtil attestationUtil = mock(AttestationUtil.class);
+    final VoluntaryExitValidator voluntaryExitValidator = mock(VoluntaryExitValidator.class);
     final OperationValidator operationValidator =
         new OperationValidatorPhase0(
             specConfig,
             predicates,
             beaconStateAccessors,
             attestationDataValidator,
-            attestationUtil);
+            attestationUtil,
+            voluntaryExitValidator);
 
     assertThat(
             operationValidator.validateBlsToExecutionChange(
