@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -33,27 +32,27 @@ public class OperationValidatorPhase0Test {
 
   @Test
   void shouldRejectBlsOperationsPhase0() {
-    final SpecConfig specConfig = mock(SpecConfig.class);
     final Predicates predicates = mock(Predicates.class);
     final BeaconStateAccessors beaconStateAccessors = mock(BeaconStateAccessors.class);
     final AttestationDataValidator attestationDataValidator = mock(AttestationDataValidator.class);
     final AttestationUtil attestationUtil = mock(AttestationUtil.class);
+    final VoluntaryExitValidator voluntaryExitValidator = mock(VoluntaryExitValidator.class);
     final OperationValidator operationValidator =
         new OperationValidatorPhase0(
-            specConfig,
             predicates,
             beaconStateAccessors,
             attestationDataValidator,
-            attestationUtil);
+            attestationUtil,
+            voluntaryExitValidator);
 
     assertThat(
             operationValidator.validateBlsToExecutionChange(
                 mock(Fork.class), mock(BeaconState.class), mock(BlsToExecutionChange.class)))
         .containsInstanceOf(OperationInvalidReason.class);
-    verifyNoInteractions(specConfig);
     verifyNoInteractions(predicates);
     verifyNoInteractions(beaconStateAccessors);
     verifyNoInteractions(attestationDataValidator);
     verifyNoInteractions(attestationUtil);
+    verifyNoInteractions(voluntaryExitValidator);
   }
 }

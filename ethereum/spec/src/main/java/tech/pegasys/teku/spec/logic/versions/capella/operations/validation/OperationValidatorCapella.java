@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.capella.operations.validation;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -24,6 +23,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationData
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 
 public class OperationValidatorCapella extends OperationValidatorPhase0 {
 
@@ -31,12 +31,17 @@ public class OperationValidatorCapella extends OperationValidatorPhase0 {
       new BlsToExecutionChangesValidator();
 
   public OperationValidatorCapella(
-      final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors,
       final AttestationDataValidator attestationDataValidator,
-      final AttestationUtil attestationUtil) {
-    super(specConfig, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
+      final AttestationUtil attestationUtil,
+      final VoluntaryExitValidator voluntaryExitValidator) {
+    super(
+        predicates,
+        beaconStateAccessors,
+        attestationDataValidator,
+        attestationUtil,
+        voluntaryExitValidator);
   }
 
   @Override
