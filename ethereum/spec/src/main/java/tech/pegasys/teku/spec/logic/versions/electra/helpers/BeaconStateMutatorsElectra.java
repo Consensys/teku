@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.function.Supplier;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 
@@ -32,6 +34,15 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   private final MiscHelpersElectra miscHelpersElectra;
 
   private final SpecConfigElectra specConfigElectra;
+
+  public static BeaconStateMutatorsElectra required(final BeaconStateMutators beaconStateMutators) {
+    checkArgument(
+        beaconStateMutators instanceof BeaconStateMutatorsElectra,
+        "Expected %s but it was %s",
+        BeaconStateMutatorsElectra.class,
+        beaconStateMutators.getClass());
+    return (BeaconStateMutatorsElectra) beaconStateMutators;
+  }
 
   public BeaconStateMutatorsElectra(
       final SpecConfig specConfig,

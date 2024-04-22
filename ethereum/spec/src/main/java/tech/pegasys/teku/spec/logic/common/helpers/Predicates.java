@@ -138,6 +138,10 @@ public class Predicates {
     return hasMaxEffectiveBalance && hasExcessBalance;
   }
 
+  public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
+    return specConfig.getMaxEffectiveBalance();
+  }
+
   public Optional<PredicatesElectra> toVersionElectra() {
     return Optional.empty();
   }
