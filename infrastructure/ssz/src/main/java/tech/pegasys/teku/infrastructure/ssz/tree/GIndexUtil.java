@@ -89,7 +89,7 @@ public class GIndexUtil {
    *
    * @see #SELF_G_INDEX
    */
-  public static boolean gIdxIsSelf(long generalizedIndex) {
+  public static boolean gIdxIsSelf(final long generalizedIndex) {
     checkGIndex(generalizedIndex);
     return generalizedIndex == SELF_G_INDEX;
   }
@@ -106,7 +106,7 @@ public class GIndexUtil {
    *   <li>{@link NodeRelation#SAME}: idx1 is equal to idx2
    * </ul>
    */
-  public static NodeRelation gIdxCompare(long idx1, long idx2) {
+  public static NodeRelation gIdxCompare(final long idx1, final long idx2) {
     checkGIndex(idx1);
     checkGIndex(idx2);
     long anchor1 = Long.highestOneBit(idx1);
@@ -137,7 +137,7 @@ public class GIndexUtil {
    * Returns the depth of the node denoted by the supplied generalized index. E.g. the depth of the
    * {@link #SELF_G_INDEX} would be 0
    */
-  public static int gIdxGetDepth(long generalizedIndex) {
+  public static int gIdxGetDepth(final long generalizedIndex) {
     checkGIndex(generalizedIndex);
     long anchor = Long.highestOneBit(generalizedIndex);
     return Long.bitCount(anchor - 1);
@@ -147,7 +147,7 @@ public class GIndexUtil {
    * Returns the generalized index of the left child of the node with specified generalized index
    * E.g. the result when passing {@link #SELF_G_INDEX} would be <code>10</code>
    */
-  public static long gIdxLeftGIndex(long generalizedIndex) {
+  public static long gIdxLeftGIndex(final long generalizedIndex) {
     return gIdxChildGIndex(generalizedIndex, 0, 1);
   }
 
@@ -155,7 +155,7 @@ public class GIndexUtil {
    * Returns the generalized index of the right child of the node with specified generalized index
    * E.g. the result when passing {@link #SELF_G_INDEX} would be <code>11</code>
    */
-  public static long gIdxRightGIndex(long generalizedIndex) {
+  public static long gIdxRightGIndex(final long generalizedIndex) {
     return gIdxChildGIndex(generalizedIndex, 1, 1);
   }
 
@@ -178,7 +178,8 @@ public class GIndexUtil {
    *   <li><code>gIdxChildGIndex(anyIndex, 1, 1) == gIdxRightGIndex(anyIndex)</code>
    * </ul>
    */
-  public static long gIdxChildGIndex(long generalizedIndex, long childIdx, int childDepth) {
+  public static long gIdxChildGIndex(
+      final long generalizedIndex, final long childIdx, final int childDepth) {
     checkGIndex(generalizedIndex);
     assert childDepth >= 0 && childDepth <= MAX_DEPTH;
     assert childIdx >= 0 && childIdx < (1L << childDepth);
@@ -195,7 +196,8 @@ public class GIndexUtil {
    * @return the zero-based index number of the child at {@code childGeneralizedIndex} in a list of
    *     children {@code childDepth}
    */
-  public static int gIdxChildIndexFromGIndex(long childGeneralizedIndex, int childDepth) {
+  public static int gIdxChildIndexFromGIndex(
+      final long childGeneralizedIndex, final int childDepth) {
     checkGIndex(childGeneralizedIndex);
     assert childDepth >= 0 && childDepth <= MAX_DEPTH;
     final long rootGIndex = childGeneralizedIndex >>> childDepth;
@@ -215,7 +217,8 @@ public class GIndexUtil {
    *   <li><code>gIdxCompose(0b1000, 0b1111) == 0b1000111</code>
    * </ul>
    */
-  public static long gIdxCompose(long parentGeneralizedIndex, long childGeneralizedIndex) {
+  public static long gIdxCompose(
+      final long parentGeneralizedIndex, final long childGeneralizedIndex) {
     checkGIndex(parentGeneralizedIndex);
     checkGIndex(childGeneralizedIndex);
     assert gIdxGetDepth(parentGeneralizedIndex) + gIdxGetDepth(childGeneralizedIndex) <= MAX_DEPTH;
@@ -255,7 +258,7 @@ public class GIndexUtil {
    *   <li><code>gIdxLeftmostFrom(0b1101) == 0b110100000...00L</code>
    * </ul>
    */
-  public static long gIdxLeftmostFrom(long fromGeneralizedIndex) {
+  public static long gIdxLeftmostFrom(final long fromGeneralizedIndex) {
     checkGIndex(fromGeneralizedIndex);
     long highestOneBit = Long.highestOneBit(fromGeneralizedIndex);
     if (highestOneBit < 0) {
@@ -277,7 +280,7 @@ public class GIndexUtil {
    *   <li><code>gIdxRightmostFrom(0b1101) == 0b110111111...11L</code>
    * </ul>
    */
-  public static long gIdxRightmostFrom(long fromGeneralizedIndex) {
+  public static long gIdxRightmostFrom(final long fromGeneralizedIndex) {
     checkGIndex(fromGeneralizedIndex);
     long highestOneBit = Long.highestOneBit(fromGeneralizedIndex);
     if (highestOneBit < 0) {
@@ -305,7 +308,7 @@ public class GIndexUtil {
    *       is at depth 1
    * </ul>
    */
-  public static int gIdxGetChildIndex(long generalizedIndex, int childDepth) {
+  public static int gIdxGetChildIndex(final long generalizedIndex, final int childDepth) {
     checkGIndex(generalizedIndex);
     assert childDepth >= 0 && childDepth <= MAX_DEPTH;
 
@@ -329,7 +332,7 @@ public class GIndexUtil {
    *       is at depth 1
    * </ul>
    */
-  public static long gIdxGetRelativeGIndex(long generalizedIndex, int childDepth) {
+  public static long gIdxGetRelativeGIndex(final long generalizedIndex, final int childDepth) {
     checkGIndex(generalizedIndex);
     assert childDepth >= 0 && childDepth <= MAX_DEPTH;
 
@@ -340,12 +343,12 @@ public class GIndexUtil {
   }
 
   @VisibleForTesting
-  static long gIdxGetParent(long generalizedIndex) {
+  static long gIdxGetParent(final long generalizedIndex) {
     checkGIndex(generalizedIndex);
     return generalizedIndex >>> 1;
   }
 
-  private static void checkGIndex(long index) {
+  private static void checkGIndex(final long index) {
     assert index != 0;
   }
 }

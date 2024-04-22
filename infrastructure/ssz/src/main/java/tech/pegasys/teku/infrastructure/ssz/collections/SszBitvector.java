@@ -60,7 +60,7 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit>, SszBi
   IntStream streamAllSetBits();
 
   @Override
-  default Boolean getElement(int index) {
+  default Boolean getElement(final int index) {
     return getBit(index);
   }
 }

@@ -22,27 +22,27 @@ public class SszField {
   private final String name;
   private final Supplier<SszSchema<?>> viewType;
 
-  public SszField(int index, SszSchema<?> sszSchema) {
+  public SszField(final int index, final SszSchema<?> sszSchema) {
     this(index, () -> sszSchema);
   }
 
-  public SszField(int index, Supplier<SszSchema<?>> viewType) {
+  public SszField(final int index, final Supplier<SszSchema<?>> viewType) {
     this(index, "field-" + index, viewType);
   }
 
-  public SszField(int index, SszFieldName name, SszSchema<?> sszSchema) {
+  public SszField(final int index, final SszFieldName name, final SszSchema<?> sszSchema) {
     this(index, name.getSszFieldName(), sszSchema);
   }
 
-  public SszField(int index, String name, SszSchema<?> sszSchema) {
+  public SszField(final int index, final String name, final SszSchema<?> sszSchema) {
     this(index, name, () -> sszSchema);
   }
 
-  public SszField(int index, SszFieldName name, Supplier<SszSchema<?>> viewType) {
+  public SszField(final int index, final SszFieldName name, final Supplier<SszSchema<?>> viewType) {
     this(index, name.getSszFieldName(), viewType);
   }
 
-  public SszField(int index, String name, Supplier<SszSchema<?>> viewType) {
+  public SszField(final int index, final String name, final Supplier<SszSchema<?>> viewType) {
     this.index = index;
     this.name = name;
     this.viewType = viewType;

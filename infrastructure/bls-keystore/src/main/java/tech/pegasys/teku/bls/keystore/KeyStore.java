@@ -146,7 +146,7 @@ public class KeyStore {
   private static Bytes applyCipherFunction(
       final Bytes decryptionKey,
       final Cipher cipher,
-      boolean encryptMode,
+      final boolean encryptMode,
       final byte[] inputMessage) {
     // aes-128-ctr needs first 16 bytes for its key. The 2nd 16 bytes are used to create checksum
     final SecretKeySpec secretKey =

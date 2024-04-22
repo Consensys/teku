@@ -33,11 +33,11 @@ public interface SszMutableList<SszElementT extends SszData>
    *
    * @throws IndexOutOfBoundsException if size would exceed maxLength
    */
-  default void append(SszElementT value) {
+  default void append(final SszElementT value) {
     set(size(), value);
   }
 
-  default void appendAll(Iterable<SszElementT> elements) {
+  default void appendAll(final Iterable<SszElementT> elements) {
     elements.forEach(this::append);
   }
 }

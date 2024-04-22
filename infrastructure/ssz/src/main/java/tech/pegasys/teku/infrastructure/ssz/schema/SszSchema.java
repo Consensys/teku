@@ -68,19 +68,19 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   boolean isPrimitive();
 
-  default Bytes sszSerialize(SszDataT view) {
+  default Bytes sszSerialize(final SszDataT view) {
     return sszSerializeTree(view.getBackingNode());
   }
 
-  default int sszSerialize(SszDataT view, SszWriter writer) {
+  default int sszSerialize(final SszDataT view, final SszWriter writer) {
     return sszSerializeTree(view.getBackingNode(), writer);
   }
 
-  default SszDataT sszDeserialize(SszReader reader) throws SszDeserializeException {
+  default SszDataT sszDeserialize(final SszReader reader) throws SszDeserializeException {
     return createFromBackingNode(sszDeserializeTree(reader));
   }
 
-  default SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
+  default SszDataT sszDeserialize(final Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
   }
 

@@ -15,7 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.sos;
 
 public class SszDeserializeException extends IllegalArgumentException {
 
-  public SszDeserializeException(String s) {
+  public SszDeserializeException(final String s) {
     super(s);
   }
 }

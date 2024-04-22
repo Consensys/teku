@@ -61,17 +61,17 @@ public class DataConfig {
 
     private Builder() {}
 
-    public Builder dataBasePath(Path dataBasePath) {
+    public Builder dataBasePath(final Path dataBasePath) {
       this.dataBasePath = dataBasePath;
       return this;
     }
 
-    public Builder beaconDataPath(Path beaconDataPath) {
+    public Builder beaconDataPath(final Path beaconDataPath) {
       this.beaconDataPath = Optional.ofNullable(beaconDataPath);
       return this;
     }
 
-    public Builder validatorDataPath(Path validatorDataPath) {
+    public Builder validatorDataPath(final Path validatorDataPath) {
       this.validatorDataPath = Optional.ofNullable(validatorDataPath);
       return this;
     }

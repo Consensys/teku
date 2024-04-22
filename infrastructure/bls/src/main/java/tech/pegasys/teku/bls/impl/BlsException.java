@@ -15,11 +15,11 @@ package tech.pegasys.teku.bls.impl;
 
 public class BlsException extends IllegalArgumentException {
 
-  public BlsException(String message) {
+  public BlsException(final String message) {
     super(message);
   }
 
-  public BlsException(String message, Throwable cause) {
+  public BlsException(final String message, final Throwable cause) {
     super(message, cause);
   }
 }

@@ -39,7 +39,7 @@ public interface IntCache<V> extends Cache<Integer, V> {
   V getInt(int key, IntFunction<V> fallback);
 
   @Override
-  default V get(Integer key, Function<Integer, V> fallback) {
+  default V get(final Integer key, final Function<Integer, V> fallback) {
     return getInt(key, value -> fallback.apply(key));
   }
 
@@ -55,17 +55,17 @@ public interface IntCache<V> extends Cache<Integer, V> {
   void invalidateInt(int key);
 
   @Override
-  default void invalidate(Integer key) {
+  default void invalidate(final Integer key) {
     invalidateInt(key);
   }
 
-  default void invalidateWithNewValueInt(int key, V newValue) {
+  default void invalidateWithNewValueInt(final int key, final V newValue) {
     invalidateInt(key);
     getInt(key, k -> newValue);
   }
 
   @Override
-  default void invalidateWithNewValue(Integer key, V newValue) {
+  default void invalidateWithNewValue(final Integer key, final V newValue) {
     invalidateWithNewValueInt(key, newValue);
   }
 

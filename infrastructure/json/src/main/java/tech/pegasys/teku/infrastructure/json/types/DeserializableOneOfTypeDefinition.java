@@ -25,11 +25,11 @@ public class DeserializableOneOfTypeDefinition<TObject>
   private final Map<Predicate<String>, DeserializableTypeDefinition<? extends TObject>> parserTypes;
 
   DeserializableOneOfTypeDefinition(
-      Optional<String> name,
-      Optional<String> title,
-      Optional<String> description,
-      Map<Predicate<TObject>, DeserializableTypeDefinition<? extends TObject>> types,
-      Map<Predicate<String>, DeserializableTypeDefinition<? extends TObject>> parserTypes) {
+      final Optional<String> name,
+      final Optional<String> title,
+      final Optional<String> description,
+      final Map<Predicate<TObject>, DeserializableTypeDefinition<? extends TObject>> types,
+      final Map<Predicate<String>, DeserializableTypeDefinition<? extends TObject>> parserTypes) {
     super(name, title, description, types);
     this.parserTypes = parserTypes;
   }

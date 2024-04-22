@@ -35,7 +35,7 @@ abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
   protected final Map<K, V> delegate;
   protected final int maxSize;
 
-  protected AbstractLimitedMap(Map<K, V> delegate, int maxSize) {
+  protected AbstractLimitedMap(final Map<K, V> delegate, final int maxSize) {
     this.delegate = delegate;
     this.maxSize = maxSize;
   }
@@ -56,32 +56,32 @@ abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
   }
 
   @Override
-  public boolean containsKey(Object key) {
+  public boolean containsKey(final Object key) {
     return delegate.containsKey(key);
   }
 
   @Override
-  public boolean containsValue(Object value) {
+  public boolean containsValue(final Object value) {
     return delegate.containsValue(value);
   }
 
   @Override
-  public V get(Object key) {
+  public V get(final Object key) {
     return delegate.get(key);
   }
 
   @Override
-  public V put(K key, V value) {
+  public V put(final K key, final V value) {
     return delegate.put(key, value);
   }
 
   @Override
-  public V remove(Object key) {
+  public V remove(final Object key) {
     return delegate.remove(key);
   }
 
   @Override
-  public void putAll(Map<? extends K, ? extends V> m) {
+  public void putAll(final Map<? extends K, ? extends V> m) {
     delegate.putAll(m);
   }
 
@@ -106,7 +106,7 @@ abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     return delegate.equals(o);
   }
 
@@ -116,58 +116,62 @@ abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
   }
 
   @Override
-  public V getOrDefault(Object key, V defaultValue) {
+  public V getOrDefault(final Object key, final V defaultValue) {
     return delegate.getOrDefault(key, defaultValue);
   }
 
   @Override
-  public void forEach(BiConsumer<? super K, ? super V> action) {
+  public void forEach(final BiConsumer<? super K, ? super V> action) {
     delegate.forEach(action);
   }
 
   @Override
-  public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+  public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
     delegate.replaceAll(function);
   }
 
   @Override
-  public V putIfAbsent(K key, V value) {
+  public V putIfAbsent(final K key, final V value) {
     return delegate.putIfAbsent(key, value);
   }
 
   @Override
-  public boolean remove(Object key, Object value) {
+  public boolean remove(final Object key, final Object value) {
     return delegate.remove(key, value);
   }
 
   @Override
-  public boolean replace(K key, V oldValue, V newValue) {
+  public boolean replace(final K key, final V oldValue, final V newValue) {
     return delegate.replace(key, oldValue, newValue);
   }
 
   @Override
-  public V replace(K key, V value) {
+  public V replace(final K key, final V value) {
     return delegate.replace(key, value);
   }
 
   @Override
-  public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+  public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
     return delegate.computeIfAbsent(key, mappingFunction);
   }
 
   @Override
   public V computeIfPresent(
-      K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+      final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return delegate.computeIfPresent(key, remappingFunction);
   }
 
   @Override
-  public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+  public V compute(
+      final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
     return delegate.compute(key, remappingFunction);
   }
 
   @Override
-  public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+  public V merge(
+      final K key,
+      final V value,
+      final BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
     return delegate.merge(key, value, remappingFunction);
   }
 }
