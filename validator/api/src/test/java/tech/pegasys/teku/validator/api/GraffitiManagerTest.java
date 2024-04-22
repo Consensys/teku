@@ -138,7 +138,8 @@ class GraffitiManagerTest {
     assertThat(file.createNewFile()).isTrue();
     assertThat(file.getParentFile().setWritable(false)).isTrue();
 
-    assertThatThrownBy(() -> manager.deleteGraffiti(publicKey)).isInstanceOf(IOException.class);
+    assertThatThrownBy(() -> manager.deleteGraffiti(publicKey))
+        .isInstanceOf(GraffitiManagementException.class);
     assertThat(file.exists()).isTrue();
   }
 

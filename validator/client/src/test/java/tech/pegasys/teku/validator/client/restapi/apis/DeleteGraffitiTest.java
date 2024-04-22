@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.GraffitiManagementException;
 import tech.pegasys.teku.validator.api.GraffitiManager;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
@@ -71,19 +72,20 @@ class DeleteGraffitiTest {
   }
 
   @Test
-  void shouldReturnErrorWhenIssueDeleting() throws IOException {
+  void shouldReturnErrorWhenIssueDeletingGraffiti() throws IOException {
+    final String errorMessage = "Unable to delete graffiti for validator " + publicKey;
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    doThrow(IOException.class).when(graffitiManager).deleteGraffiti(any());
+    doThrow(new GraffitiManagementException(errorMessage))
+        .when(graffitiManager)
+        .deleteGraffiti(any());
 
     handler.handleRequest(request);
 
     verify(graffitiManager).deleteGraffiti(eq(publicKey));
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(
-                SC_INTERNAL_SERVER_ERROR, "Unable to delete graffiti for validator " + publicKey));
+        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, errorMessage));
   }
 
   @Test

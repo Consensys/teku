@@ -40,7 +40,8 @@ public class GraffitiManager {
     }
   }
 
-  public void setGraffiti(final BLSPublicKey publicKey, final String graffiti) throws IOException {
+  public void setGraffiti(final BLSPublicKey publicKey, final String graffiti)
+      throws GraffitiManagementException {
     final String strippedGraffiti = graffiti.strip();
     final int graffitiSize = strippedGraffiti.getBytes(StandardCharsets.UTF_8).length;
     if (graffitiSize > 32) {
@@ -50,17 +51,27 @@ public class GraffitiManager {
               strippedGraffiti, graffitiSize));
     }
 
-    final Path file = directory.resolve(resolveFileName(publicKey));
-    Files.writeString(file, strippedGraffiti);
+    try {
+      final Path file = directory.resolve(resolveFileName(publicKey));
+      Files.writeString(file, strippedGraffiti);
+    } catch (IOException e) {
+      throw new GraffitiManagementException(
+          "Unable to update graffiti for validator " + publicKey, e);
+    }
   }
 
-  public void deleteGraffiti(final BLSPublicKey publicKey) throws IOException {
+  public void deleteGraffiti(final BLSPublicKey publicKey) throws GraffitiManagementException {
     final Path file = directory.resolve(resolveFileName(publicKey));
     if (!file.toFile().exists()) {
       return;
     }
 
-    Files.delete(file);
+    try {
+      Files.delete(file);
+    } catch (IOException e) {
+      throw new GraffitiManagementException(
+          "Unable to delete graffiti for validator " + publicKey, e);
+    }
   }
 
   public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey) {
