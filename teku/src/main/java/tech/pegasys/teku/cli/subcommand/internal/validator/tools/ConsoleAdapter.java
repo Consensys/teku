@@ -18,8 +18,16 @@ import java.io.Console;
 public class ConsoleAdapter {
   private final Console console = System.console();
 
+  @SuppressWarnings("SystemConsoleNull") // https://errorprone.info/bugpattern/SystemConsoleNull
   public boolean isConsoleAvailable() {
-    return console != null;
+    if (Runtime.version().feature() < 22) {
+      return console != null;
+    }
+    try {
+      return (Boolean) Console.class.getMethod("isTerminal").invoke(console);
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
   }
 
   public char[] readPassword(final String fmt, final Object... args) {
