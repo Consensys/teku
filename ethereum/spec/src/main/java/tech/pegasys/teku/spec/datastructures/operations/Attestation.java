@@ -49,7 +49,7 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
     }
 
     @Override
-    public Attestation createFromBackingNode(TreeNode node) {
+    public Attestation createFromBackingNode(final TreeNode node) {
       return new Attestation(this, node);
     }
 

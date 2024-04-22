@@ -32,17 +32,17 @@ public class PayloadAttributesV3 extends PayloadAttributesV2 {
   public final Bytes32 parentBeaconBlockRoot;
 
   public PayloadAttributesV3(
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("prevRandao") Bytes32 prevRandao,
-      @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
-      @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("prevRandao") Bytes32 prevRandao,
+      final @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
+      final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
       @JsonProperty("parentBeaconBlockRoot") final Bytes32 parentBeaconBlockRoot) {
     super(timestamp, prevRandao, suggestedFeeRecipient, withdrawals);
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
   }
 
   public static Optional<PayloadAttributesV3> fromInternalPayloadBuildingAttributesV3(
-      Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
         (payloadAttributes) ->
             new PayloadAttributesV3(

@@ -170,7 +170,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   /** Processes justification and finalization */
   @Override
   public void processJustificationAndFinalization(
-      MutableBeaconState state, TotalBalances totalBalances) throws EpochProcessingException {
+      final MutableBeaconState state, final TotalBalances totalBalances)
+      throws EpochProcessingException {
     try {
       UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
       if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))) {
@@ -271,7 +272,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   @Override
   public void processRewardsAndPenalties(
-      MutableBeaconState state, ValidatorStatuses validatorStatuses)
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses)
       throws EpochProcessingException {
     try {
       if (beaconStateAccessors.getCurrentEpoch(state).equals(SpecConfig.GENESIS_EPOCH)) {
@@ -393,7 +394,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   /** Processes slashings */
   @Override
   public void processSlashings(
-      MutableBeaconState state, final ValidatorStatuses validatorStatuses) {
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses) {
     final UInt64 totalBalance =
         validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators();
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);

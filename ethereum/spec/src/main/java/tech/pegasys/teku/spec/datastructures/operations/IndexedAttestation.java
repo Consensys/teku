@@ -44,7 +44,7 @@ public class IndexedAttestation
     }
 
     @Override
-    public IndexedAttestation createFromBackingNode(TreeNode node) {
+    public IndexedAttestation createFromBackingNode(final TreeNode node) {
       return new IndexedAttestation(this, node);
     }
 
@@ -56,7 +56,7 @@ public class IndexedAttestation
     }
   }
 
-  private IndexedAttestation(IndexedAttestationSchema type, TreeNode backingNode) {
+  private IndexedAttestation(final IndexedAttestationSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

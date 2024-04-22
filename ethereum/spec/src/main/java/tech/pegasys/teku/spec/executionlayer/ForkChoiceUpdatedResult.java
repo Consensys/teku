@@ -22,7 +22,8 @@ public class ForkChoiceUpdatedResult {
   private final PayloadStatus payloadStatus;
   private final Optional<Bytes8> payloadId;
 
-  public ForkChoiceUpdatedResult(PayloadStatus payloadStatus, Optional<Bytes8> payloadId) {
+  public ForkChoiceUpdatedResult(
+      final PayloadStatus payloadStatus, final Optional<Bytes8> payloadId) {
     this.payloadStatus = payloadStatus;
     this.payloadId = payloadId;
   }

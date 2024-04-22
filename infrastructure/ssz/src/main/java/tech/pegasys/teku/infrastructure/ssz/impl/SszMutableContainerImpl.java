@@ -25,13 +25,13 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
     implements SszMutableRefContainer {
 
-  public SszMutableContainerImpl(SszContainerImpl backingImmutableView) {
+  public SszMutableContainerImpl(final SszContainerImpl backingImmutableView) {
     super(backingImmutableView);
   }
 
   @Override
   protected SszContainerImpl createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszData> viewCache) {
+      final TreeNode backingNode, final IntCache<SszData> viewCache) {
     return new SszContainerImpl(getSchema(), backingNode, viewCache);
   }
 
@@ -52,7 +52,7 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
   }
 
   @Override
-  protected void checkIndex(int index, boolean set) {
+  protected void checkIndex(final int index, final boolean set) {
     if (index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for container with size " + size());

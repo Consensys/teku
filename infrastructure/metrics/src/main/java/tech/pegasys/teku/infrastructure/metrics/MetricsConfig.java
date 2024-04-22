@@ -175,12 +175,12 @@ public class MetricsConfig {
 
     private MetricsConfigBuilder() {}
 
-    public MetricsConfigBuilder metricsEnabled(boolean metricsEnabled) {
+    public MetricsConfigBuilder metricsEnabled(final boolean metricsEnabled) {
       this.metricsEnabled = metricsEnabled;
       return this;
     }
 
-    public MetricsConfigBuilder metricsPort(int metricsPort) {
+    public MetricsConfigBuilder metricsPort(final int metricsPort) {
       if (!PortAvailability.isPortValid(metricsPort)) {
         throw new InvalidConfigurationException(
             String.format("Invalid metricsPort: %d", metricsPort));
@@ -189,27 +189,27 @@ public class MetricsConfig {
       return this;
     }
 
-    public MetricsConfigBuilder metricsInterface(String metricsInterface) {
+    public MetricsConfigBuilder metricsInterface(final String metricsInterface) {
       this.metricsInterface = metricsInterface;
       return this;
     }
 
-    public MetricsConfigBuilder metricsCategories(Set<MetricCategory> metricsCategories) {
+    public MetricsConfigBuilder metricsCategories(final Set<MetricCategory> metricsCategories) {
       this.metricsCategories = metricsCategories;
       return this;
     }
 
-    public MetricsConfigBuilder metricsHostAllowlist(List<String> metricsHostAllowlist) {
+    public MetricsConfigBuilder metricsHostAllowlist(final List<String> metricsHostAllowlist) {
       this.metricsHostAllowlist = metricsHostAllowlist;
       return this;
     }
 
-    public MetricsConfigBuilder metricsPublishEndpoint(URL metricsPublishEndpoint) {
+    public MetricsConfigBuilder metricsPublishEndpoint(final URL metricsPublishEndpoint) {
       this.metricsPublishEndpoint = metricsPublishEndpoint;
       return this;
     }
 
-    public MetricsConfigBuilder metricsPublishInterval(int metricsPublishInterval) {
+    public MetricsConfigBuilder metricsPublishInterval(final int metricsPublishInterval) {
       if (metricsPublishInterval < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid metricsPublishInterval: %d", metricsPublishInterval));

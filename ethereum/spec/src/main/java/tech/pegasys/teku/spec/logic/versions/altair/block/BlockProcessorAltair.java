@@ -282,7 +282,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public UInt64 computeParticipantReward(BeaconStateAltair state) {
+  public UInt64 computeParticipantReward(final BeaconStateAltair state) {
     final UInt64 totalActiveIncrements =
         beaconStateAccessors
             .getTotalActiveBalance(state)
@@ -357,9 +357,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   public static boolean eth2FastAggregateVerify(
       final BLSSignatureVerifier signatureVerifier,
-      List<BLSPublicKey> pubkeys,
-      Bytes32 message,
-      BLSSignature signature) {
+      final List<BLSPublicKey> pubkeys,
+      final Bytes32 message,
+      final BLSSignature signature) {
     // BLS verify logic would throw if we pass in an empty list of public keys,
     // so if the keys list is empty, return the isInfinity of the signature.
     // this is equivalent to the spec, and removes the possibility of an empty list

@@ -36,12 +36,12 @@ public interface MutableBeaconStateCapella extends MutableBeaconStateBellatrix, 
   @Override
   BeaconStateCapella commitChanges();
 
-  default void setNextWithdrawalIndex(UInt64 nextWithdrawalIndex) {
+  default void setNextWithdrawalIndex(final UInt64 nextWithdrawalIndex) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_WITHDRAWAL_INDEX);
     set(fieldIndex, SszUInt64.of(nextWithdrawalIndex));
   }
 
-  default void setNextWithdrawalValidatorIndex(UInt64 nextWithdrawalValidatorIndex) {
+  default void setNextWithdrawalValidatorIndex(final UInt64 nextWithdrawalValidatorIndex) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX);
     set(fieldIndex, SszUInt64.of(nextWithdrawalValidatorIndex));
@@ -53,7 +53,7 @@ public interface MutableBeaconStateCapella extends MutableBeaconStateBellatrix, 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setHistoricalSummaries(SszList<HistoricalSummary> historicalsummaries) {
+  default void setHistoricalSummaries(final SszList<HistoricalSummary> historicalsummaries) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES);
     set(fieldIndex, historicalsummaries);
   }

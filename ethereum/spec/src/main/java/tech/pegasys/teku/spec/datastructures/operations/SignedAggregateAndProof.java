@@ -40,16 +40,18 @@ public class SignedAggregateAndProof
     }
 
     @Override
-    public SignedAggregateAndProof createFromBackingNode(TreeNode node) {
+    public SignedAggregateAndProof createFromBackingNode(final TreeNode node) {
       return new SignedAggregateAndProof(this, node);
     }
 
-    public SignedAggregateAndProof create(final AggregateAndProof message, BLSSignature signature) {
+    public SignedAggregateAndProof create(
+        final AggregateAndProof message, final BLSSignature signature) {
       return new SignedAggregateAndProof(this, message, signature);
     }
   }
 
-  private SignedAggregateAndProof(SignedAggregateAndProofSchema type, TreeNode backingNode) {
+  private SignedAggregateAndProof(
+      final SignedAggregateAndProofSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

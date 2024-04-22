@@ -53,7 +53,8 @@ public class ValidatorsUtil {
         && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
-  public Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
+  public Optional<Integer> getValidatorIndex(
+      final BeaconState state, final BLSPublicKey publicKey) {
     return BeaconStateCache.getTransitionCaches(state)
         .getValidatorIndexCache()
         .getValidatorIndex(state, publicKey);

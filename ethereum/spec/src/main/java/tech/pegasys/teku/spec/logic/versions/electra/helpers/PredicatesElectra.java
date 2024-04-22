@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 public class PredicatesElectra extends Predicates {
   private final SpecConfigElectra configElectra;
 
-  public PredicatesElectra(SpecConfig specConfig) {
+  public PredicatesElectra(final SpecConfig specConfig) {
     super(specConfig);
     this.configElectra = SpecConfigElectra.required(specConfig);
   }

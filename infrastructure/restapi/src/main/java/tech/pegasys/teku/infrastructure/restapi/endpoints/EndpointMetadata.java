@@ -701,7 +701,7 @@ public class EndpointMetadata {
       return this;
     }
 
-    public EndpointMetaDataBuilder withBadRequestResponse(Optional<String> maybeMessage) {
+    public EndpointMetaDataBuilder withBadRequestResponse(final Optional<String> maybeMessage) {
       response(
           SC_BAD_REQUEST,
           maybeMessage.orElse(

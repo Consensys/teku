@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 public interface SszReader extends Closeable {
 
   /** Creates an instance from {@link Bytes} */
-  static SszReader fromBytes(Bytes bytes) {
+  static SszReader fromBytes(final Bytes bytes) {
     return new SimpleSszReader(bytes);
   }
 

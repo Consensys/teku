@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigCapella extends SpecConfigBellatrix {
 
-  static SpecConfigCapella required(SpecConfig specConfig) {
+  static SpecConfigCapella required(final SpecConfig specConfig) {
     return specConfig
         .toVersionCapella()
         .orElseThrow(

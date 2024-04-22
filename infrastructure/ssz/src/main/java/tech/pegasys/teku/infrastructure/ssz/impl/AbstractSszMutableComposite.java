@@ -58,17 +58,18 @@ public abstract class AbstractSszMutableComposite<
   private final SszCompositeSchema<?> cachedSchema;
 
   private ChildChangeRecord<SszChildT, SszMutableChildT> createChangeRecordByValue(
-      SszChildT newValue) {
+      final SszChildT newValue) {
     return new ChildChangeRecord<>(newValue, null);
   }
 
   private ChildChangeRecord<SszChildT, SszMutableChildT> createChangeRecordByRef(
-      SszMutableChildT childRef) {
+      final SszMutableChildT childRef) {
     return new ChildChangeRecord<>(null, childRef);
   }
 
   /** Creates a new mutable instance with backing immutable data */
-  protected AbstractSszMutableComposite(AbstractSszComposite<SszChildT> backingImmutableData) {
+  protected AbstractSszMutableComposite(
+      final AbstractSszComposite<SszChildT> backingImmutableData) {
     this.backingImmutableData = backingImmutableData;
     sizeCache = backingImmutableData.size();
     cachedSchema = backingImmutableData.getSchema();
@@ -76,7 +77,7 @@ public abstract class AbstractSszMutableComposite<
 
   @Override
   @SuppressWarnings("unchecked")
-  public void set(int index, SszChildT value) {
+  public void set(final int index, final SszChildT value) {
     checkIndex(index, true);
     checkNotNull(value);
     validateChildSchema(index, value);
@@ -94,7 +95,7 @@ public abstract class AbstractSszMutableComposite<
     invalidate();
   }
 
-  protected void validateChildSchema(int index, SszChildT value) {
+  protected void validateChildSchema(final int index, final SszChildT value) {
     if (!value.getSchema().equals(getSchema().getChildSchema(index))) {
       throw new InvalidValueSchemaException(
           "Expected child to have schema "
@@ -105,7 +106,7 @@ public abstract class AbstractSszMutableComposite<
   }
 
   @Override
-  public SszChildT get(int index) {
+  public SszChildT get(final int index) {
     checkIndex(index, false);
     ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = childrenChanges.get(index);
     if (changeRecord == null) {
@@ -118,7 +119,7 @@ public abstract class AbstractSszMutableComposite<
   }
 
   @Override
-  public SszMutableChildT getByRef(int index) {
+  public SszMutableChildT getByRef(final int index) {
     ChildChangeRecord<SszChildT, SszMutableChildT> changeRecord = childrenChanges.get(index);
     if (changeRecord != null && changeRecord.isByRef()) {
       return changeRecord.getRefValue();
@@ -186,13 +187,13 @@ public abstract class AbstractSszMutableComposite<
     }
   }
 
-  protected TreeNode doFinalTreeUpdates(TreeNode updatedTree) {
+  protected TreeNode doFinalTreeUpdates(final TreeNode updatedTree) {
     return updatedTree;
   }
 
   /** Converts a set of changed view with their indices to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
-      Stream<Map.Entry<Integer, SszChildT>> newChildValues, TreeNode original) {
+      final Stream<Map.Entry<Integer, SszChildT>> newChildValues, final TreeNode original) {
     SszCompositeSchema<?> type = getSchema();
     if (type.getElementsPerChunk() > 1) {
       throw new IllegalStateException(
@@ -214,7 +215,7 @@ public abstract class AbstractSszMutableComposite<
       TreeNode backingNode, IntCache<SszChildT> viewCache);
 
   @Override
-  public void setInvalidator(Consumer<SszMutableData> listener) {
+  public void setInvalidator(final Consumer<SszMutableData> listener) {
     invalidator = listener;
   }
 
@@ -244,7 +245,7 @@ public abstract class AbstractSszMutableComposite<
     private final SszChildT newValue;
     private final SszMutableChildT refValue;
 
-    private ChildChangeRecord(SszChildT newValue, SszMutableChildT refValue) {
+    private ChildChangeRecord(final SszChildT newValue, final SszMutableChildT refValue) {
       this.newValue = newValue;
       this.refValue = refValue;
     }

@@ -36,14 +36,14 @@ public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUI
     }
 
     @Override
-    public EnrForkId createFromBackingNode(TreeNode node) {
+    public EnrForkId createFromBackingNode(final TreeNode node) {
       return new EnrForkId(this, node);
     }
   }
 
   public static final EnrForkIdSchema SSZ_SCHEMA = new EnrForkIdSchema();
 
-  private EnrForkId(EnrForkIdSchema type, TreeNode backingNode) {
+  private EnrForkId(final EnrForkIdSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

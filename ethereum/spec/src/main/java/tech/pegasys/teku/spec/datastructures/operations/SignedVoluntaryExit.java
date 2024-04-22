@@ -36,14 +36,14 @@ public class SignedVoluntaryExit
     }
 
     @Override
-    public SignedVoluntaryExit createFromBackingNode(TreeNode node) {
+    public SignedVoluntaryExit createFromBackingNode(final TreeNode node) {
       return new SignedVoluntaryExit(this, node);
     }
   }
 
   public static final SignedVoluntaryExitSchema SSZ_SCHEMA = new SignedVoluntaryExitSchema();
 
-  private SignedVoluntaryExit(SignedVoluntaryExitSchema type, TreeNode backingNode) {
+  private SignedVoluntaryExit(final SignedVoluntaryExitSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

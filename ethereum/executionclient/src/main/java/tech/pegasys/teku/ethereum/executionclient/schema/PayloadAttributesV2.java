@@ -28,16 +28,16 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
   public final List<WithdrawalV1> withdrawals;
 
   public PayloadAttributesV2(
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("prevRandao") Bytes32 prevRandao,
-      @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
-      @JsonProperty("withdrawals") final List<WithdrawalV1> withdrawals) {
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("prevRandao") Bytes32 prevRandao,
+      final @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
+      final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals) {
     super(timestamp, prevRandao, suggestedFeeRecipient);
     this.withdrawals = withdrawals;
   }
 
   public static Optional<PayloadAttributesV2> fromInternalPayloadBuildingAttributesV2(
-      Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
         (payloadAttributes) ->
             new PayloadAttributesV2(

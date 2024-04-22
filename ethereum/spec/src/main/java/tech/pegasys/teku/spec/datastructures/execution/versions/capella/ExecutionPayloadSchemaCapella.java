@@ -169,7 +169,7 @@ public class ExecutionPayloadSchemaCapella
   }
 
   @Override
-  public ExecutionPayloadCapellaImpl createFromBackingNode(TreeNode node) {
+  public ExecutionPayloadCapellaImpl createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadCapellaImpl(this, node);
   }
 

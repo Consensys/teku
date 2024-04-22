@@ -45,23 +45,23 @@ public class StatusMessage
     }
 
     @Override
-    public StatusMessage createFromBackingNode(TreeNode node) {
+    public StatusMessage createFromBackingNode(final TreeNode node) {
       return new StatusMessage(this, node);
     }
   }
 
   public static final StatusMessageSchema SSZ_SCHEMA = new StatusMessageSchema();
 
-  private StatusMessage(StatusMessageSchema type, TreeNode backingNode) {
+  private StatusMessage(final StatusMessageSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public StatusMessage(
-      Bytes4 forkDigest,
-      Bytes32 finalizedRoot,
-      UInt64 finalizedEpoch,
-      Bytes32 headRoot,
-      UInt64 headSlot) {
+      final Bytes4 forkDigest,
+      final Bytes32 finalizedRoot,
+      final UInt64 finalizedEpoch,
+      final Bytes32 headRoot,
+      final UInt64 headSlot) {
     super(
         SSZ_SCHEMA,
         SszBytes4.of(forkDigest),

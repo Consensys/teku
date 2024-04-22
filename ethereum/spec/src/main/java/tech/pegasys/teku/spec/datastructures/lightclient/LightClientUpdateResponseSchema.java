@@ -32,12 +32,12 @@ public class LightClientUpdateResponseSchema
   }
 
   public LightClientUpdateResponse create(
-      SszUInt64 responseChunkLen, SszBytes4 context, LightClientUpdate payload) {
+      final SszUInt64 responseChunkLen, final SszBytes4 context, final LightClientUpdate payload) {
     return new LightClientUpdateResponse(this, responseChunkLen, context, payload);
   }
 
   @Override
-  public LightClientUpdateResponse createFromBackingNode(TreeNode node) {
+  public LightClientUpdateResponse createFromBackingNode(final TreeNode node) {
     return new LightClientUpdateResponse(this, node);
   }
 }

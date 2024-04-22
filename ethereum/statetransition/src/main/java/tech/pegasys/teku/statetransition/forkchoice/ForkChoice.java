@@ -282,8 +282,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public void onAttesterSlashing(
       final AttesterSlashing slashing,
-      InternalValidationResult validationStatus,
-      boolean fromNetwork) {
+      final InternalValidationResult validationStatus,
+      final boolean fromNetwork) {
     if (!validationStatus.isAccept()) {
       return;
     }
@@ -296,7 +296,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .ifExceptionGetsHereRaiseABug();
   }
 
-  public void subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
+  public void subscribeToOptimisticHeadChangesAndUpdate(final OptimisticHeadSubscriber subscriber) {
     optimisticSyncSubscribers.subscribe(subscriber);
     getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
   }
@@ -682,7 +682,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
   }
 
-  private UInt64 getMillisIntoSlot(StoreTransaction transaction, UInt64 millisPerSlot) {
+  private UInt64 getMillisIntoSlot(final StoreTransaction transaction, final UInt64 millisPerSlot) {
     return transaction
         .getTimeInMillis()
         .minus(secondsToMillis(transaction.getGenesisTime()))

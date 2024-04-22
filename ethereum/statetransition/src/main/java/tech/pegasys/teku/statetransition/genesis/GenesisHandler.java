@@ -68,7 +68,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   @Override
-  public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {
+  public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     if (!recentChainData.isPreGenesis()) {
       return;
     }
@@ -77,7 +77,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void processNewData(
-      Bytes32 blockHash, UInt64 timestamp, List<DepositWithIndex> deposits) {
+      final Bytes32 blockHash, final UInt64 timestamp, final List<DepositWithIndex> deposits) {
     validateDeposits(deposits);
     final int previousValidatorRequirementPercent =
         roundPercent(genesisGenerator.getActiveValidatorCount());
@@ -107,13 +107,13 @@ public class GenesisHandler implements Eth1EventsChannel {
     }
   }
 
-  private int roundPercent(int activeValidatorCount) {
+  private int roundPercent(final int activeValidatorCount) {
     return activeValidatorCount
         * 100
         / spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount();
   }
 
-  private void eth2Genesis(BeaconState genesisState) {
+  private void eth2Genesis(final BeaconState genesisState) {
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
     Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(

@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, SszBit, SszBitlist>
     implements SszBitlistSchema<SszBitlist> {
 
-  public SszBitlistSchemaImpl(long maxLength) {
+  public SszBitlistSchemaImpl(final long maxLength) {
     super(SszPrimitiveSchemas.BIT_SCHEMA, maxLength);
   }
 
@@ -46,25 +46,25 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
   }
 
   @Override
-  public SszBitlist createFromBackingNode(TreeNode node) {
+  public SszBitlist createFromBackingNode(final TreeNode node) {
     return new SszBitlistImpl(this, node);
   }
 
   @Override
-  public SszBitlist ofBits(int size, int... setBitIndices) {
+  public SszBitlist ofBits(final int size, final int... setBitIndices) {
     Preconditions.checkArgument(size <= getMaxLength(), "size > maxLength");
     return SszBitlistImpl.ofBits(this, size, setBitIndices);
   }
 
   @Override
-  public SszBitlist createFromElements(List<? extends SszBit> elements) {
+  public SszBitlist createFromElements(final List<? extends SszBit> elements) {
     return ofBits(
         elements.size(),
         IntStream.range(0, elements.size()).filter(i -> elements.get(i).get()).toArray());
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int elementsCount = getLength(node);
     BytesCollector bytesCollector = new BytesCollector();
     getCompatibleVectorSchema()
@@ -73,7 +73,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
+  public TreeNode sszDeserializeTree(final SszReader reader) {
     int availableBytes = reader.getAvailableBytes();
     // preliminary rough check
     checkSsz(
@@ -103,7 +103,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
       private final int offset;
       private final int length;
 
-      public UnsafeBytes(byte[] bytes, int offset, int length) {
+      public UnsafeBytes(final byte[] bytes, final int offset, final int length) {
         this.bytes = bytes;
         this.offset = offset;
         this.length = length;
@@ -114,7 +114,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
     private int size;
 
     @Override
-    public void write(byte[] bytes, int offset, int length) {
+    public void write(final byte[] bytes, final int offset, final int length) {
       if (length == 0) {
         return;
       }
@@ -122,7 +122,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
       size += length;
     }
 
-    public int flushWithBoundaryBit(SszWriter writer, int boundaryBitOffset) {
+    public int flushWithBoundaryBit(final SszWriter writer, final int boundaryBitOffset) {
       int bitIdx = boundaryBitOffset % 8;
       checkArgument(
           TreeUtil.bitsCeilToBytes(boundaryBitOffset) == size, "Invalid boundary bit offset");

@@ -48,18 +48,18 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Void, SszNone> NONE_SCHEMA =
       new AbstractSszPrimitiveSchema<>(0) {
         @Override
-        public Void createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public Void createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           return null;
         }
 
         @Override
         protected TreeNode updateBackingNode(
-            TreeNode srcNode, int internalIndex, SszData newValue) {
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           return srcNode;
         }
 
         @Override
-        public SszNone boxed(Void rawValue) {
+        public SszNone boxed(final Void rawValue) {
           return SszNone.INSTANCE;
         }
 
@@ -82,12 +82,13 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
       new AbstractSszPrimitiveSchema<>(1) {
         @Override
-        public Boolean createFromLeafBackingNode(LeafDataNode node, int idx) {
+        public Boolean createFromLeafBackingNode(final LeafDataNode node, final int idx) {
           return (node.getData().get(idx / 8) & (1 << (idx % 8))) != 0;
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int idx, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int idx, final SszData newValue) {
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
           Bytes originalBytes = ((LeafNode) srcNode).getData();
@@ -103,7 +104,7 @@ public final class SszPrimitiveSchemas {
         }
 
         @Override
-        public SszBit boxed(Boolean rawValue) {
+        public SszBit boxed(final Boolean rawValue) {
           return SszBit.of(rawValue);
         }
 
@@ -163,7 +164,7 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA =
       new AbstractSszUInt64Schema<>() {
         @Override
-        public SszUInt64 boxed(UInt64 rawValue) {
+        public SszUInt64 boxed(final UInt64 rawValue) {
           return SszUInt64.of(rawValue);
         }
       };
@@ -171,19 +172,20 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
-        public UInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public UInt256 createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           // reverse() is due to LE -> BE conversion
           return UInt256.fromBytes(node.getData().reverse());
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           // reverse() is due to BE -> LE conversion
           return LeafNode.create(((SszUInt256) newValue).get().toBytes().reverse());
         }
 
         @Override
-        public SszUInt256 boxed(UInt256 rawValue) {
+        public SszUInt256 boxed(final UInt256 rawValue) {
           return SszUInt256.of(rawValue);
         }
 
@@ -206,12 +208,13 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Bytes4, SszBytes4> BYTES4_SCHEMA =
       new AbstractSszPrimitiveSchema<>(32) {
         @Override
-        public Bytes4 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public Bytes4 createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           return new Bytes4(node.getData().slice(internalIndex * 4, 4));
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           checkArgument(
               internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
           Bytes bytes = ((SszBytes4) newValue).get().getWrappedBytes();
@@ -221,7 +224,7 @@ public final class SszPrimitiveSchemas {
         }
 
         @Override
-        public SszBytes4 boxed(Bytes4 rawValue) {
+        public SszBytes4 boxed(final Bytes4 rawValue) {
           return SszBytes4.of(rawValue);
         }
 
@@ -244,17 +247,18 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Bytes32, SszBytes32> BYTES32_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
-        public Bytes32 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public Bytes32 createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           return node.hashTreeRoot();
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           return LeafNode.create(((SszBytes32) newValue).get());
         }
 
         @Override
-        public SszBytes32 boxed(Bytes32 rawValue) {
+        public SszBytes32 boxed(final Bytes32 rawValue) {
           return SszBytes32.of(rawValue);
         }
 
@@ -281,12 +285,13 @@ public final class SszPrimitiveSchemas {
     }
 
     @Override
-    public Byte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+    public Byte createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
       return node.getData().get(internalIndex);
     }
 
     @Override
-    public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
+    public TreeNode updateBackingNode(
+        final TreeNode srcNode, final int index, final SszData newValue) {
       byte aByte = ((SszByte) newValue).get();
       Bytes curVal = ((LeafNode) srcNode).getData();
       Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
@@ -294,7 +299,7 @@ public final class SszPrimitiveSchemas {
     }
 
     @Override
-    public SszByte boxed(Byte rawValue) {
+    public SszByte boxed(final Byte rawValue) {
       return SszByte.of(rawValue);
     }
 

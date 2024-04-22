@@ -624,6 +624,8 @@ task manifestDocker {
   }
 
   doLast {
+    def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
+    def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
     for (def variant in dockerJdkVariants) {
       def tags = []
       def cmd = ""
