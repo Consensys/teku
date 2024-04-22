@@ -89,19 +89,19 @@ public class ExecutionPayloadCommon {
   public final Bytes32 blockHash;
 
   public ExecutionPayloadCommon(
-      @JsonProperty("parentHash") Bytes32 parentHash,
-      @JsonProperty("feeRecipient") Bytes20 feeRecipient,
-      @JsonProperty("stateRoot") Bytes32 stateRoot,
-      @JsonProperty("receiptsRoot") Bytes32 receiptsRoot,
-      @JsonProperty("logsBloom") Bytes logsBloom,
-      @JsonProperty("prevRandao") Bytes32 prevRandao,
-      @JsonProperty("blockNumber") UInt64 blockNumber,
-      @JsonProperty("gasLimit") UInt64 gasLimit,
-      @JsonProperty("gasUsed") UInt64 gasUsed,
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("extraData") Bytes extraData,
-      @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
-      @JsonProperty("blockHash") Bytes32 blockHash) {
+      final @JsonProperty("parentHash") Bytes32 parentHash,
+      final @JsonProperty("feeRecipient") Bytes20 feeRecipient,
+      final @JsonProperty("stateRoot") Bytes32 stateRoot,
+      final @JsonProperty("receiptsRoot") Bytes32 receiptsRoot,
+      final @JsonProperty("logsBloom") Bytes logsBloom,
+      final @JsonProperty("prevRandao") Bytes32 prevRandao,
+      final @JsonProperty("blockNumber") UInt64 blockNumber,
+      final @JsonProperty("gasLimit") UInt64 gasLimit,
+      final @JsonProperty("gasUsed") UInt64 gasUsed,
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("extraData") Bytes extraData,
+      final @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
+      final @JsonProperty("blockHash") Bytes32 blockHash) {
     checkNotNull(parentHash, "parentHash");
     checkNotNull(feeRecipient, "feeRecipient");
     checkNotNull(stateRoot, "stateRoot");

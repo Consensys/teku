@@ -161,7 +161,7 @@ public class ExecutionPayloadSchemaBellatrix
   }
 
   @Override
-  public ExecutionPayloadBellatrix createFromBackingNode(TreeNode node) {
+  public ExecutionPayloadBellatrix createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadBellatrix(this, node);
   }
 

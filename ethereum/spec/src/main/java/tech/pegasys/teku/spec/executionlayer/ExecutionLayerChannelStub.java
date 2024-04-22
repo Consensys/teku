@@ -482,7 +482,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     return SafeFuture.completedFuture(BuilderPayloadOrFallbackData.create(builderPayload));
   }
 
-  public void setPayloadStatus(PayloadStatus payloadStatus) {
+  public void setPayloadStatus(final PayloadStatus payloadStatus) {
     this.payloadStatus = payloadStatus;
   }
 

@@ -45,7 +45,7 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
   }
 
   static void describeCustomElectraFields(
-      MoreObjects.ToStringHelper stringBuilder, BeaconStateDeneb state) {
+      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateDeneb state) {
     BeaconStateDeneb.describeCustomDenebFields(stringBuilder, state);
     stringBuilder.add("deposit_receipts_start_index", state.getNextWithdrawalIndex());
   }

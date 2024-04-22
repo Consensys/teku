@@ -33,18 +33,18 @@ public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt6
     }
 
     @Override
-    public VoluntaryExit createFromBackingNode(TreeNode node) {
+    public VoluntaryExit createFromBackingNode(final TreeNode node) {
       return new VoluntaryExit(this, node);
     }
   }
 
   public static final VoluntaryExitSchema SSZ_SCHEMA = new VoluntaryExitSchema();
 
-  private VoluntaryExit(VoluntaryExitSchema type, TreeNode backingNode) {
+  private VoluntaryExit(final VoluntaryExitSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public VoluntaryExit(UInt64 epoch, UInt64 validatorIndex) {
+  public VoluntaryExit(final UInt64 epoch, final UInt64 validatorIndex) {
     super(SSZ_SCHEMA, SszUInt64.of(epoch), SszUInt64.of(validatorIndex));
   }
 

@@ -341,7 +341,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
+  public void processBlockHeader(
+      final MutableBeaconState state, final BeaconBlockSummary blockHeader)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -375,8 +376,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  protected void processRandaoNoValidation(MutableBeaconState state, BeaconBlockBody body)
-      throws BlockProcessingException {
+  protected void processRandaoNoValidation(
+      final MutableBeaconState state, final BeaconBlockBody body) throws BlockProcessingException {
     safelyProcess(
         () -> {
           UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
@@ -578,9 +579,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected void processAttestationsNoVerification(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache)
+      final MutableBeaconState state,
+      final SszList<Attestation> attestations,
+      final IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     final IndexedAttestationProvider indexedAttestationProvider =
         createIndexedAttestationProvider(state, indexedAttestationCache);
@@ -595,7 +596,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   public IndexedAttestationProvider createIndexedAttestationProvider(
-      BeaconState state, IndexedAttestationCache indexedAttestationCache) {
+      final BeaconState state, final IndexedAttestationCache indexedAttestationCache) {
     return (attestation) ->
         indexedAttestationCache.computeIfAbsent(
             attestation, () -> attestationUtil.getIndexedAttestation(state, attestation));
@@ -618,10 +619,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @CheckReturnValue
   protected BlockValidationResult verifyAttestationSignatures(
-      BeaconState state,
-      SszList<Attestation> attestations,
-      BLSSignatureVerifier signatureVerifier,
-      IndexedAttestationCache indexedAttestationCache) {
+      final BeaconState state,
+      final SszList<Attestation> attestations,
+      final BLSSignatureVerifier signatureVerifier,
+      final IndexedAttestationCache indexedAttestationCache) {
     return verifyAttestationSignatures(
         state,
         attestations,
@@ -631,10 +632,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @CheckReturnValue
   protected BlockValidationResult verifyAttestationSignatures(
-      BeaconState state,
-      SszList<Attestation> attestations,
-      BLSSignatureVerifier signatureVerifier,
-      IndexedAttestationProvider indexedAttestationProvider) {
+      final BeaconState state,
+      final SszList<Attestation> attestations,
+      final BLSSignatureVerifier signatureVerifier,
+      final IndexedAttestationProvider indexedAttestationProvider) {
 
     Optional<AttestationProcessingResult> processResult =
         attestations.stream()
@@ -654,7 +655,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
+  public void processDeposits(
+      final MutableBeaconState state, final SszList<? extends Deposit> deposits)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -863,9 +865,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected BlockValidationResult verifyVoluntaryExits(
-      BeaconState state,
-      SszList<SignedVoluntaryExit> exits,
-      BLSSignatureVerifier signatureVerifier) {
+      final BeaconState state,
+      final SszList<SignedVoluntaryExit> exits,
+      final BLSSignatureVerifier signatureVerifier) {
     for (SignedVoluntaryExit signedExit : exits) {
       boolean exitSignatureValid =
           operationSignatureVerifier.verifyVoluntaryExitSignature(
@@ -902,7 +904,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException
-  protected void safelyProcess(BlockProcessingAction action) throws BlockProcessingException {
+  protected void safelyProcess(final BlockProcessingAction action) throws BlockProcessingException {
     try {
       action.run();
     } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {

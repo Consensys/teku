@@ -53,15 +53,15 @@ public class BeaconBlockBodySchemaAltairImpl
 
   private BeaconBlockBodySchemaAltairImpl(
       final String containerName,
-      NamedSchema<SszSignature> randaoRevealSchema,
-      NamedSchema<Eth1Data> eth1DataSchema,
-      NamedSchema<SszBytes32> graffitiSchema,
-      NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
-      NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
-      NamedSchema<SszList<Attestation>> attestationsSchema,
-      NamedSchema<SszList<Deposit>> depositsSchema,
-      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
-      NamedSchema<SyncAggregate> syncAggregateSchema) {
+      final NamedSchema<SszSignature> randaoRevealSchema,
+      final NamedSchema<Eth1Data> eth1DataSchema,
+      final NamedSchema<SszBytes32> graffitiSchema,
+      final NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
+      final NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
+      final NamedSchema<SszList<Attestation>> attestationsSchema,
+      final NamedSchema<SszList<Deposit>> depositsSchema,
+      final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
+      final NamedSchema<SyncAggregate> syncAggregateSchema) {
     super(
         containerName,
         randaoRevealSchema,
@@ -161,7 +161,7 @@ public class BeaconBlockBodySchemaAltairImpl
   }
 
   @Override
-  public BeaconBlockBodyAltairImpl createFromBackingNode(TreeNode node) {
+  public BeaconBlockBodyAltairImpl createFromBackingNode(final TreeNode node) {
     return new BeaconBlockBodyAltairImpl(this, node);
   }
 }

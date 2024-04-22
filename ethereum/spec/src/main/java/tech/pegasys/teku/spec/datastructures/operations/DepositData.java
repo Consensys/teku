@@ -44,19 +44,22 @@ public class DepositData
     }
 
     @Override
-    public DepositData createFromBackingNode(TreeNode node) {
+    public DepositData createFromBackingNode(final TreeNode node) {
       return new DepositData(this, node);
     }
   }
 
   public static final DepositDataSchema SSZ_SCHEMA = new DepositDataSchema();
 
-  private DepositData(DepositDataSchema type, TreeNode backingNode) {
+  private DepositData(final DepositDataSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public DepositData(
-      BLSPublicKey pubkey, Bytes32 withdrawalCredentials, UInt64 amount, BLSSignature signature) {
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount,
+      final BLSSignature signature) {
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),

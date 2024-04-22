@@ -80,7 +80,7 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
     sizeGauge.set(0, itemType); // Init the label so it appears in metrics immediately
   }
 
-  public synchronized void add(T item) {
+  public synchronized void add(final T item) {
     if (shouldIgnoreItemAtSlot(targetSlotFunction.apply(item))) {
       // Ignore items outside of the range we care about
       return;
@@ -128,7 +128,7 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
     orderedPendingItems.add(toSlotAndRoot(item));
   }
 
-  public synchronized void remove(T item) {
+  public synchronized void remove(final T item) {
     final SlotAndRoot itemSlotAndRoot = toSlotAndRoot(item);
     orderedPendingItems.remove(itemSlotAndRoot);
     pendingItems.remove(itemSlotAndRoot.getRoot());
@@ -183,7 +183,8 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
    *     {@code includeIndirectDependents} is {@code false}, only item A is returned.
    * @return The list of items which depend on the given block root.
    */
-  public List<T> getItemsDependingOn(final Bytes32 blockRoot, boolean includeIndirectDependents) {
+  public List<T> getItemsDependingOn(
+      final Bytes32 blockRoot, final boolean includeIndirectDependents) {
     if (includeIndirectDependents) {
       return getAllItemsDependingOn(blockRoot);
     } else {

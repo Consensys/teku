@@ -33,18 +33,18 @@ public class PingMessage extends Container1<PingMessage, SszUInt64> implements R
     }
 
     @Override
-    public PingMessage createFromBackingNode(TreeNode node) {
+    public PingMessage createFromBackingNode(final TreeNode node) {
       return new PingMessage(this, node);
     }
   }
 
   public static final PingMessageSchema SSZ_SCHEMA = new PingMessageSchema();
 
-  public PingMessage(PingMessageSchema type, TreeNode backingNode) {
+  public PingMessage(final PingMessageSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public PingMessage(UInt64 seqNumber) {
+  public PingMessage(final UInt64 seqNumber) {
     super(SSZ_SCHEMA, SszUInt64.of(seqNumber));
   }
 

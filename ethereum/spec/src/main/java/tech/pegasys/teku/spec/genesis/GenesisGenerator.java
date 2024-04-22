@@ -72,14 +72,16 @@ public class GenesisGenerator {
             .createWritableCopy();
   }
 
-  public void updateExecutionPayloadHeader(ExecutionPayloadHeader payloadHeader) {
+  public void updateExecutionPayloadHeader(final ExecutionPayloadHeader payloadHeader) {
     state
         .toMutableVersionBellatrix()
         .ifPresent(stateBellatrix -> stateBellatrix.setLatestExecutionPayloadHeader(payloadHeader));
   }
 
   public void updateCandidateState(
-      Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
+      final Bytes32 eth1BlockHash,
+      final UInt64 eth1Timestamp,
+      final List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
     state.setEth1Data(

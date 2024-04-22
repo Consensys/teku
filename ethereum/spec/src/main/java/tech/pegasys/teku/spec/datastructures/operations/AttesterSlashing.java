@@ -39,7 +39,7 @@ public class AttesterSlashing
     }
 
     @Override
-    public AttesterSlashing createFromBackingNode(TreeNode node) {
+    public AttesterSlashing createFromBackingNode(final TreeNode node) {
       return new AttesterSlashing(this, node);
     }
 
@@ -59,7 +59,7 @@ public class AttesterSlashing
                           .asListUnboxed()), // TreeSet as must be sorted
                   new HashSet<>(getAttestation2().getAttestingIndices().asListUnboxed())));
 
-  private AttesterSlashing(AttesterSlashingSchema type, TreeNode backingNode) {
+  private AttesterSlashing(final AttesterSlashingSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

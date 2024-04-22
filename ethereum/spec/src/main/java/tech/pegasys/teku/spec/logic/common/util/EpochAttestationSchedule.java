@@ -29,7 +29,7 @@ public class EpochAttestationSchedule {
     return new Builder();
   }
 
-  public SlotAttestationSchedule atSlot(UInt64 assignedSlot) {
+  public SlotAttestationSchedule atSlot(final UInt64 assignedSlot) {
     return slotSchedule.get(assignedSlot);
   }
 

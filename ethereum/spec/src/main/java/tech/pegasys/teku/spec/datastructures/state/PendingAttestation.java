@@ -56,12 +56,12 @@ public class PendingAttestation
     }
 
     @Override
-    public PendingAttestation createFromBackingNode(TreeNode node) {
+    public PendingAttestation createFromBackingNode(final TreeNode node) {
       return new PendingAttestation(this, node);
     }
   }
 
-  private PendingAttestation(PendingAttestationSchema type, TreeNode backingNode) {
+  private PendingAttestation(final PendingAttestationSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

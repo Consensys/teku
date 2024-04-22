@@ -27,11 +27,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Transition
 class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStatePhase0Impl>
     implements MutableBeaconStatePhase0, BeaconStateCache, ValidatorStatsPhase0 {
 
-  MutableBeaconStatePhase0Impl(BeaconStatePhase0Impl backingImmutableView) {
+  MutableBeaconStatePhase0Impl(final BeaconStatePhase0Impl backingImmutableView) {
     super(backingImmutableView);
   }
 
-  MutableBeaconStatePhase0Impl(BeaconStatePhase0Impl backingImmutableView, boolean builder) {
+  MutableBeaconStatePhase0Impl(
+      final BeaconStatePhase0Impl backingImmutableView, final boolean builder) {
     super(backingImmutableView, builder);
   }
 
@@ -42,10 +43,10 @@ class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStat
 
   @Override
   protected BeaconStatePhase0Impl createImmutableBeaconState(
-      TreeNode backingNode,
-      IntCache<SszData> viewCache,
-      TransitionCaches transitionCaches,
-      SlotCaches slotCaches) {
+      final TreeNode backingNode,
+      final IntCache<SszData> viewCache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     return new BeaconStatePhase0Impl(
         getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
   }
@@ -57,19 +58,19 @@ class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStat
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<MutableBeaconState, E1, E2, E3> mutator) {
+      final Mutator<MutableBeaconState, E1, E2, E3> mutator) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
+      BeaconStatePhase0 updatedPhase0(final Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
           throws E1, E2, E3 {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  protected void addCustomFields(ToStringHelper stringBuilder) {
+  protected void addCustomFields(final ToStringHelper stringBuilder) {
     BeaconStatePhase0Impl.describeCustomFields(stringBuilder, this);
   }
 }
