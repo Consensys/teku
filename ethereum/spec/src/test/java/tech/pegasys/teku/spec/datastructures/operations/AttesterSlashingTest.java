@@ -34,7 +34,7 @@ class AttesterSlashingTest {
   private final IndexedAttestation indexedAttestation2 =
       dataStructureUtil.randomIndexedAttestation();
 
-  private AttesterSlashing attesterSlashing =
+  private final AttesterSlashing attesterSlashing =
       attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
 
   @Test

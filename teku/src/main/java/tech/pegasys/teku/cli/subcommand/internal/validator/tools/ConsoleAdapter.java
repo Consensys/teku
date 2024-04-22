@@ -16,7 +16,7 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 import java.io.Console;
 
 public class ConsoleAdapter {
-  private Console console = System.console();
+  private final Console console = System.console();
 
   public boolean isConsoleAvailable() {
     return console != null;

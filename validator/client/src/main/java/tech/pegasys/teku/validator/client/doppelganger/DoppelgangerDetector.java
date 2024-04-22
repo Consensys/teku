@@ -117,7 +117,7 @@ public class DoppelgangerDetector {
     private final Set<BLSPublicKey> pubKeys;
     private Optional<UInt64> epochAtStart = Optional.empty();
     private final Map<UInt64, BLSPublicKey> detectedDoppelgangers = new HashMap<>();
-    private AtomicBoolean firstCheck = new AtomicBoolean(true);
+    private final AtomicBoolean firstCheck = new AtomicBoolean(true);
 
     public DoppelgangerDetectionTask(final UInt64 startTime, final Set<BLSPublicKey> pubKeys) {
       this.startTime = startTime;

@@ -31,7 +31,7 @@ public class OperationPoolEntryTest {
   private final TestClass b1 = TestClass.of(Bytes4.fromHexString("0xFFFFFF11"));
   private final TestClass b2 = TestClass.of(Bytes4.fromHexString("0xFFFFFF22"));
 
-  private TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1_000_000);
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1_000_000);
 
   @Test
   void shouldSortLocalFirst() {

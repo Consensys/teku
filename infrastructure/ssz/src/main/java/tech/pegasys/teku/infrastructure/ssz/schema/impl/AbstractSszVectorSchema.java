@@ -49,7 +49,7 @@ public abstract class AbstractSszVectorSchema<
 
   private final boolean isListBacking;
   private final int fixedPartSize;
-  private SszLengthBounds sszLengthBounds;
+  private final SszLengthBounds sszLengthBounds;
 
   private final Supplier<DeserializableTypeDefinition<SszVectorT>> jsonTypeDefinition =
       Suppliers.memoize(this::createTypeDefinition);

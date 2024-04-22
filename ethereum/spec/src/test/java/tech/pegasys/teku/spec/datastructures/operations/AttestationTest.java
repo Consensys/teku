@@ -35,11 +35,12 @@ class AttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationSchema schema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
-  private SszBitlist aggregationBitfield = dataStructureUtil.randomBitlist();
-  private AttestationData data = dataStructureUtil.randomAttestationData();
-  private BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
+  private final SszBitlist aggregationBitfield = dataStructureUtil.randomBitlist();
+  private final AttestationData data = dataStructureUtil.randomAttestationData();
+  private final BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
 
-  private Attestation attestation = schema.create(aggregationBitfield, data, aggregateSignature);
+  private final Attestation attestation =
+      schema.create(aggregationBitfield, data, aggregateSignature);
 
   @Test
   public void shouldBeDependentOnTargetBlockAndBeaconBlockRoot() {

@@ -44,7 +44,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService.SignatureTask;
 
 public class AggregatingSignatureVerificationServiceTest {
-  private static List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(50);
+  private static final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(50);
 
   private final int queueCapacity = 50;
   private final int batchSize = 25;

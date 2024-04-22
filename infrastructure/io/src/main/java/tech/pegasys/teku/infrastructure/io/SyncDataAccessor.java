@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 public class SyncDataAccessor {
 
   private static final Logger LOG = LogManager.getLogger();
-  private boolean atomicFileMoveSupport;
+  private final boolean atomicFileMoveSupport;
 
   SyncDataAccessor(final boolean atomicFileMoveSupport) {
     this.atomicFileMoveSupport = atomicFileMoveSupport;

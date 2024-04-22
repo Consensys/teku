@@ -24,12 +24,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class Eth1DataTest {
 
-  private Random random = new Random(100);
-  private Bytes32 depositRoot = Bytes32.random(random);
-  private Bytes32 blockHash = Bytes32.random(random);
-  private UInt64 depositCount = UInt64.valueOf(100);
+  private final Random random = new Random(100);
+  private final Bytes32 depositRoot = Bytes32.random(random);
+  private final Bytes32 blockHash = Bytes32.random(random);
+  private final UInt64 depositCount = UInt64.valueOf(100);
 
-  private Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
+  private final Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

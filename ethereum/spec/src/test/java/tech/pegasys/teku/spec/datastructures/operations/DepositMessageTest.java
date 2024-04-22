@@ -26,9 +26,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class DepositMessageTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
-  private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
-  private UInt64 amount = dataStructureUtil.randomUInt64();
+  private final BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
+  private final Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
+  private final UInt64 amount = dataStructureUtil.randomUInt64();
 
   @Test
   public void shouldRoundTripViaSsz() {

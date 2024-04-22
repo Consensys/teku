@@ -37,10 +37,10 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class DepositTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private SszBytes32Vector branch = setupMerkleBranch();
-  private DepositData depositData = dataStructureUtil.randomDepositData();
+  private final SszBytes32Vector branch = setupMerkleBranch();
+  private final DepositData depositData = dataStructureUtil.randomDepositData();
 
-  private Deposit deposit = new Deposit(branch, depositData);
+  private final Deposit deposit = new Deposit(branch, depositData);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {

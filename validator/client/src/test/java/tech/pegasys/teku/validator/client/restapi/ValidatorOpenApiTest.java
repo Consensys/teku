@@ -45,7 +45,7 @@ class ValidatorOpenApiTest {
   private final OpenApiTestUtil<ValidatorOpenApiTest> util =
       new OpenApiTestUtil<>(ValidatorOpenApiTest.class);
   private JsonNode jsonNode;
-  private SlashingRiskAction doppelgangerDetectionAction = mock(SlashingRiskAction.class);
+  private final SlashingRiskAction doppelgangerDetectionAction = mock(SlashingRiskAction.class);
 
   @BeforeEach
   void setup() throws IOException {

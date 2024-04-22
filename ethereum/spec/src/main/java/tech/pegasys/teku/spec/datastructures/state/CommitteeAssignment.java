@@ -19,9 +19,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommitteeAssignment {
 
-  private IntList committee;
-  private UInt64 committeeIndex;
-  private UInt64 slot;
+  private final IntList committee;
+  private final UInt64 committeeIndex;
+  private final UInt64 slot;
 
   public CommitteeAssignment(IntList committee, UInt64 committeeIndex, UInt64 slot) {
     this.committee = committee;

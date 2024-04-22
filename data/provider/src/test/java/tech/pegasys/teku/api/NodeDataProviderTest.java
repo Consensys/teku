@@ -54,16 +54,16 @@ public class NodeDataProviderTest {
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
 
-  private OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
+  private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
 
-  private OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
+  private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
 
-  private OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
-  private OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
+  private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
       mock(OperationPool.class);
 
-  private SyncCommitteeContributionPool syncCommitteeContributionPool =
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   private NodeDataProvider provider;
 

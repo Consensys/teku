@@ -30,10 +30,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProposerConfig {
   @JsonProperty(value = "proposer_config")
-  private Map<Bytes48, Config> proposerConfig;
+  private final Map<Bytes48, Config> proposerConfig;
 
   @JsonProperty(value = "default_config")
-  private Config defaultConfig;
+  private final Config defaultConfig;
 
   @JsonCreator
   public ProposerConfig(
@@ -94,10 +94,10 @@ public class ProposerConfig {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class Config {
     @JsonProperty(value = "fee_recipient")
-    private Eth1Address feeRecipient;
+    private final Eth1Address feeRecipient;
 
     @JsonProperty(value = "builder")
-    private BuilderConfig builder;
+    private final BuilderConfig builder;
 
     @JsonCreator
     public Config(
@@ -141,13 +141,13 @@ public class ProposerConfig {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class BuilderConfig {
     @JsonProperty(value = "enabled")
-    private Boolean enabled;
+    private final Boolean enabled;
 
     @JsonProperty(value = "gas_limit")
-    private UInt64 gasLimit;
+    private final UInt64 gasLimit;
 
     @JsonProperty(value = "registration_overrides")
-    private RegistrationOverrides registrationOverrides;
+    private final RegistrationOverrides registrationOverrides;
 
     @JsonCreator
     public BuilderConfig(
@@ -194,10 +194,10 @@ public class ProposerConfig {
 
   public static class RegistrationOverrides {
     @JsonProperty(value = "timestamp")
-    private UInt64 timestamp;
+    private final UInt64 timestamp;
 
     @JsonProperty(value = "public_key")
-    private BLSPublicKey publicKey;
+    private final BLSPublicKey publicKey;
 
     @JsonCreator
     public RegistrationOverrides(
