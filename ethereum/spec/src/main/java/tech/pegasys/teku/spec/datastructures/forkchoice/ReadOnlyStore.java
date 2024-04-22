@@ -106,7 +106,7 @@ public interface ReadOnlyStore extends TimeProvider {
 
   Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
 
-  default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
+  default SafeFuture<Optional<BeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
     return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));
   }
 

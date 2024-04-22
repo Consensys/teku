@@ -77,7 +77,7 @@ public abstract class Web3JClient {
   }
 
   public <T> SafeFuture<Response<T>> doRequest(
-      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
+      final Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
       final Duration timeout) {
     throwIfNotInitialized();
     return SafeFuture.of(web3jRequest.sendAsync())
@@ -101,7 +101,7 @@ public abstract class Web3JClient {
             });
   }
 
-  private boolean isCriticalRequest(Request<?, ?> request) {
+  private boolean isCriticalRequest(final Request<?, ?> request) {
     return !nonCriticalMethods.contains(request.getMethod());
   }
 

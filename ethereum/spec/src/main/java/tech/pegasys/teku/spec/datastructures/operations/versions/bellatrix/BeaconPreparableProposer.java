@@ -22,7 +22,7 @@ public class BeaconPreparableProposer {
   private final UInt64 validatorIndex;
   private final Eth1Address feeRecipient;
 
-  public BeaconPreparableProposer(UInt64 validatorIndex, Eth1Address feeRecipient) {
+  public BeaconPreparableProposer(final UInt64 validatorIndex, final Eth1Address feeRecipient) {
     this.validatorIndex = validatorIndex;
     this.feeRecipient = feeRecipient;
   }

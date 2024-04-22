@@ -129,17 +129,13 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     }
   }
 
-  private RewardComponent getComponentForParticipationFlagIndex(int index) {
-    switch (index) {
-      case 0:
-        return RewardComponent.SOURCE;
-      case 1:
-        return RewardComponent.TARGET;
-      case 2:
-        return RewardComponent.HEAD;
-    }
-
-    throw new IllegalArgumentException("Invalid participation flag index " + index);
+  private RewardComponent getComponentForParticipationFlagIndex(final int index) {
+    return switch (index) {
+      case 0 -> RewardComponent.SOURCE;
+      case 1 -> RewardComponent.TARGET;
+      case 2 -> RewardComponent.HEAD;
+      default -> throw new IllegalArgumentException("Invalid participation flag index " + index);
+    };
   }
 
   /**

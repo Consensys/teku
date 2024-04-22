@@ -32,18 +32,19 @@ public class ProposerSlashing
     }
 
     @Override
-    public ProposerSlashing createFromBackingNode(TreeNode node) {
+    public ProposerSlashing createFromBackingNode(final TreeNode node) {
       return new ProposerSlashing(this, node);
     }
   }
 
   public static final ProposerSlashingSchema SSZ_SCHEMA = new ProposerSlashingSchema();
 
-  private ProposerSlashing(ProposerSlashingSchema type, TreeNode backingNode) {
+  private ProposerSlashing(final ProposerSlashingSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public ProposerSlashing(SignedBeaconBlockHeader header1, SignedBeaconBlockHeader header2) {
+  public ProposerSlashing(
+      final SignedBeaconBlockHeader header1, final SignedBeaconBlockHeader header2) {
     super(SSZ_SCHEMA, header1, header2);
   }
 

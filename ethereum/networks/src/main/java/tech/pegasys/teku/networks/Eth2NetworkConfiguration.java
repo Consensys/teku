@@ -374,7 +374,7 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
 
-    public void spec(Spec spec) {
+    public void spec(final Spec spec) {
       this.spec = spec;
     }
 
@@ -537,7 +537,7 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder ignoreWeakSubjectivityPeriodEnabled(
-        boolean ignoreWeakSubjectivityPeriodEnabled) {
+        final boolean ignoreWeakSubjectivityPeriodEnabled) {
       this.allowSyncOutsideWeakSubjectivityPeriod = ignoreWeakSubjectivityPeriodEnabled;
       return this;
     }
@@ -547,7 +547,7 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder asyncP2pMaxQueue(Integer asyncP2pMaxQueue) {
+    public Builder asyncP2pMaxQueue(final Integer asyncP2pMaxQueue) {
       this.asyncP2pMaxQueue = asyncP2pMaxQueue;
       return this;
     }
@@ -926,13 +926,13 @@ public class Eth2NetworkConfiguration {
       return Optional.of(epochsStoreBlobsInt);
     }
 
-    public Builder forkChoiceLateBlockReorgEnabled(boolean forkChoiceLateBlockReorgEnabled) {
+    public Builder forkChoiceLateBlockReorgEnabled(final boolean forkChoiceLateBlockReorgEnabled) {
       this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
       return this;
     }
 
     public Builder forkChoiceUpdatedAlwaysSendPayloadAttributes(
-        boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+        final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
       this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
           forkChoiceUpdatedAlwaysSendPayloadAttributes;
       return this;

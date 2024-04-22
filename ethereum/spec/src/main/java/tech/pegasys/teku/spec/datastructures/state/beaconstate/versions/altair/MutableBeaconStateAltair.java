@@ -64,17 +64,17 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
     return getAnyByRef(fieldIndex);
   }
 
-  default void setInactivityScores(SszUInt64List newValue) {
+  default void setInactivityScores(final SszUInt64List newValue) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES);
     set(fieldIndex, newValue);
   }
 
-  default void setCurrentSyncCommittee(SyncCommittee currentSyncCommittee) {
+  default void setCurrentSyncCommittee(final SyncCommittee currentSyncCommittee) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE);
     set(fieldIndex, currentSyncCommittee);
   }
 
-  default void setNextSyncCommittee(SyncCommittee nextSyncCommittee) {
+  default void setNextSyncCommittee(final SyncCommittee nextSyncCommittee) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE);
     set(fieldIndex, nextSyncCommittee);
   }

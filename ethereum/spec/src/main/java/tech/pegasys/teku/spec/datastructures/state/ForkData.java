@@ -34,14 +34,14 @@ public class ForkData extends Container2<ForkData, SszBytes4, SszBytes32> {
     }
 
     @Override
-    public ForkData createFromBackingNode(TreeNode node) {
+    public ForkData createFromBackingNode(final TreeNode node) {
       return new ForkData(this, node);
     }
   }
 
   public static final ForkDataSchema SSZ_SCHEMA = new ForkDataSchema();
 
-  private ForkData(ForkDataSchema type, TreeNode backingNode) {
+  private ForkData(final ForkDataSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

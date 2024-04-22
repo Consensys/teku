@@ -22,12 +22,13 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
 
   private final UInt64 index;
 
-  public DepositWithIndex(SszBytes32Vector proof, DepositData data, UInt64 index) {
+  public DepositWithIndex(
+      final SszBytes32Vector proof, final DepositData data, final UInt64 index) {
     super(proof, data);
     this.index = index;
   }
 
-  public DepositWithIndex(DepositData data, UInt64 index) {
+  public DepositWithIndex(final DepositData data, final UInt64 index) {
     super(data);
     this.index = index;
   }
@@ -37,7 +38,7 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
   }
 
   @Override
-  public int compareTo(@NotNull DepositWithIndex o) {
+  public int compareTo(final @NotNull DepositWithIndex o) {
     return this.getIndex().compareTo(o.getIndex());
   }
 

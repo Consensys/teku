@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class PreparedProposerInfo extends ExpiringInfo {
   private final Eth1Address feeRecipient;
 
-  public PreparedProposerInfo(UInt64 expirySlot, Eth1Address feeRecipient) {
+  public PreparedProposerInfo(final UInt64 expirySlot, final Eth1Address feeRecipient) {
     super(expirySlot);
     this.feeRecipient = feeRecipient;
   }

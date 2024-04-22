@@ -48,8 +48,8 @@ public class WeakSubjectivityValidator {
 
   WeakSubjectivityValidator(
       final WeakSubjectivityConfig config,
-      WeakSubjectivityCalculator calculator,
-      WeakSubjectivityViolationPolicy violationPolicy) {
+      final WeakSubjectivityCalculator calculator,
+      final WeakSubjectivityViolationPolicy violationPolicy) {
     this.spec = config.getSpec();
     this.calculator = calculator;
     this.violationPolicy = violationPolicy;
@@ -93,7 +93,7 @@ public class WeakSubjectivityValidator {
 
   /** Check whether the chain matches any configured weak subjectivity checkpoint or state */
   public SafeFuture<Void> validateChainIsConsistentWithWSCheckpoint(
-      CombinedChainDataClient chainData) {
+      final CombinedChainDataClient chainData) {
     if (config.getWeakSubjectivityCheckpoint().isEmpty()) {
       // Nothing to validate against
       return SafeFuture.COMPLETE;
@@ -175,7 +175,7 @@ public class WeakSubjectivityValidator {
   }
 
   public boolean isBlockValid(
-      final SignedBeaconBlock block, ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
+      final SignedBeaconBlock block, final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
     if (config.getWeakSubjectivityCheckpoint().isEmpty()) {
       return true;
     }
@@ -208,7 +208,7 @@ public class WeakSubjectivityValidator {
    * @param message An error message
    * @param error The error encountered
    */
-  public void handleValidationFailure(final String message, Throwable error) {
+  public void handleValidationFailure(final String message, final Throwable error) {
     violationPolicy.onFailedToPerformValidation(message, error);
   }
 
@@ -257,7 +257,7 @@ public class WeakSubjectivityValidator {
     return suppressWSPeriodErrorsUntilEpoch;
   }
 
-  public boolean isWithinWSPeriod(CheckpointState checkpointState, UInt64 currentSlot) {
+  public boolean isWithinWSPeriod(final CheckpointState checkpointState, final UInt64 currentSlot) {
     return calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot);
   }
 

@@ -17,11 +17,11 @@ public class StateTransitionException extends Exception {
 
   public StateTransitionException() {}
 
-  public StateTransitionException(String message) {
+  public StateTransitionException(final String message) {
     super(message);
   }
 
-  public StateTransitionException(Throwable e) {
+  public StateTransitionException(final Throwable e) {
     super(e);
   }
 }

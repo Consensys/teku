@@ -53,7 +53,7 @@ public class ExecutionPayloadBellatrix
     implements ExecutionPayload {
 
   public ExecutionPayloadBellatrix(
-      ContainerSchema14<
+      final ContainerSchema14<
               ExecutionPayloadBellatrix,
               SszBytes32,
               SszByteVector,
@@ -70,26 +70,26 @@ public class ExecutionPayloadBellatrix
               SszBytes32,
               SszList<Transaction>>
           type,
-      TreeNode backingNode) {
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public ExecutionPayloadBellatrix(
-      ExecutionPayloadSchemaBellatrix schema,
-      SszBytes32 parentHash,
-      SszByteVector feeRecipient,
-      SszBytes32 stateRoot,
-      SszBytes32 receiptsRoot,
-      SszByteVector logsBloom,
-      SszBytes32 prevRandao,
-      SszUInt64 blockNumber,
-      SszUInt64 gasLimit,
-      SszUInt64 gasUsed,
-      SszUInt64 timestamp,
-      SszByteList extraData,
-      SszUInt256 baseFeePerGas,
-      SszBytes32 blockHash,
-      SszList<Transaction> transactions) {
+      final ExecutionPayloadSchemaBellatrix schema,
+      final SszBytes32 parentHash,
+      final SszByteVector feeRecipient,
+      final SszBytes32 stateRoot,
+      final SszBytes32 receiptsRoot,
+      final SszByteVector logsBloom,
+      final SszBytes32 prevRandao,
+      final SszUInt64 blockNumber,
+      final SszUInt64 gasLimit,
+      final SszUInt64 gasUsed,
+      final SszUInt64 timestamp,
+      final SszByteList extraData,
+      final SszUInt256 baseFeePerGas,
+      final SszBytes32 blockHash,
+      final SszList<Transaction> transactions) {
     super(
         schema,
         parentHash,

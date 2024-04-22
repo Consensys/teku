@@ -80,7 +80,7 @@ public class VoluntaryExitValidator
         });
   }
 
-  private Validator getValidator(BeaconState state, VoluntaryExit exit) {
+  private Validator getValidator(final BeaconState state, final VoluntaryExit exit) {
     return state.getValidators().get(exit.getValidatorIndex().intValue());
   }
 
@@ -102,7 +102,7 @@ public class VoluntaryExitValidator
       return () -> "Specified exit epoch is still in the future";
     }
 
-    public static OperationInvalidReason validatorTooYoung(UInt64 exitEpoch) {
+    public static OperationInvalidReason validatorTooYoung(final UInt64 exitEpoch) {
       return () -> "Validator cannot exit until epoch " + exitEpoch;
     }
 
