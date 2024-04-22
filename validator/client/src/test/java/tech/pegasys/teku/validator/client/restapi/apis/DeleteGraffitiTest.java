@@ -15,8 +15,11 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
@@ -59,10 +62,10 @@ class DeleteGraffitiTest {
   void shouldSuccessfullyDeleteGraffiti() throws IOException {
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
-    graffitiManager.deleteGraffiti(any());
 
     handler.handleRequest(request);
 
+    verify(graffitiManager).deleteGraffiti(eq(publicKey));
     assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
     assertThat(request.getResponseBody()).isNull();
   }
@@ -75,6 +78,7 @@ class DeleteGraffitiTest {
 
     handler.handleRequest(request);
 
+    verify(graffitiManager).deleteGraffiti(eq(publicKey));
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
         .isEqualTo(
@@ -88,6 +92,7 @@ class DeleteGraffitiTest {
 
     handler.handleRequest(request);
 
+    verifyNoInteractions(graffitiManager);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
   }
 

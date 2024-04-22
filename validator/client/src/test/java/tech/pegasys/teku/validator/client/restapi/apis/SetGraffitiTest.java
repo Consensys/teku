@@ -19,6 +19,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
@@ -67,6 +69,7 @@ class SetGraffitiTest {
 
     handler.handleRequest(request);
 
+    verify(graffitiManager).setGraffiti(eq(publicKey), eq(graffiti));
     assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
     assertThat(request.getResponseBody()).isNull();
   }
@@ -81,6 +84,7 @@ class SetGraffitiTest {
 
     handler.handleRequest(request);
 
+    verify(graffitiManager).setGraffiti(eq(publicKey), eq(graffiti));
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
         .isEqualTo(
@@ -105,14 +109,16 @@ class SetGraffitiTest {
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(errorMessage);
+    verify(graffitiManager).setGraffiti(eq(publicKey), eq(invalidGraffiti));
   }
 
   @Test
-  void shouldRespondNotFoundWhenNoValidator() throws JsonProcessingException {
+  void shouldRespondNotFoundWhenNoValidator() throws IOException {
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
 
     handler.handleRequest(request);
 
+    verifyNoInteractions(graffitiManager);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
   }
 
