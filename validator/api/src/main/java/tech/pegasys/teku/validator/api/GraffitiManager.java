@@ -40,7 +40,7 @@ public class GraffitiManager {
     }
   }
 
-  public void setGraffiti(final BLSPublicKey publicKey, final String graffiti)
+  public synchronized void setGraffiti(final BLSPublicKey publicKey, final String graffiti)
       throws GraffitiManagementException {
     final String strippedGraffiti = graffiti.strip();
     final int graffitiSize = strippedGraffiti.getBytes(StandardCharsets.UTF_8).length;
@@ -60,7 +60,8 @@ public class GraffitiManager {
     }
   }
 
-  public void deleteGraffiti(final BLSPublicKey publicKey) throws GraffitiManagementException {
+  public synchronized void deleteGraffiti(final BLSPublicKey publicKey)
+      throws GraffitiManagementException {
     final Path file = directory.resolve(resolveFileName(publicKey));
     if (!file.toFile().exists()) {
       return;
@@ -74,7 +75,7 @@ public class GraffitiManager {
     }
   }
 
-  public Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey)
+  public synchronized Optional<Bytes32> getGraffiti(final BLSPublicKey publicKey)
       throws GraffitiManagementException {
     final Path filePath = directory.resolve(resolveFileName(publicKey));
     if (!filePath.toFile().exists()) {
