@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 class ConfigProviderTest {
-  private final Spec spec = SpecFactory.create("prater");
+  private final Spec spec = SpecFactory.create("holesky");
 
   private final ConfigProvider configProvider = new ConfigProvider(spec);
 
