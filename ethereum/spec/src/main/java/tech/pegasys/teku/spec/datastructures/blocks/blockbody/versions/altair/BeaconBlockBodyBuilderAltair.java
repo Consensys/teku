@@ -15,11 +15,13 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
@@ -47,6 +49,7 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
     checkNotNull(syncAggregate, "syncAggregate must be specified");
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();
@@ -60,7 +63,7 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
         SszBytes32.of(graffiti),
         proposerSlashings,
         attesterSlashings,
-        attestations,
+        (SszList<Attestation>) attestations,
         deposits,
         voluntaryExits,
         syncAggregate);

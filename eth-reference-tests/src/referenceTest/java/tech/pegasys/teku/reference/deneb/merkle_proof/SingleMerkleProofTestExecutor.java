@@ -56,7 +56,7 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
     final Data data = loadDataFile(testDefinition, Data.class);
 
     switch (objectType) {
-      case "BeaconBlockBody" -> runBeaconBlockBodyTest(testDefinition, proofType, data);
+      case "BeaconBlockBodyPhase0" -> runBeaconBlockBodyTest(testDefinition, proofType, data);
       default -> throw new RuntimeException("Unknown object type " + objectType);
     }
   }

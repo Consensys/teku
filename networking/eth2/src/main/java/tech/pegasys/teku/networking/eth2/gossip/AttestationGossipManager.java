@@ -21,7 +21,7 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 
 public class AttestationGossipManager implements GossipManager {
   private static final Logger LOG = LogManager.getLogger();
@@ -51,7 +51,7 @@ public class AttestationGossipManager implements GossipManager {
     if (validatableAttestation.isAggregate() || !validatableAttestation.markGossiped()) {
       return;
     }
-    final Attestation attestation = validatableAttestation.getAttestation();
+    final AttestationContainer attestation = validatableAttestation.getAttestation();
     subnetSubscriptions
         .gossip(attestation)
         .finish(

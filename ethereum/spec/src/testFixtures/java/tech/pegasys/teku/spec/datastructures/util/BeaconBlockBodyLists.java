@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -57,16 +58,21 @@ public class BeaconBlockBodyLists {
         .of(attesterSlashings);
   }
 
+  // TODO create Electra Attestations
+  @SuppressWarnings("unchecked")
   public SszList<Attestation> createAttestations(final Attestation... attestations) {
-    return blockBodySchema.getAttestationsSchema().of(attestations);
+    return ((SszListSchema<Attestation, ?>) blockBodySchema.getAttestationsSchema())
+        .of(attestations);
   }
 
+  @SuppressWarnings("unchecked")
   public SszList<Attestation> createAttestations(
       final UInt64 slot, final Attestation... attestations) {
-    return spec.atSlot(slot)
-        .getSchemaDefinitions()
-        .getBeaconBlockBodySchema()
-        .getAttestationsSchema()
+    return ((SszListSchema<Attestation, ?>)
+            spec.atSlot(slot)
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema()
+                .getAttestationsSchema())
         .of(attestations);
   }
 

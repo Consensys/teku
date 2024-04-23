@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -186,11 +186,14 @@ public class BlockImporter {
                         Objects.equals(curVal, finalizedCheckpoint) ? updatedCheckpoint : curVal));
   }
 
+  @SuppressWarnings("unchecked")
   private void notifyBlockOperationSubscribers(final SignedBeaconBlock block) {
     final BeaconBlockBody blockBody = block.getMessage().getBody();
 
     attestationSubscribers.forEach(
-        listener -> listener.onOperationsFromBlock(block.getSlot(), blockBody.getAttestations()));
+        listener ->
+            listener.onOperationsFromBlock(
+                block.getSlot(), (SszList<AttestationContainer>) blockBody.getAttestations()));
     attesterSlashingSubscribers.deliver(
         VerifiedBlockOperationsListener::onOperationsFromBlock, blockBody.getAttesterSlashings());
     proposerSlashingSubscribers.deliver(
@@ -248,6 +251,6 @@ public class BlockImporter {
   }
 
   public interface VerifiedBlockAttestationListener {
-    void onOperationsFromBlock(UInt64 slot, SszList<Attestation> attestations);
+    void onOperationsFromBlock(UInt64 slot, SszList<AttestationContainer> attestations);
   }
 }

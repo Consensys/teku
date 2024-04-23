@@ -76,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -603,7 +604,8 @@ class RemoteValidatorApiHandlerTest {
 
     when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot))).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
+    SafeFuture<Optional<AttestationContainer>> future =
+        apiHandler.createAggregate(slot, attHashTreeRoot);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -620,7 +622,8 @@ class RemoteValidatorApiHandlerTest {
     when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot)))
         .thenReturn(Optional.of(schemaAttestation));
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
+    SafeFuture<Optional<AttestationContainer>> future =
+        apiHandler.createAggregate(slot, attHashTreeRoot);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
   }

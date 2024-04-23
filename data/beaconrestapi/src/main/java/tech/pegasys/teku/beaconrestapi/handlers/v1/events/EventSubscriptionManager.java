@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -211,7 +212,9 @@ public class EventSubscriptionManager
   }
 
   protected void onNewAttestation(final ValidatableAttestation attestation) {
-    final AttestationEvent attestationEvent = new AttestationEvent(attestation.getAttestation());
+    // TODO Remove the casting and handle Electra Attestations
+    final AttestationEvent attestationEvent =
+        new AttestationEvent((Attestation) attestation.getAttestation());
     notifySubscribersOfEvent(EventType.attestation, attestationEvent);
   }
 

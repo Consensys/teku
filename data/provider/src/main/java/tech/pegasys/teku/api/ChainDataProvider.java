@@ -68,7 +68,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -195,8 +195,8 @@ public class ChainDataProvider {
     return fromBlock(blockIdParam, SignedBeaconBlock::getRoot);
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
-      final String blockIdParam) {
+  public SafeFuture<Optional<ObjectAndMetaData<List<? extends AttestationContainer>>>>
+      getBlockAttestations(final String blockIdParam) {
     return fromBlock(
         blockIdParam, block -> block.getMessage().getBody().getAttestations().stream().toList());
   }

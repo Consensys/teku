@@ -98,6 +98,7 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -689,7 +690,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void createAggregate_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<Attestation>> result =
+    final SafeFuture<Optional<AttestationContainer>> result =
         validatorApiHandler.createAggregate(
             ONE, dataStructureUtil.randomAttestationData().hashTreeRoot());
 
@@ -711,7 +712,8 @@ class ValidatorApiHandlerTest {
   @Test
   public void createAggregate_shouldReturnAggregateFromAttestationPool() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
+    final Optional<AttestationContainer> aggregate =
+        Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(eq(attestationData.hashTreeRoot())))
         .thenReturn(aggregate.map(attestation -> ValidatableAttestation.from(spec, attestation)));
 

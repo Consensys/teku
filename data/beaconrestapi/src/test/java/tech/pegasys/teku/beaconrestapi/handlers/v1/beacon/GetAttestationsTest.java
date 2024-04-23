@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -44,7 +44,7 @@ class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldReturnAttestationInformation() throws JsonProcessingException {
     List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    when(nodeDataProvider.getAttestations(any(), any())).thenReturn(attestations);
+    doReturn(attestations).when(nodeDataProvider.getAttestations(any(), any()));
 
     handler.handleRequest(request);
 
@@ -55,7 +55,7 @@ class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldReturnEmptyAttestationInformation() throws JsonProcessingException {
     List<Attestation> attestations = Collections.emptyList();
-    when(nodeDataProvider.getAttestations(any(), any())).thenReturn(attestations);
+    doReturn(attestations).when(nodeDataProvider).getAttestations(any(), any());
 
     handler.handleRequest(request);
 

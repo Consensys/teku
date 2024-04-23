@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
+// TODO Handle Electra Attestations
 public class AttestationEvent extends Event<Attestation> {
 
   AttestationEvent(final Attestation attestation) {

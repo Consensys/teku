@@ -13,22 +13,40 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 
 /**
  * Interface used to represent different types of attestations ({@link Attestation} and {@link
  * tech.pegasys.teku.spec.datastructures.state.PendingAttestation})
  */
 public interface AttestationContainer extends SszData, SszContainer {
+
+  UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec);
+
+  Collection<Bytes32> getDependentBlockRoots();
+
   AttestationData getData();
 
   SszBitlist getAggregationBits();
+
+  default Optional<SszBitvector> getCommitteeBits() {
+    return Optional.empty();
+  }
+
+  default SszBitvector getCommitteeBitsRequired() {
+    return getCommitteeBits()
+        .orElseThrow(() -> new IllegalArgumentException("Missing committee bits"));
+  }
 
   BLSSignature getAggregateSignature();
 

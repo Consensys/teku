@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -41,7 +42,7 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   protected BLSSignature randaoReveal;
   protected Eth1Data eth1Data;
   protected Bytes32 graffiti;
-  protected SszList<Attestation> attestations;
+  protected SszList<? extends AttestationContainer> attestations;
   protected SszList<ProposerSlashing> proposerSlashings;
   protected SszList<AttesterSlashing> attesterSlashings;
   protected SszList<Deposit> deposits;
@@ -72,7 +73,8 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   }
 
   @Override
-  public BeaconBlockBodyBuilder attestations(final SszList<Attestation> attestations) {
+  public BeaconBlockBodyBuilder attestations(
+      final SszList<? extends AttestationContainer> attestations) {
     this.attestations = attestations;
     return this;
   }
@@ -162,6 +164,7 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
     return (T) schema;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();
@@ -174,7 +177,7 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
         SszBytes32.of(graffiti),
         proposerSlashings,
         attesterSlashings,
-        attestations,
+        (SszList<Attestation>) attestations,
         deposits,
         voluntaryExits);
   }

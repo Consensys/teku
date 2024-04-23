@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -303,7 +302,7 @@ public abstract class AttestationUtil {
 
   public abstract Optional<SlotInclusionGossipValidationResult>
       performSlotInclusionGossipValidation(
-          Attestation attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
+          AttestationContainer attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
 
   public enum SlotInclusionGossipValidationResult {
     IGNORE,

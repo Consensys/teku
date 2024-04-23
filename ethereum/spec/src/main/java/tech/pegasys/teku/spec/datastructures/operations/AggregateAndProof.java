@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationS
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
+// TODO Add AggregateAndProof with Electra Attestations
 public class AggregateAndProof
     extends Container3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
 
@@ -51,6 +52,13 @@ public class AggregateAndProof
         final UInt64 index, final Attestation aggregate, final BLSSignature selectionProof) {
       return new AggregateAndProof(this, index, aggregate, selectionProof);
     }
+
+    public AggregateAndProof create(
+        final UInt64 index,
+        final AttestationContainer aggregate,
+        final BLSSignature selectionProof) {
+      return new AggregateAndProof(this, index, aggregate, selectionProof);
+    }
   }
 
   private AggregateAndProof(final AggregateAndProofSchema type, final TreeNode backingNode) {
@@ -63,6 +71,15 @@ public class AggregateAndProof
       final Attestation aggregate,
       final BLSSignature selectionProof) {
     super(schema, SszUInt64.of(index), aggregate, new SszSignature(selectionProof));
+  }
+
+  private AggregateAndProof(
+      final AggregateAndProofSchema schema,
+      final UInt64 index,
+      final AttestationContainer aggregate,
+      final BLSSignature selectionProof) {
+    // TODO Remove the casting when AggregateAndProofElectra is added
+    super(schema, SszUInt64.of(index), (Attestation) aggregate, new SszSignature(selectionProof));
   }
 
   public UInt64 getIndex() {

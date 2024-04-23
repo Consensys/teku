@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -44,7 +44,7 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
 
   SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema();
 
-  SszListSchema<Attestation, ?> getAttestationsSchema();
+  SszListSchema<? extends AttestationContainer, ?> getAttestationsSchema();
 
   SszListSchema<Deposit, ?> getDepositsSchema();
 

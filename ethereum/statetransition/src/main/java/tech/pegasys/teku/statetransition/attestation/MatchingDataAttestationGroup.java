@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 /**
@@ -148,7 +148,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    *
    * @param attestation the attestation to logically remove from the pool.
    */
-  public int onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
+  public int onAttestationIncludedInBlock(
+      final UInt64 slot, final AttestationContainer attestation) {
     final SszBitlist aggregationBits = attestation.getAggregationBits();
     // Record validators in attestation as seen in this slot
     // Important to do even if the attestation is redundant so we handle re-orgs correctly

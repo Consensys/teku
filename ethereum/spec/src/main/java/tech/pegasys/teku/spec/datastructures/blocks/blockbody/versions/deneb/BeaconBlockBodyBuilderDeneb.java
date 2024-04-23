@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
@@ -58,6 +59,7 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
     checkNotNull(blobKzgCommitments, "blobKzgCommitments must be specified");
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();
@@ -71,7 +73,7 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
           SszBytes32.of(graffiti),
           proposerSlashings,
           attesterSlashings,
-          attestations,
+          (SszList<Attestation>) attestations,
           deposits,
           voluntaryExits,
           syncAggregate,
@@ -89,7 +91,7 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
         SszBytes32.of(graffiti),
         proposerSlashings,
         attesterSlashings,
-        attestations,
+        (SszList<Attestation>) attestations,
         deposits,
         voluntaryExits,
         syncAggregate,

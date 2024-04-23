@@ -23,19 +23,20 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
 @SuppressWarnings("JavaCase")
-public class BeaconBlockBodyAltair extends BeaconBlockBody {
+public class BeaconBlockBodyAltair extends BeaconBlockBodyPhase0 {
   @JsonProperty("sync_aggregate")
   public final SyncAggregate syncAggregate;
 
@@ -78,10 +79,8 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
   }
 
   @Override
-  public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
-      asInternalBeaconBlockBody(
-          final SpecVersion spec,
-          final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> builderRef) {
+  public BeaconBlockBody asInternalBeaconBlockBody(
+      final SpecVersion spec, final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> builderRef) {
     final SyncAggregateSchema syncAggregateSchema =
         getBeaconBlockBodySchema(spec).getSyncAggregateSchema();
     return super.asInternalBeaconBlockBody(

@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -564,7 +563,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @Override
   public void processAttestations(
       final MutableBeaconState state,
-      final SszList<Attestation> attestations,
+      final SszList<? extends AttestationContainer> attestations,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final CapturingIndexedAttestationCache indexedAttestationCache =
@@ -581,14 +580,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   protected void processAttestationsNoVerification(
       final MutableBeaconState state,
-      final SszList<Attestation> attestations,
+      final SszList<? extends AttestationContainer> attestations,
       final IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     final IndexedAttestationProvider indexedAttestationProvider =
         createIndexedAttestationProvider(state, indexedAttestationCache);
     safelyProcess(
         () -> {
-          for (Attestation attestation : attestations) {
+          for (AttestationContainer attestation : attestations) {
             // Validate
             assertAttestationValid(state, attestation);
             processAttestation(state, attestation, indexedAttestationProvider);
@@ -615,13 +614,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    */
   protected abstract void processAttestation(
       final MutableBeaconState genericState,
-      final Attestation attestation,
+      final AttestationContainer attestation,
       final IndexedAttestationProvider indexedAttestationProvider);
 
   @CheckReturnValue
   protected BlockValidationResult verifyAttestationSignatures(
       final BeaconState state,
-      final SszList<Attestation> attestations,
+      final SszList<? extends AttestationContainer> attestations,
       final BLSSignatureVerifier signatureVerifier,
       final IndexedAttestationCache indexedAttestationCache) {
     return verifyAttestationSignatures(
@@ -634,7 +633,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @CheckReturnValue
   protected BlockValidationResult verifyAttestationSignatures(
       final BeaconState state,
-      final SszList<Attestation> attestations,
+      final SszList<? extends AttestationContainer> attestations,
       final BLSSignatureVerifier signatureVerifier,
       final IndexedAttestationProvider indexedAttestationProvider) {
 

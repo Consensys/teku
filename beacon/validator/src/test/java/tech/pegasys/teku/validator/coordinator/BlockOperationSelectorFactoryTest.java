@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -69,7 +70,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -232,11 +233,14 @@ class BlockOperationSelectorFactoryTest {
           executionLayer);
   private ExecutionPayloadContext executionPayloadContext;
 
+  @SuppressWarnings("unchecked")
   @BeforeEach
   void setUp() {
     when(attestationPool.getAttestationsForBlock(any(), any()))
         .thenReturn(
-            beaconBlockSchemaSupplier.apply(UInt64.ZERO).getAttestationsSchema().getDefault());
+            ((SszListSchema<AttestationContainer, ?>)
+                    beaconBlockSchemaSupplier.apply(UInt64.ZERO).getAttestationsSchema())
+                .getDefault());
     when(contributionValidator.validate(any())).thenReturn(SafeFuture.completedFuture(ACCEPT));
     when(attesterSlashingValidator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
@@ -1269,7 +1273,8 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public BeaconBlockBodyBuilder attestations(final SszList<Attestation> attestations) {
+    public BeaconBlockBodyBuilder attestations(
+        SszList<? extends AttestationContainer> attestations) {
       return this;
     }
 

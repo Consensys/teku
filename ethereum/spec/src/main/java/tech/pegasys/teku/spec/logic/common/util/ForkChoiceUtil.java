@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -293,7 +293,7 @@ public class ForkChoiceUtil {
       final ReadOnlyStore store,
       final ValidatableAttestation validatableAttestation,
       final Optional<BeaconState> maybeState) {
-    Attestation attestation = validatableAttestation.getAttestation();
+    AttestationContainer attestation = validatableAttestation.getAttestation();
     return validateOnAttestation(store, attestation.getData())
         .ifSuccessful(
             () -> {
@@ -369,7 +369,7 @@ public class ForkChoiceUtil {
   }
 
   private AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(
-      final ReadOnlyStore store, final Attestation attestation) {
+      final ReadOnlyStore store, final AttestationContainer attestation) {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.

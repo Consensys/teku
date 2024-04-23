@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSt
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -133,7 +133,7 @@ public class AggregationDuty implements Duty {
 
     final AttestationData attestationData = maybeAttestation.get();
 
-    final SafeFuture<Optional<Attestation>> createAggregationFuture =
+    final SafeFuture<Optional<AttestationContainer>> createAggregationFuture =
         validatorDutyMetrics.record(
             () -> validatorApiChannel.createAggregate(slot, attestationData.hashTreeRoot()),
             this,
@@ -146,7 +146,7 @@ public class AggregationDuty implements Duty {
             return SafeFuture.completedFuture(
                 ProductionResult.noop(aggregator.validator.getPublicKey()));
           }
-          final Attestation aggregate = maybeAggregate.get();
+          final AttestationContainer aggregate = maybeAggregate.get();
           return validatorDutyMetrics.record(
               () -> createSignedAggregateAndProof(aggregator, aggregate),
               this,
@@ -155,7 +155,7 @@ public class AggregationDuty implements Duty {
   }
 
   private SafeFuture<ProductionResult<SignedAggregateAndProof>> createSignedAggregateAndProof(
-      final CommitteeAggregator aggregator, final Attestation aggregate) {
+      final CommitteeAggregator aggregator, final AttestationContainer aggregate) {
     final SchemaDefinitions schemaDefinitions =
         spec.atSlot(aggregate.getData().getSlot()).getSchemaDefinitions();
     final AggregateAndProof aggregateAndProof =

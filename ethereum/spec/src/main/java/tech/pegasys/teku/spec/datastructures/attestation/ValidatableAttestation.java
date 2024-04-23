@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -33,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatableAttestation {
   private final Spec spec;
-  private final Attestation attestation;
+  private final AttestationContainer attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
@@ -46,7 +47,8 @@ public class ValidatableAttestation {
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
 
-  public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
+  public static ValidatableAttestation from(
+      final Spec spec, final AttestationContainer attestation) {
     return new ValidatableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), false);
   }
@@ -64,7 +66,7 @@ public class ValidatableAttestation {
   }
 
   public static ValidatableAttestation fromReorgedBlock(
-      final Spec spec, final Attestation attestation) {
+      final Spec spec, final AttestationContainer attestation) {
     final ValidatableAttestation validatableAttestation =
         new ValidatableAttestation(spec, attestation, Optional.empty(), OptionalInt.empty(), false);
     // An indexed attestation from a reorged block is valid because it already
@@ -96,7 +98,7 @@ public class ValidatableAttestation {
 
   private ValidatableAttestation(
       final Spec spec,
-      final Attestation attestation,
+      final AttestationContainer attestation,
       final Optional<SignedAggregateAndProof> aggregateAndProof,
       final OptionalInt receivedSubnetId,
       final boolean producedLocally) {
@@ -169,7 +171,7 @@ public class ValidatableAttestation {
     return maybeAggregate.isPresent();
   }
 
-  public Attestation getAttestation() {
+  public AttestationContainer getAttestation() {
     return attestation;
   }
 

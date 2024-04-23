@@ -33,11 +33,12 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 
 class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   private final List<Attestation> attestations =
       List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-  private final ObjectAndMetaData<List<Attestation>> responseData =
+  private final ObjectAndMetaData<List<? extends AttestationContainer>> responseData =
       new ObjectAndMetaData<>(
           attestations, spec.getGenesisSpec().getMilestone(), false, true, false);
 
@@ -49,7 +50,8 @@ class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnBlockAttestationsInformation() throws JsonProcessingException {
-    final Optional<ObjectAndMetaData<List<Attestation>>> optionalData = Optional.of(responseData);
+    final Optional<ObjectAndMetaData<List<? extends AttestationContainer>>> optionalData =
+        Optional.of(responseData);
     when(chainDataProvider.getBlockAttestations("head"))
         .thenReturn(SafeFuture.completedFuture(optionalData));
 

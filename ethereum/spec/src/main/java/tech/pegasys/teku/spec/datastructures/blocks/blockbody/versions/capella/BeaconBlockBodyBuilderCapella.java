@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
@@ -58,6 +59,7 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
     checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();
@@ -71,7 +73,7 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
           SszBytes32.of(graffiti),
           proposerSlashings,
           attesterSlashings,
-          attestations,
+          (SszList<Attestation>) attestations,
           deposits,
           voluntaryExits,
           syncAggregate,
@@ -89,7 +91,7 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
         SszBytes32.of(graffiti),
         proposerSlashings,
         attesterSlashings,
-        attestations,
+        (SszList<Attestation>) attestations,
         deposits,
         voluntaryExits,
         syncAggregate,

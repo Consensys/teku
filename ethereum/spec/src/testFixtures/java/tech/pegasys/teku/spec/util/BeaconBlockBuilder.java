@@ -76,6 +76,7 @@ public class BeaconBlockBuilder {
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   public SafeFuture<BeaconBlock> build() {
     final BeaconBlockBodySchema<?> bodySchema =
         spec.getSchemaDefinitions().getBeaconBlockBodySchema();
@@ -104,7 +105,7 @@ public class BeaconBlockBuilder {
       attesterSlashings = bodySchema.getAttesterSlashingsSchema().getDefault();
     }
     if (attestations == null) {
-      attestations = bodySchema.getAttestationsSchema().getDefault();
+      attestations = (SszList<Attestation>) bodySchema.getAttestationsSchema().getDefault();
     }
     return bodySchema
         .createBlockBody(

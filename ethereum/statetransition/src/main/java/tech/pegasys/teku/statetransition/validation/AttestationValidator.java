@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -54,7 +54,7 @@ public class AttestationValidator {
     if (validatableAttestation.isAcceptedAsGossip()) {
       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
     }
-    Attestation attestation = validatableAttestation.getAttestation();
+    AttestationContainer attestation = validatableAttestation.getAttestation();
     final InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
     if (internalValidationResult.code() != ACCEPT) {
       return completedFuture(internalValidationResult);
@@ -71,7 +71,7 @@ public class AttestationValidator {
             });
   }
 
-  private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
+  private InternalValidationResult singleAttestationChecks(final AttestationContainer attestation) {
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
     final int bitCount = attestation.getAggregationBits().getBitCount();
@@ -86,7 +86,7 @@ public class AttestationValidator {
       final ValidatableAttestation validatableAttestation,
       final OptionalInt receivedOnSubnetId) {
 
-    Attestation attestation = validatableAttestation.getAttestation();
+    AttestationContainer attestation = validatableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
     // [REJECT] 4 - The attestation's epoch matches its target
     if (!data.getTarget().getEpoch().equals(spec.computeEpochAtSlot(data.getSlot()))) {

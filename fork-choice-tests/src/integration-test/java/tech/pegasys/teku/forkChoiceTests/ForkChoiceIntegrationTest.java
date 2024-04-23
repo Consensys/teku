@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -194,7 +195,7 @@ public class ForkChoiceIntegrationTest {
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
     @SuppressWarnings("ModifiedButNotUsed")
-    List<Attestation> attestationBuffer = new ArrayList<>();
+    List<AttestationContainer> attestationBuffer = new ArrayList<>();
 
     for (Object step : steps) {
       blockBuffer.removeIf(block -> processBlock(forkChoice, block));
@@ -207,7 +208,7 @@ public class ForkChoiceIntegrationTest {
         assertEquals(step, SPEC.getCurrentSlot(transaction));
         transaction.commit().join();
       } else if (step instanceof SignedBeaconBlock) {
-        for (Attestation attestation :
+        for (AttestationContainer attestation :
             ((SignedBeaconBlock) step).getMessage().getBody().getAttestations()) {
           attestationBuffer.add(attestation);
         }
@@ -277,7 +278,7 @@ public class ForkChoiceIntegrationTest {
     }
   }
 
-  private boolean processAttestation(ForkChoice fc, Attestation step) {
+  private boolean processAttestation(ForkChoice fc, AttestationContainer step) {
     AttestationProcessingResult attestationProcessingResult =
         fc.onAttestation(ValidatableAttestation.from(SPEC, step)).join();
     return attestationProcessingResult.isSuccessful();

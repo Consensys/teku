@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
@@ -388,6 +389,7 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
     assertThat(response.get().getData()).isEqualTo(bestBlock.getRoot());
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void getBlockAttestations_shouldReturnAttestationsOfBlock() throws Exception {
     final ChainDataProvider provider =
@@ -411,10 +413,12 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
     storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
-    final Optional<ObjectAndMetaData<List<Attestation>>> response =
+    final Optional<ObjectAndMetaData<List<? extends AttestationContainer>>> response =
         provider.getBlockAttestations("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get().getData()).containsExactly(attestation1, attestation2);
+    final List<AttestationContainer> attestations =
+        (List<AttestationContainer>) response.get().getData();
+    assertThat(attestations).containsExactly(attestation1, attestation2);
   }
 
   @Test

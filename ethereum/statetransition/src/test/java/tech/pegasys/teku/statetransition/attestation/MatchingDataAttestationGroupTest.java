@@ -24,9 +24,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+// TODO Generify for Electra Attestations
 class MatchingDataAttestationGroupTest {
   private static final UInt64 SLOT = UInt64.valueOf(1234);
   private final Spec spec = TestSpecFactory.createDefault();
@@ -51,7 +53,7 @@ class MatchingDataAttestationGroupTest {
 
   @Test
   public void isEmpty_shouldBeEmptyAfterAttestationRemoved() {
-    final Attestation attestation = addAttestation(1).getAttestation();
+    final AttestationContainer attestation = addAttestation(1).getAttestation();
     int numRemoved = group.onAttestationIncludedInBlock(UInt64.ZERO, attestation);
 
     assertThat(group.isEmpty()).isTrue();
@@ -60,7 +62,7 @@ class MatchingDataAttestationGroupTest {
 
   @Test
   public void remove_shouldRemoveAttestationEvenWhenInstanceIsDifferent() {
-    final Attestation attestation = addAttestation(1).getAttestation();
+    final AttestationContainer attestation = addAttestation(1).getAttestation();
     final Attestation copy = attestationSchema.sszDeserialize(attestation.sszSerialize());
     int numRemoved = group.onAttestationIncludedInBlock(UInt64.ZERO, copy);
 
@@ -95,7 +97,9 @@ class MatchingDataAttestationGroupTest {
     int numRemoved =
         group.onAttestationIncludedInBlock(
             UInt64.ZERO,
-            aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
+            aggregateAttestations(
+                (Attestation) attestation1.getAttestation(),
+                (Attestation) attestation2.getAttestation()));
 
     assertThat(group.stream()).containsExactly(attestation3);
     assertThat(numRemoved).isEqualTo(2); // the one attestation is still there, and we've removed 2.
@@ -135,7 +139,9 @@ class MatchingDataAttestationGroupTest {
     final ValidatableAttestation attestation2 = addAttestation(2);
 
     final Attestation expected =
-        aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation());
+        aggregateAttestations(
+            (Attestation) attestation1.getAttestation(),
+            (Attestation) attestation2.getAttestation());
     assertThat(group).containsExactlyInAnyOrder(ValidatableAttestation.from(spec, expected));
   }
 
@@ -150,7 +156,8 @@ class MatchingDataAttestationGroupTest {
             ValidatableAttestation.from(
                 spec,
                 aggregateAttestations(
-                    bigAttestation.getAttestation(), littleAttestation.getAttestation())),
+                    (Attestation) bigAttestation.getAttestation(),
+                    (Attestation) littleAttestation.getAttestation())),
             mediumAttestation);
   }
 
@@ -181,7 +188,10 @@ class MatchingDataAttestationGroupTest {
     assertThat(group)
         .containsExactly(
             ValidatableAttestation.from(
-                spec, aggregateAttestations(useful1.getAttestation(), useful2.getAttestation())));
+                spec,
+                aggregateAttestations(
+                    (Attestation) useful1.getAttestation(),
+                    (Attestation) useful2.getAttestation())));
   }
 
   @Test
@@ -288,7 +298,9 @@ class MatchingDataAttestationGroupTest {
     int numRemoved =
         group.onAttestationIncludedInBlock(
             UInt64.ZERO,
-            aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
+            aggregateAttestations(
+                (Attestation) attestation1.getAttestation(),
+                (Attestation) attestation2.getAttestation()));
 
     assertThat(numRemoved).isEqualTo(3);
     assertThat(group.size()).isEqualTo(1);

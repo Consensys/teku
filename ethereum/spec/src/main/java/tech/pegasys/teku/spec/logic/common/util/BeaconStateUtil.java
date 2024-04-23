@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -185,7 +185,8 @@ public class BeaconStateUtil {
             validatorIndex -> state.getValidators().get(validatorIndex).getEffectiveBalance());
   }
 
-  public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+  public int computeSubnetForAttestation(
+      final BeaconState state, final AttestationContainer attestation) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
     final UInt64 committeeIndex = attestation.getData().getIndex();
     return computeSubnetForCommittee(state, attestationSlot, committeeIndex);

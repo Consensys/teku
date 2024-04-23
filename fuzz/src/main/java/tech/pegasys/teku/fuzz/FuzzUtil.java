@@ -34,6 +34,7 @@ import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -86,11 +87,13 @@ public class FuzzUtil {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public Optional<byte[]> fuzzAttestation(final byte[] input) {
     AttestationFuzzInput structuredInput =
         deserialize(input, AttestationFuzzInput.createSchema(specVersion));
     SszList<Attestation> attestations =
-        beaconBlockBodySchema.getAttestationsSchema().of(structuredInput.getAttestation());
+        ((SszListSchema<Attestation, ?>) beaconBlockBodySchema.getAttestationsSchema())
+            .of(structuredInput.getAttestation());
     // process and return post state
     try {
       BeaconState postState =

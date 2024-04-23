@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -190,7 +191,7 @@ public abstract class AbstractBlockFactoryTest {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
-    when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
+    doReturn(attestations).when(attestationsPool).getAttestationsForBlock(any(), any());
     when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);

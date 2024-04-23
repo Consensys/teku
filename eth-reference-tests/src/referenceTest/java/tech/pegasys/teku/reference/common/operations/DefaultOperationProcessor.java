@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -95,7 +95,8 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processAttestation(final MutableBeaconState state, final Attestation attestation)
+  public void processAttestation(
+      final MutableBeaconState state, final AttestationContainer attestation)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
         .processAttestations(
