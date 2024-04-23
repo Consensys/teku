@@ -26,7 +26,7 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   private final UInt64 slotTime;
   private final Map<Flow, Integer> lateThresholds;
 
-  private Flow flow = Flow.LOCAL;
+  private volatile Flow flow = Flow.LOCAL;
 
   BlockPublishingPerformanceImpl(
       final TimeProvider timeProvider,

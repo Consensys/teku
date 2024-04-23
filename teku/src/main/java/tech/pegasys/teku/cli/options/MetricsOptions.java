@@ -126,7 +126,8 @@ public class MetricsOptions {
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<INTEGER>",
       description =
-          "The time (in ms) at which block production using a local flow is to be considered 'slow'. If set to 100, block production taking at least 100ms would raise a warning.",
+          "The time (in ms) taken from the beginning of the slot at which block production using a local flow is to be considered 'slow'. "
+              + "If set to 100, block production taking at least 100ms into the slot would raise a warning.",
       arity = "1")
   private int blockProductionPerformanceWarningLocalThreshold =
       MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_LOCAL_THRESHOLD;
@@ -137,7 +138,8 @@ public class MetricsOptions {
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<INTEGER>",
       description =
-          "The time (in ms) at which block production using a builder flow is to be considered 'slow'. If set to 100, block production taking at least 100ms would raise a warning.",
+          "The time (in ms) taken from the beginning of the slot at which block production using a builder flow is to be considered 'slow'. "
+              + "If set to 100, block production taking at least 100ms into the slot would raise a warning.",
       arity = "1")
   private int blockProductionPerformanceWarningBuilderThreshold =
       MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_BUILDER_THRESHOLD;
@@ -148,7 +150,8 @@ public class MetricsOptions {
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<INTEGER>",
       description =
-          "The time (in ms) at which block publishing using a local flow is to be considered 'slow'. If set to 100, block publishing taking at least 100ms would raise a warning.",
+          "The time (in ms) taken from the beginning of the slot at which block publishing using a local flow is to be considered 'slow'. "
+              + "If set to 100, block publishing taking at least 100ms into the slot would raise a warning.",
       arity = "1")
   private int blockPublishingPerformanceWarningLocalThreshold =
       MetricsConfig.DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_LOCAL_THRESHOLD;
@@ -159,7 +162,8 @@ public class MetricsOptions {
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<INTEGER>",
       description =
-          "The time (in ms) at which block publishing using a builder flow is to be considered 'slow'. If set to 100, block publishing taking at least 100ms would raise a warning.",
+          "The time (in ms) taken from the beginning of the slot at which block publishing using a builder flow is to be considered 'slow'. "
+              + "If set to 100, block publishing taking at least 100ms into the slot would raise a warning.",
       arity = "1")
   private int blockPublishingPerformanceWarningBuilderThreshold =
       MetricsConfig.DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_BUILDER_THRESHOLD;

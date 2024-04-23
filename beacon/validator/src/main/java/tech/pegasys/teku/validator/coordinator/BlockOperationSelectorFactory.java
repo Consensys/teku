@@ -187,6 +187,8 @@ public class BlockOperationSelectorFactory {
       }
 
       final SafeFuture<Void> blockProductionComplete;
+
+      // In `setExecutionData` the following fields are set:
       // Post-Bellatrix: Execution Payload / Execution Payload Header
       // Post-Deneb: KZG Commitments
       if (bodyBuilder.supportsExecutionPayload()) {
