@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -115,7 +115,7 @@ public interface BlockProcessor {
 
   void processAttestations(
       MutableBeaconState state,
-      SszList<Attestation> attestations,
+      SszList<? extends AttestationContainer> attestations,
       BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 

@@ -20,11 +20,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -90,6 +91,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
         });
   }
 
+  @SuppressWarnings("unchecked")
   private void processNonCanonicalBlockOperations(
       final Collection<Bytes32> nonCanonicalBlockRoots) {
     nonCanonicalBlockRoots.forEach(
@@ -109,7 +111,8 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                                 .getOptionalBlsToExecutionChanges()
                                 .ifPresent(blsToExecutionOperationPool::addAll);
 
-                            processNonCanonicalBlockAttestations(blockBody.getAttestations(), root);
+                            processNonCanonicalBlockAttestations(
+                                (SszList<AttestationContainer>) blockBody.getAttestations(), root);
                           },
                           () ->
                               LOG.debug(
@@ -125,7 +128,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
   }
 
   private void processNonCanonicalBlockAttestations(
-      final Iterable<Attestation> attestations, final Bytes32 blockRoot) {
+      final Iterable<AttestationContainer> attestations, final Bytes32 blockRoot) {
     // Attestations need to get re-processed through AttestationManager
     // because we don't have access to the state with which they were
     // verified anymore and we need to make sure later on
@@ -150,6 +153,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                             err)));
   }
 
+  @SuppressWarnings("unchecked")
   private void processCanonicalBlockOperations(final Collection<Bytes32> canonicalBlockRoots) {
     canonicalBlockRoots.forEach(
         root -> {
@@ -165,7 +169,8 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                             attesterSlashingPool.removeAll(blockBody.getAttesterSlashings());
                             exitPool.removeAll(blockBody.getVoluntaryExits());
                             attestationPool.onAttestationsIncludedInBlock(
-                                block.getSlot(), blockBody.getAttestations());
+                                block.getSlot(),
+                                (SszList<AttestationContainer>) blockBody.getAttestations());
                             blockBody
                                 .getOptionalBlsToExecutionChanges()
                                 .ifPresent(blsToExecutionOperationPool::removeAll);

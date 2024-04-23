@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 
 public class GetBlockAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}/attestations";
@@ -60,7 +61,7 @@ public class GetBlockAttestations extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<List<? extends AttestationContainer>>>> future =
         chainDataProvider.getBlockAttestations(request.getPathParameter(PARAMETER_BLOCK_ID));
 
     request.respondAsync(

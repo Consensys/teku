@@ -16,16 +16,16 @@ package tech.pegasys.teku.api.schema.electra;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
+import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class BeaconBlockElectra extends BeaconBlockAltair {
+public class BeaconBlockElectra extends BeaconBlock {
 
-  public BeaconBlockElectra(final BeaconBlock message) {
+  public BeaconBlockElectra(
+      final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     super(
         message.getSlot(),
         message.getProposerIndex(),
@@ -35,7 +35,8 @@ public class BeaconBlockElectra extends BeaconBlockAltair {
   }
 
   @Override
-  public BeaconBlock asInternalBeaconBlock(final Spec spec) {
+  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock asInternalBeaconBlock(
+      final Spec spec) {
     final SpecVersion specVersion = spec.atSlot(slot);
     return SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
         .getBeaconBlockSchema()

@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -321,7 +320,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   @Override
   public void processAttestations(
       final MutableBeaconState state,
-      final SszList<Attestation> attestations,
+      final SszList<? extends AttestationContainer> attestations,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final CapturingIndexedAttestationCache indexedAttestationCache =
@@ -339,14 +338,14 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   @Override
   protected void processAttestationsNoVerification(
       MutableBeaconState state,
-      SszList<Attestation> attestations,
+      SszList<? extends AttestationContainer> attestations,
       IndexedAttestationCache indexedAttestationCache)
       throws BlockProcessingException {
     final IndexedAttestationProvider indexedAttestationProvider =
         createIndexedAttestationProvider(state, indexedAttestationCache);
     safelyProcess(
         () -> {
-          for (Attestation attestation : attestations) {
+          for (AttestationContainer attestation : attestations) {
             // Validate
             assertAttestationValid(state, attestation);
             processAttestation(state, attestation, indexedAttestationProvider);

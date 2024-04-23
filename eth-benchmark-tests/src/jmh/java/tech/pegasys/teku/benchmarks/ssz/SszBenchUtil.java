@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -75,7 +75,7 @@ public class SszBenchUtil {
     bh.consume(data.getSignature());
   }
 
-  public static void iterateData(Attestation a, Blackhole bh) {
+  public static void iterateData(AttestationContainer a, Blackhole bh) {
     bh.consume(a.getAggregationBits());
     iterateData(a.getData(), bh);
     bh.consume(a.getAggregateSignature());

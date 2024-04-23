@@ -22,6 +22,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlindedBlock;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -52,7 +53,7 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
     this.proposer_index = message.getProposerIndex();
     this.parent_root = message.getParentRoot();
     this.state_root = message.getStateRoot();
-    this.body = new BeaconBlockBody(message.getBody());
+    this.body = new BeaconBlockBodyPhase0(message.getBody());
   }
 
   @JsonCreator

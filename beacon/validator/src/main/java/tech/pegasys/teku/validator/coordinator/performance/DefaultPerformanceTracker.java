@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -268,8 +269,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Get included attestations for the given epochs in a map from slot to attestations
     // included in block.
-    final SafeFuture<Map<UInt64, List<Attestation>>> attestationsIncludedOnChainFuture =
-        getAttestationsIncludedInEpochs(analyzedEpoch, analysisRangeEndEpoch);
+    final SafeFuture<Map<UInt64, List<? extends AttestationContainer>>>
+        attestationsIncludedOnChainFuture =
+            getAttestationsIncludedInEpochs(analyzedEpoch, analysisRangeEndEpoch);
 
     // Get sent attestations in range
     final Set<Attestation> producedAttestations =
@@ -288,7 +290,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       final UInt64 analyzedEpoch,
       final BeaconState state,
       final Set<Attestation> producedAttestations,
-      final Map<UInt64, List<Attestation>> attestationsIncludedOnChain) {
+      final Map<UInt64, List<? extends AttestationContainer>> attestationsIncludedOnChain) {
     final IntList inclusionDistances = new IntArrayList();
     int correctTargetCount = 0;
     int correctHeadBlockCount = 0;
@@ -297,8 +299,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // data hash to inclusion slot to aggregation bitlist
     final Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
         new HashMap<>();
-    for (Map.Entry<UInt64, List<Attestation>> entry : attestationsIncludedOnChain.entrySet()) {
-      for (Attestation attestation : entry.getValue()) {
+    for (Map.Entry<UInt64, List<? extends AttestationContainer>> entry :
+        attestationsIncludedOnChain.entrySet()) {
+      for (AttestationContainer attestation : entry.getValue()) {
         final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
         final NavigableMap<UInt64, SszBitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
@@ -394,8 +397,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
   }
 
-  private SafeFuture<Map<UInt64, List<Attestation>>> getAttestationsIncludedInEpochs(
-      final UInt64 startEpochInclusive, final UInt64 endEpochExclusive) {
+  private SafeFuture<Map<UInt64, List<? extends AttestationContainer>>>
+      getAttestationsIncludedInEpochs(
+          final UInt64 startEpochInclusive, final UInt64 endEpochExclusive) {
     return getBlocksInEpochs(startEpochInclusive, endEpochExclusive)
         .thenApply(
             beaconBlocks ->

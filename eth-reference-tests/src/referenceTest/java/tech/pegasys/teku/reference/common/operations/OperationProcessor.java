@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -46,7 +46,7 @@ public interface OperationProcessor {
   void processVoluntaryExit(MutableBeaconState state, SignedVoluntaryExit voluntaryExit)
       throws BlockProcessingException;
 
-  void processAttestation(MutableBeaconState state, Attestation attestation)
+  void processAttestation(MutableBeaconState state, AttestationContainer attestation)
       throws BlockProcessingException;
 
   void processSyncCommittee(MutableBeaconState state, SyncAggregate aggregate)

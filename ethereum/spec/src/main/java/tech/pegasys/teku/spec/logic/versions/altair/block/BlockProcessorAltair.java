@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -132,7 +132,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   @Override
   protected void processAttestation(
       final MutableBeaconState genericState,
-      final Attestation attestation,
+      final AttestationContainer attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final Optional<UInt64> maybeProposerReward =
@@ -147,7 +147,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   public Optional<UInt64> processAttestationProposerReward(
       final MutableBeaconStateAltair state,
-      final Attestation attestation,
+      final AttestationContainer attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
     final AttestationData data = attestation.getData();
 

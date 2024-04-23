@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -29,7 +28,7 @@ public class BeaconBlockPhase0 extends BeaconBlock implements UnsignedBlock {
         message.getProposerIndex(),
         message.getParentRoot(),
         message.getStateRoot(),
-        new BeaconBlockBody(message.getBody()));
+        new BeaconBlockBodyPhase0(message.getBody()));
   }
 
   @JsonCreator
@@ -38,7 +37,7 @@ public class BeaconBlockPhase0 extends BeaconBlock implements UnsignedBlock {
       @JsonProperty("proposer_index") final UInt64 proposer_index,
       @JsonProperty("parent_root") final Bytes32 parent_root,
       @JsonProperty("state_root") final Bytes32 state_root,
-      @JsonProperty("body") final BeaconBlockBody body) {
+      @JsonProperty("body") final BeaconBlockBodyPhase0 body) {
     super(slot, proposer_index, parent_root, state_root, body);
   }
 }

@@ -70,7 +70,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -535,7 +534,8 @@ public class Spec {
     return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
   }
 
-  public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+  public int computeSubnetForAttestation(
+      final BeaconState state, final AttestationContainer attestation) {
     return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
   }
 

@@ -51,10 +51,12 @@ public class AttestationElectra
     return (AttestationElectraSchema) super.getSchema();
   }
 
+  @Override
   public UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
     return getData().getEarliestSlotForForkChoice(spec);
   }
 
+  @Override
   public Collection<Bytes32> getDependentBlockRoots() {
     return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
   }
@@ -69,8 +71,9 @@ public class AttestationElectra
     return getField1();
   }
 
-  public SszBitvector getCommitteeBits() {
-    return getField2();
+  @Override
+  public Optional<SszBitvector> getCommitteeBits() {
+    return Optional.of(getField2());
   }
 
   @Override
@@ -81,6 +84,6 @@ public class AttestationElectra
   @Override
   public Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.of(
-        getCommitteeBits().getAllSetBits().intStream().mapToObj(UInt64::valueOf).toList());
+        getCommitteeBitsRequired().getAllSetBits().intStream().mapToObj(UInt64::valueOf).toList());
   }
 }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.api;
 
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
@@ -41,11 +40,13 @@ import tech.pegasys.teku.api.schema.electra.BeaconBlockElectra;
 import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
 import tech.pegasys.teku.api.schema.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.api.schema.electra.BlindedBlockElectra;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 
 /**
  * Takes objects from Internal layers and converts to an appropriate schema object.
@@ -93,7 +94,7 @@ public class SchemaObjectProvider {
           block.getProposerIndex(),
           block.getParentRoot(),
           block.getStateRoot(),
-          new BeaconBlockBody(block.getBody()));
+          new BeaconBlockBodyPhase0(block.getBody()));
       case ALTAIR -> new BeaconBlockAltair(
           block.getSlot(),
           block.getProposerIndex(),
@@ -136,7 +137,7 @@ public class SchemaObjectProvider {
           block.getProposerIndex(),
           block.getParentRoot(),
           block.getStateRoot(),
-          new BeaconBlockBody(block.getBody()));
+          new BeaconBlockBodyPhase0(block.getBody()));
       case ALTAIR -> new BeaconBlockAltair(
           block.getSlot(),
           block.getProposerIndex(),
@@ -170,64 +171,55 @@ public class SchemaObjectProvider {
     };
   }
 
-  private BeaconBlockBodyAltair getBeaconBlockBodyAltair(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BeaconBlockBodyAltair getBeaconBlockBodyAltair(final BeaconBlockBody body) {
     return new BeaconBlockBodyAltair(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair
             .required(body));
   }
 
-  private BeaconBlockBodyBellatrix getBeaconBlockBodyBellatrix(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BeaconBlockBodyBellatrix getBeaconBlockBodyBellatrix(final BeaconBlockBody body) {
     return new BeaconBlockBodyBellatrix(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
             .BeaconBlockBodyBellatrix.required(body));
   }
 
-  private BeaconBlockBodyCapella getBeaconBlockBodyCapella(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BeaconBlockBodyCapella getBeaconBlockBodyCapella(final BeaconBlockBody body) {
     return new BeaconBlockBodyCapella(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella
             .BeaconBlockBodyCapella.required(body));
   }
 
-  private BeaconBlockBodyDeneb getBeaconBlockBodyDeneb(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BeaconBlockBodyDeneb getBeaconBlockBodyDeneb(final BeaconBlockBody body) {
     return new BeaconBlockBodyDeneb(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb
             .required(body));
   }
 
-  private BeaconBlockBodyElectra getBeaconBlockBodyElectra(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BeaconBlockBodyElectra getBeaconBlockBodyElectra(final BeaconBlockBody body) {
     return new BeaconBlockBodyElectra(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
             .BeaconBlockBodyElectra.required(body));
   }
 
-  private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(final BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyBellatrix(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
             .BlindedBeaconBlockBodyBellatrix.required(body));
   }
 
-  private BlindedBeaconBlockBodyCapella getBlindedBlockBodyCapella(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BlindedBeaconBlockBodyCapella getBlindedBlockBodyCapella(final BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyCapella(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella
             .BlindedBeaconBlockBodyCapella.required(body));
   }
 
-  private BlindedBeaconBlockBodyDeneb getBlindedBlockBodyDeneb(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BlindedBeaconBlockBodyDeneb getBlindedBlockBodyDeneb(final BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyDeneb(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb
             .BlindedBeaconBlockBodyDeneb.required(body));
   }
 
-  private BlindedBeaconBlockBodyElectra getBlindedBlockBodyElectra(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+  private BlindedBeaconBlockBodyElectra getBlindedBlockBodyElectra(final BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyElectra(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
             .BlindedBeaconBlockBodyElectra.required(body));

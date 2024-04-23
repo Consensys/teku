@@ -22,7 +22,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 /**
@@ -73,7 +73,7 @@ class AggregateAttestationBuilder {
                 BLS.aggregate(
                     includedAttestations.stream()
                         .map(ValidatableAttestation::getAttestation)
-                        .map(Attestation::getAggregateSignature)
+                        .map(AttestationContainer::getAggregateSignature)
                         .toList())));
   }
 

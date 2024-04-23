@@ -1296,6 +1296,7 @@ public final class DataStructureUtil {
     return randomBlindedBeaconBlockBody(slot, __ -> {});
   }
 
+  @SuppressWarnings("unchecked")
   public BeaconBlockBody randomBlindedBeaconBlockBody(
       final UInt64 slot, final Consumer<BeaconBlockBodyBuilder> builderModifier) {
     final BeaconBlockBodySchema<?> schema =
@@ -1314,7 +1315,16 @@ public final class DataStructureUtil {
                       randomSszList(
                           schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
                   .attestations(
-                      randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                      builder.supportElectraAttestations()
+                          ? randomSszList(
+                              (SszListSchema<AttestationElectra, ?>)
+                                  schema.toVersionElectra().orElseThrow().getAttestationsSchema(),
+                              this::randomAttestationElectra,
+                              3)
+                          : randomSszList(
+                              (SszListSchema<Attestation, ?>) schema.getAttestationsSchema(),
+                              this::randomAttestation,
+                              3))
                   .deposits(
                       randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
                   .voluntaryExits(
@@ -1407,6 +1417,7 @@ public final class DataStructureUtil {
     return randomBeaconBlockBody(randomUInt64(), builderModifier);
   }
 
+  @SuppressWarnings("unchecked")
   public BeaconBlockBody randomBeaconBlockBody(
       final UInt64 slot, final Consumer<BeaconBlockBodyBuilder> builderModifier) {
     final BeaconBlockBodySchema<?> schema =
@@ -1425,8 +1436,16 @@ public final class DataStructureUtil {
                       randomSszList(
                           schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
                   .attestations(
-                      randomSszList(
-                          schema.getAttestationsSchema(), () -> this.randomAttestation(slot), 3))
+                      builder.supportElectraAttestations()
+                          ? randomSszList(
+                              (SszListSchema<AttestationElectra, ?>)
+                                  schema.toVersionElectra().orElseThrow().getAttestationsSchema(),
+                              () -> this.randomAttestationElectra(slot),
+                              3)
+                          : randomSszList(
+                              (SszListSchema<Attestation, ?>) schema.getAttestationsSchema(),
+                              () -> this.randomAttestation(slot),
+                              3))
                   .deposits(
                       randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
                   .voluntaryExits(
@@ -1457,6 +1476,7 @@ public final class DataStructureUtil {
     return randomFullBeaconBlockBody(__ -> {});
   }
 
+  @SuppressWarnings("unchecked")
   public BeaconBlockBody randomFullBeaconBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderModifier) {
     final BeaconBlockBodySchema<?> schema =
@@ -1475,7 +1495,14 @@ public final class DataStructureUtil {
                       randomFullSszList(
                           schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
                   .attestations(
-                      randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
+                      builder.supportElectraAttestations()
+                          ? randomFullSszList(
+                              (SszListSchema<AttestationElectra, ?>)
+                                  schema.toVersionElectra().orElseThrow().getAttestationsSchema(),
+                              this::randomAttestationElectra)
+                          : randomFullSszList(
+                              (SszListSchema<Attestation, ?>) schema.getAttestationsSchema(),
+                              this::randomAttestation))
                   .deposits(
                       randomFullSszList(
                           schema.getDepositsSchema(), this::randomDepositWithoutIndex))
@@ -2388,9 +2415,11 @@ public final class DataStructureUtil {
         count);
   }
 
+  @SuppressWarnings("unchecked")
   public SszList<Attestation> randomAttestations(final int count, final UInt64 slot) {
     return randomSszList(
-        spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
+        (SszListSchema<Attestation, ?>)
+            spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
   }

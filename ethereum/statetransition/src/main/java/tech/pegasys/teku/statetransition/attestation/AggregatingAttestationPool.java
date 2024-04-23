@@ -38,7 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -152,11 +152,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized void onAttestationsIncludedInBlock(
-      final UInt64 slot, final Iterable<Attestation> attestations) {
+      final UInt64 slot, final Iterable<AttestationContainer> attestations) {
     attestations.forEach(attestation -> onAttestationIncludedInBlock(slot, attestation));
   }
 
-  private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
+  private void onAttestationIncludedInBlock(
+      final UInt64 slot, final AttestationContainer attestation) {
     final AttestationData attestationData = attestation.getData();
     final MatchingDataAttestationGroup attestations = getOrCreateAttestationGroup(attestationData);
     final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
@@ -172,16 +173,19 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return size.get();
   }
 
-  public synchronized SszList<Attestation> getAttestationsForBlock(
+  // TODO Handle Electra Attestations
+  @SuppressWarnings("unchecked")
+  public synchronized SszList<AttestationContainer> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
-    final SszListSchema<Attestation, ?> attestationsSchema =
-        spec.atSlot(stateAtBlockSlot.getSlot())
-            .getSchemaDefinitions()
-            .getBeaconBlockBodySchema()
-            .getAttestationsSchema();
+    final SszListSchema<AttestationContainer, ?> attestationsSchema =
+        (SszListSchema<AttestationContainer, ?>)
+            spec.atSlot(stateAtBlockSlot.getSlot())
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema()
+                .getAttestationsSchema();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
     return dataHashBySlot
@@ -209,7 +213,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(attestationsSchema.collector());
   }
 
-  public synchronized List<Attestation> getAttestations(
+  public synchronized List<? extends AttestationContainer> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);

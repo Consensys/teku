@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -63,7 +64,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
     this.debugDataDumper = debugDataDumper;
   }
 
-  public SafeFuture<?> gossip(final Attestation attestation) {
+  public SafeFuture<?> gossip(final AttestationContainer attestation) {
     return computeSubnetForAttestation(attestation)
         .thenCompose(
             subnetId -> {
@@ -102,7 +103,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         debugDataDumper);
   }
 
-  private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {
+  private SafeFuture<Optional<Integer>> computeSubnetForAttestation(
+      final AttestationContainer attestation) {
     return recentChainData
         .retrieveStateInEffectAtSlot(attestation.getData().getSlot())
         .thenApply(

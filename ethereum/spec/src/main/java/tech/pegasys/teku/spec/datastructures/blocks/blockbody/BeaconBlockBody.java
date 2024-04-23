@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -57,7 +57,7 @@ public interface BeaconBlockBody extends SszContainer {
 
   SszList<AttesterSlashing> getAttesterSlashings();
 
-  SszList<Attestation> getAttestations();
+  SszList<? extends AttestationContainer> getAttestations();
 
   SszList<Deposit> getDeposits();
 

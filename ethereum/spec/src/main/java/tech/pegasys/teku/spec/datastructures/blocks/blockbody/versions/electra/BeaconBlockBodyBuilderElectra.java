@@ -22,6 +22,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
@@ -54,6 +56,19 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
   }
 
   @Override
+  public BeaconBlockBodyBuilder attestations(
+      final SszList<? extends AttestationContainer> attestations) {
+    this.attestations = attestations;
+    return this;
+  }
+
+  @Override
+  public Boolean supportsBlsToExecutionChanges() {
+    return true;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
   public BeaconBlockBody build() {
     validate();
     if (isBlinded()) {
@@ -66,7 +81,7 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
           SszBytes32.of(graffiti),
           proposerSlashings,
           attesterSlashings,
-          attestations,
+          (SszList<AttestationElectra>) attestations,
           deposits,
           voluntaryExits,
           syncAggregate,
@@ -86,7 +101,7 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
         SszBytes32.of(graffiti),
         proposerSlashings,
         attesterSlashings,
-        attestations,
+        (SszList<AttestationElectra>) attestations,
         deposits,
         voluntaryExits,
         syncAggregate,

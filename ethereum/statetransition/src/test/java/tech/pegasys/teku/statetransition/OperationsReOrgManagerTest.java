@@ -31,11 +31,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -162,7 +164,8 @@ public class OperationsReOrgManagerTest {
     verify(exitOperationPool).removeAll(fork2Block1.getBody().getVoluntaryExits());
     verify(attestationPool)
         .onAttestationsIncludedInBlock(
-            fork2Block1.getSlot(), fork2Block1.getBody().getAttestations());
+            fork2Block1.getSlot(),
+            (SszList<AttestationContainer>) fork2Block1.getBody().getAttestations());
     verify(blsToExecutionOperationPool)
         .removeAll(fork2Block1.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
 
@@ -171,7 +174,8 @@ public class OperationsReOrgManagerTest {
     verify(exitOperationPool).removeAll(fork2Block2.getBody().getVoluntaryExits());
     verify(attestationPool)
         .onAttestationsIncludedInBlock(
-            fork2Block2.getSlot(), fork2Block2.getBody().getAttestations());
+            fork2Block2.getSlot(),
+            (SszList<AttestationContainer>) fork2Block2.getBody().getAttestations());
     verify(blsToExecutionOperationPool)
         .removeAll(fork2Block2.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
   }
@@ -224,7 +228,8 @@ public class OperationsReOrgManagerTest {
     verify(attesterSlashingOperationPool).removeAll(block2.getBody().getAttesterSlashings());
     verify(exitOperationPool).removeAll(block2.getBody().getVoluntaryExits());
     verify(attestationPool)
-        .onAttestationsIncludedInBlock(block2.getSlot(), block2.getBody().getAttestations());
+        .onAttestationsIncludedInBlock(
+            block2.getSlot(), (SszList<AttestationContainer>) block2.getBody().getAttestations());
     verify(blsToExecutionOperationPool)
         .removeAll(block2.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
 
@@ -232,7 +237,8 @@ public class OperationsReOrgManagerTest {
     verify(attesterSlashingOperationPool).removeAll(block1.getBody().getAttesterSlashings());
     verify(exitOperationPool).removeAll(block1.getBody().getVoluntaryExits());
     verify(attestationPool)
-        .onAttestationsIncludedInBlock(block1.getSlot(), block1.getBody().getAttestations());
+        .onAttestationsIncludedInBlock(
+            block1.getSlot(), (SszList<AttestationContainer>) block1.getBody().getAttestations());
     verify(blsToExecutionOperationPool)
         .removeAll(block1.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
   }

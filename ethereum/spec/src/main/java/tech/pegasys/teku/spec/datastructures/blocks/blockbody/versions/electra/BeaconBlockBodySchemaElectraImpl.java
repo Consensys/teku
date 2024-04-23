@@ -35,8 +35,6 @@ import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -44,6 +42,8 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -56,7 +56,7 @@ public class BeaconBlockBodySchemaElectraImpl
         SszBytes32,
         SszList<ProposerSlashing>,
         SszList<AttesterSlashing>,
-        SszList<Attestation>,
+        SszList<AttestationElectra>,
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
@@ -73,7 +73,7 @@ public class BeaconBlockBodySchemaElectraImpl
       final NamedSchema<SszBytes32> graffitiSchema,
       final NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
       final NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
-      final NamedSchema<SszList<Attestation>> attestationsSchema,
+      final NamedSchema<SszList<AttestationElectra>> attestationsSchema,
       final NamedSchema<SszList<Deposit>> depositsSchema,
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       final NamedSchema<SyncAggregate> syncAggregateSchema,
@@ -121,7 +121,8 @@ public class BeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(maxValidatorsPerAttestation),
+                new AttestationElectraSchema(
+                    maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot()),
                 specConfig.getMaxAttestationsElectra())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
@@ -174,8 +175,8 @@ public class BeaconBlockBodySchemaElectraImpl
 
   @SuppressWarnings("unchecked")
   @Override
-  public SszListSchema<Attestation, ?> getAttestationsSchema() {
-    return (SszListSchema<Attestation, ?>)
+  public SszListSchema<AttestationElectra, ?> getAttestationsSchema() {
+    return (SszListSchema<AttestationElectra, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.ATTESTATIONS));
   }
 

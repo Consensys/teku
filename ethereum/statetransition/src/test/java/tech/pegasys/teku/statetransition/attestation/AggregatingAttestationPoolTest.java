@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
@@ -141,7 +142,7 @@ class AggregatingAttestationPoolTest {
     // It was previously assumed that wasn't possible so it threw an IllegalStateException
     // Now it should just exclude the group from consideration
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
-    final SszList<Attestation> result =
+    final SszList<AttestationContainer> result =
         aggregatingPool.getAttestationsForBlock(state, new AttestationForkChecker(spec, state));
     assertThat(result).isEmpty();
   }
@@ -413,14 +414,17 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation2);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void getAttestations_shouldReturnAllAttestations() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3);
-    assertThat(aggregatingPool.getAttestations(Optional.empty(), Optional.empty()))
+    assertThat(
+            (List<Attestation>) aggregatingPool.getAttestations(Optional.empty(), Optional.empty()))
         .containsExactly(attestation);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void getAttestations_shouldReturnAttestationsForGivenCommitteeIndexOnly() {
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
@@ -434,11 +438,13 @@ class AggregatingAttestationPoolTest {
     Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
     addAttestationFromValidators(attestationData2, 4, 5, 6);
     assertThat(
-            aggregatingPool.getAttestations(
-                Optional.empty(), Optional.of(attestationData1.getIndex())))
+            (List<Attestation>)
+                aggregatingPool.getAttestations(
+                    Optional.empty(), Optional.of(attestationData1.getIndex())))
         .containsExactly(attestation1);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void getAttestations_shouldReturnAttestationsForGivenSlotOnly() {
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
@@ -452,8 +458,9 @@ class AggregatingAttestationPoolTest {
     Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
     addAttestationFromValidators(attestationData2, 4, 5, 6);
     assertThat(
-            aggregatingPool.getAttestations(
-                Optional.of(attestationData1.getSlot()), Optional.empty()))
+            (List<Attestation>)
+                aggregatingPool.getAttestations(
+                    Optional.of(attestationData1.getSlot()), Optional.empty()))
         .containsExactly(attestation1);
   }
 

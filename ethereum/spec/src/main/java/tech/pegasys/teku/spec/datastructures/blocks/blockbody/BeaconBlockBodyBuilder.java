@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -37,7 +37,7 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder graffiti(Bytes32 graffiti);
 
-  BeaconBlockBodyBuilder attestations(SszList<Attestation> attestations);
+  BeaconBlockBodyBuilder attestations(SszList<? extends AttestationContainer> attestations);
 
   BeaconBlockBodyBuilder proposerSlashings(SszList<ProposerSlashing> proposerSlashings);
 
@@ -46,6 +46,10 @@ public interface BeaconBlockBodyBuilder {
   BeaconBlockBodyBuilder deposits(SszList<Deposit> deposits);
 
   BeaconBlockBodyBuilder voluntaryExits(SszList<SignedVoluntaryExit> voluntaryExits);
+
+  default Boolean supportElectraAttestations() {
+    return false;
+  }
 
   default Boolean supportsSyncAggregate() {
     return false;

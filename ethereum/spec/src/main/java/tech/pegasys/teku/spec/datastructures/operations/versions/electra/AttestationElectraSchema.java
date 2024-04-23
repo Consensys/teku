@@ -14,11 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -43,8 +41,8 @@ public class AttestationElectraSchema
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<SszList<SszBitvector>, ?> getAggregationBitsSchema() {
-    return (SszListSchema<SszList<SszBitvector>, ?>) getFieldSchema0();
+  public SszBitlistSchema<?> getAggregationBitsSchema() {
+    return (SszBitlistSchema<?>) getFieldSchema0();
   }
 
   @Override

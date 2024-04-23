@@ -27,12 +27,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
@@ -44,7 +44,7 @@ class BlindedBeaconBlockBodyElectraImpl
         SszBytes32,
         SszList<ProposerSlashing>,
         SszList<AttesterSlashing>,
-        SszList<Attestation>,
+        SszList<AttestationElectra>,
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
@@ -70,7 +70,7 @@ class BlindedBeaconBlockBodyElectraImpl
       final SszBytes32 graffiti,
       final SszList<ProposerSlashing> proposerSlashings,
       final SszList<AttesterSlashing> attesterSlashings,
-      final SszList<Attestation> attestations,
+      final SszList<AttestationElectra> attestations,
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> voluntaryExits,
       final SyncAggregate syncAggregate,
@@ -139,7 +139,7 @@ class BlindedBeaconBlockBodyElectraImpl
   }
 
   @Override
-  public SszList<Attestation> getAttestations() {
+  public SszList<AttestationElectra> getAttestations() {
     return getField5();
   }
 

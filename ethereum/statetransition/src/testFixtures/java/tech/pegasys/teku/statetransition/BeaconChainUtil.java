@@ -27,6 +27,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -178,13 +179,15 @@ public class BeaconChainUtil {
     return createAndImportBlockAtSlot(UInt64.valueOf(slot));
   }
 
+  @SuppressWarnings("unchecked")
   public SignedBeaconBlock createAndImportBlockAtSlotWithAttestations(
       final UInt64 slot, List<Attestation> attestations) throws Exception {
     Optional<SszList<Attestation>> attestationsSSZList =
         attestations.isEmpty()
             ? Optional.empty()
             : Optional.of(
-                beaconBlockBodySchema.getAttestationsSchema().createFromElements(attestations));
+                ((SszListSchema<Attestation, ?>) beaconBlockBodySchema.getAttestationsSchema())
+                    .createFromElements(attestations));
 
     return createAndImportBlockAtSlot(
         slot, attestationsSSZList, Optional.empty(), Optional.empty(), Optional.empty());

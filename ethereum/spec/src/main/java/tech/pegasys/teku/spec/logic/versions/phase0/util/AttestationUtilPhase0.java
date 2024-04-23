@@ -21,7 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -47,7 +47,9 @@ public class AttestationUtilPhase0 extends AttestationUtil {
    */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
-      final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+      final AttestationContainer attestation,
+      final UInt64 genesisTime,
+      final UInt64 currentTimeMillis) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
     if (isCurrentTimeAfterAttestationPropagationSlotRange(
             attestationSlot, genesisTime, currentTimeMillis)
@@ -62,7 +64,9 @@ public class AttestationUtilPhase0 extends AttestationUtil {
   }
 
   protected boolean isFromFarFuture(
-      final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+      final AttestationContainer attestation,
+      final UInt64 genesisTime,
+      final UInt64 currentTimeMillis) {
     final UInt64 attestationForkChoiceEligibleTimeMillis =
         secondsToMillis(
             genesisTime.plus(
