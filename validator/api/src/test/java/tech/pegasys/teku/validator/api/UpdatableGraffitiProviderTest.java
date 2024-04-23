@@ -72,7 +72,7 @@ class UpdatableGraffitiProviderTest {
   @Test
   void getWithThrowable_shouldGetStorageGraffitiWhenAvailable() throws Throwable {
     provider = new UpdatableGraffitiProvider(() -> Optional.of(storageGraffiti), Optional::empty);
-    assertThat(provider.getWithThrowable()).hasValue(storageGraffiti);
+    assertThat(provider.getUnsafe()).hasValue(storageGraffiti);
   }
 
   @Test
@@ -80,19 +80,19 @@ class UpdatableGraffitiProviderTest {
     provider =
         new UpdatableGraffitiProvider(
             () -> Optional.of(storageGraffiti), () -> Optional.of(defaultGraffiti));
-    assertThat(provider.getWithThrowable()).hasValue(storageGraffiti);
+    assertThat(provider.getUnsafe()).hasValue(storageGraffiti);
   }
 
   @Test
   void getWithThrowable_shouldGetDefaultGraffitiWhenStorageEmpty() throws Throwable {
     provider = new UpdatableGraffitiProvider(Optional::empty, () -> Optional.of(defaultGraffiti));
-    assertThat(provider.getWithThrowable()).hasValue(defaultGraffiti);
+    assertThat(provider.getUnsafe()).hasValue(defaultGraffiti);
   }
 
   @Test
   void getWithThrowable_shouldBeEmptyWhenBothEmpty() throws Throwable {
     provider = new UpdatableGraffitiProvider(Optional::empty, Optional::empty);
-    assertThat(provider.getWithThrowable()).isEmpty();
+    assertThat(provider.getUnsafe()).isEmpty();
   }
 
   @Test
@@ -104,6 +104,6 @@ class UpdatableGraffitiProviderTest {
     when(storageProvider.get()).thenThrow(exception);
 
     provider = new UpdatableGraffitiProvider(storageProvider, () -> Optional.of(defaultGraffiti));
-    assertThatThrownBy(() -> provider.getWithThrowable()).isEqualTo(exception);
+    assertThatThrownBy(() -> provider.getUnsafe()).isEqualTo(exception);
   }
 }

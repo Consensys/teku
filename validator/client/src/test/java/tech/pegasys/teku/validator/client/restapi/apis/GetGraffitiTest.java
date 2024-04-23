@@ -76,7 +76,7 @@ class GetGraffitiTest {
     final GraffitiManagementException exception =
         new GraffitiManagementException("Unable to retrieve graffiti from storage");
     final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
-    doThrow(exception).when(provider).getWithThrowable();
+    doThrow(exception).when(provider).getUnsafe();
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
@@ -85,7 +85,7 @@ class GetGraffitiTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody())
         .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, exception.getMessage()));
-    verify(provider).getWithThrowable();
+    verify(provider).getUnsafe();
   }
 
   @Test
@@ -133,7 +133,7 @@ class GetGraffitiTest {
 
   private void checkGraffiti(final Optional<Bytes32> graffiti) throws Throwable {
     final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
-    when(provider.getWithThrowable()).thenReturn(graffiti);
+    when(provider.getUnsafe()).thenReturn(graffiti);
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
     when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
 
@@ -143,6 +143,6 @@ class GetGraffitiTest {
         new GetGraffiti.GraffitiResponse(publicKey, graffiti);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
-    verify(provider).getWithThrowable();
+    verify(provider).getUnsafe();
   }
 }

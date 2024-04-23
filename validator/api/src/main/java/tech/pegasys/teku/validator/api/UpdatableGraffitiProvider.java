@@ -41,7 +41,7 @@ public class UpdatableGraffitiProvider implements GraffitiProvider {
     }
   }
 
-  public Optional<Bytes32> getWithThrowable() throws Throwable {
+  public Optional<Bytes32> getUnsafe() throws Throwable {
     return storageProvider.get().or(defaultProvider::get);
   }
 }
