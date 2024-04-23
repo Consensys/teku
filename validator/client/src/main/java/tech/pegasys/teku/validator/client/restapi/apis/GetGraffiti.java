@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.api.Bytes32Parser;
+import tech.pegasys.teku.validator.api.GraffitiManagementException;
 import tech.pegasys.teku.validator.api.UpdatableGraffitiProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.Validator;
@@ -94,7 +95,7 @@ public class GetGraffiti extends RestApiEndpoint {
       final UpdatableGraffitiProvider provider =
           (UpdatableGraffitiProvider) maybeValidator.get().getGraffitiProvider();
       request.respondOk(new GraffitiResponse(publicKey, provider.getUnsafe()));
-    } catch (Throwable e) {
+    } catch (GraffitiManagementException e) {
       request.respondError(SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
   }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.api;
 
-public class GraffitiManagementException extends Exception {
+public class GraffitiManagementException extends RuntimeException {
 
   public GraffitiManagementException(final String message) {
     super(message);

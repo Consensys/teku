@@ -15,13 +15,11 @@ package tech.pegasys.teku.validator.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -59,24 +57,24 @@ class UpdatableGraffitiProviderTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  public void get_shouldDelegateToDefaultProviderWhenStorageProviderFails() throws Throwable {
-    final ExceptionThrowingSupplier<Optional<Bytes32>> storageProvider =
-        mock(ExceptionThrowingSupplier.class);
-    when(storageProvider.get()).thenThrow(new RuntimeException("Error"));
+  public void get_shouldDelegateToDefaultProviderWhenStorageProviderFails() {
+    final Supplier<Optional<Bytes32>> storageProvider =
+        () -> {
+          throw new RuntimeException("Error");
+        };
 
     provider = new UpdatableGraffitiProvider(storageProvider, () -> Optional.of(defaultGraffiti));
     assertThat(provider.get()).hasValue(defaultGraffiti);
   }
 
   @Test
-  void getWithThrowable_shouldGetStorageGraffitiWhenAvailable() throws Throwable {
+  void getWithThrowable_shouldGetStorageGraffitiWhenAvailable() {
     provider = new UpdatableGraffitiProvider(() -> Optional.of(storageGraffiti), Optional::empty);
     assertThat(provider.getUnsafe()).hasValue(storageGraffiti);
   }
 
   @Test
-  void getWithThrowable_shouldGetStorageGraffitiWhenBothAvailable() throws Throwable {
+  void getWithThrowable_shouldGetStorageGraffitiWhenBothAvailable() {
     provider =
         new UpdatableGraffitiProvider(
             () -> Optional.of(storageGraffiti), () -> Optional.of(defaultGraffiti));
@@ -84,24 +82,24 @@ class UpdatableGraffitiProviderTest {
   }
 
   @Test
-  void getWithThrowable_shouldGetDefaultGraffitiWhenStorageEmpty() throws Throwable {
+  void getWithThrowable_shouldGetDefaultGraffitiWhenStorageEmpty() {
     provider = new UpdatableGraffitiProvider(Optional::empty, () -> Optional.of(defaultGraffiti));
     assertThat(provider.getUnsafe()).hasValue(defaultGraffiti);
   }
 
   @Test
-  void getWithThrowable_shouldBeEmptyWhenBothEmpty() throws Throwable {
+  void getWithThrowable_shouldBeEmptyWhenBothEmpty() {
     provider = new UpdatableGraffitiProvider(Optional::empty, Optional::empty);
     assertThat(provider.getUnsafe()).isEmpty();
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  public void getWithThrowable_shouldThrowExceptionWhenStorageProviderFails() throws Throwable {
+  public void getWithThrowable_shouldThrowExceptionWhenStorageProviderFails() {
     final RuntimeException exception = new RuntimeException("Error");
-    final ExceptionThrowingSupplier<Optional<Bytes32>> storageProvider =
-        mock(ExceptionThrowingSupplier.class);
-    when(storageProvider.get()).thenThrow(exception);
+    final Supplier<Optional<Bytes32>> storageProvider =
+        () -> {
+          throw exception;
+        };
 
     provider = new UpdatableGraffitiProvider(storageProvider, () -> Optional.of(defaultGraffiti));
     assertThatThrownBy(() -> provider.getUnsafe()).isEqualTo(exception);

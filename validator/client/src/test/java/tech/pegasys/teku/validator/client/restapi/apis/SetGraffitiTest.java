@@ -33,7 +33,6 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -62,7 +61,7 @@ class SetGraffitiTest {
           .build();
 
   @Test
-  void shouldSuccessfullySetGraffiti() throws IOException, GraffitiManagementException {
+  void shouldSuccessfullySetGraffiti() throws JsonProcessingException {
     request.setRequestBody(graffiti);
 
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
@@ -76,7 +75,7 @@ class SetGraffitiTest {
   }
 
   @Test
-  void shouldReturnErrorWhenIssueSettingGraffiti() throws IOException, GraffitiManagementException {
+  void shouldReturnErrorWhenIssueSettingGraffiti() throws JsonProcessingException {
     final GraffitiManagementException exception =
         new GraffitiManagementException("Unable to update graffiti for validator " + publicKey);
     request.setRequestBody(graffiti);
@@ -94,7 +93,7 @@ class SetGraffitiTest {
   }
 
   @Test
-  void shouldThrowExceptionWhenInvalidGraffitiInput() throws GraffitiManagementException {
+  void shouldThrowExceptionWhenInvalidGraffitiInput() {
     final String invalidGraffiti = "This graffiti is a bit too long!!";
     final String errorMessage =
         String.format(
@@ -114,7 +113,7 @@ class SetGraffitiTest {
   }
 
   @Test
-  void shouldRespondNotFoundWhenNoValidator() throws IOException {
+  void shouldRespondNotFoundWhenNoValidator() throws JsonProcessingException {
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
 
     handler.handleRequest(request);

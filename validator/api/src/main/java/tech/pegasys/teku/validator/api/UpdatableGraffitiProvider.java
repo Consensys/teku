@@ -14,16 +14,15 @@
 package tech.pegasys.teku.validator.api;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 
 public class UpdatableGraffitiProvider implements GraffitiProvider {
-  private final ExceptionThrowingSupplier<Optional<Bytes32>> storageProvider;
+  private final Supplier<Optional<Bytes32>> storageProvider;
   private final GraffitiProvider defaultProvider;
 
   public UpdatableGraffitiProvider(
-      final ExceptionThrowingSupplier<Optional<Bytes32>> storageProvider,
-      final GraffitiProvider defaultProvider) {
+      final Supplier<Optional<Bytes32>> storageProvider, final GraffitiProvider defaultProvider) {
     this.storageProvider = storageProvider;
     this.defaultProvider = defaultProvider;
   }
@@ -36,12 +35,15 @@ public class UpdatableGraffitiProvider implements GraffitiProvider {
   private Optional<Bytes32> getFromStorage() {
     try {
       return storageProvider.get();
-    } catch (Throwable e) {
+    } catch (Exception e) {
       return Optional.empty();
     }
   }
 
-  public Optional<Bytes32> getUnsafe() throws Throwable {
+  /**
+   * @return graffiti without checking for thrown Exceptions.
+   */
+  public Optional<Bytes32> getUnsafe() {
     return storageProvider.get().or(defaultProvider::get);
   }
 }

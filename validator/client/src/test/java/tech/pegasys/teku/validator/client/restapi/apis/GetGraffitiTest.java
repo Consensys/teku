@@ -62,17 +62,17 @@ class GetGraffitiTest {
           .build();
 
   @Test
-  void shouldGetGraffiti() throws Throwable {
+  void shouldGetGraffiti() throws JsonProcessingException {
     checkGraffiti(Optional.of(bytesGraffiti));
   }
 
   @Test
-  void shouldGetEmptyGraffiti() throws Throwable {
+  void shouldGetEmptyGraffiti() throws JsonProcessingException {
     checkGraffiti(Optional.empty());
   }
 
   @Test
-  void shouldHandleGraffitiManagementException() throws Throwable {
+  void shouldHandleGraffitiManagementException() throws JsonProcessingException {
     final GraffitiManagementException exception =
         new GraffitiManagementException("Unable to retrieve graffiti from storage");
     final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
@@ -131,7 +131,7 @@ class GetGraffitiTest {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 
-  private void checkGraffiti(final Optional<Bytes32> graffiti) throws Throwable {
+  private void checkGraffiti(final Optional<Bytes32> graffiti) throws JsonProcessingException {
     final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
     when(provider.getUnsafe()).thenReturn(graffiti);
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);

@@ -60,7 +60,7 @@ class DeleteGraffitiTest {
           .build();
 
   @Test
-  void shouldSuccessfullyDeleteGraffiti() throws IOException, GraffitiManagementException {
+  void shouldSuccessfullyDeleteGraffiti() throws JsonProcessingException {
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
 
@@ -89,7 +89,7 @@ class DeleteGraffitiTest {
   }
 
   @Test
-  void shouldRespondNotFoundWhenNoValidator() throws IOException {
+  void shouldRespondNotFoundWhenNoValidator() throws JsonProcessingException {
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
 
     handler.handleRequest(request);
