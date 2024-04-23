@@ -83,6 +83,7 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
       Spec spec,
       CombinedChainDataClient combinedChainDataClient,
       DataColumnSidecarDB db,
+      BlockChainAccessor blockChainAccessor,
       UInt256 nodeId,
       int totalCustodySubnetCount) {
     this.spec = spec;
