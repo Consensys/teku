@@ -19,7 +19,6 @@ import java.util.Optional;
 public enum Eth2Network {
   // Live networks
   MAINNET("mainnet"),
-  PRATER("prater"),
   SEPOLIA("sepolia"),
   LUKSO("lukso"),
   GNOSIS("gnosis"),
@@ -52,9 +51,6 @@ public enum Eth2Network {
       if (value.name().equals(normalizedNetworkName)) {
         return Optional.of(value);
       }
-    }
-    if (normalizedNetworkName.equals("GOERLI")) {
-      return Optional.of(PRATER);
     }
     return Optional.empty();
   }
