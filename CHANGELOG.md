@@ -19,5 +19,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Updated the bootnodes for Chiado and Gnosis networks.
 - Added hidden option `--Xp2p-dumps-to-file-enabled` to enable saving p2p dumps to file.
 - Appends consensus layer (CL) and execution layer (EL) clients' information to the validator graffiti. Check [documentation](https://docs.teku.consensys.io/development/reference/cli#validators-graffiti-client-append-format) for available configuration options.
+- Added support for [Graffiti management](https://ethereum.github.io/keymanager-APIs/?urls.primaryName=dev#/Graffiti) in the Key Manager API.
 
 ### Bug Fixes
