@@ -68,13 +68,13 @@ class UpdatableGraffitiProviderTest {
   }
 
   @Test
-  void getWithThrowable_shouldGetStorageGraffitiWhenAvailable() {
+  void getUnsafe_shouldGetStorageGraffitiWhenAvailable() {
     provider = new UpdatableGraffitiProvider(() -> Optional.of(storageGraffiti), Optional::empty);
     assertThat(provider.getUnsafe()).hasValue(storageGraffiti);
   }
 
   @Test
-  void getWithThrowable_shouldGetStorageGraffitiWhenBothAvailable() {
+  void getUnsafe_shouldGetStorageGraffitiWhenBothAvailable() {
     provider =
         new UpdatableGraffitiProvider(
             () -> Optional.of(storageGraffiti), () -> Optional.of(defaultGraffiti));
@@ -82,19 +82,19 @@ class UpdatableGraffitiProviderTest {
   }
 
   @Test
-  void getWithThrowable_shouldGetDefaultGraffitiWhenStorageEmpty() {
+  void getUnsafe_shouldGetDefaultGraffitiWhenStorageEmpty() {
     provider = new UpdatableGraffitiProvider(Optional::empty, () -> Optional.of(defaultGraffiti));
     assertThat(provider.getUnsafe()).hasValue(defaultGraffiti);
   }
 
   @Test
-  void getWithThrowable_shouldBeEmptyWhenBothEmpty() {
+  void getUnsafe_shouldBeEmptyWhenBothEmpty() {
     provider = new UpdatableGraffitiProvider(Optional::empty, Optional::empty);
     assertThat(provider.getUnsafe()).isEmpty();
   }
 
   @Test
-  public void getWithThrowable_shouldThrowExceptionWhenStorageProviderFails() {
+  public void getUnsafe_shouldThrowExceptionWhenStorageProviderFails() {
     final RuntimeException exception = new RuntimeException("Error");
     final Supplier<Optional<Bytes32>> storageProvider =
         () -> {
