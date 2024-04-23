@@ -29,6 +29,7 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
 import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
@@ -45,7 +46,8 @@ public class Eth2NetworkOptions {
       names = {"--initial-state"},
       paramLabel = "<STRING>",
       description =
-          "The initial state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
+          "The initial state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint "
+              + "state.",
       arity = "1")
   private String initialState;
 
@@ -62,7 +64,8 @@ public class Eth2NetworkOptions {
       names = {"--genesis-state"},
       paramLabel = "<STRING>",
       description =
-          "The genesis state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
+          "The genesis state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint "
+              + "state.",
       arity = "1")
   private String genesisState;
 
@@ -86,7 +89,8 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<STRING>",
       description =
-          "The trusted setup which is needed for KZG commitments. Only required when creating a custom network. This value should be a file or URL pointing to a trusted setup.",
+          "The trusted setup which is needed for KZG commitments. Only required when creating a custom network. This "
+              + "value should be a file or URL pointing to a trusted setup.",
       arity = "1")
   private String trustedSetup = null; // Depends on network configuration
 
@@ -105,7 +109,8 @@ public class Eth2NetworkOptions {
       names = {"--Xfork-choice-updated-always-send-payload-attributes"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Calculate and send payload attributes on every forkChoiceUpdated regardless if a connected validator is due to be a block proposer or not.",
+          "Calculate and send payload attributes on every forkChoiceUpdated regardless if a connected validator is "
+              + "due to be a block proposer or not.",
       arity = "0..1",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
@@ -167,7 +172,8 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<Bytes32 hex>",
       description =
-          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-bellatrix-terminal-block-hash-epoch-override",
+          "Override terminal block hash for The Merge. To be used in conjunction with "
+              + "--Xnetwork-bellatrix-terminal-block-hash-epoch-override",
       arity = "1",
       converter = Bytes32Converter.class)
   private Bytes32 terminalBlockHashOverride;
@@ -177,7 +183,8 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<epoch>",
       description =
-          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-bellatrix-terminal-block-hash-override",
+          "Override terminal block hash for The Merge. To be used in conjunction with "
+              + "--Xnetwork-bellatrix-terminal-block-hash-override",
       arity = "1")
   private UInt64 terminalBlockHashEpochOverride;
 
@@ -186,7 +193,8 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<NUMBER>",
       description =
-          "Override the the number of slots that must pass before it is considered safe to optimistically import a block",
+          "Override the the number of slots that must pass before it is considered safe to optimistically import a "
+              + "block",
       arity = "1")
   private Integer safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
@@ -233,7 +241,8 @@ public class Eth2NetworkOptions {
       names = {"--Xstartup-timeout-seconds"},
       paramLabel = "<NUMBER>",
       description =
-          "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been reached.",
+          "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been "
+              + "reached.",
       hidden = true)
   private Integer startupTimeoutSeconds;
 
@@ -250,7 +259,9 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<STRING>",
       description =
-          "Sets the number of epochs blob sidecars are stored and requested during the sync. Use MAX to store all blob sidecars. The value cannot be set to be lower than the spec's MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS.",
+          "Sets the number of epochs blob sidecars are stored and requested during the sync. Use MAX to store all "
+              + "blob sidecars. The value cannot be set to be lower than the spec's "
+              + "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS.",
       fallbackValue = "",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
@@ -278,6 +289,12 @@ public class Eth2NetworkOptions {
   }
 
   private void configureEth2Network(final Eth2NetworkConfiguration.Builder builder) {
+    if (network.equals("goerli")) {
+      throw new InvalidConfigurationException(
+          "Goerli support has been removed. Please choose another network (see https://docs.teku.consensys"
+              + ".io/get-started/connect).");
+    }
+
     builder.applyNetworkDefaults(network);
     if (startupTargetPeerCount != null) {
       builder.startupTargetPeerCount(startupTargetPeerCount);
