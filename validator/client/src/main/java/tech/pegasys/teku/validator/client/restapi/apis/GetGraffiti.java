@@ -22,7 +22,6 @@ import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PU
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -52,14 +51,17 @@ public class GetGraffiti extends RestApiEndpoint {
           .format("byte")
           .build();
 
-  private static final SerializableTypeDefinition<GraffitiResponse> GRAFFITI_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(GraffitiResponse.class)
-          .withOptionalField("pubkey", PUBKEY_API_TYPE, GraffitiResponse::getPublicKey)
-          .withField("graffiti", GRAFFITI_TYPE, GraffitiResponse::getGraffiti)
+  private static final SerializableTypeDefinition<Optional<Bytes32>> GRAFFITI_RESPONSE_TYPE =
+      SerializableTypeDefinition.<Optional<Bytes32>>object()
+          .withOptionalField("pubkey", PUBKEY_API_TYPE, value -> Optional.empty())
+          .withField(
+              "graffiti",
+              GRAFFITI_TYPE,
+              graffiti -> graffiti.orElse(Bytes32Parser.toBytes32(Bytes.EMPTY.toArray())))
           .build();
 
-  private static final SerializableTypeDefinition<GraffitiResponse> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(GraffitiResponse.class)
+  private static final SerializableTypeDefinition<Optional<Bytes32>> RESPONSE_TYPE =
+      SerializableTypeDefinition.<Optional<Bytes32>>object()
           .name("GraffitiResponse")
           .withField("data", GRAFFITI_RESPONSE_TYPE, Function.identity())
           .build();
@@ -94,7 +96,7 @@ public class GetGraffiti extends RestApiEndpoint {
     try {
       final UpdatableGraffitiProvider provider =
           (UpdatableGraffitiProvider) maybeValidator.get().getGraffitiProvider();
-      request.respondOk(new GraffitiResponse(publicKey, provider.getUnsafe()));
+      request.respondOk(provider.getUnsafe());
     } catch (GraffitiManagementException e) {
       request.respondError(SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
@@ -102,44 +104,5 @@ public class GetGraffiti extends RestApiEndpoint {
 
   private static String processGraffitiString(final Bytes32 graffiti) {
     return new String(graffiti.toArrayUnsafe(), StandardCharsets.UTF_8).strip().replace("\0", "");
-  }
-
-  static class GraffitiResponse {
-    private final Optional<BLSPublicKey> publicKey;
-    private final Bytes32 graffiti;
-
-    GraffitiResponse(final BLSPublicKey publicKey, final Optional<Bytes32> graffiti) {
-      this(publicKey, graffiti.orElse(Bytes32Parser.toBytes32(Bytes.EMPTY.toArray())));
-    }
-
-    GraffitiResponse(final BLSPublicKey publicKey, final Bytes32 graffiti) {
-      this.publicKey = Optional.of(publicKey);
-      this.graffiti = graffiti;
-    }
-
-    Optional<BLSPublicKey> getPublicKey() {
-      return publicKey;
-    }
-
-    Bytes32 getGraffiti() {
-      return graffiti;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final GraffitiResponse that = (GraffitiResponse) o;
-      return Objects.equals(publicKey, that.publicKey) && Objects.equals(graffiti, that.graffiti);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(publicKey, graffiti);
-    }
   }
 }

@@ -101,13 +101,10 @@ class GetGraffitiTest {
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    final GetGraffiti.GraffitiResponse response =
-        new GetGraffiti.GraffitiResponse(publicKey, bytesGraffiti);
-    final String responseData = getResponseStringFromMetadata(handler, SC_OK, response);
+    final String responseData =
+        getResponseStringFromMetadata(handler, SC_OK, Optional.of(bytesGraffiti));
     final String expectedResponse =
-        String.format(
-            "{\"data\":{\"pubkey\":\"%s\",\"graffiti\":\"%s\"}}",
-            publicKey.toHexString(), stringGraffiti);
+        String.format("{\"data\":{\"graffiti\":\"%s\"}}", stringGraffiti);
     assertThat(responseData).isEqualTo(expectedResponse);
   }
 
@@ -139,10 +136,8 @@ class GetGraffitiTest {
 
     handler.handleRequest(request);
 
-    final GetGraffiti.GraffitiResponse expectedResponse =
-        new GetGraffiti.GraffitiResponse(publicKey, graffiti);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+    assertThat(request.getResponseBody()).isEqualTo(graffiti);
     verify(provider).getUnsafe();
   }
 }
