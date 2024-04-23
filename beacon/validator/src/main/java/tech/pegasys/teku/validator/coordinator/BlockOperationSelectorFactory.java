@@ -186,9 +186,9 @@ public class BlockOperationSelectorFactory {
                 .createFromElements(List.of()));
       }
 
+      final SafeFuture<Void> blockProductionComplete;
       // Post-Bellatrix: Execution Payload / Execution Payload Header
       // Post-Deneb: KZG Commitments
-      final SafeFuture<Void> blockProductionComplete;
       if (bodyBuilder.supportsExecutionPayload()) {
         blockProductionComplete =
             forkChoiceNotifier

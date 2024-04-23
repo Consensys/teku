@@ -821,6 +821,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribe(ChainHeadChannel.class, syncCommitteeMetrics);
   }
 
+  protected void initEth1DataCache() {
+    LOG.debug("BeaconChainController.initEth1DataCache");
+    eth1DataCache = new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec));
+  }
+
   public void initDepositProvider() {
     LOG.debug("BeaconChainController.initDepositProvider()");
     depositProvider =
@@ -837,11 +842,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .subscribe(Eth1EventsChannel.class, depositProvider)
         .subscribe(FinalizedCheckpointChannel.class, depositProvider)
         .subscribe(SlotEventsChannel.class, depositProvider);
-  }
-
-  protected void initEth1DataCache() {
-    LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec));
   }
 
   protected void initAttestationTopicSubscriber() {
@@ -939,8 +939,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             timeProvider,
             (slot) -> secondsToMillis(recentChainData.computeTimeAtSlot(slot)),
             beaconConfig.getMetricsConfig().isBlockProductionAndPublishingPerformanceEnabled(),
-            beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold(),
-            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningThreshold());
+            beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningLocalThreshold(),
+            beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningBuilderThreshold(),
+            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningLocalThreshold(),
+            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningBuilderThreshold());
 
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(

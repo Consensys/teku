@@ -24,7 +24,7 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
   private final UInt64 slotTime;
-  private final Map<Flow, Integer> lateThreshold;
+  private final Map<Flow, Integer> lateThresholds;
 
   private Flow flow = Flow.LOCAL;
 
@@ -32,9 +32,9 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
       final TimeProvider timeProvider,
       final UInt64 slot,
       final UInt64 slotTime,
-      final Map<Flow, Integer> lateThreshold) {
+      final Map<Flow, Integer> lateThresholds) {
     this.performanceTracker = new PerformanceTracker(timeProvider);
-    this.lateThreshold = lateThreshold;
+    this.lateThresholds = lateThresholds;
     this.slot = slot;
     this.slotTime = slotTime;
     performanceTracker.addEvent("start");
@@ -44,7 +44,7 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   public void complete() {
     final UInt64 completionTime = performanceTracker.addEvent(COMPLETE_LABEL);
     final boolean isLateEvent =
-        completionTime.minusMinZero(slotTime).isGreaterThan(lateThreshold.get(flow));
+        completionTime.minusMinZero(slotTime).isGreaterThan(lateThresholds.get(flow));
     performanceTracker.report(
         slotTime,
         isLateEvent,

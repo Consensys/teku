@@ -16,12 +16,10 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 
-import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -122,62 +120,32 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
         .containsOnly("localhost", "127.0.0.1");
   }
 
-  @ParameterizedTest
-  @MethodSource("provideArgumentsForWarningThresholdShouldAcceptTwoThresholds")
-  public void warningThresholds_shouldAcceptTwoThresholds(
-      final String option,
-      final String value,
-      final Function<MetricsConfig, List<Integer>> configValue,
-      final List<Integer> expectedValue) {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(option, value);
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("provideArgumentsForShouldSetWarningThresholds")
+  public void shouldSetWarningThresholds(
+      final String option, final Function<MetricsConfig, Integer> configValueFunction) {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(option, "100");
     final MetricsConfig config = tekuConfiguration.metricsConfig();
-    assertThat(configValue.apply(config)).isEqualTo(expectedValue);
+    assertThat(configValueFunction.apply(config)).isEqualTo(100);
   }
 
-  @ParameterizedTest
-  @MethodSource("provideArgumentsForWarningThresholdShouldFailIfNotTwoThresholds")
-  public void warningThresholds_shouldFailIfNotTwoThresholds(
-      final String option, final String value, final String expectedErrorMessage) {
-    assertThrows(
-        Throwable.class,
-        () -> getTekuConfigurationFromArguments(option, value),
-        expectedErrorMessage);
-  }
-
-  private static Stream<Arguments> provideArgumentsForWarningThresholdShouldAcceptTwoThresholds() {
+  private static Stream<Arguments> provideArgumentsForShouldSetWarningThresholds() {
     return Stream.of(
         Arguments.of(
-            "--Xmetrics-block-production-timing-tracking-warning-threshold",
-            "100,200",
-            (Function<MetricsConfig, List<Integer>>)
-                MetricsConfig::getBlockProductionPerformanceWarningThreshold,
-            List.of(100, 200)),
+            "--Xmetrics-block-production-timing-tracking-warning-local-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockProductionPerformanceWarningLocalThreshold),
         Arguments.of(
-            "--Xmetrics-block-publishing-timing-tracking-warning-threshold",
-            "100,200",
-            (Function<MetricsConfig, List<Integer>>)
-                MetricsConfig::getBlockPublishingPerformanceWarningThreshold,
-            List.of(100, 200)));
-  }
-
-  private static Stream<Arguments>
-      provideArgumentsForWarningThresholdShouldFailIfNotTwoThresholds() {
-    return Stream.of(
+            "--Xmetrics-block-production-timing-tracking-warning-builder-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockProductionPerformanceWarningBuilderThreshold),
         Arguments.of(
-            "--Xmetrics-block-production-timing-tracking-warning-threshold",
-            "100",
-            "Invalid blockProductionPerformanceWarningThreshold: [100]. Expected size of 2, but it was 1"),
+            "--Xmetrics-block-publishing-timing-tracking-warning-local-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockPublishingPerformanceWarningLocalThreshold),
         Arguments.of(
-            "--Xmetrics-block-publishing-timing-tracking-warning-threshold",
-            "100",
-            "Invalid blockPublishingPerformanceWarningThreshold: [100]. Expected size of 2, but it was 1"),
-        Arguments.of(
-            "--Xmetrics-block-production-timing-tracking-warning-threshold",
-            "100,200,300",
-            "Invalid blockProductionPerformanceWarningThreshold: [100,200,300]. Expected size of 2, but it was 3"),
-        Arguments.of(
-            "--Xmetrics-block-publishing-timing-tracking-warning-threshold",
-            "100,200,300",
-            "Invalid blockPublishingPerformanceWarningThreshold: [100,200,300]. Expected size of 2, but it was 3"));
+            "--Xmetrics-block-publishing-timing-tracking-warning-builder-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockPublishingPerformanceWarningBuilderThreshold));
   }
 }

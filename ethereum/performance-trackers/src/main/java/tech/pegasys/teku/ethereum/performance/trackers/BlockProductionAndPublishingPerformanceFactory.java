@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.performance.trackers;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -24,26 +23,38 @@ public class BlockProductionAndPublishingPerformanceFactory {
   private final TimeProvider timeProvider;
   private final Function<UInt64, UInt64> slotTimeCalculator;
   private final boolean enabled;
-  private final Map<Flow, Integer> lateProductionEventThreshold;
-  private final Map<Flow, Integer> latePublishingEventThreshold;
+  private final Map<Flow, Integer> lateProductionEventThresholds;
+  private final Map<Flow, Integer> latePublishingEventThresholds;
 
   public BlockProductionAndPublishingPerformanceFactory(
       final TimeProvider timeProvider,
       final Function<UInt64, UInt64> slotTimeCalculator,
       final boolean enabled,
-      final List<Integer> lateProductionEventThreshold,
-      final List<Integer> latePublishingEventThreshold) {
+      final int lateProductionEventLocalThreshold,
+      final int lateProductionEventBuilderThreshold,
+      final int latePublishingEventLocalThreshold,
+      final int latePublishingEvenBuilderThreshold) {
     this.timeProvider = timeProvider;
     this.slotTimeCalculator = slotTimeCalculator;
     this.enabled = enabled;
-    this.lateProductionEventThreshold = convertToMap(lateProductionEventThreshold);
-    this.latePublishingEventThreshold = convertToMap(latePublishingEventThreshold);
+    this.lateProductionEventThresholds =
+        Map.of(
+            Flow.LOCAL,
+            lateProductionEventLocalThreshold,
+            Flow.BUILDER,
+            lateProductionEventBuilderThreshold);
+    this.latePublishingEventThresholds =
+        Map.of(
+            Flow.LOCAL,
+            latePublishingEventLocalThreshold,
+            Flow.BUILDER,
+            latePublishingEvenBuilderThreshold);
   }
 
   public BlockProductionPerformance createForProduction(final UInt64 slot) {
     if (enabled) {
       return new BlockProductionPerformanceImpl(
-          timeProvider, slot, slotTimeCalculator.apply(slot), lateProductionEventThreshold);
+          timeProvider, slot, slotTimeCalculator.apply(slot), lateProductionEventThresholds);
     } else {
       return BlockProductionPerformance.NOOP;
     }
@@ -52,17 +63,9 @@ public class BlockProductionAndPublishingPerformanceFactory {
   public BlockPublishingPerformance createForPublishing(final UInt64 slot) {
     if (enabled) {
       return new BlockPublishingPerformanceImpl(
-          timeProvider, slot, slotTimeCalculator.apply(slot), latePublishingEventThreshold);
+          timeProvider, slot, slotTimeCalculator.apply(slot), latePublishingEventThresholds);
     } else {
       return BlockPublishingPerformance.NOOP;
     }
-  }
-
-  /**
-   * @param lateThreshold the first element in the list will be the LOCAL late threshold. The second
-   *     element will be the BUILDER late threshold
-   */
-  private Map<Flow, Integer> convertToMap(final List<Integer> lateThreshold) {
-    return Map.of(Flow.LOCAL, lateThreshold.get(0), Flow.BUILDER, lateThreshold.get(1));
   }
 }

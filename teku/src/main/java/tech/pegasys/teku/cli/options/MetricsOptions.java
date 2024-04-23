@@ -121,7 +121,7 @@ public class MetricsOptions {
       MetricsConfig.DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED;
 
   @Option(
-      names = {"--Xmetrics-block-production-timing-tracking-warning-threshold"},
+      names = {"--Xmetrics-block-production-timing-tracking-warning-local-threshold"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<localFlowThreshold,builderFlowThreshold>",
@@ -133,16 +133,26 @@ public class MetricsOptions {
       MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD;
 
   @Option(
-      names = {"--Xmetrics-block-publishing-timing-tracking-warning-threshold"},
+      names = {"--Xmetrics-block-publishing-timing-tracking-warning-local-threshold"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<localFlowThreshold,builderFlowThreshold>",
       description =
-          "The times (in ms) at which block publishing is to be considered 'slow' for a local and builder flow (comma-separated). If set to \"100,200\", block publishing for a local flow taking at least 100ms would raise a warning. "
-              + "Same would apply for a builder flow taking at least 200ms.",
-      split = ",")
-  private List<Integer> blockPublishingPerformanceWarningThreshold =
-      MetricsConfig.DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD;
+          "The time (in ms) at which block publishing using a local flow is to be considered 'slow'. If set to 100, block publishing taking at least 100ms would raise a warning.",
+      arity = "1")
+  private int blockPublishingPerformanceWarningLocalThreshold =
+      MetricsConfig.DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_LOCAL_THRESHOLD;
+
+  @Option(
+      names = {"--Xmetrics-block-publishing-timing-tracking-warning-builder-threshold"},
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<INTEGER>",
+      description =
+          "The time (in ms) at which block publishing using a builder flow is to be considered 'slow'. If set to 100, block publishing taking at least 100ms would raise a warning.",
+      arity = "1")
+  private int blockPublishingPerformanceWarningBuilderThreshold =
+      MetricsConfig.DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_BUILDER_THRESHOLD;
 
   @Option(
       names = {"--Xmetrics-blob-sidecars-storage-enabled"},
@@ -171,10 +181,14 @@ public class MetricsOptions {
                 .blobSidecarsStorageCountersEnabled(blobSidecarsStorageCountersEnabled)
                 .blockProductionAndPublishingPerformanceEnabled(
                     blockProductionAndPublishingPerformanceEnabled)
-                .blockProductionPerformanceWarningThreshold(
-                    blockProductionPerformanceWarningThreshold)
-                .blockPublishingPerformanceWarningThreshold(
-                    blockPublishingPerformanceWarningThreshold));
+                .blockProductionPerformanceWarningLocalThreshold(
+                    blockProductionPerformanceWarningLocalThreshold)
+                .blockProductionPerformanceWarningBuilderThreshold(
+                    blockProductionPerformanceWarningBuilderThreshold)
+                .blockPublishingPerformanceWarningLocalThreshold(
+                    blockPublishingPerformanceWarningLocalThreshold)
+                .blockPublishingPerformanceWarningBuilderThreshold(
+                    blockPublishingPerformanceWarningBuilderThreshold));
   }
 
   private URL parseMetricsEndpointUrl() {
