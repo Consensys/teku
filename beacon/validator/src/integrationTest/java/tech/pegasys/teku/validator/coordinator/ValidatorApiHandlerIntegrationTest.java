@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -122,7 +123,7 @@ public class ValidatorApiHandlerIntegrationTest {
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager,
           new BlockProductionAndPublishingPerformanceFactory(
-              new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0));
+              new SystemTimeProvider(), __ -> UInt64.ZERO, true, List.of(0, 0), List.of(0, 0)));
 
   @BeforeEach
   public void setup() {

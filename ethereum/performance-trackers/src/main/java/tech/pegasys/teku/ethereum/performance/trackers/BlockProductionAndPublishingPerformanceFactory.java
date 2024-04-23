@@ -13,28 +13,31 @@
 
 package tech.pegasys.teku.ethereum.performance.trackers;
 
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockProductionAndPublishingPerformanceFactory {
+
   private final TimeProvider timeProvider;
-  private final boolean enabled;
-  private final int lateProductionEventThreshold;
-  private final int latePublishingEventThreshold;
   private final Function<UInt64, UInt64> slotTimeCalculator;
+  private final boolean enabled;
+  private final Map<Flow, Integer> lateProductionEventThreshold;
+  private final Map<Flow, Integer> latePublishingEventThreshold;
 
   public BlockProductionAndPublishingPerformanceFactory(
       final TimeProvider timeProvider,
       final Function<UInt64, UInt64> slotTimeCalculator,
       final boolean enabled,
-      final int lateProductionEventThreshold,
-      final int latePublishingEventThreshold) {
+      final List<Integer> lateProductionEventThreshold,
+      final List<Integer> latePublishingEventThreshold) {
     this.timeProvider = timeProvider;
     this.slotTimeCalculator = slotTimeCalculator;
     this.enabled = enabled;
-    this.lateProductionEventThreshold = lateProductionEventThreshold;
-    this.latePublishingEventThreshold = latePublishingEventThreshold;
+    this.lateProductionEventThreshold = convertToMap(lateProductionEventThreshold);
+    this.latePublishingEventThreshold = convertToMap(latePublishingEventThreshold);
   }
 
   public BlockProductionPerformance createForProduction(final UInt64 slot) {
@@ -53,5 +56,13 @@ public class BlockProductionAndPublishingPerformanceFactory {
     } else {
       return BlockPublishingPerformance.NOOP;
     }
+  }
+
+  /**
+   * @param lateThreshold the first element in the list will be the LOCAL late threshold. The second
+   *     element will be the BUILDER late threshold
+   */
+  private Map<Flow, Integer> convertToMap(final List<Integer> lateThreshold) {
+    return Map.of(Flow.LOCAL, lateThreshold.get(0), Flow.BUILDER, lateThreshold.get(1));
   }
 }

@@ -124,24 +124,24 @@ public class MetricsOptions {
       names = {"--Xmetrics-block-production-timing-tracking-warning-threshold"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
-      paramLabel = "<INTEGER>",
+      paramLabel = "<localFlowThreshold,builderFlowThreshold>",
       description =
-          "The time (in ms) at which block production is to be considered 'slow'. If set to 100, block production taking at least 100ms would raise a warning.",
-      fallbackValue = "true",
-      arity = "0..1")
-  private int blockProductionPerformanceWarningThreshold =
+          "The times (in ms) at which block production is to be considered 'slow' for a local and builder flow (comma-separated). If set to \"100,200\", block production taking at least 100ms would raise a warning. "
+              + "Same would apply for a builder flow taking at least 200ms.",
+      split = ",")
+  private List<Integer> blockProductionPerformanceWarningThreshold =
       MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD;
 
   @Option(
       names = {"--Xmetrics-block-publishing-timing-tracking-warning-threshold"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
-      paramLabel = "<INTEGER>",
+      paramLabel = "<localFlowThreshold,builderFlowThreshold>",
       description =
-          "The time (in ms) at which block publishing is to be considered 'slow'. If set to 100, block publishing taking at least 100ms would raise a warning.",
-      fallbackValue = "true",
-      arity = "0..1")
-  private int blockPublishingPerformanceWarningThreshold =
+          "The times (in ms) at which block publishing is to be considered 'slow' for a local and builder flow (comma-separated). If set to \"100,200\", block publishing for a local flow taking at least 100ms would raise a warning. "
+              + "Same would apply for a builder flow taking at least 200ms.",
+      split = ",")
+  private List<Integer> blockPublishingPerformanceWarningThreshold =
       MetricsConfig.DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD;
 
   @Option(

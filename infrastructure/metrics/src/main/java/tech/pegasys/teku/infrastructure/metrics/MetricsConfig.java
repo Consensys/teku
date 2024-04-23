@@ -41,8 +41,10 @@ public class MetricsConfig {
   public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = true;
   public static final boolean DEFAULT_TICK_PERFORMANCE_ENABLED = false;
   public static final boolean DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED = true;
-  public static final int DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD = 300;
-  public static final int DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD = 1000;
+  public static final List<Integer> DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD =
+      List.of(300, 750);
+  public static final List<Integer> DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD =
+      List.of(1000, 1500);
   public static final boolean DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED = false;
 
   private final boolean metricsEnabled;
@@ -57,8 +59,8 @@ public class MetricsConfig {
   private final boolean tickPerformanceEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private final boolean blockProductionAndPublishingPerformanceEnabled;
-  private final int blockProductionPerformanceWarningThreshold;
-  private final int blockPublishingPerformanceWarningThreshold;
+  private final List<Integer> blockProductionPerformanceWarningThreshold;
+  private final List<Integer> blockPublishingPerformanceWarningThreshold;
 
   private MetricsConfig(
       final boolean metricsEnabled,
@@ -73,8 +75,8 @@ public class MetricsConfig {
       final boolean tickPerformanceEnabled,
       final boolean blobSidecarsStorageCountersEnabled,
       final boolean blockProductionAndPublishingPerformanceEnabled,
-      final int blockProductionPerformanceWarningThreshold,
-      final int blockPublishingPerformanceWarningThreshold) {
+      final List<Integer> blockProductionPerformanceWarningThreshold,
+      final List<Integer> blockPublishingPerformanceWarningThreshold) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -136,11 +138,11 @@ public class MetricsConfig {
     return blockProductionAndPublishingPerformanceEnabled;
   }
 
-  public int getBlockProductionPerformanceWarningThreshold() {
+  public List<Integer> getBlockProductionPerformanceWarningThreshold() {
     return blockProductionPerformanceWarningThreshold;
   }
 
-  public int getBlockPublishingPerformanceWarningThreshold() {
+  public List<Integer> getBlockPublishingPerformanceWarningThreshold() {
     return blockPublishingPerformanceWarningThreshold;
   }
 
@@ -165,9 +167,9 @@ public class MetricsConfig {
     private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
     private boolean blockProductionAndPublishingPerformanceEnabled =
         DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED;
-    private int blockProductionPerformanceWarningThreshold =
+    private List<Integer> blockProductionPerformanceWarningThreshold =
         DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD;
-    private int blockPublishingPerformanceWarningThreshold =
+    private List<Integer> blockPublishingPerformanceWarningThreshold =
         DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD;
     private boolean tickPerformanceEnabled = DEFAULT_TICK_PERFORMANCE_ENABLED;
     private boolean blobSidecarsStorageCountersEnabled =
@@ -240,15 +242,28 @@ public class MetricsConfig {
     }
 
     public MetricsConfigBuilder blockProductionPerformanceWarningThreshold(
-        final int blockProductionPerformanceWarningThreshold) {
+        final List<Integer> blockProductionPerformanceWarningThreshold) {
+      validateWarningThreshold(
+          blockProductionPerformanceWarningThreshold, "blockProductionPerformanceWarningThreshold");
       this.blockProductionPerformanceWarningThreshold = blockProductionPerformanceWarningThreshold;
       return this;
     }
 
     public MetricsConfigBuilder blockPublishingPerformanceWarningThreshold(
-        final int blockPublishingPerformanceWarningThreshold) {
+        final List<Integer> blockPublishingPerformanceWarningThreshold) {
+      validateWarningThreshold(
+          blockPublishingPerformanceWarningThreshold, "blockPublishingPerformanceWarningThreshold");
       this.blockPublishingPerformanceWarningThreshold = blockPublishingPerformanceWarningThreshold;
       return this;
+    }
+
+    private void validateWarningThreshold(final List<Integer> threshold, final String name) {
+      if (threshold.size() != 2) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid %s: %s. Expected size of 2, but it was %d",
+                name, threshold, threshold.size()));
+      }
     }
 
     public MetricsConfigBuilder tickPerformanceEnabled(final boolean tickPerformanceEnabled) {

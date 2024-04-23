@@ -162,13 +162,13 @@ public class BlockOperationSelectorFactory {
 
       // Optional fields introduced in later forks
 
-      // Sync aggregate
+      // Post-Altair: Sync aggregate
       if (bodyBuilder.supportsSyncAggregate()) {
         bodyBuilder.syncAggregate(
             contributionPool.createSyncAggregateForBlock(blockSlotState.getSlot(), parentRoot));
       }
 
-      // BLS to Execution changes
+      // Post-Capella: BLS to Execution changes
       if (bodyBuilder.supportsBlsToExecutionChanges()) {
         bodyBuilder.blsToExecutionChanges(
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
@@ -177,16 +177,17 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
-      // Post-electra: consolidations supported
+      // Post-Electra: Consolidations
       if (bodyBuilder.supportsConsolidations()) {
-        // devnet0 blocks are empty of consolidations, so just default their list.
+        // devnet-0 blocks are empty of consolidations, so just default their list.
         bodyBuilder.consolidations(
             SchemaDefinitionsElectra.required(schemaDefinitions)
                 .getConsolidationsSchema()
                 .createFromElements(List.of()));
       }
 
-      // Execution Payload / Execution Payload Header / KZG Commitments
+      // Post-Bellatrix: Execution Payload / Execution Payload Header
+      // Post-Deneb: KZG Commitments
       final SafeFuture<Void> blockProductionComplete;
       if (bodyBuilder.supportsExecutionPayload()) {
         blockProductionComplete =
