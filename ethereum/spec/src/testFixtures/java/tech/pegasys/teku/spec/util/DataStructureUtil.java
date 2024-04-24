@@ -201,7 +201,7 @@ public final class DataStructureUtil {
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
-  private static final int MAX_EP_RANDOM_EXITS = 16;
+  private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
 
   private final Spec spec;
 
@@ -689,7 +689,7 @@ public final class DataStructureUtil {
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
                       .depositReceipts(this::randomExecutionPayloadDepositReceipts)
-                      .withdrawalRequests(this::randomExecutionPayloadExits);
+                      .withdrawalRequests(this::randomExecutionLayerWithdrawalRequests);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -720,8 +720,8 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<ExecutionLayerWithdrawalRequest> randomExecutionPayloadExits() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_EXITS))
+  public List<ExecutionLayerWithdrawalRequest> randomExecutionLayerWithdrawalRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
         .mapToObj(__ -> randomExecutionLayerWithdrawalRequest())
         .collect(toList());
   }

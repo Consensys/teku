@@ -185,7 +185,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               "ssz_static/BlobIdentifier",
               new SszTestExecutor<>(schemas -> BlobIdentifier.SSZ_SCHEMA))
 
-          // electra types
+          // Electra types
           .put(
               "ssz_static/Consolidation",
               new SszTestExecutor<>(
