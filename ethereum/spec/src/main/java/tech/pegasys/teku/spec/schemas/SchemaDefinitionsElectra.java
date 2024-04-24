@@ -101,13 +101,15 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+                getMaxValidatorPerAttestation(specConfig),
             "BeaconBlockBodyElectra");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
-            getBlobKzgCommitmentsSchema(),
+                getBlobKzgCommitmentsSchema(),
+                getMaxValidatorPerAttestation(specConfig),
             "BlindedBlockBodyElectra");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
     this.blindedBeaconBlockSchema =

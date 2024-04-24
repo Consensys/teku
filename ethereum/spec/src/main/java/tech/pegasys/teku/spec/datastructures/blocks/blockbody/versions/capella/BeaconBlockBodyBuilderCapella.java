@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
@@ -58,6 +59,7 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
     checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();

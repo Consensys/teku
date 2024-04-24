@@ -34,8 +34,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 
 public class GetAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
@@ -55,7 +55,7 @@ public class GetAttestations extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
-            .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
+            .response(SC_OK, "Request successful", getResponseType(spec))
             .build());
     this.nodeDataProvider = nodeDataProvider;
   }
@@ -71,13 +71,17 @@ public class GetAttestations extends RestApiEndpoint {
     request.respondOk(nodeDataProvider.getAttestations(slot, committeeIndex));
   }
 
-  private static SerializableTypeDefinition<List<Attestation>> getResponseType(
-      final SpecConfig specConfig) {
-    return SerializableTypeDefinition.<List<Attestation>>object()
+  private static SerializableTypeDefinition<List<AttestationPhase0>> getResponseType(
+      final Spec spec) {
+    // TODO EIP-7549 handle Electra attestations
+    return SerializableTypeDefinition.<List<AttestationPhase0>>object()
         .name("GetPoolAttestationsResponse")
         .withField(
             "data",
-            listOf(new Attestation.AttestationSchema(specConfig).getJsonTypeDefinition()),
+            listOf(
+                ((AttestationPhase0Schema)
+                        spec.getGenesisSchemaDefinitions().getAttestationSchema())
+                    .getJsonTypeDefinition()),
             Function.identity())
         .build();
   }

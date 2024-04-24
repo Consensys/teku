@@ -23,7 +23,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 @SuppressWarnings("JavaCase")
 public class Attestation {
@@ -59,7 +59,7 @@ public class Attestation {
 
   public tech.pegasys.teku.spec.datastructures.operations.Attestation asInternalAttestation(
       final SpecVersion specVersion) {
-    final AttestationSchema attestationSchema =
+    final AttestationSchema<?> attestationSchema =
         specVersion.getSchemaDefinitions().getAttestationSchema();
     return attestationSchema.create(
         attestationSchema.getAggregationBitsSchema().sszDeserialize(aggregation_bits),

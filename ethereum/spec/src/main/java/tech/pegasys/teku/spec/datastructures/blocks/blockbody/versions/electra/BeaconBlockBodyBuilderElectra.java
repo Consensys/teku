@@ -22,6 +22,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
@@ -53,6 +55,18 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
     super.validate();
   }
 
+  @Override
+  public BeaconBlockBodyBuilder attestations(final SszList<Attestation> attestations) {
+    this.attestations = attestations;
+    return this;
+  }
+
+  @Override
+  public Boolean supportsBlsToExecutionChanges() {
+    return true;
+  }
+
+  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();

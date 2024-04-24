@@ -18,34 +18,41 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
+// TODO Add AggregateAndProof with Electra Attestations
 public class AggregateAndProof
     extends Container3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
 
   public static class AggregateAndProofSchema
       extends ContainerSchema3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
 
-    public AggregateAndProofSchema(final SpecConfig specConfig) {
+    public AggregateAndProofSchema(
+        final AttestationSchema<? extends Attestation> attestationSchema) {
       super(
           "AggregateAndProof",
           namedSchema("aggregator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("aggregate", new AttestationSchema(specConfig)),
+          namedSchema("aggregate", SszSchema.as(Attestation.class, attestationSchema)),
           namedSchema("selection_proof", SszSignatureSchema.INSTANCE));
     }
 
-    public AttestationSchema getAttestationSchema() {
-      return (AttestationSchema) getFieldSchema1();
+    public AttestationSchema<? extends Attestation> getAttestationSchema() {
+      return (AttestationSchema<? extends Attestation>) getFieldSchema1();
     }
 
     @Override
     public AggregateAndProof createFromBackingNode(final TreeNode node) {
       return new AggregateAndProof(this, node);
+    }
+
+    public AggregateAndProof create(
+        final UInt64 index, final AttestationPhase0 aggregate, final BLSSignature selectionProof) {
+      return new AggregateAndProof(this, index, aggregate, selectionProof);
     }
 
     public AggregateAndProof create(
@@ -56,6 +63,14 @@ public class AggregateAndProof
 
   private AggregateAndProof(final AggregateAndProofSchema type, final TreeNode backingNode) {
     super(type, backingNode);
+  }
+
+  private AggregateAndProof(
+      final AggregateAndProofSchema schema,
+      final UInt64 index,
+      final AttestationPhase0 aggregate,
+      final BLSSignature selectionProof) {
+    super(schema, SszUInt64.of(index), aggregate, new SszSignature(selectionProof));
   }
 
   private AggregateAndProof(

@@ -34,12 +34,13 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -87,6 +88,7 @@ public class BeaconBlockBodySchemaBellatrixImpl
   public static BeaconBlockBodySchemaBellatrixImpl create(
       final SpecConfigBellatrix specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
+      final long maxValidatorsPerAttestation,
       final String containerName) {
     final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
         new ExecutionPayloadSchemaBellatrix(specConfig);
@@ -105,7 +107,8 @@ public class BeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                new AttestationPhase0Schema(maxValidatorsPerAttestation).castTypeToAttestationSchema(),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),

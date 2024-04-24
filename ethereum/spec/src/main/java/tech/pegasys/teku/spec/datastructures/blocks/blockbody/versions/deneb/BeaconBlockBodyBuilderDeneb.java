@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 

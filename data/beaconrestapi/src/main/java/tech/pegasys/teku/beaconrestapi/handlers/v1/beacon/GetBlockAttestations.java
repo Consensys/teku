@@ -35,6 +35,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 
 public class GetBlockAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}/attestations";
@@ -71,12 +73,12 @@ public class GetBlockAttestations extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
-      final Spec spec) {
-    Attestation.AttestationSchema dataSchema =
-        new Attestation.AttestationSchema(spec.getGenesisSpecConfig());
+  private static SerializableTypeDefinition<ObjectAndMetaData<List<AttestationPhase0>>>
+      getResponseType(final Spec spec) {
+    final AttestationPhase0Schema dataSchema =
+        (AttestationPhase0Schema) spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
-    return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
+    return SerializableTypeDefinition.<ObjectAndMetaData<List<AttestationPhase0>>>object()
         .name("GetBlockAttestationsResponse")
         .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
