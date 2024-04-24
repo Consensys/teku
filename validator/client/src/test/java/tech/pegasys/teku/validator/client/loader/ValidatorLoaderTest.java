@@ -58,7 +58,10 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
+import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.api.UpdatableGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.LocalValidatorImportResult;
 import tech.pegasys.teku.validator.client.Validator;
@@ -139,7 +142,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -155,6 +159,7 @@ class ValidatorLoaderTest {
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
+    checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -177,7 +182,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -199,6 +205,7 @@ class ValidatorLoaderTest {
     assertThat(result).isNotDone();
     verify(slashingProtector)
         .maySignBlock(PUBLIC_KEY1, forkInfo.getGenesisValidatorsRoot(), block.getSlot());
+    assertThat(validator.getGraffitiProvider()).isInstanceOf(FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -221,7 +228,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -243,6 +251,7 @@ class ValidatorLoaderTest {
     // Confirm request was sent without checking with the slashing protector
     verifyNoInteractions(slashingProtector);
     verify(httpClient).sendAsync(any(), any());
+    assertThat(validator.getGraffitiProvider()).isInstanceOf(FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -267,7 +276,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -283,6 +293,7 @@ class ValidatorLoaderTest {
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
+    checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -312,7 +323,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(dataDirLayout));
+            Optional.of(dataDirLayout),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -328,6 +340,7 @@ class ValidatorLoaderTest {
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(mutableValidatorPubKey);
     assertThat(validator2.isReadOnly()).isFalse();
+    checkGraffitiProviderTypes(validators.getValidators(), UpdatableGraffitiProvider.class);
   }
 
   @Test
@@ -350,7 +363,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     final DeleteKeyResult result =
         validatorLoader.deleteLocalMutableValidator(dataStructureUtil.randomPublicKey());
@@ -380,7 +394,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -391,6 +406,7 @@ class ValidatorLoaderTest {
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator1.isReadOnly()).isTrue();
+    assertThat(validator1.getGraffitiProvider()).isInstanceOf(FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -434,7 +450,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(dataDirLayout));
+            Optional.of(dataDirLayout),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -445,6 +462,7 @@ class ValidatorLoaderTest {
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator1.isReadOnly()).isTrue();
+    assertThat(validator1.getGraffitiProvider()).isInstanceOf(UpdatableGraffitiProvider.class);
   }
 
   @Test
@@ -470,7 +488,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -483,6 +502,7 @@ class ValidatorLoaderTest {
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator.getSigner().isLocal()).isFalse();
+    assertThat(validator.getGraffitiProvider()).isInstanceOf(FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -505,7 +525,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -520,6 +541,7 @@ class ValidatorLoaderTest {
     verify(slashingProtector)
         .maySignBlock(
             validator.getPublicKey(), forkInfo.getGenesisValidatorsRoot(), block.getSlot());
+    assertThat(validator.getGraffitiProvider()).isInstanceOf(FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -546,7 +568,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -557,6 +580,7 @@ class ValidatorLoaderTest {
 
     validatorLoader.loadValidators();
     assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1, PUBLIC_KEY2);
+    checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -583,7 +607,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -594,6 +619,7 @@ class ValidatorLoaderTest {
 
     validatorLoader.loadValidators();
     assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1, PUBLIC_KEY2);
+    checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -615,7 +641,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     // No validators initially
     validatorLoader.loadValidators();
@@ -627,6 +654,7 @@ class ValidatorLoaderTest {
     validatorLoader.loadValidators();
 
     assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1);
+    checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -650,11 +678,13 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(ownedValidatorCount);
+    checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
 
   @Test
@@ -671,7 +701,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
     validatorLoader.loadValidators();
     final LocalValidatorImportResult result =
         validatorLoader.loadLocalMutableValidator(null, "", Optional.empty(), true);
@@ -696,7 +727,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(new SimpleDataDirLayout(tempDir)));
+            Optional.of(new SimpleDataDirLayout(tempDir)),
+            (publicKey) -> Optional.empty());
     validatorLoader.loadValidators();
 
     final String keystoreString =
@@ -710,6 +742,7 @@ class ValidatorLoaderTest {
         validatorLoader.getOwnedValidators().getValidator(PUBLIC_KEY1);
     assertThat(validator).isPresent();
     assertThat(validator.orElseThrow().getSigner()).isInstanceOf(DeletableSigner.class);
+    assertThat(validator.get().getGraffitiProvider()).isInstanceOf(UpdatableGraffitiProvider.class);
   }
 
   @Test
@@ -733,7 +766,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
@@ -760,13 +794,15 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            (publicKey) -> Optional.empty());
 
     assertThatThrownBy(validatorLoader::loadValidators)
         .isExactlyInstanceOf(InvalidConfigurationException.class);
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(0);
+    checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
 
   static void writeKeystore(final Path tempDir) throws Exception {
@@ -790,5 +826,12 @@ class ValidatorLoaderTest {
     assertThat(keystorePassword.toFile().mkdirs()).isTrue();
     Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
     Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
+  }
+
+  private <T extends GraffitiProvider> void checkGraffitiProviderTypes(
+      final List<Validator> validators, final Class<T> expectedType) {
+    for (final Validator validator : validators) {
+      assertThat(validator.getGraffitiProvider()).isInstanceOf(expectedType);
+    }
   }
 }

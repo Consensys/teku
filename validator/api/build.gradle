@@ -5,6 +5,7 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:http')
+  implementation project(':infrastructure:serviceutils')
   implementation project(':ethereum:execution-types')
   implementation project(':ethereum:json-types')
   implementation project(':ethereum:spec')
@@ -13,6 +14,7 @@ dependencies {
 
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:logging'))
+  testImplementation testFixtures(project(':infrastructure:serviceutils'))
   testImplementation testFixtures(project(':ethereum:spec'))
 }
 

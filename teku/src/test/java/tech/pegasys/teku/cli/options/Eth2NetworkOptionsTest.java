@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.GENESIS_STATE_URL_PATH;
@@ -215,5 +216,12 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .hasValue("http://foo:9000/" + GENESIS_STATE_URL_PATH);
     assertThat(networkConfiguration.getNetworkBoostrapConfig().getInitialState())
         .hasValue("http://foo:9000/" + FINALIZED_STATE_URL_PATH);
+  }
+
+  @Test
+  public void shouldShowGoerliDeprecationWarning() {
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments("--network", "goerli"))
+        .isInstanceOf(AssertionError.class) // thrown because we had an error
+        .hasMessageContaining("Goerli support has been removed");
   }
 }

@@ -128,7 +128,7 @@ public class ExecutionBuilderModule {
     final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
         executionLayerManager
             .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
-            .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
+            .alwaysRun(blockProductionPerformance::engineGetPayload);
 
     final Optional<SafeFuture<BuilderBidOrFallbackData>> maybeFallback =
         isBuilderFlowViable(executionPayloadContext, state, localGetPayloadResponse);
@@ -165,15 +165,14 @@ public class ExecutionBuilderModule {
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
-            signedBuilderBidMaybe -> {
-              blockProductionPerformance.builderGetHeader();
-              LOG.trace(
-                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                  slot,
-                  validatorPublicKey,
-                  executionPayloadContext.getParentHash(),
-                  signedBuilderBidMaybe);
-            })
+            signedBuilderBidMaybe ->
+                LOG.trace(
+                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                    slot,
+                    validatorPublicKey,
+                    executionPayloadContext.getParentHash(),
+                    signedBuilderBidMaybe))
+        .alwaysRun(blockProductionPerformance::builderGetHeader)
         .thenComposeCombined(
             safeLocalGetPayloadResponse,
             (signedBuilderBidMaybe, maybeLocalGetPayloadResponse) -> {
