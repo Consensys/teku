@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.Valida
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
@@ -110,9 +111,15 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     // execution change
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorPhase0(config, miscHelpers, beaconStateAccessors);
+    final VoluntaryExitValidator voluntaryExitValidator =
+        new VoluntaryExitValidator(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorPhase0(
-            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
+            predicates,
+            beaconStateAccessors,
+            attestationDataValidator,
+            attestationUtil,
+            voluntaryExitValidator);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,

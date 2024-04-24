@@ -372,7 +372,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions());
 
     return engineGetPayload(executionPayloadContext, state)
-        .thenPeek(__ -> blockProductionPerformance.engineGetPayload())
+        .alwaysRun(blockProductionPerformance::engineGetPayload)
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
@@ -415,7 +415,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                           });
               return BuilderBidOrFallbackData.create(builderBid);
             })
-        .thenPeek(__ -> blockProductionPerformance.builderGetHeader());
+        .alwaysRun(blockProductionPerformance::builderGetHeader);
   }
 
   @Override

@@ -91,10 +91,9 @@ public class ExecutionLayerBlockProductionManagerImpl
     return executionLayerChannel
         .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
-            builderPayloadOrFallbackData -> {
-              builderResultCache.put(signedBeaconBlock.getSlot(), builderPayloadOrFallbackData);
-              blockPublishingPerformance.builderGetPayload();
-            });
+            builderPayloadOrFallbackData ->
+                builderResultCache.put(signedBeaconBlock.getSlot(), builderPayloadOrFallbackData))
+        .alwaysRun(blockPublishingPerformance::builderGetPayload);
   }
 
   @Override
@@ -109,7 +108,7 @@ public class ExecutionLayerBlockProductionManagerImpl
     final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
         executionLayerChannel
             .engineGetPayload(context, blockSlotState)
-            .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
+            .alwaysRun(blockProductionPerformance::engineGetPayload);
 
     return ExecutionPayloadResult.createForLocalFlow(context, getPayloadResponseFuture);
   }

@@ -19,42 +19,40 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
-import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.Bytes32Parser;
 import tech.pegasys.teku.validator.api.GraffitiManagementException;
-import tech.pegasys.teku.validator.api.UpdatableGraffitiProvider;
+import tech.pegasys.teku.validator.api.GraffitiManager;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
-class GetGraffitiTest {
+class DeleteGraffitiTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private final String stringGraffiti = "Test graffiti";
-  private final Bytes32 bytesGraffiti = Bytes32Parser.toBytes32(stringGraffiti);
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
 
   private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
-  private final GetGraffiti handler = new GetGraffiti(keyManager);
+  private final GraffitiManager graffitiManager = mock(GraffitiManager.class);
+  private final DeleteGraffiti handler = new DeleteGraffiti(keyManager, graffitiManager);
   private final StubRestApiRequest request =
       StubRestApiRequest.builder()
           .metadata(handler.getMetadata())
@@ -62,50 +60,47 @@ class GetGraffitiTest {
           .build();
 
   @Test
-  void shouldGetGraffiti() throws JsonProcessingException {
-    checkGraffiti(Optional.of(bytesGraffiti));
-  }
-
-  @Test
-  void shouldGetEmptyGraffiti() throws JsonProcessingException {
-    checkGraffiti(Optional.empty());
-  }
-
-  @Test
-  void shouldHandleGraffitiManagementException() throws JsonProcessingException {
-    final GraffitiManagementException exception =
-        new GraffitiManagementException("Unable to retrieve graffiti from storage");
-    final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
-    doThrow(exception).when(provider).getUnsafe();
-    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
-    when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
+  void shouldSuccessfullyDeleteGraffiti() throws JsonProcessingException {
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
 
     handler.handleRequest(request);
 
-    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-    assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, exception.getMessage()));
-    verify(provider).getUnsafe();
+    verify(graffitiManager).deleteGraffiti(eq(publicKey));
+    assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
-  void shouldHandleValidatorNotFound() throws IOException {
+  void shouldReturnErrorWhenIssueDeletingGraffiti()
+      throws IOException, GraffitiManagementException {
+    final GraffitiManagementException exception =
+        new GraffitiManagementException("Unable to delete graffiti for validator " + publicKey);
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.of(validator));
+    doThrow(exception).when(graffitiManager).deleteGraffiti(any());
+
+    handler.handleRequest(request);
+
+    verify(graffitiManager).deleteGraffiti(eq(publicKey));
+    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, exception.getMessage()));
+  }
+
+  @Test
+  void shouldRespondNotFoundWhenNoValidator() throws JsonProcessingException {
     when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
 
     handler.handleRequest(request);
 
+    verifyNoInteractions(graffitiManager);
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
-    assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Validator not found"));
   }
 
   @Test
-  void metadata_shouldHandle200() throws JsonProcessingException {
-    final String responseData =
-        getResponseStringFromMetadata(handler, SC_OK, Optional.of(bytesGraffiti));
-    final String expectedResponse =
-        String.format("{\"data\":{\"graffiti\":\"%s\"}}", stringGraffiti);
-    assertThat(responseData).isEqualTo(expectedResponse);
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
 
   @Test
@@ -126,18 +121,5 @@ class GetGraffitiTest {
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
-  }
-
-  private void checkGraffiti(final Optional<Bytes32> graffiti) throws JsonProcessingException {
-    final UpdatableGraffitiProvider provider = mock(UpdatableGraffitiProvider.class);
-    when(provider.getUnsafe()).thenReturn(graffiti);
-    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, provider);
-    when(keyManager.getValidatorByPublicKey(eq(publicKey))).thenReturn(Optional.of(validator));
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(graffiti);
-    verify(provider).getUnsafe();
   }
 }

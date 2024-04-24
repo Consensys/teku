@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessor
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -116,9 +117,15 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         new AttestationUtilDeneb(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorDeneb(config, miscHelpers, beaconStateAccessors);
+    final VoluntaryExitValidatorElectra voluntaryExitValidatorElectra =
+        new VoluntaryExitValidatorElectra(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorCapella(
-            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
+            predicates,
+            beaconStateAccessors,
+            attestationDataValidator,
+            attestationUtil,
+            voluntaryExitValidatorElectra);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,

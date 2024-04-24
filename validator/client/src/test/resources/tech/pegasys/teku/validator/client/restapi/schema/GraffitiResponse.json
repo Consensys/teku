@@ -11,7 +11,10 @@
           "$ref" : "#/components/schemas/Pubkey"
         },
         "graffiti" : {
-          "type" : "string"
+          "type" : "string",
+          "description" : "Bytes32 string",
+          "example" : "Example graffiti",
+          "format" : "byte"
         }
       }
     }
