@@ -80,7 +80,7 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
     private int depositsCount;
 
     @JsonProperty(value = "execution_payload_header", required = false)
-    private boolean executionPayloadHeader = false;
+    private final boolean executionPayloadHeader = false;
 
     public int getDepositsCount() {
       return depositsCount;

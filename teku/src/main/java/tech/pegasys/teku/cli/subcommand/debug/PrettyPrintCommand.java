@@ -76,7 +76,7 @@ public class PrettyPrintCommand implements Callable<Integer> {
       description = "Milestone to use when decoding objects.",
       arity = "1")
   @SuppressWarnings("FieldCanBeFinal")
-  private final SpecMilestone milestone = SpecMilestone.ALTAIR;
+  private SpecMilestone milestone = SpecMilestone.ALTAIR;
 
   @Parameters(
       index = "1",

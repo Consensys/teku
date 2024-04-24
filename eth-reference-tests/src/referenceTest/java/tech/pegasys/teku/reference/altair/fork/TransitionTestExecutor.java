@@ -113,6 +113,6 @@ public class TransitionTestExecutor implements TestExecutor {
     private int forkBlock;
 
     @JsonProperty(value = "bls_setting", defaultValue = "0")
-    private int blsSetting = 0;
+    private final int blsSetting = 0;
   }
 }
