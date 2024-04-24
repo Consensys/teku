@@ -90,6 +90,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitm
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.Cell;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.CellSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumn;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -2412,6 +2418,103 @@ public final class DataStructureUtil {
           signedBeaconBlockHeader.orElse(randomSignedBeaconBlockHeader()),
           kzgCommitmentInclusionProof.orElse(randomKzgCommitmentInclusionProof()));
     }
+  }
+
+  public class RandomSidecarBuilder {
+    private Optional<UInt64> index = Optional.empty();
+    private Optional<DataColumn> dataColumn = Optional.empty();
+    private Optional<List<KZGCommitment>> kzgCommitments = Optional.empty();
+    private Optional<List<KZGProof>> kzgProofs = Optional.empty();
+    private Optional<SignedBeaconBlockHeader> signedBeaconBlockHeader = Optional.empty();
+    private Optional<List<Bytes32>> kzgCommitmentInclusionProof = Optional.empty();
+
+    public RandomSidecarBuilder index(final UInt64 index) {
+      this.index = Optional.of(index);
+      return this;
+    }
+
+    public RandomSidecarBuilder dataColumn(final DataColumn dataColumn) {
+      this.dataColumn = Optional.of(dataColumn);
+      return this;
+    }
+
+    public RandomSidecarBuilder kzgCommitments(final List<KZGCommitment> kzgCommitments) {
+      this.kzgCommitments = Optional.of(kzgCommitments);
+      return this;
+    }
+
+    public RandomSidecarBuilder kzgProofs(final List<KZGProof> kzgProofs) {
+      this.kzgProofs = Optional.of(kzgProofs);
+      return this;
+    }
+
+    public RandomSidecarBuilder signedBeaconBlockHeader(
+        final SignedBeaconBlockHeader signedBeaconBlockHeader) {
+      this.signedBeaconBlockHeader = Optional.of(signedBeaconBlockHeader);
+      return this;
+    }
+
+    public RandomSidecarBuilder kzgCommitmentInclusionProof(
+        final List<Bytes32> kzgCommitmentInclusionProof) {
+      this.kzgCommitmentInclusionProof = Optional.of(kzgCommitmentInclusionProof);
+      return this;
+    }
+
+    public DataColumnSidecar build() {
+      final SignedBeaconBlockHeader signedBlockHeader =
+          signedBeaconBlockHeader.orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader);
+      final DataColumnSidecarSchema dataColumnSidecarSchema =
+          getElectraSchemaDefinitions(signedBlockHeader.getMessage().getSlot())
+              .getDataColumnSidecarSchema();
+      final int numberOfProofs =
+          kzgProofs
+              .map(List::size)
+              .or(() -> kzgCommitments.map(List::size))
+              .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
+
+      return dataColumnSidecarSchema.create(
+          index.orElseGet(DataStructureUtil.this::randomBlobSidecarIndex),
+          dataColumn.orElseGet(() -> randomDataColumn(signedBlockHeader.getMessage().getSlot())),
+          kzgCommitments.orElseGet(
+              () ->
+                  IntStream.range(0, numberOfProofs)
+                      .mapToObj(__ -> randomKZGCommitment())
+                      .toList()),
+          kzgProofs.orElseGet(
+              () -> IntStream.range(0, numberOfProofs).mapToObj(__ -> randomKZGProof()).toList()),
+          signedBlockHeader,
+          kzgCommitmentInclusionProof.orElseGet(
+              () ->
+                  IntStream.range(
+                          0,
+                          dataColumnSidecarSchema
+                              .getKzgCommitmentInclusionProofSchema()
+                              .getLength())
+                      .mapToObj(__ -> randomBytes32())
+                      .toList()));
+    }
+  }
+
+  public DataColumn randomDataColumn(final UInt64 slot) {
+    final DataColumnSchema dataColumnSchema =
+        getElectraSchemaDefinitions(slot).getDataColumnSchema();
+    List<Cell> list =
+        IntStream.range(0, randomNumberOfBlobsPerBlock()).mapToObj(__ -> randomCell(slot)).toList();
+    return dataColumnSchema.create(list);
+  }
+
+  public Cell randomCell(final UInt64 slot) {
+    final CellSchema cellSchema = getElectraSchemaDefinitions(slot).getCellSchema();
+    return cellSchema.create(randomBytes(cellSchema.getLength()));
+  }
+
+  public DataColumnSidecar randomDataColumnSidecar() {
+    return new RandomSidecarBuilder().build();
+  }
+
+  public DataColumnSidecar randomDataColumnSidecar(
+      final SignedBeaconBlockHeader header, final UInt64 index) {
+    return new RandomSidecarBuilder().signedBeaconBlockHeader(header).index(index).build();
   }
 
   public List<Bytes32> randomKzgCommitmentInclusionProof() {

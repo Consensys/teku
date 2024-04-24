@@ -256,5 +256,5 @@ public interface Database extends AutoCloseable {
 
   void addSidecar(DataColumnSidecar sidecar);
 
-  void pruneAllSidecars(UInt64 tillSlot);
+  void pruneAllSidecars(UInt64 tillSlotInclusive);
 }

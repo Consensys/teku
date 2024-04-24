@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
@@ -88,6 +89,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
       pendingPartialWithdrawalSchema;
   private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
 
+  private final CellSchema cellSchema;
   private final DataColumnSchema dataColumnSchema;
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
 
@@ -146,6 +148,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
     this.pendingConsolidationSchema = new PendingConsolidation.PendingConsolidationSchema();
 
+    this.cellSchema = new CellSchema(specConfig);
     this.dataColumnSchema = new DataColumnSchema(specConfig);
     this.dataColumnSidecarSchema =
         DataColumnSidecarSchema.create(
@@ -295,5 +298,13 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public DataColumnSidecarSchema getDataColumnSidecarSchema() {
     return dataColumnSidecarSchema;
+  }
+
+  public DataColumnSchema getDataColumnSchema() {
+    return dataColumnSchema;
+  }
+
+  public CellSchema getCellSchema() {
+    return cellSchema;
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.electra;
 
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
@@ -22,6 +24,9 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeaderSchema;
@@ -41,6 +46,8 @@ public class DataColumnSidecarSchema
         SszBytes32Vector> {
 
   static final SszFieldName FIELD_BLOB = () -> "column";
+  static final SszFieldName FIELD_KZG_COMMITMENTS = () -> "kzg_commitments";
+  static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   static final SszFieldName FIELD_SIGNED_BLOCK_HEADER = () -> "signed_block_header";
   static final SszFieldName FIELD_KZG_COMMITMENT_INCLUSION_PROOF =
       () -> "kzg_commitment_inclusion_proof";
@@ -54,11 +61,11 @@ public class DataColumnSidecarSchema
         namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(FIELD_BLOB, dataColumnSchema),
         namedSchema(
-            "kzg_commitments",
+            FIELD_KZG_COMMITMENTS,
             SszListSchema.create(
                 SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(
-            "kzg_proofs",
+            FIELD_KZG_PROOFS,
             SszListSchema.create(
                 SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(FIELD_SIGNED_BLOCK_HEADER, signedBeaconBlockHeaderSchema),
@@ -79,6 +86,17 @@ public class DataColumnSidecarSchema
   public SszBytes32VectorSchema<?> getKzgCommitmentInclusionProofSchema() {
     return (SszBytes32VectorSchema<?>)
         getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENT_INCLUSION_PROOF));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszKZGCommitment, ?> getKzgCommitmentsSchema() {
+    return (SszListSchema<SszKZGCommitment, ?>)
+        getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENTS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
+    return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
   //  public DataColumnSidecar create(
@@ -113,24 +131,24 @@ public class DataColumnSidecarSchema
   //        signedBeaconBlockHeader,
   //        kzgCommitmentInclusionProof);
   //  }
-  //
-  //  public DataColumnSidecar create(
-  //      final UInt64 index,
-  //      final Blob blob,
-  //      final KZGCommitment kzgCommitment,
-  //      final KZGProof kzgProof,
-  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentInclusionProof) {
-  //    return new DataColumnSidecar(
-  //        this,
-  //        index,
-  //        blob,
-  //        kzgCommitment,
-  //        kzgProof,
-  //        signedBeaconBlockHeader,
-  //        kzgCommitmentInclusionProof);
-  //  }
-  //
+
+  public DataColumnSidecar create(
+      final UInt64 index,
+      final DataColumn dataColumn,
+      final List<KZGCommitment> kzgCommitments,
+      final List<KZGProof> kzgProofs,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes32> kzgCommitmentInclusionProof) {
+    return new DataColumnSidecar(
+        this,
+        index,
+        dataColumn,
+        kzgCommitments,
+        kzgProofs,
+        signedBeaconBlockHeader,
+        kzgCommitmentInclusionProof);
+  }
+
   public static DataColumnSidecarSchema create(
       final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
       final DataColumnSchema dataColumnSchema,

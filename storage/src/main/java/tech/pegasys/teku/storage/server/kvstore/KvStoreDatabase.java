@@ -964,6 +964,7 @@ public class KvStoreDatabase implements Database {
             streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
         final FinalizedUpdater updater = finalizedUpdater()) {
       prunableIdentifiers.forEach(updater::removeSidecar);
+      updater.commit();
     }
   }
 

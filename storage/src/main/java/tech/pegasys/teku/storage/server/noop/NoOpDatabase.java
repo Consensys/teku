@@ -353,7 +353,7 @@ public class NoOpDatabase implements Database {
   public void addSidecar(DataColumnSidecar sidecar) {}
 
   @Override
-  public void pruneAllSidecars(UInt64 tillSlot) {}
+  public void pruneAllSidecars(UInt64 tillSlotInclusive) {}
 
   @Override
   public void close() {}

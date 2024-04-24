@@ -60,9 +60,8 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
     sidecarUpdateChannel.onNewSidecar(sidecar);
   }
 
-  // TODO: clarify, is it inclusive? change input name
   @Override
-  public void pruneAllSidecars(final UInt64 tillSlot) {
-    sidecarUpdateChannel.onSidecarsAvailabilitySlot(tillSlot);
+  public void pruneAllSidecars(final UInt64 tillSlotExclusive) {
+    sidecarUpdateChannel.onSidecarsAvailabilitySlot(tillSlotExclusive);
   }
 }

@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.electra;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -41,27 +45,30 @@ public class DataColumnSidecar
     super(dataColumnSidecarSchema, backingTreeNode);
   }
 
-  //  public DataColumnSidecar(
-  //      final DataColumnSidecarSchema schema,
-  //      final UInt64 index,
-  //      final Blob blob,
-  //      final SszKZGCommitment sszKzgCommitment,
-  //      final SszKZGProof sszKzgProof,
-  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentInclusionProof) {
-  //    super(
-  //        schema,
-  //        SszUInt64.of(index),
-  //        schema.getDataColumnSszSchema().create(blob.getBytes()),
-  //        sszKzgCommitment,
-  //        sszKzgProof,
-  //        signedBeaconBlockHeader,
-  //        schema
-  //            .getKzgCommitmentInclusionProofSchema()
-  //
-  // .createFromElements(kzgCommitmentInclusionProof.stream().map(SszBytes32::of).toList()));
-  //  }
-  //
+  public DataColumnSidecar(
+      final DataColumnSidecarSchema schema,
+      final UInt64 index,
+      final DataColumn dataColumn,
+      final List<KZGCommitment> kzgCommitments,
+      final List<KZGProof> kzgProofs,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes32> kzgCommitmentInclusionProof) {
+    super(
+        schema,
+        SszUInt64.of(index),
+        dataColumn,
+        schema
+            .getKzgCommitmentsSchema()
+            .createFromElements(kzgCommitments.stream().map(SszKZGCommitment::new).toList()),
+        schema
+            .getKzgProofsSchema()
+            .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
+        signedBeaconBlockHeader,
+        schema
+            .getKzgCommitmentInclusionProofSchema()
+            .createFromElements(kzgCommitmentInclusionProof.stream().map(SszBytes32::of).toList()));
+  }
+
   //  public DataColumnSidecar(
   //      final DataColumnSidecarSchema schema,
   //      final UInt64 index,

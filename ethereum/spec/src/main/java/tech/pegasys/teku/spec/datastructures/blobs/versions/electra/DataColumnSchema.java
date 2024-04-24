@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.electra;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -21,6 +22,11 @@ public class DataColumnSchema extends AbstractSszListSchema<Cell, DataColumn> {
 
   public DataColumnSchema(final SpecConfigElectra specConfig) {
     super(new CellSchema(specConfig), specConfig.getMaxBlobCommitmentsPerBlock());
+  }
+
+  public DataColumn create(final List<Cell> cells) {
+    final TreeNode backingNode = this.createTreeFromElements(cells);
+    return createFromBackingNode(backingNode);
   }
 
   @Override
