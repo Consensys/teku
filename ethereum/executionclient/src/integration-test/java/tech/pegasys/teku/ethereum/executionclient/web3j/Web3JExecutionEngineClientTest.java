@@ -344,9 +344,9 @@ public class Web3JExecutionEngineClientTest {
     assertThat(executionPayloadV4Parameter.get("parentHash"))
         .isEqualTo(executionPayloadV4.parentHash.toHexString());
 
-    assertThat(executionPayloadV4Parameter.get("depositReceipts"))
+    assertThat(executionPayloadV4Parameter.get("depositRequests"))
         .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.depositReceipts);
+        .hasSameSizeAs(executionPayloadV4.depositRequests);
     assertThat(executionPayloadV4Parameter.get("withdrawalRequests"))
         .asInstanceOf(InstanceOfAssertFactories.LIST)
         .hasSameSizeAs(executionPayloadV4.withdrawalRequests);
