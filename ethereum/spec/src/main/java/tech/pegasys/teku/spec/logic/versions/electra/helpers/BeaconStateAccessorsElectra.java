@@ -116,4 +116,15 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
         beaconStateAccessors.getClass());
     return (BeaconStateAccessorsElectra) beaconStateAccessors;
   }
+
+  /**
+   * implements get_validator_max_effective_balance state accessor
+   *
+   * @param validator - a validator from a state.
+   * @return the max effective balance for the specified validator based on its withdrawal
+   *     credentials.
+   */
+  public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
+    return predicatesElectra.getValidatorMaxEffectiveBalance(validator);
+  }
 }

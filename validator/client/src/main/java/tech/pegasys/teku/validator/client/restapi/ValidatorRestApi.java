@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.GraffitiManager;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.validator.client.VoluntaryExitDataProvider;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteGraffiti;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetFeeRecipient;
@@ -50,6 +52,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostVoluntaryExit;
 import tech.pegasys.teku.validator.client.restapi.apis.SetFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.SetGasLimit;
+import tech.pegasys.teku.validator.client.restapi.apis.SetGraffiti;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
 public class ValidatorRestApi {
@@ -70,7 +73,8 @@ public class ValidatorRestApi {
       final DataDirLayout dataDirLayout,
       final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final SlashingRiskAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction,
+      final GraffitiManager graffitiManager) {
     final VoluntaryExitDataProvider voluntaryExitDataProvider =
         new VoluntaryExitDataProvider(
             spec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
@@ -130,7 +134,9 @@ public class ValidatorRestApi {
         .endpoint(new DeleteFeeRecipient(proposerConfigManager))
         .endpoint(new DeleteGasLimit(proposerConfigManager))
         .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
-        .endpoint(new GetGraffiti())
+        .endpoint(new GetGraffiti(keyManager))
+        .endpoint(new SetGraffiti(keyManager, graffitiManager))
+        .endpoint(new DeleteGraffiti(keyManager, graffitiManager))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(validatorApiBearerFile)
         .build();

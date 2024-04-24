@@ -37,7 +37,7 @@ public class VoluntaryExitValidator
   private final Predicates predicates;
   private final BeaconStateAccessors beaconStateAccessors;
 
-  VoluntaryExitValidator(
+  public VoluntaryExitValidator(
       final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors) {
@@ -49,7 +49,7 @@ public class VoluntaryExitValidator
   @Override
   public Optional<OperationInvalidReason> validate(
       final Fork fork, final BeaconState state, final SignedVoluntaryExit signedExit) {
-    VoluntaryExit exit = signedExit.getMessage();
+    final VoluntaryExit exit = signedExit.getMessage();
     return firstOf(
         () ->
             check(
@@ -108,6 +108,11 @@ public class VoluntaryExitValidator
 
     public static OperationInvalidReason invalidSignature() {
       return () -> "Signature is invalid";
+    }
+
+    public static OperationInvalidReason pendingWithdrawalsInQueue() {
+      return () ->
+          "Validator cannot be exited while there are pending withdrawals in the withdrawal queue";
     }
   }
 }
