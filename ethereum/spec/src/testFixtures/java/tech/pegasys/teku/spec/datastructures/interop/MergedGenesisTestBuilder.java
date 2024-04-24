@@ -37,7 +37,7 @@ public class MergedGenesisTestBuilder {
     final GenesisConfigOptions genesisConfigOptions =
         configFile.getConfigOptions(Collections.emptyMap());
     final ProtocolSchedule protocolSchedule =
-        MainnetProtocolSchedule.fromConfig(genesisConfigOptions, new BadBlockManager());
+        MainnetProtocolSchedule.fromConfig(genesisConfigOptions);
     final GenesisState genesisState = GenesisState.fromConfig(configFile, protocolSchedule);
     final Block genesisBlock = genesisState.getBlock();
     final BlockHeader header = genesisBlock.getHeader();
