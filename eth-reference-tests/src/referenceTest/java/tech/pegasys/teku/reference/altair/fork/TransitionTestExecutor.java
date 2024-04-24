@@ -98,7 +98,7 @@ public class TransitionTestExecutor implements TestExecutor {
     assertThatSszData(result).isEqualByGettersTo(postState);
   }
 
-  @SuppressWarnings({"unused", "UnusedVariable"})
+  @SuppressWarnings({"unused", "UnusedVariable", "FieldCanBeFinal"})
   private static class MetaData {
     @JsonProperty(value = "post_fork", required = true)
     private String postFork;
@@ -113,6 +113,6 @@ public class TransitionTestExecutor implements TestExecutor {
     private int forkBlock;
 
     @JsonProperty(value = "bls_setting", defaultValue = "0")
-    private final int blsSetting = 0;
+    private int blsSetting = 0;
   }
 }

@@ -79,8 +79,9 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
     @JsonProperty(value = "deposits_count", required = true)
     private int depositsCount;
 
+    @SuppressWarnings("FieldCanBeFinal")
     @JsonProperty(value = "execution_payload_header", required = false)
-    private final boolean executionPayloadHeader = false;
+    private boolean executionPayloadHeader = false;
 
     public int getDepositsCount() {
       return depositsCount;
