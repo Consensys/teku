@@ -103,13 +103,13 @@ public class DepositProvider
     event.getDeposits().stream()
         .map(depositUtil::convertDepositEventToOperationDeposit)
         .forEach(
-            deposit -> {
+            depositWithIndex -> {
               if (!recentChainData.isPreGenesis()) {
-                LOG.debug("About to process deposit: {}", deposit.index());
+                LOG.debug("About to process deposit: {}", depositWithIndex.index());
               }
 
-              depositNavigableMap.put(deposit.index(), deposit);
-              depositMerkleTree.pushLeaf(deposit.deposit().getData().hashTreeRoot());
+              depositNavigableMap.put(depositWithIndex.index(), depositWithIndex);
+              depositMerkleTree.pushLeaf(depositWithIndex.deposit().getData().hashTreeRoot());
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
