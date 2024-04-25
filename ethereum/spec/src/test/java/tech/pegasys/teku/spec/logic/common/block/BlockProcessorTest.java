@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -267,10 +266,9 @@ public abstract class BlockProcessorTest {
                     new Eth1Data(depositMerkleTree.getRoot(), UInt64.valueOf(1), Bytes32.ZERO)));
 
     SszListSchema<Deposit, ?> schema =
-        SszListSchema.create(DepositWithIndex.SSZ_SCHEMA, specConfig.getMaxDeposits());
+        SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits());
     SszBytes32Vector proof = Deposit.SSZ_SCHEMA.getProofSchema().of(depositMerkleTree.getProof(0));
-    SszList<Deposit> deposits =
-        schema.of(new DepositWithIndex(proof, depositData, UInt64.valueOf(0)));
+    SszList<Deposit> deposits = schema.of(new Deposit(proof, depositData));
 
     // Attempt to process deposit with above data.
     return beaconState.updated(state -> blockProcessor.processDeposits(state, deposits));

@@ -656,8 +656,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void processDeposits(
-      final MutableBeaconState state, final SszList<? extends Deposit> deposits)
+  public void processDeposits(final MutableBeaconState state, final SszList<Deposit> deposits)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -668,7 +667,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  private boolean batchVerifyDepositSignatures(final SszList<? extends Deposit> deposits) {
+  private boolean batchVerifyDepositSignatures(final SszList<Deposit> deposits) {
     try {
       final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
       final List<Bytes> messages = new ArrayList<>();

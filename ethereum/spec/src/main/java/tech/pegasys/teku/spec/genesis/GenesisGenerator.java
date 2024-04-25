@@ -85,9 +85,7 @@ public class GenesisGenerator {
   }
 
   public void updateCandidateState(
-      final Bytes32 eth1BlockHash,
-      final UInt64 eth1Timestamp,
-      final List<? extends Deposit> deposits) {
+      final Bytes32 eth1BlockHash, final UInt64 eth1Timestamp, final List<Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
     state.setEth1Data(

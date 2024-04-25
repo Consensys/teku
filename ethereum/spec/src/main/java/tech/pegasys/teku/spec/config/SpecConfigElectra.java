@@ -32,6 +32,12 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
                         + specConfig.getClass().getSimpleName()));
   }
 
+  Bytes4 getElectraForkVersion();
+
+  UInt64 getElectraForkEpoch();
+
+  UInt64 getMinPerEpochChurnLimitElectra();
+
   UInt64 getMinActivationBalance();
 
   UInt64 getMaxEffectiveBalanceElectra();
@@ -42,9 +48,9 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getPendingConsolidationsLimit();
 
-  int getWhistleblowerRewardQuotientElectra();
-
   int getMinSlashingPenaltyQuotientElectra();
+
+  int getWhistleblowerRewardQuotientElectra();
 
   int getMaxAttesterSlashingsElectra();
 
@@ -52,19 +58,11 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxConsolidations();
 
-  int getMaxPartialWithdrawalsPerPayload();
+  int getMaxDepositReceiptsPerPayload();
 
   int getMaxWithdrawalRequestsPerPayload();
 
-  UInt64 getMinPerEpochChurnLimitElectra();
-
-  Bytes4 getElectraForkVersion();
-
-  UInt64 getElectraForkEpoch();
-
-  int getMaxDepositReceiptsPerPayload();
-
-  int getMaxExecutionLayerWithdrawalRequests();
+  int getMaxPendingPartialsPerWithdrawalsSweep();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();

@@ -295,7 +295,7 @@ public class Spec {
   public BeaconState initializeBeaconStateFromEth1(
       final Bytes32 eth1BlockHash,
       final UInt64 eth1Timestamp,
-      final List<? extends Deposit> deposits,
+      final List<Deposit> deposits,
       final Optional<ExecutionPayloadHeader> payloadHeader) {
     final GenesisGenerator genesisGenerator = createGenesisGenerator();
     genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
