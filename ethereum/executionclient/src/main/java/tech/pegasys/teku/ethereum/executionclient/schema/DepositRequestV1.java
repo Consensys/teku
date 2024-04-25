@@ -27,7 +27,7 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeser
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class DepositReceiptV1 {
+public class DepositRequestV1 {
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes48Deserializer.class)
   public final Bytes48 pubkey;
@@ -48,7 +48,7 @@ public class DepositReceiptV1 {
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   public final UInt64 index;
 
-  public DepositReceiptV1(
+  public DepositRequestV1(
       @JsonProperty("pubkey") final Bytes48 pubkey,
       @JsonProperty("withdrawalCredentials") final Bytes32 withdrawalCredentials,
       @JsonProperty("amount") final UInt64 amount,

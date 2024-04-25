@@ -116,7 +116,7 @@ public class ExecutionPayloadSchemaElectra
             WITHDRAWAL_REQUESTS,
             SszListSchema.create(
                 ExecutionLayerWithdrawalRequest.SSZ_SCHEMA,
-                specConfig.getMaxExecutionLayerWithdrawalRequests())));
+                specConfig.getMaxWithdrawalRequestsPerPayload())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
