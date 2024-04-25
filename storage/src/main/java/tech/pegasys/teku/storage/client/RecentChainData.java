@@ -301,6 +301,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final Optional<ChainHead> originalChainHead = chainHead;
 
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+      // FIXME: with transitioned stateRoot already
       final Optional<ProtoNodeData> maybeBlockData = forkChoiceStrategy.getBlockData(root);
       if (maybeBlockData.isEmpty()) {
         LOG.error(
@@ -375,6 +376,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return optionalReorgContext;
   }
 
+  // TODO: Test the consequences of having transitioned chainHead
   private ChainHead createNewChainHead(
       final Bytes32 root, final UInt64 currentSlot, final ProtoNodeData blockData) {
     final SafeFuture<StateAndBlockSummary> chainHeadStateFuture =

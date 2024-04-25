@@ -38,6 +38,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   private final Spec spec;
   private final Checkpoint checkpoint;
   private final boolean isGenesis;
+  private final boolean isTransitioned;
 
   private AnchorPoint(
       final Spec spec,
@@ -45,15 +46,11 @@ public class AnchorPoint extends StateAndBlockSummary {
       final BeaconState state,
       final BeaconBlockSummary blockSummary) {
     super(blockSummary, state);
-    checkArgument(
-        checkpoint.getRoot().equals(blockSummary.getRoot()), "Checkpoint and block must match");
-    checkArgument(
-        checkpoint.getEpochStartSlot(spec).isGreaterThanOrEqualTo(blockSummary.getSlot()),
-        "Block must be at or prior to the start of the checkpoint epoch");
-
     this.spec = spec;
     this.checkpoint = checkpoint;
     this.isGenesis = checkpoint.getEpoch().equals(SpecConfig.GENESIS_EPOCH);
+    this.isTransitioned = state.getSlot().isGreaterThan(blockSummary.getSlot());
+    verifyAnchor();
   }
 
   public static AnchorPoint create(
@@ -129,6 +126,42 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(spec, checkpoint, state, block);
   }
 
+  /**
+   * Skipping verification in the super class. All checks are made in {@link #verifyAnchor()}
+   * instead
+   */
+  @Override
+  protected void verifyStateAndBlockConsistency() {}
+
+  private void verifyAnchor() {
+    final UInt64 blockSlot = blockSummary.getSlot();
+    if (state.getSlot().isGreaterThan(blockSlot)) {
+      // the finalized state is transitioned with empty slot(s)
+      checkArgument(
+          blockSummary.getStateRoot().equals(state.getLatestBlockHeader().getStateRoot()),
+          "Block state root must match the latest block header state root in the state");
+      final int stateAndBlockRootsIndex =
+          blockSlot.mod(spec.getSlotsPerHistoricalRoot(blockSlot)).intValue();
+      checkArgument(
+          blockSummary
+              .getStateRoot()
+              .equals(state.getStateRoots().get(stateAndBlockRootsIndex).get()),
+          "Block state root must match the state root for the block slot %s in the state roots",
+          blockSlot);
+      checkArgument(
+          blockSummary.getRoot().equals(state.getBlockRoots().get(stateAndBlockRootsIndex).get()),
+          "Block root must match the root for the block slot %s in the block roots in the state",
+          blockSlot);
+    } else {
+      super.verifyStateAndBlockConsistency();
+    }
+    checkArgument(
+        checkpoint.getRoot().equals(blockSummary.getRoot()), "Checkpoint and block must match");
+    checkArgument(
+        checkpoint.getEpochStartSlot(spec).isGreaterThanOrEqualTo(blockSlot),
+        "Block must be at or prior to the start of the checkpoint epoch");
+  }
+
   public boolean isGenesis() {
     return isGenesis;
   }
@@ -147,6 +180,10 @@ public class AnchorPoint extends StateAndBlockSummary {
 
   public UInt64 getEpochStartSlot() {
     return checkpoint.getEpochStartSlot(spec);
+  }
+
+  public boolean isTransitioned() {
+    return isTransitioned;
   }
 
   @Override

@@ -88,6 +88,7 @@ public class AttestationStateSelector {
     // If the attestation is within the lookahead period for the finalized state, use that
     // If the target block doesn't descend from finalized the attestation is invalid
     final BeaconState finalizedState = recentChainData.getStore().getLatestFinalized().getState();
+    // TODO: Test
     if (finalizedState.getSlot().isGreaterThanOrEqualTo(earliestSlot)) {
       appliedSelectorRule.labels("attestation_within_lookahead").inc();
       return completedFuture(Optional.of(finalizedState));
