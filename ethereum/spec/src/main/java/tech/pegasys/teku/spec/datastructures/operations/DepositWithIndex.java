@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -42,15 +41,22 @@ public class DepositWithIndex implements Comparable<DepositWithIndex> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
     DepositWithIndex that = (DepositWithIndex) o;
-    return Objects.equals(index, that.index) && Objects.equals(deposit, that.deposit);
+    return deposit.equals(that.deposit) && index.equals(that.index);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(deposit, index);
+    int result = deposit.hashCode();
+    result = 31 * result + index.hashCode();
+    return result;
   }
 
   @Override
