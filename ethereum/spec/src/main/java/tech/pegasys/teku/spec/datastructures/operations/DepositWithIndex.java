@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+import java.util.Objects;
+
 public class DepositWithIndex implements Comparable<DepositWithIndex> {
 
   private final Deposit deposit;
@@ -54,9 +56,7 @@ public class DepositWithIndex implements Comparable<DepositWithIndex> {
 
   @Override
   public int hashCode() {
-    int result = deposit.hashCode();
-    result = 31 * result + index.hashCode();
-    return result;
+    return Objects.hash(deposit, index);
   }
 
   @Override
