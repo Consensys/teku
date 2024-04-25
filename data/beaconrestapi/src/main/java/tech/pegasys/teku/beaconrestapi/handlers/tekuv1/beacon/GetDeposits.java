@@ -37,7 +37,9 @@ public class GetDeposits extends RestApiEndpoint {
       SerializableTypeDefinition.object(DepositWithIndex.class)
           .withField("index", CoreTypes.UINT64_TYPE, DepositWithIndex::getIndex)
           .withField(
-              "data", DepositData.SSZ_SCHEMA.getJsonTypeDefinition(), DepositWithIndex::getData)
+              "data",
+              DepositData.SSZ_SCHEMA.getJsonTypeDefinition(),
+              depositWithIndex -> depositWithIndex.getDeposit().getData())
           .build();
 
   public static final SerializableTypeDefinition<List<DepositWithIndex>> DEPOSITS_RESPONSE_TYPE =

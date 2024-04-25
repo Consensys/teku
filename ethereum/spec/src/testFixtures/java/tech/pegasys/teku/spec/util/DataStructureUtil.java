@@ -1551,10 +1551,11 @@ public final class DataStructureUtil {
     final Bytes32 randomBytes32 = randomBytes32();
     final SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new DepositWithIndex(
-        Stream.generate(() -> randomBytes32)
-            .limit(proofSchema.getLength())
-            .collect(proofSchema.collectorUnboxed()),
-        randomDepositData(),
+        new Deposit(
+            Stream.generate(() -> randomBytes32)
+                .limit(proofSchema.getLength())
+                .collect(proofSchema.collectorUnboxed()),
+            randomDepositData()),
         UInt64.valueOf(depositIndex));
   }
 
@@ -1620,7 +1621,7 @@ public final class DataStructureUtil {
     return randomDepositEvent(randomUInt64());
   }
 
-  public List<DepositWithIndex> randomDeposits(final int num) {
+  public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
     final ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
     for (int i = 0; i < num; i++) {

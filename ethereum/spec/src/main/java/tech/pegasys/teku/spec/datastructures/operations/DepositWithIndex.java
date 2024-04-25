@@ -15,22 +15,20 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
+public class DepositWithIndex implements Comparable<DepositWithIndex> {
 
+  private final Deposit deposit;
   private final UInt64 index;
 
-  public DepositWithIndex(
-      final SszBytes32Vector proof, final DepositData data, final UInt64 index) {
-    super(proof, data);
+  public DepositWithIndex(Deposit deposit, UInt64 index) {
+    this.deposit = deposit;
     this.index = index;
   }
 
-  public DepositWithIndex(final DepositData data, final UInt64 index) {
-    super(data);
-    this.index = index;
+  public Deposit getDeposit() {
+    return deposit;
   }
 
   public UInt64 getIndex() {
@@ -43,23 +41,16 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    final DepositWithIndex that = (DepositWithIndex) o;
-    return index.equals(that.index);
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DepositWithIndex that = (DepositWithIndex) o;
+    return Objects.equals(index, that.index) && Objects.equals(deposit, that.deposit);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), index);
+    return Objects.hash(deposit, index);
   }
 
   @Override

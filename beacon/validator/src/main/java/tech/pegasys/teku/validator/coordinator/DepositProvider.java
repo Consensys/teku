@@ -109,7 +109,7 @@ public class DepositProvider
               }
 
               depositNavigableMap.put(deposit.getIndex(), deposit);
-              depositMerkleTree.pushLeaf(deposit.getData().hashTreeRoot());
+              depositMerkleTree.pushLeaf(deposit.getDeposit().getData().hashTreeRoot());
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
@@ -211,9 +211,17 @@ public class DepositProvider
       final BeaconState state, final Eth1Data eth1Data) {
     final long maxDeposits = spec.getMaxDeposits(state);
     final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+    return getDepositsWithIndex(state, eth1Data).stream()
+        .map(DepositWithIndex::getDeposit)
+        .collect(depositsSchema.collector());
+  }
+
+  public synchronized List<DepositWithIndex> getDepositsWithIndex(
+      final BeaconState state, final Eth1Data eth1Data) {
+    final long maxDeposits = spec.getMaxDeposits(state);
     // no Eth1 deposits needed if already transitioned to the EIP-6110 mechanism
     if (spec.isFormerDepositMechanismDisabled(state)) {
-      return depositsSchema.createFromElements(emptyList());
+      return emptyList();
     }
     final UInt64 eth1DepositCount;
     if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
@@ -241,7 +249,7 @@ public class DepositProvider
 
     // No deposits to include
     if (eth1PendingDepositCount.isZero()) {
-      return depositsSchema.createFromElements(emptyList());
+      return emptyList();
     }
 
     // We need to have all the deposits that can be included in the state available to ensure
@@ -250,7 +258,7 @@ public class DepositProvider
 
     final UInt64 toDepositIndex = eth1DepositIndex.plus(eth1PendingDepositCount);
 
-    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, depositsSchema);
+    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount);
   }
 
   protected synchronized List<DepositWithIndex> getAvailableDeposits() {
@@ -283,11 +291,8 @@ public class DepositProvider
    * @param toDepositIndex exclusive
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
    */
-  private SszList<Deposit> getDepositsWithProof(
-      final UInt64 fromDepositIndex,
-      final UInt64 toDepositIndex,
-      final UInt64 eth1DepositCount,
-      final SszListSchema<Deposit, ?> depositsSchema) {
+  private List<DepositWithIndex> getDepositsWithProof(
+      final UInt64 fromDepositIndex, final UInt64 toDepositIndex, final UInt64 eth1DepositCount) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
     final SszBytes32VectorSchema<?> depositProofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     if (depositMerkleTree.getDepositCount() < eth1DepositCount.intValue()) {
@@ -309,9 +314,10 @@ public class DepositProvider
               expectedDepositIndex.set(deposit.getIndex().plus(ONE));
               SszBytes32Vector proof =
                   depositProofSchema.of(merkleTree.getProof(deposit.getIndex().intValue()));
-              return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
+              return new DepositWithIndex(
+                  new Deposit(proof, deposit.getDeposit().getData()), deposit.getIndex());
             })
-        .collect(depositsSchema.collector());
+        .toList();
   }
 
   @Override

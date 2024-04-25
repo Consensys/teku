@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
@@ -77,10 +78,13 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void processNewData(
-      final Bytes32 blockHash, final UInt64 timestamp, final List<DepositWithIndex> deposits) {
-    validateDeposits(deposits);
+      final Bytes32 blockHash,
+      final UInt64 timestamp,
+      final List<DepositWithIndex> depositsWithIndex) {
+    validateDeposits(depositsWithIndex);
     final int previousValidatorRequirementPercent =
         roundPercent(genesisGenerator.getActiveValidatorCount());
+    List<Deposit> deposits = depositsWithIndex.stream().map(DepositWithIndex::getDeposit).toList();
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
