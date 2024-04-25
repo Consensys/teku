@@ -1621,14 +1621,12 @@ public final class DataStructureUtil {
     return randomDepositEvent(randomUInt64());
   }
 
+  public List<Deposit> randomDeposits(final int num) {
+    return randomDepositsWithIndex(num).stream().map(DepositWithIndex::deposit).toList();
+  }
+
   public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
-    final ArrayList<DepositWithIndex> deposits = new ArrayList<>();
-
-    for (int i = 0; i < num; i++) {
-      deposits.add(randomDepositWithIndex());
-    }
-
-    return deposits;
+    return Stream.generate(this::randomDepositWithIndex).limit(num).toList();
   }
 
   public SszList<Deposit> randomSszDeposits(final int num) {

@@ -76,8 +76,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
             dataStructureUtil.randomSignedVoluntaryExit(),
             dataStructureUtil.randomSignedVoluntaryExit());
     deposits =
-        blockBodyLists.createDeposits(
-            dataStructureUtil.randomDepositsWithIndex(2).toArray(new Deposit[0]));
+        blockBodyLists.createDeposits(dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
     attestations =
         blockBodyLists.createAttestations(
             dataStructureUtil.randomAttestation(),
