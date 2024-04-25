@@ -306,16 +306,17 @@ public class DepositProvider
         .values()
         .stream()
         .map(
-            deposit -> {
-              if (!deposit.index().equals(expectedDepositIndex.get())) {
+            depositWithIndex -> {
+              if (!depositWithIndex.index().equals(expectedDepositIndex.get())) {
                 throw MissingDepositsException.missingRange(
-                    expectedDepositIndex.get(), deposit.index());
+                    expectedDepositIndex.get(), depositWithIndex.index());
               }
-              expectedDepositIndex.set(deposit.index().plus(ONE));
+              expectedDepositIndex.set(depositWithIndex.index().plus(ONE));
               SszBytes32Vector proof =
-                  depositProofSchema.of(merkleTree.getProof(deposit.index().intValue()));
+                  depositProofSchema.of(merkleTree.getProof(depositWithIndex.index().intValue()));
               return new DepositWithIndex(
-                  new Deposit(proof, deposit.deposit().getData()), deposit.index());
+                  new Deposit(proof, depositWithIndex.deposit().getData()),
+                  depositWithIndex.index());
             })
         .toList();
   }
