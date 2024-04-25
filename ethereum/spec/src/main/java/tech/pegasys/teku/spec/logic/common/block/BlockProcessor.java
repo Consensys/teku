@@ -119,7 +119,7 @@ public interface BlockProcessor {
       BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
+  void processDeposits(MutableBeaconState state, SszList<Deposit> deposits)
       throws BlockProcessingException;
 
   void processDepositWithoutCheckingMerkleProof(

@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -31,8 +30,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
@@ -135,12 +134,7 @@ public class StateUpgradeTransitionTest {
         new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
             .createDeposits(VALIDATOR_KEYS, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
 
-    final List<DepositWithIndex> deposits = new ArrayList<>();
-    for (int index = 0; index < initialDepositData.size(); index++) {
-      final DepositData data = initialDepositData.get(index);
-      DepositWithIndex deposit = new DepositWithIndex(data, UInt64.valueOf(index));
-      deposits.add(deposit);
-    }
+    final List<Deposit> deposits = initialDepositData.stream().map(Deposit::new).toList();
     final BeaconState initialState =
         spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
     return initialState.updated(state -> state.setGenesisTime(UInt64.ZERO));

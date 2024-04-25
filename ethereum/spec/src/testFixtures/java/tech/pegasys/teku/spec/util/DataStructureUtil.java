@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -1551,10 +1552,11 @@ public final class DataStructureUtil {
     final Bytes32 randomBytes32 = randomBytes32();
     final SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new DepositWithIndex(
-        Stream.generate(() -> randomBytes32)
-            .limit(proofSchema.getLength())
-            .collect(proofSchema.collectorUnboxed()),
-        randomDepositData(),
+        new Deposit(
+            Stream.generate(() -> randomBytes32)
+                .limit(proofSchema.getLength())
+                .collect(proofSchema.collectorUnboxed()),
+            randomDepositData()),
         UInt64.valueOf(depositIndex));
   }
 
@@ -1620,14 +1622,12 @@ public final class DataStructureUtil {
     return randomDepositEvent(randomUInt64());
   }
 
-  public List<DepositWithIndex> randomDeposits(final int num) {
-    final ArrayList<DepositWithIndex> deposits = new ArrayList<>();
+  public List<Deposit> randomDeposits(final int num) {
+    return randomDepositsWithIndex(num).stream().map(DepositWithIndex::deposit).toList();
+  }
 
-    for (int i = 0; i < num; i++) {
-      deposits.add(randomDepositWithIndex());
-    }
-
-    return deposits;
+  public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
+    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(Collectors.toList());
   }
 
   public SszList<Deposit> randomSszDeposits(final int num) {
