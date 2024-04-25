@@ -27,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;

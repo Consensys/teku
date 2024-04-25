@@ -299,7 +299,8 @@ class DiscoveryNetworkTest {
         maybeForkId,
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
             .getDefault(),
-        syncCommitteeSubnets);
+        syncCommitteeSubnets,
+        Optional.empty());
   }
 
   public static Stream<Arguments> provideNodeIds() {

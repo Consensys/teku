@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.base.Supplier;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -57,6 +59,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
@@ -80,6 +83,7 @@ import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -200,12 +204,17 @@ public class Eth2P2PNetworkFactory {
         final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
         final SubnetSubscriptionService syncCommitteeSubnetService =
             new SubnetSubscriptionService();
+        final SubnetSubscriptionService dataColumnSidecarSubnetService =
+            new SubnetSubscriptionService();
         final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
             new EarliestAvailableBlockSlot(
                 historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
         final CombinedChainDataClient combinedChainDataClient =
             new CombinedChainDataClient(
                 recentChainData, historicalChainData, spec, earliestAvailableBlockSlot);
+        final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
+            new DataColumnSidecarSubnetTopicProvider(
+                combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
         if (rpcEncoding == null) {
           rpcEncoding =
@@ -258,8 +267,16 @@ public class Eth2P2PNetworkFactory {
                 discoConfig.getMinPeers(),
                 discoConfig.getMaxPeers(),
                 discoConfig.getMinRandomlySelectedPeers());
+        final Supplier<SpecVersion> currentSpecVersionSupplier =
+            () -> combinedChainDataClient.getRecentChainData().getCurrentSpec();
         final SchemaDefinitionsSupplier currentSchemaDefinitions =
-            () -> config.getSpec().getGenesisSchemaDefinitions();
+            () ->
+                combinedChainDataClient
+                    .getRecentChainData()
+                    .getCurrentSpec()
+                    .getSchemaDefinitions();
+        final Supplier<Optional<UInt64>> currentSlotSupplier =
+            () -> combinedChainDataClient.getRecentChainData().getCurrentSlot();
         final SettableLabelledGauge subnetPeerCountGauge =
             SettableLabelledGauge.create(
                 metricsSystem,
@@ -294,11 +311,14 @@ public class Eth2P2PNetworkFactory {
                         targetPeerRange,
                         gossipNetwork ->
                             PeerSubnetSubscriptions.create(
-                                currentSchemaDefinitions,
+                                currentSpecVersionSupplier.get(),
+                                currentSlotSupplier.get(),
                                 gossipNetwork,
                                 attestationSubnetTopicProvider,
                                 syncCommitteeTopicProvider,
                                 syncCommitteeSubnetService,
+                                dataColumnSidecarSubnetTopicProvider,
+                                dataColumnSidecarSubnetService,
                                 config.getTargetSubnetSubscriberCount(),
                                 subnetPeerCountGauge),
                         reputationManager,
@@ -331,6 +351,7 @@ public class Eth2P2PNetworkFactory {
             recentChainData,
             attestationSubnetService,
             syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,

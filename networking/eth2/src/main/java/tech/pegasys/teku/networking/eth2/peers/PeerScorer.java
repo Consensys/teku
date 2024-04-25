@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -26,12 +25,5 @@ public interface PeerScorer {
     return scoreExistingPeer(peer.getId());
   }
 
-  int scoreCandidatePeer(
-      final SszBitvector attSubnetSubscriptions,
-      final SszBitvector syncCommitteeSubnetSubscriptions);
-
-  default int scoreCandidatePeer(final DiscoveryPeer candidate) {
-    return scoreCandidatePeer(
-        candidate.getPersistentAttestationSubnets(), candidate.getSyncCommitteeSubnets());
-  }
+  int scoreCandidatePeer(final DiscoveryPeer candidate);
 }

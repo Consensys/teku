@@ -161,7 +161,8 @@ public class SimpleSidecarRetriever
     volatile SafeFuture<DataColumnSidecar> activeRpcRequest = null;
 
     private RetrieveRequest(
-        ColumnSlotAndIdentifier columnId, DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest) {
+        ColumnSlotAndIdentifier columnId,
+        DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest) {
       this.columnId = columnId;
       this.peerSearchRequest = peerSearchRequest;
     }

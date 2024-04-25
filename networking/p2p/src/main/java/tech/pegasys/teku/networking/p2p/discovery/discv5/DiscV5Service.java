@@ -216,7 +216,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
             nodeRecord.getUdpAddress().get(),
             Optional.empty(),
             currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
-            currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault());
+            currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault(),
+            Optional.empty());
 
     return Optional.of(MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString());
   }

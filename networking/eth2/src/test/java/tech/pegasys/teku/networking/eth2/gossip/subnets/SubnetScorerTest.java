@@ -18,15 +18,21 @@ import static org.assertj.core.api.Assertions.entry;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
@@ -40,18 +46,19 @@ class SubnetScorerTest {
   @Test
   void shouldScoreCandidatePeerWithNoSubnetsAsZero() {
     final SubnetScorer scorer =
-        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions));
+        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions, 128));
     assertThat(
             scorer.scoreCandidatePeer(
-                schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
-                schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()))
+                createDiscoveryPeer(
+                    schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
+                    schemaDefinitions.getSyncnetsENRFieldSchema().getDefault())))
         .isZero();
   }
 
   @Test
   void shouldScoreExistingPeerWithNoSubnetsAsZero() {
     final SubnetScorer scorer =
-        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions));
+        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions, 128));
     assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
   }
 
@@ -64,7 +71,7 @@ class SubnetScorerTest {
     final MockNodeId node5 = new MockNodeId(4);
     final SubnetScorer scorer =
         SubnetScorer.create(
-            PeerSubnetSubscriptions.builder(() -> schemaDefinitions)
+            PeerSubnetSubscriptions.builder(() -> schemaDefinitions, 0)
                 .attestationSubnetSubscriptions(
                     b ->
                         b.addRelevantSubnet(1)
@@ -113,7 +120,7 @@ class SubnetScorerTest {
     final MockNodeId node3 = new MockNodeId(2);
     final SubnetScorer scorer =
         SubnetScorer.create(
-            PeerSubnetSubscriptions.builder(() -> schemaDefinitions)
+            PeerSubnetSubscriptions.builder(() -> schemaDefinitions, 128)
                 .attestationSubnetSubscriptions(
                     b ->
                         b.addRelevantSubnet(1)
@@ -176,8 +183,24 @@ class SubnetScorerTest {
                     Function.identity(),
                     (subscriptions) ->
                         scorer.scoreCandidatePeer(
-                            subscriptions.getLeft(), subscriptions.getRight())));
+                            createDiscoveryPeer(
+                                subscriptions.getLeft(), subscriptions.getRight()))));
     assertThat(actual).contains(expected);
+  }
+
+  private DiscoveryPeer createDiscoveryPeer(SszBitvector attSubnets, SszBitvector syncSubnets) {
+    try {
+      return new DiscoveryPeer(
+          Bytes.fromHexString(
+              "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
+          new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
+          Optional.empty(),
+          attSubnets,
+          syncSubnets,
+          Optional.empty());
+    } catch (UnknownHostException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private Pair<SszBitvector, SszBitvector> candidateWithSubnets(

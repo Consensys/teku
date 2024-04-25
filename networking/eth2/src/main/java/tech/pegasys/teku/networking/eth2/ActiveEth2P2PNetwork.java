@@ -69,6 +69,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final GossipConfigurator gossipConfigurator;
   private final SubnetSubscriptionService attestationSubnetService;
   private final SubnetSubscriptionService syncCommitteeSubnetService;
+  private final SubnetSubscriptionService dataColumnSidecarSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
   private final Optional<Integer> dasExtraCustodySubnetCount;
@@ -92,6 +93,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final RecentChainData recentChainData,
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,
+      final SubnetSubscriptionService dataColumnSidecarSubnetService,
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
@@ -109,6 +111,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.gossipConfigurator = gossipConfigurator;
     this.attestationSubnetService = attestationSubnetService;
     this.syncCommitteeSubnetService = syncCommitteeSubnetService;
+    this.dataColumnSidecarSubnetService = dataColumnSidecarSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
     this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
@@ -340,11 +343,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   @Override
   public void subscribeToDataColumnSidecarSubnetId(int subnetId) {
     gossipForkManager.subscribeToDataColumnSidecarSubnetId(subnetId);
+    dataColumnSidecarSubnetService.addSubscription(subnetId);
   }
 
   @Override
   public void unsubscribeFromDataColumnSidecarSubnetId(int subnetId) {
     gossipForkManager.unsubscribeFromDataColumnSidecarSubnetId(subnetId);
+    dataColumnSidecarSubnetService.removeSubscription(subnetId);
   }
 
   @Override

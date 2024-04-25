@@ -18,7 +18,6 @@ import com.google.common.base.Objects;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.web3j.abi.datatypes.Int;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 

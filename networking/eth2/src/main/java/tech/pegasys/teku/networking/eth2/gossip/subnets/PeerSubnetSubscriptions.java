@@ -21,6 +21,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
@@ -33,36 +34,63 @@ import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 public class PeerSubnetSubscriptions {
 
   private final SubnetSubscriptions attestationSubnetSubscriptions;
   private final SubnetSubscriptions syncCommitteeSubnetSubscriptions;
+  private final SubnetSubscriptions dataColumnSidecarSubnetSubscriptions;
+  private final NodeIdToDataColumnSidecarSubnetsCalculator
+      nodeIdToDataColumnSidecarSubnetsCalculator;
   private final int targetSubnetSubscriberCount;
 
   private PeerSubnetSubscriptions(
       final SubnetSubscriptions attestationSubnetSubscriptions,
       final SubnetSubscriptions syncCommitteeSubnetSubscriptions,
+      final SubnetSubscriptions dataColumnSidecarSubnetSubscriptions,
+      final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
       final int targetSubnetSubscriberCount) {
     this.attestationSubnetSubscriptions = attestationSubnetSubscriptions;
     this.syncCommitteeSubnetSubscriptions = syncCommitteeSubnetSubscriptions;
+    this.dataColumnSidecarSubnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
+    this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
   }
 
+  @FunctionalInterface
+  public interface NodeIdToDataColumnSidecarSubnetsCalculator {
+
+    SszBitvector calculateSubnets(NodeId nodeId, int extraSubnetCount);
+  }
+
   public static PeerSubnetSubscriptions create(
-      final SchemaDefinitionsSupplier currentSchemaDefinitions,
+      final SpecVersion currentVersion,
+      final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
       final GossipNetwork network,
       final AttestationSubnetTopicProvider attestationTopicProvider,
       final SyncCommitteeSubnetTopicProvider syncCommitteeSubnetTopicProvider,
       final SubnetSubscriptionService syncCommitteeSubnetService,
+      final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider,
+      final SubnetSubscriptionService dataColumnSidecarSubnetService,
       final int targetSubnetSubscriberCount,
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
 
+    SchemaDefinitionsSupplier currentSchemaDefinitions = currentVersion::getSchemaDefinitions;
+    Integer dataColumnSidecarSubnetCount =
+        currentVersion
+            .getConfig()
+            .toVersionElectra()
+            .map(NetworkingSpecConfigElectra::getDataColumnSidecarSubnetCount)
+            .orElse(0);
+
     final PeerSubnetSubscriptions subscriptions =
-        builder(currentSchemaDefinitions)
+        builder(currentSchemaDefinitions, dataColumnSidecarSubnetCount)
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
+            .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(
                 b ->
                     // Track all attestation subnets
@@ -93,6 +121,20 @@ public class PeerSubnetSubscriptions {
                                   .forEach(
                                       subscriber ->
                                           b.addSubscriber(syncCommitteeSubnet, subscriber));
+                            }))
+            .dataColumnSidecarSubnetSubscriptions(
+                b ->
+                    dataColumnSidecarSubnetService
+                        .getSubnets()
+                        .forEach(
+                            columnSubnet -> {
+                              b.addRelevantSubnet(columnSubnet);
+                              subscribersByTopic
+                                  .getOrDefault(
+                                      dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(
+                                          columnSubnet),
+                                      Collections.emptySet())
+                                  .forEach(subscriber -> b.addSubscriber(columnSubnet, subscriber));
                             }))
             .build();
     updateMetrics(currentSchemaDefinitions, subnetPeerCountGauge, subscriptions);
@@ -129,14 +171,17 @@ public class PeerSubnetSubscriptions {
     return IntStream.range(0, currentSchemaDefinitions.getSyncnetsENRFieldSchema().getLength());
   }
 
-  static Builder builder(final SchemaDefinitionsSupplier currentSchemaDefinitions) {
-    return new Builder(currentSchemaDefinitions);
+  static Builder builder(
+      final SchemaDefinitionsSupplier currentSchemaDefinitions,
+      Integer dataColumnSidecarSubnetCount) {
+    return new Builder(currentSchemaDefinitions, dataColumnSidecarSubnetCount);
   }
 
   @VisibleForTesting
   static PeerSubnetSubscriptions createEmpty(
-      final SchemaDefinitionsSupplier currentSchemaDefinitions) {
-    return builder(currentSchemaDefinitions).build();
+      final SchemaDefinitionsSupplier currentSchemaDefinitions,
+      Integer dataColumnSidecarSubnetCount) {
+    return builder(currentSchemaDefinitions, dataColumnSidecarSubnetCount).build();
   }
 
   public int getSubscriberCountForAttestationSubnet(final int subnetId) {
@@ -147,6 +192,10 @@ public class PeerSubnetSubscriptions {
     return syncCommitteeSubnetSubscriptions.getSubscriberCountForSubnet(subnetId);
   }
 
+  public int getSubscriberCountForDataColumnSidecarSubnet(final int subnetId) {
+    return dataColumnSidecarSubnetSubscriptions.getSubscriberCountForSubnet(subnetId);
+  }
+
   public SszBitvector getAttestationSubnetSubscriptions(final NodeId peerId) {
     return attestationSubnetSubscriptions.getSubnetSubscriptions(peerId);
   }
@@ -155,12 +204,25 @@ public class PeerSubnetSubscriptions {
     return syncCommitteeSubnetSubscriptions.getSubnetSubscriptions(peerId);
   }
 
+  public SszBitvector getDataColumnSidecarSubnetSubscriptions(final NodeId peerId) {
+    return dataColumnSidecarSubnetSubscriptions.getSubnetSubscriptions(peerId);
+  }
+
+  public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
+      final NodeId peerId, final int extraSubnetCount) {
+    return nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(peerId, extraSubnetCount);
+  }
+
   public boolean isSyncCommitteeSubnetRelevant(final int subnetId) {
     return syncCommitteeSubnetSubscriptions.isSubnetRelevant(subnetId);
   }
 
   public boolean isAttestationSubnetRelevant(final int subnetId) {
     return attestationSubnetSubscriptions.isSubnetRelevant(subnetId);
+  }
+
+  public boolean isDataColumnSidecarSubnetRelevant(final int subnetId) {
+    return dataColumnSidecarSubnetSubscriptions.isSubnetRelevant(subnetId);
   }
 
   public PeerScorer createScorer() {
@@ -177,20 +239,15 @@ public class PeerSubnetSubscriptions {
   }
 
   private OptionalInt getMinSubscriberCount() {
-    final OptionalInt minAttestationSubscribers =
-        attestationSubnetSubscriptions.getMinSubscriberCount();
-    final OptionalInt minSyncnetSubscribers =
-        syncCommitteeSubnetSubscriptions.getMinSubscriberCount();
-    if (minAttestationSubscribers.isPresent() && minSyncnetSubscribers.isPresent()) {
-      return OptionalInt.of(
-          Math.min(minAttestationSubscribers.getAsInt(), minSyncnetSubscribers.getAsInt()));
-    } else {
-      if (minAttestationSubscribers.isPresent()) {
-        return minAttestationSubscribers;
-      } else {
-        return minSyncnetSubscribers;
-      }
-    }
+    return optionalMin(
+        List.of(
+            attestationSubnetSubscriptions.getMinSubscriberCount(),
+            syncCommitteeSubnetSubscriptions.getMinSubscriberCount(),
+            dataColumnSidecarSubnetSubscriptions.getMinSubscriberCount()));
+  }
+
+  private static OptionalInt optionalMin(List<OptionalInt> optionalInts) {
+    return optionalInts.stream().flatMapToInt(OptionalInt::stream).min();
   }
 
   public interface Factory {
@@ -288,19 +345,27 @@ public class PeerSubnetSubscriptions {
   public static class Builder {
     private final SubnetSubscriptions.Builder attestationSubnetSubscriptions;
     private final SubnetSubscriptions.Builder syncCommitteeSubnetSubscriptions;
+    private final SubnetSubscriptions.Builder dataColumnSidecarSubnetSubscriptions;
+    private NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator;
     private int targetSubnetSubscriberCount = 2;
 
-    private Builder(final SchemaDefinitionsSupplier currentSchemaDefinitions) {
+    private Builder(
+        final SchemaDefinitionsSupplier currentSchemaDefinitions,
+        Integer dataColumnSidecarSubnetCount) {
       attestationSubnetSubscriptions =
           SubnetSubscriptions.builder(currentSchemaDefinitions.getAttnetsENRFieldSchema());
       syncCommitteeSubnetSubscriptions =
           SubnetSubscriptions.builder(currentSchemaDefinitions.getSyncnetsENRFieldSchema());
+      dataColumnSidecarSubnetSubscriptions =
+          SubnetSubscriptions.builder(SszBitvectorSchema.create(dataColumnSidecarSubnetCount));
     }
 
     public PeerSubnetSubscriptions build() {
       return new PeerSubnetSubscriptions(
           attestationSubnetSubscriptions.build(),
           syncCommitteeSubnetSubscriptions.build(),
+          dataColumnSidecarSubnetSubscriptions.build(),
+          nodeIdToDataColumnSidecarSubnetsCalculator,
           targetSubnetSubscriberCount);
     }
 
@@ -322,6 +387,18 @@ public class PeerSubnetSubscriptions {
     public Builder syncCommitteeSubnetSubscriptions(
         final Consumer<SubnetSubscriptions.Builder> consumer) {
       consumer.accept(syncCommitteeSubnetSubscriptions);
+      return this;
+    }
+
+    public Builder dataColumnSidecarSubnetSubscriptions(
+        final Consumer<SubnetSubscriptions.Builder> consumer) {
+      consumer.accept(dataColumnSidecarSubnetSubscriptions);
+      return this;
+    }
+
+    public Builder nodeIdToDataColumnSidecarSubnetsCalculator(
+        NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator) {
+      this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
       return this;
     }
   }
