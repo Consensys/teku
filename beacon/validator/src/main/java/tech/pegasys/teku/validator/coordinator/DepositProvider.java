@@ -105,11 +105,11 @@ public class DepositProvider
         .forEach(
             deposit -> {
               if (!recentChainData.isPreGenesis()) {
-                LOG.debug("About to process deposit: {}", deposit.getIndex());
+                LOG.debug("About to process deposit: {}", deposit.index());
               }
 
-              depositNavigableMap.put(deposit.getIndex(), deposit);
-              depositMerkleTree.pushLeaf(deposit.getDeposit().getData().hashTreeRoot());
+              depositNavigableMap.put(deposit.index(), deposit);
+              depositMerkleTree.pushLeaf(deposit.deposit().getData().hashTreeRoot());
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
@@ -212,7 +212,7 @@ public class DepositProvider
     final long maxDeposits = spec.getMaxDeposits(state);
     final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
     return getDepositsWithIndex(state, eth1Data).stream()
-        .map(DepositWithIndex::getDeposit)
+        .map(DepositWithIndex::deposit)
         .collect(depositsSchema.collector());
   }
 
@@ -307,15 +307,15 @@ public class DepositProvider
         .stream()
         .map(
             deposit -> {
-              if (!deposit.getIndex().equals(expectedDepositIndex.get())) {
+              if (!deposit.index().equals(expectedDepositIndex.get())) {
                 throw MissingDepositsException.missingRange(
-                    expectedDepositIndex.get(), deposit.getIndex());
+                    expectedDepositIndex.get(), deposit.index());
               }
-              expectedDepositIndex.set(deposit.getIndex().plus(ONE));
+              expectedDepositIndex.set(deposit.index().plus(ONE));
               SszBytes32Vector proof =
-                  depositProofSchema.of(merkleTree.getProof(deposit.getIndex().intValue()));
+                  depositProofSchema.of(merkleTree.getProof(deposit.index().intValue()));
               return new DepositWithIndex(
-                  new Deposit(proof, deposit.getDeposit().getData()), deposit.getIndex());
+                  new Deposit(proof, deposit.deposit().getData()), deposit.index());
             })
         .toList();
   }

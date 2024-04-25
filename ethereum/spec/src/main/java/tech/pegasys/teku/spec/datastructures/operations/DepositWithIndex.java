@@ -16,47 +16,11 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-import java.util.Objects;
-
-public class DepositWithIndex implements Comparable<DepositWithIndex> {
-
-  private final Deposit deposit;
-  private final UInt64 index;
-
-  public DepositWithIndex(Deposit deposit, UInt64 index) {
-    this.deposit = deposit;
-    this.index = index;
-  }
-
-  public Deposit getDeposit() {
-    return deposit;
-  }
-
-  public UInt64 getIndex() {
-    return index;
-  }
+public record DepositWithIndex(Deposit deposit, UInt64 index) implements Comparable<DepositWithIndex> {
 
   @Override
   public int compareTo(final @NotNull DepositWithIndex o) {
-    return this.getIndex().compareTo(o.getIndex());
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    DepositWithIndex that = (DepositWithIndex) o;
-    return deposit.equals(that.deposit) && index.equals(that.index);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(deposit, index);
+    return this.index().compareTo(o.index());
   }
 
   @Override

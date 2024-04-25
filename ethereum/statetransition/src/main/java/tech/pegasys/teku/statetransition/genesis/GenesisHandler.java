@@ -84,7 +84,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     validateDeposits(depositsWithIndex);
     final int previousValidatorRequirementPercent =
         roundPercent(genesisGenerator.getActiveValidatorCount());
-    List<Deposit> deposits = depositsWithIndex.stream().map(DepositWithIndex::getDeposit).toList();
+    List<Deposit> deposits = depositsWithIndex.stream().map(DepositWithIndex::deposit).toList();
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
@@ -105,9 +105,9 @@ public class GenesisHandler implements Eth1EventsChannel {
 
     final UInt64 expectedIndex = UInt64.valueOf(genesisGenerator.getDepositCount());
     final DepositWithIndex firstDeposit = deposits.get(0);
-    if (!firstDeposit.getIndex().equals(expectedIndex)) {
+    if (!firstDeposit.index().equals(expectedIndex)) {
       throw InvalidDepositEventsException.expectedDepositAtIndex(
-          expectedIndex, firstDeposit.getIndex());
+          expectedIndex, firstDeposit.index());
     }
   }
 

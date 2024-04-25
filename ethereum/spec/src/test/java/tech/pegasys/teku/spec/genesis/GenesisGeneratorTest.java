@@ -63,7 +63,7 @@ class GenesisGeneratorTest {
   void initializeBeaconStateFromEth1_shouldIgnoreInvalidSignedDeposits() {
     List<DepositWithIndex> depositsWithIndex = dataStructureUtil.randomDepositsWithIndex(3);
     DepositWithIndex deposit = depositsWithIndex.get(1);
-    DepositData depositData = deposit.getDeposit().getData();
+    DepositData depositData = deposit.deposit().getData();
     DepositWithIndex invalidSigDeposit =
         new DepositWithIndex(
             new Deposit(
@@ -72,18 +72,18 @@ class GenesisGeneratorTest {
                     depositData.getWithdrawalCredentials(),
                     depositData.getAmount(),
                     BLSSignature.empty())),
-            deposit.getIndex());
+            deposit.index());
     depositsWithIndex.set(1, invalidSigDeposit);
-    List<Deposit> deposits = depositsWithIndex.stream().map(DepositWithIndex::getDeposit).toList();
+    List<Deposit> deposits = depositsWithIndex.stream().map(DepositWithIndex::deposit).toList();
 
     BeaconState state =
         spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
     assertEquals(2, state.getValidators().size());
     assertEquals(
-        depositsWithIndex.get(0).getDeposit().getData().getPubkey().toBytesCompressed(),
+        depositsWithIndex.get(0).deposit().getData().getPubkey().toBytesCompressed(),
         state.getValidators().get(0).getPubkeyBytes());
     assertEquals(
-        depositsWithIndex.get(2).getDeposit().getData().getPubkey().toBytesCompressed(),
+        depositsWithIndex.get(2).deposit().getData().getPubkey().toBytesCompressed(),
         state.getValidators().get(1).getPubkeyBytes());
   }
 
