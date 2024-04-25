@@ -16,7 +16,8 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record DepositWithIndex(Deposit deposit, UInt64 index) implements Comparable<DepositWithIndex> {
+public record DepositWithIndex(Deposit deposit, UInt64 index)
+    implements Comparable<DepositWithIndex> {
 
   @Override
   public int compareTo(final @NotNull DepositWithIndex o) {
