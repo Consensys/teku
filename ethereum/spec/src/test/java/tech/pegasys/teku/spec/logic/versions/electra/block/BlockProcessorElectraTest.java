@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_AMOUNT;
 
@@ -21,7 +22,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -35,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -450,6 +454,44 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         .isLessThan(FAR_FUTURE_EPOCH);
     assertThat(postState.getValidators().get(validatorIndex).getWithdrawableEpoch())
         .isLessThan(FAR_FUTURE_EPOCH);
+  }
+
+  @Override
+  @Test
+  public void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
+      throws BlockProcessingException {
+    // Create a deposit
+    final Bytes32 withdrawalCredentials =
+        dataStructureUtil.randomCompoundingWithdrawalCredentials();
+    DepositData depositInput = dataStructureUtil.randomDepositData(withdrawalCredentials);
+    BLSPublicKey pubkey = depositInput.getPubkey();
+    UInt64 amount = depositInput.getAmount();
+
+    Validator knownValidator = makeValidator(pubkey, withdrawalCredentials);
+
+    BeaconState preState = createBeaconState(amount, knownValidator);
+
+    int originalValidatorRegistrySize = preState.getValidators().size();
+    int originalValidatorBalancesSize = preState.getBalances().size();
+
+    BeaconState postState = processDepositHelper(preState, depositInput);
+
+    assertEquals(
+        postState.getValidators().size(),
+        originalValidatorRegistrySize,
+        "A new validator was added to the validator registry, but should not have been.");
+    assertEquals(
+        postState.getBalances().size(),
+        originalValidatorBalancesSize,
+        "A new balance was added to the validator balances, but should not have been.");
+    assertEquals(knownValidator, postState.getValidators().get(originalValidatorRegistrySize - 1));
+    // as of electra, the balance increase is in the queue, and yet to be applied to the validator.
+    assertEquals(amount, postState.getBalances().getElement(originalValidatorBalancesSize - 1));
+    assertThat(BeaconStateElectra.required(postState).getPendingBalanceDeposits().get(0).getIndex())
+        .isEqualTo(originalValidatorBalancesSize - 1);
+    assertThat(
+            BeaconStateElectra.required(postState).getPendingBalanceDeposits().get(0).getAmount())
+        .isEqualTo(UInt64.THIRTY_TWO_ETH);
   }
 
   @Test

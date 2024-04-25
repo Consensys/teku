@@ -14,11 +14,9 @@
 package tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 
 import java.util.List;
 import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -163,25 +161,6 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
   }
 
   /**
-   * switch_to_compounding_validator
-   *
-   * @param state beaconState
-   * @param index validatorIndex
-   */
-  protected void switchToCompoundingValidator(
-      final MutableBeaconStateElectra state, final int index) {
-    final byte[] withdrawalCredentialsUpdated =
-        state.getValidators().get(index).getWithdrawalCredentials().toArray();
-    withdrawalCredentialsUpdated[0] = COMPOUNDING_WITHDRAWAL_BYTE;
-    state
-        .getValidators()
-        .update(
-            index,
-            validator ->
-                validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
-  }
-
-  /**
    * is_eligible_for_activation_queue
    *
    * @param status - Validator status
@@ -267,7 +246,8 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
         break;
       }
 
-      switchToCompoundingValidator(stateElectra, pendingConsolidation.getTargetIndex());
+      stateMutatorsElectra.switchToCompoundingValidator(
+          stateElectra, pendingConsolidation.getTargetIndex());
       final UInt64 activeBalance =
           stateAccessorsElectra.getActiveBalance(state, pendingConsolidation.getSourceIndex());
       beaconStateMutators.decreaseBalance(

@@ -19,9 +19,14 @@ import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_
 
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -36,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -54,6 +60,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlockProcessorElectra extends BlockProcessorDeneb {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfigElectra specConfigElectra;
   private final PredicatesElectra predicatesElectra;
@@ -306,5 +313,66 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           Optional.empty(),
           false);
     }
+  }
+
+  @Override
+  protected void applyDepositToValidatorIndex(
+      final MutableBeaconState state,
+      final Bytes32 withdrawalCredentials,
+      final boolean signatureAlreadyVerified,
+      final int validatorIndex,
+      final UInt64 amount) {
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+    final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
+        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits().createWritableCopy();
+    pendingBalanceDeposits.append(
+        schemaDefinitionsElectra
+            .getPendingBalanceDepositSchema()
+            .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
+    stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
+    if (signatureAlreadyVerified
+        && predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)) {
+      beaconStateMutatorsElectra.switchToCompoundingValidator(stateElectra, validatorIndex);
+    }
+  }
+
+  @Override
+  protected void addValidatorToRegistry(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials);
+    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
+    state.getValidators().append(validator);
+    final int validatorIndex = validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow();
+
+    state.getBalances().appendElement(UInt64.ZERO);
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+
+    stateElectra.getPreviousEpochParticipation().append(SszByte.ZERO);
+    stateElectra.getCurrentEpochParticipation().append(SszByte.ZERO);
+    stateElectra.getInactivityScores().append(SszUInt64.ZERO);
+    final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
+        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits().createWritableCopy();
+    pendingBalanceDeposits.append(
+        schemaDefinitionsElectra
+            .getPendingBalanceDepositSchema()
+            .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
+    stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
+  }
+
+  protected Validator getValidatorFromDeposit(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials) {
+    final UInt64 effectiveBalance = UInt64.ZERO;
+    return new Validator(
+        pubkey,
+        withdrawalCredentials,
+        effectiveBalance,
+        false,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH);
   }
 }
