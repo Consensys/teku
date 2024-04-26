@@ -47,7 +47,6 @@ public class SszByteVectorSchemaTest extends SszVectorSchemaTestBase {
   @ParameterizedTest
   <T extends SszByteVector> void fromBytes_shouldCreateCorrectClassInstance(
       final SszByteVectorSchema<T> schema) {
-    Random random = new Random(1);
     List<Bytes> byteList =
         Stream.generate(() -> Bytes.of(random.nextInt(256))).limit(schema.getLength()).toList();
     Bytes bytes = Bytes.wrap(byteList);
