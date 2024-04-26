@@ -22,7 +22,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGCell;
+import tech.pegasys.teku.kzg.KZGCellWithID;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -83,6 +87,22 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
     return IntStream.range(0, subnetCount)
         .mapToObj(index -> computeSubscribedSubnet(nodeId, epoch, index))
         .toList();
+  }
+
+  @Override
+  public boolean verifyDataColumnSidecarKzgProof(KZG kzg, DataColumnSidecar dataColumnSidecar) {
+    return IntStream.range(0, dataColumnSidecar.getSszKZGProofs().size())
+        .mapToObj(
+            index ->
+                kzg.verifyCellProof(
+                    dataColumnSidecar.getSszKZGCommitments().get(index).getKZGCommitment(),
+                    KZGCellWithID.fromCellAndColumn(
+                        new KZGCell(dataColumnSidecar.getDataColumn().get(index).getBytes()),
+                        dataColumnSidecar.getIndex().intValue()),
+                    dataColumnSidecar.getSszKZGProofs().get(index).getKZGProof()))
+        .filter(verificationResult -> !verificationResult)
+        .findFirst()
+        .orElse(true);
   }
 
   @Override

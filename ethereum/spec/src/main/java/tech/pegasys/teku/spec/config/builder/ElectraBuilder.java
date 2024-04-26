@@ -52,6 +52,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
   private Integer minEpochsForDataColumnSidecarsRequests;
+  private Integer maxRequestDataColumnSidecars;
 
   ElectraBuilder() {}
 
@@ -79,7 +80,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         fieldElementsPerCell,
         dataColumnSidecarSubnetCount,
         custodyRequirement,
-        minEpochsForDataColumnSidecarsRequests);
+        minEpochsForDataColumnSidecarsRequests,
+        maxRequestDataColumnSidecars);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -212,6 +214,12 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
+  public ElectraBuilder maxRequestDataColumnSidecars(final Integer maxRequestDataColumnSidecars) {
+    checkNotNull(maxRequestDataColumnSidecars);
+    this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (electraForkEpoch == null) {
@@ -250,6 +258,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);
     constants.put("custodyRequirement", custodyRequirement);
     constants.put("minEpochsForDataColumnSidecarsRequests", minEpochsForDataColumnSidecarsRequests);
+    constants.put("maxRequestDataColumnSidecars", maxRequestDataColumnSidecars);
 
     return constants;
   }

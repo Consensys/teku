@@ -42,10 +42,11 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -215,6 +216,13 @@ public class Eth2P2PNetworkFactory {
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
+        final PeerSubnetSubscriptions.NodeIdToDataColumnSidecarSubnetsCalculator
+            nodeIdToDataColumnSidecarSubnetsCalculator =
+                (nodeId, extraSubnetCount) -> {
+                  SszBitvectorSchema<SszBitvector> bitvectorSchema =
+                      SszBitvectorSchema.create(config.getTargetSubnetSubscriberCount());
+                  return bitvectorSchema.getDefault();
+                };
 
         if (rpcEncoding == null) {
           rpcEncoding =
@@ -275,8 +283,6 @@ public class Eth2P2PNetworkFactory {
                     .getRecentChainData()
                     .getCurrentSpec()
                     .getSchemaDefinitions();
-        final Supplier<Optional<UInt64>> currentSlotSupplier =
-            () -> combinedChainDataClient.getRecentChainData().getCurrentSlot();
         final SettableLabelledGauge subnetPeerCountGauge =
             SettableLabelledGauge.create(
                 metricsSystem,
@@ -312,7 +318,7 @@ public class Eth2P2PNetworkFactory {
                         gossipNetwork ->
                             PeerSubnetSubscriptions.create(
                                 currentSpecVersionSupplier.get(),
-                                currentSlotSupplier.get(),
+                                nodeIdToDataColumnSidecarSubnetsCalculator,
                                 gossipNetwork,
                                 attestationSubnetTopicProvider,
                                 syncCommitteeTopicProvider,

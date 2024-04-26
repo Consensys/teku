@@ -957,6 +957,22 @@ public class Spec {
     return blobSidecar.getIndex().mod(specConfigDeneb.getBlobSidecarSubnetCount());
   }
 
+  public Optional<UInt64> getNumberOfDataColumns() {
+    return getSpecConfigElectra().map(SpecConfigElectra::getNumberOfColumns);
+  }
+
+  public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
+      final ReadOnlyStore store, final UInt64 epoch) {
+    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(ELECTRA)) {
+      return false;
+    }
+    final SpecConfig config = atEpoch(epoch).getConfig();
+    final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(config);
+    return getCurrentEpoch(store)
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(specConfigElectra.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
   public UInt64 computeSubnetForDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     final SpecConfig config = atSlot(dataColumnSidecar.getSlot()).getConfig();
     final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(config);
@@ -985,6 +1001,15 @@ public class Spec {
 
   private Optional<SpecConfigDeneb> getSpecConfigDeneb(final UInt64 slot) {
     return atSlot(slot).getConfig().toVersionDeneb();
+  }
+
+  // Electra private helpers
+  private Optional<SpecConfigElectra> getSpecConfigElectra() {
+    final SpecMilestone highestSupportedMilestone =
+        getForkSchedule().getHighestSupportedMilestone();
+    return Optional.ofNullable(forMilestone(highestSupportedMilestone))
+        .map(SpecVersion::getConfig)
+        .flatMap(SpecConfig::toVersionElectra);
   }
 
   // Private helpers

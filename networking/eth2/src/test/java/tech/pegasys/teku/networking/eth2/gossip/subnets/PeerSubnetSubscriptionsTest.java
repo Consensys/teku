@@ -62,6 +62,9 @@ class PeerSubnetSubscriptionsTest {
       mock(SyncCommitteeSubnetTopicProvider.class);
   private final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
       mock(DataColumnSidecarSubnetTopicProvider.class);
+  private final PeerSubnetSubscriptions.NodeIdToDataColumnSidecarSubnetsCalculator
+      nodeIdToDataColumnSidecarSubnetsCalculator =
+          mock(PeerSubnetSubscriptions.NodeIdToDataColumnSidecarSubnetsCalculator.class);
   private final SubnetSubscriptionService syncnetSubscriptions = new SubnetSubscriptionService();
   private final SubnetSubscriptionService dataColumnSubscriptions = new SubnetSubscriptionService();
 
@@ -207,7 +210,7 @@ class PeerSubnetSubscriptionsTest {
   private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {
     return PeerSubnetSubscriptions.create(
         currentSpecVersionSupplier.get(),
-        currentSlotSupplier.get(),
+        nodeIdToDataColumnSidecarSubnetsCalculator,
         gossipNetwork,
         attestationTopicProvider,
         syncCommitteeTopicProvider,

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -73,6 +74,10 @@ public class Eth2PeerFactory {
         RateTracker.create(peerRateLimit, TIME_OUT, timeProvider),
         RateTracker.create(
             peerRateLimit * spec.getMaxBlobsPerBlock().orElse(1), TIME_OUT, timeProvider),
+        RateTracker.create(
+            peerRateLimit * spec.getNumberOfDataColumns().orElse(UInt64.ONE).intValue(),
+            TIME_OUT,
+            timeProvider),
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider),
         kzg);
   }

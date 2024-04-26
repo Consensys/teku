@@ -49,10 +49,12 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -258,6 +260,14 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestDataColumnSidecarsByRoot(
+      final List<DataColumnIdentifier> dataColumnIdentifiers,
+      final RpcResponseListener<DataColumnSidecar> listener) {
+    // TODO
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock> handler =
         PendingRequestHandler.createForSingleBlockRequest(
@@ -339,6 +349,18 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public void adjustBlobSidecarsRequest(
       final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
+
+  @Override
+  public Optional<RequestApproval> approveDataColumnSidecarsRequest(
+      final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
+    return Optional.of(
+        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+  }
+
+  @Override
+  public void adjustDataColumnSidecarsRequest(
+      final RequestApproval dataColumnSidecarRequests,
+      final long returnedDataColumnSidecarsCount) {}
 
   @Override
   public boolean approveRequest() {

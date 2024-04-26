@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -92,6 +93,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final CellSchema cellSchema;
   private final DataColumnSchema dataColumnSchema;
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
+  private final DataColumnSidecarsByRootRequestMessageSchema
+      dataColumnSidecarsByRootRequestMessageSchema;
 
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
@@ -153,6 +156,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.dataColumnSidecarSchema =
         DataColumnSidecarSchema.create(
             SignedBeaconBlockHeader.SSZ_SCHEMA, dataColumnSchema, specConfig);
+    this.dataColumnSidecarsByRootRequestMessageSchema =
+        new DataColumnSidecarsByRootRequestMessageSchema(specConfig);
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
@@ -306,5 +311,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public CellSchema getCellSchema() {
     return cellSchema;
+  }
+
+  public DataColumnSidecarsByRootRequestMessageSchema
+      getDataColumnSidecarsByRootRequestMessageSchema() {
+    return dataColumnSidecarsByRootRequestMessageSchema;
   }
 }

@@ -26,4 +26,6 @@ public interface NetworkingSpecConfigElectra extends NetworkingSpecConfig {
   int getCustodyRequirement();
 
   int getMinEpochsForDataColumnSidecarsRequests();
+
+  int getMaxRequestDataColumnSidecars();
 }
