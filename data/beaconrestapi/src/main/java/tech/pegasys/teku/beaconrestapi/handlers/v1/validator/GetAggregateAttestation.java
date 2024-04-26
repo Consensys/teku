@@ -35,8 +35,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 public class GetAggregateAttestation extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/aggregate_attestation";
@@ -82,13 +81,16 @@ public class GetAggregateAttestation extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<AttestationPhase0> getResponseType(final Spec spec) {
-    final AttestationPhase0Schema dataSchema =
-        (AttestationPhase0Schema) spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  private static SerializableTypeDefinition<Attestation> getResponseType(final Spec spec) {
+    final AttestationSchema<?> dataSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
-    return SerializableTypeDefinition.object(AttestationPhase0.class)
+    return SerializableTypeDefinition.object(Attestation.class)
         .name("GetAggregatedAttestationResponse")
-        .withField("data", dataSchema.getJsonTypeDefinition(), Function.identity())
+        .withField(
+            "data",
+            dataSchema.castTypeToAttestationSchema().getJsonTypeDefinition(),
+            Function.identity())
         .build();
   }
 }

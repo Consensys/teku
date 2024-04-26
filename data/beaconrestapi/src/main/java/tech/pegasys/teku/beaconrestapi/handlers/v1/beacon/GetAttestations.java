@@ -34,8 +34,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 public class GetAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
@@ -72,15 +71,15 @@ public class GetAttestations extends RestApiEndpoint {
   }
 
   // TODO EIP-7549 handle Electra attestations
-  private static SerializableTypeDefinition<List<AttestationPhase0>> getResponseType(
-      final Spec spec) {
-    return SerializableTypeDefinition.<List<AttestationPhase0>>object()
+  private static SerializableTypeDefinition<List<Attestation>> getResponseType(final Spec spec) {
+    return SerializableTypeDefinition.<List<Attestation>>object()
         .name("GetPoolAttestationsResponse")
         .withField(
             "data",
             listOf(
-                ((AttestationPhase0Schema)
-                        spec.getGenesisSchemaDefinitions().getAttestationSchema())
+                spec.getGenesisSchemaDefinitions()
+                    .getAttestationSchema()
+                    .castTypeToAttestationSchema()
                     .getJsonTypeDefinition()),
             Function.identity())
         .build();
