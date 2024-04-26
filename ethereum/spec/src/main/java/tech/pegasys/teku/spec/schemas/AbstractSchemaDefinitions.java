@@ -18,10 +18,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
@@ -30,18 +28,13 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema =
       SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
   private final HistoricalBatchSchema historicalBatchSchema;
-  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema;
   private final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema;
   private final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
       beaconBlocksByRootRequestMessageSchema;
-  private final AggregateAndProofSchema aggregateAndProofSchema;
 
   public AbstractSchemaDefinitions(final SpecConfig specConfig) {
     this.historicalBatchSchema = new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot());
-    this.aggregateAndProofSchema = new AggregateAndProofSchema(getAttestationSchema());
-    this.signedAggregateAndProofSchema =
-        new SignedAggregateAndProofSchema(getAggregateAndProofSchema());
     this.indexedAttestationSchema =
         new IndexedAttestation.IndexedAttestationSchema(getMaxValidatorPerAttestation(specConfig));
     this.attesterSlashingSchema =
@@ -52,11 +45,6 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   }
 
   abstract long getMaxValidatorPerAttestation(SpecConfig specConfig);
-
-  @Override
-  public AggregateAndProofSchema getAggregateAndProofSchema() {
-    return aggregateAndProofSchema;
-  }
 
   @Override
   public SszBitvectorSchema<SszBitvector> getAttnetsENRFieldSchema() {
@@ -71,11 +59,6 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   @Override
   public HistoricalBatchSchema getHistoricalBatchSchema() {
     return historicalBatchSchema;
-  }
-
-  @Override
-  public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
-    return signedAggregateAndProofSchema;
   }
 
   @Override

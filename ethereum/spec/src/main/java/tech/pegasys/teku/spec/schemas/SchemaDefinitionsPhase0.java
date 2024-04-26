@@ -26,10 +26,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
 public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
+  private final AttestationSchema<?> attestationSchema;
+  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
+  private final AggregateAndProofSchema aggregateAndProofSchema;
   private final BeaconStateSchemaPhase0 beaconStateSchema;
   private final BeaconBlockBodySchemaPhase0 beaconBlockBodySchema;
   private final MetadataMessageSchemaPhase0 metadataMessageSchema;
@@ -38,6 +45,9 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
 
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
     super(specConfig);
+    this.attestationSchema = new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
+    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
+    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(
@@ -54,6 +64,21 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   @Override
   long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
+  }
+
+  @Override
+  public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
+    return signedAggregateAndProofSchema;
+  }
+
+  @Override
+  public AggregateAndProofSchema getAggregateAndProofSchema() {
+    return aggregateAndProofSchema;
+  }
+
+  @Override
+  public AttestationSchema<?> getAttestationSchema() {
+    return attestationSchema;
   }
 
   @Override

@@ -74,9 +74,7 @@ public interface SchemaDefinitions {
 
   AggregateAndProofSchema getAggregateAndProofSchema();
 
-  default AttestationSchema<?> getAttestationSchema() {
-    return getAggregateAndProofSchema().getAttestationSchema();
-  }
+  AttestationSchema<?> getAttestationSchema();
 
   IndexedAttestationSchema getIndexedAttestationSchema();
 
