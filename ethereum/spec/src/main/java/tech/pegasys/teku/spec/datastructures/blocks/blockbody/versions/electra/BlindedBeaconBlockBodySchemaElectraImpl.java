@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -122,7 +121,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
                 new AttestationElectraSchema(
-                    maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot()).castTypeToAttestationSchema(),
+                        maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot())
+                    .castTypeToAttestationSchema(),
                 specConfig.getMaxAttestationsElectra())),
         namedSchema(
             BlockBodyFields.DEPOSITS,

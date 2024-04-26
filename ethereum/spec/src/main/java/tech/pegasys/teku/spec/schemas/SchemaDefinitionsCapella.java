@@ -92,7 +92,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
             specConfig,
             getAttesterSlashingSchema(),
             signedBlsToExecutionChangeSchema,
-                getMaxValidatorPerAttestation(specConfig),
+            getMaxValidatorPerAttestation(specConfig),
             "BlindedBlockBodyCapella");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");
     this.blindedBeaconBlockSchema =

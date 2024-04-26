@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 public class AttestationEvent extends Event<Attestation> {
 
   AttestationEvent(final Attestation attestation) {
-    super(attestation.getSchema().castTypeToAttestationSchema().getJsonTypeDefinition(), attestation);
+    super(
+        attestation.getSchema().castTypeToAttestationSchema().getJsonTypeDefinition(), attestation);
   }
 }

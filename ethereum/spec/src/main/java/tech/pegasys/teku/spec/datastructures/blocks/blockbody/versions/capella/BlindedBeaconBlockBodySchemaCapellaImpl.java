@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -110,7 +109,8 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationPhase0Schema(maxValidatorsPerAttestation).castTypeToAttestationSchema(),
+                new AttestationPhase0Schema(maxValidatorsPerAttestation)
+                    .castTypeToAttestationSchema(),
                 specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,

@@ -26,9 +26,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData.Attestat
 import tech.pegasys.teku.spec.datastructures.operations.Deposit.DepositSchema;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData.DepositDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage.DepositMessageSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing.ProposerSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit.SignedVoluntaryExitSchema;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit.VoluntaryExitSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
