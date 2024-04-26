@@ -19,8 +19,8 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attestation> {
@@ -39,8 +39,8 @@ public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attes
   }
 
   @Override
-  protected AttestationSchema getContainerType() {
-    return spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  protected AttestationSchema<Attestation> getContainerType() {
+    return spec.getGenesisSchemaDefinitions().getAttestationSchema().castTypeToAttestationSchema();
   }
 
   @Override

@@ -71,9 +71,9 @@ public class GetAttestations extends RestApiEndpoint {
     request.respondOk(nodeDataProvider.getAttestations(slot, committeeIndex));
   }
 
+  // TODO EIP-7549 handle Electra attestations
   private static SerializableTypeDefinition<List<AttestationPhase0>> getResponseType(
       final Spec spec) {
-    // TODO EIP-7549 handle Electra attestations
     return SerializableTypeDefinition.<List<AttestationPhase0>>object()
         .name("GetPoolAttestationsResponse")
         .withField(
