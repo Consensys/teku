@@ -60,12 +60,6 @@ public class PeerSubnetSubscriptions {
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
   }
 
-  @FunctionalInterface
-  public interface NodeIdToDataColumnSidecarSubnetsCalculator {
-
-    SszBitvector calculateSubnets(NodeId nodeId, int extraSubnetCount);
-  }
-
   public static PeerSubnetSubscriptions create(
       final SpecVersion currentVersion,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
@@ -88,7 +82,7 @@ public class PeerSubnetSubscriptions {
             .orElse(0);
 
     final PeerSubnetSubscriptions subscriptions =
-        builder(currentSchemaDefinitions, dataColumnSidecarSubnetCount)
+        builder(currentSchemaDefinitions, SszBitvectorSchema.create(dataColumnSidecarSubnetCount))
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
             .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(
@@ -173,15 +167,15 @@ public class PeerSubnetSubscriptions {
 
   static Builder builder(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
-      Integer dataColumnSidecarSubnetCount) {
-    return new Builder(currentSchemaDefinitions, dataColumnSidecarSubnetCount);
+      final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
+    return new Builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema);
   }
 
   @VisibleForTesting
   static PeerSubnetSubscriptions createEmpty(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
-      Integer dataColumnSidecarSubnetCount) {
-    return builder(currentSchemaDefinitions, dataColumnSidecarSubnetCount).build();
+      final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
+    return builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema).build();
   }
 
   public int getSubscriberCountForAttestationSubnet(final int subnetId) {
@@ -210,7 +204,9 @@ public class PeerSubnetSubscriptions {
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
       final NodeId peerId, final int extraSubnetCount) {
-    return nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(peerId, extraSubnetCount);
+    return nodeIdToDataColumnSidecarSubnetsCalculator
+        .calculateSubnets(peerId, extraSubnetCount)
+        .orElse(dataColumnSidecarSubnetSubscriptions.getSubscriptionSchema().getDefault());
   }
 
   public boolean isSyncCommitteeSubnetRelevant(final int subnetId) {
@@ -307,6 +303,10 @@ public class PeerSubnetSubscriptions {
       return subscriptionsByPeer.getOrDefault(peerId, subscriptionSchema.getDefault());
     }
 
+    public SszBitvectorSchema<?> getSubscriptionSchema() {
+      return subscriptionSchema;
+    }
+
     public static class Builder {
       private final SszBitvectorSchema<?> subscriptionSchema;
 
@@ -351,13 +351,13 @@ public class PeerSubnetSubscriptions {
 
     private Builder(
         final SchemaDefinitionsSupplier currentSchemaDefinitions,
-        Integer dataColumnSidecarSubnetCount) {
+        final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
       attestationSubnetSubscriptions =
           SubnetSubscriptions.builder(currentSchemaDefinitions.getAttnetsENRFieldSchema());
       syncCommitteeSubnetSubscriptions =
           SubnetSubscriptions.builder(currentSchemaDefinitions.getSyncnetsENRFieldSchema());
       dataColumnSidecarSubnetSubscriptions =
-          SubnetSubscriptions.builder(SszBitvectorSchema.create(dataColumnSidecarSubnetCount));
+          SubnetSubscriptions.builder(dataColumnSidecarSubnetBitmaskSchema);
     }
 
     public PeerSubnetSubscriptions build() {

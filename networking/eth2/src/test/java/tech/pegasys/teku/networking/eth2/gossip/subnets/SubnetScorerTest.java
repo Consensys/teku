@@ -31,6 +31,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -42,11 +43,15 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 class SubnetScorerTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
+  private static final int DATA_COLUMN_SIDECAR_SUBNET_COUNT = 128;
 
   @Test
   void shouldScoreCandidatePeerWithNoSubnetsAsZero() {
     final SubnetScorer scorer =
-        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions, 128));
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.createEmpty(
+                () -> schemaDefinitions,
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
     assertThat(
             scorer.scoreCandidatePeer(
                 createDiscoveryPeer(
@@ -58,7 +63,10 @@ class SubnetScorerTest {
   @Test
   void shouldScoreExistingPeerWithNoSubnetsAsZero() {
     final SubnetScorer scorer =
-        SubnetScorer.create(PeerSubnetSubscriptions.createEmpty(() -> schemaDefinitions, 128));
+        SubnetScorer.create(
+            PeerSubnetSubscriptions.createEmpty(
+                () -> schemaDefinitions,
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
     assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
   }
 
@@ -71,7 +79,9 @@ class SubnetScorerTest {
     final MockNodeId node5 = new MockNodeId(4);
     final SubnetScorer scorer =
         SubnetScorer.create(
-            PeerSubnetSubscriptions.builder(() -> schemaDefinitions, 0)
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
                 .attestationSubnetSubscriptions(
                     b ->
                         b.addRelevantSubnet(1)
@@ -120,7 +130,9 @@ class SubnetScorerTest {
     final MockNodeId node3 = new MockNodeId(2);
     final SubnetScorer scorer =
         SubnetScorer.create(
-            PeerSubnetSubscriptions.builder(() -> schemaDefinitions, 128)
+            PeerSubnetSubscriptions.builder(
+                    () -> schemaDefinitions,
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
                 .attestationSubnetSubscriptions(
                     b ->
                         b.addRelevantSubnet(1)

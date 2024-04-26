@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.base.Supplier;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,16 +24,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
@@ -47,6 +42,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
@@ -73,9 +69,7 @@ import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.config.NetworkingSpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
@@ -378,48 +372,12 @@ public class Eth2P2PNetworkBuilder {
             discoConfig.getMinPeers(),
             discoConfig.getMaxPeers(),
             discoConfig.getMinRandomlySelectedPeers());
-    final Supplier<SpecVersion> currentSpecVersionSupplier =
-        () -> combinedChainDataClient.getRecentChainData().getCurrentSpec();
     final SchemaDefinitionsSupplier currentSchemaDefinitions =
         () -> combinedChainDataClient.getRecentChainData().getCurrentSpec().getSchemaDefinitions();
-    final Supplier<Optional<UInt64>> currentSlotSupplier =
-        () -> combinedChainDataClient.getRecentChainData().getCurrentSlot();
 
-    final PeerSubnetSubscriptions.NodeIdToDataColumnSidecarSubnetsCalculator
-        nodeIdToDataColumnSidecarSubnetsCalculator =
-            (nodeId, extraSubnetCount) -> {
-              SpecVersion currentSpecVersion = currentSpecVersionSupplier.get();
-              Integer custodyRequirement =
-                  currentSpecVersion
-                      .getConfig()
-                      .toVersionElectra()
-                      .map(NetworkingSpecConfigElectra::getCustodyRequirement)
-                      .orElse(0);
-              Optional<UInt64> currentEpoch =
-                  currentSlotSupplier
-                      .get()
-                      .map(slot -> currentSpecVersion.miscHelpers().computeEpochAtSlot(slot));
-
-              SszBitvectorSchema<SszBitvector> bitvectorSchema =
-                  SszBitvectorSchema.create(config.getTargetSubnetSubscriberCount());
-              Optional<SszBitvector> sszBits =
-                  currentSpecVersion
-                      .miscHelpers()
-                      .toVersionElectra()
-                      .flatMap(
-                          electraHelpers ->
-                              currentEpoch.map(
-                                  epoch -> {
-                                    List<UInt64> nodeSubnets =
-                                        electraHelpers.computeDataColumnSidecarBackboneSubnets(
-                                            UInt256.fromBytes(nodeId.toBytes()),
-                                            epoch,
-                                            custodyRequirement + extraSubnetCount);
-                                    return bitvectorSchema.ofBits(
-                                        nodeSubnets.stream().map(UInt64::intValue).toList());
-                                  }));
-              return sszBits.orElseGet(bitvectorSchema::getDefault);
-            };
+    final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator =
+        NodeIdToDataColumnSidecarSubnetsCalculator.create(
+            spec, () -> combinedChainDataClient.getRecentChainData().getCurrentSlot());
 
     final SettableLabelledGauge subnetPeerCountGauge =
         SettableLabelledGauge.create(
@@ -439,7 +397,7 @@ public class Eth2P2PNetworkBuilder {
                 targetPeerRange,
                 network ->
                     PeerSubnetSubscriptions.create(
-                        currentSpecVersionSupplier.get(),
+                        combinedChainDataClient.getRecentChainData().getCurrentSpec(),
                         nodeIdToDataColumnSidecarSubnetsCalculator,
                         network,
                         attestationSubnetTopicProvider,
