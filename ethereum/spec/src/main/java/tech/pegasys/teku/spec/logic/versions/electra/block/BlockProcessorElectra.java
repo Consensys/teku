@@ -346,10 +346,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
     state.getValidators().append(validator);
     final int validatorIndex = validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow();
-
-    state.getBalances().appendElement(UInt64.ZERO);
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
 
+    stateElectra.getBalances().appendElement(UInt64.ZERO);
     stateElectra.getPreviousEpochParticipation().append(SszByte.ZERO);
     stateElectra.getCurrentEpochParticipation().append(SszByte.ZERO);
     stateElectra.getInactivityScores().append(SszUInt64.ZERO);

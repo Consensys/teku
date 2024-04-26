@@ -120,15 +120,15 @@ public class GenesisGenerator {
     final List<PendingBalanceDeposit> pendingBalanceDeposits =
         stateElectra.getPendingBalanceDeposits().stream().toList();
 
-    final UInt64 depositsAmount =
+    final UInt64 depositAmount =
         pendingBalanceDeposits.stream()
             .filter(z -> z.getIndex() == validatorIndex)
             .map(z -> z.getAmount())
             .reduce(UInt64::plus)
             .get();
-    if (depositsAmount.isGreaterThanOrEqualTo(
+    if (depositAmount.isGreaterThanOrEqualTo(
         SpecConfigElectra.required(specConfig).getMinActivationBalance())) {
-      mutatorsElectra.increaseBalance(state, validatorIndex, depositsAmount);
+      mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
       stateElectra.setPendingBalanceDeposits(
           SchemaDefinitionsElectra.required(genesisSpec.getSchemaDefinitions())
               .getPendingBalanceDepositsSchema()
