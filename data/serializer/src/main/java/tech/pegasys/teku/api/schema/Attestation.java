@@ -74,6 +74,9 @@ public class Attestation {
     return attestationSchema.create(
         attestationSchema.getAggregationBitsSchema().sszDeserialize(aggregation_bits),
         data.asInternalAttestationData(),
+        attestationSchema
+            .getCommitteeBitsSchema()
+            .map(committeeBits -> committeeBits.sszDeserialize(committee_bits)),
         signature.asInternalBLSSignature());
   }
 
