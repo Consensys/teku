@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
 public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
-  public final List<DepositReceiptV1> depositReceipts;
+  public final List<DepositRequestV1> depositRequests;
   public final List<WithdrawalRequestV1> withdrawalRequests;
 
   public ExecutionPayloadV4(
@@ -58,7 +58,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
       final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
       final @JsonProperty("blobGasUsed") UInt64 blobGasUsed,
       final @JsonProperty("excessBlobGas") UInt64 excessBlobGas,
-      final @JsonProperty("depositReceipts") List<DepositReceiptV1> depositReceipts,
+      final @JsonProperty("depositRequests") List<DepositRequestV1> depositRequests,
       final @JsonProperty("withdrawalRequests") List<WithdrawalRequestV1> withdrawalRequests) {
     super(
         parentHash,
@@ -78,7 +78,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         withdrawals,
         blobGasUsed,
         excessBlobGas);
-    this.depositReceipts = depositReceipts;
+    this.depositRequests = depositRequests;
     this.withdrawalRequests = withdrawalRequests;
   }
 
@@ -104,7 +104,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         withdrawalsList,
         executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getBlobGasUsed).orElse(null),
         executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getExcessBlobGas).orElse(null),
-        getDepositReceipts(
+        getDepositRequests(
             executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getDepositReceipts)),
         getWithdrawalRequests(
             executionPayload
@@ -119,10 +119,10 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
     return super.applyToBuilder(executionPayloadSchema, builder)
         .depositReceipts(
             () ->
-                checkNotNull(depositReceipts, "depositReceipts not provided when required").stream()
+                checkNotNull(depositRequests, "depositRequests not provided when required").stream()
                     .map(
-                        depositReceiptV1 ->
-                            createInternalDepositReceipt(depositReceiptV1, executionPayloadSchema))
+                        depositRequestV1 ->
+                            createInternalDepositReceipt(depositRequestV1, executionPayloadSchema))
                     .toList())
         .withdrawalRequests(
             () ->
@@ -136,16 +136,16 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   }
 
   private DepositReceipt createInternalDepositReceipt(
-      final DepositReceiptV1 depositReceiptV1,
+      final DepositRequestV1 depositRequestV1,
       final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
         .getDepositReceiptSchemaRequired()
         .create(
-            BLSPublicKey.fromBytesCompressed(depositReceiptV1.pubkey),
-            depositReceiptV1.withdrawalCredentials,
-            depositReceiptV1.amount,
-            BLSSignature.fromBytesCompressed(depositReceiptV1.signature),
-            depositReceiptV1.index);
+            BLSPublicKey.fromBytesCompressed(depositRequestV1.pubkey),
+            depositRequestV1.withdrawalCredentials,
+            depositRequestV1.amount,
+            BLSSignature.fromBytesCompressed(depositRequestV1.signature),
+            depositRequestV1.index);
   }
 
   private ExecutionLayerWithdrawalRequest createInternalWithdrawalRequest(
@@ -159,24 +159,24 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
             withdrawalRequestV1.amount);
   }
 
-  public static List<DepositReceiptV1> getDepositReceipts(
+  public static List<DepositRequestV1> getDepositRequests(
       final Optional<SszList<DepositReceipt>> maybeDepositReceipts) {
     if (maybeDepositReceipts.isEmpty()) {
       return List.of();
     }
 
-    final List<DepositReceiptV1> depositReceipts = new ArrayList<>();
+    final List<DepositRequestV1> depositRequests = new ArrayList<>();
 
     for (DepositReceipt depositReceipt : maybeDepositReceipts.get()) {
-      depositReceipts.add(
-          new DepositReceiptV1(
+      depositRequests.add(
+          new DepositRequestV1(
               depositReceipt.getPubkey().toBytesCompressed(),
               depositReceipt.getWithdrawalCredentials(),
               depositReceipt.getAmount(),
               depositReceipt.getSignature().toBytesCompressed(),
               depositReceipt.getIndex()));
     }
-    return depositReceipts;
+    return depositRequests;
   }
 
   public static List<WithdrawalRequestV1> getWithdrawalRequests(

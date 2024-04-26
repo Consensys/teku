@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -130,7 +129,7 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    List<DepositWithIndex> deposits = depositProvider.getDepositsWithIndex(state, randomEth1Data);
     assertThat(deposits).hasSize(15);
     checkThatDepositProofIsValid(deposits);
   }
@@ -155,9 +154,11 @@ public class DepositProviderTest {
             .collect(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 32).collector());
     state = state.updated(mutableState -> mutableState.setEth1DataVotes(et1hDataVotes));
 
-    SszList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
+    List<DepositWithIndex> deposits = depositProvider.getDepositsWithIndex(state, newEth1Data);
     assertThat(deposits).hasSize(25);
     checkThatDepositProofIsValid(deposits);
+    assertThat(deposits.stream().map(DepositWithIndex::deposit))
+        .containsExactlyElementsOf(depositProvider.getDeposits(state, newEth1Data));
   }
 
   @Test
@@ -169,9 +170,11 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    List<DepositWithIndex> deposits = depositProvider.getDepositsWithIndex(state, randomEth1Data);
     assertThat(deposits).hasSize(10);
     checkThatDepositProofIsValid(deposits);
+    assertThat(deposits.stream().map(DepositWithIndex::deposit))
+        .containsExactlyElementsOf(depositProvider.getDeposits(state, randomEth1Data));
   }
 
   @Test
@@ -196,13 +199,16 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    final SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    final List<DepositWithIndex> deposits =
+        depositProvider.getDepositsWithIndex(state, randomEth1Data);
 
     // the pending Eth1 deposits (deposit_receipt_start_index - eth1_deposit_index)
     // we need to process eth1_deposit_index deposit (5) up to 16 (exclusive) so 11 is the
     // expected size
     assertThat(deposits).hasSize(11);
     checkThatDepositProofIsValid(deposits);
+    assertThat(deposits.stream().map(DepositWithIndex::deposit))
+        .containsExactlyElementsOf(depositProvider.getDeposits(state, randomEth1Data));
   }
 
   @Test
@@ -249,7 +255,11 @@ public class DepositProviderTest {
     depositProvider.onDepositsFromBlock(event);
 
     depositMerkleTree.add(
-        depositUtil.convertDepositEventToOperationDeposit(deposit).getData().hashTreeRoot());
+        depositUtil
+            .convertDepositEventToOperationDeposit(deposit)
+            .deposit()
+            .getData()
+            .hashTreeRoot());
     verify(eth1DataCache)
         .onBlockWithDeposit(
             event.getBlockNumber(),
@@ -482,18 +492,18 @@ public class DepositProviderTest {
         .isEqualTo(UInt64.valueOf(30));
   }
 
-  private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {
+  private void checkThatDepositProofIsValid(List<DepositWithIndex> depositsWithIndex) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
-    deposits.forEach(
-        deposit ->
+    depositsWithIndex.forEach(
+        depositWithIndex ->
             assertThat(
                     genesisSpec
                         .predicates()
                         .isValidMerkleBranch(
-                            deposit.getData().hashTreeRoot(),
-                            deposit.getProof(),
+                            depositWithIndex.deposit().getData().hashTreeRoot(),
+                            depositWithIndex.deposit().getProof(),
                             genesisSpec.getConfig().getDepositContractTreeDepth() + 1,
-                            ((DepositWithIndex) deposit).getIndex().intValue(),
+                            depositWithIndex.index().intValue(),
                             depositMerkleTree.getRoot()))
                 .withFailMessage("Expected proof to be valid but was not")
                 .isTrue());
@@ -509,8 +519,7 @@ public class DepositProviderTest {
   private void mockDepositsFromEth1Block(int startIndex, int n) {
     allSeenDepositsList.subList(startIndex, n).stream()
         .map(depositUtil::convertDepositEventToOperationDeposit)
-        .map(Deposit::getData)
-        .map(DepositData::hashTreeRoot)
+        .map(depositWithIndex -> depositWithIndex.deposit().getData().hashTreeRoot())
         .forEachOrdered(depositMerkleTree::add);
 
     DepositsFromBlockEvent depositsFromBlockEvent = mock(DepositsFromBlockEvent.class);

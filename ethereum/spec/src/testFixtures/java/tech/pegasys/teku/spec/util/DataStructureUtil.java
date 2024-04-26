@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -201,7 +202,7 @@ public final class DataStructureUtil {
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
-  private static final int MAX_EP_RANDOM_EXITS = 16;
+  private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
 
   private final Spec spec;
 
@@ -689,7 +690,7 @@ public final class DataStructureUtil {
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
                       .depositReceipts(this::randomExecutionPayloadDepositReceipts)
-                      .withdrawalRequests(this::randomExecutionPayloadExits);
+                      .withdrawalRequests(this::randomExecutionLayerWithdrawalRequests);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -720,8 +721,8 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<ExecutionLayerWithdrawalRequest> randomExecutionPayloadExits() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_EXITS))
+  public List<ExecutionLayerWithdrawalRequest> randomExecutionLayerWithdrawalRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
         .mapToObj(__ -> randomExecutionLayerWithdrawalRequest())
         .collect(toList());
   }
@@ -1520,20 +1521,34 @@ public final class DataStructureUtil {
     return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
   }
 
-  public DepositMessage randomDepositMessage(final BLSKeyPair keyPair) {
+  public DepositMessage randomDepositMessage(
+      final BLSKeyPair keyPair, final Optional<Bytes32> maybeWithdrawalCredentials) {
     final BLSPublicKey pubkey = keyPair.getPublicKey();
-    final Bytes32 withdrawalCredentials = randomBytes32();
+    final Bytes32 withdrawalCredentials = maybeWithdrawalCredentials.orElse(randomBytes32());
     return new DepositMessage(pubkey, withdrawalCredentials, getMaxEffectiveBalance());
   }
 
   public DepositMessage randomDepositMessage() {
     final BLSKeyPair keyPair = randomKeyPair();
-    return randomDepositMessage(keyPair);
+    return randomDepositMessage(keyPair, Optional.empty());
   }
 
   public DepositData randomDepositData() {
     final BLSKeyPair keyPair = randomKeyPair();
-    final DepositMessage depositMessage = randomDepositMessage(keyPair);
+    final DepositMessage depositMessage = randomDepositMessage(keyPair, Optional.empty());
+
+    final Bytes32 domain = computeDepositDomain();
+    final Bytes signingRoot = getSigningRoot(depositMessage, domain);
+
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
+
+    return new DepositData(depositMessage, signature);
+  }
+
+  public DepositData randomDepositData(final Bytes32 withdrawalCredentials) {
+    final BLSKeyPair keyPair = randomKeyPair();
+    final DepositMessage depositMessage =
+        randomDepositMessage(keyPair, Optional.of(withdrawalCredentials));
 
     final Bytes32 domain = computeDepositDomain();
     final Bytes signingRoot = getSigningRoot(depositMessage, domain);
@@ -1551,10 +1566,11 @@ public final class DataStructureUtil {
     final Bytes32 randomBytes32 = randomBytes32();
     final SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new DepositWithIndex(
-        Stream.generate(() -> randomBytes32)
-            .limit(proofSchema.getLength())
-            .collect(proofSchema.collectorUnboxed()),
-        randomDepositData(),
+        new Deposit(
+            Stream.generate(() -> randomBytes32)
+                .limit(proofSchema.getLength())
+                .collect(proofSchema.collectorUnboxed()),
+            randomDepositData()),
         UInt64.valueOf(depositIndex));
   }
 
@@ -1620,14 +1636,12 @@ public final class DataStructureUtil {
     return randomDepositEvent(randomUInt64());
   }
 
-  public List<DepositWithIndex> randomDeposits(final int num) {
-    final ArrayList<DepositWithIndex> deposits = new ArrayList<>();
+  public List<Deposit> randomDeposits(final int num) {
+    return randomDepositsWithIndex(num).stream().map(DepositWithIndex::deposit).toList();
+  }
 
-    for (int i = 0; i < num; i++) {
-      deposits.add(randomDepositWithIndex());
-    }
-
-    return deposits;
+  public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
+    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(Collectors.toList());
   }
 
   public SszList<Deposit> randomSszDeposits(final int num) {

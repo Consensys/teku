@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -58,37 +57,33 @@ class GenesisGeneratorTest {
       new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
           .createDeposits(VALIDATOR_KEYS);
   private final List<Deposit> initialDeposits =
-      IntStream.range(0, initialDepositData.size())
-          .mapToObj(
-              index -> {
-                final DepositData data = initialDepositData.get(index);
-                return new DepositWithIndex(data, UInt64.valueOf(index));
-              })
-          .collect(toList());
+      initialDepositData.stream().map(Deposit::new).toList();
 
   @Test
   void initializeBeaconStateFromEth1_shouldIgnoreInvalidSignedDeposits() {
-    List<DepositWithIndex> deposits = dataStructureUtil.randomDeposits(3);
-    DepositWithIndex deposit = deposits.get(1);
-    DepositData depositData = deposit.getData();
+    List<DepositWithIndex> depositsWithIndex = dataStructureUtil.randomDepositsWithIndex(3);
+    DepositWithIndex deposit = depositsWithIndex.get(1);
+    DepositData depositData = deposit.deposit().getData();
     DepositWithIndex invalidSigDeposit =
         new DepositWithIndex(
-            new DepositData(
-                depositData.getPubkey(),
-                depositData.getWithdrawalCredentials(),
-                depositData.getAmount(),
-                BLSSignature.empty()),
-            deposit.getIndex());
-    deposits.set(1, invalidSigDeposit);
+            new Deposit(
+                new DepositData(
+                    depositData.getPubkey(),
+                    depositData.getWithdrawalCredentials(),
+                    depositData.getAmount(),
+                    BLSSignature.empty())),
+            deposit.index());
+    depositsWithIndex.set(1, invalidSigDeposit);
+    List<Deposit> deposits = depositsWithIndex.stream().map(DepositWithIndex::deposit).toList();
 
     BeaconState state =
         spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
     assertEquals(2, state.getValidators().size());
     assertEquals(
-        deposits.get(0).getData().getPubkey().toBytesCompressed(),
+        depositsWithIndex.get(0).deposit().getData().getPubkey().toBytesCompressed(),
         state.getValidators().get(0).getPubkeyBytes());
     assertEquals(
-        deposits.get(2).getData().getPubkey().toBytesCompressed(),
+        depositsWithIndex.get(2).deposit().getData().getPubkey().toBytesCompressed(),
         state.getValidators().get(1).getPubkeyBytes());
   }
 
@@ -145,14 +140,7 @@ class GenesisGeneratorTest {
 
     List<DepositData> initialDepositData = List.of(partialDepositData, topUpDepositData);
 
-    List<Deposit> initialDeposits =
-        IntStream.range(0, initialDepositData.size())
-            .mapToObj(
-                index -> {
-                  final DepositData data = initialDepositData.get(index);
-                  return new DepositWithIndex(data, UInt64.valueOf(index));
-                })
-            .collect(toList());
+    List<Deposit> initialDeposits = initialDepositData.stream().map(Deposit::new).collect(toList());
 
     genesisGenerator.updateCandidateState(Bytes32.ZERO, UInt64.ZERO, initialDeposits);
 

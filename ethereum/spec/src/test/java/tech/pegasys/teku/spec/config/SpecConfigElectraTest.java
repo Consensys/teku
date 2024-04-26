@@ -82,8 +82,6 @@ public class SpecConfigElectraTest {
         denebConfig,
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(999_999),
-        dataStructureUtil.randomPositiveInt(16),
-        dataStructureUtil.randomPositiveInt(16),
         dataStructureUtil.randomUInt64(128000000000L),
         dataStructureUtil.randomUInt64(32000000000L),
         dataStructureUtil.randomUInt64(2048000000000L),
@@ -92,10 +90,11 @@ public class SpecConfigElectraTest {
         dataStructureUtil.randomPositiveInt(262144),
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(4096),
+        dataStructureUtil.randomPositiveInt(1),
         dataStructureUtil.randomPositiveInt(8),
-        dataStructureUtil.randomPositiveInt(8),
-        dataStructureUtil.randomPositiveInt(8),
-        dataStructureUtil.randomPositiveInt(8),
-        dataStructureUtil.randomPositiveInt(2)) {};
+        dataStructureUtil.randomPositiveInt(1),
+        dataStructureUtil.randomPositiveInt(8192),
+        dataStructureUtil.randomPositiveInt(16),
+        dataStructureUtil.randomPositiveInt(8)) {};
   }
 }

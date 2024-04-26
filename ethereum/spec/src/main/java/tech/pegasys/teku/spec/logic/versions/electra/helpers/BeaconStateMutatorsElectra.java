@@ -15,8 +15,10 @@ package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -168,6 +170,27 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     }
 
     return stateElectra.getEarliestConsolidationEpoch();
+  }
+
+  /**
+   * switch_to_compounding_validator
+   *
+   * @param state beaconState
+   * @param index validatorIndex
+   */
+  public void switchToCompoundingValidator(final MutableBeaconStateElectra state, final int index) {
+    if (PredicatesElectra.isEth1WithdrawalCredential(
+        state.getValidators().get(index).getWithdrawalCredentials())) {
+      final byte[] withdrawalCredentialsUpdated =
+          state.getValidators().get(index).getWithdrawalCredentials().toArray();
+      withdrawalCredentialsUpdated[0] = COMPOUNDING_WITHDRAWAL_BYTE;
+      state
+          .getValidators()
+          .update(
+              index,
+              validator ->
+                  validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
+    }
   }
 
   @Override
