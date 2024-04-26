@@ -396,6 +396,10 @@ public final class DataStructureUtil {
     return SszBitlistSchema.create(n).ofBits(n, bits);
   }
 
+  public SszBitvector randomCommitteeBitvector() {
+    return randomSszBitvector(getMaxCommitteesPerSlot());
+  }
+
   public SszBitvector randomSszBitvector(final int n) {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
@@ -792,7 +796,11 @@ public final class DataStructureUtil {
   public Attestation randomAttestation() {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(), randomSignature());
+        .create(
+            randomBitlist(),
+            randomAttestationData(),
+            Optional.of(randomCommitteeBitvector()),
+            randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {
@@ -802,13 +810,21 @@ public final class DataStructureUtil {
   public Attestation randomAttestation(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(slot), randomSignature());
+        .create(
+            randomBitlist(),
+            randomAttestationData(slot),
+            Optional.of(randomCommitteeBitvector()),
+            randomSignature());
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), attestationData, randomSignature());
+        .create(
+            randomBitlist(),
+            attestationData,
+            Optional.of(randomCommitteeBitvector()),
+            randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {
@@ -2570,6 +2586,10 @@ public final class DataStructureUtil {
 
   private int getMaxValidatorsPerCommittee() {
     return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
+  }
+
+  private int getMaxCommitteesPerSlot() {
+    return getConstant(SpecConfig::getMaxCommitteesPerSlot);
   }
 
   private UInt64 getMaxEffectiveBalance() {

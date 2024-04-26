@@ -17,10 +17,13 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -32,6 +35,10 @@ public class Attestation {
 
   public final AttestationData data;
 
+  @JsonInclude(Include.NON_NULL)
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
+  public final Bytes committee_bits;
+
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
@@ -39,6 +46,7 @@ public class Attestation {
       final tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
     this.aggregation_bits = attestation.getAggregationBits().sszSerialize();
     this.data = new AttestationData(attestation.getData());
+    this.committee_bits = attestation.getCommitteeBits().map(SszData::sszSerialize).orElse(null);
     this.signature = new BLSSignature(attestation.getAggregateSignature());
   }
 
@@ -46,9 +54,11 @@ public class Attestation {
   public Attestation(
       @JsonProperty("aggregation_bits") final Bytes aggregation_bits,
       @JsonProperty("data") final AttestationData data,
+      @JsonProperty("committee_bits") final Bytes committee_bits,
       @JsonProperty("signature") final BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;
     this.data = data;
+    this.committee_bits = committee_bits;
     this.signature = signature;
   }
 
@@ -78,11 +88,12 @@ public class Attestation {
     Attestation that = (Attestation) o;
     return Objects.equals(aggregation_bits, that.aggregation_bits)
         && Objects.equals(data, that.data)
+        && Objects.equals(committee_bits, that.committee_bits)
         && Objects.equals(signature, that.signature);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bits, data, signature);
+    return Objects.hash(aggregation_bits, data, committee_bits, signature);
   }
 }
