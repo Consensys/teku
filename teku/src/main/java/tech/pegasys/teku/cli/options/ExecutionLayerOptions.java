@@ -30,7 +30,7 @@ import picocli.CommandLine.Option;
 
 public class ExecutionLayerOptions {
 
-  @Mixin private DepositOptions depositOptions = new DepositOptions();
+  @Mixin private final DepositOptions depositOptions = new DepositOptions();
 
   @Option(
       names = {"--ee-endpoint"},

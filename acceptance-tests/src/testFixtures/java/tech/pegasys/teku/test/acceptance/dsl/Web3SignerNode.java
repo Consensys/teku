@@ -110,7 +110,7 @@ public class Web3SignerNode extends Node {
   }
 
   public static class Config {
-    private Map<String, Object> configMap = new HashMap<>();
+    private final Map<String, Object> configMap = new HashMap<>();
     private final Map<File, String> configFileMap = new HashMap<>();
 
     public Config() {

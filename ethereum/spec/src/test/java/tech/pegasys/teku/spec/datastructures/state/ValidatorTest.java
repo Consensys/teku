@@ -29,17 +29,17 @@ class ValidatorTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
 
-  private int seed = 100;
-  private Bytes48 pubkey = BLSTestUtil.randomPublicKey(seed).toBytesCompressed();
-  private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
-  private UInt64 activationEligibilityEpoch = dataStructureUtil.randomUInt64();
-  private UInt64 activationEpoch = dataStructureUtil.randomUInt64();
-  private UInt64 exitEpoch = dataStructureUtil.randomUInt64();
-  private UInt64 withdrawalEpoch = dataStructureUtil.randomUInt64();
-  private boolean slashed = false;
-  private UInt64 effectiveBalance = dataStructureUtil.randomUInt64();
+  private final int seed = 100;
+  private final Bytes48 pubkey = BLSTestUtil.randomPublicKey(seed).toBytesCompressed();
+  private final Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
+  private final UInt64 activationEligibilityEpoch = dataStructureUtil.randomUInt64();
+  private final UInt64 activationEpoch = dataStructureUtil.randomUInt64();
+  private final UInt64 exitEpoch = dataStructureUtil.randomUInt64();
+  private final UInt64 withdrawalEpoch = dataStructureUtil.randomUInt64();
+  private final boolean slashed = false;
+  private final UInt64 effectiveBalance = dataStructureUtil.randomUInt64();
 
-  private Validator validator =
+  private final Validator validator =
       new Validator(
           pubkey,
           withdrawalCredentials,

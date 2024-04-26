@@ -31,7 +31,7 @@ import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptions {
 
-  @Mixin private NatOptions natOptions = new NatOptions();
+  @Mixin private final NatOptions natOptions = new NatOptions();
 
   @Option(
       names = {"--p2p-enabled"},

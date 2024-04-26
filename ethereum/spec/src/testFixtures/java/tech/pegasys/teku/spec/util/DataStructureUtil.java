@@ -1521,20 +1521,34 @@ public final class DataStructureUtil {
     return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
   }
 
-  public DepositMessage randomDepositMessage(final BLSKeyPair keyPair) {
+  public DepositMessage randomDepositMessage(
+      final BLSKeyPair keyPair, final Optional<Bytes32> maybeWithdrawalCredentials) {
     final BLSPublicKey pubkey = keyPair.getPublicKey();
-    final Bytes32 withdrawalCredentials = randomBytes32();
+    final Bytes32 withdrawalCredentials = maybeWithdrawalCredentials.orElse(randomBytes32());
     return new DepositMessage(pubkey, withdrawalCredentials, getMaxEffectiveBalance());
   }
 
   public DepositMessage randomDepositMessage() {
     final BLSKeyPair keyPair = randomKeyPair();
-    return randomDepositMessage(keyPair);
+    return randomDepositMessage(keyPair, Optional.empty());
   }
 
   public DepositData randomDepositData() {
     final BLSKeyPair keyPair = randomKeyPair();
-    final DepositMessage depositMessage = randomDepositMessage(keyPair);
+    final DepositMessage depositMessage = randomDepositMessage(keyPair, Optional.empty());
+
+    final Bytes32 domain = computeDepositDomain();
+    final Bytes signingRoot = getSigningRoot(depositMessage, domain);
+
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
+
+    return new DepositData(depositMessage, signature);
+  }
+
+  public DepositData randomDepositData(final Bytes32 withdrawalCredentials) {
+    final BLSKeyPair keyPair = randomKeyPair();
+    final DepositMessage depositMessage =
+        randomDepositMessage(keyPair, Optional.of(withdrawalCredentials));
 
     final Bytes32 domain = computeDepositDomain();
     final Bytes signingRoot = getSigningRoot(depositMessage, domain);

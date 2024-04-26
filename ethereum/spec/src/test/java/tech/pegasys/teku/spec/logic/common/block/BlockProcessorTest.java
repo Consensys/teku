@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -50,7 +51,7 @@ public abstract class BlockProcessorTest {
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
-  private final SpecConfig specConfig = genesisSpec.getConfig();
+  protected final SpecConfig specConfig = genesisSpec.getConfig();
   private final BlockProcessor blockProcessor = genesisSpec.getBlockProcessor();
 
   protected abstract Spec createSpec();
@@ -62,7 +63,7 @@ public abstract class BlockProcessorTest {
   }
 
   @Test
-  void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
+  public void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
       throws BlockProcessingException {
     // Create a deposit
     DepositData depositInput = dataStructureUtil.randomDepositData();
@@ -85,14 +86,21 @@ public abstract class BlockProcessorTest {
         postState.getBalances().size(),
         originalValidatorBalancesSize + 1,
         "No balance was added to the validator balances.");
-    assertEquals(
-        makeValidator(pubkey, withdrawalCredentials),
-        postState.getValidators().get(originalValidatorRegistrySize));
-    assertEquals(amount, postState.getBalances().getElement(originalValidatorBalancesSize));
+    if (spec.atSlot(postState.getSlot()).getMilestone().equals(SpecMilestone.ELECTRA)) {
+      assertEquals(
+          makeValidator(pubkey, withdrawalCredentials).withEffectiveBalance(UInt64.ZERO),
+          postState.getValidators().get(originalValidatorRegistrySize));
+      assertEquals(UInt64.ZERO, postState.getBalances().getElement(originalValidatorBalancesSize));
+    } else {
+      assertEquals(
+          makeValidator(pubkey, withdrawalCredentials),
+          postState.getValidators().get(originalValidatorRegistrySize));
+      assertEquals(amount, postState.getBalances().getElement(originalValidatorBalancesSize));
+    }
   }
 
   @Test
-  void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
+  public void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
       throws BlockProcessingException {
     // Create a deposit
     DepositData depositInput = dataStructureUtil.randomDepositData();
@@ -202,7 +210,7 @@ public abstract class BlockProcessorTest {
     return createBeaconState(false, null, null);
   }
 
-  private BeaconState createBeaconState(UInt64 amount, Validator knownValidator) {
+  protected BeaconState createBeaconState(UInt64 amount, Validator knownValidator) {
     return createBeaconState(true, amount, knownValidator);
   }
 
@@ -244,7 +252,7 @@ public abstract class BlockProcessorTest {
             });
   }
 
-  private BeaconState processDepositHelper(BeaconState beaconState, DepositData depositData)
+  protected BeaconState processDepositHelper(BeaconState beaconState, DepositData depositData)
       throws BlockProcessingException {
 
     // Add the deposit to a Merkle tree so that we can get the root to put into the state Eth1 data

@@ -59,7 +59,7 @@ public class PrettyPrintCommand implements Callable<Integer> {
       paramLabel = "<FORMAT>",
       description = "Output format to use",
       arity = "1")
-  @SuppressWarnings("FieldMayBeFinal")
+  @SuppressWarnings("FieldCanBeFinal")
   private OutputFormat format = OutputFormat.JSON;
 
   @Option(
@@ -67,7 +67,7 @@ public class PrettyPrintCommand implements Callable<Integer> {
       paramLabel = "<NETWORK>",
       description = "Network config to use when decoding objects.",
       arity = "1")
-  @SuppressWarnings("FieldMayBeFinal")
+  @SuppressWarnings("FieldCanBeFinal")
   private String network = "mainnet";
 
   @Parameters(
@@ -75,7 +75,7 @@ public class PrettyPrintCommand implements Callable<Integer> {
       paramLabel = "<MILESTONE>",
       description = "Milestone to use when decoding objects.",
       arity = "1")
-  @SuppressWarnings("FieldMayBeFinal")
+  @SuppressWarnings("FieldCanBeFinal")
   private SpecMilestone milestone = SpecMilestone.ALTAIR;
 
   @Parameters(

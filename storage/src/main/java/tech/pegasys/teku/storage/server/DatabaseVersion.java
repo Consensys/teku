@@ -30,7 +30,7 @@ public enum DatabaseVersion {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final DatabaseVersion DEFAULT_VERSION;
-  private String value;
+  private final String value;
 
   static {
     if (isLevelDbSupported()) {

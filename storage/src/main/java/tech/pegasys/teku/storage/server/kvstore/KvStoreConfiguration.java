@@ -38,7 +38,7 @@ import org.rocksdb.CompressionType;
  * be loaded providing a simple way to experiment with different values without it being fixed at
  * database creation.
  */
-@SuppressWarnings("FieldMayBeFinal")
+@SuppressWarnings("FieldCanBeFinal")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class KvStoreConfiguration {
   public static final int DEFAULT_MAX_OPEN_FILES = 128;

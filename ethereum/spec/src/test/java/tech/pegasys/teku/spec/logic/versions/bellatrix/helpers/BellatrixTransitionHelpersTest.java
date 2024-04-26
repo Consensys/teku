@@ -43,7 +43,7 @@ class BellatrixTransitionHelpersTest {
   private final UInt256 terminalDifficulty =
       spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
 
-  private UInt64 slot = dataStructureUtil.randomUInt64();
+  private final UInt64 slot = dataStructureUtil.randomUInt64();
 
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 

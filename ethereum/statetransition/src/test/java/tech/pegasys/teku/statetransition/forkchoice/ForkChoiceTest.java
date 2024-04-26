@@ -129,7 +129,7 @@ class ForkChoiceTest {
       mock(BlockBroadcastValidator.class);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
-  private DebugDataDumper debugDataDumper = mock(DebugDataDumper.class);
+  private final DebugDataDumper debugDataDumper = mock(DebugDataDumper.class);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 

@@ -19,7 +19,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class AsyncRunnerFactoryTest {
 
-  private AsyncRunnerFactory asyncRunnerFactory =
+  private final AsyncRunnerFactory asyncRunnerFactory =
       new AsyncRunnerFactory() {
         @Override
         public AsyncRunner create(

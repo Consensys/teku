@@ -53,7 +53,7 @@ public final class BLSSecretKey {
     return fromBytes(keyBytes);
   }
 
-  private SecretKey secretKey;
+  private final SecretKey secretKey;
 
   /**
    * Construct from an implementation-specific SecretKey object.

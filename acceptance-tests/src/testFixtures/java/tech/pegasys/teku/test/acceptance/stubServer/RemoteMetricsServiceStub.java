@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class RemoteMetricsServiceStub {
-  private HttpServer server;
+  private final HttpServer server;
 
   public RemoteMetricsServiceStub(InetSocketAddress inetSocketAddress) throws IOException {
     server = HttpServer.create(inetSocketAddress, 0);
