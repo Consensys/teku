@@ -96,7 +96,7 @@ public class TekuVoluntaryExit extends Node {
   }
 
   public static class Config {
-    private Map<String, Object> configMap = new HashMap<>();
+    private final Map<String, Object> configMap = new HashMap<>();
 
     public Config() {
       configMap.put("log-destination", "console");

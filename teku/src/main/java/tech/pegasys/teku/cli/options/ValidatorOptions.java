@@ -34,9 +34,10 @@ import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
 
-  @Mixin private ValidatorKeysOptions validatorKeysOptions = new ValidatorKeysOptions();
+  @Mixin private final ValidatorKeysOptions validatorKeysOptions = new ValidatorKeysOptions();
 
-  @Mixin private ValidatorProposerOptions validatorProposerOptions = new ValidatorProposerOptions();
+  @Mixin
+  private final ValidatorProposerOptions validatorProposerOptions = new ValidatorProposerOptions();
 
   @Option(
       names = {"--validators-graffiti"},

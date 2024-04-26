@@ -40,7 +40,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   private final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData;
   private final Map<KvStoreVariable<?>, Bytes> variableData;
 
-  private AtomicBoolean closed = new AtomicBoolean(false);
+  private final AtomicBoolean closed = new AtomicBoolean(false);
 
   public MockKvStoreInstance(
       Collection<KvStoreColumn<?, ?>> columns,

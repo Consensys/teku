@@ -171,7 +171,7 @@ public class P2PConfig {
 
     private Spec spec;
     private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
-    private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;

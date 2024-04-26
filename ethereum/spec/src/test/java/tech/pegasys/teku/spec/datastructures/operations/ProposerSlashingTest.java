@@ -26,10 +26,12 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class ProposerSlashingTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private SignedBeaconBlockHeader proposal1 = dataStructureUtil.randomSignedBeaconBlockHeader();
-  private SignedBeaconBlockHeader proposal2 = dataStructureUtil.randomSignedBeaconBlockHeader();
+  private final SignedBeaconBlockHeader proposal1 =
+      dataStructureUtil.randomSignedBeaconBlockHeader();
+  private final SignedBeaconBlockHeader proposal2 =
+      dataStructureUtil.randomSignedBeaconBlockHeader();
 
-  private ProposerSlashing proposerSlashing = new ProposerSlashing(proposal1, proposal2);
+  private final ProposerSlashing proposerSlashing = new ProposerSlashing(proposal1, proposal2);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

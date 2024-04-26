@@ -48,7 +48,7 @@ public class BlobSidecarPrunerTest {
   private final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
   private final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
 
-  private UInt64 genesisTime = UInt64.valueOf(0);
+  private final UInt64 genesisTime = UInt64.valueOf(0);
 
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
