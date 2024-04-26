@@ -91,7 +91,11 @@ public class Predicates {
    * @return true if the validator has an "eth1" withdrawal credential, false otherwise
    */
   public boolean hasEth1WithdrawalCredential(final Validator validator) {
-    return validator.getWithdrawalCredentials().get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
+    return isEth1WithdrawalCredential(validator.getWithdrawalCredentials());
+  }
+
+  public static boolean isEth1WithdrawalCredential(final Bytes32 withdrawalCredentials) {
+    return withdrawalCredentials.get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
   }
 
   /**
