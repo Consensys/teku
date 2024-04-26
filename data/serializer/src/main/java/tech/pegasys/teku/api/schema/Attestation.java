@@ -22,8 +22,10 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -76,7 +78,10 @@ public class Attestation {
         data.asInternalAttestationData(),
         attestationSchema
             .getCommitteeBitsSchema()
-            .map(committeeBits -> committeeBits.sszDeserialize(committee_bits)),
+            .map(
+                committeeBits ->
+                    (Supplier<SszBitvector>) () -> committeeBits.sszDeserialize(committee_bits))
+            .orElse(() -> null),
         signature.asInternalBLSSignature());
   }
 

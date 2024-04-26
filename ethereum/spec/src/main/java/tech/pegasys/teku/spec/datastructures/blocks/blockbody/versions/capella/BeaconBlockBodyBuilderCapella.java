@@ -58,7 +58,6 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
     checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();

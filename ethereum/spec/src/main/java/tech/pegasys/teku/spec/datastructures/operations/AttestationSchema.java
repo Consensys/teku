@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -24,19 +25,15 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.electra.Attesta
 
 public interface AttestationSchema<T extends Attestation> extends SszContainerSchema<T> {
 
-  SszBitlistSchema<?> getAggregationBitsSchema();
-
-  Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema();
-
   Attestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final Optional<SszBitvector> committeeBits,
+      final Supplier<SszBitvector> committeeBits,
       final BLSSignature signature);
 
   default Attestation create(
       final SszBitlist aggregationBits, final AttestationData data, final BLSSignature signature) {
-    return create(aggregationBits, data, Optional.empty(), signature);
+    return create(aggregationBits, data, () -> null, signature);
   }
 
   default SszBitlist createEmptyAggregationBits() {
@@ -52,4 +49,8 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
   default Optional<AttestationElectraSchema> toVersionElectra() {
     return Optional.empty();
   }
+
+  SszBitlistSchema<?> getAggregationBitsSchema();
+
+  Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema();
 }

@@ -88,7 +88,6 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
     return executionPayloadHeader != null;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();

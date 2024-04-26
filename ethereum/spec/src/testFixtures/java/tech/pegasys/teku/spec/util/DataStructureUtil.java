@@ -799,7 +799,7 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(),
-            Optional.of(randomCommitteeBitvector()),
+            this::randomCommitteeBitvector,
             randomSignature());
   }
 
@@ -813,7 +813,7 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(slot),
-            Optional.of(randomCommitteeBitvector()),
+            this::randomCommitteeBitvector,
             randomSignature());
   }
 
@@ -821,10 +821,7 @@ public final class DataStructureUtil {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
         .create(
-            randomBitlist(),
-            attestationData,
-            Optional.of(randomCommitteeBitvector()),
-            randomSignature());
+            randomBitlist(), attestationData, this::randomCommitteeBitvector, randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {

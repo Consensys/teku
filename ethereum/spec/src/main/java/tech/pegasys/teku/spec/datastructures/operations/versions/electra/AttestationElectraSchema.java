@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -61,10 +64,11 @@ public class AttestationElectraSchema
   public Attestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final Optional<SszBitvector> committeeBits,
+      final Supplier<SszBitvector> committeeBits,
       final BLSSignature signature) {
-    return new AttestationElectra(
-        this, aggregationBits, data, committeeBits.orElseThrow(), signature);
+    final SszBitvector suppliedCommitteeBits = committeeBits.get();
+    checkNotNull(suppliedCommitteeBits, "committeeBits must be provided in Electra");
+    return new AttestationElectra(this, aggregationBits, data, suppliedCommitteeBits, signature);
   }
 
   public AttestationElectra create(

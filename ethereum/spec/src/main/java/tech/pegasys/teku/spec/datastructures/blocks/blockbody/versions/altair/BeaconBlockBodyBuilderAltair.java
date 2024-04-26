@@ -47,7 +47,6 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
     checkNotNull(syncAggregate, "syncAggregate must be specified");
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public BeaconBlockBody build() {
     validate();

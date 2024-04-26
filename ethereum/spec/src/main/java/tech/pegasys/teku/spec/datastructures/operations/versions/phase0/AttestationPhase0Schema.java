@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.operations.versions.phase0;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -58,7 +59,7 @@ public class AttestationPhase0Schema
   public Attestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final Optional<SszBitvector> committeeBits,
+      final Supplier<SszBitvector> committeeBits,
       final BLSSignature signature) {
     return new AttestationPhase0(this, aggregationBits, data, signature);
   }
