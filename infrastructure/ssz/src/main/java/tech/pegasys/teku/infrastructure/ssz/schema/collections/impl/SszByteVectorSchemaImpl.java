@@ -52,9 +52,8 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public SszVectorT fromBytes(final Bytes bytes) {
-    return (SszVectorT) new SszByteVectorImpl(this, bytes);
+    return createFromBackingNode(fromBytesToTree(this, bytes));
   }
 
   public static TreeNode fromBytesToTree(final SszByteVectorSchema<?> schema, final Bytes bytes) {
@@ -69,8 +68,8 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
   }
 
   @Override
-  public SszVectorT createFromElements(final List<? extends SszByte> elements) {
+  public TreeNode createTreeFromElements(final List<? extends SszByte> elements) {
     Bytes bytes = Bytes.of(elements.stream().mapToInt(sszByte -> 0xFF & sszByte.get()).toArray());
-    return fromBytes(bytes);
+    return fromBytesToTree(this, bytes);
   }
 }

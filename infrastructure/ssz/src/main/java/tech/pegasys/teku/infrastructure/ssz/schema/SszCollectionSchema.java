@@ -44,20 +44,21 @@ public interface SszCollectionSchema<
     return createFromElements(List.of(elements));
   }
 
-  @SuppressWarnings("unchecked")
   default SszCollectionT createFromElements(final List<? extends SszElementT> elements) {
+    return createFromBackingNode(createTreeFromElements(elements));
+  }
+
+  default TreeNode createTreeFromElements(final List<? extends SszElementT> elements) {
+    // TODO: probably suboptimal method implementation:
+    // This is a generic implementation which works for both Vector and List but it potentially
+    // could do better if construct the tree directly in List/Vector subclasses
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
     SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
     int idx = 0;
     for (SszElementT element : elements) {
       writableCopy.set(idx++, element);
     }
-    return (SszCollectionT) writableCopy.commitChanges();
-  }
-
-  default TreeNode createTreeFromElements(final List<SszElementT> elements) {
-    // TODO: suboptimal
-    return createFromElements(elements).getBackingNode();
+    return writableCopy.commitChanges().getBackingNode();
   }
 
   default Collector<SszElementT, ?, SszCollectionT> collector() {
