@@ -61,12 +61,10 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class BlockProposalTestUtil {
   private final Spec spec;
   private final DataStructureUtil dataStructureUtil;
-  private final BeaconBlockBodyLists blockBodyLists;
 
   public BlockProposalTestUtil(final Spec spec) {
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
-    blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
   }
 
   public SafeFuture<SignedBlockAndState> createNewBlock(
@@ -303,6 +301,7 @@ public class BlockProposalTestUtil {
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
+    final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, newSlot);
     if (skipStateTransition) {
       return createNewBlockSkippingStateTransition(
           signer,
@@ -361,6 +360,7 @@ public class BlockProposalTestUtil {
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
+    final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, newSlot);
     final List<KZGCommitment> generatedBlobKzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
 
     final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =

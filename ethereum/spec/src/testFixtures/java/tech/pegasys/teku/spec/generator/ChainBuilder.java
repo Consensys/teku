@@ -567,18 +567,16 @@ public class ChainBuilder {
     }
     final Signer signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState;
+    final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, slot);
     try {
       SszList<Attestation> attestations =
-          BeaconBlockBodyLists.ofSpec(spec)
-              .createAttestations(options.getAttestations().toArray(new Attestation[0]));
+          blockBodyLists.createAttestations(options.getAttestations().toArray(new Attestation[0]));
       SszList<AttesterSlashing> attesterSlashings =
-          BeaconBlockBodyLists.ofSpec(spec)
-              .createAttesterSlashings(
-                  options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
+          blockBodyLists.createAttesterSlashings(
+              options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
       SszList<ProposerSlashing> proposerSlashings =
-          BeaconBlockBodyLists.ofSpec(spec)
-              .createProposerSlashings(
-                  options.getProposerSlashings().toArray(new ProposerSlashing[0]));
+          blockBodyLists.createProposerSlashings(
+              options.getProposerSlashings().toArray(new ProposerSlashing[0]));
 
       if (denebMilestoneReached(slot)) {
         nextBlockAndState =
