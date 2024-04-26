@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -336,5 +337,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SignedConsolidation.SignedConsolidationSchema getSignedConsolidationSchema() {
     return SignedConsolidation.SSZ_SCHEMA;
+  }
+
+  @Override
+  long getMaxValidatorPerAttestation(SpecConfig specConfig) {
+    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 }

@@ -2582,6 +2582,10 @@ public final class DataStructureUtil {
   }
 
   private int getMaxValidatorsPerCommittee() {
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      return getConstant(SpecConfig::getMaxValidatorsPerCommittee)
+          * getConstant(SpecConfig::getMaxCommitteesPerSlot);
+    }
     return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
   }
 
