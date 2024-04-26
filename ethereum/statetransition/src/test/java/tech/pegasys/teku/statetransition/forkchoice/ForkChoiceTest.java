@@ -73,8 +73,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -115,7 +115,7 @@ class ForkChoiceTest {
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
       mock(BlobSidecarsAvailabilityChecker.class);
-  private AttestationSchema attestationSchema;
+  private AttestationSchema<?> attestationSchema;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private SignedBlockAndState genesis;

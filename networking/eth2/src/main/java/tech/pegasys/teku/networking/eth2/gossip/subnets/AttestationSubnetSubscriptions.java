@@ -82,7 +82,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   }
 
   @VisibleForTesting
-  SafeFuture<Optional<TopicChannel>> getChannel(final AttestationPhase0 attestation) {
+  SafeFuture<Optional<TopicChannel>> getChannel(final Attestation attestation) {
     return computeSubnetForAttestation(attestation)
         .thenApply(subnetId -> subnetId.flatMap(this::getChannelForSubnet));
   }
