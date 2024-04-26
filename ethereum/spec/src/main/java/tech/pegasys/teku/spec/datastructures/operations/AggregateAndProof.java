@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.Attestat
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-// TODO Add AggregateAndProof with Electra Attestations
 public class AggregateAndProof
     extends Container3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
 
