@@ -14,15 +14,18 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -107,5 +110,40 @@ class BeaconStateMutatorsElectraTest {
     postState =
         postState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 1));
     assertThat(postState.getPendingBalanceDeposits().size()).isEqualTo(2);
+  }
+
+  @Test
+  public void queueEntireBalanceAndResetValidator_updateStateAsRequired() {
+    final UInt64 validatorBalance = specConfig.getMinActivationBalance();
+    final BeaconStateElectra preState =
+        BeaconStateElectra.required(
+            new BeaconStateTestBuilder(dataStructureUtil)
+                .activeValidator(validatorBalance)
+                .build());
+
+    // Sanity check preState values
+    final Validator preValidator = preState.getValidators().get(0);
+    assertThat(preValidator.getEffectiveBalance()).isEqualTo(validatorBalance);
+    assertThat(preValidator.getActivationEpoch()).isNotEqualTo(FAR_FUTURE_EPOCH);
+    assertThat(preState.getBalances().get(0)).isEqualTo(SszUInt64.of(validatorBalance));
+    assertThat(preState.getPendingBalanceDeposits().size()).isEqualTo(0);
+
+    final BeaconStateElectra postState =
+        preState.updatedElectra(
+            state -> stateMutatorsElectra.queueEntireBalanceAndResetValidator(state, 0));
+
+    // Validator has been reset
+    final Validator postValidator = postState.getValidators().get(0);
+    assertThat(postValidator.getEffectiveBalance()).isEqualTo(UInt64.ZERO);
+    assertThat(postValidator.getActivationEpoch()).isEqualTo(FAR_FUTURE_EPOCH);
+
+    // Updated state balances
+    assertThat(postState.getBalances().get(0)).isEqualTo(SszUInt64.ZERO);
+
+    // Created pending balance deposit
+    final SszList<PendingBalanceDeposit> postPendingBalanceDeposits =
+        postState.getPendingBalanceDeposits();
+    assertThat(postPendingBalanceDeposits.size()).isEqualTo(1);
+    assertThat(postPendingBalanceDeposits.get(0).getAmount()).isEqualTo(validatorBalance);
   }
 }
