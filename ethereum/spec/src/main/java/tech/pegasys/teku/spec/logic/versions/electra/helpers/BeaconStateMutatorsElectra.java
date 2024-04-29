@@ -19,6 +19,8 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WI
 
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -26,16 +28,19 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
   private final MiscHelpersElectra miscHelpersElectra;
 
   private final SpecConfigElectra specConfigElectra;
+  private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
   public static BeaconStateMutatorsElectra required(final BeaconStateMutators beaconStateMutators) {
     checkArgument(
@@ -49,11 +54,13 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   public BeaconStateMutatorsElectra(
       final SpecConfig specConfig,
       final MiscHelpers miscHelpers,
-      final BeaconStateAccessors beaconStateAccessors) {
+      final BeaconStateAccessors beaconStateAccessors,
+      final SchemaDefinitionsElectra schemaDefinitionsElectra) {
     super(SpecConfigBellatrix.required(specConfig), miscHelpers, beaconStateAccessors);
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
     this.miscHelpersElectra = MiscHelpersElectra.required(miscHelpers);
     this.specConfigElectra = SpecConfigElectra.required(specConfig);
+    this.schemaDefinitionsElectra = schemaDefinitionsElectra;
   }
 
   /**
@@ -190,6 +197,33 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
               index,
               validator ->
                   validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
+    }
+  }
+
+  /**
+   * queue_excess_active_balance
+   *
+   * @param state beaconState
+   * @param validatorIndex validatorIndex
+   */
+  public void queueExcessActiveBalance(
+      final MutableBeaconStateElectra state, final int validatorIndex) {
+    final UInt64 balance = state.getBalances().get(validatorIndex).get();
+    final UInt64 minActivationBalance = specConfigElectra.getMinActivationBalance();
+
+    if (balance.isGreaterThan(minActivationBalance)) {
+      final UInt64 excessBalance = balance.minus(minActivationBalance);
+      state.getBalances().set(validatorIndex, SszUInt64.of(minActivationBalance));
+      final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
+          MutableBeaconStateElectra.required(state)
+              .getPendingBalanceDeposits()
+              .createWritableCopy();
+      pendingBalanceDeposits.append(
+          schemaDefinitionsElectra
+              .getPendingBalanceDepositSchema()
+              .create(
+                  SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(excessBalance)));
+      state.setPendingBalanceDeposits(pendingBalanceDeposits);
     }
   }
 
