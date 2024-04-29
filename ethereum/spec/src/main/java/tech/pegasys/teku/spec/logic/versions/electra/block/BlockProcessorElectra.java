@@ -264,9 +264,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
             // Add the partial withdrawal to the pending queue
             final SszMutableList<PendingPartialWithdrawal> newPendingPartialWithdrawals =
-                MutableBeaconStateElectra.required(state)
-                    .getPendingPartialWithdrawals()
-                    .createWritableCopy();
+                MutableBeaconStateElectra.required(state).getPendingPartialWithdrawals();
             newPendingPartialWithdrawals.append(
                 schemaDefinitionsElectra
                     .getPendingPartialWithdrawalSchema()
@@ -336,7 +334,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final UInt64 amount) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
-        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits().createWritableCopy();
+        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits();
     pendingBalanceDeposits.append(
         schemaDefinitionsElectra
             .getPendingBalanceDepositSchema()
@@ -365,7 +363,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     stateElectra.getCurrentEpochParticipation().append(SszByte.ZERO);
     stateElectra.getInactivityScores().append(SszUInt64.ZERO);
     final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
-        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits().createWritableCopy();
+        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits();
     pendingBalanceDeposits.append(
         schemaDefinitionsElectra
             .getPendingBalanceDepositSchema()
