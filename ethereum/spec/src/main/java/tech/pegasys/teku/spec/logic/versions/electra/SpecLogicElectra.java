@@ -100,7 +100,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
     final BeaconStateAccessorsElectra beaconStateAccessors =
         new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
-        new BeaconStateMutatorsElectra(config, miscHelpers, beaconStateAccessors);
+        new BeaconStateMutatorsElectra(
+            config, miscHelpers, beaconStateAccessors, schemaDefinitions);
 
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =

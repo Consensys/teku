@@ -114,9 +114,14 @@ public class GenesisGenerator {
       final SpecConfig specConfig,
       final SpecVersion genesisSpec,
       final int validatorIndex) {
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(genesisSpec.getSchemaDefinitions());
     final BeaconStateMutatorsElectra mutatorsElectra =
         new BeaconStateMutatorsElectra(
-            specConfig, genesisSpec.miscHelpers(), genesisSpec.beaconStateAccessors());
+            specConfig,
+            genesisSpec.miscHelpers(),
+            genesisSpec.beaconStateAccessors(),
+            schemaDefinitionsElectra);
     final List<PendingBalanceDeposit> pendingBalanceDeposits =
         stateElectra.getPendingBalanceDeposits().stream().toList();
 
@@ -130,7 +135,7 @@ public class GenesisGenerator {
         SpecConfigElectra.required(specConfig).getMinActivationBalance())) {
       mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
       stateElectra.setPendingBalanceDeposits(
-          SchemaDefinitionsElectra.required(genesisSpec.getSchemaDefinitions())
+          schemaDefinitionsElectra
               .getPendingBalanceDepositsSchema()
               .createFromElements(
                   pendingBalanceDeposits.stream()
