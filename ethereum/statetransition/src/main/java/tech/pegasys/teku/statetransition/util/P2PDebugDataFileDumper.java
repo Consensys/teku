@@ -32,7 +32,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class DebugDataDumper {
+public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static final String GOSSIP_MESSAGES_DIR = "gossip_messages";
@@ -43,11 +44,11 @@ public class DebugDataDumper {
   private boolean enabled;
   private final Path directory;
 
-  public DebugDataDumper(final Path directory) {
+  public P2PDebugDataFileDumper(final Path directory) {
     this.enabled = true;
     this.directory = directory;
 
-    final Path gossipMessagesPath = this.directory.resolve(GOSSIP_MESSAGES_DIR);
+    final Path gossipMessagesPath = directory.resolve(GOSSIP_MESSAGES_DIR);
     createDirectory(gossipMessagesPath, GOSSIP_MESSAGES_DIR, "gossip messages");
     createDirectory(
         gossipMessagesPath.resolve(DECODING_ERROR_SUB_DIR),
@@ -55,7 +56,7 @@ public class DebugDataDumper {
         "gossip messages with decoding errors");
     createDirectory(
         gossipMessagesPath.resolve(REJECTED_SUB_DIR), REJECTED_SUB_DIR, "rejected gossip messages");
-    createDirectory(this.directory.resolve(INVALID_BLOCK_DIR), INVALID_BLOCK_DIR, "invalid blocks");
+    createDirectory(directory.resolve(INVALID_BLOCK_DIR), INVALID_BLOCK_DIR, "invalid blocks");
   }
 
   public void saveGossipMessageDecodingError(

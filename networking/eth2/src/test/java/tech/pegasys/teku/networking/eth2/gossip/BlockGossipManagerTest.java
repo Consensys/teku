@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -70,7 +70,7 @@ public class BlockGossipManagerTest {
             gossipEncoding,
             forkInfo,
             processor,
-            mock(DebugDataDumper.class));
+            P2PDebugDataDumper.NOOP);
     blockGossipManager.subscribe();
   }
 

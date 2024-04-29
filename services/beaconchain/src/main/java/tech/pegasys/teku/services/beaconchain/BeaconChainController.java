@@ -149,11 +149,11 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataFileDumper;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
-import tech.pegasys.teku.statetransition.util.noop.NoOpDebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
@@ -289,7 +289,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected PoolFactory poolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
-  protected DebugDataDumper debugDataDumper;
+  protected P2PDebugDataDumper p2pDebugDataDumper;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -321,10 +321,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
-    this.debugDataDumper =
+    this.p2pDebugDataDumper =
         beaconConfig.p2pConfig().isP2pDumpsToFileEnabled()
-            ? new DebugDataDumper(serviceConfig.getDataDirLayout().getDebugDataDirectory())
-            : new NoOpDebugDataDumper();
+            ? new P2PDebugDataFileDumper(serviceConfig.getDataDirLayout().getDebugDataDirectory())
+            : P2PDebugDataDumper.NOOP;
     this.futureItemsMetric =
         SettableLabelledGauge.create(
             metricsSystem,
@@ -798,7 +798,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
-            debugDataDumper,
+            p2pDebugDataDumper,
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
@@ -1116,7 +1116,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .specProvider(spec)
             .kzg(kzg)
             .recordMessageArrival(true)
-            .debugDataDumper(debugDataDumper)
+            .p2pDebugDataDumper(p2pDebugDataDumper)
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

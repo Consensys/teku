@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofGossipManager
@@ -37,7 +37,7 @@ public class SignedContributionAndProofGossipManager
       final ForkInfo forkInfo,
       final OperationProcessor<SignedContributionAndProof> processor,
       final NetworkingSpecConfig networkingConfig,
-      final DebugDataDumper debugDataDumper) {
+      final P2PDebugDataDumper p2pDebugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
@@ -52,7 +52,7 @@ public class SignedContributionAndProofGossipManager
                 .getSpec()
                 .computeEpochAtSlot(message.getMessage().getContribution().getSlot()),
         networkingConfig,
-        debugDataDumper);
+        p2pDebugDataDumper);
   }
 
   public void publishContribution(final SignedContributionAndProof message) {

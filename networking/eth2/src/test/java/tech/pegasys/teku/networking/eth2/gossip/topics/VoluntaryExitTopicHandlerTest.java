@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -29,7 +28,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.VoluntaryExitGenerator;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -50,7 +49,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             forkInfo,
             processor,
             spec.getNetworkingConfig(),
-            mock(DebugDataDumper.class))
+            P2PDebugDataDumper.NOOP)
         .getTopicHandler();
   }
 
