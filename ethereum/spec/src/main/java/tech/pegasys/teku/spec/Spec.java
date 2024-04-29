@@ -755,7 +755,10 @@ public class Spec {
   }
 
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState state) {
-    return atState(state).getBlockProcessor().getExpectedWithdrawals(state);
+    return atState(state)
+        .getBlockProcessor()
+        .getExpectedWithdrawals(state)
+        .getExpectedWithdrawals();
   }
 
   // Block Processor Utils

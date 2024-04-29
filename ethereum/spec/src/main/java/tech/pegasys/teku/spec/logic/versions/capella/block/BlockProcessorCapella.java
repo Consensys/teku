@@ -16,9 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.capella.block;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_PREFIX;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.CheckReturnValue;
@@ -27,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -35,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -193,7 +190,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         schemaDefinitionsCapella
             .getExecutionPayloadSchema()
             .getWithdrawalsSchemaRequired()
-            .createFromElements(getExpectedWithdrawals(state));
+            .createFromElements(getExpectedWithdrawals(state).getWithdrawalList());
 
     assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
 
@@ -248,61 +245,13 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   }
 
   @Override
-  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
-    return Optional.of(getExpectedWithdrawals(BeaconStateCapella.required(preState)));
-  }
-
-  // get_expected_withdrawals
-  private List<Withdrawal> getExpectedWithdrawals(final BeaconStateCapella preState) {
-    final List<Withdrawal> expectedWithdrawals = new ArrayList<>();
-    final WithdrawalSchema withdrawalSchema = schemaDefinitionsCapella.getWithdrawalSchema();
-    final UInt64 epoch = miscHelpers.computeEpochAtSlot(preState.getSlot());
-    final SszList<Validator> validators = preState.getValidators();
-    final SszUInt64List balances = preState.getBalances();
-    final int validatorCount = validators.size();
-    final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
-    final int maxValidatorsPerWithdrawalsSweep =
-        specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
-    final int bound = Math.min(validatorCount, maxValidatorsPerWithdrawalsSweep);
-
-    final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
-
-    UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
-    int validatorIndex = preState.getNextWithdrawalValidatorIndex().intValue();
-
-    for (int i = 0; i < bound; i++) {
-      final Validator validator = validators.get(validatorIndex);
-      if (predicates.hasEth1WithdrawalCredential(validator)) {
-        final UInt64 balance = balances.get(validatorIndex).get();
-
-        if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
-          expectedWithdrawals.add(
-              withdrawalSchema.create(
-                  withdrawalIndex,
-                  UInt64.valueOf(validatorIndex),
-                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                  balance));
-          withdrawalIndex = withdrawalIndex.increment();
-        } else if (predicates.isPartiallyWithdrawableValidatorEth1CredentialsChecked(
-            validator, balance)) {
-          expectedWithdrawals.add(
-              withdrawalSchema.create(
-                  withdrawalIndex,
-                  UInt64.valueOf(validatorIndex),
-                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                  balance.minus(maxEffectiveBalance)));
-          withdrawalIndex = withdrawalIndex.increment();
-        }
-
-        if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
-          break;
-        }
-      }
-
-      validatorIndex = (validatorIndex + 1) % validatorCount;
-    }
-
-    return expectedWithdrawals;
+  public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState preState) {
+    return ExpectedWithdrawals.create(
+        BeaconStateCapella.required(preState),
+        schemaDefinitionsCapella,
+        miscHelpers,
+        specConfigCapella,
+        predicates);
   }
 
   @VisibleForTesting

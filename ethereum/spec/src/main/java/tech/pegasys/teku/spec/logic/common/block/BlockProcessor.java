@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -30,8 +29,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -178,7 +177,7 @@ public interface BlockProcessor {
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException;
 
-  Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
+  ExpectedWithdrawals getExpectedWithdrawals(BeaconState preState);
 
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();

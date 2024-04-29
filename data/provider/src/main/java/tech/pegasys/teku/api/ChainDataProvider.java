@@ -727,7 +727,7 @@ public class ChainDataProvider {
       return spec.atSlot(proposalSlot)
           .getBlockProcessor()
           .getExpectedWithdrawals(preState)
-          .orElse(List.of());
+          .getWithdrawalList();
     } catch (SlotProcessingException | EpochProcessingException e) {
       LOG.debug("Failed to get expected withdrawals for slot {}", proposalSlot, e);
     }
