@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.Valida
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
-import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
@@ -64,7 +63,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorElectra epochProcessor,
-      final BlockProcessorCapella blockProcessor,
+      final BlockProcessorElectra blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
@@ -101,7 +100,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
     final BeaconStateAccessorsElectra beaconStateAccessors =
         new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
-        new BeaconStateMutatorsElectra(config, miscHelpers, beaconStateAccessors);
+        new BeaconStateMutatorsElectra(
+            config, miscHelpers, beaconStateAccessors, schemaDefinitions);
 
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
