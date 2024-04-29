@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
@@ -41,7 +41,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final OperationProcessor<ValidatableAttestation> processor;
   private final ForkInfo forkInfo;
   private final AttestationSchema<? extends Attestation> attestationSchema;
-  private final DebugDataDumper debugDataDumper;
+  private final P2PDebugDataDumper p2pDebugDataDumper;
 
   public AttestationSubnetSubscriptions(
       final Spec spec,
@@ -51,7 +51,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final RecentChainData recentChainData,
       final OperationProcessor<ValidatableAttestation> processor,
       final ForkInfo forkInfo,
-      final DebugDataDumper debugDataDumper) {
+      final P2PDebugDataDumper p2pDebugDataDumper) {
     super(gossipNetwork, gossipEncoding);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -60,7 +60,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
     this.forkInfo = forkInfo;
     attestationSchema =
         spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions().getAttestationSchema();
-    this.debugDataDumper = debugDataDumper;
+    this.p2pDebugDataDumper = p2pDebugDataDumper;
   }
 
   public SafeFuture<?> gossip(final Attestation attestation) {
@@ -99,7 +99,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         topicName,
         attestationSchema,
         subnetId,
-        debugDataDumper);
+        p2pDebugDataDumper);
   }
 
   private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {

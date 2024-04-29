@@ -36,17 +36,17 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class DebugDataDumperTest {
+class P2PDebugDataFileDumperTest {
   final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 
   @Test
   void saveGossipMessageDecodingError_shouldSaveToFile(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipMessageDecodingError(
+    dumper.saveGossipMessageDecodingError(
         "/eth/test/topic", arrivalTimestamp, () -> messageBytes, new Throwable());
 
     final String fileName =
@@ -62,10 +62,10 @@ class DebugDataDumperTest {
 
   @Test
   void saveGossipRejectedMessageToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
     final Bytes messageBytes = dataStructureUtil.stateBuilderPhase0().build().sszSerialize();
     final Optional<UInt64> arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-    manager.saveGossipRejectedMessageToFile(
+    dumper.saveGossipRejectedMessageToFile(
         "/eth/test/topic", arrivalTimestamp, () -> messageBytes, Optional.of("reason"));
 
     final String fileName =
@@ -81,9 +81,9 @@ class DebugDataDumperTest {
 
   @Test
   void saveInvalidBlockToFile_shouldSaveToFile(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    manager.saveInvalidBlockToFile(block, "reason", Optional.of(new Throwable()));
+    dumper.saveInvalidBlockToFile(block, "reason", Optional.of(new Throwable()));
 
     final String fileName =
         String.format("%s_%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
@@ -93,12 +93,11 @@ class DebugDataDumperTest {
 
   @Test
   void saveBytesToFile_shouldNotThrowExceptionWhenNoDirectory(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
     assertDoesNotThrow(
         () -> {
           final boolean success =
-              manager.saveBytesToFile(
-                  "object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY);
+              dumper.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY);
           assertThat(success).isTrue(); // creates directory
         });
   }
@@ -106,15 +105,14 @@ class DebugDataDumperTest {
   @Test
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void saveBytesToFile_shouldNotEscalateWhenIOException(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
     final File invalidPath = tempDir.resolve("invalid").toFile();
     assertThat(invalidPath.mkdirs()).isTrue();
     assertThat(invalidPath.setWritable(false)).isTrue();
     assertDoesNotThrow(
         () -> {
           final boolean success =
-              manager.saveBytesToFile(
-                  "object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY);
+              dumper.saveBytesToFile("object", Path.of("invalid").resolve("file.ssz"), Bytes.EMPTY);
           assertThat(success).isFalse();
         });
   }
@@ -123,24 +121,24 @@ class DebugDataDumperTest {
   @DisabledOnOs(OS.WINDOWS) // Can't set permissions on Windows
   void constructionOfDirectories_shouldDisableWhenFailedToCreate(@TempDir Path tempDir) {
     assertThat(tempDir.toFile().setWritable(false)).isTrue();
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
-    assertThat(manager.isEnabled()).isFalse();
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
+    assertThat(dumper.isEnabled()).isFalse();
   }
 
   @Test
   void formatOptionalTimestamp_shouldFormatTimestamp(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
     final String formattedTimestamp =
-        manager.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()), timeProvider);
+        dumper.formatOptionalTimestamp(Optional.of(timeProvider.getTimeInMillis()), timeProvider);
     assertThat(formattedTimestamp)
         .isEqualTo(formatTimestamp(timeProvider.getTimeInMillis().longValue()));
   }
 
   @Test
   void formatOptionalTimestamp_shouldGenerateTimestamp(@TempDir Path tempDir) {
-    final DebugDataDumper manager = new DebugDataDumper(tempDir);
+    final P2PDebugDataFileDumper dumper = new P2PDebugDataFileDumper(tempDir);
     final String formattedTimestamp =
-        manager.formatOptionalTimestamp(Optional.empty(), timeProvider);
+        dumper.formatOptionalTimestamp(Optional.empty(), timeProvider);
     assertThat(formattedTimestamp)
         .isEqualTo(formatTimestamp(timeProvider.getTimeInMillis().longValue()));
   }
