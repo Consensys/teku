@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDenebTest;
+import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 class BlockProcessorElectraTest extends BlockProcessorDenebTest {
@@ -582,6 +583,12 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         .isEqualTo(UInt64.valueOf(123_456_789));
     assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch())
         .isEqualTo(UInt64.valueOf(1_261));
+  }
+
+  @Test
+  void shouldUseElectraAttestationUtil() {
+    assertThat(spec.getGenesisSpec().getAttestationUtil())
+        .isInstanceOf(AttestationUtilElectra.class);
   }
 
   private Supplier<ValidatorExitContext> validatorExitContextSupplier(final BeaconState state) {

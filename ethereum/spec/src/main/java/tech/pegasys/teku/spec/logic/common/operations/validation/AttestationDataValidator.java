@@ -20,6 +20,8 @@ public interface AttestationDataValidator
 
   enum AttestationInvalidReason implements OperationInvalidReason {
     COMMITTEE_INDEX_TOO_HIGH("CommitteeIndex too high"),
+    COMMITTEE_INDEX_MUST_BE_ZERO("CommitteeIndex must be set to zero"),
+    PARTICIPANTS_COUNT_MISMATCH("Attesting participants count do not match aggregation bits"),
     NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH("Attestation not from current or previous epoch"),
     SLOT_NOT_IN_EPOCH("Attestation slot not in specified epoch"),
     SUBMITTED_TOO_QUICKLY("Attestation submitted too quickly"),
