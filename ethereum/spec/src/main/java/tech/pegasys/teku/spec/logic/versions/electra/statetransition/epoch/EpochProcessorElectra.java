@@ -44,9 +44,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 public class EpochProcessorElectra extends EpochProcessorBellatrix {
 
   private final UInt64 minActivationBalance;
-  private final SchemaDefinitionsElectra definitionsElectra;
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
-
   private final BeaconStateMutatorsElectra stateMutatorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
@@ -70,7 +68,6 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
         schemaDefinitions);
     this.minActivationBalance =
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
-    this.definitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
     this.stateMutatorsElectra = BeaconStateMutatorsElectra.required(beaconStateMutators);
     this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
