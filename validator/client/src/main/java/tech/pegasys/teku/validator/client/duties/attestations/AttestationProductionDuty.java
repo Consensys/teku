@@ -31,8 +31,8 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -201,9 +201,9 @@ public class AttestationProductionDuty implements Duty {
       final AttestationData attestationData,
       final ValidatorWithCommitteePositionAndIndex validator,
       final BLSSignature signature) {
-    final AttestationSchema attestationSchema =
+    final AttestationSchema<?> attestationSchema =
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
-    SszBitlist aggregationBits =
+    final SszBitlist aggregationBits =
         attestationSchema
             .getAggregationBitsSchema()
             .ofBits(validator.getCommitteeSize(), validator.getCommitteePosition());

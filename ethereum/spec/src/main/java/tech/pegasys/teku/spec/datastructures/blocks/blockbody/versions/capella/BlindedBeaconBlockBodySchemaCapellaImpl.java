@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -92,6 +92,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
       final SpecConfigCapella specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
+      final long maxValidatorsPerAttestation,
       final String containerName) {
     return new BlindedBeaconBlockBodySchemaCapellaImpl(
         containerName,
@@ -108,7 +109,9 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                new AttestationPhase0Schema(maxValidatorsPerAttestation)
+                    .castTypeToAttestationSchema(),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),

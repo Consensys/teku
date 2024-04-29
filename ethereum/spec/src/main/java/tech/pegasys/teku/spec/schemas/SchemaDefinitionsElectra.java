@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -47,6 +48,10 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -56,6 +61,9 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConso
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
+  private final AttestationSchema<?> attestationSchema;
+  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
+  private final AggregateAndProofSchema aggregateAndProofSchema;
 
   private final BeaconStateSchemaElectra beaconStateSchema;
 
@@ -90,6 +98,15 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
+
+    final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
+
+    this.attestationSchema =
+        new AttestationElectraSchema(
+            maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot());
+    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
+    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
+
     this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
 
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
@@ -101,6 +118,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            maxValidatorsPerAttestation,
             "BeaconBlockBodyElectra");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
@@ -108,6 +126,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            maxValidatorsPerAttestation,
             "BlindedBlockBodyElectra");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
     this.blindedBeaconBlockSchema =
@@ -151,6 +170,21 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         SchemaDefinitionsElectra.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsElectra) schemaDefinitions;
+  }
+
+  @Override
+  public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
+    return signedAggregateAndProofSchema;
+  }
+
+  @Override
+  public AggregateAndProofSchema getAggregateAndProofSchema() {
+    return aggregateAndProofSchema;
+  }
+
+  @Override
+  public AttestationSchema<?> getAttestationSchema() {
+    return attestationSchema;
   }
 
   @Override
@@ -303,5 +337,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SignedConsolidation.SignedConsolidationSchema getSignedConsolidationSchema() {
     return SignedConsolidation.SSZ_SCHEMA;
+  }
+
+  @Override
+  long getMaxValidatorPerAttestation(SpecConfig specConfig) {
+    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 }

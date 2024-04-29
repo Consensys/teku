@@ -48,8 +48,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -478,7 +478,7 @@ class AttestationProductionDutyTest {
       final int committeePosition,
       final int committeeSize,
       final BLSSignature signature) {
-    final AttestationSchema attestationSchema =
+    final AttestationSchema<?> attestationSchema =
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
     final SszBitlist expectedAggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, committeePosition);

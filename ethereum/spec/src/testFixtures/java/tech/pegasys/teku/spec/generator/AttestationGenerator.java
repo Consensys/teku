@@ -37,8 +37,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Committee;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -85,7 +85,7 @@ public class AttestationGenerator {
 
   private static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
-    final AttestationSchema attestationSchema = srcAttestations.get(0).getSchema();
+    AttestationSchema<? extends Attestation> attestationSchema = srcAttestations.get(0).getSchema();
     int targetBitlistSize =
         srcAttestations.stream().mapToInt(a -> a.getAggregationBits().size()).max().getAsInt();
     SszBitlist targetBitlist =
@@ -98,7 +98,7 @@ public class AttestationGenerator {
     BLSSignature targetSig =
         BLS.aggregate(
             srcAttestations.stream()
-                .map(Attestation::getAggregateSignature)
+                .map(attestation -> attestation.getAggregateSignature())
                 .collect(Collectors.toList()));
 
     return attestationSchema.create(targetBitlist, srcAttestations.get(0).getData(), targetSig);
@@ -386,7 +386,7 @@ public class AttestationGenerator {
         Committee committee,
         AttestationData attestationData) {
       int committeeSize = committee.getCommitteeSize();
-      final AttestationSchema attestationSchema =
+      final AttestationSchema<?> attestationSchema =
           spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
       SszBitlist aggregationBitfield =
           getAggregationBits(attestationSchema, committeeSize, indexIntoCommittee);
@@ -399,7 +399,7 @@ public class AttestationGenerator {
     }
 
     private SszBitlist getAggregationBits(
-        AttestationSchema attestationSchema, int committeeSize, int indexIntoCommittee) {
+        final AttestationSchema<?> attestationSchema, int committeeSize, int indexIntoCommittee) {
       // Create aggregation bitfield
       return attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, indexIntoCommittee);
     }

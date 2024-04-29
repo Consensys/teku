@@ -1,5 +1,5 @@
 {
-  "title" : "Attestation",
+  "title" : "AttestationPhase0",
   "type" : "object",
   "required" : [ "aggregation_bits", "data", "signature" ],
   "properties" : {

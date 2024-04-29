@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
@@ -103,6 +102,7 @@ public abstract class AttestationUtil {
 
     final IndexedAttestationSchema indexedAttestationSchema =
         schemaDefinitions.getIndexedAttestationSchema();
+    specConfig.getMaxCommitteesPerSlot();
     return indexedAttestationSchema.create(
         attestingIndices.stream()
             .sorted()
@@ -122,15 +122,16 @@ public abstract class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#get_attesting_indices</a>
    */
-  public IntList getAttestingIndices(
-      final BeaconState state, final AttestationContainer attestation) {
+  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return IntList.of(streamAttestingIndices(state, attestation).toArray());
   }
 
+  public IntStream streamAttestingIndices(final BeaconState state, final Attestation attestation) {
+    return streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits());
+  }
+
   public IntStream streamAttestingIndices(
-      final BeaconState state, final AttestationContainer attestation) {
-    final AttestationData data = attestation.getData();
-    final SszBitlist aggregationBits = attestation.getAggregationBits();
+      final BeaconState state, final AttestationData data, final SszBitlist aggregationBits) {
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(

@@ -20,7 +20,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -34,7 +34,7 @@ public class SingleAttestationTopicHandler {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final String topicName,
-      final AttestationSchema attestationSchema,
+      final AttestationSchema<? extends Attestation> attestationSchema,
       final int subnetId,
       final DebugDataDumper debugDataDumper) {
 
@@ -55,7 +55,7 @@ public class SingleAttestationTopicHandler {
             spec,
             forkInfo.getFork(),
             message -> spec.computeEpochAtSlot(message.getData().getSlot())),
-        attestationSchema,
+        attestationSchema.castTypeToAttestationSchema(),
         spec.getNetworkingConfig(),
         debugDataDumper);
   }

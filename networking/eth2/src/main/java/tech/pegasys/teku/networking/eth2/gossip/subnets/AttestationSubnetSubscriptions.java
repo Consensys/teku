@@ -28,7 +28,7 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -40,7 +40,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final RecentChainData recentChainData;
   private final OperationProcessor<ValidatableAttestation> processor;
   private final ForkInfo forkInfo;
-  private final AttestationSchema attestationSchema;
+  private final AttestationSchema<? extends Attestation> attestationSchema;
   private final DebugDataDumper debugDataDumper;
 
   public AttestationSubnetSubscriptions(

@@ -10,7 +10,7 @@
       "format" : "uint64"
     },
     "aggregate" : {
-      "$ref" : "#/components/schemas/Attestation"
+      "$ref" : "#/components/schemas/AttestationElectra"
     },
     "selection_proof" : {
       "type" : "string",

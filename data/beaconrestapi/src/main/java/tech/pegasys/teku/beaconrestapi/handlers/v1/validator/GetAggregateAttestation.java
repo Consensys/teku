@@ -34,8 +34,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 public class GetAggregateAttestation extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/aggregate_attestation";
@@ -59,10 +59,7 @@ public class GetAggregateAttestation extends RestApiEndpoint {
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .queryParamRequired(ATTESTATION_DATA_ROOT_PARAMETER)
             .queryParamRequired(SLOT_PARAM)
-            .response(
-                HttpStatusCodes.SC_OK,
-                "Request successful",
-                getResponseType(spec.getGenesisSpecConfig()))
+            .response(HttpStatusCodes.SC_OK, "Request successful", getResponseType(spec))
             .withNotFoundResponse()
             .build());
     this.provider = provider;
@@ -84,13 +81,16 @@ public class GetAggregateAttestation extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<Attestation> getResponseType(
-      final SpecConfig specConfig) {
-    Attestation.AttestationSchema dataSchema = new Attestation.AttestationSchema(specConfig);
+  private static SerializableTypeDefinition<Attestation> getResponseType(final Spec spec) {
+    final AttestationSchema<?> dataSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
     return SerializableTypeDefinition.object(Attestation.class)
         .name("GetAggregatedAttestationResponse")
-        .withField("data", dataSchema.getJsonTypeDefinition(), Function.identity())
+        .withField(
+            "data",
+            dataSchema.castTypeToAttestationSchema().getJsonTypeDefinition(),
+            Function.identity())
         .build();
   }
 }

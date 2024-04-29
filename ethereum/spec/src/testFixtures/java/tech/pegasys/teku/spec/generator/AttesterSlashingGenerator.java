@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -105,7 +105,7 @@ public class AttesterSlashingGenerator {
       final Committee committee,
       final AttestationData attestationData) {
     int committeeSize = committee.getCommitteeSize();
-    AttestationSchema attestationSchema =
+    AttestationSchema<?> attestationSchema =
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
     SszBitlist aggregationBitfield =
         attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, indexIntoCommittee);
