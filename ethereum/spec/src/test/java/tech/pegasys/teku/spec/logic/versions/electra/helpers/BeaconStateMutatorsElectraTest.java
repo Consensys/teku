@@ -58,7 +58,8 @@ class BeaconStateMutatorsElectraTest {
     final BeaconStateElectra preState =
         BeaconStateElectra.required(
             new BeaconStateTestBuilder(dataStructureUtil)
-                .activeValidator(minActivationBalance.plus(excessBalance))
+                .activeValidatorWithBalance(
+                    specConfig.getMaxEffectiveBalance(), minActivationBalance.plus(excessBalance))
                 .build());
 
     final BeaconStateElectra postState =
@@ -77,7 +78,8 @@ class BeaconStateMutatorsElectraTest {
     final BeaconStateElectra preState =
         BeaconStateElectra.required(
             new BeaconStateTestBuilder(dataStructureUtil)
-                .activeValidator(minActivationBalance)
+                .activeValidatorWithBalance(
+                    specConfig.getMaxEffectiveBalance(), minActivationBalance)
                 .build());
 
     final BeaconStateElectra postState =
@@ -95,8 +97,10 @@ class BeaconStateMutatorsElectraTest {
     final BeaconStateElectra preState =
         BeaconStateElectra.required(
             new BeaconStateTestBuilder(dataStructureUtil)
-                .activeValidator(minActivationBalance.plus(excessBalance))
-                .activeValidator(minActivationBalance.plus(excessBalance))
+                .activeValidatorWithBalance(
+                    specConfig.getMaxEffectiveBalance(), minActivationBalance.plus(excessBalance))
+                .activeValidatorWithBalance(
+                    specConfig.getMaxEffectiveBalance(), minActivationBalance.plus(excessBalance))
                 .build());
 
     BeaconStateElectra postState =
