@@ -212,6 +212,30 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     }
   }
 
+  /**
+   * queue_entire_balance_and_reset_validator
+   *
+   * @param state beaconState
+   * @param index validatorIndex
+   */
+  protected void queueEntireBalanceAndResetValidator(
+      final MutableBeaconStateElectra state, final int index) {
+    final UInt64 balance = state.getBalances().getElement(index);
+    state.getBalances().set(index, SszUInt64.ZERO);
+    state
+        .getValidators()
+        .update(
+            index,
+            validator ->
+                validator.withActivationEpoch(FAR_FUTURE_EPOCH).withEffectiveBalance(UInt64.ZERO));
+
+    final PendingBalanceDeposit deposit =
+        schemaDefinitionsElectra
+            .getPendingBalanceDepositSchema()
+            .create(SszUInt64.of(UInt64.valueOf(index)), SszUInt64.of(balance));
+    state.getPendingBalanceDeposits().append(deposit);
+  }
+
   @Override
   protected int getWhistleblowerRewardQuotient() {
     return specConfigElectra.getWhistleblowerRewardQuotientElectra();

@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -45,9 +44,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 public class EpochProcessorElectra extends EpochProcessorBellatrix {
 
   private final UInt64 minActivationBalance;
-  private final SchemaDefinitionsElectra definitionsElectra;
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
-
   private final BeaconStateMutatorsElectra stateMutatorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
@@ -71,7 +68,6 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
         schemaDefinitions);
     this.minActivationBalance =
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
-    this.definitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
     this.stateMutatorsElectra = BeaconStateMutatorsElectra.required(beaconStateMutators);
     this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
@@ -132,32 +128,6 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
       final UInt64 finalizedEpoch, final Validator validator) {
     return validator.getActivationEpoch().equals(FAR_FUTURE_EPOCH)
         && validator.getActivationEligibilityEpoch().isLessThanOrEqualTo(finalizedEpoch);
-  }
-
-  /**
-   * queue_entire_balance_and_reset_validator
-   *
-   * @param state beaconState
-   * @param index validatorIndex
-   */
-  protected void queueEntireBalanceAndResetValidator(
-      final MutableBeaconStateElectra state, final int index) {
-    final UInt64 balance = state.getBalances().getElement(index);
-    state.getBalances().set(index, SszUInt64.ZERO);
-    state
-        .getValidators()
-        .update(
-            index,
-            validator ->
-                validator.withActivationEpoch(FAR_FUTURE_EPOCH).withEffectiveBalance(UInt64.ZERO));
-    final SszMutableList<PendingBalanceDeposit> pendingDeposits =
-        state.getPendingBalanceDeposits().createWritableCopy();
-    final PendingBalanceDeposit deposit =
-        definitionsElectra
-            .getPendingBalanceDepositSchema()
-            .create(SszUInt64.of(UInt64.valueOf(index)), SszUInt64.of(balance));
-    pendingDeposits.append(deposit);
-    state.setPendingBalanceDeposits(pendingDeposits);
   }
 
   /**
