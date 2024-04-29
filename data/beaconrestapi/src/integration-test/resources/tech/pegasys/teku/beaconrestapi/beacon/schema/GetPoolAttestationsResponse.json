@@ -6,7 +6,7 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/Attestation"
+        "$ref" : "#/components/schemas/AttestationElectra"
       }
     }
   }

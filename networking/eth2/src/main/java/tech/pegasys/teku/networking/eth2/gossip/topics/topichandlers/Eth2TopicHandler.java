@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -55,7 +55,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
   private final OperationMilestoneValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
-  private final DebugDataDumper debugDataDumper;
+  private final P2PDebugDataDumper p2pDebugDataDumper;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -67,7 +67,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
       final NetworkingSpecConfig networkingConfig,
-      final DebugDataDumper debugDataDumper) {
+      final P2PDebugDataDumper p2pDebugDataDumper) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
@@ -79,7 +79,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
-    this.debugDataDumper = debugDataDumper;
+    this.p2pDebugDataDumper = p2pDebugDataDumper;
   }
 
   public Eth2TopicHandler(
@@ -92,7 +92,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
       final NetworkingSpecConfig networkingConfig,
-      final DebugDataDumper debugDataDumper) {
+      final P2PDebugDataDumper p2pDebugDataDumper) {
     this(
         recentChainData,
         asyncRunner,
@@ -103,7 +103,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         forkValidator,
         messageType,
         networkingConfig,
-        debugDataDumper);
+        p2pDebugDataDumper);
   }
 
   @Override
@@ -135,7 +135,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {
       case REJECT:
-        debugDataDumper.saveGossipRejectedMessageToFile(
+        p2pDebugDataDumper.saveGossipRejectedMessageToFile(
             getTopic(),
             message.getArrivalTimestamp(),
             () -> message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
@@ -172,7 +172,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     final ValidationResult response;
     if (ExceptionUtil.hasCause(err, DecodingException.class)) {
 
-      debugDataDumper.saveGossipMessageDecodingError(
+      p2pDebugDataDumper.saveGossipMessageDecodingError(
           getTopic(), message.getArrivalTimestamp(), message::getOriginalMessage, err);
       P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;

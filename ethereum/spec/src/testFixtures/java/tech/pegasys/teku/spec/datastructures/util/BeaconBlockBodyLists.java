@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -25,14 +28,18 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 public class BeaconBlockBodyLists {
 
-  public static BeaconBlockBodyLists ofSpec(Spec spec) {
-    return new BeaconBlockBodyLists(spec);
+  public static BeaconBlockBodyLists ofSpecAtSlot(final Spec spec, final UInt64 slot) {
+    return new BeaconBlockBodyLists(spec, slot);
+  }
+
+  public static BeaconBlockBodyLists ofSpec(final Spec spec) {
+    return new BeaconBlockBodyLists(spec, GENESIS_SLOT);
   }
 
   private final BeaconBlockBodySchema<?> blockBodySchema;
 
-  public BeaconBlockBodyLists(Spec spec) {
-    blockBodySchema = spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
+  public BeaconBlockBodyLists(final Spec spec, final UInt64 slot) {
+    blockBodySchema = spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
   public SszList<ProposerSlashing> createProposerSlashings(ProposerSlashing... proposerSlashings) {

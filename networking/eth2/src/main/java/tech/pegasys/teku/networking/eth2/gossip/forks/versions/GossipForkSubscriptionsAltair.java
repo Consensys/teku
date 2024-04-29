@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
-import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0 {
@@ -64,7 +64,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
           signedContributionAndProofOperationProcessor,
       final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
-      final DebugDataDumper debugDataDumper) {
+      final P2PDebugDataDumper p2pDebugDataDumper) {
     super(
         fork,
         spec,
@@ -79,7 +79,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
         attesterSlashingProcessor,
         proposerSlashingProcessor,
         voluntaryExitProcessor,
-        debugDataDumper);
+        p2pDebugDataDumper);
     this.signedContributionAndProofOperationProcessor =
         signedContributionAndProofOperationProcessor;
     this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
@@ -99,7 +99,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             forkInfo,
             signedContributionAndProofOperationProcessor,
             specConfig.getNetworkingConfig(),
-            debugDataDumper);
+            p2pDebugDataDumper);
     addGossipManager(syncCommitteeContributionGossipManager);
   }
 
@@ -116,7 +116,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             asyncRunner,
             syncCommitteeMessageOperationProcessor,
             forkInfo,
-            debugDataDumper);
+            p2pDebugDataDumper);
     syncCommitteeMessageGossipManager =
         new SyncCommitteeMessageGossipManager(
             metricsSystem,

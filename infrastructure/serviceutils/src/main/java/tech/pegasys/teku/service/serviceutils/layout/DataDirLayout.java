@@ -17,13 +17,10 @@ import java.nio.file.Path;
 
 public interface DataDirLayout {
   static DataDirLayout createFrom(final DataConfig dataConfig) {
-    final SeparateServiceDataDirLayout layout =
-        new SeparateServiceDataDirLayout(
-            dataConfig.getDataBasePath(),
-            dataConfig.getBeaconDataPath(),
-            dataConfig.getValidatorDataPath());
-
-    return layout;
+    return new SeparateServiceDataDirLayout(
+        dataConfig.getDataBasePath(),
+        dataConfig.getBeaconDataPath(),
+        dataConfig.getValidatorDataPath());
   }
 
   Path getBeaconDataDirectory();

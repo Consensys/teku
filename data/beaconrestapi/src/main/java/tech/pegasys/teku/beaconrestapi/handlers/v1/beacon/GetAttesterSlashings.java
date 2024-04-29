@@ -62,8 +62,9 @@ public class GetAttesterSlashings extends RestApiEndpoint {
 
   private static SerializableTypeDefinition<List<AttesterSlashing>> getResponseType(
       final Spec spec) {
+    // TODO EIP-7549 handle electra indexed attestations
     final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
-        new IndexedAttestation.IndexedAttestationSchema(spec.getGenesisSpecConfig());
+        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
         new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
 
