@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WI
 
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutato
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
+
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
   private final MiscHelpersElectra miscHelpersElectra;
 
@@ -93,13 +93,7 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     return state.getEarliestExitEpoch();
   }
 
-  /**
-   * initiate_validator_exit
-   *
-   * @param state
-   * @param index
-   * @param validatorExitContextSupplier
-   */
+  /** initiate_validator_exit */
   @Override
   public void initiateValidatorExit(
       final MutableBeaconState state,
@@ -137,13 +131,7 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
                     exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay())));
   }
 
-  /**
-   * compute_consolidation_epoch_and_update_churn
-   *
-   * @param state
-   * @param consolidationBalance
-   * @return
-   */
+  /** compute_consolidation_epoch_and_update_churn */
   public UInt64 computeConsolidationEpochAndUpdateChurn(
       final MutableBeaconState state, final UInt64 consolidationBalance) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
@@ -214,16 +202,13 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     if (balance.isGreaterThan(minActivationBalance)) {
       final UInt64 excessBalance = balance.minus(minActivationBalance);
       state.getBalances().set(validatorIndex, SszUInt64.of(minActivationBalance));
-      final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
-          MutableBeaconStateElectra.required(state)
-              .getPendingBalanceDeposits()
-              .createWritableCopy();
-      pendingBalanceDeposits.append(
+
+      final PendingBalanceDeposit pendingBalanceDeposit =
           schemaDefinitionsElectra
               .getPendingBalanceDepositSchema()
               .create(
-                  SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(excessBalance)));
-      state.setPendingBalanceDeposits(pendingBalanceDeposits);
+                  SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(excessBalance));
+      state.getPendingBalanceDeposits().append(pendingBalanceDeposit);
     }
   }
 

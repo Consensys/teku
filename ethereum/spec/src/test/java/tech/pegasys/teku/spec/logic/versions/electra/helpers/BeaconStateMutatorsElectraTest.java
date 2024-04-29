@@ -56,10 +56,10 @@ class BeaconStateMutatorsElectraTest {
     final UInt64 minActivationBalance = specConfig.getMinActivationBalance();
     final long excessBalance = 1L;
     final BeaconStateElectra preState =
-        (BeaconStateElectra)
+        BeaconStateElectra.required(
             new BeaconStateTestBuilder(dataStructureUtil)
                 .activeValidator(minActivationBalance.plus(excessBalance))
-                .build();
+                .build());
 
     final BeaconStateElectra postState =
         preState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 0));
@@ -75,10 +75,10 @@ class BeaconStateMutatorsElectraTest {
   public void queueExcessActiveBalance_withoutExcessBalance_ShouldNotCreatePendingBalanceDeposit() {
     final UInt64 minActivationBalance = specConfig.getMinActivationBalance();
     final BeaconStateElectra preState =
-        (BeaconStateElectra)
+        BeaconStateElectra.required(
             new BeaconStateTestBuilder(dataStructureUtil)
                 .activeValidator(minActivationBalance)
-                .build();
+                .build());
 
     final BeaconStateElectra postState =
         preState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 0));
@@ -93,11 +93,11 @@ class BeaconStateMutatorsElectraTest {
     final UInt64 minActivationBalance = specConfig.getMinActivationBalance();
     final long excessBalance = 1L;
     final BeaconStateElectra preState =
-        (BeaconStateElectra)
+        BeaconStateElectra.required(
             new BeaconStateTestBuilder(dataStructureUtil)
                 .activeValidator(minActivationBalance.plus(excessBalance))
                 .activeValidator(minActivationBalance.plus(excessBalance))
-                .build();
+                .build());
 
     BeaconStateElectra postState =
         preState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 0));

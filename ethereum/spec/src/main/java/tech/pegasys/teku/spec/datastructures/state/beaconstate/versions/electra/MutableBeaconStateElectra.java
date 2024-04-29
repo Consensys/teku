@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_BALANCE_DEPOSITS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_CONSOLIDATIONS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -81,14 +86,29 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, pendingBalanceDeposits);
   }
 
+  default SszMutableList<PendingBalanceDeposit> getPendingBalanceDeposits() {
+    final int index = getSchema().getFieldIndex(PENDING_BALANCE_DEPOSITS);
+    return getAnyByRef(index);
+  }
+
   default void setPendingPartialWithdrawals(
       final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS);
     set(fieldIndex, pendingPartialWithdrawals);
   }
 
+  default SszMutableList<PendingPartialWithdrawal> getPendingPartialWithdrawals() {
+    final int index = getSchema().getFieldIndex(PENDING_PARTIAL_WITHDRAWALS);
+    return getAnyByRef(index);
+  }
+
   default void setPendingConsolidations(final SszList<PendingConsolidation> pendingConsolidations) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS);
     set(fieldIndex, pendingConsolidations);
+  }
+
+  default SszMutableList<PendingConsolidation> getPendingConsolidations() {
+    final int index = getSchema().getFieldIndex(PENDING_CONSOLIDATIONS);
+    return getAnyByRef(index);
   }
 }
