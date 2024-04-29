@@ -59,6 +59,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
     createDirectory(directory.resolve(INVALID_BLOCK_DIR), INVALID_BLOCK_DIR, "invalid blocks");
   }
 
+  @Override
   public void saveGossipMessageDecodingError(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
@@ -83,6 +84,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
     }
   }
 
+  @Override
   public void saveGossipRejectedMessageToFile(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
@@ -106,6 +108,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
     }
   }
 
+  @Override
   public void saveInvalidBlockToFile(
       final SignedBeaconBlock block,
       final String failureReason,
@@ -130,7 +133,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   }
 
   @VisibleForTesting
-  protected boolean saveBytesToFile(
+  boolean saveBytesToFile(
       final String description, final Path relativeFilePath, final Bytes bytes) {
     final Path path = directory.resolve(relativeFilePath);
     try {
