@@ -86,6 +86,7 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, pendingBalanceDeposits);
   }
 
+  @Override
   default SszMutableList<PendingBalanceDeposit> getPendingBalanceDeposits() {
     final int index = getSchema().getFieldIndex(PENDING_BALANCE_DEPOSITS);
     return getAnyByRef(index);
@@ -97,6 +98,7 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, pendingPartialWithdrawals);
   }
 
+  @Override
   default SszMutableList<PendingPartialWithdrawal> getPendingPartialWithdrawals() {
     final int index = getSchema().getFieldIndex(PENDING_PARTIAL_WITHDRAWALS);
     return getAnyByRef(index);
@@ -107,6 +109,7 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, pendingConsolidations);
   }
 
+  @Override
   default SszMutableList<PendingConsolidation> getPendingConsolidations() {
     final int index = getSchema().getFieldIndex(PENDING_CONSOLIDATIONS);
     return getAnyByRef(index);
