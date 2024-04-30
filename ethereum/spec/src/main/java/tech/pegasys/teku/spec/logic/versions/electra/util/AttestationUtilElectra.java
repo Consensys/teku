@@ -20,7 +20,9 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -75,5 +77,20 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
     return IntStream.range(committeeOffset, committeeOffset + committee.size())
         .filter(aggregationBits::isSet)
         .map(attesterIndex -> committee.getInt(attesterIndex - committeeOffset));
+  }
+
+  /**
+   * In electra, attestationData must have committee index set to 0
+   *
+   * @see
+   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/validator.md#construct-attestation</a>
+   */
+  @Override
+  public AttestationData getGenericAttestationData(
+      final UInt64 slot,
+      final BeaconState state,
+      final BeaconBlockSummary block,
+      final UInt64 committeeIndex) {
+    return super.getGenericAttestationData(slot, state, block, UInt64.ZERO);
   }
 }

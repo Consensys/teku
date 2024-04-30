@@ -17,47 +17,24 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.client.Validator;
 
-class ValidatorWithCommitteePositionAndIndex {
+record ValidatorWithAttestationDutyInfo(
+    Validator validator,
+    int committeeIndex,
+    int committeePosition,
+    int validatorIndex,
+    int committeeSize) {
 
-  private final Validator validator;
-  private final int committeePosition;
-  private final int validatorIndex;
-  private final int committeeSize;
-
-  ValidatorWithCommitteePositionAndIndex(
-      final Validator validator,
-      final int committeePosition,
-      final int validatorIndex,
-      final int committeeSize) {
-    this.validator = validator;
-    this.committeePosition = committeePosition;
-    this.validatorIndex = validatorIndex;
-    this.committeeSize = committeeSize;
-  }
-
-  public Signer getSigner() {
+  public Signer signer() {
     return validator.getSigner();
   }
 
-  public int getCommitteePosition() {
-    return committeePosition;
-  }
-
-  public int getValidatorIndex() {
-    return validatorIndex;
-  }
-
-  public int getCommitteeSize() {
-    return committeeSize;
-  }
-
-  public BLSPublicKey getPublicKey() {
+  public BLSPublicKey publicKey() {
     return validator.getPublicKey();
   }
 
   @Override
   public String toString() {
-    return "ValidatorWithCommitteePositionAndIndex{"
+    return "ValidatorWithAttestationDutyInfo{"
         + "validator="
         + validator
         + ", committeePosition="
