@@ -151,6 +151,7 @@ public class DepositSnapshotsBundleTest {
     return Stream.of(
         Arguments.of(Eth2Network.GNOSIS, "https://rpc.ankr.com/gnosis"),
         Arguments.of(Eth2Network.MAINNET, "https://mainnet.infura.io/v3/%INFURA_KEY%"),
-        Arguments.of(Eth2Network.SEPOLIA, "https://sepolia.infura.io/v3/%INFURA_KEY%"));
+        Arguments.of(Eth2Network.SEPOLIA, "https://sepolia.infura.io/v3/%INFURA_KEY%"),
+        Arguments.of(Eth2Network.HOLESKY, "https://holesky.infura.io/v3/%INFURA_KEY%"));
   }
 }
