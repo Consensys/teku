@@ -14,16 +14,21 @@
 package tech.pegasys.teku.spec.logic.versions.electra.forktransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -34,12 +39,20 @@ class ElectraStateUpgradeTest {
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final PredicatesElectra predicatesElectra =
       new PredicatesElectra(spec.getGenesisSpecConfig());
+  final SchemaDefinitionsElectra schemaDefinitionsElectra =
+      SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
   private final MiscHelpersElectra miscHelpersElectra =
       new MiscHelpersElectra(
           spec.getGenesisSpecConfig(), predicatesElectra, spec.getGenesisSchemaDefinitions());
   final BeaconStateAccessorsElectra stateAccessorsElectra =
       new BeaconStateAccessorsElectra(
           spec.getGenesisSpecConfig(), predicatesElectra, miscHelpersElectra);
+  final BeaconStateMutatorsElectra stateMutatorsElectra =
+      new BeaconStateMutatorsElectra(
+          spec.getGenesisSpecConfig(),
+          miscHelpersElectra,
+          stateAccessorsElectra,
+          schemaDefinitionsElectra);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
@@ -47,14 +60,16 @@ class ElectraStateUpgradeTest {
     final BeaconStateDeneb pre =
         BeaconStateDeneb.required(
             dataStructureUtil
-                .stateBuilder(SpecMilestone.DENEB, 1, 0)
+                .stateBuilder(SpecMilestone.DENEB, 0, 0)
                 .slot(UInt64.valueOf(80_000L))
                 .build());
+
     final ElectraStateUpgrade upgrade =
         new ElectraStateUpgrade(
             SpecConfigElectra.required(spec.getGenesisSpecConfig()),
-            SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions()),
-            stateAccessorsElectra);
+            schemaDefinitionsElectra,
+            stateAccessorsElectra,
+            stateMutatorsElectra);
 
     final BeaconStateElectra post = upgrade.upgrade(pre);
 
@@ -70,5 +85,119 @@ class ElectraStateUpgradeTest {
     assertThat(post.getPendingBalanceDeposits()).isEmpty();
     assertThat(post.getPendingConsolidations()).isEmpty();
     assertThat(post.getPendingPartialWithdrawals()).isEmpty();
+  }
+
+  @Test
+  public void shouldAddNonActiveValidatorsToPendingBalanceDeposits() {
+    final UInt64 maxEffectiveBalance = spec.getGenesisSpecConfig().getMaxEffectiveBalance();
+
+    // Not-active validator 1
+    final Validator validator1 =
+        dataStructureUtil
+            .validatorBuilder()
+            .activationEpoch(FAR_FUTURE_EPOCH)
+            .activationEligibilityEpoch(UInt64.valueOf(1))
+            .build();
+    // Not-active validator 2
+    final Validator validator2 =
+        dataStructureUtil
+            .validatorBuilder()
+            .activationEpoch(FAR_FUTURE_EPOCH)
+            .activationEligibilityEpoch(UInt64.valueOf(10))
+            .build();
+    // Not-active validator 3, with activation eligibility epoch lower than validator 2
+    final Validator validator3 =
+        dataStructureUtil
+            .validatorBuilder()
+            .activationEpoch(FAR_FUTURE_EPOCH)
+            .activationEligibilityEpoch(UInt64.valueOf(5))
+            .build();
+
+    final BeaconStateDeneb preState =
+        BeaconStateDeneb.required(
+            dataStructureUtil
+                .stateBuilder(SpecMilestone.DENEB, 3, 0)
+                .validators(validator1, validator2, validator3)
+                // All validators have their balance = maxEffectiveBalance
+                .balances(maxEffectiveBalance, maxEffectiveBalance, maxEffectiveBalance)
+                .build());
+
+    final ElectraStateUpgrade upgrade =
+        new ElectraStateUpgrade(
+            SpecConfigElectra.required(spec.getGenesisSpecConfig()),
+            schemaDefinitionsElectra,
+            stateAccessorsElectra,
+            stateMutatorsElectra);
+
+    final BeaconStateElectra postState = upgrade.upgrade(preState);
+
+    final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
+        postState.getPendingBalanceDeposits();
+    assertThat(pendingBalanceDeposits.size()).isEqualTo(3);
+    assertPendingBalanceDeposit(pendingBalanceDeposits.get(0), 0, maxEffectiveBalance);
+    // During Electra fork upgrade, pending balance deposits must be ordered by activation
+    // eligibility epoch.
+    // Because Validator3 (index = 2) activation eligibility epoch is lower than validator2,
+    // Validator3's pending balance deposit must come before Validator2 (index = 1)
+    assertPendingBalanceDeposit(pendingBalanceDeposits.get(1), 2, maxEffectiveBalance);
+    assertPendingBalanceDeposit(pendingBalanceDeposits.get(2), 1, maxEffectiveBalance);
+  }
+
+  @Test
+  public void shouldAddValidatorsWithCompoundingCredentialsExcessBalanceToPendingBalanceDeposits() {
+    final UInt64 maxEffectiveBalance = spec.getGenesisSpecConfig().getMaxEffectiveBalance();
+    final UInt64 excessBalance = UInt64.valueOf(1_000);
+
+    // Compounding validator with excess balance
+    final Validator validator1 =
+        dataStructureUtil
+            .validatorBuilder()
+            .activationEpoch(UInt64.ZERO)
+            .withRandomCompoundingWithdrawalCredentials()
+            .build();
+
+    // Another compounding validator with excess balance
+    final Validator validator2 =
+        dataStructureUtil
+            .validatorBuilder()
+            .activationEpoch(UInt64.ZERO)
+            .withRandomCompoundingWithdrawalCredentials()
+            .build();
+
+    final BeaconStateDeneb preState =
+        BeaconStateDeneb.required(
+            dataStructureUtil
+                .stateBuilder(SpecMilestone.DENEB, 4, 0)
+                .validators(validator1, validator2)
+                // All validators have their balance = maxEffectiveBalance
+                .balances(
+                    maxEffectiveBalance.plus(excessBalance),
+                    maxEffectiveBalance.plus(excessBalance))
+                .build());
+
+    final ElectraStateUpgrade upgrade =
+        new ElectraStateUpgrade(
+            SpecConfigElectra.required(spec.getGenesisSpecConfig()),
+            schemaDefinitionsElectra,
+            stateAccessorsElectra,
+            stateMutatorsElectra);
+
+    final BeaconStateElectra postState = upgrade.upgrade(preState);
+
+    final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
+        postState.getPendingBalanceDeposits();
+    assertThat(pendingBalanceDeposits.size()).isEqualTo(2);
+    // Compounding validator will have a pending balance deposit only of the excess, in their index
+    // order
+    assertPendingBalanceDeposit(pendingBalanceDeposits.get(0), 0, excessBalance);
+    assertPendingBalanceDeposit(pendingBalanceDeposits.get(1), 1, excessBalance);
+  }
+
+  private void assertPendingBalanceDeposit(
+      final PendingBalanceDeposit pendingBalanceDeposit,
+      final int expectedValidatorIndex,
+      final UInt64 expectedAmount) {
+    assertThat(pendingBalanceDeposit.getIndex()).isEqualTo(expectedValidatorIndex);
+    assertThat(pendingBalanceDeposit.getAmount()).isEqualTo(expectedAmount);
   }
 }

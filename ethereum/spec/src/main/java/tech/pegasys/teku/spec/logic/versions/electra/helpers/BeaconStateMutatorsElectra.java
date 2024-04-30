@@ -218,7 +218,7 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
    * @param state beaconState
    * @param index validatorIndex
    */
-  protected void queueEntireBalanceAndResetValidator(
+  public void queueEntireBalanceAndResetValidator(
       final MutableBeaconStateElectra state, final int index) {
     final UInt64 balance = state.getBalances().getElement(index);
     state.getBalances().set(index, SszUInt64.ZERO);

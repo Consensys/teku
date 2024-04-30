@@ -173,7 +173,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
 
     // State upgrade
     final ElectraStateUpgrade stateUpgrade =
-        new ElectraStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+        new ElectraStateUpgrade(
+            config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
 
     return new SpecLogicElectra(
         predicates,

@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.forktransition;
 
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+
+import java.util.Comparator;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -27,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -36,22 +42,26 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
   private final SpecConfigElectra specConfig;
   private final SchemaDefinitionsElectra schemaDefinitions;
   private final BeaconStateAccessorsElectra beaconStateAccessors;
+  private final BeaconStateMutatorsElectra beaconStateMutators;
 
   public ElectraStateUpgrade(
       final SpecConfigElectra specConfig,
       final SchemaDefinitionsElectra schemaDefinitions,
-      final BeaconStateAccessorsElectra beaconStateAccessors) {
+      final BeaconStateAccessorsElectra beaconStateAccessors,
+      final BeaconStateMutatorsElectra beaconStateMutators) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.beaconStateMutators = beaconStateMutators;
   }
 
   @Override
   public BeaconStateElectra upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateDeneb preStateDeneb = BeaconStateDeneb.required(preState);
+    final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
     final MiscHelpersElectra miscHelpersElectra =
-        new MiscHelpersElectra(specConfig, new PredicatesElectra(specConfig), schemaDefinitions);
+        new MiscHelpersElectra(specConfig, predicatesElectra, schemaDefinitions);
     return schemaDefinitions
         .getBeaconStateSchema()
         .createEmpty()
@@ -115,6 +125,30 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                   beaconStateAccessors.getConsolidationChurnLimit(state));
               state.setEarliestConsolidationEpoch(
                   miscHelpersElectra.computeActivationExitEpoch(epoch));
+
+              final SszMutableList<Validator> validators = state.getValidators();
+
+              // Add validators that are not yet active to pending balance deposits
+              IntStream.range(0, validators.size())
+                  .filter(
+                      index -> validators.get(index).getActivationEpoch().equals(FAR_FUTURE_EPOCH))
+                  .boxed()
+                  .sorted(
+                      Comparator.comparing(
+                          index -> validators.get(index).getActivationEligibilityEpoch()))
+                  .forEach(
+                      index ->
+                          beaconStateMutators.queueEntireBalanceAndResetValidator(state, index));
+
+              // Ensure early adopters of compounding credentials go through the activation churn
+              IntStream.range(0, validators.size())
+                  .forEach(
+                      index -> {
+                        if (predicatesElectra.hasCompoundingWithdrawalCredential(
+                            validators.get(index))) {
+                          beaconStateMutators.queueExcessActiveBalance(state, index);
+                        }
+                      });
             });
   }
 
