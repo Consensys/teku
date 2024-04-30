@@ -57,12 +57,10 @@ class ElectraStateUpgradeTest {
 
   @Test
   void canUpgradeFromDeneb() {
+    final UInt64 slot = UInt64.valueOf(80_000L);
     final BeaconStateDeneb pre =
         BeaconStateDeneb.required(
-            dataStructureUtil
-                .stateBuilder(SpecMilestone.DENEB, 0, 0)
-                .slot(UInt64.valueOf(80_000L))
-                .build());
+            dataStructureUtil.stateBuilder(SpecMilestone.DENEB, 0, 0).slot(slot).build());
 
     final ElectraStateUpgrade upgrade =
         new ElectraStateUpgrade(
@@ -78,7 +76,7 @@ class ElectraStateUpgradeTest {
     // = (64 *10^9) - (64 *10^9) MOD 10^9
     // = (64 *10^9) - 0
     assertThat(post.getExitBalanceToConsume()).isEqualTo(UInt64.valueOf(64_000_000_000L));
-    assertThat(post.getEarliestExitEpoch()).isEqualTo(UInt64.valueOf(10_001));
+    assertThat(post.getEarliestExitEpoch()).isEqualTo(slot.dividedBy(8).increment());
     assertThat(post.getConsolidationBalanceToConsume()).isEqualTo(UInt64.ZERO);
     // 80_000/8 (slots -> epochs) + max_seed_lookahead + 1
     assertThat(post.getEarliestConsolidationEpoch()).isEqualTo(UInt64.valueOf(10005));
@@ -168,6 +166,7 @@ class ElectraStateUpgradeTest {
         BeaconStateDeneb.required(
             dataStructureUtil
                 .stateBuilder(SpecMilestone.DENEB, 4, 0)
+                .slot(UInt64.valueOf(100_000))
                 .validators(validator1, validator2)
                 // All validators have their balance = maxEffectiveBalance
                 .balances(
