@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import java.util.Comparator;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -153,11 +152,10 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
   }
 
   private UInt64 findEarliestExitEpoch(final BeaconState state) {
-    final SszList<Validator> validators = state.getValidators();
     UInt64 lastExitEpoch = UInt64.ZERO;
-    for (int i = 0; i < validators.size(); i++) {
-      final UInt64 exitEpoch = validators.get(i).getExitEpoch();
-      if (exitEpoch.isLessThan(UInt64.MAX_VALUE)) {
+    for (final Validator validator : state.getValidators()) {
+      final UInt64 exitEpoch = validator.getExitEpoch();
+      if (!exitEpoch.equals(FAR_FUTURE_EPOCH)) {
         lastExitEpoch = lastExitEpoch.max(exitEpoch);
       }
     }
