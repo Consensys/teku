@@ -24,11 +24,13 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -56,6 +59,32 @@ public class ExpectedWithdrawals {
   }
 
   public static ExpectedWithdrawals create(
+      final BeaconState preState,
+      final SchemaDefinitions schemaDefinitions,
+      final MiscHelpers miscHelpers,
+      final SpecConfig specConfig,
+      final Predicates predicates) {
+
+    if (preState.toVersionElectra().isPresent()) {
+      return createFromElectraState(
+          BeaconStateElectra.required(preState),
+          SchemaDefinitionsElectra.required(schemaDefinitions),
+          MiscHelpersElectra.required(miscHelpers),
+          SpecConfigElectra.required(specConfig),
+          PredicatesElectra.required(predicates));
+    } else if (preState.toVersionCapella().isPresent()) {
+      return createFromCapellaState(
+          BeaconStateCapella.required(preState),
+          SchemaDefinitionsCapella.required(schemaDefinitions),
+          miscHelpers,
+          SpecConfigCapella.required(specConfig),
+          predicates);
+    }
+
+    return NOOP;
+  }
+
+  private static ExpectedWithdrawals createFromCapellaState(
       final BeaconStateCapella preState,
       final SchemaDefinitionsCapella schemaDefinitionsCapella,
       final MiscHelpers miscHelpers,
@@ -72,7 +101,7 @@ public class ExpectedWithdrawals {
     return new ExpectedWithdrawals(capellaWithdrawals, 0);
   }
 
-  public static ExpectedWithdrawals create(
+  private static ExpectedWithdrawals createFromElectraState(
       final BeaconStateElectra preState,
       final SchemaDefinitionsElectra schemaDefinitions,
       final MiscHelpersElectra miscHelpers,

@@ -64,7 +64,6 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -334,16 +333,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           Optional.empty(),
           false);
     }
-  }
-
-  @Override
-  public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState preState) {
-    return ExpectedWithdrawals.create(
-        BeaconStateElectra.required(preState),
-        schemaDefinitionsElectra,
-        MiscHelpersElectra.required(miscHelpers),
-        specConfigElectra,
-        predicatesElectra);
   }
 
   @Override

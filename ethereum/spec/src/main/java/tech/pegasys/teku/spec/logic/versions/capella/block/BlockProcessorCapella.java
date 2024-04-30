@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -196,11 +195,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   @Override
   public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState preState) {
     return ExpectedWithdrawals.create(
-        BeaconStateCapella.required(preState),
-        schemaDefinitionsCapella,
-        miscHelpers,
-        specConfigCapella,
-        predicates);
+        preState, schemaDefinitionsCapella, miscHelpers, specConfig, predicates);
   }
 
   @VisibleForTesting
