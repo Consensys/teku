@@ -385,8 +385,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     final UInt64 committeeCountPerSlot =
         beaconStateAccessors.getCommitteeCountPerSlot(
             state, attestation.getData().getTarget().getEpoch());
-    beaconStateAccessors.getCommitteeCountPerSlot(
-        state, attestation.getData().getTarget().getEpoch());
     final SszBitlist aggregationBits = attestation.getAggregationBits();
     final Optional<OperationInvalidReason> committeeCheckResult =
         checkCommittees(
@@ -408,7 +406,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final SszBitlist aggregationBits) {
     int participantsCount = 0;
     for (final UInt64 committeeIndex : committeeIndices) {
-      if (committeeIndex.isGreaterThan(committeeCountPerSlot)) {
+      if (committeeIndex.isGreaterThanOrEqualTo(committeeCountPerSlot)) {
         return Optional.of(AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH);
       }
       final IntList committee =
