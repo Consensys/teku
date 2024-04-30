@@ -180,9 +180,7 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
       stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
     } else {
       final List<PendingBalanceDeposit> newList =
-          pendingBalanceDeposits
-              .asList()
-              .subList(nextDepositIndex, pendingBalanceDeposits.size());
+          pendingBalanceDeposits.asList().subList(nextDepositIndex, pendingBalanceDeposits.size());
       stateElectra.setPendingBalanceDeposits(
           schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(newList));
       stateElectra.setDepositBalanceToConsume(availableForProcessing.minusMinZero(processedAmount));
