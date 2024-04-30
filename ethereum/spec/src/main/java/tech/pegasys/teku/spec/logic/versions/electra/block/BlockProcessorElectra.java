@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -157,6 +158,20 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         state,
         getExecutionLayerWithdrawalRequestsFromBlock(executionPayload),
         validatorExitContextSupplier);
+  }
+
+  // process_withdrawals
+  @Override
+  public void processWithdrawals(
+      final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
+      throws BlockProcessingException {
+    final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(genericState);
+    expectedWithdrawals.processWithdrawals(
+        genericState,
+        payloadSummary,
+        schemaDefinitionsElectra,
+        beaconStateMutators,
+        specConfigElectra);
   }
 
   /**

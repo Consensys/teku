@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -185,63 +184,13 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   public void processWithdrawals(
       final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
-    final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
-    final SszList<Withdrawal> expectedWithdrawals =
-        schemaDefinitionsCapella
-            .getExecutionPayloadSchema()
-            .getWithdrawalsSchemaRequired()
-            .createFromElements(getExpectedWithdrawals(state).getWithdrawalList());
-
-    assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
-
-    for (int i = 0; i < expectedWithdrawals.size(); i++) {
-      final Withdrawal withdrawal = expectedWithdrawals.get(i);
-      beaconStateMutators.decreaseBalance(
-          state, withdrawal.getValidatorIndex().intValue(), withdrawal.getAmount());
-    }
-
-    final int validatorCount = genericState.getValidators().size();
-    final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
-    final int maxValidatorsPerWithdrawalsSweep =
-        specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
-    if (expectedWithdrawals.size() != 0) {
-      final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
-      state.setNextWithdrawalIndex(latestWithdrawal.getIndex().increment());
-    }
-
-    final int nextWithdrawalValidatorIndex;
-    if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
-      // Update the next validator index to start the next withdrawal sweep
-      final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
-      nextWithdrawalValidatorIndex = latestWithdrawal.getValidatorIndex().intValue() + 1;
-    } else {
-      // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
-      nextWithdrawalValidatorIndex =
-          state.getNextWithdrawalValidatorIndex().intValue() + maxValidatorsPerWithdrawalsSweep;
-    }
-    state.setNextWithdrawalValidatorIndex(
-        UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
-  }
-
-  private static void assertWithdrawalsInExecutionPayloadMatchExpected(
-      final ExecutionPayloadSummary payloadSummary, final SszList<Withdrawal> expectedWithdrawals)
-      throws BlockProcessingException {
-    // the spec does a element-to-element comparison but Teku is comparing the hash of the tree
-    if (payloadSummary.getOptionalWithdrawalsRoot().isEmpty()
-        || !expectedWithdrawals
-            .hashTreeRoot()
-            .equals(payloadSummary.getOptionalWithdrawalsRoot().get())) {
-      final String msg =
-          String.format(
-              "Withdrawals in execution payload are different from expected (expected withdrawals root is %s but was "
-                  + "%s)",
-              expectedWithdrawals.hashTreeRoot(),
-              payloadSummary
-                  .getOptionalWithdrawalsRoot()
-                  .map(Bytes::toHexString)
-                  .orElse("MISSING"));
-      throw new BlockProcessingException(msg);
-    }
+    final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(genericState);
+    expectedWithdrawals.processWithdrawals(
+        genericState,
+        payloadSummary,
+        schemaDefinitionsCapella,
+        beaconStateMutators,
+        specConfigCapella);
   }
 
   @Override
