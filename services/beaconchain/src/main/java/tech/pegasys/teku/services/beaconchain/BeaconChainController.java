@@ -588,7 +588,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initDataColumnSidecarManager() {
-    if (spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
       DataColumnSidecarValidator dataColumnSidecarValidator = DataColumnSidecarValidator.create();
       DataColumnSidecarGossipValidator gossipValidator =
           DataColumnSidecarGossipValidator.create(dataColumnSidecarValidator);
@@ -854,7 +854,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec));
+    eth1DataCache = new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec));
   }
 
   protected void initAttestationTopicSubscriber() {

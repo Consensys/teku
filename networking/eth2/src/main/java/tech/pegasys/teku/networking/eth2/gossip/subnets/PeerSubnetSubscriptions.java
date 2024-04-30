@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.NetworkingSpecConfigElectra;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigEip7594;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 public class PeerSubnetSubscriptions {
@@ -77,8 +77,8 @@ public class PeerSubnetSubscriptions {
     Integer dataColumnSidecarSubnetCount =
         currentVersion
             .getConfig()
-            .toVersionElectra()
-            .map(NetworkingSpecConfigElectra::getDataColumnSidecarSubnetCount)
+            .toVersionEip7594()
+            .map(NetworkingSpecConfigEip7594::getDataColumnSidecarSubnetCount)
             .orElse(0);
 
     final PeerSubnetSubscriptions subscriptions =
@@ -175,7 +175,9 @@ public class PeerSubnetSubscriptions {
   static PeerSubnetSubscriptions createEmpty(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
       final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
-    return builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema).build();
+    return builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema)
+        .nodeIdToDataColumnSidecarSubnetsCalculator(NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+        .build();
   }
 
   public int getSubscriberCountForAttestationSubnet(final int subnetId) {

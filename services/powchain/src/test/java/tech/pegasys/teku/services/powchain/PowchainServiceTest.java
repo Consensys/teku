@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,8 +39,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 
 public class PowchainServiceTest {
@@ -53,7 +50,6 @@ public class PowchainServiceTest {
       mock(ExecutionWeb3jClientProvider.class);
   private final Web3JClient web3JClient = mock(Web3JClient.class);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private Supplier<Optional<BeaconState>> latestFinalizedState;
 
   @BeforeEach
   public void setup() {
@@ -73,7 +69,6 @@ public class PowchainServiceTest {
     when(eventChannels.getPublisher(eq(Eth1DepositStorageChannel.class), any(AsyncRunner.class)))
         .thenReturn(mock(Eth1DepositStorageChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
-    latestFinalizedState = Optional::empty;
   }
 
   @Test
@@ -218,52 +213,10 @@ public class PowchainServiceTest {
         .isEmpty();
   }
 
-  @Test
-  public void shouldNotInitializeIfEth1PollingHasBeenDisabled() {
-    final Spec spec = mock(Spec.class);
-    when(powConfig.getSpec()).thenReturn(spec);
-    final BeaconState finalizedState = mock(BeaconState.class);
-    when(spec.isFormerDepositMechanismDisabled(finalizedState)).thenReturn(true);
-
-    latestFinalizedState = () -> Optional.of(finalizedState);
-
-    final PowchainService powchainService =
-        new PowchainService(
-            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
-
-    powchainService.start().join();
-
-    assertThat(powchainService.isRunning()).isTrue();
-    assertThat(powchainService.getEth1DepositManager()).isNull();
-  }
-
-  @Test
-  public void shouldStopServiceIfEth1PollingHasBeenDisabledOnFinalizedCheckpoint() {
-    final Spec spec = mock(Spec.class);
-    when(powConfig.getSpec()).thenReturn(spec);
-    final BeaconState finalizedState = mock(BeaconState.class);
-    when(spec.isFormerDepositMechanismDisabled(finalizedState)).thenReturn(true);
-
-    latestFinalizedState = () -> Optional.of(finalizedState);
-
-    final PowchainService powchainService =
-        new PowchainService(
-            serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider), latestFinalizedState);
-
-    powchainService.start().join();
-
-    assertThat(powchainService.isRunning()).isTrue();
-
-    powchainService.onNewFinalizedCheckpoint(mock(Checkpoint.class), false);
-
-    assertThat(powchainService.isRunning()).isFalse();
-  }
-
   private PowchainService createAndInitializePowchainService(
       final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
     final PowchainService powchainService =
-        new PowchainService(
-            serviceConfig, powConfig, maybeExecutionWeb3jClientProvider, latestFinalizedState);
+        new PowchainService(serviceConfig, powConfig, maybeExecutionWeb3jClientProvider);
     powchainService.initialize();
     return powchainService;
   }

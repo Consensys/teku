@@ -23,7 +23,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.EIP7594;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -44,14 +44,12 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
@@ -72,7 +70,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA})
+@TestSpecContext(milestone = {CAPELLA, DENEB, EIP7594})
 public class Web3JExecutionEngineClientTest {
 
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
@@ -290,66 +288,6 @@ public class Web3JExecutionEngineClientTest {
         .isEqualTo(
             Bytes.ofUnsignedLong(executionPayloadV3.excessBlobGas.longValue())
                 .toQuantityHexString());
-    assertThat(((List<Object>) requestData.get("params")).get(1))
-        .asInstanceOf(LIST)
-        .containsExactlyElementsOf(
-            blobVersionedHashes.stream()
-                .map(VersionedHash::toHexString)
-                .collect(Collectors.toList()));
-    assertThat(((List<Object>) requestData.get("params")).get(2))
-        .asString()
-        .isEqualTo(parentBeaconBlockRoot.toHexString());
-  }
-
-  @TestTemplate
-  @SuppressWarnings("unchecked")
-  public void newPayloadV4_shouldBuildRequestAndResponseSuccessfully() {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
-    final Bytes32 latestValidHash = dataStructureUtil.randomBytes32();
-    final PayloadStatus payloadStatusResponse =
-        PayloadStatus.valid(Optional.of(latestValidHash), Optional.empty());
-
-    final String bodyResponse =
-        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\":"
-            + "{ \"status\": \"VALID\", \"latestValidHash\": \""
-            + latestValidHash
-            + "\", \"validationError\": null}}";
-
-    mockSuccessfulResponse(bodyResponse);
-
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    final ExecutionPayloadV4 executionPayloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload);
-
-    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
-    final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
-
-    final SafeFuture<Response<PayloadStatusV1>> futureResponse =
-        eeClient.newPayloadV4(executionPayloadV4, blobVersionedHashes, parentBeaconBlockRoot);
-
-    assertThat(futureResponse)
-        .succeedsWithin(1, TimeUnit.SECONDS)
-        .matches(
-            response ->
-                response.getPayload().asInternalExecutionPayload().equals(payloadStatusResponse));
-
-    final Map<String, Object> requestData = takeRequest();
-    verifyJsonRpcMethodCall(requestData, "engine_newPayloadV4");
-
-    final Map<String, Object> executionPayloadV4Parameter =
-        (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
-    // 19 fields in ExecutionPayloadV4
-    assertThat(executionPayloadV4Parameter).hasSize(19);
-    // sanity check
-    assertThat(executionPayloadV4Parameter.get("parentHash"))
-        .isEqualTo(executionPayloadV4.parentHash.toHexString());
-
-    assertThat(executionPayloadV4Parameter.get("depositReceipts"))
-        .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.depositReceipts);
-    assertThat(executionPayloadV4Parameter.get("exits"))
-        .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.exits);
     assertThat(((List<Object>) requestData.get("params")).get(1))
         .asInstanceOf(LIST)
         .containsExactlyElementsOf(

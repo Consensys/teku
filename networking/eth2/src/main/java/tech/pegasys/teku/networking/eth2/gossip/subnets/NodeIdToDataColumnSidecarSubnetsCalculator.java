@@ -24,8 +24,8 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 
 @FunctionalInterface
 public interface NodeIdToDataColumnSidecarSubnetsCalculator {
@@ -36,7 +36,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
   /** Creates a calculator instance for the specific slot */
   private static NodeIdToDataColumnSidecarSubnetsCalculator createAtSlot(
-      SpecConfigElectra config, MiscHelpersElectra miscHelpers, UInt64 currentSlot) {
+      SpecConfigEip7594 config, MiscHelpersEip7594 miscHelpers, UInt64 currentSlot) {
     UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
     SszBitvectorSchema<SszBitvector> bitvectorSchema =
         SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount());
@@ -62,11 +62,11 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
                 slot -> {
                   SpecVersion specVersion = spec.atSlot(slot);
                   final NodeIdToDataColumnSidecarSubnetsCalculator calculatorAtSlot;
-                  if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+                  if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7594)) {
                     calculatorAtSlot =
                         createAtSlot(
-                            SpecConfigElectra.required(specVersion.getConfig()),
-                            MiscHelpersElectra.required(specVersion.miscHelpers()),
+                            SpecConfigEip7594.required(specVersion.getConfig()),
+                            MiscHelpersEip7594.required(specVersion.miscHelpers()),
                             slot);
                   } else {
                     calculatorAtSlot = NOOP;

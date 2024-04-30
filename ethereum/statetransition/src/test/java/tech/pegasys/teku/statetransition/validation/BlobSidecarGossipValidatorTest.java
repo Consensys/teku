@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.EIP7594})
 public class BlobSidecarGossipValidatorTest {
   private final Map<Bytes32, BlockImportResult> invalidBlocks = new HashMap<>();
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);

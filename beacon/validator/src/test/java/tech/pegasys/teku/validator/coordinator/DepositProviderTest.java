@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -175,37 +174,6 @@ public class DepositProviderTest {
   }
 
   @Test
-  void noDepositsIncludedIfFormerDepositMechanismHasBeenDisabled() {
-    setup(16, SpecMilestone.ELECTRA);
-    updateStateEth1DepositIndex(5);
-    updateStateDepositReceiptsStartIndex(5);
-
-    final SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
-
-    assertThat(deposits).isEmpty();
-  }
-
-  @Test
-  void getsRemainingEth1PendingDepositsIfElectraIsEnabled() {
-    setup(16, SpecMilestone.ELECTRA);
-    updateStateEth1DepositIndex(5);
-    updateStateEth1DataDepositCount(20);
-    // 16th deposit is using the new mechanism
-    updateStateDepositReceiptsStartIndex(16);
-
-    mockDepositsFromEth1Block(0, 10);
-    mockDepositsFromEth1Block(10, 20);
-
-    final SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
-
-    // the pending Eth1 deposits (deposit_receipt_start_index - eth1_deposit_index)
-    // we need to process eth1_deposit_index deposit (5) up to 16 (exclusive) so 11 is the
-    // expected size
-    assertThat(deposits).hasSize(11);
-    checkThatDepositProofIsValid(deposits);
-  }
-
-  @Test
   void depositsWithFinalizedIndicesGetPrunedFromMap() {
     setup(16);
     Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
@@ -303,21 +271,6 @@ public class DepositProviderTest {
     depositProvider.onSlot(UInt64.ONE);
 
     verify(eventLogger).eth1DepositDataNotAvailable(UInt64.valueOf(9), UInt64.valueOf(10));
-  }
-
-  @Test
-  void
-      shouldNotLogAnEventOnSlotIfFormerDepositMechanismIsDisabled_EvenIfAllDepositsRequiredForStateNotAvailable() {
-    setup(1, SpecMilestone.ELECTRA);
-    mockDepositsFromEth1Block(0, 8);
-    updateStateEth1DepositIndex(5);
-    updateStateDepositReceiptsStartIndex(5);
-    updateStateEth1DataDepositCount(10);
-    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
-
-    depositProvider.onSlot(UInt64.ONE);
-
-    verifyNoInteractions(eventLogger);
   }
 
   @Test
@@ -535,13 +488,5 @@ public class DepositProviderTest {
 
   private void updateStateEth1DepositIndex(int n) {
     state = state.updated(mutableState -> mutableState.setEth1DepositIndex(UInt64.valueOf(n)));
-  }
-
-  private void updateStateDepositReceiptsStartIndex(int n) {
-    state =
-        state.updated(
-            mutableState ->
-                MutableBeaconStateElectra.required(mutableState)
-                    .setDepositReceiptsStartIndex(UInt64.valueOf(n)));
   }
 }

@@ -9,7 +9,7 @@
       "in" : "header",
       "schema" : {
         "type" : "string",
-        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "eip7594" ],
         "description" : "Version of the block being submitted, if using SSZ encoding."
       }
     } ],
@@ -36,7 +36,7 @@
             }, {
               "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
             }, {
-              "$ref" : "#/components/schemas/SignedBlockContentsElectra"
+              "$ref" : "#/components/schemas/SignedBlockContentsEip7594"
             } ]
           }
         }

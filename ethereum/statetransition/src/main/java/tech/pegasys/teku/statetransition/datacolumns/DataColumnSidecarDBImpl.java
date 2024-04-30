@@ -16,7 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;

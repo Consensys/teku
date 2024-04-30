@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
@@ -68,14 +68,14 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
     SpecVersion specVersion = spec.atEpoch(epoch);
     specVersion
         .miscHelpers()
-        .toVersionElectra()
+        .toVersionEip7594()
         .ifPresent(
-            electraSpec -> {
+            eip7594Spec -> {
               int totalSubnetCount =
-                  SpecConfigElectra.required(specVersion.getConfig()).getCustodyRequirement()
+                  SpecConfigEip7594.required(specVersion.getConfig()).getCustodyRequirement()
                       + extraVoluntarySubnetCount;
               List<UInt64> subnets =
-                  electraSpec.computeDataColumnSidecarBackboneSubnets(
+                  eip7594Spec.computeDataColumnSidecarBackboneSubnets(
                       nodeId, epoch, totalSubnetCount);
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });

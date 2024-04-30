@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -89,13 +89,13 @@ class SpecVersionTest {
   }
 
   @Test
-  void shouldCreateElectraSpec() {
-    final SpecConfigElectra electraSpecConfig = SpecConfigElectra.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createElectra(electraSpecConfig);
+  void shouldCreateEip7594Spec() {
+    final SpecConfigEip7594 eip7594SpecConfig = SpecConfigEip7594.required(minimalConfig);
+    final SpecVersion expectedVersion = SpecVersion.createEip7594(eip7594SpecConfig);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig);
+        SpecVersion.create(SpecMilestone.EIP7594, minimalConfig);
     assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ELECTRA);
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.EIP7594);
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }

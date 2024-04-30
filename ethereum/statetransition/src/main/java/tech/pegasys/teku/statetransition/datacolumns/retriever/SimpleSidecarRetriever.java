@@ -27,9 +27,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarValidator;
@@ -181,8 +181,8 @@ public class SimpleSidecarRetriever
       UInt64 epoch = spec.computeEpochAtSlot(slot);
       SpecVersion specVersion = spec.atSlot(slot);
       int minCustodyRequirement =
-          SpecConfigElectra.required(specVersion.getConfig()).getCustodyRequirement();
-      return MiscHelpersElectra.required(specVersion.miscHelpers())
+          SpecConfigEip7594.required(specVersion.getConfig()).getCustodyRequirement();
+      return MiscHelpersEip7594.required(specVersion.miscHelpers())
           .computeCustodyColumnIndexes(
               nodeId, epoch, minCustodyRequirement + extraCustodySubnetCount);
     }

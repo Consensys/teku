@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.config.builder.AltairBuilder;
 import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
 import tech.pegasys.teku.spec.config.builder.DenebBuilder;
-import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
+import tech.pegasys.teku.spec.config.builder.Eip7594Builder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class SpecConfigReader {
@@ -197,13 +197,13 @@ public class SpecConfigReader {
               unprocessedConfig.remove(constantKey);
             });
 
-    // Process electra config
-    streamConfigSetters(ElectraBuilder.class)
+    // Process EIP7594 config
+    streamConfigSetters(Eip7594Builder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConfig.get(constantKey);
-              invokeSetter(setter, configBuilder::electraBuilder, constantKey, rawValue);
+              invokeSetter(setter, configBuilder::eip7594Builder, constantKey, rawValue);
               unprocessedConfig.remove(constantKey);
             });
 

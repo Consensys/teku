@@ -28,7 +28,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -40,7 +39,6 @@ public class Eth1DataCache {
   static final String VOTES_CURRENT_METRIC_NAME = "eth1_current_period_votes_current";
   static final String VOTES_BEST_METRIC_NAME = "eth1_current_period_votes_best";
 
-  private final Spec spec;
   private final Eth1VotingPeriod eth1VotingPeriod;
   private final UInt64 cacheDuration;
 
@@ -52,9 +50,7 @@ public class Eth1DataCache {
   private final SettableGauge currentPeriodVotesBest;
   private final SettableGauge currentPeriodVotesMax;
 
-  public Eth1DataCache(
-      final Spec spec, final MetricsSystem metricsSystem, final Eth1VotingPeriod eth1VotingPeriod) {
-    this.spec = spec;
+  public Eth1DataCache(final MetricsSystem metricsSystem, final Eth1VotingPeriod eth1VotingPeriod) {
     this.eth1VotingPeriod = eth1VotingPeriod;
     cacheDuration = eth1VotingPeriod.getCacheDurationInSeconds();
     metricsSystem.createIntegerGauge(
@@ -115,10 +111,6 @@ public class Eth1DataCache {
   }
 
   public Eth1Data getEth1Vote(final BeaconState state) {
-    if (spec.isFormerDepositMechanismDisabled(state)) {
-      // no need for a real vote when Eth1 polling has been disabled
-      return state.getEth1Data();
-    }
     final NavigableMap<UInt64, Eth1Data> votesToConsider =
         getVotesToConsider(state.getSlot(), state.getGenesisTime(), state.getEth1Data());
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
@@ -142,10 +134,6 @@ public class Eth1DataCache {
   }
 
   public void updateMetrics(final BeaconState state) {
-    if (spec.isFormerDepositMechanismDisabled(state)) {
-      // no need to update metrics when Eth1 polling has been disabled
-      return;
-    }
     final Eth1Data currentEth1Data = state.getEth1Data();
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
     final Set<Eth1Data> knownBlocks =

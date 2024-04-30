@@ -111,7 +111,7 @@ public interface SchemaDefinitions {
   }
 
   @NonSchema
-  default Optional<SchemaDefinitionsElectra> toVersionElectra() {
+  default Optional<SchemaDefinitionsEip7594> toVersionEip7594() {
     return Optional.empty();
   }
 

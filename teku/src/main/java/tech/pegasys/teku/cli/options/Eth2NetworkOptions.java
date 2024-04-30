@@ -146,12 +146,12 @@ public class Eth2NetworkOptions {
   private UInt64 denebForkEpoch;
 
   @Option(
-      names = {"--Xnetwork-electra-fork-epoch"},
+      names = {"--Xnetwork-das-fork-epoch"},
       hidden = true,
       paramLabel = "<epoch>",
-      description = "Override the electra fork activation epoch.",
+      description = "Override the EIP7594 fork activation epoch.",
       arity = "1")
-  private UInt64 electraForkEpoch;
+  private UInt64 eip7594ForkEpoch;
 
   @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
@@ -309,8 +309,8 @@ public class Eth2NetworkOptions {
     if (denebForkEpoch != null) {
       builder.denebForkEpoch(denebForkEpoch);
     }
-    if (electraForkEpoch != null) {
-      builder.electraForkEpoch(electraForkEpoch);
+    if (eip7594ForkEpoch != null) {
+      builder.eip7594ForkEpoch(eip7594ForkEpoch);
     }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);

@@ -158,6 +158,8 @@ class SubnetScorerTest {
                             .addSubscriber(1, node1)
                             .addSubscriber(1, node2)
                             .addSubscriber(1, node3))
+                .nodeIdToDataColumnSidecarSubnetsCalculator(
+                    NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
                 .build());
 
     assertCandidatePeerScores(

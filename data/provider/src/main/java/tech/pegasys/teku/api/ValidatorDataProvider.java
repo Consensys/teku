@@ -34,8 +34,8 @@ import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.electra.SignedBeaconBlockElectra;
-import tech.pegasys.teku.api.schema.electra.SignedBlindedBeaconBlockElectra;
+import tech.pegasys.teku.api.schema.eip7594.SignedBeaconBlockEip7594;
+import tech.pegasys.teku.api.schema.eip7594.SignedBlindedBeaconBlockEip7594;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
@@ -175,7 +175,7 @@ public class ValidatorDataProvider {
       case BELLATRIX -> mapper.treeToValue(jsonNode, SignedBeaconBlockBellatrix.class);
       case CAPELLA -> mapper.treeToValue(jsonNode, SignedBeaconBlockCapella.class);
       case DENEB -> mapper.treeToValue(jsonNode, SignedBeaconBlockDeneb.class);
-      case ELECTRA -> mapper.treeToValue(jsonNode, SignedBeaconBlockElectra.class);
+      case EIP7594 -> mapper.treeToValue(jsonNode, SignedBeaconBlockEip7594.class);
     };
   }
 
@@ -191,7 +191,7 @@ public class ValidatorDataProvider {
       case BELLATRIX -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockBellatrix.class);
       case CAPELLA -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockCapella.class);
       case DENEB -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockDeneb.class);
-      case ELECTRA -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockElectra.class);
+      case EIP7594 -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockEip7594.class);
     };
   }
 

@@ -28,11 +28,11 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscriptions {
@@ -59,12 +59,12 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
     this.recentChainData = recentChainData;
     this.processor = processor;
     this.forkInfo = forkInfo;
-    SpecVersion specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
+    SpecVersion specVersion = spec.forMilestone(SpecMilestone.EIP7594);
     this.dataColumnSidecarSchema =
-        SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+        SchemaDefinitionsEip7594.required(specVersion.getSchemaDefinitions())
             .getDataColumnSidecarSchema();
     this.subnetCount =
-        SpecConfigElectra.required(specVersion.getConfig()).getDataColumnSidecarSubnetCount();
+        SpecConfigEip7594.required(specVersion.getConfig()).getDataColumnSidecarSubnetCount();
   }
 
   public SafeFuture<?> gossip(final DataColumnSidecar sidecar) {

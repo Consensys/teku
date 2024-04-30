@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.api;
 
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 
 public interface SidecarUpdateChannel extends VoidReturningChannelInterface {
 

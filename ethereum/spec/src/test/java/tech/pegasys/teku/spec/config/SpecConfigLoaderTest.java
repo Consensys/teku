@@ -43,7 +43,7 @@ public class SpecConfigLoaderTest {
   public void shouldLoadAllKnownNetworks(final Eth2Network network) throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfigStrict(network.configName());
     // testing latest SpecConfig ensures all fields will be asserted on
-    assertAllFieldsSet(config, SpecConfigElectra.class);
+    assertAllFieldsSet(config, SpecConfigEip7594.class);
   }
 
   /**

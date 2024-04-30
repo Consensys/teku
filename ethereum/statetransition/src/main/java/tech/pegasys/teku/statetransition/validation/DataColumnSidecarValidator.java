@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 
 /** Check the DataColumnSidecar strict validity received either via Pubsub or Req/Resp */
 public interface DataColumnSidecarValidator {

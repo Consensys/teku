@@ -18,8 +18,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -63,11 +61,5 @@ public interface OperationProcessor {
       throws BlockProcessingException;
 
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
-      throws BlockProcessingException;
-
-  void processDepositReceipt(final MutableBeaconState state, final DepositReceipt depositReceipt)
-      throws BlockProcessingException;
-
-  void processExecutionLayerExit(MutableBeaconState state, ExecutionLayerExit executionLayerExit)
       throws BlockProcessingException;
 }

@@ -16,7 +16,6 @@ package tech.pegasys.teku.services;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.networking.nat.NatService;
@@ -25,9 +24,7 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
@@ -63,19 +60,7 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.natConfiguration(),
             tekuConfig.network().getListenPort(),
             tekuConfig.discovery().isDiscoveryEnabled()));
-    // making it a Supplier ensures that BeaconChainService has been started and RecentChainData has
-    // been initialized when `get()` is called
-    final Supplier<Optional<BeaconState>> finalizedStateSupplier =
-        () -> {
-          final RecentChainData recentChainData =
-              beaconChainService.getBeaconChainController().getRecentChainData();
-          if (recentChainData.isPreGenesis()) {
-            return Optional.empty();
-          }
-          return Optional.of(recentChainData.getStore().getLatestFinalized().getState());
-        };
-    powchainService(
-            tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider, finalizedStateSupplier)
+    powchainService(tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider)
         .ifPresent(services::add);
 
     final Optional<SlashingRiskAction> maybeValidatorSlashedAction =
@@ -94,8 +79,7 @@ public class BeaconNodeServiceController extends ServiceController {
   private Optional<PowchainService> powchainService(
       final TekuConfiguration tekuConfig,
       final ServiceConfig serviceConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
-      final Supplier<Optional<BeaconState>> finalizedStateSupplier) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionWeb3jClientProvider.isEmpty())) {
       return Optional.empty();
@@ -108,10 +92,7 @@ public class BeaconNodeServiceController extends ServiceController {
     }
     final PowchainService powchainService =
         new PowchainService(
-            serviceConfig,
-            tekuConfig.powchain(),
-            maybeExecutionWeb3jClientProvider,
-            finalizedStateSupplier);
+            serviceConfig, tekuConfig.powchain(), maybeExecutionWeb3jClientProvider);
     serviceConfig.getEventChannels().subscribe(FinalizedCheckpointChannel.class, powchainService);
     return Optional.of(powchainService);
   }

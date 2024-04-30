@@ -22,7 +22,7 @@ public enum Version {
   bellatrix,
   capella,
   deneb,
-  electra;
+  eip7594;
 
   public static Version fromMilestone(final SpecMilestone milestone) {
     return switch (milestone) {
@@ -31,7 +31,7 @@ public enum Version {
       case BELLATRIX -> bellatrix;
       case CAPELLA -> capella;
       case DENEB -> deneb;
-      case ELECTRA -> electra;
+      case EIP7594 -> eip7594;
     };
   }
 }

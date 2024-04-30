@@ -71,6 +71,24 @@ public class GenesisGenerator {
     return this;
   }
 
+  public GenesisGenerator withDenebEpoch(final UInt64 denebForkEpoch) {
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.denebBuilder(
+                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+    return this;
+  }
+
+  public GenesisGenerator withEip7594Epoch(final UInt64 eip7594ForkEpoch) {
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.eip7594Builder(
+                    eip7594Builder -> eip7594Builder.eip7594ForkEpoch(eip7594ForkEpoch)));
+    return this;
+  }
+
   public GenesisGenerator withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
     return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
   }

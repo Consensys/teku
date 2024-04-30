@@ -19,7 +19,7 @@
       "in" : "header",
       "schema" : {
         "type" : "string",
-        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "eip7594" ],
         "description" : "Version of the block being submitted."
       }
     } ],
@@ -46,7 +46,7 @@
             }, {
               "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
             }, {
-              "$ref" : "#/components/schemas/SignedBlindedBlockElectra"
+              "$ref" : "#/components/schemas/SignedBlindedBlockEip7594"
             }  ]
           }
         }

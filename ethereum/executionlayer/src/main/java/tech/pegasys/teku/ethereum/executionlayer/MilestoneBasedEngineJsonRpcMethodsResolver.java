@@ -32,12 +32,10 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdate
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV4;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
@@ -73,8 +71,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                 case DENEB:
                   methodsByMilestone.put(milestone, denebSupportedMethods());
                   break;
-                case ELECTRA:
-                  methodsByMilestone.put(milestone, electraSupportedMethods());
+                case EIP7594:
                   break;
               }
             });
@@ -105,16 +102,6 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV3(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV3(executionEngineClient, spec));
-    methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
-
-    return methods;
-  }
-
-  private Map<EngineApiMethod, EngineJsonRpcMethod<?>> electraSupportedMethods() {
-    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
-
-    methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV4(executionEngineClient));
-    methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV4(executionEngineClient, spec));
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
 
     return methods;

@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.EIP7594;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -47,16 +47,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
-import tech.pegasys.teku.spec.config.NetworkingSpecConfigElectra;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigEip7594;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -220,14 +220,13 @@ public class Spec {
   }
 
   /**
-   * Networking config with Electra constants. Use {@link
-   * tech.pegasys.teku.spec.config.SpecConfigElectra#required(SpecConfig)} when you are sure that
-   * Electra is available, otherwise use this method
+   * Networking config with EIP7594 constants. Use {@link SpecConfigEip7594#required(SpecConfig)}
+   * when you are sure that EIP7594 is available, otherwise use this method
    */
-  public Optional<NetworkingSpecConfigElectra> getNetworkingConfigElectra() {
-    return Optional.ofNullable(forMilestone(ELECTRA))
+  public Optional<NetworkingSpecConfigEip7594> getNetworkingConfigEip7594() {
+    return Optional.ofNullable(forMilestone(EIP7594))
         .map(SpecVersion::getConfig)
-        .map(specConfig -> (NetworkingSpecConfigElectra) specConfig.getNetworkingConfig());
+        .map(specConfig -> (NetworkingSpecConfigEip7594) specConfig.getNetworkingConfig());
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -424,10 +423,10 @@ public class Spec {
   public DataColumnSidecar deserializeSidecar(final Bytes serializedSidecar, final UInt64 slot) {
     return atSlot(slot)
         .getSchemaDefinitions()
-        .toVersionElectra()
+        .toVersionEip7594()
         .orElseThrow(
             () ->
-                new RuntimeException("Electra milestone is required to deserialize column sidecar"))
+                new RuntimeException("EIP7594 milestone is required to deserialize column sidecar"))
         .getDataColumnSidecarSchema()
         .sszDeserialize(serializedSidecar);
   }
@@ -958,36 +957,31 @@ public class Spec {
   }
 
   public Optional<UInt64> getNumberOfDataColumns() {
-    return getSpecConfigElectra().map(SpecConfigElectra::getNumberOfColumns);
+    return getSpecConfigEip7594().map(SpecConfigEip7594::getNumberOfColumns);
   }
 
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(ELECTRA)) {
+    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(EIP7594)) {
       return false;
     }
     final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(config);
+    final SpecConfigEip7594 specConfigEip7594 = SpecConfigEip7594.required(config);
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(specConfigElectra.getMinEpochsForDataColumnSidecarsRequests());
+        .isLessThanOrEqualTo(specConfigEip7594.getMinEpochsForDataColumnSidecarsRequests());
   }
 
   public UInt64 computeSubnetForDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     final SpecConfig config = atSlot(dataColumnSidecar.getSlot()).getConfig();
-    final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(config);
-    return dataColumnSidecar.getIndex().mod(specConfigElectra.getDataColumnSidecarSubnetCount());
+    final SpecConfigEip7594 specConfigEip7594 = SpecConfigEip7594.required(config);
+    return dataColumnSidecar.getIndex().mod(specConfigEip7594.getDataColumnSidecarSubnetCount());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
     return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
         .map(this::computeStartSlotAtEpoch);
-  }
-
-  // Electra Utils
-  public boolean isFormerDepositMechanismDisabled(BeaconState state) {
-    return atState(state).miscHelpers().isFormerDepositMechanismDisabled(state);
   }
 
   // Deneb private helpers
@@ -1003,13 +997,13 @@ public class Spec {
     return atSlot(slot).getConfig().toVersionDeneb();
   }
 
-  // Electra private helpers
-  private Optional<SpecConfigElectra> getSpecConfigElectra() {
+  // EIP7594 private helpers
+  private Optional<SpecConfigEip7594> getSpecConfigEip7594() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
     return Optional.ofNullable(forMilestone(highestSupportedMilestone))
         .map(SpecVersion::getConfig)
-        .flatMap(SpecConfig::toVersionElectra);
+        .flatMap(SpecConfig::toVersionEip7594);
   }
 
   // Private helpers

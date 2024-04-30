@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 
 /** The class which searches for a specific {@link DataColumnSidecar} across nodes in the network */
 public interface DataColumnSidecarRetriever {

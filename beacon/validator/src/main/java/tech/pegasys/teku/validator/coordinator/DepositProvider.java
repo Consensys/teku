@@ -184,9 +184,6 @@ public class DepositProvider
         .get()
         .thenAccept(
             state -> {
-              if (spec.isFormerDepositMechanismDisabled(state)) {
-                return;
-              }
               // We want to verify our Beacon Node view of the eth1 deposits.
               // So we want to check if it has the necessary deposit data to propose a block
               final UInt64 eth1DepositCount = state.getEth1Data().getDepositCount();
@@ -211,10 +208,6 @@ public class DepositProvider
       final BeaconState state, final Eth1Data eth1Data) {
     final long maxDeposits = spec.getMaxDeposits(state);
     final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
-    // no Eth1 deposits needed if already transitioned to the EIP-6110 mechanism
-    if (spec.isFormerDepositMechanismDisabled(state)) {
-      return depositsSchema.createFromElements(emptyList());
-    }
     final UInt64 eth1DepositCount;
     if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
       eth1DepositCount = eth1Data.getDepositCount();
@@ -224,20 +217,7 @@ public class DepositProvider
     final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
 
     final UInt64 eth1PendingDepositCount =
-        state
-            .toVersionElectra()
-            .map(
-                stateElectra -> {
-                  // EIP-6110
-                  final UInt64 eth1DepositIndexLimit =
-                      eth1DepositCount.min(stateElectra.getDepositReceiptsStartIndex());
-                  return eth1DepositIndexLimit.minusMinZero(eth1DepositIndex).min(maxDeposits);
-                })
-            .orElseGet(
-                () -> {
-                  // Phase0
-                  return eth1DepositCount.minusMinZero(eth1DepositIndex).min(maxDeposits);
-                });
+        eth1DepositCount.minusMinZero(eth1DepositIndex).min(maxDeposits);
 
     // No deposits to include
     if (eth1PendingDepositCount.isZero()) {

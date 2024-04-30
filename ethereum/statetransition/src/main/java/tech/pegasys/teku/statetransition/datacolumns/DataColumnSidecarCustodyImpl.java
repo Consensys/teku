@@ -26,10 +26,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, SlotEventsChannel {
@@ -75,7 +75,7 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
   private final UInt256 nodeId;
   private final int totalCustodySubnetCount;
 
-  private final UInt64 electraStartEpoch;
+  private final UInt64 eip7594StartEpoch;
 
   private UInt64 currentSlot = null;
 
@@ -97,7 +97,7 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
                 .join();
     this.nodeId = nodeId;
     this.totalCustodySubnetCount = totalCustodySubnetCount;
-    this.electraStartEpoch = spec.getForkSchedule().getFork(SpecMilestone.ELECTRA).getEpoch();
+    this.eip7594StartEpoch = spec.getForkSchedule().getFork(SpecMilestone.EIP7594).getEpoch();
   }
 
   private UInt64 getEarliestCustodySlot(UInt64 currentSlot) {
@@ -108,10 +108,10 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
   private UInt64 getEarliestCustodyEpoch(UInt64 currentEpoch) {
     int custodyPeriod =
         spec.getSpecConfig(currentEpoch)
-            .toVersionElectra()
+            .toVersionEip7594()
             .orElseThrow()
             .getMinEpochsForDataColumnSidecarsRequests();
-    return currentEpoch.minusMinZero(custodyPeriod).max(electraStartEpoch);
+    return currentEpoch.minusMinZero(custodyPeriod).max(eip7594StartEpoch);
   }
 
   private Set<UInt64> getCustodyColumnsForSlot(UInt64 slot) {
@@ -119,7 +119,7 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
   }
 
   private Set<UInt64> getCustodyColumnsForEpoch(UInt64 epoch) {
-    return MiscHelpersElectra.required(spec.atEpoch(epoch).miscHelpers())
+    return MiscHelpersEip7594.required(spec.atEpoch(epoch).miscHelpers())
         .computeCustodyColumnIndexes(nodeId, epoch, totalCustodySubnetCount);
   }
 

@@ -53,7 +53,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
       SpecMilestone.ALTAIR,
       SpecMilestone.BELLATRIX,
       SpecMilestone.DENEB,
-      SpecMilestone.ELECTRA
+      SpecMilestone.EIP7594
     })
 public class BlockGossipValidatorTest {
   private Spec spec;

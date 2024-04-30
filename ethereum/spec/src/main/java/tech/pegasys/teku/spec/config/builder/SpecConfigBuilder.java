@@ -28,7 +28,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -130,12 +130,12 @@ public class SpecConfigBuilder {
 
   private Integer reorgParentWeightThreshold = 160;
 
-  private final BuilderChain<SpecConfig, SpecConfigElectra> builderChain =
+  private final BuilderChain<SpecConfig, SpecConfigEip7594> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
           .appendBuilder(new DenebBuilder())
-          .appendBuilder(new ElectraBuilder());
+          .appendBuilder(new Eip7594Builder());
 
   public SpecConfig build() {
     builderChain.addOverridableItemsToRawConfig(
@@ -727,8 +727,8 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder electraBuilder(final Consumer<ElectraBuilder> consumer) {
-    builderChain.withBuilder(ElectraBuilder.class, consumer);
+  public SpecConfigBuilder eip7594Builder(final Consumer<Eip7594Builder> consumer) {
+    builderChain.withBuilder(Eip7594Builder.class, consumer);
     return this;
   }
 }

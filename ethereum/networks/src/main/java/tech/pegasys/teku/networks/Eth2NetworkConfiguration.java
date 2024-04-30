@@ -87,7 +87,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> bellatrixForkEpoch;
   private final Optional<UInt64> capellaForkEpoch;
   private final Optional<UInt64> denebForkEpoch;
-  private final Optional<UInt64> electraForkEpoch;
+  private final Optional<UInt64> eip7594ForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -117,7 +117,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<UInt64> capellaForkEpoch,
       final Optional<UInt64> denebForkEpoch,
-      final Optional<UInt64> electraForkEpoch,
+      final Optional<UInt64> eip7594ForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -139,7 +139,7 @@ public class Eth2NetworkConfiguration {
     this.bellatrixForkEpoch = bellatrixForkEpoch;
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
-    this.electraForkEpoch = electraForkEpoch;
+    this.eip7594ForkEpoch = eip7594ForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -219,7 +219,7 @@ public class Eth2NetworkConfiguration {
       case BELLATRIX -> bellatrixForkEpoch;
       case CAPELLA -> capellaForkEpoch;
       case DENEB -> denebForkEpoch;
-      case ELECTRA -> electraForkEpoch;
+      case EIP7594 -> eip7594ForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -299,7 +299,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
-        && Objects.equals(electraForkEpoch, that.electraForkEpoch)
+        && Objects.equals(eip7594ForkEpoch, that.eip7594ForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
         && Objects.equals(trustedSetup, that.trustedSetup)
@@ -323,7 +323,7 @@ public class Eth2NetworkConfiguration {
         bellatrixForkEpoch,
         capellaForkEpoch,
         denebForkEpoch,
-        electraForkEpoch,
+        eip7594ForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
         trustedSetup,
@@ -363,7 +363,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
     private Optional<UInt64> denebForkEpoch = Optional.empty();
-    private Optional<UInt64> electraForkEpoch = Optional.empty();
+    private Optional<UInt64> eip7594ForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -414,9 +414,9 @@ public class Eth2NetworkConfiguration {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
                       });
-                  builder.electraBuilder(
-                      electraBuilder ->
-                          electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
+                  builder.eip7594Builder(
+                      eip7594Builder ->
+                          eip7594ForkEpoch.ifPresent(eip7594Builder::eip7594ForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
@@ -448,7 +448,7 @@ public class Eth2NetworkConfiguration {
           bellatrixForkEpoch,
           capellaForkEpoch,
           denebForkEpoch,
-          electraForkEpoch,
+          eip7594ForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -641,8 +641,8 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
-      this.electraForkEpoch = Optional.of(electraForkEpoch);
+    public Builder eip7594ForkEpoch(final UInt64 eip7594ForkEpoch) {
+      this.eip7594ForkEpoch = Optional.of(eip7594ForkEpoch);
       return this;
     }
 

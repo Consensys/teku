@@ -20,7 +20,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
-import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
+import tech.pegasys.teku.api.schema.eip7594.BeaconStateEip7594;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -41,7 +41,7 @@ public class BeaconStateTest {
           case BELLATRIX -> new BeaconStateBellatrix(beaconStateInternal);
           case CAPELLA -> new BeaconStateCapella(beaconStateInternal);
           case DENEB -> new BeaconStateDeneb(beaconStateInternal);
-          case ELECTRA -> new BeaconStateElectra(beaconStateInternal);
+          case EIP7594 -> new BeaconStateEip7594(beaconStateInternal);
         };
 
     assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);

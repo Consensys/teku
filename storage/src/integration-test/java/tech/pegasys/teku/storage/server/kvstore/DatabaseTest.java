@@ -64,7 +64,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -2176,7 +2176,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void addSidecar_isOperative(final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalElectra());
+    setupWithSpec(TestSpecFactory.createMinimalEip7594());
     initialize(context);
     final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
     final ColumnSlotAndIdentifier columnSlotAndIdentifier =
@@ -2189,7 +2189,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void setFirstIncompleteSlot_isOperative(final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalElectra());
+    setupWithSpec(TestSpecFactory.createMinimalEip7594());
     initialize(context);
     assertThat(database.getFirstIncompleteSlot().isEmpty()).isTrue();
 
@@ -2202,7 +2202,7 @@ public class DatabaseTest {
   @SuppressWarnings("JavaCase")
   public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
       throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalElectra());
+    setupWithSpec(TestSpecFactory.createMinimalEip7594());
     initialize(context);
 
     final SignedBeaconBlockHeader blockHeader1 = dataStructureUtil.randomSignedBeaconBlockHeader();
@@ -2248,7 +2248,7 @@ public class DatabaseTest {
   @TestTemplate
   @SuppressWarnings("JavaCase")
   public void pruneAllSidecars_isOperative(final DatabaseContext context) throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalElectra());
+    setupWithSpec(TestSpecFactory.createMinimalEip7594());
     initialize(context);
 
     final SignedBeaconBlockHeader blockHeader1 =

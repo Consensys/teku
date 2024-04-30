@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.electra.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage.BeaconBlocksByRangeRequestMessageSchema;
@@ -63,7 +63,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -371,7 +371,7 @@ public class BeaconChainMethods {
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData) {
-    if (!spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
+    if (!spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
       return Optional.empty();
     }
 
@@ -383,8 +383,8 @@ public class BeaconChainMethods {
         new DataColumnSidecarsByRootMessageHandler(spec, metricsSystem, combinedChainDataClient);
     final DataColumnSidecarsByRootRequestMessageSchema
         dataColumnSidecarsByRootRequestMessageSchema =
-            SchemaDefinitionsElectra.required(
-                    spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            SchemaDefinitionsEip7594.required(
+                    spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions())
                 .getDataColumnSidecarsByRootRequestMessageSchema();
 
     return Optional.of(

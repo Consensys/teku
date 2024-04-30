@@ -34,8 +34,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -309,8 +307,6 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       }
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
-      case DEPOSIT_RECEIPT -> processDepositReceipt(testDefinition, state, processor);
-      case EXECUTION_LAYER_EXIT -> processExecutionLayerExit(testDefinition, state, processor);
       default -> throw new UnsupportedOperationException(
           "Operation " + operation + " not implemented in OperationTestExecutor");
     }
@@ -336,26 +332,6 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final SignedBlsToExecutionChange blsToExecutionChange =
         loadBlsToExecutionChange(testDefinition);
     processor.processBlsToExecutionChange(state, blsToExecutionChange);
-  }
-
-  private void processDepositReceipt(
-      final TestDefinition testDefinition,
-      final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
-    final DepositReceipt depositReceipt =
-        loadSsz(testDefinition, dataFileName, DepositReceipt.SSZ_SCHEMA);
-    processor.processDepositReceipt(state, depositReceipt);
-  }
-
-  private void processExecutionLayerExit(
-      final TestDefinition testDefinition,
-      final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
-    final ExecutionLayerExit executionLayerExit =
-        loadSsz(testDefinition, dataFileName, ExecutionLayerExit.SSZ_SCHEMA);
-    processor.processExecutionLayerExit(state, executionLayerExit);
   }
 
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {

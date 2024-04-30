@@ -28,8 +28,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodyEip7594;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BlindedBeaconBlockBodyEip7594;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -118,7 +118,7 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
-  default Optional<BeaconBlockBodyElectra> toVersionElectra() {
+  default Optional<BeaconBlockBodyEip7594> toVersionEip7594() {
     return Optional.empty();
   }
 
@@ -126,7 +126,7 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
-  default Optional<BlindedBeaconBlockBodyElectra> toBlindedVersionElectra() {
+  default Optional<BlindedBeaconBlockBodyEip7594> toBlindedVersionEip7594() {
     return Optional.empty();
   }
 }
