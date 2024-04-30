@@ -119,7 +119,7 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
               state.setDepositBalanceToConsume(UInt64.ZERO);
               state.setExitBalanceToConsume(
                   beaconStateAccessors.getActivationExitChurnLimit(state));
-              state.setEarliestExitEpoch(findEarliestExitEpoch(state));
+              state.setEarliestExitEpoch(findEarliestExitEpoch(state, epoch));
               state.setConsolidationBalanceToConsume(
                   beaconStateAccessors.getConsolidationChurnLimit(state));
               state.setEarliestConsolidationEpoch(
@@ -151,14 +151,12 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
             });
   }
 
-  private UInt64 findEarliestExitEpoch(final BeaconState state) {
-    UInt64 lastExitEpoch = UInt64.ZERO;
-    for (final Validator validator : state.getValidators()) {
-      final UInt64 exitEpoch = validator.getExitEpoch();
-      if (!exitEpoch.equals(FAR_FUTURE_EPOCH)) {
-        lastExitEpoch = lastExitEpoch.max(exitEpoch);
-      }
-    }
-    return lastExitEpoch.increment();
+  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 currentEpoch) {
+    return state.getValidators().stream()
+        .map(Validator::getExitEpoch)
+        .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
+        .max(UInt64::compareTo)
+        .orElse(currentEpoch)
+        .increment();
   }
 }
