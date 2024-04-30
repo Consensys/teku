@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_AMOUNT;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -47,6 +51,8 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -369,6 +375,50 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             .getPendingBalanceDepositSchema()
             .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
     stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
+  }
+
+  @Override
+  protected void assertAttestationValid(
+      final MutableBeaconState state, final Attestation attestation) {
+    super.assertAttestationValid(state, attestation);
+    final List<UInt64> committeeIndices = attestation.getCommitteeIndicesRequired();
+    final UInt64 committeeCountPerSlot =
+        beaconStateAccessors.getCommitteeCountPerSlot(
+            state, attestation.getData().getTarget().getEpoch());
+    beaconStateAccessors.getCommitteeCountPerSlot(
+        state, attestation.getData().getTarget().getEpoch());
+    final SszBitlist aggregationBits = attestation.getAggregationBits();
+    final Optional<OperationInvalidReason> committeeCheckResult =
+        checkCommittees(
+            committeeIndices,
+            committeeCountPerSlot,
+            state,
+            attestation.getData().getSlot(),
+            aggregationBits);
+    if (committeeCheckResult.isPresent()) {
+      throw new IllegalArgumentException(committeeCheckResult.get().describe());
+    }
+  }
+
+  private Optional<OperationInvalidReason> checkCommittees(
+      final List<UInt64> committeeIndices,
+      final UInt64 committeeCountPerSlot,
+      final BeaconState state,
+      final UInt64 slot,
+      final SszBitlist aggregationBits) {
+    int participantsCount = 0;
+    for (final UInt64 committeeIndex : committeeIndices) {
+      if (committeeIndex.isGreaterThan(committeeCountPerSlot)) {
+        return Optional.of(AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH);
+      }
+      final IntList committee =
+          beaconStateAccessors.getBeaconCommittee(state, slot, committeeIndex);
+      participantsCount += committee.size();
+    }
+    if (participantsCount != aggregationBits.size()) {
+      return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
+    }
+    return Optional.empty();
   }
 
   protected Validator getValidatorFromDeposit(
