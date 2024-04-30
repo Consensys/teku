@@ -187,7 +187,8 @@ class ElectraStateUpgradeTest {
     final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
         postState.getPendingBalanceDeposits();
     assertThat(pendingBalanceDeposits.size()).isEqualTo(2);
-    // Compounding validator will have a pending balance deposit only of the excess, in their index order
+    // Compounding validator will have a pending balance deposit only of the excess, in their index
+    // order
     assertPendingBalanceDeposit(pendingBalanceDeposits.get(0), 0, excessBalance);
     assertPendingBalanceDeposit(pendingBalanceDeposits.get(1), 1, excessBalance);
   }
