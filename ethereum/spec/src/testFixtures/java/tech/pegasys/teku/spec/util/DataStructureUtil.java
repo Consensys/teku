@@ -2378,7 +2378,7 @@ public final class DataStructureUtil {
     private Optional<List<KZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<List<KZGProof>> kzgProofs = Optional.empty();
     private Optional<SignedBeaconBlockHeader> signedBeaconBlockHeader = Optional.empty();
-    private Optional<List<Bytes32>> kzgCommitmentInclusionProof = Optional.empty();
+    private Optional<List<Bytes32>> kzgCommitmentsInclusionProof = Optional.empty();
 
     public RandomSidecarBuilder index(final UInt64 index) {
       this.index = Optional.of(index);
@@ -2406,9 +2406,9 @@ public final class DataStructureUtil {
       return this;
     }
 
-    public RandomSidecarBuilder kzgCommitmentInclusionProof(
-        final List<Bytes32> kzgCommitmentInclusionProof) {
-      this.kzgCommitmentInclusionProof = Optional.of(kzgCommitmentInclusionProof);
+    public RandomSidecarBuilder kzgCommitmentsInclusionProof(
+        final List<Bytes32> kzgCommitmentsInclusionProof) {
+      this.kzgCommitmentsInclusionProof = Optional.of(kzgCommitmentsInclusionProof);
       return this;
     }
 
@@ -2435,12 +2435,12 @@ public final class DataStructureUtil {
           kzgProofs.orElseGet(
               () -> IntStream.range(0, numberOfProofs).mapToObj(__ -> randomKZGProof()).toList()),
           signedBlockHeader,
-          kzgCommitmentInclusionProof.orElseGet(
+          kzgCommitmentsInclusionProof.orElseGet(
               () ->
                   IntStream.range(
                           0,
                           dataColumnSidecarSchema
-                              .getKzgCommitmentInclusionProofSchema()
+                              .getKzgCommitmentsInclusionProofSchema()
                               .getLength())
                       .mapToObj(__ -> randomBytes32())
                       .toList()));

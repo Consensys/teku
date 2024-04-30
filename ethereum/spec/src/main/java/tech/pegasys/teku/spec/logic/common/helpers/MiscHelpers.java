@@ -350,11 +350,6 @@ public class MiscHelpers {
     return false;
   }
 
-  public boolean verifyDataColumnSidecarKzgProof(
-      final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
-    return false;
-  }
-
   public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     return false;
   }
@@ -379,6 +374,15 @@ public class MiscHelpers {
 
   public UInt64 getMaxRequestBlocks() {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
+  }
+
+  public boolean verifyDataColumnSidecarKzgProof(
+      final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
+    return false;
+  }
+
+  public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+    return false;
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {

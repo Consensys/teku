@@ -130,7 +130,7 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
     assertThat(miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(kzgCommitmentIndex))
         .isEqualTo(data.leafIndex);
     assertThat(
-            miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+            miscHelpersDeneb.computeBlobKzgCommitmentInclusionProof(
                 kzgCommitmentIndex, beaconBlockBody))
         .isEqualTo(data.branch.stream().map(Bytes32::fromHexString).toList());
   }

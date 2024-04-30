@@ -56,10 +56,10 @@ public class DataColumnSidecarsByRootValidator {
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
     }
 
-    verifyKzg(dataColumnSidecar);
+    verifyKzgProof(dataColumnSidecar);
   }
 
-  private void verifyKzg(final DataColumnSidecar dataColumnSidecar) {
+  private void verifyKzgProof(final DataColumnSidecar dataColumnSidecar) {
     if (!verifyDataColumnSidecarKzgProof(dataColumnSidecar)) {
       throw new DataColumnSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);

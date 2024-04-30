@@ -20,13 +20,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellWithID;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodySchemaEip7594;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -45,13 +49,17 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
   }
 
   private final SpecConfigEip7594 specConfigEip7594;
+  private final Predicates predicates;
+  private final SchemaDefinitionsEip7594 schemaDefinitions;
 
   public MiscHelpersEip7594(
       final SpecConfigEip7594 specConfig,
       final Predicates predicates,
       final SchemaDefinitionsEip7594 schemaDefinitions) {
     super(specConfig, predicates, schemaDefinitions);
+    this.predicates = predicates;
     this.specConfigEip7594 = specConfig;
+    this.schemaDefinitions = schemaDefinitions;
   }
 
   public UInt64 computeSubnetForDataColumnSidecar(UInt64 columnIndex) {
@@ -79,6 +87,18 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
 
   @Override
   public boolean verifyDataColumnSidecarKzgProof(KZG kzg, DataColumnSidecar dataColumnSidecar) {
+    final UInt64 dataColumns = specConfigEip7594.getNumberOfColumns();
+    if (dataColumnSidecar.getIndex().isGreaterThanOrEqualTo(dataColumns)) {
+      return false;
+    }
+
+    // Number of rows is the same for cells, commitments, proofs
+    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
+        || dataColumnSidecar.getSszKZGCommitments().size()
+            != dataColumnSidecar.getSszKZGProofs().size()) {
+      return false;
+    }
+
     return IntStream.range(0, dataColumnSidecar.getSszKZGProofs().size())
         .mapToObj(
             index ->
@@ -91,6 +111,28 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
         .filter(verificationResult -> !verificationResult)
         .findFirst()
         .orElse(true);
+  }
+
+  @Override
+  public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+    return predicates.isValidMerkleBranch(
+        dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
+        dataColumnSidecar.getKzgCommitmentsInclusionProof(),
+        specConfigEip7594.getKzgCommitmentsInclusionProofDepth().intValue(),
+        getBlockBodyKzgCommitmentsGeneralizedIndex(),
+        dataColumnSidecar.getBlockBodyRoot());
+  }
+
+  private int getBlockBodyKzgCommitmentsGeneralizedIndex() {
+    return (int)
+        BeaconBlockBodySchemaEip7594.required(schemaDefinitions.getBeaconBlockBodySchema())
+            .getBlobKzgCommitmentsGeneralizedIndex();
+  }
+
+  public List<Bytes32> computeDataColumnKzgCommitmentsInclusionProof(
+      final BeaconBlockBody beaconBlockBody) {
+    return MerkleUtil.constructMerkleProof(
+        beaconBlockBody.getBackingNode(), getBlockBodyKzgCommitmentsGeneralizedIndex());
   }
 
   @Override

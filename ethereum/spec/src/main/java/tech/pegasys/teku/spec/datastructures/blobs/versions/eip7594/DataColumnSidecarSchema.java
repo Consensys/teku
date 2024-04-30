@@ -49,8 +49,8 @@ public class DataColumnSidecarSchema
   static final SszFieldName FIELD_KZG_COMMITMENTS = () -> "kzg_commitments";
   static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   static final SszFieldName FIELD_SIGNED_BLOCK_HEADER = () -> "signed_block_header";
-  static final SszFieldName FIELD_KZG_COMMITMENT_INCLUSION_PROOF =
-      () -> "kzg_commitment_inclusion_proof";
+  static final SszFieldName FIELD_KZG_COMMITMENTS_INCLUSION_PROOF =
+      () -> "kzg_commitments_inclusion_proof";
 
   DataColumnSidecarSchema(
       final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
@@ -70,7 +70,7 @@ public class DataColumnSidecarSchema
                 SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(FIELD_SIGNED_BLOCK_HEADER, signedBeaconBlockHeaderSchema),
         namedSchema(
-            FIELD_KZG_COMMITMENT_INCLUSION_PROOF,
+            FIELD_KZG_COMMITMENTS_INCLUSION_PROOF,
             SszBytes32VectorSchema.create(
                 specConfig.getKzgCommitmentsInclusionProofDepth().intValue())));
   }
@@ -84,9 +84,9 @@ public class DataColumnSidecarSchema
     return (SignedBeaconBlockHeaderSchema) getFieldSchema4();
   }
 
-  public SszBytes32VectorSchema<?> getKzgCommitmentInclusionProofSchema() {
+  public SszBytes32VectorSchema<?> getKzgCommitmentsInclusionProofSchema() {
     return (SszBytes32VectorSchema<?>)
-        getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENT_INCLUSION_PROOF));
+        getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENTS_INCLUSION_PROOF));
   }
 
   @SuppressWarnings("unchecked")
@@ -106,7 +106,7 @@ public class DataColumnSidecarSchema
   //      final SszKZGCommitment sszKzgCommitment,
   //      final SszKZGProof sszKzgProof,
   //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //      final List<Bytes32> kzgCommitmentsInclusionProof) {
   //    return new DataColumnSidecar(
   //        this,
   //        index,
@@ -114,7 +114,7 @@ public class DataColumnSidecarSchema
   //        sszKzgCommitment,
   //        sszKzgProof,
   //        signedBeaconBlockHeader,
-  //        kzgCommitmentInclusionProof);
+  //        kzgCommitmentsInclusionProof);
   //  }
   //
   //  public DataColumnSidecar create(
@@ -123,14 +123,14 @@ public class DataColumnSidecarSchema
   //      final Bytes48 kzgCommitment,
   //      final Bytes48 kzgProof,
   //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //      final List<Bytes32> kzgCommitmentsInclusionProof) {
   //    return create(
   //        index,
   //        new Blob(getBlobSchema(), blob),
   //        KZGCommitment.fromBytesCompressed(kzgCommitment),
   //        KZGProof.fromBytesCompressed(kzgProof),
   //        signedBeaconBlockHeader,
-  //        kzgCommitmentInclusionProof);
+  //        kzgCommitmentsInclusionProof);
   //  }
 
   public DataColumnSidecar create(
@@ -139,7 +139,7 @@ public class DataColumnSidecarSchema
       final List<KZGCommitment> kzgCommitments,
       final List<KZGProof> kzgProofs,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
-      final List<Bytes32> kzgCommitmentInclusionProof) {
+      final List<Bytes32> kzgCommitmentsInclusionProof) {
     return new DataColumnSidecar(
         this,
         index,
@@ -147,7 +147,7 @@ public class DataColumnSidecarSchema
         kzgCommitments,
         kzgProofs,
         signedBeaconBlockHeader,
-        kzgCommitmentInclusionProof);
+        kzgCommitmentsInclusionProof);
   }
 
   public static DataColumnSidecarSchema create(

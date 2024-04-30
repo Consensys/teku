@@ -231,7 +231,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
   }
 
-  public List<Bytes32> computeKzgCommitmentInclusionProof(
+  public List<Bytes32> computeBlobKzgCommitmentInclusionProof(
       final UInt64 blobSidecarIndex, final BeaconBlockBody beaconBlockBody) {
     return MerkleUtil.constructMerkleProof(
         beaconBlockBody.getBackingNode(),
@@ -256,7 +256,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
               index, commitmentsCount));
     }
     final List<Bytes32> kzgCommitmentInclusionProof =
-        computeKzgCommitmentInclusionProof(index, beaconBlockBody);
+        computeBlobKzgCommitmentInclusionProof(index, beaconBlockBody);
     return blobSidecarSchema.create(
         index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }

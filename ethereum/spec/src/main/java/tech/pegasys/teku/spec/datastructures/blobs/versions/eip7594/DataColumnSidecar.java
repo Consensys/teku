@@ -52,7 +52,7 @@ public class DataColumnSidecar
       final List<KZGCommitment> kzgCommitments,
       final List<KZGProof> kzgProofs,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
-      final List<Bytes32> kzgCommitmentInclusionProof) {
+      final List<Bytes32> kzgCommitmentsInclusionProof) {
     super(
         schema,
         SszUInt64.of(index),
@@ -65,8 +65,9 @@ public class DataColumnSidecar
             .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
         signedBeaconBlockHeader,
         schema
-            .getKzgCommitmentInclusionProofSchema()
-            .createFromElements(kzgCommitmentInclusionProof.stream().map(SszBytes32::of).toList()));
+            .getKzgCommitmentsInclusionProofSchema()
+            .createFromElements(
+                kzgCommitmentsInclusionProof.stream().map(SszBytes32::of).toList()));
   }
 
   //  public DataColumnSidecar(
@@ -76,7 +77,7 @@ public class DataColumnSidecar
   //      final KZGCommitment kzgCommitment,
   //      final KZGProof kzgProof,
   //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentInclusionProof) {
+  //      final List<Bytes32> kzgCommitmentsInclusionProof) {
   //    this(
   //        schema,
   //        index,
@@ -84,7 +85,7 @@ public class DataColumnSidecar
   //        new SszKZGCommitment(kzgCommitment),
   //        new SszKZGProof(kzgProof),
   //        signedBeaconBlockHeader,
-  //        kzgCommitmentInclusionProof);
+  //        kzgCommitmentsInclusionProof);
   //  }
 
   public UInt64 getIndex() {
@@ -107,7 +108,7 @@ public class DataColumnSidecar
     return getField4();
   }
 
-  public SszBytes32Vector getKzgCommitmentInclusionProof() {
+  public SszBytes32Vector getKzgCommitmentsInclusionProof() {
     return getField5();
   }
 
@@ -128,12 +129,12 @@ public class DataColumnSidecar
   }
 
   public String toLogString() {
-    return LogFormatter.formatBlobSidecar(
+    return LogFormatter.formatDataColumnSidecar(
         getSlot(),
         getBlockRoot(),
         getIndex(),
         getDataColumn().toBriefString(),
-        "" + getSszKZGCommitments().size(),
-        "" + getSszKZGProofs().size());
+        getSszKZGCommitments().size(),
+        getSszKZGProofs().size());
   }
 }
