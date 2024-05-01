@@ -35,6 +35,7 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
   private static final Logger LOG = LogManager.getLogger();
 
   private final AtomicBoolean lastExecutionClientAvailability = new AtomicBoolean(true);
+  private final AtomicBoolean engineGetClientVersionFailure = new AtomicBoolean(false);
 
   private final ExecutionLayerChannel executionLayerChannel;
   private final ExecutionClientVersionChannel executionClientVersionChannel;
@@ -68,10 +69,17 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
         .engineGetClientVersion(consensusClientVersion)
         .thenAccept(
             clientVersions -> {
+              engineGetClientVersionFailure.compareAndSet(true, false);
               final ClientVersion executionClientVersion = clientVersions.get(0);
               updateVersionIfNeeded(executionClientVersion);
             })
-        .finish(ex -> LOG.debug("Exception while calling engine_getClientVersion", ex));
+        .finish(
+            ex -> {
+              if (engineGetClientVersionFailure.compareAndSet(false, true)) {
+                executionClientVersionChannel.onExecutionClientVersionNotAvailable();
+              }
+              LOG.debug("Exception while calling engine_getClientVersion", ex);
+            });
   }
 
   private synchronized void updateVersionIfNeeded(final ClientVersion executionClientVersion) {

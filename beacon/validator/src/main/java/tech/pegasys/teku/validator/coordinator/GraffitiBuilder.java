@@ -73,6 +73,15 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   @Override
   public void onExecutionClientVersion(final ClientVersion executionClientVersion) {
     this.executionClientVersion = Optional.of(executionClientVersion);
+    logDefaultGraffiti();
+  }
+
+  @Override
+  public void onExecutionClientVersionNotAvailable() {
+    logDefaultGraffiti();
+  }
+
+  private void logDefaultGraffiti() {
     final Optional<Bytes32> defaultGraffiti = Optional.of(buildGraffiti(defaultUserGraffiti));
     EVENT_LOG.logDefaultGraffiti(
         extractGraffiti(defaultGraffiti, calculateGraffitiLength(defaultGraffiti)));
