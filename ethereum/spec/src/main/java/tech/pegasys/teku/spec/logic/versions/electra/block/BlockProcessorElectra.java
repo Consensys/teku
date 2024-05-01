@@ -346,7 +346,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             .getPendingBalanceDepositSchema()
             .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
     stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
-    if (predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)
+    if (signatureAlreadyVerified
+        && predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)
         && PredicatesElectra.isEth1WithdrawalCredential(
             state.getValidators().get(validatorIndex).getWithdrawalCredentials())) {
       beaconStateMutatorsElectra.switchToCompoundingValidator(stateElectra, validatorIndex);
