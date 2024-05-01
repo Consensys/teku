@@ -127,7 +127,8 @@ public class ExecutionClientVersionProviderTest {
     verify(executionLayerChannel, times(2)).engineGetClientVersion(consensusClientVersion);
     // no version is pushed in the channel
     verify(publishChannel, never()).onExecutionClientVersion(any());
-    verify(publishChannel).onExecutionClientVersionNotAvailable();
+    // non-availability has not been called in the middle
+    verify(publishChannel, never()).onExecutionClientVersionNotAvailable();
 
     // EL is back
     when(executionLayerChannel.engineGetClientVersion(any()))
@@ -139,7 +140,5 @@ public class ExecutionClientVersionProviderTest {
     verify(executionLayerChannel, times(3)).engineGetClientVersion(consensusClientVersion);
     // Version is the same, not pushed in the channel
     verify(publishChannel, never()).onExecutionClientVersion(any());
-    // non-availability has been called only once
-    verify(publishChannel).onExecutionClientVersionNotAvailable();
   }
 }

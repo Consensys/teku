@@ -35,7 +35,6 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
   private static final Logger LOG = LogManager.getLogger();
 
   private final AtomicBoolean lastExecutionClientAvailability = new AtomicBoolean(true);
-  private final AtomicBoolean engineGetClientVersionFailure = new AtomicBoolean(false);
 
   private final ExecutionLayerChannel executionLayerChannel;
   private final ExecutionClientVersionChannel executionClientVersionChannel;
@@ -51,31 +50,30 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
     this.executionClientVersionChannel = executionClientVersionChannel;
     this.consensusClientVersion = consensusClientVersion;
     // update client info on initialization
-    updateClientInfo();
+    updateClientInfo(true);
   }
 
   @Override
   public void onAvailabilityUpdated(final boolean isAvailable) {
     // only update info after EL has been unavailable
     if (isAvailable && lastExecutionClientAvailability.compareAndSet(false, true)) {
-      updateClientInfo();
+      updateClientInfo(false);
     } else {
       lastExecutionClientAvailability.set(isAvailable);
     }
   }
 
-  private void updateClientInfo() {
+  private void updateClientInfo(final boolean notifyNotAvailable) {
     executionLayerChannel
         .engineGetClientVersion(consensusClientVersion)
         .thenAccept(
             clientVersions -> {
-              engineGetClientVersionFailure.compareAndSet(true, false);
               final ClientVersion executionClientVersion = clientVersions.get(0);
               updateVersionIfNeeded(executionClientVersion);
             })
         .finish(
             ex -> {
-              if (engineGetClientVersionFailure.compareAndSet(false, true)) {
+              if (notifyNotAvailable) {
                 executionClientVersionChannel.onExecutionClientVersionNotAvailable();
               }
               LOG.debug("Exception while calling engine_getClientVersion", ex);

@@ -25,6 +25,6 @@ public interface ExecutionClientVersionChannel extends VoidReturningChannelInter
    */
   void onExecutionClientVersion(ClientVersion executionClientVersion);
 
-  /** Called when engine_getClientVersion method is not available or has failed */
+  /** Called when engine_getClientVersion method is not available or has failed on startup */
   void onExecutionClientVersionNotAvailable();
 }
