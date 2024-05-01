@@ -758,9 +758,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         handleInvalidDeposit(pubkey, maybePubkeyToIndexMap);
       }
     } else {
-      // This validator already exists, increase their balance
       applyDepositToValidatorIndex(
-          state, withdrawalCredentials, signatureAlreadyVerified, existingIndex.get(), amount);
+          state,
+          withdrawalCredentials,
+          signatureAlreadyVerified,
+          existingIndex.get(),
+          amount,
+          pubkey,
+          signature);
     }
   }
 
@@ -769,7 +774,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Bytes32 withdrawalCredentials,
       final boolean signatureAlreadyVerified,
       final int validatorIndex,
-      final UInt64 amount) {
+      final UInt64 amount,
+      final BLSPublicKey pubkey,
+      final BLSSignature signature) {
     beaconStateMutators.increaseBalance(state, validatorIndex, amount);
   }
 
@@ -784,7 +791,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  private boolean depositSignatureIsValid(
+  protected boolean depositSignatureIsValid(
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,

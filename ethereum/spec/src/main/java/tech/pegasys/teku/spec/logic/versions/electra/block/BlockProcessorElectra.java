@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
@@ -337,7 +338,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final Bytes32 withdrawalCredentials,
       final boolean signatureAlreadyVerified,
       final int validatorIndex,
-      final UInt64 amount) {
+      final UInt64 amount,
+      final BLSPublicKey pubkey,
+      final BLSSignature signature) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
         MutableBeaconStateElectra.required(state).getPendingBalanceDeposits();
@@ -346,8 +349,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             .getPendingBalanceDepositSchema()
             .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
     stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
-    if (signatureAlreadyVerified
-        && predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)) {
+    if (predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)
+        && PredicatesElectra.isEth1WithdrawalCredential(
+            state.getValidators().get(validatorIndex).getWithdrawalCredentials())
+        && (signatureAlreadyVerified
+            || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature))) {
       beaconStateMutatorsElectra.switchToCompoundingValidator(stateElectra, validatorIndex);
     }
   }
