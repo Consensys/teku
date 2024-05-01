@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
@@ -39,7 +40,7 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
   private final ExecutionClientVersionChannel executionClientVersionChannel;
   private final ClientVersion consensusClientVersion;
 
-  private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>(null);
+  private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>();
 
   public ExecutionClientVersionProvider(
       final ExecutionLayerChannel executionLayerChannel,
@@ -70,26 +71,16 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
               final ClientVersion executionClientVersion = clientVersions.get(0);
               updateVersionIfNeeded(executionClientVersion);
             })
-        .finish(
-            ex -> {
-              LOG.debug("Exception while calling engine_getClientVersion", ex);
-              updateVersionIfNeeded(ClientVersion.UNKNOWN);
-            });
+        .finish(ex -> LOG.debug("Exception while calling engine_getClientVersion", ex));
   }
 
   private synchronized void updateVersionIfNeeded(final ClientVersion executionClientVersion) {
-    if (executionClientVersion.equals(this.executionClientVersion.get())) {
+    if (Objects.equals(this.executionClientVersion.get(), executionClientVersion)) {
       return;
     }
-    if (!executionClientVersion.equals(ClientVersion.UNKNOWN)) {
-      EVENT_LOG.logExecutionClientVersion(
-          executionClientVersion.name(), executionClientVersion.version());
-    }
-    // push UNKNOWN forward only when it's set for the first time
-    if (!executionClientVersion.equals(ClientVersion.UNKNOWN)
-        || this.executionClientVersion.get() == null) {
-      this.executionClientVersion.set(executionClientVersion);
-      executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
-    }
+    EVENT_LOG.logExecutionClientVersion(
+        executionClientVersion.name(), executionClientVersion.version());
+    this.executionClientVersion.set(executionClientVersion);
+    executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
   }
 }

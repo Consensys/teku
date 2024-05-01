@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,13 +37,15 @@ import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
  * according to the clientGraffitiAppendFormat configuration.
  */
 public class GraffitiBuilder implements ExecutionClientVersionChannel {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static final String SPACE = " ";
 
+  private volatile Optional<ClientVersion> executionClientVersion = Optional.empty();
+
   private final ClientGraffitiAppendFormat clientGraffitiAppendFormat;
   private final ClientVersion consensusClientVersion;
-  private final AtomicReference<ClientVersion> executionClientVersion;
   private final Optional<Bytes32> defaultUserGraffiti;
 
   public GraffitiBuilder(
@@ -52,7 +53,6 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
       final Optional<Bytes32> defaultUserGraffiti) {
     this.clientGraffitiAppendFormat = clientGraffitiAppendFormat;
     this.consensusClientVersion = createTekuClientVersion();
-    this.executionClientVersion = new AtomicReference<>(ClientVersion.UNKNOWN);
     this.defaultUserGraffiti = defaultUserGraffiti;
   }
 
@@ -72,7 +72,7 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
 
   @Override
   public void onExecutionClientVersion(final ClientVersion executionClientVersion) {
-    this.executionClientVersion.set(executionClientVersion);
+    this.executionClientVersion = Optional.of(executionClientVersion);
     final Optional<Bytes32> defaultGraffiti = Optional.of(buildGraffiti(defaultUserGraffiti));
     EVENT_LOG.logDefaultGraffiti(
         extractGraffiti(defaultGraffiti, calculateGraffitiLength(defaultGraffiti)));
@@ -118,7 +118,7 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   @VisibleForTesting
   protected String extractGraffiti(final Optional<Bytes32> graffiti, final int length) {
     return graffiti
-        .map(Bytes::toArray)
+        .map(Bytes::toArrayUnsafe)
         .map(bytes -> Arrays.copyOf(bytes, length))
         .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
         .orElse("");
@@ -138,56 +138,62 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
 
   @VisibleForTesting
   protected String formatClientsInfo(final int length) {
-    final boolean isElInfoAvailable = !ClientVersion.UNKNOWN.equals(executionClientVersion.get());
-    final String safeConsensusCode = extractClientCodeSafely(consensusClientVersion);
-    final String safeExecutionCode =
-        isElInfoAvailable ? extractClientCodeSafely(executionClientVersion.get()) : "";
+    final String consensusCode = consensusClientVersion.code();
+    final String executionCode = getExecutionCode();
     // LH1be52536BU0f91a674
     if (length >= 20) {
       return String.format(
           "%s%s%s%s",
-          safeConsensusCode,
-          consensusClientVersion.commit().toUnprefixedHexString(),
-          safeExecutionCode,
-          isElInfoAvailable ? executionClientVersion.get().commit().toUnprefixedHexString() : "");
+          consensusCode,
+          getCommit(consensusClientVersion),
+          executionCode,
+          executionClientVersion.map(this::getCommit).orElse(""));
     }
     // LH1be5BU0f91
     if (length >= 12) {
       return String.format(
           "%s%s%s%s",
-          safeConsensusCode,
-          consensusClientVersion.commit().toUnprefixedHexString().substring(0, 4),
-          safeExecutionCode,
-          isElInfoAvailable
-              ? executionClientVersion.get().commit().toUnprefixedHexString().substring(0, 4)
-              : "");
+          consensusCode,
+          getCommit(consensusClientVersion, 4),
+          executionCode,
+          executionClientVersion.map(clientVersion -> getCommit(clientVersion, 4)).orElse(""));
     }
     // LH1bBU0f
     if (length >= 8) {
       return String.format(
           "%s%s%s%s",
-          safeConsensusCode,
-          consensusClientVersion.commit().toUnprefixedHexString().substring(0, 2),
-          safeExecutionCode,
-          isElInfoAvailable
-              ? executionClientVersion.get().commit().toUnprefixedHexString().substring(0, 2)
-              : "");
+          consensusCode,
+          getCommit(consensusClientVersion, 2),
+          executionCode,
+          executionClientVersion.map(clientVersion -> getCommit(clientVersion, 2)).orElse(""));
     }
     // LHBU
     if (length >= 4) {
-      return String.format("%s%s", safeConsensusCode, isElInfoAvailable ? safeExecutionCode : "");
+      return String.format("%s%s", consensusCode, executionCode);
     }
 
     return "";
   }
 
-  protected String extractClientCodeSafely(final ClientVersion clientVersion) {
-    final boolean isValid =
-        clientVersion.code() != null
-            && clientVersion.code().length() >= 2
-            && clientVersion.code().substring(0, 2).matches("[a-zA-Z]{2}");
-    return isValid
-        ? clientVersion.code().substring(0, 2).toUpperCase(Locale.ROOT)
-        : ClientVersion.UNKNOWN.code();
+  private String getExecutionCode() {
+    return executionClientVersion
+        .map(
+            clientVersion -> {
+              final String code = clientVersion.code();
+              final boolean isValid =
+                  code != null && code.length() >= 2 && code.substring(0, 2).matches("[a-zA-Z]{2}");
+              return isValid
+                  ? code.substring(0, 2).toUpperCase(Locale.ROOT)
+                  : ClientVersion.UNKNOWN_CLIENT_CODE;
+            })
+        .orElse("");
+  }
+
+  private String getCommit(final ClientVersion clientVersion) {
+    return clientVersion.commit().toUnprefixedHexString();
+  }
+
+  private String getCommit(final ClientVersion clientVersion, final int length) {
+    return getCommit(clientVersion).substring(0, length);
   }
 }
