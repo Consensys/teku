@@ -85,6 +85,11 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
       return switch (clientGraffitiAppendFormat) {
         case AUTO -> {
           final int clientInfoLength = Bytes32.SIZE - 1 - userGraffitiLength;
+          // Could drop SPACE's `-1` in a corner case
+          if (clientInfoLength == 3) {
+            yield joinNonEmpty(
+                "", extractGraffiti(userGraffiti, userGraffitiLength), formatClientsInfo(4));
+          }
           yield joinNonEmpty(
               SPACE,
               extractGraffiti(userGraffiti, userGraffitiLength),
@@ -92,6 +97,11 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
         }
         case CLIENT_CODES -> {
           final int clientInfoLength = Integer.min(Bytes32.SIZE - 1 - userGraffitiLength, 4);
+          // Could drop SPACE's `-1` in a corner case
+          if (clientInfoLength == 3) {
+            yield joinNonEmpty(
+                "", extractGraffiti(userGraffiti, userGraffitiLength), formatClientsInfo(4));
+          }
           yield joinNonEmpty(
               SPACE,
               extractGraffiti(userGraffiti, userGraffitiLength),

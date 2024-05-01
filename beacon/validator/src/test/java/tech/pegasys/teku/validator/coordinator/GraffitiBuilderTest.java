@@ -48,6 +48,8 @@ public class GraffitiBuilderTest {
 
   private final String asciiGraffiti0 = "";
   private static final String ASCII_GRAFFITI_20 = "I've proposed ablock";
+  private static final String ASCII_GRAFFITI_27 = "27 bytes of user's graffiti";
+  private static final String ASCII_GRAFFITI_28 = "28 bytes of user's graffiti!";
   private final String asciiGraffiti32 = "I've proposed a good Teku block!";
 
   private static final String UTF_8_GRAFFITI_4 = "\uD83D\uDE80";
@@ -542,6 +544,14 @@ public class GraffitiBuilderTest {
                 + BESU_CLIENT_VERSION.code()
                 + BESU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)),
         Arguments.of(
+            AUTO,
+            Optional.of(ASCII_GRAFFITI_27),
+            ASCII_GRAFFITI_27 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
+        Arguments.of(
+            AUTO,
+            Optional.of(ASCII_GRAFFITI_28),
+            ASCII_GRAFFITI_28 + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
+        Arguments.of(
             CLIENT_CODES,
             Optional.empty(),
             TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
@@ -557,6 +567,14 @@ public class GraffitiBuilderTest {
             CLIENT_CODES,
             Optional.of(ASCII_GRAFFITI_20),
             ASCII_GRAFFITI_20 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
+        Arguments.of(
+            CLIENT_CODES,
+            Optional.of(ASCII_GRAFFITI_27),
+            ASCII_GRAFFITI_27 + " " + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
+        Arguments.of(
+            CLIENT_CODES,
+            Optional.of(ASCII_GRAFFITI_28),
+            ASCII_GRAFFITI_28 + TEKU_CLIENT_VERSION.code() + BESU_CLIENT_VERSION.code()),
         Arguments.of(DISABLED, Optional.empty(), ""),
         Arguments.of(DISABLED, Optional.of("small"), "small"),
         Arguments.of(DISABLED, Optional.of(UTF_8_GRAFFITI_4), UTF_8_GRAFFITI_4),
@@ -589,6 +607,12 @@ public class GraffitiBuilderTest {
                 + " "
                 + TEKU_CLIENT_VERSION.code()
                 + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)),
+        Arguments.of(
+            AUTO,
+            Optional.of(ASCII_GRAFFITI_27),
+            ASCII_GRAFFITI_27 + " " + TEKU_CLIENT_VERSION.code()),
+        Arguments.of(
+            AUTO, Optional.of(ASCII_GRAFFITI_28), ASCII_GRAFFITI_28 + TEKU_CLIENT_VERSION.code()),
         Arguments.of(CLIENT_CODES, Optional.empty(), TEKU_CLIENT_VERSION.code()),
         Arguments.of(CLIENT_CODES, Optional.of("small"), "small " + TEKU_CLIENT_VERSION.code()),
         Arguments.of(
@@ -599,6 +623,14 @@ public class GraffitiBuilderTest {
             CLIENT_CODES,
             Optional.of(ASCII_GRAFFITI_20),
             ASCII_GRAFFITI_20 + " " + TEKU_CLIENT_VERSION.code()),
+        Arguments.of(
+            CLIENT_CODES,
+            Optional.of(ASCII_GRAFFITI_27),
+            ASCII_GRAFFITI_27 + " " + TEKU_CLIENT_VERSION.code()),
+        Arguments.of(
+            CLIENT_CODES,
+            Optional.of(ASCII_GRAFFITI_28),
+            ASCII_GRAFFITI_28 + TEKU_CLIENT_VERSION.code()),
         Arguments.of(DISABLED, Optional.empty(), ""),
         Arguments.of(DISABLED, Optional.of("small"), "small"),
         Arguments.of(DISABLED, Optional.of(UTF_8_GRAFFITI_4), UTF_8_GRAFFITI_4),
