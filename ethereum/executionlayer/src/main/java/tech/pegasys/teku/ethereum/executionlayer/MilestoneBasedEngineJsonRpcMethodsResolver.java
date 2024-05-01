@@ -72,6 +72,8 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                   methodsByMilestone.put(milestone, denebSupportedMethods());
                   break;
                 case EIP7594:
+                  // not changed
+                  methodsByMilestone.put(milestone, denebSupportedMethods());
                   break;
               }
             });
