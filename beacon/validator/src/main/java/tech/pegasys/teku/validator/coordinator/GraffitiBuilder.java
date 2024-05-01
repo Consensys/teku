@@ -139,7 +139,7 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   @VisibleForTesting
   protected String formatClientsInfo(final int length) {
     final String consensusCode = consensusClientVersion.code();
-    final String executionCode = getExecutionCode();
+    final String executionCode = getExecutionCodeSafely();
     // LH1be52536BU0f91a674
     if (length >= 20) {
       return String.format(
@@ -175,7 +175,7 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
     return "";
   }
 
-  private String getExecutionCode() {
+  private String getExecutionCodeSafely() {
     return executionClientVersion
         .map(
             clientVersion -> {
