@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -149,6 +150,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockGossipChannel blockGossipChannel,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
+      final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
@@ -190,6 +192,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            dataColumnSidecarGossipChannel,
             performanceTracker,
             dutyMetrics);
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);

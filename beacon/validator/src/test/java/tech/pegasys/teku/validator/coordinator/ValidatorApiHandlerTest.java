@@ -79,6 +79,7 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -150,6 +151,8 @@ class ValidatorApiHandlerTest {
       mock(BlockBlobSidecarsTrackersPool.class);
   private final BlobSidecarGossipChannel blobSidecarGossipChannel =
       mock(BlobSidecarGossipChannel.class);
+  private final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
+      mock(DataColumnSidecarGossipChannel.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -202,6 +205,7 @@ class ValidatorApiHandlerTest {
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            dataColumnSidecarGossipChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriptions,
@@ -456,6 +460,7 @@ class ValidatorApiHandlerTest {
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            dataColumnSidecarGossipChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriptions,
@@ -1302,6 +1307,7 @@ class ValidatorApiHandlerTest {
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            dataColumnSidecarGossipChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriptions,

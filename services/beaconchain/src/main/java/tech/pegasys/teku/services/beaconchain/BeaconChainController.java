@@ -78,6 +78,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -946,7 +947,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayerBlockProductionManager);
-    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
+    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector, kzg);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -960,6 +961,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
       blobSidecarGossipChannel = eventChannels.getPublisher(BlobSidecarGossipChannel.class);
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
+    }
+    final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
+      dataColumnSidecarGossipChannel =
+          eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
+    } else {
+      dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
 
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
@@ -981,6 +989,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            dataColumnSidecarGossipChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,

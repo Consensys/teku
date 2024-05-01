@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7594.helpers;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -167,23 +166,21 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     final DataColumnSidecarSchema dataColumnSidecarSchema =
         schemaDefinitions.getDataColumnSidecarSchema();
 
-    final List<DataColumnSidecar> dataColumnSidecars = new ArrayList<>();
-    for (int i = 0; i < extendedMatrix.get(0).size(); ++i) {
-      final int cellID = i;
-      final DataColumn dataColumn =
-          dataColumnSchema.create(extendedMatrix.stream().map(row -> row.get(cellID)).toList());
-      final DataColumnSidecar dataColumnSidecar =
-          dataColumnSidecarSchema.create(
-              UInt64.valueOf(cellID),
-              dataColumn,
-              sszKZGCommitments,
-              sszKZGProofs,
-              signedBeaconBlock.asHeader(),
-              kzgCommitmentsInclusionProof);
-      dataColumnSidecars.add(dataColumnSidecar);
-    }
-
-    return dataColumnSidecars;
+    return IntStream.range(0, extendedMatrix.get(0).size())
+        .mapToObj(
+            cellID -> {
+              final DataColumn dataColumn =
+                  dataColumnSchema.create(
+                      extendedMatrix.stream().map(row -> row.get(cellID)).toList());
+              return dataColumnSidecarSchema.create(
+                  UInt64.valueOf(cellID),
+                  dataColumn,
+                  sszKZGCommitments,
+                  sszKZGProofs,
+                  signedBeaconBlock.asHeader(),
+                  kzgCommitmentsInclusionProof);
+            })
+        .toList();
   }
 
   private List<List<Cell>> computeExtendedMatrix(final List<Blob> blobs, final KZG kzg) {

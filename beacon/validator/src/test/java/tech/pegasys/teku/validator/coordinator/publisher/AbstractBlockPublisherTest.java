@@ -42,7 +42,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class AbstractBlockPublisherTest {
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Spec spec = TestSpecFactory.createMinimalEip7594();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
