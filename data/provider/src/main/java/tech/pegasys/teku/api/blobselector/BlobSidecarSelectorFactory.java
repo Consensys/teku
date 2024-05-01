@@ -154,6 +154,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
                     blobSidecars.isEmpty()
                         ? Optional.empty()
                         : addMetaData(
+                            //TODO we don't care about metadata here...need to find a way to get around the lack of a block root?
                             Optional.of(blobSidecars), new SlotAndBlockRoot(slot, Bytes32.ZERO)));
   }
 
@@ -215,7 +216,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
       return addMetaData(
           maybeBlobSidecarList,
           slotAndBlockRoot.getSlot(),
-          (false || client.isOptimisticBlock(slotAndBlockRoot.getBlockRoot())),
+          client.isOptimisticBlock(slotAndBlockRoot.getBlockRoot()),
           false,
           client.isFinalized(slotAndBlockRoot.getSlot()));
     } else {
