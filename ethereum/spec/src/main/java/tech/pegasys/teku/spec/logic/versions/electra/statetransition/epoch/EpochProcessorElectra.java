@@ -165,8 +165,7 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
 
     final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
         stateElectra.getPendingBalanceDeposits();
-    for (int i = 0; i < pendingBalanceDeposits.size(); i++) {
-      final PendingBalanceDeposit deposit = pendingBalanceDeposits.get(i);
+    for (final PendingBalanceDeposit deposit : pendingBalanceDeposits) {
       if (processedAmount.plus(deposit.getAmount()).isGreaterThan(availableForProcessing)) {
         break;
       }
@@ -181,9 +180,7 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
       stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
     } else {
       final List<PendingBalanceDeposit> newList =
-          pendingBalanceDeposits
-              .asList()
-              .subList(nextDepositIndex, pendingBalanceDeposits.size() - 1);
+          pendingBalanceDeposits.asList().subList(nextDepositIndex, pendingBalanceDeposits.size());
       stateElectra.setPendingBalanceDeposits(
           schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(newList));
       stateElectra.setDepositBalanceToConsume(availableForProcessing.minusMinZero(processedAmount));
@@ -204,8 +201,7 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
         stateElectra.getPendingConsolidations();
     final UInt64 currentEpoch = stateAccessorsElectra.getCurrentEpoch(state);
 
-    for (int i = 0; i < pendingConsolidations.size(); i++) {
-      final PendingConsolidation pendingConsolidation = pendingConsolidations.get(i);
+    for (final PendingConsolidation pendingConsolidation : pendingConsolidations) {
       final Validator sourceValidator =
           state.getValidators().get(pendingConsolidation.getSourceIndex());
       if (sourceValidator.isSlashed()) {
@@ -234,7 +230,7 @@ public class EpochProcessorElectra extends EpochProcessorBellatrix {
       final List<PendingConsolidation> newList =
           pendingConsolidations
               .asList()
-              .subList(nextPendingBalanceConsolidation, pendingConsolidations.size() - 1);
+              .subList(nextPendingBalanceConsolidation, pendingConsolidations.size());
       stateElectra.setPendingConsolidations(
           schemaDefinitionsElectra.getPendingConsolidationsSchema().createFromElements(newList));
     }
