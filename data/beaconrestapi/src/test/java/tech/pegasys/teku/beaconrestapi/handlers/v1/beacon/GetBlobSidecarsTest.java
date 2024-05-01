@@ -34,6 +34,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDat
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -61,7 +62,8 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(blobSidecars);
+    assertThat(((BlobSidecarsAndMetaData) request.getResponseBody()).getData())
+        .isEqualTo(blobSidecars);
   }
 
   @Test
@@ -82,8 +84,9 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
   @Test
   void metadata_shouldHandle200() throws IOException {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
-
-    final String data = getResponseStringFromMetadata(handler, SC_OK, blobSidecars);
+    final BlobSidecarsAndMetaData blobSidecarsAndMetaData =
+        new BlobSidecarsAndMetaData(blobSidecars, SpecMilestone.DENEB, true, false, false);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, blobSidecarsAndMetaData);
     final String expected =
         Resources.toString(
             Resources.getResource(GetBlobSidecarsTest.class, "getBlobSidecars.json"), UTF_8);
