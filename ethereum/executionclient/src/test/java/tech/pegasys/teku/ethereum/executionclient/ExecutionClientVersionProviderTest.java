@@ -52,12 +52,8 @@ public class ExecutionClientVersionProviderTest {
     when(executionLayerChannel.engineGetClientVersion(any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
-    final ExecutionClientVersionProvider executionClientVersionProvider =
-        new ExecutionClientVersionProvider(
-            executionLayerChannel, publishChannel, consensusClientVersion);
-
-    executionClientVersionProvider.onAvailabilityUpdated(false);
-    executionClientVersionProvider.onAvailabilityUpdated(true);
+    new ExecutionClientVersionProvider(
+        executionLayerChannel, publishChannel, consensusClientVersion);
 
     // only called once (on initialization)
     verify(publishChannel).onExecutionClientVersionNotAvailable();
@@ -127,7 +123,7 @@ public class ExecutionClientVersionProviderTest {
     verify(executionLayerChannel, times(2)).engineGetClientVersion(consensusClientVersion);
     // no version is pushed in the channel
     verify(publishChannel, never()).onExecutionClientVersion(any());
-    // non-availability has not been called in the middle
+    // non-availability has not been called if EL has been available on initialization
     verify(publishChannel, never()).onExecutionClientVersionNotAvailable();
 
     // EL is back
