@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7594.helpers;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -22,15 +24,26 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellWithID;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.Cell;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.CellSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumn;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodyEip7594;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodySchemaEip7594;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -133,6 +146,54 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
       final BeaconBlockBody beaconBlockBody) {
     return MerkleUtil.constructMerkleProof(
         beaconBlockBody.getBackingNode(), getBlockBodyKzgCommitmentsGeneralizedIndex());
+  }
+
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final SignedBeaconBlock signedBeaconBlock,
+      final List<Blob> blobs,
+      final SszList<SszKZGProof> sszKZGProofs,
+      final KZG kzg) {
+    if (blobs.isEmpty()) {
+      return Collections.emptyList();
+    }
+    final BeaconBlockBodyEip7594 beaconBlockBody =
+        BeaconBlockBodyEip7594.required(signedBeaconBlock.getMessage().getBody());
+    final SszList<SszKZGCommitment> sszKZGCommitments = beaconBlockBody.getBlobKzgCommitments();
+    final List<Bytes32> kzgCommitmentsInclusionProof =
+        computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
+
+    final List<List<Cell>> extendedMatrix = computeExtendedMatrix(blobs, kzg);
+    final DataColumnSchema dataColumnSchema = schemaDefinitions.getDataColumnSchema();
+    final DataColumnSidecarSchema dataColumnSidecarSchema =
+        schemaDefinitions.getDataColumnSidecarSchema();
+
+    final List<DataColumnSidecar> dataColumnSidecars = new ArrayList<>();
+    for (int i = 0; i < extendedMatrix.get(0).size(); ++i) {
+      final int cellID = i;
+      final DataColumn dataColumn =
+          dataColumnSchema.create(extendedMatrix.stream().map(row -> row.get(cellID)).toList());
+      final DataColumnSidecar dataColumnSidecar =
+          dataColumnSidecarSchema.create(
+              UInt64.valueOf(cellID),
+              dataColumn,
+              sszKZGCommitments,
+              sszKZGProofs,
+              signedBeaconBlock.asHeader(),
+              kzgCommitmentsInclusionProof);
+      dataColumnSidecars.add(dataColumnSidecar);
+    }
+
+    return dataColumnSidecars;
+  }
+
+  private List<List<Cell>> computeExtendedMatrix(final List<Blob> blobs, final KZG kzg) {
+    final CellSchema cellSchema = schemaDefinitions.getCellSchema();
+    return blobs.stream()
+        .map(blob -> kzg.computeCells(blob.getBytes()))
+        .map(
+            kzgCellsList ->
+                kzgCellsList.stream().map(kzgCell -> cellSchema.create(kzgCell.bytes())).toList())
+        .toList();
   }
 
   @Override

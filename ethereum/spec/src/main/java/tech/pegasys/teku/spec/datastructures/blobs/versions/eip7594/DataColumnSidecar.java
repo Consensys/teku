@@ -70,23 +70,26 @@ public class DataColumnSidecar
                 kzgCommitmentsInclusionProof.stream().map(SszBytes32::of).toList()));
   }
 
-  //  public DataColumnSidecar(
-  //      final DataColumnSidecarSchema schema,
-  //      final UInt64 index,
-  //      final Blob blob,
-  //      final KZGCommitment kzgCommitment,
-  //      final KZGProof kzgProof,
-  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentsInclusionProof) {
-  //    this(
-  //        schema,
-  //        index,
-  //        blob,
-  //        new SszKZGCommitment(kzgCommitment),
-  //        new SszKZGProof(kzgProof),
-  //        signedBeaconBlockHeader,
-  //        kzgCommitmentsInclusionProof);
-  //  }
+  public DataColumnSidecar(
+      final DataColumnSidecarSchema schema,
+      final UInt64 index,
+      final DataColumn dataColumn,
+      final SszList<SszKZGCommitment> sszKzgCommitments,
+      final SszList<SszKZGProof> sszKkzgProofs,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes32> kzgCommitmentsInclusionProof) {
+    super(
+        schema,
+        SszUInt64.of(index),
+        dataColumn,
+        sszKzgCommitments,
+        sszKkzgProofs,
+        signedBeaconBlockHeader,
+        schema
+            .getKzgCommitmentsInclusionProofSchema()
+            .createFromElements(
+                kzgCommitmentsInclusionProof.stream().map(SszBytes32::of).toList()));
+  }
 
   public UInt64 getIndex() {
     return getField0().get();

@@ -100,23 +100,23 @@ public class DataColumnSidecarSchema
     return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
-  //  public DataColumnSidecar create(
-  //      final UInt64 index,
-  //      final Blob blob,
-  //      final SszKZGCommitment sszKzgCommitment,
-  //      final SszKZGProof sszKzgProof,
-  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentsInclusionProof) {
-  //    return new DataColumnSidecar(
-  //        this,
-  //        index,
-  //        blob,
-  //        sszKzgCommitment,
-  //        sszKzgProof,
-  //        signedBeaconBlockHeader,
-  //        kzgCommitmentsInclusionProof);
-  //  }
-  //
+  public DataColumnSidecar create(
+      final UInt64 index,
+      final DataColumn dataColumn,
+      final SszList<SszKZGCommitment> sszKzgCommitments,
+      final SszList<SszKZGProof> sszKkzgProofs,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes32> kzgCommitmentsInclusionProof) {
+    return new DataColumnSidecar(
+        this,
+        index,
+        dataColumn,
+        sszKzgCommitments,
+        sszKkzgProofs,
+        signedBeaconBlockHeader,
+        kzgCommitmentsInclusionProof);
+  }
+
   //  public DataColumnSidecar create(
   //      final UInt64 index,
   //      final Bytes blob,
