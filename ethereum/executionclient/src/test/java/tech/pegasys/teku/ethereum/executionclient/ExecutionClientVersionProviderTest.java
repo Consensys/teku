@@ -19,6 +19,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -60,6 +61,7 @@ public class ExecutionClientVersionProviderTest {
 
     // only called once (on initialization)
     verify(publishChannel).onExecutionClientVersionNotAvailable();
+    verifyNoMoreInteractions(publishChannel);
   }
 
   @Test
@@ -106,7 +108,7 @@ public class ExecutionClientVersionProviderTest {
   }
 
   @Test
-  public void doesNotPushUnknownVersionInChannel_whenELIsDownInTheMiddle() {
+  public void doesNotPushExecutionClientVersionInChannel_whenELIsDownInTheMiddle() {
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
             executionLayerChannel, publishChannel, consensusClientVersion);
@@ -123,8 +125,9 @@ public class ExecutionClientVersionProviderTest {
     executionClientVersionProvider.onAvailabilityUpdated(true);
     // EL called two times
     verify(executionLayerChannel, times(2)).engineGetClientVersion(consensusClientVersion);
-    // UNKNOWN version is not pushed in the channel
+    // no version is pushed in the channel
     verify(publishChannel, never()).onExecutionClientVersion(any());
+    verify(publishChannel).onExecutionClientVersionNotAvailable();
 
     // EL is back
     when(executionLayerChannel.engineGetClientVersion(any()))
@@ -136,5 +139,7 @@ public class ExecutionClientVersionProviderTest {
     verify(executionLayerChannel, times(3)).engineGetClientVersion(consensusClientVersion);
     // Version is the same, not pushed in the channel
     verify(publishChannel, never()).onExecutionClientVersion(any());
+    // non-availability has been called only once
+    verify(publishChannel).onExecutionClientVersionNotAvailable();
   }
 }
