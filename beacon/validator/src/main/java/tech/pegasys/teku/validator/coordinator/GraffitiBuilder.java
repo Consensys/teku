@@ -118,9 +118,8 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   @VisibleForTesting
   protected String extractGraffiti(final Optional<Bytes32> graffiti, final int length) {
     return graffiti
-        .map(Bytes::toArrayUnsafe)
-        .map(bytes -> Arrays.copyOf(bytes, length))
-        .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
+        .map(bytes -> bytes.slice(0, length))
+        .map(bytes -> new String(bytes.toArrayUnsafe(), StandardCharsets.UTF_8))
         .orElse("");
   }
 
