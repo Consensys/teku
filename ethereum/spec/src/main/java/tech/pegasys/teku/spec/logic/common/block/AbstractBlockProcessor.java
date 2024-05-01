@@ -759,8 +759,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
     } else {
       // This validator already exists, increase their balance
-      applyDepositToValidatorIndex(
-          state, withdrawalCredentials, signatureAlreadyVerified, existingIndex.get(), amount);
+      if (signatureAlreadyVerified
+          || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature)) {
+        applyDepositToValidatorIndex(
+            state, withdrawalCredentials, true, existingIndex.get(), amount);
+      }
     }
   }
 
