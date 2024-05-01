@@ -36,11 +36,11 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
 
   private final AtomicBoolean lastExecutionClientAvailability = new AtomicBoolean(true);
 
+  private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>();
+
   private final ExecutionLayerChannel executionLayerChannel;
   private final ExecutionClientVersionChannel executionClientVersionChannel;
   private final ClientVersion consensusClientVersion;
-
-  private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>();
 
   public ExecutionClientVersionProvider(
       final ExecutionLayerChannel executionLayerChannel,
