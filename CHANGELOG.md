@@ -12,5 +12,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
+- Added metadata fields to getBlobSidecars response.  
 
 ### Bug Fixes
