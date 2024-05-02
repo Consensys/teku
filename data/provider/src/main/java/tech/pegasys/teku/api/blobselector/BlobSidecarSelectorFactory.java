@@ -154,7 +154,8 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
                     blobSidecars.isEmpty()
                         ? Optional.empty()
                         : addMetaData(
-                            //TODO we don't care about metadata here...need to find a way to get around the lack of a block root?
+                            // We don't care about metadata since the api (teku only) that
+                            // consumes the return value doesn't use it
                             Optional.of(blobSidecars), new SlotAndBlockRoot(slot, Bytes32.ZERO)));
   }
 
@@ -187,6 +188,31 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
 
   private Optional<BlobSidecarsAndMetaData> addMetaData(
       final Optional<List<BlobSidecar>> maybeBlobSidecarList,
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    if (maybeBlobSidecarList.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final UInt64 slot = slotAndBlockRoot.getSlot();
+    final Bytes32 blockRoot = slotAndBlockRoot.getBlockRoot();
+    final Optional<ChainHead> maybeChainHead = client.getChainHead();
+    final boolean isFinalized = client.isFinalized(slot);
+    boolean isOptimistic;
+    boolean isCanonical = false;
+
+    if (maybeChainHead.isPresent()) {
+      ChainHead chainHead = maybeChainHead.get();
+      isOptimistic = chainHead.isOptimistic() || client.isOptimisticBlock(blockRoot);
+      isCanonical = client.isCanonicalBlock(slot, blockRoot, chainHead.getRoot());
+    } else {
+      // If there's no chain head, we assume the block is not optimistic and not canonical
+      isOptimistic = client.isOptimisticBlock(blockRoot);
+    }
+    return addMetaData(maybeBlobSidecarList, slot, isOptimistic, isCanonical, isFinalized);
+  }
+
+  private Optional<BlobSidecarsAndMetaData> addMetaData(
+      final Optional<List<BlobSidecar>> maybeBlobSidecarList,
       final SlotAndBlockRoot slotAndBlockRoot,
       final boolean isOptimistic) {
     if (maybeBlobSidecarList.isEmpty()) {
@@ -198,38 +224,6 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
         isOptimistic,
         true,
         client.isFinalized(slotAndBlockRoot.getSlot()));
-  }
-
-  private Optional<BlobSidecarsAndMetaData> addMetaData(
-      final Optional<List<BlobSidecar>> maybeBlobSidecarList,
-      final SlotAndBlockRoot slotAndBlockRoot) {
-
-    if (maybeBlobSidecarList.isEmpty()) {
-      return Optional.empty();
-    }
-
-    final Optional<ChainHead> maybeChainHead = client.getChainHead();
-
-    if (maybeChainHead.isEmpty()) {
-      // If we don't have a chain head, we can't determine if the block is canonical or optimistic
-      // so we assume it's not optimistic and not canonical
-      return addMetaData(
-          maybeBlobSidecarList,
-          slotAndBlockRoot.getSlot(),
-          client.isOptimisticBlock(slotAndBlockRoot.getBlockRoot()),
-          false,
-          client.isFinalized(slotAndBlockRoot.getSlot()));
-    } else {
-      final ChainHead chainHead = maybeChainHead.get();
-
-      return addMetaData(
-          maybeBlobSidecarList,
-          slotAndBlockRoot.getSlot(),
-          chainHead.isOptimistic() || client.isOptimisticBlock(slotAndBlockRoot.getBlockRoot()),
-          client.isCanonicalBlock(
-              slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), chainHead.getRoot()),
-          client.isFinalized(slotAndBlockRoot.getSlot()));
-    }
   }
 
   private Optional<BlobSidecarsAndMetaData> addMetaData(
