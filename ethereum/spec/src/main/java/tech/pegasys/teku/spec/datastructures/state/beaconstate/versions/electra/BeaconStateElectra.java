@@ -25,6 +25,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,10 +45,25 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
                     "Expected an Electra state but got: " + state.getClass().getSimpleName()));
   }
 
+  private static <T extends SszData> void addItems(
+      MoreObjects.ToStringHelper stringBuilder, String keyPrefix, SszList<T> items) {
+    for (int i = 0; i < items.size(); i++) {
+      stringBuilder.add(keyPrefix + "[" + i + "]", items.get(i));
+    }
+  }
+
   static void describeCustomElectraFields(
-      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateDeneb state) {
+      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateElectra state) {
     BeaconStateDeneb.describeCustomDenebFields(stringBuilder, state);
-    stringBuilder.add("deposit_receipts_start_index", state.getNextWithdrawalIndex());
+    stringBuilder.add("deposit_receipts_start_index", state.getDepositReceiptsStartIndex());
+    stringBuilder.add("deposit_balance_to_consume", state.getDepositBalanceToConsume());
+    stringBuilder.add("exit_balance_to_consume", state.getExitBalanceToConsume());
+    stringBuilder.add("earliest_exit_epoch", state.getEarliestExitEpoch());
+    stringBuilder.add("consolidation_balance_to_consume", state.getConsolidationBalanceToConsume());
+    stringBuilder.add("earliest_consolidation_epoch", state.getEarliestConsolidationEpoch());
+    addItems(stringBuilder, "pending_balance_deposits", state.getPendingBalanceDeposits());
+    addItems(stringBuilder, "pending_partial_withdrawals", state.getPendingPartialWithdrawals());
+    addItems(stringBuilder, "pending_consolidations", state.getPendingConsolidations());
   }
 
   @Override
