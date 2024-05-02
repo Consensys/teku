@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -75,7 +76,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     BLS_TO_EXECUTION_CHANGE,
     WITHDRAWAL,
     DEPOSIT_RECEIPT,
-    EXECUTION_LAYER_WITHDRAWAL_REQUEST
+    EXECUTION_LAYER_WITHDRAWAL_REQUEST,
+    CONSOLIDATION
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -124,6 +126,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               new OperationsTestExecutor<>(
                   "execution_layer_withdrawal_request.ssz_snappy",
                   Operation.EXECUTION_LAYER_WITHDRAWAL_REQUEST))
+          .put(
+              "operations/consolidation",
+              new OperationsTestExecutor<>("consolidation.ssz_snappy", Operation.CONSOLIDATION))
           .build();
 
   private final String dataFileName;
@@ -313,6 +318,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case DEPOSIT_RECEIPT -> processDepositReceipt(testDefinition, state, processor);
       case EXECUTION_LAYER_WITHDRAWAL_REQUEST -> processExecutionLayerWithdrawalRequest(
           testDefinition, state, processor);
+      case CONSOLIDATION -> processConsolidation(testDefinition, state, processor);
       default -> throw new UnsupportedOperationException(
           "Operation " + operation + " not implemented in OperationTestExecutor");
     }
@@ -358,6 +364,16 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest =
         loadSsz(testDefinition, dataFileName, ExecutionLayerWithdrawalRequest.SSZ_SCHEMA);
     processor.processExecutionLayerWithdrawalRequest(state, executionLayerWithdrawalRequest);
+  }
+
+  private void processConsolidation(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor)
+      throws BlockProcessingException {
+    final SignedConsolidation consolidation =
+        loadSsz(testDefinition, dataFileName, SignedConsolidation.SSZ_SCHEMA);
+    processor.processConsolidation(state, consolidation);
   }
 
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {
@@ -424,7 +440,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           EXECUTION_PAYLOAD,
           WITHDRAWAL,
           DEPOSIT_RECEIPT,
-          EXECUTION_LAYER_WITHDRAWAL_REQUEST -> {}
+          EXECUTION_LAYER_WITHDRAWAL_REQUEST,
+          CONSOLIDATION -> {}
     }
   }
 

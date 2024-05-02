@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -170,5 +171,17 @@ public class DefaultOperationProcessor implements OperationProcessor {
     spec.getBlockProcessor(state.getSlot())
         .processExecutionLayerWithdrawalRequests(
             state, withdrawalRequests, validatorExitContextSupplier);
+  }
+
+  @Override
+  public void processConsolidation(
+      final MutableBeaconState state, final SignedConsolidation consolidation)
+      throws BlockProcessingException {
+    final SszList<SignedConsolidation> consolidations =
+        BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
+            .getConsolidationsSchema()
+            .of(consolidation);
+
+    spec.getBlockProcessor(state.getSlot()).processConsolidations(state, consolidations);
   }
 }

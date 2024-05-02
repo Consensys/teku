@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public interface BlockProcessor {
+
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
 
@@ -175,6 +177,10 @@ public interface BlockProcessor {
       final MutableBeaconState state,
       final SszList<ExecutionLayerWithdrawalRequest> exits,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException;
+
+  void processConsolidations(
+      MutableBeaconState state, final SszList<SignedConsolidation> consolidations)
       throws BlockProcessingException;
 
   ExpectedWithdrawals getExpectedWithdrawals(BeaconState preState);
