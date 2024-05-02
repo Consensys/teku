@@ -137,32 +137,32 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
     final UInt64 computedActivationExitEpoch = miscHelpersElectra.computeActivationExitEpoch(epoch);
-    final UInt64 earliestConsolidationEpoch =
-        stateElectra.getEarliestConsolidationEpoch().max(computedActivationExitEpoch);
     final UInt64 perEpochConsolidationChurn =
         stateAccessorsElectra.getConsolidationChurnLimit(stateElectra);
 
-    final UInt64 consolidationBalanceToConsume =
+    UInt64 earliestConsolidationEpoch =
+        stateElectra.getEarliestConsolidationEpoch().max(computedActivationExitEpoch);
+    // New epoch for consolidations.
+    UInt64 consolidationBalanceToConsume =
         stateElectra.getEarliestConsolidationEpoch().isLessThan(earliestConsolidationEpoch)
             ? perEpochConsolidationChurn
             : stateElectra.getConsolidationBalanceToConsume();
 
+    // Consolidation doesn't fit in the current earliest epoch.
     if (consolidationBalance.isGreaterThan(consolidationBalanceToConsume)) {
       final UInt64 balanceToProcess =
           consolidationBalance.minusMinZero(consolidationBalanceToConsume);
       final UInt64 additionalEpochs =
           balanceToProcess.decrement().dividedBy(perEpochConsolidationChurn).increment();
-      stateElectra.setConsolidationBalanceToConsume(
-          consolidationBalanceToConsume.plus(
-              additionalEpochs
-                  .times(perEpochConsolidationChurn)
-                  .minusMinZero(consolidationBalance)));
-      stateElectra.setEarliestConsolidationEpoch(earliestConsolidationEpoch.plus(additionalEpochs));
-    } else {
-      stateElectra.setConsolidationBalanceToConsume(
-          consolidationBalanceToConsume.minusMinZero(consolidationBalance));
-      stateElectra.setEarliestConsolidationEpoch(earliestConsolidationEpoch);
+      earliestConsolidationEpoch = earliestConsolidationEpoch.plus(additionalEpochs);
+      consolidationBalanceToConsume =
+          consolidationBalanceToConsume.plus(additionalEpochs.times(perEpochConsolidationChurn));
     }
+
+    // Consume the balance and update state variables.
+    stateElectra.setConsolidationBalanceToConsume(
+        consolidationBalanceToConsume.minusMinZero(consolidationBalance));
+    stateElectra.setEarliestConsolidationEpoch(earliestConsolidationEpoch);
 
     return stateElectra.getEarliestConsolidationEpoch();
   }
