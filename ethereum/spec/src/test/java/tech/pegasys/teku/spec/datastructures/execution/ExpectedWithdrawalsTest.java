@@ -23,6 +23,8 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExpectedWithdrawalsTest {
@@ -84,5 +86,55 @@ class ExpectedWithdrawalsTest {
     assertThat(withdrawals.getWithdrawalList().get(1).getAmount())
         .isEqualTo(UInt64.valueOf(excessBalance));
     assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(1);
+    final MutableBeaconStateElectra mutableBeaconStateElectra =
+        MutableBeaconStateElectra.required(preState.createWritableCopy());
+
+    withdrawals.processWithdrawalsUnchecked(
+        mutableBeaconStateElectra,
+        SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions()),
+        spec.getGenesisSpec().beaconStateMutators(),
+        SpecConfigElectra.required(spec.getGenesisSpecConfig()));
+    assertThat(mutableBeaconStateElectra.getPendingPartialWithdrawals().size()).isEqualTo(0);
+
+    assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.valueOf(2));
+    assertThat(mutableBeaconStateElectra.getValidators().size()).isEqualTo(2);
+  }
+
+  @Test
+  void electraPendingPartialWithdrawals() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final SpecConfigElectra specConfigElectra =
+        SpecConfigElectra.required(spec.getGenesisSpec().getConfig());
+    final UInt64 electraMaxBalance = specConfigElectra.getMaxEffectiveBalance();
+    final long partialWithdrawalBalance = 10241024L;
+
+    final BeaconStateElectra preState =
+        BeaconStateElectra.required(
+            new BeaconStateTestBuilder(dataStructureUtil)
+                .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance))
+                .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance + 1))
+                .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance + 2))
+                .pendingPartialWithdrawal(0, electraMaxBalance.plus(partialWithdrawalBalance))
+                .pendingPartialWithdrawal(
+                    1, electraMaxBalance.plus(partialWithdrawalBalance).plus(1))
+                .pendingPartialWithdrawal(
+                    2, electraMaxBalance.plus(partialWithdrawalBalance).plus(2))
+                .build());
+
+    final ExpectedWithdrawals withdrawals =
+        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
+    final MutableBeaconStateElectra mutableBeaconStateElectra =
+        MutableBeaconStateElectra.required(preState.createWritableCopy());
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(1);
+
+    withdrawals.processWithdrawalsUnchecked(
+        mutableBeaconStateElectra,
+        SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions()),
+        spec.getGenesisSpec().beaconStateMutators(),
+        SpecConfigElectra.required(spec.getGenesisSpecConfig()));
+    assertThat(mutableBeaconStateElectra.getPendingPartialWithdrawals().size()).isEqualTo(2);
+    assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.ONE);
+    assertThat(mutableBeaconStateElectra.getValidators().size()).isEqualTo(3);
   }
 }

@@ -18,37 +18,84 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class ExpectedWithdrawals {
   public static final ExpectedWithdrawals NOOP = new ExpectedWithdrawals(List.of(), 0);
-  public final List<Withdrawal> withdrawalList;
+  private final List<Withdrawal> withdrawalList;
+  private Optional<SszList<Withdrawal>> maybeWithdrawalsSszList = Optional.empty();
   private final int partialWithdrawalCount;
 
-  public ExpectedWithdrawals(
+  private ExpectedWithdrawals(
       final List<Withdrawal> withdrawalList, final int partialWithdrawalCount) {
     this.withdrawalList = withdrawalList;
     this.partialWithdrawalCount = partialWithdrawalCount;
   }
 
+  private ExpectedWithdrawals(
+      final List<Withdrawal> withdrawalList,
+      final int partialWithdrawalCount,
+      final SchemaDefinitionsCapella schemaDefinitions) {
+    this.withdrawalList = withdrawalList;
+    this.partialWithdrawalCount = partialWithdrawalCount;
+
+    getExpectedWithdrawalsSszList(schemaDefinitions);
+  }
+
   public static ExpectedWithdrawals create(
+      final BeaconState preState,
+      final SchemaDefinitions schemaDefinitions,
+      final MiscHelpers miscHelpers,
+      final SpecConfig specConfig,
+      final Predicates predicates) {
+
+    if (preState.toVersionElectra().isPresent()) {
+      return createFromElectraState(
+          BeaconStateElectra.required(preState),
+          SchemaDefinitionsElectra.required(schemaDefinitions),
+          MiscHelpersElectra.required(miscHelpers),
+          SpecConfigElectra.required(specConfig),
+          PredicatesElectra.required(predicates));
+    } else if (preState.toVersionCapella().isPresent()) {
+      return createFromCapellaState(
+          BeaconStateCapella.required(preState),
+          SchemaDefinitionsCapella.required(schemaDefinitions),
+          miscHelpers,
+          SpecConfigCapella.required(specConfig),
+          predicates);
+    }
+
+    return NOOP;
+  }
+
+  private static ExpectedWithdrawals createFromCapellaState(
       final BeaconStateCapella preState,
       final SchemaDefinitionsCapella schemaDefinitionsCapella,
       final MiscHelpers miscHelpers,
@@ -62,10 +109,10 @@ public class ExpectedWithdrawals {
             specConfigCapella,
             predicates,
             new ArrayList<>());
-    return new ExpectedWithdrawals(capellaWithdrawals, 0);
+    return new ExpectedWithdrawals(capellaWithdrawals, 0, schemaDefinitionsCapella);
   }
 
-  public static ExpectedWithdrawals create(
+  private static ExpectedWithdrawals createFromElectraState(
       final BeaconStateElectra preState,
       final SchemaDefinitionsElectra schemaDefinitions,
       final MiscHelpersElectra miscHelpers,
@@ -82,7 +129,7 @@ public class ExpectedWithdrawals {
             specConfig,
             predicates,
             partialPendingWithdrawals);
-    return new ExpectedWithdrawals(capellaWithdrawals, partialWithdrawalsCount);
+    return new ExpectedWithdrawals(capellaWithdrawals, partialWithdrawalsCount, schemaDefinitions);
   }
 
   public List<Withdrawal> getWithdrawalList() {
@@ -207,6 +254,115 @@ public class ExpectedWithdrawals {
     }
 
     return expectedWithdrawals;
+  }
+
+  public void processWithdrawals(
+      final MutableBeaconState genericState,
+      final ExecutionPayloadSummary payloadSummary,
+      final SchemaDefinitionsCapella schemaDefinitionsCapella,
+      final BeaconStateMutators beaconStateMutators,
+      final SpecConfigCapella specConfigCapella)
+      throws BlockProcessingException {
+    final SszList<Withdrawal> expectedWithdrawals =
+        getExpectedWithdrawalsSszList(schemaDefinitionsCapella);
+
+    assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
+
+    processWithdrawalsUnchecked(
+        genericState, schemaDefinitionsCapella, beaconStateMutators, specConfigCapella);
+  }
+
+  void processWithdrawalsUnchecked(
+      final MutableBeaconState genericState,
+      final SchemaDefinitionsCapella schemaDefinitionsCapella,
+      final BeaconStateMutators beaconStateMutators,
+      final SpecConfigCapella specConfigCapella) {
+    final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
+    final SszList<Withdrawal> expectedWithdrawals =
+        getExpectedWithdrawalsSszList(schemaDefinitionsCapella);
+
+    for (int i = 0; i < expectedWithdrawals.size(); i++) {
+      final Withdrawal withdrawal = expectedWithdrawals.get(i);
+      beaconStateMutators.decreaseBalance(
+          state, withdrawal.getValidatorIndex().intValue(), withdrawal.getAmount());
+    }
+
+    if (partialWithdrawalCount > 0) {
+      // new in electra
+      reducePendingWithdrawals(MutableBeaconStateElectra.required(state));
+    }
+
+    final int validatorCount = genericState.getValidators().size();
+    final int maxWithdrawalsPerPayload = specConfigCapella.getMaxWithdrawalsPerPayload();
+    final int maxValidatorsPerWithdrawalsSweep =
+        specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
+    if (!expectedWithdrawals.isEmpty()) {
+      final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
+      state.setNextWithdrawalIndex(latestWithdrawal.getIndex().increment());
+    }
+
+    if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
+      // Update the next validator index to start the next withdrawal sweep
+      final Withdrawal latestWithdrawal = expectedWithdrawals.get(expectedWithdrawals.size() - 1);
+      final int nextWithdrawalValidatorIndex = latestWithdrawal.getValidatorIndex().intValue() + 1;
+      state.setNextWithdrawalValidatorIndex(
+          UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
+    } else {
+      // Advance sweep by the max length of the sweep if there was not a full set of withdrawals
+      final int nextWithdrawalValidatorIndex =
+          state.getNextWithdrawalValidatorIndex().intValue() + maxValidatorsPerWithdrawalsSweep;
+      state.setNextWithdrawalValidatorIndex(
+          UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
+    }
+  }
+
+  private SszList<Withdrawal> getExpectedWithdrawalsSszList(
+      final SchemaDefinitionsCapella schemaDefinitions) {
+    if (maybeWithdrawalsSszList.isEmpty()) {
+      maybeWithdrawalsSszList =
+          Optional.of(
+              schemaDefinitions
+                  .getExecutionPayloadSchema()
+                  .getWithdrawalsSchemaRequired()
+                  .createFromElements(withdrawalList));
+    }
+    return maybeWithdrawalsSszList.get();
+  }
+
+  private void reducePendingWithdrawals(final MutableBeaconStateElectra state) {
+    final SszListSchema<PendingPartialWithdrawal, ?> schema =
+        state.getPendingPartialWithdrawals().getSchema();
+    if (state.getPendingPartialWithdrawals().size() == partialWithdrawalCount) {
+      state.setPendingPartialWithdrawals(schema.createFromElements(List.of()));
+    } else {
+      final List<PendingPartialWithdrawal> pendingPartialWithdrawals =
+          state.getPendingPartialWithdrawals().asList();
+      state.setPendingPartialWithdrawals(
+          schema.createFromElements(
+              pendingPartialWithdrawals.subList(
+                  partialWithdrawalCount, pendingPartialWithdrawals.size())));
+    }
+  }
+
+  private static void assertWithdrawalsInExecutionPayloadMatchExpected(
+      final ExecutionPayloadSummary payloadSummary, final SszList<Withdrawal> expectedWithdrawals)
+      throws BlockProcessingException {
+    // the spec does a element-to-element comparison but Teku is comparing the hash of the tree
+    if (payloadSummary.getOptionalWithdrawalsRoot().isEmpty()
+        || !expectedWithdrawals
+            .hashTreeRoot()
+            .equals(payloadSummary.getOptionalWithdrawalsRoot().get())) {
+      final String msg =
+          String.format(
+              "Withdrawals in execution payload are different from expected (expected withdrawals root is %s but was "
+                  + "%s)",
+              expectedWithdrawals.hashTreeRoot(),
+              payloadSummary
+                  .getOptionalWithdrawalsRoot()
+                  .map(Bytes::toHexString)
+                  .orElse("MISSING"));
+      throw new BlockProcessingException(msg);
+    }
   }
 
   private static UInt64 nextWithdrawalAfter(final List<Withdrawal> partialWithdrawals) {
