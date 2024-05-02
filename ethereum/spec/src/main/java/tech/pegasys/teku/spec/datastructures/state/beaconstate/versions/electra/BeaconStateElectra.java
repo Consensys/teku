@@ -62,7 +62,7 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
     stringBuilder.add("consolidation_balance_to_consume", state.getConsolidationBalanceToConsume());
     stringBuilder.add("earliest_consolidation_epoch", state.getEarliestConsolidationEpoch());
     addItems(stringBuilder, "pending_balance_deposits", state.getPendingBalanceDeposits());
-    addItems(stringBuilder, "pending_partial_withdrawals", state.getPendingBalanceDeposits());
+    addItems(stringBuilder, "pending_partial_withdrawals", state.getPendingPartialWithdrawals());
     addItems(stringBuilder, "pending_consolidations", state.getPendingConsolidations());
   }
 
