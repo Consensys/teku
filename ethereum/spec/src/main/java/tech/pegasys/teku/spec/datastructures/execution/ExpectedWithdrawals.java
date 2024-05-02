@@ -49,13 +49,24 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class ExpectedWithdrawals {
   public static final ExpectedWithdrawals NOOP = new ExpectedWithdrawals(List.of(), 0);
-  public final List<Withdrawal> withdrawalList;
+  private final List<Withdrawal> withdrawalList;
+  private Optional<SszList<Withdrawal>> maybeWithdrawalsSszList = Optional.empty();
   private final int partialWithdrawalCount;
 
-  public ExpectedWithdrawals(
+  private ExpectedWithdrawals(
       final List<Withdrawal> withdrawalList, final int partialWithdrawalCount) {
     this.withdrawalList = withdrawalList;
     this.partialWithdrawalCount = partialWithdrawalCount;
+  }
+
+  private ExpectedWithdrawals(
+      final List<Withdrawal> withdrawalList,
+      final int partialWithdrawalCount,
+      final SchemaDefinitionsCapella schemaDefinitions) {
+    this.withdrawalList = withdrawalList;
+    this.partialWithdrawalCount = partialWithdrawalCount;
+
+    getExpectedWithdrawalsSszList(schemaDefinitions);
   }
 
   public static ExpectedWithdrawals create(
@@ -98,7 +109,7 @@ public class ExpectedWithdrawals {
             specConfigCapella,
             predicates,
             new ArrayList<>());
-    return new ExpectedWithdrawals(capellaWithdrawals, 0);
+    return new ExpectedWithdrawals(capellaWithdrawals, 0, schemaDefinitionsCapella);
   }
 
   private static ExpectedWithdrawals createFromElectraState(
@@ -118,7 +129,7 @@ public class ExpectedWithdrawals {
             specConfig,
             predicates,
             partialPendingWithdrawals);
-    return new ExpectedWithdrawals(capellaWithdrawals, partialWithdrawalsCount);
+    return new ExpectedWithdrawals(capellaWithdrawals, partialWithdrawalsCount, schemaDefinitions);
   }
 
   public List<Withdrawal> getWithdrawalList() {
@@ -253,10 +264,7 @@ public class ExpectedWithdrawals {
       final SpecConfigCapella specConfigCapella)
       throws BlockProcessingException {
     final SszList<Withdrawal> expectedWithdrawals =
-        schemaDefinitionsCapella
-            .getExecutionPayloadSchema()
-            .getWithdrawalsSchemaRequired()
-            .createFromElements(withdrawalList);
+        getExpectedWithdrawalsSszList(schemaDefinitionsCapella);
 
     assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
 
@@ -271,10 +279,7 @@ public class ExpectedWithdrawals {
       final SpecConfigCapella specConfigCapella) {
     final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
     final SszList<Withdrawal> expectedWithdrawals =
-        schemaDefinitionsCapella
-            .getExecutionPayloadSchema()
-            .getWithdrawalsSchemaRequired()
-            .createFromElements(withdrawalList);
+        getExpectedWithdrawalsSszList(schemaDefinitionsCapella);
 
     for (int i = 0; i < expectedWithdrawals.size(); i++) {
       final Withdrawal withdrawal = expectedWithdrawals.get(i);
@@ -309,6 +314,19 @@ public class ExpectedWithdrawals {
       state.setNextWithdrawalValidatorIndex(
           UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
     }
+  }
+
+  private SszList<Withdrawal> getExpectedWithdrawalsSszList(
+      final SchemaDefinitionsCapella schemaDefinitions) {
+    if (maybeWithdrawalsSszList.isEmpty()) {
+      maybeWithdrawalsSszList =
+          Optional.of(
+              schemaDefinitions
+                  .getExecutionPayloadSchema()
+                  .getWithdrawalsSchemaRequired()
+                  .createFromElements(withdrawalList));
+    }
+    return maybeWithdrawalsSszList.get();
   }
 
   private void reducePendingWithdrawals(final MutableBeaconStateElectra state) {

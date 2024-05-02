@@ -141,7 +141,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final int expectedDepositCount =
           Math.min(
               specConfig.getMaxDeposits(),
-              eth1DepositIndexLimit.minus(state.getEth1DepositIndex()).intValue());
+              eth1DepositIndexLimit.minusMinZero(state.getEth1DepositIndex()).intValue());
 
       checkArgument(
           body.getDeposits().size() == expectedDepositCount,
@@ -274,7 +274,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             final UInt64 toWithdraw =
                 validatorBalance
                     .min(minActivationBalance)
-                    .minus(pendingBalanceToWithdraw)
+                    .minusMinZero(pendingBalanceToWithdraw)
                     .min(withdrawalRequest.getAmount());
             final UInt64 exitQueueEpoch =
                 beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(
