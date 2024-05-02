@@ -414,6 +414,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           "Source and Target validators in consolidation must have the same withdrawal credentials");
 
       // Verify consolidation is signed by the source and the target
+      // Note: we are not concerned about batch verifying these signatures at this point. It is
+      // likely that SignedConsolidation will disappear in favour of EL-triggered consolidation
+      // operations.
       assertCondition(
           operationSignatureVerifier.verifyConsolidationSignature(
               electraState, signedConsolidation, BLSSignatureVerifier.SIMPLE),
