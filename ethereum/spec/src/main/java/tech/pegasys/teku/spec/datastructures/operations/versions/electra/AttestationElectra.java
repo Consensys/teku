@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -85,5 +86,10 @@ public class AttestationElectra
   public Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.of(
         getCommitteeBitsRequired().getAllSetBits().intStream().mapToObj(UInt64::valueOf).toList());
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.ELECTRA;
   }
 }

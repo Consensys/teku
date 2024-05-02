@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 
 /**
@@ -62,4 +63,6 @@ public interface Attestation extends SszData, SszContainer {
     return getCommitteeIndices()
         .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
   }
+
+  SpecMilestone getMilestone();
 }
