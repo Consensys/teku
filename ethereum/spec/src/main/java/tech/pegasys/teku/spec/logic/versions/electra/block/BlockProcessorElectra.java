@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
@@ -397,7 +398,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       // Consolidations must specify an epoch when they become valid; they are not valid before then
       assertCondition(
           currentEpoch.isGreaterThanOrEqualTo(consolidation.getEpoch()),
-          "Consolidation must have activation epoch in the future");
+          "Consolidation must have an activation epoch no greater than current epoch");
 
       // Verify the source and the target have Execution layer withdrawal credentials
       assertCondition(
@@ -407,10 +408,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           predicatesElectra.hasExecutionWithdrawalCredential(targetValidator),
           "Target validator in consolidation must have execution withdrawal credentials");
       // Verify the same withdrawal address
+      final Eth1Address sourceValidatorExecutionAddress =
+          Predicates.getExecutionAddressUnchecked(sourceValidator.getWithdrawalCredentials());
+      final Eth1Address targetValidatorExecutionAddress =
+          Predicates.getExecutionAddressUnchecked(targetValidator.getWithdrawalCredentials());
       assertCondition(
-          sourceValidator
-              .getWithdrawalCredentials()
-              .equals(targetValidator.getWithdrawalCredentials()),
+          sourceValidatorExecutionAddress.equals(targetValidatorExecutionAddress),
           "Source and Target validators in consolidation must have the same withdrawal credentials");
 
       // Verify consolidation is signed by the source and the target
