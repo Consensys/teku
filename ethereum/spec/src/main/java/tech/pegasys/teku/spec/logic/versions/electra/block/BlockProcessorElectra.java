@@ -188,8 +188,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   public void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
       final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
     withdrawalRequests.forEach(
@@ -274,7 +273,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               && hasExcessBalance) {
             final UInt64 toWithdraw =
                 validatorBalance
-                    .min(minActivationBalance)
+                    .minusMinZero(minActivationBalance)
                     .minusMinZero(pendingBalanceToWithdraw)
                     .min(withdrawalRequest.getAmount());
             final UInt64 exitQueueEpoch =
