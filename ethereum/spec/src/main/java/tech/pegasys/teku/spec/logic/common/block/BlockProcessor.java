@@ -53,8 +53,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecution
 
 public interface BlockProcessor {
 
-  Optional<OperationInvalidReason> validateAttestation(
-      final BeaconState state, final AttestationData data);
+  Optional<OperationInvalidReason> validateAttestation(BeaconState state, AttestationData data);
 
   BeaconState processAndValidateBlock(
       SignedBeaconBlock signedBlock,
@@ -124,10 +123,10 @@ public interface BlockProcessor {
       throws BlockProcessingException;
 
   void processDepositWithoutCheckingMerkleProof(
-      final MutableBeaconState state,
-      final Deposit deposit,
-      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
-      final boolean signatureAlreadyVerified);
+      MutableBeaconState state,
+      Deposit deposit,
+      Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
+      boolean signatureAlreadyVerified);
 
   void processVoluntaryExits(
       MutableBeaconState state,
@@ -139,7 +138,7 @@ public interface BlockProcessor {
       MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  UInt64 computeParticipantReward(final BeaconStateAltair state);
+  UInt64 computeParticipantReward(BeaconStateAltair state);
 
   void processExecutionPayload(
       MutableBeaconState state,
@@ -169,18 +168,16 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositReceipts(
-      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+  void processDepositReceipts(MutableBeaconState state, SszList<DepositReceipt> depositReceipts)
       throws BlockProcessingException;
 
   void processExecutionLayerWithdrawalRequests(
-      final MutableBeaconState state,
-      final SszList<ExecutionLayerWithdrawalRequest> exits,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      MutableBeaconState state,
+      SszList<ExecutionLayerWithdrawalRequest> exits,
+      Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException;
 
-  void processConsolidations(
-      MutableBeaconState state, final SszList<SignedConsolidation> consolidations)
+  void processConsolidations(MutableBeaconState state, SszList<SignedConsolidation> consolidations)
       throws BlockProcessingException;
 
   ExpectedWithdrawals getExpectedWithdrawals(BeaconState preState);
