@@ -151,7 +151,7 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
       final UInt64 balanceToProcess =
           consolidationBalance.minusMinZero(consolidationBalanceToConsume);
       final UInt64 additionalEpochs =
-          balanceToProcess.decrement().dividedBy(perEpochConsolidationChurn.increment());
+          balanceToProcess.decrement().dividedBy(perEpochConsolidationChurn).increment();
       stateElectra.setConsolidationBalanceToConsume(
           consolidationBalanceToConsume.plus(
               additionalEpochs
