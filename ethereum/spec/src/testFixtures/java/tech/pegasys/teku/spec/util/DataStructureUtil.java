@@ -779,13 +779,8 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
-    final int maxCommitteesPerSlot = spec.atSlot(slot).getConfig().getMaxCommitteesPerSlot();
     return new AttestationData(
-        slot,
-        randomUInt64(maxCommitteesPerSlot),
-        randomBytes32(),
-        randomCheckpoint(),
-        randomCheckpoint());
+        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {

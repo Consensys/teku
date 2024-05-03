@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.ArrayUtils;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
@@ -32,30 +32,13 @@ public class AggregatorUtil {
     final List<BLSSignature> signatures = new ArrayList<>();
     signatures.add(firstAttestation.getAggregateSignature());
 
-    final Supplier<SszBitvector> committeeBitsSupplier;
-    final IntSet participationIndices = new IntOpenHashSet();
-
     for (Attestation attestation : attestations) {
       aggregateBits = aggregateBits.or(attestation.getAggregationBits());
       signatures.add(attestation.getAggregateSignature());
-      if (firstAttestation.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-        participationIndices.addAll(attestation.getCommitteeBitsRequired().getAllSetBits());
-      }
     }
 
-    if (firstAttestation.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      committeeBitsSupplier =
-          firstAttestation
-              .getSchema()
-              .getCommitteeBitsSchema()
-              .map(
-                  committeeBitsSchema ->
-                      (Supplier<SszBitvector>)
-                          () -> committeeBitsSchema.ofBits(participationIndices))
-              .orElse(() -> null);
-    } else {
-      committeeBitsSupplier = () -> null;
-    }
+    final Supplier<SszBitvector> committeeBitsSupplier =
+        buildCommiteeBitsSupplier(firstAttestation, attestations);
 
     return firstAttestation
         .getSchema()
@@ -64,5 +47,22 @@ public class AggregatorUtil {
             firstAttestation.getData(),
             committeeBitsSupplier,
             BLS.aggregate(signatures));
+  }
+
+  private static Supplier<SszBitvector> buildCommiteeBitsSupplier(
+      final Attestation firstAttestation, final Attestation... attestations) {
+    final Supplier<SszBitvector> committeeBitsSupplier;
+    if (firstAttestation.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      committeeBitsSupplier =
+          () ->
+              Arrays.stream(ArrayUtils.addAll(attestations, firstAttestation))
+                  .map(Attestation::getCommitteeBitsRequired)
+                  .reduce(SszBitvector::or)
+                  .orElseThrow(
+                      () -> new IllegalArgumentException("Error while aggregating committee bit"));
+    } else {
+      committeeBitsSupplier = () -> null;
+    }
+    return committeeBitsSupplier;
   }
 }

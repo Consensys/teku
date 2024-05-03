@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,10 +24,10 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 /**
  * Builds an aggregate attestation, providing functions to test if an attestation can be added or is
@@ -68,37 +66,11 @@ class AggregateAttestationBuilder {
 
   public ValidatableAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
-    final AttestationSchema<?> attestationSchema =
-        spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
-    final Supplier<SszBitvector> committeeBitsSupplier;
-
-    if (spec.atSlot(attestationData.getSlot())
-        .getMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      final IntSet participationIndices = new IntOpenHashSet();
-      includedAttestations.forEach(
-          validatableAttestation ->
-              participationIndices.addAll(
-                  validatableAttestation
-                      .getAttestation()
-                      .getCommitteeBitsRequired()
-                      .getAllSetBits()));
-
-      committeeBitsSupplier =
-          attestationSchema
-              .getCommitteeBitsSchema()
-              .map(
-                  committeeBitsSchema ->
-                      (Supplier<SszBitvector>)
-                          () -> committeeBitsSchema.ofBits(participationIndices))
-              .orElse(() -> null);
-    } else {
-      committeeBitsSupplier = () -> null;
-    }
-
+    final SpecVersion specVersion = spec.atSlot(attestationData.getSlot());
+    final Supplier<SszBitvector> committeeBitsSupplier = buildCommitteeBitsSupplier(specVersion);
     return ValidatableAttestation.from(
         spec,
-        spec.atSlot(attestationData.getSlot())
+        specVersion
             .getSchemaDefinitions()
             .getAttestationSchema()
             .create(
@@ -110,6 +82,24 @@ class AggregateAttestationBuilder {
                         .map(ValidatableAttestation::getAttestation)
                         .map(Attestation::getAggregateSignature)
                         .toList())));
+  }
+
+  private Supplier<SszBitvector> buildCommitteeBitsSupplier(final SpecVersion specVersion) {
+    final Supplier<SszBitvector> committeeBitsSupplier;
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      committeeBitsSupplier =
+          () ->
+              includedAttestations.stream()
+                  .map(
+                      includedAttestation ->
+                          includedAttestation.getAttestation().getCommitteeBitsRequired())
+                  .reduce(SszBitvector::or)
+                  .orElseThrow(
+                      () -> new IllegalArgumentException("Error while aggregating committee bit"));
+    } else {
+      committeeBitsSupplier = () -> null;
+    }
+    return committeeBitsSupplier;
   }
 
   public Collection<ValidatableAttestation> getIncludedAttestations() {

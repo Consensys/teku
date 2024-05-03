@@ -544,7 +544,9 @@ class AggregatingAttestationPoolTest {
               attestationSchema
                   .getCommitteeBitsSchema()
                   .orElseThrow()
-                  .ofBits(data.getIndex().intValue());
+                  .ofBits(
+                      dataStructureUtil.randomPositiveInt(
+                          spec.atSlot(data.getSlot()).getConfig().getMaxCommitteesPerSlot()));
     } else {
       committeeBits = () -> null;
     }
