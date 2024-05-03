@@ -168,7 +168,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
         dataColumnSidecarSchema.getKzgProofsSchema();
 
     List<List<KZGCellAndProof>> blobsCellsAndProofs =
-        blobs.stream().map(blob -> kzg.computeCellsAndProofs(blob.getBytes())).toList();
+        blobs.stream().parallel().map(blob -> kzg.computeCellsAndProofs(blob.getBytes())).toList();
 
     int columnCount = blobsCellsAndProofs.get(0).size();
 

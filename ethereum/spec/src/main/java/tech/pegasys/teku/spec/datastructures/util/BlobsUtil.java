@@ -22,6 +22,7 @@ import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -75,7 +76,7 @@ public class BlobsUtil {
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final List<Blob> blobs) {
-    return blobs.stream().map(Blob::getBytes).map(kzg::blobToKzgCommitment).toList();
+    return blobs.stream().parallel().map(Blob::getBytes).map(kzg::blobToKzgCommitment).toList();
   }
 
   public KZGProof computeKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
@@ -84,7 +85,12 @@ public class BlobsUtil {
 
   public List<KZGProof> computeKzgProofs(
       final List<Blob> blobs, final List<KZGCommitment> kzgCommitments) {
-    return Streams.zip(blobs.stream(), kzgCommitments.stream(), this::computeKzgProof).toList();
+    return Streams.zip(blobs.stream(), kzgCommitments.stream(), Pair::of)
+        .parallel()
+        .map(
+            blobAndCommitment ->
+                computeKzgProof(blobAndCommitment.getLeft(), blobAndCommitment.getRight()))
+        .toList();
   }
 
   public List<Blob> generateBlobs(final UInt64 slot, final int count) {
