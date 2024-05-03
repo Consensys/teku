@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -132,13 +131,11 @@ public class GenesisGenerator {
             .map(PendingBalanceDeposit::getAmount)
             .reduce(UInt64::plus)
             .orElse(UInt64.ZERO);
-      mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
-      if (pendingBalanceDeposits.isEmpty()) {
-        stateElectra.setPendingBalanceDeposits(
-                schemaDefinitionsElectra
-                        .getPendingBalanceDepositsSchema()
-                        .createFromElements(List.of()));
-      } else {
+    mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
+    if (pendingBalanceDeposits.isEmpty()) {
+      stateElectra.setPendingBalanceDeposits(
+          schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(List.of()));
+    } else {
       stateElectra.setPendingBalanceDeposits(
           schemaDefinitionsElectra
               .getPendingBalanceDepositsSchema()
@@ -164,7 +161,8 @@ public class GenesisGenerator {
     if (genesisSpec.getMilestone().equals(SpecMilestone.ELECTRA)) {
       consumePendingBalance(
           MutableBeaconStateElectra.required(state), specConfig, genesisSpec, index);
-      MutableBeaconStateElectra.required(state).setDepositReceiptsStartIndex(UNSET_DEPOSIT_RECEIPTS_START_INDEX);
+      MutableBeaconStateElectra.required(state)
+          .setDepositReceiptsStartIndex(UNSET_DEPOSIT_RECEIPTS_START_INDEX);
     }
     final UInt64 balance = state.getBalances().getElement(index);
     final UInt64 effectiveBalance =
