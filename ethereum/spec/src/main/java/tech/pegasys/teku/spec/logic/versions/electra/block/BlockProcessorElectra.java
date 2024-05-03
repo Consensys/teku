@@ -55,7 +55,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -286,24 +285,22 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                     .minusMinZero(minActivationBalance)
                     .minusMinZero(pendingBalanceToWithdraw)
                     .min(withdrawalRequest.getAmount());
+            final MutableBeaconStateElectra electraState =
+                MutableBeaconStateElectra.required(state);
             final UInt64 exitQueueEpoch =
-                beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(
-                    MutableBeaconStateElectra.required(state), toWithdraw);
+                beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(electraState, toWithdraw);
             final UInt64 withdrawableEpoch =
                 exitQueueEpoch.plus(specConfigElectra.getMinValidatorWithdrawabilityDelay());
 
-            // Add the partial withdrawal to the pending queue
-            final SszMutableList<PendingPartialWithdrawal> newPendingPartialWithdrawals =
-                MutableBeaconStateElectra.required(state).getPendingPartialWithdrawals();
-            newPendingPartialWithdrawals.append(
-                schemaDefinitionsElectra
-                    .getPendingPartialWithdrawalSchema()
-                    .create(
-                        SszUInt64.of(UInt64.fromLongBits(validatorIndex)),
-                        SszUInt64.of(toWithdraw),
-                        SszUInt64.of(withdrawableEpoch)));
-            MutableBeaconStateElectra.required(state)
-                .setPendingPartialWithdrawals(newPendingPartialWithdrawals);
+            electraState
+                .getPendingPartialWithdrawals()
+                .append(
+                    schemaDefinitionsElectra
+                        .getPendingPartialWithdrawalSchema()
+                        .create(
+                            SszUInt64.of(UInt64.fromLongBits(validatorIndex)),
+                            SszUInt64.of(toWithdraw),
+                            SszUInt64.of(withdrawableEpoch)));
           }
         });
   }

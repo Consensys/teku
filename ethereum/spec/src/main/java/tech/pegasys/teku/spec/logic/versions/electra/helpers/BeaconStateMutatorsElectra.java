@@ -83,7 +83,7 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
             : state.getExitBalanceToConsume();
 
     if (exitBalance.isGreaterThan(exitBalanceToConsume)) {
-      final UInt64 balanceToProcess = exitBalance.minusMinZero(state.getExitBalanceToConsume());
+      final UInt64 balanceToProcess = exitBalance.minusMinZero(exitBalanceToConsume);
       final UInt64 additionalEpochs =
           balanceToProcess.minusMinZero(1).dividedBy(perEpochChurn).increment();
       state.setEarliestExitEpoch(earliestExitEpoch.plus(additionalEpochs));
