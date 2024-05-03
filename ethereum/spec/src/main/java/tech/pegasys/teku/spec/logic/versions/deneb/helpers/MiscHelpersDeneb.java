@@ -51,6 +51,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   private final Predicates predicates;
   private final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
   private final BlobSidecarSchema blobSidecarSchema;
+  private final SpecConfigDeneb specConfigDeneb;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -67,6 +68,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
       final Predicates predicates,
       final SchemaDefinitionsDeneb schemaDefinitions) {
     super(specConfig);
+    this.specConfigDeneb = specConfig;
     this.predicates = predicates;
     this.beaconBlockBodySchema =
         (BeaconBlockBodySchemaDeneb<?>) schemaDefinitions.getBeaconBlockBodySchema();
@@ -268,5 +270,12 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
         getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
         blobSidecar.getBlockBodyRoot());
+  }
+
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+      final UInt64 currentEpoch, final UInt64 epoch) {
+    return currentEpoch
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 }

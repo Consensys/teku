@@ -203,6 +203,11 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
   }
 
   @Override
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(UInt64 currentEpoch, UInt64 epoch) {
+    return false;
+  }
+
+  @Override
   public Optional<MiscHelpersEip7594> toVersionEip7594() {
     return Optional.of(this);
   }

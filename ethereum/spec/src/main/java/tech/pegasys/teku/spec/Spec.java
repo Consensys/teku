@@ -932,14 +932,14 @@ public class Spec {
 
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(DENEB)) {
-      return false;
-    }
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return getCurrentEpoch(store)
-        .minusMinZero(epoch)
-        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionDeneb()
+        .map(
+            denebMiscHelpers ->
+                denebMiscHelpers.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+                    getCurrentEpoch(store), epoch))
+        .orElse(false);
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {
