@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -84,6 +85,8 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(BlockBlobSidecarsTrackersPool.class);
   private final BlobSidecarGossipChannel blobSidecarGossipChannel =
       mock(BlobSidecarGossipChannel.class);
+  private final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
+      mock(DataColumnSidecarGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
@@ -109,6 +112,7 @@ public class ValidatorApiHandlerIntegrationTest {
           blockGossipChannel,
           blockBlobSidecarsTrackersPool,
           blobSidecarGossipChannel,
+          dataColumnSidecarGossipChannel,
           attestationPool,
           attestationManager,
           attestationTopicSubscriber,

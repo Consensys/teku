@@ -18,6 +18,7 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -69,7 +70,9 @@ public class BlockPublisherEip7594 extends AbstractBlockPublisher {
       final List<BlobSidecar> blobSidecars,
       BlockPublishingPerformance blockPublishingPerformance) {
     blockGossipChannel.publishBlock(block);
-    final List<DataColumnSidecar> dataColumnSidecars = blockFactory.createDataColumnSidecars(block);
+    List<Blob> blobs = blobSidecars.stream().map(BlobSidecar::getBlob).toList();
+    final List<DataColumnSidecar> dataColumnSidecars =
+        blockFactory.createDataColumnSidecars(block, blobs);
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(dataColumnSidecars);
     blockPublishingPerformance.blockAndBlobSidecarsPublishingInitiated();
   }
