@@ -73,23 +73,29 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   public UInt64 computeExitEpochAndUpdateChurn(
       final MutableBeaconStateElectra state, final UInt64 exitBalance) {
     final UInt64 earliestExitEpoch =
-        miscHelpers.computeActivationExitEpoch(stateAccessorsElectra.getCurrentEpoch(state));
+        miscHelpers
+            .computeActivationExitEpoch(stateAccessorsElectra.getCurrentEpoch(state))
+            .max(state.getEarliestExitEpoch());
     final UInt64 perEpochChurn = stateAccessorsElectra.getActivationExitChurnLimit(state);
+    final UInt64 exitBalanceToConsume =
+        state.getEarliestExitEpoch().isLessThan(earliestExitEpoch)
+            ? perEpochChurn
+            : state.getExitBalanceToConsume();
 
-    if (state.getEarliestExitEpoch().isLessThan(earliestExitEpoch)) {
-      state.setEarliestExitEpoch(earliestExitEpoch);
-      state.setExitBalanceToConsume(perEpochChurn);
-    }
-    final UInt64 exitBalanceToConsume = state.getExitBalanceToConsume();
-    if (exitBalance.isLessThanOrEqualTo(exitBalanceToConsume)) {
-      state.setExitBalanceToConsume(exitBalanceToConsume.minusMinZero(exitBalance));
-    } else {
+    if (exitBalance.isGreaterThan(exitBalanceToConsume)) {
       final UInt64 balanceToProcess = exitBalance.minusMinZero(state.getExitBalanceToConsume());
-      final UInt64 additionalEpochs = balanceToProcess.dividedBy(perEpochChurn);
-      final UInt64 remainder = balanceToProcess.mod(perEpochChurn);
-      state.setEarliestExitEpoch(additionalEpochs.increment());
-      state.setExitBalanceToConsume(perEpochChurn.minusMinZero(remainder));
+      final UInt64 additionalEpochs =
+          balanceToProcess.minusMinZero(1).dividedBy(perEpochChurn).increment();
+      state.setEarliestExitEpoch(earliestExitEpoch.plus(additionalEpochs));
+      state.setExitBalanceToConsume(
+          exitBalanceToConsume
+              .plus(additionalEpochs.times(perEpochChurn))
+              .minusMinZero(exitBalance));
+    } else {
+      state.setExitBalanceToConsume(exitBalanceToConsume.minusMinZero(exitBalance));
+      state.setEarliestExitEpoch(earliestExitEpoch);
     }
+
     return state.getEarliestExitEpoch();
   }
 
