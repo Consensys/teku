@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.genesis;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -95,7 +96,7 @@ public class GenesisGenerator {
     // Process deposits
     deposits.forEach(
         deposit -> {
-          LOG.trace("About to process deposit: {}", depositDataList::size);
+          LOG.trace("About to process deposit: {}", depositDataList.size());
           depositDataList.append(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
@@ -123,17 +124,21 @@ public class GenesisGenerator {
             genesisSpec.beaconStateAccessors(),
             schemaDefinitionsElectra);
     final List<PendingBalanceDeposit> pendingBalanceDeposits =
-        stateElectra.getPendingBalanceDeposits().stream().toList();
+        stateElectra.getPendingBalanceDeposits().asList();
 
     final UInt64 depositAmount =
         pendingBalanceDeposits.stream()
             .filter(z -> z.getIndex() == validatorIndex)
-            .map(z -> z.getAmount())
+            .map(PendingBalanceDeposit::getAmount)
             .reduce(UInt64::plus)
-            .get();
-    if (depositAmount.isGreaterThanOrEqualTo(
-        SpecConfigElectra.required(specConfig).getMinActivationBalance())) {
+            .orElse(UInt64.ZERO);
       mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
+      if (pendingBalanceDeposits.isEmpty()) {
+        stateElectra.setPendingBalanceDeposits(
+                schemaDefinitionsElectra
+                        .getPendingBalanceDepositsSchema()
+                        .createFromElements(List.of()));
+      } else {
       stateElectra.setPendingBalanceDeposits(
           schemaDefinitionsElectra
               .getPendingBalanceDepositsSchema()
@@ -150,7 +155,7 @@ public class GenesisGenerator {
       // Could be absent if the deposit was invalid
       return;
     }
-    Validator validator = state.getValidators().get(index);
+    final Validator validator = state.getValidators().get(index);
     if (validator.getActivationEpoch().equals(GENESIS_EPOCH)) {
       // Validator is already activated (and thus already has the max effective balance)
       return;
@@ -159,6 +164,7 @@ public class GenesisGenerator {
     if (genesisSpec.getMilestone().equals(SpecMilestone.ELECTRA)) {
       consumePendingBalance(
           MutableBeaconStateElectra.required(state), specConfig, genesisSpec, index);
+      MutableBeaconStateElectra.required(state).setDepositReceiptsStartIndex(UNSET_DEPOSIT_RECEIPTS_START_INDEX);
     }
     final UInt64 balance = state.getBalances().getElement(index);
     final UInt64 effectiveBalance =
