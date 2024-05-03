@@ -235,4 +235,55 @@ public class BlobSidecarSelectorFactoryTest {
       verify(client, never()).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
     }
   }
+
+  @Test
+  public void genesisSelector_shouldAlwaysReturnOptimisticMetadataFieldFalse()
+      throws ExecutionException, InterruptedException {
+    when(client.getBlockAtSlotExact(UInt64.ZERO))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<BlobSidecarsAndMetaData> result =
+        blobSidecarSelectorFactory.genesisSelector().getBlobSidecars(indices).get();
+    assertThat(result).isNotEmpty();
+    final BlobSidecarsAndMetaData blobSidecarsAndMetaData = result.get();
+    assertThat(blobSidecarsAndMetaData.isExecutionOptimistic()).isEqualTo(false);
+  }
+
+  @Test
+  public void slotSelector_whenSelectingFinalizedBlockMetadataReturnsFinalizedTrue()
+      throws ExecutionException, InterruptedException {
+    when(client.isFinalized(block.getSlot())).thenReturn(true);
+    when(client.getBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+    when(client.isChainHeadOptimistic()).thenReturn(false);
+
+    final Optional<BlobSidecarsAndMetaData> result =
+        blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
+
+    assertThat(result).isNotEmpty();
+    final BlobSidecarsAndMetaData blobSidecarsAndMetaData = result.get();
+    assertThat(blobSidecarsAndMetaData.isFinalized()).isEqualTo(true);
+  }
+
+  @Test
+  public void slotSelector_whenSelectingNonFinalizedBlockMetadataReturnsFinalizedFalse()
+      throws ExecutionException, InterruptedException {
+    when(client.isFinalized(block.getSlot())).thenReturn(false);
+    when(client.getBlockAtSlotExact(block.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(client.getBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+    when(client.isChainHeadOptimistic()).thenReturn(false);
+    when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<BlobSidecarsAndMetaData> result =
+        blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
+
+    assertThat(result).isNotEmpty();
+    final BlobSidecarsAndMetaData blobSidecarsAndMetaData = result.get();
+    assertThat(blobSidecarsAndMetaData.isFinalized()).isEqualTo(false);
+  }
 }
