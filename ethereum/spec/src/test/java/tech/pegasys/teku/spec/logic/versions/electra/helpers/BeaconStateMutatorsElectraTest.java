@@ -135,7 +135,8 @@ class BeaconStateMutatorsElectraTest {
     // Validator has been reset
     final Validator postValidator = postState.getValidators().get(0);
     assertThat(postValidator.getEffectiveBalance()).isEqualTo(UInt64.ZERO);
-    assertThat(postValidator.getActivationEpoch()).isEqualTo(FAR_FUTURE_EPOCH);
+    assertThat(postValidator.getActivationEpoch()).isEqualTo(UInt64.ZERO);
+    assertThat(postValidator.getActivationEligibilityEpoch()).isEqualTo(FAR_FUTURE_EPOCH);
 
     // Updated state balances
     assertThat(postState.getBalances().get(0)).isEqualTo(SszUInt64.ZERO);
