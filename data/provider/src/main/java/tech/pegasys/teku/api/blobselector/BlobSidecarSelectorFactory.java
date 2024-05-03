@@ -227,15 +227,15 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
   }
 
   private Optional<BlobSidecarsAndMetaData> addMetaData(
-      final Optional<List<BlobSidecar>> maybeBlobSidecar,
+      final Optional<List<BlobSidecar>> maybeBlobSidecarList,
       final UInt64 blockSlot,
       final boolean executionOptimistic,
       final boolean canonical,
       final boolean finalized) {
-    return maybeBlobSidecar.map(
-        blobSideCarList ->
+    return maybeBlobSidecarList.map(
+        blobSidecarList ->
             new BlobSidecarsAndMetaData(
-                blobSideCarList,
+                blobSidecarList,
                 spec.atSlot(blockSlot).getMilestone(),
                 executionOptimistic,
                 canonical,
