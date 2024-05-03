@@ -227,7 +227,9 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
         .update(
             index,
             validator ->
-                validator.withActivationEpoch(FAR_FUTURE_EPOCH).withEffectiveBalance(UInt64.ZERO));
+                validator
+                    .withActivationEligibilityEpoch(FAR_FUTURE_EPOCH)
+                    .withEffectiveBalance(UInt64.ZERO));
 
     final PendingBalanceDeposit deposit =
         schemaDefinitionsElectra
