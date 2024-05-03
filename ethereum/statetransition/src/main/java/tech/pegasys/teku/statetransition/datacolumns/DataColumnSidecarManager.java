@@ -17,19 +17,34 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface DataColumnSidecarManager {
 
-  public static DataColumnSidecarManager NOOP =
-      (sidecar, arrivalTimestamp) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-
-  public static DataColumnSidecarManager create(DataColumnSidecarGossipValidator validator) {
-    // TODO
-    return (sidecar, arrivalTimestamp) -> validator.validate(sidecar);
+  interface ValidDataColumnSidecarsListener {
+    void onNewValidSidecar(DataColumnSidecar sidecar);
   }
+
+  DataColumnSidecarManager NOOP =
+      new DataColumnSidecarManager() {
+        @Override
+        public SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
+            DataColumnSidecar sidecar, Optional<UInt64> arrivalTimestamp) {
+          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+        }
+
+        @Override
+        public void onDataColumnSidecarPublish(DataColumnSidecar sidecar) {}
+
+        @Override
+        public void subscribeToValidDataColumnSidecars(
+            ValidDataColumnSidecarsListener sidecarsListener) {}
+      };
+
+  void onDataColumnSidecarPublish(DataColumnSidecar sidecar);
 
   SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
       DataColumnSidecar sidecar, Optional<UInt64> arrivalTimestamp);
+
+  void subscribeToValidDataColumnSidecars(ValidDataColumnSidecarsListener sidecarsListener);
 }

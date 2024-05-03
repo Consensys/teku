@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 
 public class CustodySync implements SlotEventsChannel {
 
-  private final DataColumnSidecarCustody custody;
+  private final UpdatableDataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
   private final int maxPendingColumnRequests = 1024;
   private final int minPendingColumnRequests = 512;
@@ -33,7 +33,8 @@ public class CustodySync implements SlotEventsChannel {
   private Map<ColumnSlotAndIdentifier, PendingRequest> pendingRequests = new HashMap<>();
   private boolean started = false;
 
-  public CustodySync(DataColumnSidecarCustody custody, DataColumnSidecarRetriever retriever) {
+  public CustodySync(
+      UpdatableDataColumnSidecarCustody custody, DataColumnSidecarRetriever retriever) {
     this.custody = custody;
     this.retriever = retriever;
   }
