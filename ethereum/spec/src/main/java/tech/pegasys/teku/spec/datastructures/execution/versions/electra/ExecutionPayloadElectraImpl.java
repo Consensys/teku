@@ -103,7 +103,7 @@ public class ExecutionPayloadElectraImpl
       final SszUInt64 blobGasUsed,
       final SszUInt64 excessBlobGas,
       final SszList<DepositReceipt> depositReceipts,
-      final SszList<ExecutionLayerWithdrawalRequest> exits) {
+      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests) {
     super(
         schema,
         parentHash,
@@ -124,7 +124,7 @@ public class ExecutionPayloadElectraImpl
         blobGasUsed,
         excessBlobGas,
         depositReceipts,
-        exits);
+        withdrawalRequests);
   }
 
   @Override

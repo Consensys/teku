@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
@@ -35,11 +36,11 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
 
   private final AtomicBoolean lastExecutionClientAvailability = new AtomicBoolean(true);
 
+  private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>();
+
   private final ExecutionLayerChannel executionLayerChannel;
   private final ExecutionClientVersionChannel executionClientVersionChannel;
   private final ClientVersion consensusClientVersion;
-
-  private final AtomicReference<ClientVersion> executionClientVersion = new AtomicReference<>(null);
 
   public ExecutionClientVersionProvider(
       final ExecutionLayerChannel executionLayerChannel,
@@ -49,20 +50,20 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
     this.executionClientVersionChannel = executionClientVersionChannel;
     this.consensusClientVersion = consensusClientVersion;
     // update client info on initialization
-    updateClientInfo();
+    updateClientInfo(true);
   }
 
   @Override
   public void onAvailabilityUpdated(final boolean isAvailable) {
     // only update info after EL has been unavailable
     if (isAvailable && lastExecutionClientAvailability.compareAndSet(false, true)) {
-      updateClientInfo();
+      updateClientInfo(false);
     } else {
       lastExecutionClientAvailability.set(isAvailable);
     }
   }
 
-  private void updateClientInfo() {
+  private void updateClientInfo(final boolean notifyNotAvailable) {
     executionLayerChannel
         .engineGetClientVersion(consensusClientVersion)
         .thenAccept(
@@ -72,24 +73,20 @@ public class ExecutionClientVersionProvider implements ExecutionClientEventsChan
             })
         .finish(
             ex -> {
+              if (notifyNotAvailable) {
+                executionClientVersionChannel.onExecutionClientVersionNotAvailable();
+              }
               LOG.debug("Exception while calling engine_getClientVersion", ex);
-              updateVersionIfNeeded(ClientVersion.UNKNOWN);
             });
   }
 
   private synchronized void updateVersionIfNeeded(final ClientVersion executionClientVersion) {
-    if (executionClientVersion.equals(this.executionClientVersion.get())) {
+    if (Objects.equals(this.executionClientVersion.get(), executionClientVersion)) {
       return;
     }
-    if (!executionClientVersion.equals(ClientVersion.UNKNOWN)) {
-      EVENT_LOG.logExecutionClientVersion(
-          executionClientVersion.name(), executionClientVersion.version());
-    }
-    // push UNKNOWN forward only when it's set for the first time
-    if (!executionClientVersion.equals(ClientVersion.UNKNOWN)
-        || this.executionClientVersion.get() == null) {
-      this.executionClientVersion.set(executionClientVersion);
-      executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
-    }
+    EVENT_LOG.logExecutionClientVersion(
+        executionClientVersion.name(), executionClientVersion.version());
+    this.executionClientVersion.set(executionClientVersion);
+    executionClientVersionChannel.onExecutionClientVersion(executionClientVersion);
   }
 }

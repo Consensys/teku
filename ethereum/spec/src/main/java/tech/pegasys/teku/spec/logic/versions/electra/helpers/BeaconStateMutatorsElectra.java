@@ -73,23 +73,29 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   public UInt64 computeExitEpochAndUpdateChurn(
       final MutableBeaconStateElectra state, final UInt64 exitBalance) {
     final UInt64 earliestExitEpoch =
-        miscHelpers.computeActivationExitEpoch(stateAccessorsElectra.getCurrentEpoch(state));
+        miscHelpers
+            .computeActivationExitEpoch(stateAccessorsElectra.getCurrentEpoch(state))
+            .max(state.getEarliestExitEpoch());
     final UInt64 perEpochChurn = stateAccessorsElectra.getActivationExitChurnLimit(state);
+    final UInt64 exitBalanceToConsume =
+        state.getEarliestExitEpoch().isLessThan(earliestExitEpoch)
+            ? perEpochChurn
+            : state.getExitBalanceToConsume();
 
-    if (state.getEarliestExitEpoch().isLessThan(earliestExitEpoch)) {
-      state.setEarliestExitEpoch(earliestExitEpoch);
-      state.setExitBalanceToConsume(perEpochChurn);
-    }
-    final UInt64 exitBalanceToConsume = state.getExitBalanceToConsume();
-    if (exitBalance.isLessThanOrEqualTo(exitBalanceToConsume)) {
-      state.setExitBalanceToConsume(exitBalanceToConsume.minusMinZero(exitBalance));
+    if (exitBalance.isGreaterThan(exitBalanceToConsume)) {
+      final UInt64 balanceToProcess = exitBalance.minusMinZero(exitBalanceToConsume);
+      final UInt64 additionalEpochs =
+          balanceToProcess.minusMinZero(1).dividedBy(perEpochChurn).increment();
+      state.setEarliestExitEpoch(earliestExitEpoch.plus(additionalEpochs));
+      state.setExitBalanceToConsume(
+          exitBalanceToConsume
+              .plus(additionalEpochs.times(perEpochChurn))
+              .minusMinZero(exitBalance));
     } else {
-      final UInt64 balanceToProcess = exitBalance.minusMinZero(state.getExitBalanceToConsume());
-      final UInt64 additionalEpochs = balanceToProcess.dividedBy(perEpochChurn);
-      final UInt64 remainder = balanceToProcess.mod(perEpochChurn);
-      state.setEarliestExitEpoch(additionalEpochs.increment());
-      state.setExitBalanceToConsume(perEpochChurn.minusMinZero(remainder));
+      state.setExitBalanceToConsume(exitBalanceToConsume.minusMinZero(exitBalance));
+      state.setEarliestExitEpoch(earliestExitEpoch);
     }
+
     return state.getEarliestExitEpoch();
   }
 
@@ -137,32 +143,32 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
     final UInt64 computedActivationExitEpoch = miscHelpersElectra.computeActivationExitEpoch(epoch);
-    final UInt64 earliestConsolidationEpoch =
-        stateElectra.getEarliestConsolidationEpoch().max(computedActivationExitEpoch);
     final UInt64 perEpochConsolidationChurn =
         stateAccessorsElectra.getConsolidationChurnLimit(stateElectra);
 
-    final UInt64 consolidationBalanceToConsume =
+    UInt64 earliestConsolidationEpoch =
+        stateElectra.getEarliestConsolidationEpoch().max(computedActivationExitEpoch);
+    // New epoch for consolidations.
+    UInt64 consolidationBalanceToConsume =
         stateElectra.getEarliestConsolidationEpoch().isLessThan(earliestConsolidationEpoch)
             ? perEpochConsolidationChurn
             : stateElectra.getConsolidationBalanceToConsume();
 
+    // Consolidation doesn't fit in the current earliest epoch.
     if (consolidationBalance.isGreaterThan(consolidationBalanceToConsume)) {
       final UInt64 balanceToProcess =
           consolidationBalance.minusMinZero(consolidationBalanceToConsume);
       final UInt64 additionalEpochs =
-          balanceToProcess.decrement().dividedBy(perEpochConsolidationChurn.increment());
-      stateElectra.setConsolidationBalanceToConsume(
-          consolidationBalanceToConsume.plus(
-              additionalEpochs
-                  .times(perEpochConsolidationChurn)
-                  .minusMinZero(consolidationBalance)));
-      stateElectra.setEarliestConsolidationEpoch(earliestConsolidationEpoch.plus(additionalEpochs));
-    } else {
-      stateElectra.setConsolidationBalanceToConsume(
-          consolidationBalanceToConsume.minusMinZero(consolidationBalance));
-      stateElectra.setEarliestConsolidationEpoch(earliestConsolidationEpoch);
+          balanceToProcess.decrement().dividedBy(perEpochConsolidationChurn).increment();
+      earliestConsolidationEpoch = earliestConsolidationEpoch.plus(additionalEpochs);
+      consolidationBalanceToConsume =
+          consolidationBalanceToConsume.plus(additionalEpochs.times(perEpochConsolidationChurn));
     }
+
+    // Consume the balance and update state variables.
+    stateElectra.setConsolidationBalanceToConsume(
+        consolidationBalanceToConsume.minusMinZero(consolidationBalance));
+    stateElectra.setEarliestConsolidationEpoch(earliestConsolidationEpoch);
 
     return stateElectra.getEarliestConsolidationEpoch();
   }
@@ -227,7 +233,9 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
         .update(
             index,
             validator ->
-                validator.withActivationEpoch(FAR_FUTURE_EPOCH).withEffectiveBalance(UInt64.ZERO));
+                validator
+                    .withActivationEligibilityEpoch(FAR_FUTURE_EPOCH)
+                    .withEffectiveBalance(UInt64.ZERO));
 
     final PendingBalanceDeposit deposit =
         schemaDefinitionsElectra

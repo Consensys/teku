@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_W
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -96,6 +97,21 @@ public class Predicates {
 
   public static boolean isEth1WithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
+  }
+
+  /**
+   * Get the execution address from a validator's withdrawal credentials. This method does not check
+   * if the validator has the correct type of withdrawal credentials (e.g. prefixes 0x01 and 0x02).
+   *
+   * <p>This method can be used in conjunction with {@link
+   * PredicatesElectra#hasExecutionWithdrawalCredential(Validator)} to ensure a correct execution
+   * address will be returned.
+   *
+   * @param withdrawalCredentials the 32 bytes withdrawal credentials field of a validator
+   * @return the last 20 bytes of the input withdrawal credentials, wrapped as {@link Eth1Address}.
+   */
+  public static Eth1Address getExecutionAddressUnchecked(final Bytes32 withdrawalCredentials) {
+    return Eth1Address.fromBytes(withdrawalCredentials.slice(12));
   }
 
   /**

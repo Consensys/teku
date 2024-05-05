@@ -89,6 +89,14 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
           .build();
 
+  private static final ImmutableMap<String, TestExecutor> ELECTRA_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
@@ -102,6 +110,7 @@ public abstract class Eth2ReferenceTestCase {
           case TestFork.BELLATRIX -> BELLATRIX_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.CAPELLA -> CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.DENEB -> DENEB_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.ELECTRA -> ELECTRA_TEST_TYPES.get(testDefinition.getTestType());
           default -> null;
         };
 

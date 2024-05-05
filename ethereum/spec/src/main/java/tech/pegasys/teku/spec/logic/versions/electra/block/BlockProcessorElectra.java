@@ -25,6 +25,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
@@ -35,7 +38,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.consolidations.Consolidation;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -47,7 +54,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -62,12 +69,13 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlockProcessorElectra extends BlockProcessorDeneb {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfigElectra specConfigElectra;
@@ -116,16 +124,18 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     super.processOperationsNoValidation(state, body, indexedAttestationCache);
 
     safelyProcess(
-        () ->
-            processDepositReceipts(
-                state,
-                body.getOptionalExecutionPayload()
-                    .flatMap(ExecutionPayload::toVersionElectra)
-                    .map(ExecutionPayloadElectra::getDepositReceipts)
-                    .orElseThrow(
-                        () ->
-                            new BlockProcessingException(
-                                "Deposit receipts were not found during block processing."))));
+        () -> {
+          processDepositReceipts(
+              state,
+              body.getOptionalExecutionPayload()
+                  .flatMap(ExecutionPayload::toVersionElectra)
+                  .map(ExecutionPayloadElectra::getDepositReceipts)
+                  .orElseThrow(
+                      () ->
+                          new BlockProcessingException(
+                              "Deposit receipts were not found during block processing.")));
+          processConsolidations(state, BeaconBlockBodyElectra.required(body).getConsolidations());
+        });
   }
 
   @Override
@@ -141,7 +151,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final int expectedDepositCount =
           Math.min(
               specConfig.getMaxDeposits(),
-              eth1DepositIndexLimit.minus(state.getEth1DepositIndex()).intValue());
+              eth1DepositIndexLimit.minusMinZero(state.getEth1DepositIndex()).intValue());
 
       checkArgument(
           body.getDeposits().size() == expectedDepositCount,
@@ -165,6 +175,20 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         validatorExitContextSupplier);
   }
 
+  // process_withdrawals
+  @Override
+  public void processWithdrawals(
+      final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
+      throws BlockProcessingException {
+    final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(genericState);
+    expectedWithdrawals.processWithdrawals(
+        genericState,
+        payloadSummary,
+        schemaDefinitionsElectra,
+        beaconStateMutators,
+        specConfigElectra);
+  }
+
   /**
    * Implements process_execution_layer_withdrawal_request from consensus-specs (EIP-7002 &
    * EIP-7251).
@@ -173,8 +197,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   public void processExecutionLayerWithdrawalRequests(
       final MutableBeaconState state,
       final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
 
     withdrawalRequests.forEach(
@@ -259,27 +282,25 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               && hasExcessBalance) {
             final UInt64 toWithdraw =
                 validatorBalance
-                    .min(minActivationBalance)
-                    .minus(pendingBalanceToWithdraw)
+                    .minusMinZero(minActivationBalance)
+                    .minusMinZero(pendingBalanceToWithdraw)
                     .min(withdrawalRequest.getAmount());
+            final MutableBeaconStateElectra electraState =
+                MutableBeaconStateElectra.required(state);
             final UInt64 exitQueueEpoch =
-                beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(
-                    MutableBeaconStateElectra.required(state), toWithdraw);
+                beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(electraState, toWithdraw);
             final UInt64 withdrawableEpoch =
                 exitQueueEpoch.plus(specConfigElectra.getMinValidatorWithdrawabilityDelay());
 
-            // Add the partial withdrawal to the pending queue
-            final SszMutableList<PendingPartialWithdrawal> newPendingPartialWithdrawals =
-                MutableBeaconStateElectra.required(state).getPendingPartialWithdrawals();
-            newPendingPartialWithdrawals.append(
-                schemaDefinitionsElectra
-                    .getPendingPartialWithdrawalSchema()
-                    .create(
-                        SszUInt64.of(UInt64.fromLongBits(validatorIndex)),
-                        SszUInt64.of(toWithdraw),
-                        SszUInt64.of(withdrawableEpoch)));
-            MutableBeaconStateElectra.required(state)
-                .setPendingPartialWithdrawals(newPendingPartialWithdrawals);
+            electraState
+                .getPendingPartialWithdrawals()
+                .append(
+                    schemaDefinitionsElectra
+                        .getPendingPartialWithdrawalSchema()
+                        .create(
+                            SszUInt64.of(UInt64.fromLongBits(validatorIndex)),
+                            SszUInt64.of(toWithdraw),
+                            SszUInt64.of(withdrawableEpoch)));
           }
         });
   }
@@ -321,14 +342,105 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
   }
 
+  /*
+   Implements process_consolidation from consensus-specs (EIP-7251)
+  */
   @Override
-  public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState preState) {
-    return ExpectedWithdrawals.create(
-        BeaconStateElectra.required(preState),
-        schemaDefinitionsElectra,
-        MiscHelpersElectra.required(miscHelpers),
-        specConfigElectra,
-        predicatesElectra);
+  public void processConsolidations(
+      final MutableBeaconState state, final SszList<SignedConsolidation> consolidations)
+      throws BlockProcessingException {
+    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
+
+    for (final SignedConsolidation signedConsolidation : consolidations) {
+      // If the pending consolidations queue is full, no consolidations are allowed in the block
+      assertCondition(
+          electraState.getPendingConsolidations().size()
+              < specConfigElectra.getPendingConsolidationsLimit(),
+          "Consolidation queue is full");
+
+      // If there is too little available consolidation churn limit, no consolidations are allowed
+      // in the block
+      assertCondition(
+          BeaconStateAccessorsElectra.required(beaconStateAccessors)
+              .getConsolidationChurnLimit(electraState)
+              .isGreaterThan(specConfigElectra.getMinActivationBalance()),
+          "Not enough consolidation churn limit available");
+
+      final Consolidation consolidation = signedConsolidation.getMessage();
+
+      // Verify that source != target, so a consolidation cannot be used as an exit.
+      assertCondition(
+          consolidation.getSourceIndex() != consolidation.getTargetIndex(),
+          "Consolidation source_index and target_index must be different");
+
+      final Validator sourceValidator = state.getValidators().get(consolidation.getSourceIndex());
+      final Validator targetValidator = state.getValidators().get(consolidation.getTargetIndex());
+      final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(electraState);
+
+      assertCondition(
+          predicatesElectra.isActiveValidator(sourceValidator, currentEpoch),
+          "Source validator in consolidation is inactive");
+      assertCondition(
+          predicatesElectra.isActiveValidator(targetValidator, currentEpoch),
+          "Target validator in consolidation is inactive");
+
+      // Verify exits for source and target have not been initiated
+      assertCondition(
+          sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH),
+          "Source validator in consolidation is exiting");
+      assertCondition(
+          targetValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH),
+          "Target validator in consolidation is exiting");
+
+      // Consolidations must specify an epoch when they become valid; they are not valid before then
+      assertCondition(
+          currentEpoch.isGreaterThanOrEqualTo(consolidation.getEpoch()),
+          "Consolidation must have an activation epoch no greater than current epoch");
+
+      // Verify the source and the target have Execution layer withdrawal credentials
+      assertCondition(
+          predicatesElectra.hasExecutionWithdrawalCredential(sourceValidator),
+          "Source validator in consolidation must have execution withdrawal credentials");
+      assertCondition(
+          predicatesElectra.hasExecutionWithdrawalCredential(targetValidator),
+          "Target validator in consolidation must have execution withdrawal credentials");
+      // Verify the same withdrawal address
+      final Eth1Address sourceValidatorExecutionAddress =
+          Predicates.getExecutionAddressUnchecked(sourceValidator.getWithdrawalCredentials());
+      final Eth1Address targetValidatorExecutionAddress =
+          Predicates.getExecutionAddressUnchecked(targetValidator.getWithdrawalCredentials());
+      assertCondition(
+          sourceValidatorExecutionAddress.equals(targetValidatorExecutionAddress),
+          "Source and Target validators in consolidation must have the same withdrawal credentials");
+
+      // Verify consolidation is signed by the source and the target
+      // Note: we are not concerned about batch verifying these signatures at this point. It is
+      // likely that SignedConsolidation will disappear in favour of EL-triggered consolidation
+      // operations.
+      assertCondition(
+          operationSignatureVerifier.verifyConsolidationSignature(
+              electraState, signedConsolidation, BLSSignatureVerifier.SIMPLE),
+          "Invalid consolidation signature");
+
+      // Initiate source validator exit and append pending consolidation
+      final UInt64 exitEpoch =
+          beaconStateMutatorsElectra.computeConsolidationEpochAndUpdateChurn(
+              electraState, sourceValidator.getEffectiveBalance());
+      final UInt64 withdrawableEpoch =
+          exitEpoch.plus(specConfigElectra.getMinValidatorWithdrawabilityDelay());
+      electraState
+          .getValidators()
+          .update(
+              consolidation.getSourceIndex(),
+              v -> v.withExitEpoch(exitEpoch).withWithdrawableEpoch(withdrawableEpoch));
+
+      final PendingConsolidation pendingConsolidation =
+          new PendingConsolidation(
+              schemaDefinitionsElectra.getPendingConsolidationSchema(),
+              SszUInt64.of(UInt64.valueOf(consolidation.getSourceIndex())),
+              SszUInt64.of(UInt64.valueOf(consolidation.getTargetIndex())));
+      electraState.getPendingConsolidations().append(pendingConsolidation);
+    }
   }
 
   @Override
@@ -337,7 +449,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final Bytes32 withdrawalCredentials,
       final boolean signatureAlreadyVerified,
       final int validatorIndex,
-      final UInt64 amount) {
+      final UInt64 amount,
+      final BLSPublicKey pubkey,
+      final BLSSignature signature) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
         MutableBeaconStateElectra.required(state).getPendingBalanceDeposits();
@@ -346,8 +460,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             .getPendingBalanceDepositSchema()
             .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
     stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
-    if (signatureAlreadyVerified
-        && predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)) {
+    if (predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)
+        && PredicatesElectra.isEth1WithdrawalCredential(
+            state.getValidators().get(validatorIndex).getWithdrawalCredentials())
+        && (signatureAlreadyVerified
+            || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature))) {
       beaconStateMutatorsElectra.switchToCompoundingValidator(stateElectra, validatorIndex);
     }
   }

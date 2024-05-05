@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -758,9 +759,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         handleInvalidDeposit(pubkey, maybePubkeyToIndexMap);
       }
     } else {
-      // This validator already exists, increase their balance
       applyDepositToValidatorIndex(
-          state, withdrawalCredentials, signatureAlreadyVerified, existingIndex.get(), amount);
+          state,
+          withdrawalCredentials,
+          signatureAlreadyVerified,
+          existingIndex.get(),
+          amount,
+          pubkey,
+          signature);
     }
   }
 
@@ -769,7 +775,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Bytes32 withdrawalCredentials,
       final boolean signatureAlreadyVerified,
       final int validatorIndex,
-      final UInt64 amount) {
+      final UInt64 amount,
+      final BLSPublicKey pubkey,
+      final BLSSignature signature) {
     beaconStateMutators.increaseBalance(state, validatorIndex, amount);
   }
 
@@ -784,7 +792,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  private boolean depositSignatureIsValid(
+  protected boolean depositSignatureIsValid(
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,
@@ -913,6 +921,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     // No ExecutionLayerWithdrawalRequests until Electra
   }
 
+  @Override
+  public void processConsolidations(
+      final MutableBeaconState state, final SszList<SignedConsolidation> consolidations)
+      throws BlockProcessingException {
+    // No Consolidations until Electra
+  }
+
   // Catch generic errors and wrap them in a BlockProcessingException
   protected void safelyProcess(final BlockProcessingAction action) throws BlockProcessingException {
     try {
@@ -920,6 +935,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {
       LOG.warn("Failed to process block", e);
       throw new BlockProcessingException(e);
+    }
+  }
+
+  protected void assertCondition(final boolean condition, final String errorMessage)
+      throws BlockProcessingException {
+    if (!condition) {
+      throw new BlockProcessingException(errorMessage);
     }
   }
 
