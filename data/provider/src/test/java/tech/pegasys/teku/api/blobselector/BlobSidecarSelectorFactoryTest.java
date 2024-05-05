@@ -69,7 +69,7 @@ public class BlobSidecarSelectorFactoryTest {
 
     final Optional<BlobSidecarsAndMetaData> result =
         blobSidecarSelectorFactory.headSelector().getBlobSidecars(indices).get();
-    assertThat(Optional.of(result.get().getData())).hasValue(blobSidecars);
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
   }
 
   @Test
@@ -83,7 +83,7 @@ public class BlobSidecarSelectorFactoryTest {
 
     final Optional<BlobSidecarsAndMetaData> result =
         blobSidecarSelectorFactory.finalizedSelector().getBlobSidecars(indices).get();
-    assertThat(Optional.of(result.get().getData())).hasValue(blobSidecars);
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
   }
 
   @Test
@@ -96,7 +96,7 @@ public class BlobSidecarSelectorFactoryTest {
 
     final Optional<BlobSidecarsAndMetaData> result =
         blobSidecarSelectorFactory.genesisSelector().getBlobSidecars(indices).get();
-    assertThat(Optional.of(result.get().getData())).hasValue(blobSidecars);
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
   }
 
   @Test
@@ -116,7 +116,7 @@ public class BlobSidecarSelectorFactoryTest {
             .blockRootSelector(block.getRoot())
             .getBlobSidecars(indices)
             .get();
-    assertThat(Optional.of(result.get().getData())).hasValue(blobSidecars);
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
   }
 
   @Test
@@ -137,7 +137,7 @@ public class BlobSidecarSelectorFactoryTest {
             .blockRootSelector(block.getRoot())
             .getBlobSidecars(indices)
             .get();
-    assertThat(Optional.of(result.get().getData())).hasValue(blobSidecars);
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
   }
 
   @Test
@@ -150,7 +150,7 @@ public class BlobSidecarSelectorFactoryTest {
 
     final Optional<BlobSidecarsAndMetaData> result =
         blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
-    assertThat(Optional.of(result.get().getData())).hasValue(blobSidecars);
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
   }
 
   @Test
@@ -168,7 +168,7 @@ public class BlobSidecarSelectorFactoryTest {
 
     final Optional<BlobSidecarsAndMetaData> result =
         blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
-    assertThat(Optional.of(result.get().getData())).hasValue(blobSidecars);
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
   }
 
   @Test
@@ -248,7 +248,7 @@ public class BlobSidecarSelectorFactoryTest {
         blobSidecarSelectorFactory.genesisSelector().getBlobSidecars(indices).get();
     assertThat(result).isNotEmpty();
     final BlobSidecarsAndMetaData blobSidecarsAndMetaData = result.get();
-    assertThat(blobSidecarsAndMetaData.isExecutionOptimistic()).isEqualTo(false);
+    assertThat(blobSidecarsAndMetaData.isExecutionOptimistic()).isFalse();
   }
 
   @Test
@@ -264,7 +264,7 @@ public class BlobSidecarSelectorFactoryTest {
 
     assertThat(result).isNotEmpty();
     final BlobSidecarsAndMetaData blobSidecarsAndMetaData = result.get();
-    assertThat(blobSidecarsAndMetaData.isFinalized()).isEqualTo(true);
+    assertThat(blobSidecarsAndMetaData.isFinalized()).isTrue();
   }
 
   @Test
@@ -284,6 +284,6 @@ public class BlobSidecarSelectorFactoryTest {
 
     assertThat(result).isNotEmpty();
     final BlobSidecarsAndMetaData blobSidecarsAndMetaData = result.get();
-    assertThat(blobSidecarsAndMetaData.isFinalized()).isEqualTo(false);
+    assertThat(blobSidecarsAndMetaData.isFinalized()).isFalse();
   }
 }
