@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.loader;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -58,7 +59,7 @@ public class ExternalUrlKeyReader {
     return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
   }
 
-  public SafeFuture<String[]> readUrl() {
+  private SafeFuture<String[]> readUrl() {
     try {
       return SafeFuture.completedFuture(mapper.readValue(new URL(url), String[].class));
     } catch (IOException e) {
@@ -66,7 +67,8 @@ public class ExternalUrlKeyReader {
     }
   }
 
-  public SafeFuture<String[]> retry() {
+  @VisibleForTesting
+  SafeFuture<String[]> retry() {
     return asyncRunner
         .runWithRetry(
             () -> {

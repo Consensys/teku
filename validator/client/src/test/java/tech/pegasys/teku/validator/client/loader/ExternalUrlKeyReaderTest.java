@@ -44,17 +44,18 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class ExternalUrlKeyReaderTest {
   private static final Duration DELAY = Duration.ofSeconds(5);
   private static final String VALID_URL = "http://test:0000/api/v1/eth2/publicKeys";
-  private final ObjectMapper mapper = mock(ObjectMapper.class);
 
+  private final ObjectMapper mapper = mock(ObjectMapper.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
 
-  final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
-  final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
-  final String[] expectedKeys = new String[] {publicKey1.toHexString(), publicKey2.toHexString()};
+  private final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
+  private final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
+  private final String[] expectedKeys =
+      new String[] {publicKey1.toHexString(), publicKey2.toHexString()};
 
   @Test
   void readKeys_validUrlReturnsValidKeys() throws IOException {
