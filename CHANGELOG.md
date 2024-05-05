@@ -12,6 +12,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
+- Added metadata fields to getBlobSidecars response.  
 - Retry when a URL is provided to --validators-external-signer-public-keys CLI argument, and it fails to load.
 
 ### Bug Fixes

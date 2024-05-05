@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
+import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
@@ -100,7 +101,7 @@ public class ChainDataProvider {
         combinedChainDataClient,
         new BlockSelectorFactory(spec, combinedChainDataClient),
         new StateSelectorFactory(spec, combinedChainDataClient),
-        new BlobSidecarSelectorFactory(combinedChainDataClient),
+        new BlobSidecarSelectorFactory(spec, combinedChainDataClient),
         rewardCalculator);
   }
 
@@ -179,7 +180,7 @@ public class ChainDataProvider {
     return fromBlock(blockIdParam, Function.identity());
   }
 
-  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
+  public SafeFuture<Optional<BlobSidecarsAndMetaData>> getBlobSidecars(
       final String blockIdParam, final List<UInt64> indices) {
     return blobSidecarSelectorFactory
         .createSelectorForBlockId(blockIdParam)
@@ -188,7 +189,11 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<List<BlobSidecar>>> getAllBlobSidecarsAtSlot(
       final UInt64 slot, final List<UInt64> indices) {
-    return blobSidecarSelectorFactory.slotSelectorForAll(slot).getBlobSidecars(indices);
+    return blobSidecarSelectorFactory
+        .slotSelectorForAll(slot)
+        .getBlobSidecars(indices)
+        .thenApply(
+            maybeBlobSideCarsMetaData -> maybeBlobSideCarsMetaData.map(ObjectAndMetaData::getData));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {
