@@ -423,7 +423,9 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             new RejectingSlashingProtector(),
             slashingProtectionLogger,
             new PublicKeyLoader(
-                externalSignerHttpClientFactory, validatorConfig.getValidatorExternalSignerUrl()),
+                externalSignerHttpClientFactory,
+                validatorConfig.getValidatorExternalSignerUrl(),
+                asyncRunner),
             asyncRunner,
             metricsSystem,
             dataDirLayout,

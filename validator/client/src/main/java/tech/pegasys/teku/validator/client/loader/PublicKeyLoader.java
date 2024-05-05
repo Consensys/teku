@@ -27,11 +27,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 
@@ -42,6 +44,7 @@ public class PublicKeyLoader {
   final ObjectMapper objectMapper;
   final Supplier<HttpClient> externalSignerHttpClientFactory;
   final URL externalSignerUrl;
+  final AsyncRunner asyncRunner;
 
   @VisibleForTesting
   PublicKeyLoader() {
@@ -50,24 +53,35 @@ public class PublicKeyLoader {
         () -> {
           throw new UnsupportedOperationException();
         },
+        null,
         null);
   }
 
   public PublicKeyLoader(
-      final Supplier<HttpClient> externalSignerHttpClientFactory, final URL externalSignerUrl) {
-    this(new ObjectMapper(), externalSignerHttpClientFactory, externalSignerUrl);
+      final Supplier<HttpClient> externalSignerHttpClientFactory,
+      final URL externalSignerUrl,
+      final AsyncRunner asyncRunner) {
+    this(new ObjectMapper(), externalSignerHttpClientFactory, externalSignerUrl, asyncRunner);
   }
 
   public PublicKeyLoader(
       final ObjectMapper objectMapper,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
-      final URL externalSignerUrl) {
+      final URL externalSignerUrl,
+      final AsyncRunner asyncRunner) {
     this.objectMapper = objectMapper;
     this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
     this.externalSignerUrl = externalSignerUrl;
+    this.asyncRunner = asyncRunner;
   }
 
   public List<BLSPublicKey> getPublicKeys(final List<String> sources) {
+    return getPublicKeys(
+        sources, (url) -> new ExternalUrlKeyReader(url, objectMapper, asyncRunner));
+  }
+
+  public List<BLSPublicKey> getPublicKeys(
+      final List<String> sources, final Function<String, ExternalUrlKeyReader> urlReader) {
     if (sources == null || sources.isEmpty()) {
       return Collections.emptyList();
     }
@@ -81,7 +95,7 @@ public class PublicKeyLoader {
                       return readKeysFromExternalSigner();
                     }
                     if (key.contains(":")) {
-                      return readKeysFromUrl(key);
+                      return urlReader.apply(key).readKeys();
                     }
 
                     return Stream.of(BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
@@ -92,15 +106,6 @@ public class PublicKeyLoader {
     } catch (IllegalArgumentException e) {
       throw new InvalidConfigurationException(
           "Invalid configuration. Signer public key is invalid", e);
-    }
-  }
-
-  private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
-    try {
-      final String[] keys = objectMapper.readValue(new URL(url), String[].class);
-      return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
-    } catch (IOException ex) {
-      throw new InvalidConfigurationException("Failed to load public keys from URL " + url, ex);
     }
   }
 

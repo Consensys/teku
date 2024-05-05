@@ -24,18 +24,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader.ExternalSignerException;
@@ -57,13 +59,16 @@ public class PublicKeyLoaderTest {
   private final ObjectMapper mapper = mock(ObjectMapper.class);
   private final HttpClient httpClient = mock(HttpClient.class);
 
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
+
   @SuppressWarnings("unchecked")
   private final HttpResponse<String> externalSignerHttpResponse = mock(HttpResponse.class);
 
   private final Supplier<HttpClient> externalSignerHttpClientSupplier = () -> httpClient;
 
   private final PublicKeyLoader loader =
-      new PublicKeyLoader(mapper, externalSignerHttpClientSupplier, externalSignerUrl);
+      new PublicKeyLoader(mapper, externalSignerHttpClientSupplier, externalSignerUrl, asyncRunner);
 
   public PublicKeyLoaderTest() throws MalformedURLException {}
 
@@ -121,16 +126,18 @@ public class PublicKeyLoaderTest {
   }
 
   @Test
-  void shouldThrowInvalidConfigurationExceptionWhenUrlFailsToLoad() throws Exception {
-    final UnknownHostException exception = new UnknownHostException("Unknown host");
-    when(mapper.readValue(new URL(urlSource), String[].class)).thenThrow(exception);
-    assertThatThrownBy(() -> loader.getPublicKeys(List.of(urlSource)))
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasRootCause(exception);
+  void shouldThrowExceptionWhenUrlFailsToLoad() {
+    final InvalidConfigurationException cause = new InvalidConfigurationException("Unknown host");
+    final CompletionException exception = new CompletionException(cause);
+    final ExternalUrlKeyReader reader = mock(ExternalUrlKeyReader.class);
+    when(reader.readKeys()).thenThrow(exception);
+
+    assertThatThrownBy(() -> loader.getPublicKeys(List.of(urlSource), (key) -> reader))
+        .isEqualTo(exception);
   }
 
   @Test
-  void shouldThrowInvalidConfigurationExceptionWhenExternalSignerReturnsNon200() throws Exception {
+  void shouldThrowInvalidConfigurationExceptionWhenExternalSignerReturnsNon200() {
     when(externalSignerHttpResponse.statusCode()).thenReturn(400);
     assertThatThrownBy(() -> loader.getPublicKeys(List.of(EXTERNAL_SIGNER_SOURCE_ID)))
         .isInstanceOf(InvalidConfigurationException.class)

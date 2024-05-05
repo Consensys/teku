@@ -260,6 +260,10 @@ public class StatusLogger {
         totalToRecord);
   }
 
+  public void failedToLoadPublicKeysFromUrl(final String url) {
+    log.error("Failed to load public keys from URL: {}", url);
+  }
+
   public void failedToStartValidatorClient(final String message) {
     log.fatal(
         "An error was encountered during validator client service start up. Error: {}", message);

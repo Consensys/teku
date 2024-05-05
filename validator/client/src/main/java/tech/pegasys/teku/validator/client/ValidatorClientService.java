@@ -430,7 +430,8 @@ public class ValidatorClientService extends Service {
         slashingProtectionLogger,
         new PublicKeyLoader(
             externalSignerHttpClientFactory,
-            config.getValidatorConfig().getValidatorExternalSignerUrl()),
+            config.getValidatorConfig().getValidatorExternalSignerUrl(),
+            asyncRunner),
         asyncRunner,
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()
