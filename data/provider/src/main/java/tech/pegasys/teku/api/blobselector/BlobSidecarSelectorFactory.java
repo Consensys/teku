@@ -22,16 +22,22 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSidecarSelector> {
 
-  public BlobSidecarSelectorFactory(final CombinedChainDataClient client) {
+  private final Spec spec;
+
+  public BlobSidecarSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
     super(client);
+    this.spec = spec;
   }
 
   @Override
@@ -44,11 +50,23 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
                   if (maybeSlot.isPresent()) {
                     final SlotAndBlockRoot slotAndBlockRoot =
                         new SlotAndBlockRoot(maybeSlot.get(), blockRoot);
-                    return getBlobSidecars(slotAndBlockRoot, indices);
+                    return getBlobSidecars(slotAndBlockRoot, indices)
+                        .thenApply(blobSidecars -> addMetaData(blobSidecars, slotAndBlockRoot));
                   }
                   return client
                       .getBlockByBlockRoot(blockRoot)
-                      .thenCompose(maybeBlock -> getBlobSidecarsForBlock(maybeBlock, indices));
+                      .thenCompose(
+                          maybeBlock -> {
+                            if (maybeBlock.isEmpty()) {
+                              return SafeFuture.completedFuture(Optional.empty());
+                            }
+                            final SignedBeaconBlock block = maybeBlock.get();
+                            final SlotAndBlockRoot slotAndBlockRoot =
+                                new SlotAndBlockRoot(block.getSlot(), blockRoot);
+                            return getBlobSidecarsForBlock(maybeBlock, indices)
+                                .thenApply(
+                                    blobSidecars -> addMetaData(blobSidecars, slotAndBlockRoot));
+                          });
                 });
   }
 
@@ -57,7 +75,13 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     return indices ->
         client
             .getChainHead()
-            .map(head -> getBlobSidecars(head.getSlotAndBlockRoot(), indices))
+            .map(
+                head ->
+                    getBlobSidecars(head.getSlotAndBlockRoot(), indices)
+                        .thenApply(
+                            blobSideCars ->
+                                addMetaData(
+                                    blobSideCars, head.getSlotAndBlockRoot(), head.isOptimistic())))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
@@ -66,7 +90,17 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     return indices ->
         client
             .getBlockAtSlotExact(GENESIS_SLOT)
-            .thenCompose(maybeGenesisBlock -> getBlobSidecarsForBlock(maybeGenesisBlock, indices));
+            .thenCompose(
+                maybeGenesisBlock ->
+                    getBlobSidecarsForBlock(maybeGenesisBlock, indices)
+                        .thenApply(
+                            blobSidecars ->
+                                addMetaData(
+                                    blobSidecars,
+                                    GENESIS_SLOT,
+                                    false,
+                                    true,
+                                    client.isFinalized(GENESIS_SLOT))));
   }
 
   @Override
@@ -74,7 +108,15 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     return indices ->
         client
             .getLatestFinalized()
-            .map(anchorPoint -> getBlobSidecars(anchorPoint.getSlotAndBlockRoot(), indices))
+            .map(
+                anchorPoint ->
+                    getBlobSidecars(anchorPoint.getSlotAndBlockRoot(), indices)
+                        .thenApply(
+                            blobSideCars ->
+                                addMetaData(
+                                    blobSideCars,
+                                    anchorPoint.getSlotAndBlockRoot(),
+                                    client.isChainHeadOptimistic())))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
@@ -82,11 +124,24 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
   public BlobSidecarSelector slotSelector(final UInt64 slot) {
     return indices -> {
       if (client.isFinalized(slot)) {
-        return getBlobSidecars(slot, indices);
+        return getBlobSidecars(slot, indices)
+            .thenApply(
+                blobSidecars ->
+                    addMetaData(blobSidecars, slot, client.isChainHeadOptimistic(), true, true));
       }
       return client
           .getBlockAtSlotExact(slot)
-          .thenCompose(maybeBlock -> getBlobSidecarsForBlock(maybeBlock, indices));
+          .thenCompose(
+              maybeBlock ->
+                  getBlobSidecarsForBlock(maybeBlock, indices)
+                      .thenApply(
+                          blobSidecars ->
+                              addMetaData(
+                                  blobSidecars,
+                                  slot,
+                                  client.isChainHeadOptimistic(),
+                                  false,
+                                  client.isFinalized(slot))));
     };
   }
 
@@ -96,7 +151,12 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
             .getAllBlobSidecars(slot, indices)
             .thenApply(
                 blobSidecars ->
-                    blobSidecars.isEmpty() ? Optional.empty() : Optional.of(blobSidecars));
+                    blobSidecars.isEmpty()
+                        ? Optional.empty()
+                        : addMetaData(
+                            // We don't care about metadata since the api (teku only) that
+                            // consumes the return value doesn't use it
+                            Optional.of(blobSidecars), new SlotAndBlockRoot(slot, Bytes32.ZERO)));
   }
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsForBlock(
@@ -124,5 +184,61 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
     return client.getBlobSidecars(slot, indices).thenApply(Optional::of);
+  }
+
+  private Optional<BlobSidecarsAndMetaData> addMetaData(
+      final Optional<List<BlobSidecar>> maybeBlobSidecarList,
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    if (maybeBlobSidecarList.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final UInt64 slot = slotAndBlockRoot.getSlot();
+    final Bytes32 blockRoot = slotAndBlockRoot.getBlockRoot();
+    final Optional<ChainHead> maybeChainHead = client.getChainHead();
+    final boolean isFinalized = client.isFinalized(slot);
+    boolean isOptimistic;
+    boolean isCanonical = false;
+
+    if (maybeChainHead.isPresent()) {
+      ChainHead chainHead = maybeChainHead.get();
+      isOptimistic = chainHead.isOptimistic() || client.isOptimisticBlock(blockRoot);
+      isCanonical = client.isCanonicalBlock(slot, blockRoot, chainHead.getRoot());
+    } else {
+      // If there's no chain head, we assume the block is not optimistic and not canonical
+      isOptimistic = client.isOptimisticBlock(blockRoot);
+    }
+    return addMetaData(maybeBlobSidecarList, slot, isOptimistic, isCanonical, isFinalized);
+  }
+
+  private Optional<BlobSidecarsAndMetaData> addMetaData(
+      final Optional<List<BlobSidecar>> maybeBlobSidecarList,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final boolean isOptimistic) {
+    if (maybeBlobSidecarList.isEmpty()) {
+      return Optional.empty();
+    }
+    return addMetaData(
+        maybeBlobSidecarList,
+        slotAndBlockRoot.getSlot(),
+        isOptimistic,
+        true,
+        client.isFinalized(slotAndBlockRoot.getSlot()));
+  }
+
+  private Optional<BlobSidecarsAndMetaData> addMetaData(
+      final Optional<List<BlobSidecar>> maybeBlobSidecarList,
+      final UInt64 blockSlot,
+      final boolean executionOptimistic,
+      final boolean canonical,
+      final boolean finalized) {
+    return maybeBlobSidecarList.map(
+        blobSidecarList ->
+            new BlobSidecarsAndMetaData(
+                blobSidecarList,
+                spec.atSlot(blockSlot).getMilestone(),
+                executionOptimistic,
+                canonical,
+                finalized));
   }
 }
