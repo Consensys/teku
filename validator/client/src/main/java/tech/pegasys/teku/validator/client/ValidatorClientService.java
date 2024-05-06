@@ -431,7 +431,7 @@ public class ValidatorClientService extends Service {
         new PublicKeyLoader(
             externalSignerHttpClientFactory,
             config.getValidatorConfig().getValidatorExternalSignerUrl(),
-            asyncRunner),
+            Optional.of(asyncRunner)),
         asyncRunner,
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()

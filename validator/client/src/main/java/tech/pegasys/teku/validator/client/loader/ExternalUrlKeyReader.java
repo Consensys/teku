@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -35,29 +36,38 @@ public class ExternalUrlKeyReader {
 
   private final URL url;
   private final ObjectMapper mapper;
-  private final AsyncRunner asyncRunner;
+  private final Optional<AsyncRunner> asyncRunner;
 
+  @VisibleForTesting
   public ExternalUrlKeyReader(
       final String urlString, final ObjectMapper mapper, final AsyncRunner asyncRunner) {
+    this(urlString, mapper, Optional.of(asyncRunner));
+  }
+
+  public ExternalUrlKeyReader(
+      final String urlString, final ObjectMapper mapper, final Optional<AsyncRunner> asyncRunner) {
     this.url = getUrl(urlString);
     this.mapper = mapper;
     this.asyncRunner = asyncRunner;
   }
 
   public Stream<BLSPublicKey> readKeys() {
-    final String[] keys = getKeysWithRetry().join();
+    final String[] keys =
+        asyncRunner
+            .map(this::getKeysWithRetry)
+            .orElseGet(this::readUrl)
+            .exceptionallyCompose(
+                ex ->
+                    SafeFuture.failedFuture(
+                        new InvalidConfigurationException(
+                            "Failed to load public keys from URL: " + url, ex)))
+            .join();
     return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
   }
 
   @VisibleForTesting
-  SafeFuture<String[]> getKeysWithRetry() {
-    return asyncRunner
-        .runWithRetry(this::readUrl, FIXED_DELAY, MAX_RETRIES)
-        .exceptionallyCompose(
-            ex ->
-                SafeFuture.failedFuture(
-                    new InvalidConfigurationException(
-                        "Failed to load public keys from URL: " + url, ex)));
+  SafeFuture<String[]> getKeysWithRetry(final AsyncRunner asyncRunner) {
+    return asyncRunner.runWithRetry(this::readUrl, FIXED_DELAY, MAX_RETRIES);
   }
 
   private SafeFuture<String[]> readUrl() {

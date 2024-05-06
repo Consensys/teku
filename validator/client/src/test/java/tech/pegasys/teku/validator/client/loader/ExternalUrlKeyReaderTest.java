@@ -30,6 +30,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -58,44 +59,81 @@ class ExternalUrlKeyReaderTest {
   private final String[] expectedKeys =
       new String[] {publicKey1.toHexString(), publicKey2.toHexString()};
 
-  @Test
-  void readKeys_validUrlReturnsValidKeys() throws IOException {
-    when(mapper.readValue(any(URL.class), eq(String[].class))).thenReturn(expectedKeys);
-    final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
-
-    assertThat(reader.readKeys()).contains(publicKey1, publicKey2);
-    verify(mapper).readValue(any(URL.class), eq(String[].class));
-  }
+  private ExternalUrlKeyReader reader;
 
   @Test
-  void readKeys_validUrlReturnsEmptyKeys() throws IOException {
-    when(mapper.readValue(any(URL.class), eq(String[].class))).thenReturn(new String[] {});
-    final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
-
-    assertThat(reader.readKeys()).isEmpty();
-    verify(mapper).readValue(any(URL.class), eq(String[].class));
-  }
-
-  @Test
-  void readKeys_validUrlReturnsInvalidKeys() throws IOException {
-    when(mapper.readValue(any(URL.class), eq(String[].class)))
-        .thenReturn(new String[] {"invalid", "keys"});
-    final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
-
-    assertThatThrownBy(() -> reader.readKeys().collect(Collectors.toSet()))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Invalid odd-length hex binary representation");
-    verify(mapper).readValue(any(URL.class), eq(String[].class));
-  }
-
-  @Test
-  void readKeys_malformedUrlString() {
+  void malformedUrlString() {
     final String invalidUrl = "invalid:url";
-    assertThatThrownBy(() -> new ExternalUrlKeyReader(invalidUrl, mapper, asyncRunner))
+    assertThatThrownBy(() -> new ExternalUrlKeyReader(invalidUrl, mapper, Optional.empty()))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Failed to load public keys from invalid URL: " + invalidUrl)
         .hasRootCauseInstanceOf(MalformedURLException.class);
     verifyNoInteractions(mapper);
+  }
+
+  @Test
+  void readKeys_retryDisabled_validUrlReturnsValidKeys() throws IOException {
+    initialise(expectedKeys, false);
+
+    assertThat(reader.readKeys()).contains(publicKey1, publicKey2);
+    verifyReadCall();
+  }
+
+  @Test
+  void readKeys_retryDisabled_validUrlReturnsEmptyKeys() throws IOException {
+    initialise(new String[] {}, false);
+
+    assertThat(reader.readKeys()).isEmpty();
+    verifyReadCall();
+  }
+
+  @Test
+  void readKeys_retryDisabled_validUrlReturnsInvalidKeys() throws IOException {
+    initialise(new String[] {"invalid", "keys"}, false);
+
+    assertThatThrownBy(() -> reader.readKeys().collect(Collectors.toSet()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Invalid odd-length hex binary representation");
+    verifyReadCall();
+  }
+
+  @Test
+  void readKeys_retryDisabled_unreachableUrlFails() throws IOException {
+    final UnknownHostException exception = new UnknownHostException("Unknown host");
+    when(mapper.readValue(any(URL.class), eq(String[].class))).thenThrow(exception);
+    reader = new ExternalUrlKeyReader(VALID_URL, mapper, Optional.empty());
+
+    assertThatThrownBy(reader::readKeys)
+        .isInstanceOf(CompletionException.class)
+        .hasCauseInstanceOf(InvalidConfigurationException.class)
+        .hasRootCause(exception);
+    verifyReadCall();
+  }
+
+  @Test
+  void readKeys_retryEnabled_validUrlReturnsValidKeys() throws IOException {
+    initialise(expectedKeys, true);
+
+    assertThat(reader.readKeys()).contains(publicKey1, publicKey2);
+    verifyReadCall();
+  }
+
+  @Test
+  void readKeys_retryEnabled_validUrlReturnsEmptyKeys() throws IOException {
+    initialise(new String[] {}, true);
+
+    assertThat(reader.readKeys()).isEmpty();
+    verifyReadCall();
+  }
+
+  @Test
+  void readKeys_retryEnabled_validUrlReturnsInvalidKeys() throws IOException {
+    initialise(new String[] {"invalid", "keys"}, true);
+
+    assertThatThrownBy(() -> reader.readKeys().collect(Collectors.toSet()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Invalid odd-length hex binary representation");
+    verifyReadCall();
   }
 
   @Test
@@ -104,35 +142,47 @@ class ExternalUrlKeyReaderTest {
     when(mapper.readValue(any(URL.class), eq(String[].class)))
         .thenThrow(exception, exception, exception)
         .thenReturn(expectedKeys);
-    final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
+    reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
 
-    final SafeFuture<String[]> keys = reader.getKeysWithRetry();
+    final SafeFuture<String[]> keys = reader.getKeysWithRetry(asyncRunner);
     for (int i = 0; i < 3; i++) {
       assertThat(keys).isNotCompleted();
       timeProvider.advanceTimeBy(DELAY);
       asyncRunner.executeQueuedActions();
     }
     assertThat(keys).isCompletedWithValue(expectedKeys);
-    verify(mapper, times(4)).readValue(any(URL.class), eq(String[].class));
+    verifyReadCalls(4);
   }
 
   @Test
   void readKeysWithRetry_unreachableUrlRetryUntilMaxRetries() throws IOException {
     final IOException exception = new ConnectException("Connection refused");
     when(mapper.readValue(any(URL.class), eq(String[].class))).thenThrow(exception);
-    final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
+    reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
 
-    final SafeFuture<String[]> keys = reader.getKeysWithRetry();
+    final SafeFuture<String[]> keys = reader.getKeysWithRetry(asyncRunner);
     for (int i = 0; i < MAX_RETRIES; i++) {
       assertThat(keys).isNotCompleted();
       timeProvider.advanceTimeBy(DELAY);
       asyncRunner.executeQueuedActions();
     }
     assertThat(keys).isCompletedExceptionally();
-    assertThatThrownBy(keys::join)
-        .isInstanceOf(CompletionException.class)
-        .hasCauseInstanceOf(InvalidConfigurationException.class)
-        .hasRootCause(exception);
-    verify(mapper, times(MAX_RETRIES + 1)).readValue(any(URL.class), eq(String[].class));
+    assertThatThrownBy(keys::join).isInstanceOf(CompletionException.class).hasRootCause(exception);
+    verifyReadCalls(MAX_RETRIES + 1);
+  }
+
+  private void initialise(final String[] keys, final boolean retryEnabled) throws IOException {
+    when(mapper.readValue(any(URL.class), eq(String[].class))).thenReturn(keys);
+    reader =
+        new ExternalUrlKeyReader(
+            VALID_URL, mapper, Optional.ofNullable(retryEnabled ? asyncRunner : null));
+  }
+
+  private void verifyReadCall() throws IOException {
+    verifyReadCalls(1);
+  }
+
+  private void verifyReadCalls(final int times) throws IOException {
+    verify(mapper, times(times)).readValue(any(URL.class), eq(String[].class));
   }
 }

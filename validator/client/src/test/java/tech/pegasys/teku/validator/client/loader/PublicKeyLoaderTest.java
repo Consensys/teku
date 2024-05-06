@@ -28,6 +28,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes48;
@@ -35,9 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader.ExternalSignerException;
@@ -59,16 +58,14 @@ public class PublicKeyLoaderTest {
   private final ObjectMapper mapper = mock(ObjectMapper.class);
   private final HttpClient httpClient = mock(HttpClient.class);
 
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
-
   @SuppressWarnings("unchecked")
   private final HttpResponse<String> externalSignerHttpResponse = mock(HttpResponse.class);
 
   private final Supplier<HttpClient> externalSignerHttpClientSupplier = () -> httpClient;
 
   private final PublicKeyLoader loader =
-      new PublicKeyLoader(mapper, externalSignerHttpClientSupplier, externalSignerUrl, asyncRunner);
+      new PublicKeyLoader(
+          mapper, externalSignerHttpClientSupplier, externalSignerUrl, Optional.empty());
 
   public PublicKeyLoaderTest() throws MalformedURLException {}
 

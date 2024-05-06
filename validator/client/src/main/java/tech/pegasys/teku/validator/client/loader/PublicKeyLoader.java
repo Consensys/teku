@@ -26,6 +26,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -44,7 +45,7 @@ public class PublicKeyLoader {
   final ObjectMapper objectMapper;
   final Supplier<HttpClient> externalSignerHttpClientFactory;
   final URL externalSignerUrl;
-  final AsyncRunner asyncRunner;
+  final Optional<AsyncRunner> asyncRunner;
 
   @VisibleForTesting
   PublicKeyLoader() {
@@ -54,13 +55,18 @@ public class PublicKeyLoader {
           throw new UnsupportedOperationException();
         },
         null,
-        null);
+        Optional.empty());
+  }
+
+  public PublicKeyLoader(
+      final Supplier<HttpClient> externalSignerHttpClientFactory, final URL externalSignerUrl) {
+    this(externalSignerHttpClientFactory, externalSignerUrl, Optional.empty());
   }
 
   public PublicKeyLoader(
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final URL externalSignerUrl,
-      final AsyncRunner asyncRunner) {
+      final Optional<AsyncRunner> asyncRunner) {
     this(new ObjectMapper(), externalSignerHttpClientFactory, externalSignerUrl, asyncRunner);
   }
 
@@ -68,7 +74,7 @@ public class PublicKeyLoader {
       final ObjectMapper objectMapper,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final URL externalSignerUrl,
-      final AsyncRunner asyncRunner) {
+      final Optional<AsyncRunner> asyncRunner) {
     this.objectMapper = objectMapper;
     this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
     this.externalSignerUrl = externalSignerUrl;
