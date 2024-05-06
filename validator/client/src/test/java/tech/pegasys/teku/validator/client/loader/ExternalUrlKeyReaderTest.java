@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExternalUrlKeyReaderTest {
   private static final Duration DELAY = Duration.ofSeconds(5);
+  private static final int MAX_RETRIES = 59;
   private static final String VALID_URL = "http://test:0000/api/v1/eth2/publicKeys";
 
   private final ObjectMapper mapper = mock(ObjectMapper.class);
@@ -125,7 +126,7 @@ class ExternalUrlKeyReaderTest {
     final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
 
     final SafeFuture<String[]> keys = reader.retry();
-    for (int i = 0; i < 59; i++) {
+    for (int i = 0; i < MAX_RETRIES; i++) {
       assertThat(keys).isNotCompleted();
       timeProvider.advanceTimeBy(DELAY);
       asyncRunner.executeQueuedActions();
@@ -135,6 +136,6 @@ class ExternalUrlKeyReaderTest {
         .isInstanceOf(CompletionException.class)
         .hasCauseInstanceOf(InvalidConfigurationException.class)
         .hasRootCause(exception);
-    verify(mapper, times(60)).readValue(any(URL.class), eq(String[].class));
+    verify(mapper, times(MAX_RETRIES + 1)).readValue(any(URL.class), eq(String[].class));
   }
 }

@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 
 public class ExternalUrlKeyReader {
   private static final Duration FIXED_DELAY = Duration.ofSeconds(5);
+  private static final int MAX_RETRIES = 59;
 
   private final String url;
   private final ObjectMapper mapper;
@@ -76,7 +77,7 @@ public class ExternalUrlKeyReader {
               return readUrl();
             },
             FIXED_DELAY,
-            59)
+            MAX_RETRIES)
         .exceptionallyCompose(
             ex ->
                 SafeFuture.failedFuture(
