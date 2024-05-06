@@ -91,11 +91,8 @@ class ExternalUrlKeyReaderTest {
   @Test
   void readKeys_malformedUrlString() {
     final String invalidUrl = "invalid:url";
-    final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(invalidUrl, mapper, asyncRunner);
-
-    assertThatThrownBy(reader::readKeys)
-        .isInstanceOf(CompletionException.class)
-        .hasCauseInstanceOf(InvalidConfigurationException.class)
+    assertThatThrownBy(() -> new ExternalUrlKeyReader(invalidUrl, mapper, asyncRunner))
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Failed to load public keys from invalid URL: " + invalidUrl)
         .hasRootCauseInstanceOf(MalformedURLException.class);
     verifyNoInteractions(mapper);
@@ -109,7 +106,7 @@ class ExternalUrlKeyReaderTest {
         .thenReturn(expectedKeys);
     final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
 
-    final SafeFuture<String[]> keys = reader.retry();
+    final SafeFuture<String[]> keys = reader.getKeysWithRetry();
     for (int i = 0; i < 3; i++) {
       assertThat(keys).isNotCompleted();
       timeProvider.advanceTimeBy(DELAY);
@@ -125,7 +122,7 @@ class ExternalUrlKeyReaderTest {
     when(mapper.readValue(any(URL.class), eq(String[].class))).thenThrow(exception);
     final ExternalUrlKeyReader reader = new ExternalUrlKeyReader(VALID_URL, mapper, asyncRunner);
 
-    final SafeFuture<String[]> keys = reader.retry();
+    final SafeFuture<String[]> keys = reader.getKeysWithRetry();
     for (int i = 0; i < MAX_RETRIES; i++) {
       assertThat(keys).isNotCompleted();
       timeProvider.advanceTimeBy(DELAY);

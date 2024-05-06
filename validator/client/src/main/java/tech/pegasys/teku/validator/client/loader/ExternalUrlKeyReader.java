@@ -33,55 +33,48 @@ public class ExternalUrlKeyReader {
   private static final Duration FIXED_DELAY = Duration.ofSeconds(5);
   private static final int MAX_RETRIES = 59;
 
-  private final String url;
+  private final URL url;
   private final ObjectMapper mapper;
   private final AsyncRunner asyncRunner;
 
   public ExternalUrlKeyReader(
-      final String url, final ObjectMapper mapper, final AsyncRunner asyncRunner) {
-    this.url = url;
+      final String urlString, final ObjectMapper mapper, final AsyncRunner asyncRunner) {
+    this.url = getUrl(urlString);
     this.mapper = mapper;
     this.asyncRunner = asyncRunner;
   }
 
   public Stream<BLSPublicKey> readKeys() {
-    final String[] keys =
-        readUrl()
-            .exceptionallyCompose(
-                ex -> {
-                  if (ex instanceof MalformedURLException) {
-                    return SafeFuture.failedFuture(
-                        new InvalidConfigurationException(
-                            "Failed to load public keys from invalid URL: " + url, ex));
-                  }
-                  return retry();
-                })
-            .join();
+    final String[] keys = getKeysWithRetry().join();
     return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
   }
 
-  private SafeFuture<String[]> readUrl() {
-    try {
-      return SafeFuture.completedFuture(mapper.readValue(new URL(url), String[].class));
-    } catch (IOException e) {
-      return SafeFuture.failedFuture(e);
-    }
-  }
-
   @VisibleForTesting
-  SafeFuture<String[]> retry() {
+  SafeFuture<String[]> getKeysWithRetry() {
     return asyncRunner
-        .runWithRetry(
-            () -> {
-              STATUS_LOG.failedToLoadPublicKeysFromUrl(url);
-              return readUrl();
-            },
-            FIXED_DELAY,
-            MAX_RETRIES)
+        .runWithRetry(this::readUrl, FIXED_DELAY, MAX_RETRIES)
         .exceptionallyCompose(
             ex ->
                 SafeFuture.failedFuture(
                     new InvalidConfigurationException(
                         "Failed to load public keys from URL: " + url, ex)));
+  }
+
+  private SafeFuture<String[]> readUrl() {
+    try {
+      return SafeFuture.completedFuture(mapper.readValue(url, String[].class));
+    } catch (IOException e) {
+      STATUS_LOG.failedToLoadPublicKeysFromUrl(url.toString());
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
+  private URL getUrl(final String url) {
+    try {
+      return new URL(url);
+    } catch (MalformedURLException e) {
+      throw new InvalidConfigurationException(
+          "Failed to load public keys from invalid URL: " + url, e);
+    }
   }
 }
