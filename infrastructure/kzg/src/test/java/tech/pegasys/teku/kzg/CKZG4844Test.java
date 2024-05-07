@@ -15,7 +15,7 @@ package tech.pegasys.teku.kzg;
 
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_BLOB;
-import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_BLOB;
+import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_EXT_BLOB;
 import static ethereum.ckzg4844.CKZG4844JNI.FIELD_ELEMENTS_PER_BLOB;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -283,7 +283,6 @@ public final class CKZG4844Test {
         .hasMessage("Expected G2 point to be 96 bytes");
   }
 
-  static final int CELLS_PER_EXT_BLOB = CELLS_PER_BLOB;
   static final int CELLS_PER_ORIG_BLOB = CELLS_PER_EXT_BLOB / 2;
 
   @Test

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.kzg;
 
-import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_BLOB;
+import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_EXT_BLOB;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -97,10 +97,10 @@ public interface KZG {
 
         @Override
         public List<KZGCell> recoverCells(List<KZGCellWithColumnId> cells) {
-          if (cells.size() < CELLS_PER_BLOB) {
+          if (cells.size() < CELLS_PER_EXT_BLOB) {
             throw new IllegalArgumentException("Can't recover from " + cells.size() + " cells");
           }
-          return cells.stream().map(KZGCellWithColumnId::cell).limit(CELLS_PER_BLOB).toList();
+          return cells.stream().map(KZGCellWithColumnId::cell).limit(CELLS_PER_EXT_BLOB).toList();
         }
       };
 
