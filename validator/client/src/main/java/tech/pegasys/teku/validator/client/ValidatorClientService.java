@@ -424,7 +424,10 @@ public class ValidatorClientService extends Service {
         HttpClientExternalSignerFactory.create(validatorConfig);
     final Optional<AsyncRunner> maybeAsyncRunner =
         Optional.ofNullable(
-            validatorConfig.validatorExternalSignerPublicKeysRetryEnabled() ? asyncRunner : null);
+            !validatorConfig.getValidatorExternalSignerPublicKeySources().isEmpty()
+                    && validatorConfig.validatorExternalSignerPublicKeysRetryEnabled()
+                ? asyncRunner
+                : null);
     return ValidatorLoader.create(
         config.getSpec(),
         validatorConfig,
