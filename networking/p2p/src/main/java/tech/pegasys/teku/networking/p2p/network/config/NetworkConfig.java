@@ -133,7 +133,7 @@ public class NetworkConfig {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
       if (advertisedAddress.isAnyLocalAddress()) {
         final boolean useIPV6 = advertisedAddress instanceof Inet6Address;
-        return getSiteLocalOrLinkLocalAddress(useIPV6);
+        return getSiteLocalOrUniqueLocalAddress(useIPV6);
       } else {
         return ipAddress;
       }
@@ -144,7 +144,8 @@ public class NetworkConfig {
     }
   }
 
-  private String getSiteLocalOrLinkLocalAddress(final boolean useIPV6) throws UnknownHostException {
+  private String getSiteLocalOrUniqueLocalAddress(final boolean useIPV6)
+      throws UnknownHostException {
     try {
       final Enumeration<NetworkInterface> networkInterfaces =
           NetworkInterface.getNetworkInterfaces();
@@ -157,8 +158,10 @@ public class NetworkConfig {
           if (!useIPV6 && inetAddress instanceof Inet4Address && inetAddress.isSiteLocalAddress()) {
             return inetAddress.getHostAddress();
           }
-          // IPv6 (include only link local addresses)
-          if (useIPV6 && inetAddress instanceof Inet6Address && inetAddress.isLinkLocalAddress()) {
+          // IPv6 (include only site local addresses or ULAs)
+          if (useIPV6
+              && inetAddress instanceof Inet6Address
+              && (inetAddress.isSiteLocalAddress() || isUniqueLocalAddress(inetAddress))) {
             return inetAddress.getHostAddress();
           }
         }
@@ -169,6 +172,13 @@ public class NetworkConfig {
     }
     throw new UnknownHostException(
         String.format("Unable to determine local %s Address", useIPV6 ? "IPv6" : "IPv4"));
+  }
+
+  private boolean isUniqueLocalAddress(final InetAddress inetAddress) {
+    // Check the first byte to determine if it's in the fc00::/7 range
+    // Unique local IPv6 addresses start with 0xfc or 0xfd
+    int firstByte = inetAddress.getAddress()[0] & 0xff; // Convert to unsigned
+    return (firstByte == 0xfc || firstByte == 0xfd);
   }
 
   public static class Builder {
