@@ -138,9 +138,7 @@ public class NetworkConfig {
       } else {
         return ipAddress;
       }
-    } catch (UnknownHostException ex) {
-      LOG.error(
-          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", ex);
+    } catch (final UnknownHostException ex) {
       throw new UncheckedIOException(ex);
     }
   }
@@ -167,8 +165,8 @@ public class NetworkConfig {
           }
         }
       }
-    } catch (SocketException ex) {
-      LOG.error("Failed to find site local address", ex);
+    } catch (final SocketException ex) {
+      LOG.error("Failed to find site local or unique local address", ex);
       throw new UnknownHostException(ex.getMessage());
     }
     throw new UnknownHostException(

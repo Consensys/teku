@@ -61,7 +61,15 @@ class NetworkConfigTest {
   void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6()
       throws UnknownHostException {
     listenIp = "::0";
-    final String result = createConfig().getAdvertisedIp();
+    final String result;
+    try {
+      result = createConfig().getAdvertisedIp();
+    } catch (Exception ex) {
+      // local IPv6 not supported
+      assertThat(ex.getCause()).isInstanceOf(UnknownHostException.class);
+      assertThat(ex.getMessage()).contains("Unable to determine local IPv6 Address");
+      return;
+    }
     assertThat(result).isNotEqualTo("::0");
     assertThat(result).isNotEqualTo("0.0.0.0");
     // check the advertised IP is IPv6
