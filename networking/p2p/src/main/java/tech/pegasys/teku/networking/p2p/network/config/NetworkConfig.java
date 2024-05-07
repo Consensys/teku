@@ -177,7 +177,7 @@ public class NetworkConfig {
   private boolean isUniqueLocalAddress(final InetAddress inetAddress) {
     // Check the first byte to determine if it's in the fc00::/7 range
     // Unique local IPv6 addresses start with 0xfc or 0xfd
-    int firstByte = inetAddress.getAddress()[0] & 0xff; // Convert to unsigned
+    final int firstByte = inetAddress.getAddress()[0] & 0xff; // Convert to unsigned
     return (firstByte == 0xfc || firstByte == 0xfd);
   }
 
