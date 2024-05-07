@@ -133,7 +133,7 @@ public class NetworkConfig {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
       if (advertisedAddress.isAnyLocalAddress()) {
         final boolean useIPV6 = advertisedAddress instanceof Inet6Address;
-        return getSiteLocalAddress(useIPV6);
+        return getSiteLocalOrLinkLocalAddress(useIPV6);
       } else {
         return ipAddress;
       }
@@ -144,7 +144,7 @@ public class NetworkConfig {
     }
   }
 
-  private String getSiteLocalAddress(final boolean useIPV6) throws UnknownHostException {
+  private String getSiteLocalOrLinkLocalAddress(final boolean useIPV6) throws UnknownHostException {
     try {
       final Enumeration<NetworkInterface> networkInterfaces =
           NetworkInterface.getNetworkInterfaces();
@@ -157,18 +157,18 @@ public class NetworkConfig {
           if (!useIPV6 && inetAddress instanceof Inet4Address && inetAddress.isSiteLocalAddress()) {
             return inetAddress.getHostAddress();
           }
-          // IPv6 (exclude loopback addresses, because the concept of site local addresses has been
-          // deprecated)
-          if (useIPV6 && inetAddress instanceof Inet6Address && !inetAddress.isLoopbackAddress()) {
+          // IPv6 (include only link local addresses)
+          if (useIPV6 && inetAddress instanceof Inet6Address && inetAddress.isLinkLocalAddress()) {
             return inetAddress.getHostAddress();
           }
         }
       }
-    } catch (SocketException e) {
-      LOG.error("Failed to find site local address", e);
-      throw new UnknownHostException(e.getMessage());
+    } catch (SocketException ex) {
+      LOG.error("Failed to find site local address", ex);
+      throw new UnknownHostException(ex.getMessage());
     }
-    throw new UnknownHostException("Unable to determine local IP Address");
+    throw new UnknownHostException(
+        String.format("Unable to determine local %s Address", useIPV6 ? "IPv6" : "IPv4"));
   }
 
   public static class Builder {
