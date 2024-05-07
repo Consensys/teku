@@ -153,16 +153,13 @@ public class NetworkConfig {
         final Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
         while (inetAddresses.hasMoreElements()) {
           final InetAddress inetAddress = inetAddresses.nextElement();
-          // exclude loopback addresses
-          if (inetAddress.isLoopbackAddress()) {
-            continue;
-          }
           // IPv4 (include only site local addresses)
           if (!useIPV6 && inetAddress instanceof Inet4Address && inetAddress.isSiteLocalAddress()) {
             return inetAddress.getHostAddress();
           }
-          // IPv6 (concept of site local addresses has been deprecated)
-          if (useIPV6 && inetAddress instanceof Inet6Address) {
+          // IPv6 (exclude loopback addresses, because the concept of site local addresses has been
+          // deprecated)
+          if (useIPV6 && inetAddress instanceof Inet6Address && !inetAddress.isLoopbackAddress()) {
             return inetAddress.getHostAddress();
           }
         }
