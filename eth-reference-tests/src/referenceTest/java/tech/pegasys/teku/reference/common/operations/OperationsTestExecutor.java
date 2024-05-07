@@ -71,9 +71,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     SYNC_AGGREGATE,
     EXECUTION_PAYLOAD,
     BLS_TO_EXECUTION_CHANGE,
-    WITHDRAWAL,
-    DEPOSIT_RECEIPT,
-    EXECUTION_LAYER_EXIT
+    WITHDRAWAL
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -114,13 +112,6 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/withdrawals",
               new OperationsTestExecutor<>("execution_payload.ssz_snappy", Operation.WITHDRAWAL))
-          .put(
-              "operations/deposit_receipt",
-              new OperationsTestExecutor<>("deposit_receipt.ssz_snappy", Operation.DEPOSIT_RECEIPT))
-          .put(
-              "operations/execution_layer_exit",
-              new OperationsTestExecutor<>(
-                  "execution_layer_exit.ssz_snappy", Operation.EXECUTION_LAYER_EXIT))
           .build();
 
   private final String dataFileName;
@@ -396,9 +387,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           ATTESTATION,
           SYNC_AGGREGATE,
           EXECUTION_PAYLOAD,
-          WITHDRAWAL,
-          DEPOSIT_RECEIPT,
-          EXECUTION_LAYER_EXIT -> {}
+          WITHDRAWAL -> {}
     }
   }
 

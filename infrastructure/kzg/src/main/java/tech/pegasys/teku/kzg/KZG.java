@@ -43,7 +43,7 @@ public interface KZG {
         public boolean verifyBlobKzgProof(
             final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
             throws KZGException {
-          return true;
+          return false;
         }
 
         @Override
@@ -52,7 +52,7 @@ public interface KZG {
             final List<KZGCommitment> kzgCommitments,
             final List<KZGProof> kzgProofs)
             throws KZGException {
-          return true;
+          return false;
         }
 
         @Override
@@ -83,16 +83,24 @@ public interface KZG {
 
         @Override
         public boolean verifyCellProof(
-            KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof) {
-          return true;
+            KZGCommitment commitment, KZGCellWithColumnId cellWithID, KZGProof proof) {
+          return false;
         }
 
         @Override
-        public List<KZGCell> recoverCells(List<KZGCellWithID> cells) {
+        public boolean verifyCellProofBatch(
+            List<KZGCommitment> commitments,
+            List<KZGCellWithIds> cellWithIDs,
+            List<KZGProof> proofs) {
+          return false;
+        }
+
+        @Override
+        public List<KZGCell> recoverCells(List<KZGCellWithColumnId> cells) {
           if (cells.size() < CELLS_PER_BLOB) {
             throw new IllegalArgumentException("Can't recover from " + cells.size() + " cells");
           }
-          return cells.stream().map(KZGCellWithID::cell).limit(CELLS_PER_BLOB).toList();
+          return cells.stream().map(KZGCellWithColumnId::cell).limit(CELLS_PER_BLOB).toList();
         }
       };
 
@@ -117,9 +125,11 @@ public interface KZG {
 
   List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 
-  boolean verifyCellProof(KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof);
+  boolean verifyCellProof(KZGCommitment commitment, KZGCellWithColumnId cellWithID, KZGProof proof);
 
-  // TODO veryCellProofBatch()
+  boolean verifyCellProofBatch(
+      List<KZGCommitment> commitments, List<KZGCellWithIds> cellWithIDs, List<KZGProof> proofs);
 
-  List<KZGCell> recoverCells(List<KZGCellWithID> cells);
+  /** Check {@link KzgRecoverAllCellsTestExecutor} for implementation requirements */
+  List<KZGCell> recoverCells(List<KZGCellWithColumnId> cells);
 }

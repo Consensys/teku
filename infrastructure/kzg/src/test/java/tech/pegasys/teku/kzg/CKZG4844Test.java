@@ -292,9 +292,9 @@ public final class CKZG4844Test {
     List<KZGCell> cells = CKZG.computeCells(blob);
     assertThat(cells).hasSize(CELLS_PER_EXT_BLOB);
 
-    List<KZGCellWithID> cellsToRecover =
+    List<KZGCellWithColumnId> cellsToRecover =
         IntStream.range(CELLS_PER_ORIG_BLOB, CELLS_PER_EXT_BLOB)
-            .mapToObj(i -> new KZGCellWithID(cells.get(i), KZGCellID.fromCellColumnIndex(i)))
+            .mapToObj(i -> new KZGCellWithColumnId(cells.get(i), KZGCellID.fromCellColumnIndex(i)))
             .toList();
 
     List<KZGCell> recoveredCells = CKZG.recoverCells(cellsToRecover);
@@ -315,14 +315,14 @@ public final class CKZG4844Test {
       assertThat(
               CKZG.verifyCellProof(
                   kzgCommitment,
-                  KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
+                  KZGCellWithColumnId.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
                   cellAndProofs.get(i).proof()))
           .isTrue();
       var invalidProof = cellAndProofs.get((i + 1) % cellAndProofs.size()).proof();
       assertThat(
               CKZG.verifyCellProof(
                   kzgCommitment,
-                  KZGCellWithID.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
+                  KZGCellWithColumnId.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
                   invalidProof))
           .isFalse();
     }

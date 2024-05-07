@@ -13,15 +13,9 @@
 
 package tech.pegasys.teku.kzg;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+public record KZGCellWithColumnId(KZGCell cell, KZGCellID columnId) {
 
-public record KZGCellID(UInt64 id) {
-
-  public static KZGCellID fromCellColumnIndex(int idx) {
-    return new KZGCellID(UInt64.valueOf(idx));
-  }
-
-  int getColumnIndex() {
-    return id.intValue();
+  public static KZGCellWithColumnId fromCellAndColumn(KZGCell cell, int columnIndex) {
+    return new KZGCellWithColumnId(cell, KZGCellID.fromCellColumnIndex(columnIndex));
   }
 }

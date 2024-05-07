@@ -13,16 +13,20 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7594.helpers;
 
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
+
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
@@ -30,7 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
-import tech.pegasys.teku.kzg.KZGCellWithID;
+import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.Cell;
@@ -80,17 +84,49 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     return columnIndex.mod(specConfigEip7594.getDataColumnSidecarSubnetCount());
   }
 
-  public Set<UInt64> computeCustodyColumnIndexes(
-      final UInt256 nodeId, final UInt64 epoch, final int subnetCount) {
-    // TODO: implement whatever formula is finalized
-    Set<UInt64> subnets =
-        new HashSet<>(computeDataColumnSidecarBackboneSubnets(nodeId, epoch, subnetCount));
-    return Stream.iterate(UInt64.ZERO, UInt64::increment)
-        .limit(specConfigEip7594.getNumberOfColumns().intValue())
-        .filter(columnIndex -> subnets.contains(computeSubnetForDataColumnSidecar(columnIndex)))
-        .collect(Collectors.toSet());
+  public Set<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int subnetCount) {
+    //     assert custody_subnet_count <= DATA_COLUMN_SIDECAR_SUBNET_COUNT
+    if (subnetCount > specConfigEip7594.getDataColumnSidecarSubnetCount()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Subnet count %s couldn't exceed number of subnet columns %s",
+              subnetCount, specConfigEip7594.getNumberOfColumns()));
+    }
+
+    final List<UInt64> subnetIds = new ArrayList<>();
+    UInt256 curId = nodeId;
+    while (subnetIds.size() < subnetCount) {
+      final UInt64 subnetId =
+          bytesToUInt64(Hash.sha256(uint256ToBytes(curId)).slice(0, 8))
+              .mod(specConfigEip7594.getDataColumnSidecarSubnetCount());
+      if (!subnetIds.contains(subnetId)) {
+        subnetIds.add(subnetId);
+      }
+      if (curId.equals(UInt256.MAX_VALUE)) {
+        curId = UInt256.ZERO;
+      }
+      curId = curId.plus(1);
+    }
+
+    final int columnsPerSubnet =
+        specConfigEip7594
+            .getNumberOfColumns()
+            .dividedBy(specConfigEip7594.getDataColumnSidecarSubnetCount())
+            .intValue();
+    return subnetIds.stream()
+        .sorted()
+        .flatMap(
+            subnetId -> IntStream.range(0, columnsPerSubnet).mapToObj(i -> Pair.of(subnetId, i)))
+        .map(
+            // ColumnIndex(DATA_COLUMN_SIDECAR_SUBNET_COUNT * i + subnet_id)
+            pair ->
+                specConfigEip7594.getDataColumnSidecarSubnetCount() * pair.getRight()
+                    + pair.getLeft().intValue())
+        .map(UInt64::valueOf)
+        .collect(Collectors.toUnmodifiableSet());
   }
 
+  // TODO
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
       final UInt256 nodeId, final UInt64 epoch, final int subnetCount) {
     // TODO: implement whatever formula is finalized
@@ -118,7 +154,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
             index ->
                 kzg.verifyCellProof(
                     dataColumnSidecar.getSszKZGCommitments().get(index).getKZGCommitment(),
-                    KZGCellWithID.fromCellAndColumn(
+                    KZGCellWithColumnId.fromCellAndColumn(
                         new KZGCell(dataColumnSidecar.getDataColumn().get(index).getBytes()),
                         dataColumnSidecar.getIndex().intValue()),
                     dataColumnSidecar.getSszKZGProofs().get(index).getKZGProof()))
@@ -137,7 +173,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
         dataColumnSidecar.getBlockBodyRoot());
   }
 
-  private int getBlockBodyKzgCommitmentsGeneralizedIndex() {
+  public int getBlockBodyKzgCommitmentsGeneralizedIndex() {
     return (int)
         BeaconBlockBodySchemaEip7594.required(schemaDefinitions.getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsGeneralizedIndex();

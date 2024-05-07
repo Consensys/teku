@@ -20,6 +20,8 @@ public class KzgTests {
 
   public static final ImmutableMap<String, TestExecutor> KZG_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
+
+          // BlobSidecar Deneb utils
           .put("kzg/blob_to_kzg_commitment", new KzgBlobToCommitmentTestExecutor())
           .put("kzg/compute_blob_kzg_proof", new KzgComputeBlobProofTestExecutor())
           // no KZG interface on CL side, EL responsibility
@@ -29,5 +31,12 @@ public class KzgTests {
           .put("kzg/verify_blob_kzg_proof_batch", new KzgVerifyBlobProofBatchTestExecutor())
           // no KZG interface on CL side, EL responsibility
           .put("kzg/verify_kzg_proof", TestExecutor.IGNORE_TESTS)
+
+          // DataColumnSidecar EIP-7594 utils
+          .put("kzg/compute_cells", new KzgComputeCellsTestExecutor())
+          .put("kzg/compute_cells_and_kzg_proofs", new KzgComputeCellsAndKzgProofsTestExecutor())
+          .put("kzg/recover_all_cells", new KzgRecoverAllCellsTestExecutor())
+          .put("kzg/verify_cell_kzg_proof", new KzgVerifyCellKzgProofTestExecutor())
+          .put("kzg/verify_cell_kzg_proof_batch", new KzgVerifyCellKzgProofBatchTestExecutor())
           .build();
 }

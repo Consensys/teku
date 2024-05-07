@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg;
+package tech.pegasys.teku.reference.eip7594.networking;
 
-public record KZGCellWithID(KZGCell cell, KZGCellID id) {
+import com.google.common.collect.ImmutableMap;
+import tech.pegasys.teku.reference.TestExecutor;
 
-  public static KZGCellWithID fromCellAndColumn(KZGCell cell, int index) {
-    return new KZGCellWithID(cell, KZGCellID.fromCellColumnIndex(index));
-  }
+public class NetworkingTests {
+  public static final ImmutableMap<String, TestExecutor> NETWORKING_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .put("networking/get_custody_columns", new GetCustodyColumnsTestExecutor())
+          .build();
 }

@@ -25,10 +25,11 @@ public class KzgRetriever {
   private static final Map<String, String> TRUSTED_SETUP_FILES_BY_NETWORK = Maps.newHashMap();
 
   public static KZG getKzgWithLoadedTrustedSetup(final Spec spec, final String network) {
-    if (!spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      return KZG.NOOP;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)
+        || spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
+      return getKzgWithLoadedTrustedSetup(network);
     }
-    return getKzgWithLoadedTrustedSetup(network);
+    return KZG.NOOP;
   }
 
   public static KZG getKzgWithLoadedTrustedSetup(final String network) {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +31,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DataColumnSidecarCustodyImpl
     implements UpdatableDataColumnSidecarCustody, SlotEventsChannel {
@@ -120,7 +120,7 @@ public class DataColumnSidecarCustodyImpl
 
   private Set<UInt64> getCustodyColumnsForEpoch(UInt64 epoch) {
     return MiscHelpersEip7594.required(spec.atEpoch(epoch).miscHelpers())
-        .computeCustodyColumnIndexes(nodeId, epoch, totalCustodySubnetCount);
+        .computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount);
   }
 
   @Override
@@ -138,7 +138,7 @@ public class DataColumnSidecarCustodyImpl
         .map(
             miscHelpersEip7594 ->
                 miscHelpersEip7594
-                    .computeCustodyColumnIndexes(nodeId, epoch, totalCustodySubnetCount)
+                    .computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount)
                     .contains(columnIndex))
         .orElse(false);
   }

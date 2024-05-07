@@ -171,17 +171,36 @@ final class CKZG4844 implements KZG {
 
   @Override
   public boolean verifyCellProof(
-      KZGCommitment commitment, KZGCellWithID cellWithID, KZGProof proof) {
+      KZGCommitment commitment, KZGCellWithColumnId cellWithColumnId, KZGProof proof) {
     return CKZG4844JNI.verifyCellProof(
         commitment.toArrayUnsafe(),
-        cellWithID.id().id().longValue(),
-        cellWithID.cell().bytes().toArrayUnsafe(),
+        cellWithColumnId.columnId().id().longValue(),
+        cellWithColumnId.cell().bytes().toArrayUnsafe(),
         proof.toArrayUnsafe());
   }
 
   @Override
-  public List<KZGCell> recoverCells(List<KZGCellWithID> cells) {
-    long[] cellIds = cells.stream().mapToLong(c -> c.id().id().longValue()).toArray();
+  public boolean verifyCellProofBatch(
+      List<KZGCommitment> commitments,
+      List<KZGCellWithIds> cellWithIdsList,
+      List<KZGProof> proofs) {
+    return CKZG4844JNI.verifyCellProofBatch(
+        CKZG4844Utils.flattenCommitments(commitments),
+        cellWithIdsList.stream()
+            .mapToLong(cellWithIds -> cellWithIds.rowId().id().longValue())
+            .toArray(),
+        cellWithIdsList.stream()
+            .mapToLong(cellWithIds -> cellWithIds.columnId().id().longValue())
+            .toArray(),
+        CKZG4844Utils.flattenBytes(
+            cellWithIdsList.stream().map(cellWithIds -> cellWithIds.cell().bytes()).toList(),
+            cellWithIdsList.size() * BYTES_PER_CELL),
+        CKZG4844Utils.flattenProofs(proofs));
+  }
+
+  @Override
+  public List<KZGCell> recoverCells(List<KZGCellWithColumnId> cells) {
+    long[] cellIds = cells.stream().mapToLong(c -> c.columnId().id().longValue()).toArray();
     byte[] cellBytes =
         CKZG4844Utils.flattenBytes(
             cells.stream().map(c -> c.cell().bytes()).toList(), cells.size() * BYTES_PER_CELL);

@@ -13,15 +13,18 @@
 
 package tech.pegasys.teku.kzg;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+public record KZGCellWithIds(KZGCell cell, KZGCellID rowId, KZGCellID columnId) {
 
-public record KZGCellID(UInt64 id) {
-
-  public static KZGCellID fromCellColumnIndex(int idx) {
-    return new KZGCellID(UInt64.valueOf(idx));
+  public static KZGCellWithIds fromCellAndIndices(KZGCell cell, int rowIndex, int columnIndex) {
+    return new KZGCellWithIds(
+        cell, KZGCellID.fromCellColumnIndex(rowIndex), KZGCellID.fromCellColumnIndex(columnIndex));
   }
 
-  int getColumnIndex() {
-    return id.intValue();
+  public static KZGCellWithIds fromKZGCellWithColumnIdAndRowId(
+      KZGCellWithColumnId cellWithColumnId, int rowIndex) {
+    return new KZGCellWithIds(
+        cellWithColumnId.cell(),
+        KZGCellID.fromCellColumnIndex(rowIndex),
+        cellWithColumnId.columnId());
   }
 }
