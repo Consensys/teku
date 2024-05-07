@@ -16,6 +16,9 @@ package tech.pegasys.teku.networking.p2p.network.config;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.libp2p.core.multiformats.Multiaddr;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -55,11 +58,14 @@ class NetworkConfigTest {
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() {
+  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6()
+      throws UnknownHostException {
     listenIp = "::0";
     final String result = createConfig().getAdvertisedIp();
     assertThat(result).isNotEqualTo("::0");
     assertThat(result).isNotEqualTo("0.0.0.0");
+    // check the advertised IP is IPv6
+    assertThat(InetAddress.getByName(result)).isInstanceOf(Inet6Address.class);
   }
 
   @Test

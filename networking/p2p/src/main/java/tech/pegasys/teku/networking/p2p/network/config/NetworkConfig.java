@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.p2p.network.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -130,7 +132,8 @@ public class NetworkConfig {
     try {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
       if (advertisedAddress.isAnyLocalAddress()) {
-        return getSiteLocalAddress();
+        final boolean useIPV6 = advertisedAddress instanceof Inet6Address;
+        return getSiteLocalAddress(useIPV6);
       } else {
         return ipAddress;
       }
@@ -141,21 +144,26 @@ public class NetworkConfig {
     }
   }
 
-  private String getSiteLocalAddress() throws UnknownHostException {
+  private String getSiteLocalAddress(final boolean useIPV6) throws UnknownHostException {
     try {
-      final InetAddress address = InetAddress.getLocalHost();
-      if (address.isAnyLocalAddress()) {
-        return address.getHostAddress();
-      }
       final Enumeration<NetworkInterface> networkInterfaces =
           NetworkInterface.getNetworkInterfaces();
       while (networkInterfaces.hasMoreElements()) {
-        NetworkInterface n = networkInterfaces.nextElement();
-        final Enumeration<InetAddress> inetAddresses = n.getInetAddresses();
+        final NetworkInterface networkInterface = networkInterfaces.nextElement();
+        final Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
         while (inetAddresses.hasMoreElements()) {
-          InetAddress i = inetAddresses.nextElement();
-          if (i.isSiteLocalAddress()) {
-            return i.getHostAddress();
+          final InetAddress inetAddress = inetAddresses.nextElement();
+          // exclude loopback addresses
+          if (inetAddress.isLoopbackAddress()) {
+            continue;
+          }
+          // IPv4 (include only site local addresses)
+          if (!useIPV6 && inetAddress instanceof Inet4Address && inetAddress.isSiteLocalAddress()) {
+            return inetAddress.getHostAddress();
+          }
+          // IPv6 (concept of site local addresses has been deprecated)
+          if (useIPV6 && inetAddress instanceof Inet6Address) {
+            return inetAddress.getHostAddress();
           }
         }
       }
