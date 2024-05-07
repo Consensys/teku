@@ -39,7 +39,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void shouldNotThrowIfExternalPublicKeysEnabledAreSpecifiedWithPublicKeys()
+  public void shouldNotThrowIfExternalPublicKeysEnabledIsSpecifiedWithPublicKeys()
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =
         configBuilder
@@ -50,7 +50,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void shouldNotThrowIfExternalPublicKeysDisabledAreSpecifiedWithPublicKeys()
+  public void shouldNotThrowIfExternalPublicKeysDisabledIsSpecifiedWithPublicKeys()
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =
         configBuilder
@@ -61,7 +61,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void shouldNotThrowIfExternalPublicKeysEnabledAreSpecifiedWithoutPublicKeys()
+  public void shouldNotThrowIfExternalPublicKeysEnabledIsSpecifiedWithoutPublicKeys()
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =
         configBuilder
