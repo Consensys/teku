@@ -497,7 +497,13 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   @Override
   protected void assertAttestationValid(
       final MutableBeaconState state, final Attestation attestation) {
-    super.assertAttestationValid(state, attestation);
+    final Optional<OperationInvalidReason> invalidReason =
+        validateAttestation(state, attestation.getData());
+    checkArgument(
+        invalidReason.isEmpty(),
+        "process_attestations: %s",
+        invalidReason.map(OperationInvalidReason::describe).orElse(""));
+
     final List<UInt64> committeeIndices = attestation.getCommitteeIndicesRequired();
     final UInt64 committeeCountPerSlot =
         beaconStateAccessors.getCommitteeCountPerSlot(
