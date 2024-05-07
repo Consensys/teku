@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.network.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
+import java.io.UncheckedIOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -137,10 +138,10 @@ public class NetworkConfig {
       } else {
         return ipAddress;
       }
-    } catch (UnknownHostException err) {
+    } catch (UnknownHostException ex) {
       LOG.error(
-          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
-      return ipAddress;
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", ex);
+      throw new UncheckedIOException(ex);
     }
   }
 
