@@ -49,6 +49,17 @@ public class ValidatorKeysOptions {
   private List<String> validatorExternalSignerPublicKeys = new ArrayList<>();
 
   @CommandLine.Option(
+      hidden = true,
+      names = {"--Xvalidators-external-signer-public-keys-retry-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      fallbackValue = "true",
+      description = "Enable retry loading URL to load validators external signer public keys.",
+      arity = "0..1")
+  private boolean validatorExternalSignerPublicKeysRetryEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_KEYS_RETRY_ENABLED;
+
+  @CommandLine.Option(
       names = {"--validators-external-signer-url"},
       paramLabel = "<NETWORK>",
       description = "URL for the external signing service",
@@ -110,6 +121,8 @@ public class ValidatorKeysOptions {
             config
                 .validatorKeys(validatorKeys)
                 .validatorExternalSignerPublicKeySources(parseValidatorExternalKeys())
+                .validatorExternalSignerPublicKeysRetryEnabled(
+                    validatorExternalSignerPublicKeysRetryEnabled)
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerConcurrentRequestLimit(
                     validatorExternalSignerConcurrentRequestLimit)

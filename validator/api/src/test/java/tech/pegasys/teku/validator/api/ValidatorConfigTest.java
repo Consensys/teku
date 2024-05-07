@@ -39,6 +39,39 @@ class ValidatorConfigTest {
   }
 
   @Test
+  public void shouldNotThrowIfExternalPublicKeysEnabledAreSpecifiedWithPublicKeys()
+      throws MalformedURLException {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
+            .validatorExternalSignerPublicKeySources(List.of("http://localhost:9000/test"))
+            .validatorExternalSignerPublicKeysRetryEnabled(true);
+    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void shouldNotThrowIfExternalPublicKeysDisabledAreSpecifiedWithPublicKeys()
+      throws MalformedURLException {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
+            .validatorExternalSignerPublicKeySources(List.of("http://localhost:9000/test"))
+            .validatorExternalSignerPublicKeysRetryEnabled(false);
+    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void shouldNotThrowIfExternalPublicKeysEnabledAreSpecifiedWithoutPublicKeys()
+      throws MalformedURLException {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
+            .validatorExternalSignerPublicKeySources(List.of())
+            .validatorExternalSignerPublicKeysRetryEnabled(true);
+    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+  }
+
+  @Test
   public void shouldNotThrowIfExternalSignerUrlIsSpecifiedWithoutExternalPublicKeys()
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =

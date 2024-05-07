@@ -410,8 +410,9 @@ public class ValidatorClientService extends Service {
       final AsyncRunner asyncRunner,
       final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
+    final ValidatorConfig validatorConfig = config.getValidatorConfig();
     final SlashingProtector slashingProtector =
-        config.getValidatorConfig().isLocalSlashingProtectionSynchronizedModeEnabled()
+        validatorConfig.isLocalSlashingProtectionSynchronizedModeEnabled()
             ? new LocalSlashingProtector(
                 SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath)
             : new LocalSlashingProtectorConcurrentAccess(
@@ -420,18 +421,21 @@ public class ValidatorClientService extends Service {
         new SlashingProtectionLogger(
             slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
     final Supplier<HttpClient> externalSignerHttpClientFactory =
-        HttpClientExternalSignerFactory.create(config.getValidatorConfig());
+        HttpClientExternalSignerFactory.create(validatorConfig);
+    final Optional<AsyncRunner> maybeAsyncRunner =
+        Optional.ofNullable(
+            validatorConfig.validatorExternalSignerPublicKeysRetryEnabled() ? asyncRunner : null);
     return ValidatorLoader.create(
         config.getSpec(),
-        config.getValidatorConfig(),
+        validatorConfig,
         config.getInteropConfig(),
         externalSignerHttpClientFactory,
         slashingProtector,
         slashingProtectionLogger,
         new PublicKeyLoader(
             externalSignerHttpClientFactory,
-            config.getValidatorConfig().getValidatorExternalSignerUrl(),
-            Optional.of(asyncRunner)),
+            validatorConfig.getValidatorExternalSignerUrl(),
+            maybeAsyncRunner),
         asyncRunner,
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()

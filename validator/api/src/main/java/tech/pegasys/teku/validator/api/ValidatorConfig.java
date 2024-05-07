@@ -56,6 +56,7 @@ public class ValidatorConfig {
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 40_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
+  public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_KEYS_RETRY_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED = true;
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
@@ -71,6 +72,7 @@ public class ValidatorConfig {
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
+  private final boolean validatorExternalSignerPublicKeysRetryEnabled;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
   private final Optional<String> validatorExternalSignerUserInfo;
@@ -114,6 +116,7 @@ public class ValidatorConfig {
   private ValidatorConfig(
       final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeySources,
+      final boolean validatorExternalSignerPublicKeysRetryEnabled,
       final URL validatorExternalSignerUrl,
       final Optional<String> validatorExternalSignerUserInfo,
       final Duration validatorExternalSignerTimeout,
@@ -153,6 +156,8 @@ public class ValidatorConfig {
       boolean dvtSelectionsEndpointEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
+    this.validatorExternalSignerPublicKeysRetryEnabled =
+        validatorExternalSignerPublicKeysRetryEnabled;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerUserInfo = validatorExternalSignerUserInfo;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
@@ -211,6 +216,10 @@ public class ValidatorConfig {
 
   public List<String> getValidatorExternalSignerPublicKeySources() {
     return validatorExternalSignerPublicKeySources;
+  }
+
+  public boolean validatorExternalSignerPublicKeysRetryEnabled() {
+    return validatorExternalSignerPublicKeysRetryEnabled;
   }
 
   public boolean isValidatorExternalSignerSlashingProtectionEnabled() {
@@ -368,6 +377,8 @@ public class ValidatorConfig {
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
+    private boolean validatorExternalSignerPublicKeysRetryEnabled =
+        DEFAULT_VALIDATOR_EXTERNAL_SIGNER_KEYS_RETRY_ENABLED;
     private URL validatorExternalSignerUrl;
     private Optional<String> validatorExternalSignerUserInfo = Optional.empty();
     private int validatorExternalSignerConcurrentRequestLimit =
@@ -430,6 +441,11 @@ public class ValidatorConfig {
         List<String> validatorExternalSignerPublicKeySources) {
       checkNotNull(validatorExternalSignerPublicKeySources);
       this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
+      return this;
+    }
+
+    public Builder validatorExternalSignerPublicKeysRetryEnabled(final boolean enabled) {
+      this.validatorExternalSignerPublicKeysRetryEnabled = enabled;
       return this;
     }
 
@@ -678,6 +694,7 @@ public class ValidatorConfig {
       return new ValidatorConfig(
           validatorKeys,
           validatorExternalSignerPublicKeySources,
+          validatorExternalSignerPublicKeysRetryEnabled,
           validatorExternalSignerUrl,
           validatorExternalSignerUserInfo,
           validatorExternalSignerTimeout,
