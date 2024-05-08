@@ -53,10 +53,10 @@ executors:
       - image: cimg/openjdk:17.0.7
         auth:
           <<: *docker-auth
-    resource_class: large
+    resource_class: xlarge
     working_directory: ~/project
     environment:
-      JAVA_TOOL_OPTIONS: -Xmx4g
+      JAVA_TOOL_OPTIONS: -Xmx8g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   machine_executor_amd64:
