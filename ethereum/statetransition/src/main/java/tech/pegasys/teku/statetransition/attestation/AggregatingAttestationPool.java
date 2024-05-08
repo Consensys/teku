@@ -201,7 +201,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(forkChecker::areAttestationsFromCorrectFork)
         .flatMap(MatchingDataAttestationGroup::stream)
         .map(ValidatableAttestation::getAttestation)
-        .filter(attestation -> attestation.requiresCommitteeBits() != blockRequiresAttestationsWithCommitteeBits)
+        .filter(
+            attestation ->
+                attestation.requiresCommitteeBits() == blockRequiresAttestationsWithCommitteeBits)
         .limit(attestationsSchema.getMaxLength())
         .filter(
             attestation -> {
