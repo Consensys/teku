@@ -168,7 +168,7 @@ public class TransitionCaches {
     return beaconCommittee;
   }
 
-  /** (epoch) -> (size of a beacon committee by index) cache */
+  /** (epoch) -> Map(committeeIndex, size of a committee) */
   public Cache<UInt64, Int2IntMap> getBeaconCommitteesSize() {
     return beaconCommitteesSize;
   }
