@@ -538,7 +538,8 @@ class AggregatingAttestationPoolTest {
       final AttestationData data, final int... validators) {
     final Attestation attestation = createAttestation(data, validators);
     ValidatableAttestation validatableAttestation = ValidatableAttestation.from(spec, attestation);
-    validatableAttestation.saveCommitteeShufflingSeed(dataStructureUtil.randomBeaconState(100, 15));
+    validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(
+        dataStructureUtil.randomBeaconState(100, 15));
     aggregatingPool.add(validatableAttestation);
     return attestation;
   }
