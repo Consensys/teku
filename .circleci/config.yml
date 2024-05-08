@@ -56,7 +56,7 @@ executors:
     resource_class: large
     working_directory: ~/project
     environment:
-      JAVA_TOOL_OPTIONS: -Xmx3g
+      JAVA_TOOL_OPTIONS: -Xmx4g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
   machine_executor_amd64:
