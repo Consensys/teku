@@ -116,6 +116,19 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
 
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
+  void or_shouldThrowIfBitvectorSizeIsSmaller(SszBitvector bitvector) {
+    if (bitvector.getSchema().getMaxLength() == 1) {
+      return;
+    }
+    SszBitvectorSchema<SszBitvector> smallerSchema =
+        SszBitvectorSchema.create(bitvector.getSchema().getMaxLength() - 1);
+    SszBitvector smallerBitvector = smallerSchema.ofBits();
+    assertThatThrownBy(() -> bitvector.or(smallerBitvector))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
   void getBitCount_shouldReturnCorrectCount(SszBitvector bitvector) {
     long bitCount = bitvector.stream().filter(AbstractSszPrimitive::get).count();
     assertThat(bitvector.getBitCount()).isEqualTo(bitCount);

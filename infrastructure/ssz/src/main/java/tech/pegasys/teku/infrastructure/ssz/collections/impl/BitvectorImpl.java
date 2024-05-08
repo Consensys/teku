@@ -77,7 +77,7 @@ class BitvectorImpl {
   }
 
   public BitvectorImpl or(final BitvectorImpl other) {
-    if (other.getSize() > getSize()) {
+    if (other.getSize() != getSize()) {
       throw new IllegalArgumentException(
           "Argument bitfield size is greater: " + other.getSize() + " > " + getSize());
     }
