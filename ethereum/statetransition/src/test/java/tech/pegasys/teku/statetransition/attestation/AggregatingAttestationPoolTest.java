@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {PHASE0})
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
@@ -59,7 +59,7 @@ class AggregatingAttestationPoolTest {
   private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
   private AttestationSchema<?> attestationSchema;
-  private UInt64 committeeIndex;
+  private Optional<UInt64> committeeIndex;
   private final Spec mockSpec = mock(Spec.class);
 
   private AggregatingAttestationPool aggregatingPool =
@@ -76,9 +76,13 @@ class AggregatingAttestationPoolTest {
     dataStructureUtil = specContext.getDataStructureUtil();
 
     if (specMilestone.equals(PHASE0)) {
-      committeeIndex = UInt64.valueOf(dataStructureUtil.randomPositiveInt());
+      committeeIndex = Optional.empty();
     } else {
-      committeeIndex = UInt64.valueOf(1);
+      // TODO we have to test multiple committees when will be supported
+      committeeIndex =
+          Optional.of(
+              dataStructureUtil.randomUInt64(
+                  spec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
     }
 
     when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(true);
@@ -96,7 +100,7 @@ class AggregatingAttestationPoolTest {
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
     final Optional<ValidatableAttestation> result =
         aggregatingPool.createAggregateFor(
-            dataStructureUtil.randomAttestationData().hashTreeRoot(), Optional.of(committeeIndex));
+            dataStructureUtil.randomAttestationData().hashTreeRoot(), committeeIndex);
     assertThat(result).isEmpty();
   }
 
@@ -107,8 +111,7 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
 
     final Optional<ValidatableAttestation> result =
-        aggregatingPool.createAggregateFor(
-            attestationData.hashTreeRoot(), Optional.of(committeeIndex));
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
     assertThat(result.map(ValidatableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
@@ -121,8 +124,7 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
     final Optional<ValidatableAttestation> result =
-        aggregatingPool.createAggregateFor(
-            attestationData.hashTreeRoot(), Optional.of(committeeIndex));
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
     assertThat(result.map(ValidatableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
@@ -475,8 +477,6 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getAttestations_shouldReturnAttestationsForGivenSlotOnly() {
-    // TODO EIP7549 Handle Electra attestations
-    assumeThat(specMilestone).isLessThan(ELECTRA);
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
     final AttestationData attestationData2 =
         new AttestationData(
@@ -554,9 +554,7 @@ class AggregatingAttestationPoolTest {
               attestationSchema
                   .getCommitteeBitsSchema()
                   .orElseThrow()
-                  .ofBits(
-                      dataStructureUtil.randomPositiveInt(
-                          spec.atSlot(data.getSlot()).getConfig().getMaxCommitteesPerSlot()));
+                  .ofBits(committeeIndex.orElseThrow().intValue());
     } else {
       committeeBits = () -> null;
     }
