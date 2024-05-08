@@ -90,7 +90,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public SszBitvector or(SszBitvector other) {
+  public SszBitvector or(final SszBitvector other) {
     return new SszBitvectorImpl(getSchema(), value.or(toBitvectorImpl(other)));
   }
 

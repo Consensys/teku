@@ -81,7 +81,7 @@ class BitvectorImpl {
       throw new IllegalArgumentException(
           "Argument bitfield size is greater: " + other.getSize() + " > " + getSize());
     }
-    BitSet newData = (BitSet) this.data.clone();
+    final BitSet newData = (BitSet) this.data.clone();
     newData.or(other.data);
     return new BitvectorImpl(newData, size);
   }
