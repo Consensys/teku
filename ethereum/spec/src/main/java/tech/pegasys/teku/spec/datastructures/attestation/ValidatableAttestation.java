@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.attestation;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -45,6 +46,7 @@ public class ValidatableAttestation {
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
+  private volatile Optional<Int2IntMap> committeesSize = Optional.empty();
 
   public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
     return new ValidatableAttestation(
@@ -136,6 +138,10 @@ public class ValidatableAttestation {
     return committeeShufflingSeed;
   }
 
+  public Optional<Int2IntMap> getCommitteesSize() {
+    return committeesSize;
+  }
+
   public OptionalInt getReceivedSubnetId() {
     return receivedSubnetId;
   }
@@ -144,17 +150,34 @@ public class ValidatableAttestation {
     this.indexedAttestation = Optional.of(indexedAttestation);
   }
 
-  public void saveCommitteeShufflingSeed(final BeaconState state) {
+  public void saveCommitteeShufflingSeedAndCommitteesSize(final BeaconState state) {
+    saveCommitteeShufflingSeed(state);
+    // The committees size is only required when the committee_bits field is present in the
+    // Attestation
+    if (attestation.getCommitteeBits().isPresent()) {
+      saveCommitteesSize(state);
+    }
+  }
+
+  private void saveCommitteeShufflingSeed(final BeaconState state) {
     if (committeeShufflingSeed.isPresent()) {
       return;
     }
-
     final Bytes32 committeeShufflingSeed =
         spec.getSeed(
             state,
             spec.computeEpochAtSlot(attestation.getData().getSlot()),
             Domain.BEACON_ATTESTER);
     this.committeeShufflingSeed = Optional.of(committeeShufflingSeed);
+  }
+
+  private void saveCommitteesSize(final BeaconState state) {
+    if (committeesSize.isPresent()) {
+      return;
+    }
+    final Int2IntMap committeesSize =
+        spec.getBeaconCommitteesSize(state, attestation.getData().getSlot());
+    this.committeesSize = Optional.of(committeesSize);
   }
 
   public boolean isGossiped() {
@@ -224,6 +247,7 @@ public class ValidatableAttestation {
         .add("isValidIndexedAttestation", isValidIndexedAttestation)
         .add("indexedAttestation", indexedAttestation)
         .add("committeeShufflingSeed", committeeShufflingSeed)
+        .add("committeesSize", committeesSize)
         .add("receivedSubnetId", receivedSubnetId)
         .toString();
   }

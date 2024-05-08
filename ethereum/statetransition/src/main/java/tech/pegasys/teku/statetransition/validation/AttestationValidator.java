@@ -190,7 +190,7 @@ public class AttestationValidator {
 
                         // Save committee shuffling seed since the state is available and
                         // attestation is valid
-                        validatableAttestation.saveCommitteeShufflingSeed(state);
+                        validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                         return InternalValidationResultWithState.accept(state);
                       });
             });

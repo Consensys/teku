@@ -189,7 +189,7 @@ public abstract class AttestationUtil {
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
-                attestation.saveCommitteeShufflingSeed(state);
+                attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 attestation.setValidIndexedAttestation();
               }
               return result;

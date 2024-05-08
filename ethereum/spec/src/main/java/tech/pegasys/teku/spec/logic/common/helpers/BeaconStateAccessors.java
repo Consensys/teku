@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.Optional;
@@ -295,7 +297,7 @@ public abstract class BeaconStateAccessors {
         .getBeaconCommittee()
         .get(
             TekuPair.of(slot, index),
-            p -> {
+            __ -> {
               UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
               UInt64 committeesPerSlot = getCommitteeCountPerSlot(state, epoch);
               int committeeIndex =
@@ -310,6 +312,25 @@ public abstract class BeaconStateAccessors {
                   getSeed(state, epoch, Domain.BEACON_ATTESTER),
                   committeeIndex,
                   count);
+            });
+  }
+
+  public Int2IntMap getBeaconCommitteesSize(final BeaconState state, final UInt64 slot) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBeaconCommitteesSize()
+        .get(
+            epoch,
+            __ -> {
+              final UInt64 committees = getCommitteeCountPerSlot(state, epoch);
+              final Int2IntMap committeesSize = new Int2IntOpenHashMap(committees.intValue());
+              UInt64.range(UInt64.ZERO, committees)
+                  .forEach(
+                      index -> {
+                        final IntList committee = getBeaconCommittee(state, slot, index);
+                        committeesSize.put(index.intValue(), committee.size());
+                      });
+              return committeesSize;
             });
   }
 
