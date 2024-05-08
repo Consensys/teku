@@ -259,7 +259,7 @@ public class BeaconStateMutators {
     int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
 
     final UInt64 whistleblowerReward =
-        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
+        validator.getEffectiveBalance().dividedBy(getWhistleblowerRewardQuotient());
 
     if (whistleblowerIndex == -1) {
       // proposer takes all rewards
