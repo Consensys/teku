@@ -86,4 +86,9 @@ public class AttestationElectra
     return Optional.of(
         getCommitteeBitsRequired().getAllSetBits().intStream().mapToObj(UInt64::valueOf).toList());
   }
+
+  @Override
+  public boolean requiresCommitteeBits() {
+    return true;
+  }
 }

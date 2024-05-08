@@ -83,4 +83,9 @@ public class AttestationElectraSchema
   public Optional<AttestationElectraSchema> toVersionElectra() {
     return Optional.of(this);
   }
+
+  @Override
+  public boolean requiresCommitteeBits() {
+    return true;
+  }
 }

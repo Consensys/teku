@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -177,11 +178,14 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
+    final SchemaDefinitions schemaDefinitions =
+        spec.atSlot(stateAtBlockSlot.getSlot()).getSchemaDefinitions();
+
     final SszListSchema<Attestation, ?> attestationsSchema =
-        spec.atSlot(stateAtBlockSlot.getSlot())
-            .getSchemaDefinitions()
-            .getBeaconBlockBodySchema()
-            .getAttestationsSchema();
+        schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
+
+    final boolean blockRequiresAttestationsWithCommitteeBits =
+        schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
     return dataHashBySlot
@@ -196,11 +200,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
         .flatMap(MatchingDataAttestationGroup::stream)
-        .limit(attestationsSchema.getMaxLength())
         .map(ValidatableAttestation::getAttestation)
+        .filter(attestation -> attestation.requiresCommitteeBits() != blockRequiresAttestationsWithCommitteeBits)
+        .limit(attestationsSchema.getMaxLength())
         .filter(
-            att -> {
-              if (spec.computeEpochAtSlot(att.getData().getSlot()).isLessThan(currentEpoch)) {
+            attestation -> {
+              if (spec.computeEpochAtSlot(attestation.getData().getSlot())
+                  .isLessThan(currentEpoch)) {
                 final int currentCount = prevEpochCount.getAndIncrement();
                 return currentCount < previousEpochLimit;
               }
