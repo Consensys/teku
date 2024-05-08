@@ -76,6 +76,16 @@ class BitvectorImpl {
     return data.stream().boxed().toList();
   }
 
+  public BitvectorImpl or(final BitvectorImpl other) {
+    if (other.getSize() != getSize()) {
+      throw new IllegalArgumentException(
+          "Argument bitfield size is greater: " + other.getSize() + " > " + getSize());
+    }
+    final BitSet newData = (BitSet) this.data.clone();
+    newData.or(other.data);
+    return new BitvectorImpl(newData, size);
+  }
+
   public BitvectorImpl withBit(final int i) {
     checkElementIndex(i, size);
     BitSet newSet = (BitSet) data.clone();
