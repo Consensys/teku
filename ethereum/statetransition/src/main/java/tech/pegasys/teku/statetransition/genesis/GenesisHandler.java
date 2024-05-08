@@ -84,7 +84,8 @@ public class GenesisHandler implements Eth1EventsChannel {
     validateDeposits(depositsWithIndex);
     final int previousValidatorRequirementPercent =
         roundPercent(genesisGenerator.getActiveValidatorCount());
-    List<Deposit> deposits = depositsWithIndex.stream().map(DepositWithIndex::deposit).toList();
+    final List<Deposit> deposits =
+        depositsWithIndex.stream().map(DepositWithIndex::deposit).toList();
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
@@ -119,7 +120,7 @@ public class GenesisHandler implements Eth1EventsChannel {
 
   private void eth2Genesis(final BeaconState genesisState) {
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
-    Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(), genesisBlockRoot, genesisState.getGenesisTime());
   }
