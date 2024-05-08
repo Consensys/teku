@@ -214,15 +214,16 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
       nextDepositIndex++;
     }
 
-    if (pendingBalanceDeposits.size() >= nextDepositIndex) {
-      stateElectra.setPendingBalanceDeposits(
-          schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(List.of()));
-      stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
-    } else {
+    if (!pendingBalanceDeposits.isEmpty()) {
       final List<PendingBalanceDeposit> newList =
           pendingBalanceDeposits.asList().subList(nextDepositIndex, pendingBalanceDeposits.size());
       stateElectra.setPendingBalanceDeposits(
           schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(newList));
+      stateElectra.setDepositBalanceToConsume(availableForProcessing.minusMinZero(processedAmount));
+    }
+    if (stateElectra.getPendingBalanceDeposits().isEmpty()) {
+      stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
+    } else {
       stateElectra.setDepositBalanceToConsume(availableForProcessing.minusMinZero(processedAmount));
     }
   }
@@ -263,7 +264,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
       nextPendingBalanceConsolidation++;
     }
-    if (pendingConsolidations.size() >= nextPendingBalanceConsolidation) {
+    if (pendingConsolidations.size() <= nextPendingBalanceConsolidation) {
       stateElectra.setPendingConsolidations(
           schemaDefinitionsElectra.getPendingConsolidationsSchema().createFromElements(List.of()));
     } else {
