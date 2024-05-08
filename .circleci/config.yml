@@ -59,6 +59,17 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx3g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
 
+  ref_test_compiling_executor:
+    docker:
+      - image: cimg/openjdk:17.0.11
+        auth:
+          <<: *docker-auth
+    resource_class: large
+    working_directory: ~/project
+    environment:
+      JAVA_TOOL_OPTIONS: -Xmx2g
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
+
   machine_executor_amd64:
     machine:
       image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
@@ -359,7 +370,7 @@ jobs:
           path: build/test-results
 
   referenceTestsPrep:
-    executor: large_executor
+    executor: ref_test_compiling_executor
     steps:
       - prepare
       - attach_workspace:
