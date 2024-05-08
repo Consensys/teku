@@ -115,7 +115,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * Iterates through the aggregation of attestations in this group. The iterator attempts to create
    * the minimum number of attestations that include all attestations in the group.
    *
-   * <p>committeeIndex is an optional field that enables aggregation over a specified committee
+   * <p>committeeIndex is an optional parameter that enables aggregation over a specified committee
    * (applies to Electra only)
    *
    * <p>While it is guaranteed that every validator from an attestation in this group is included in

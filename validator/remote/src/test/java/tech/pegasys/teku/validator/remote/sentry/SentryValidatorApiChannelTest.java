@@ -185,7 +185,7 @@ class SentryValidatorApiChannelTest {
     sentryValidatorApiChannel.createAggregate(UInt64.ZERO, Bytes32.ZERO, Optional.of(ONE));
 
     verify(dutiesProviderChannel)
-        .createAggregate(eq(UInt64.ZERO), eq(Bytes32.ZERO), Optional.of(ONE));
+        .createAggregate(eq(UInt64.ZERO), eq(Bytes32.ZERO), eq(Optional.of(ONE)));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
