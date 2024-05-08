@@ -20,11 +20,14 @@ import java.util.Iterator;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -112,6 +115,9 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * Iterates through the aggregation of attestations in this group. The iterator attempts to create
    * the minimum number of attestations that include all attestations in the group.
    *
+   * <p>committeeIndex is an optional field that enables aggregation over a specified committee
+   * (applies to Electra only)
+   *
    * <p>While it is guaranteed that every validator from an attestation in this group is included in
    * an aggregate produced by this iterator, there is no guarantee that the added attestation
    * instances themselves will be included.
@@ -120,11 +126,23 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    */
   @Override
   public Iterator<ValidatableAttestation> iterator() {
-    return new AggregatingIterator();
+    return new AggregatingIterator(Optional.empty());
+  }
+
+  public Iterator<ValidatableAttestation> iterator(final Optional<UInt64> committeeIndex) {
+    return new AggregatingIterator(committeeIndex);
   }
 
   public Stream<ValidatableAttestation> stream() {
-    return StreamSupport.stream(spliterator(), false);
+    return StreamSupport.stream(spliterator(Optional.empty()), false);
+  }
+
+  public Stream<ValidatableAttestation> stream(final Optional<UInt64> committeeIndex) {
+    return StreamSupport.stream(spliterator(committeeIndex), false);
+  }
+
+  public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
+    return Spliterators.spliteratorUnknownSize(iterator(committeeIndex), 0);
   }
 
   /**
@@ -200,6 +218,11 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
     private SszBitlist includedValidators = MatchingDataAttestationGroup.this.includedValidators;
+    private final Optional<UInt64> maybeCommitteeIndex;
+
+    private AggregatingIterator(final Optional<UInt64> committeeIndex) {
+      this.maybeCommitteeIndex = committeeIndex;
+    }
 
     @Override
     public boolean hasNext() {
@@ -226,10 +249,32 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     public Stream<ValidatableAttestation> streamRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
+          .filter(this::maybeFilterOnCommitteeIndex)
           .filter(
               candidate ->
                   !includedValidators.isSuperSetOf(
                       candidate.getAttestation().getAggregationBits()));
+    }
+
+    /*
+    If we have attestations with committeeBits (Electra) then, if maybeCommitteeIndex is specified, we will consider attestation related to that committee only
+     */
+    private boolean maybeFilterOnCommitteeIndex(ValidatableAttestation candidate) {
+      final Optional<SszBitvector> maybeCommitteeBits =
+          candidate.getAttestation().getCommitteeBits();
+      if (maybeCommitteeBits.isEmpty()) {
+        return true;
+      }
+      return maybeCommitteeIndex
+          .map(
+              committeeIndex -> {
+                final SszBitvector committeeBits = maybeCommitteeBits.orElseThrow();
+                if (committeeBits.getBitCount() != 1) {
+                  return false;
+                }
+                return committeeBits.isSet(committeeIndex.intValue());
+              })
+          .orElse(true);
     }
   }
 }

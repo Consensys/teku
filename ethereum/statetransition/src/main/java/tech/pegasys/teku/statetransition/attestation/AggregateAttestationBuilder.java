@@ -18,9 +18,13 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -62,19 +66,43 @@ class AggregateAttestationBuilder {
 
   public ValidatableAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
+    final SpecVersion specVersion = spec.atSlot(attestationData.getSlot());
+    final Supplier<SszBitvector> committeeBitsSupplier = buildCommitteeBitsSupplier(specVersion);
     return ValidatableAttestation.from(
         spec,
-        spec.atSlot(attestationData.getSlot())
+        specVersion
             .getSchemaDefinitions()
             .getAttestationSchema()
             .create(
                 currentAggregateBits,
                 attestationData,
+                committeeBitsSupplier,
                 BLS.aggregate(
                     includedAttestations.stream()
                         .map(ValidatableAttestation::getAttestation)
                         .map(Attestation::getAggregateSignature)
                         .toList())));
+  }
+
+  /*
+  TODO Electra, we currently assume we aggregate attestations having the same committee bits
+   */
+  private Supplier<SszBitvector> buildCommitteeBitsSupplier(final SpecVersion specVersion) {
+    final Supplier<SszBitvector> committeeBitsSupplier;
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      committeeBitsSupplier =
+          () ->
+              includedAttestations.stream()
+                  .map(
+                      includedAttestation ->
+                          includedAttestation.getAttestation().getCommitteeBitsRequired())
+                  .findFirst()
+                  .orElseThrow(
+                      () -> new IllegalArgumentException("Error while aggregating committee bit"));
+    } else {
+      committeeBitsSupplier = () -> null;
+    }
+    return committeeBitsSupplier;
   }
 
   public Collection<ValidatableAttestation> getIncludedAttestations() {

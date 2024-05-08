@@ -214,6 +214,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
+    // TODO fix for electra
     final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
         (group) ->
             maybeCommitteeIndex
@@ -238,9 +239,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized Optional<ValidatableAttestation> createAggregateFor(
-      final Bytes32 attestationHashTreeRoot) {
+      final Bytes32 attestationHashTreeRoot, final Optional<UInt64> committeeIndex) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
-        .flatMap(attestations -> attestations.stream().findFirst());
+        .flatMap(attestations -> attestations.stream(committeeIndex).findFirst());
   }
 
   public synchronized void onReorg(final UInt64 commonAncestorSlot) {
