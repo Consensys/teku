@@ -50,7 +50,7 @@ executors:
 
   large_executor:
     docker:
-      - image: cimg/openjdk:21.0.2
+      - image: cimg/openjdk:17.0.7
         auth:
           <<: *docker-auth
     resource_class: large
