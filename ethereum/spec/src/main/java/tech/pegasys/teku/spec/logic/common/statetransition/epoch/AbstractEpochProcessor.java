@@ -479,7 +479,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     return specConfig.getMaxEffectiveBalance();
   }
 
-  private boolean shouldIncreaseEffectiveBalance(
+  protected boolean shouldIncreaseEffectiveBalance(
       final UInt64 balance,
       final UInt64 hysteresisIncrement,
       final UInt64 currentEffectiveBalance,
@@ -492,7 +492,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         && currentEffectiveBalance.plus(upwardThreshold).isLessThan(balance);
   }
 
-  private boolean shouldDecreaseEffectiveBalance(
+  protected boolean shouldDecreaseEffectiveBalance(
       final UInt64 balance,
       final UInt64 hysteresisIncrement,
       final UInt64 currentEffectiveBalance,
