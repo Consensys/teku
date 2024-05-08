@@ -141,10 +141,10 @@ public class BeaconRestApiTypes {
           SIGNATURE_TYPE.withDescription(
               "`BLSSignature Hex` BLS12-381 signature for the current epoch."));
 
-  public static final ParameterMetadata<Boolean> SKIP_RANDAO_VERIFICATION_PARAMETER =
+  public static final ParameterMetadata<String> SKIP_RANDAO_VERIFICATION_PARAMETER =
       new ParameterMetadata<>(
           RestApiConstants.SKIP_RANDAO_VERIFICATION,
-          BOOLEAN_TYPE.withDescription(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION));
+          CoreTypes.string(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION, "true"));
 
   public static final ParameterMetadata<UInt64> BUILDER_BOOST_FACTOR_PARAMETER =
       new ParameterMetadata<>(
