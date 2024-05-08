@@ -335,7 +335,9 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     return sendRequest(
         () ->
             apiClient

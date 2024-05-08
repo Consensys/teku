@@ -1846,6 +1846,13 @@ public final class DataStructureUtil {
         .build();
   }
 
+  public BeaconState randomBeaconState(
+      final int validatorCount, final int numItemsInSSZLists, final UInt64 slot) {
+    return stateBuilder(spec.getGenesisSpec().getMilestone(), validatorCount, numItemsInSSZLists)
+        .slot(slot)
+        .build();
+  }
+
   public AbstractBeaconStateBuilder<
           ? extends BeaconState,
           ? extends MutableBeaconState,

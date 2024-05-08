@@ -14,11 +14,14 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.ATTESTATION_RETENTION_SLOTS;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
@@ -26,15 +29,19 @@ import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggre
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -43,14 +50,16 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttestationSchema<?> attestationSchema =
-      spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  private Spec spec;
+  private SpecMilestone specMilestone;
+  private DataStructureUtil dataStructureUtil;
+  private AttestationSchema<?> attestationSchema;
+  private Optional<UInt64> committeeIndex;
   private final Spec mockSpec = mock(Spec.class);
 
   private AggregatingAttestationPool aggregatingPool =
@@ -60,7 +69,22 @@ class AggregatingAttestationPoolTest {
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
   @BeforeEach
-  public void setUp() {
+  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
+    attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    dataStructureUtil = specContext.getDataStructureUtil();
+
+    if (specMilestone.equals(PHASE0)) {
+      committeeIndex = Optional.empty();
+    } else {
+      // TODO we have to test multiple committees when will be supported
+      committeeIndex =
+          Optional.of(
+              dataStructureUtil.randomUInt64(
+                  spec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
+    }
+
     when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(true);
     when(mockSpec.getPreviousEpochAttestationCapacity(any())).thenReturn(Integer.MAX_VALUE);
     // Fwd some calls to the real spec
@@ -72,27 +96,27 @@ class AggregatingAttestationPoolTest {
     when(mockSpec.atSlot(any())).thenAnswer(invocation -> spec.atSlot(invocation.getArgument(0)));
   }
 
-  @Test
+  @TestTemplate
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
     final Optional<ValidatableAttestation> result =
         aggregatingPool.createAggregateFor(
-            dataStructureUtil.randomAttestationData().hashTreeRoot());
+            dataStructureUtil.randomAttestationData().hashTreeRoot(), committeeIndex);
     assertThat(result).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void createAggregateFor_shouldAggregateAttestationsWithMatchingData() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
 
     final Optional<ValidatableAttestation> result =
-        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
     assertThat(result.map(ValidatableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
 
-  @Test
+  @TestTemplate
   public void createAggregateFor_shouldReturnBestAggregateForMatchingDataWhenSomeOverlap() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5, 7);
@@ -100,12 +124,12 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
     final Optional<ValidatableAttestation> result =
-        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
     assertThat(result.map(ValidatableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
 
-  @Test
+  @TestTemplate
   public void getAttestationsForBlock_shouldReturnEmptyListWhenNoAttestationsAvailable() {
     when(mockSpec.validateAttestation(any(), any())).thenReturn(Optional.empty());
 
@@ -114,7 +138,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker)).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void getAttestationsForBlock_shouldNotIncludeAttestationsWhereDataDoesNotValidate() {
     addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 1);
     addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 2);
@@ -128,7 +152,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker)).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   void getAttestationsForBlock_shouldNotThrowExceptionWhenShufflingSeedIsUnknown() {
     final Attestation attestation = dataStructureUtil.randomAttestation(1);
     // Receive the attestation from a block, prior to receiving it via gossip
@@ -146,7 +170,7 @@ class AggregatingAttestationPoolTest {
     assertThat(result).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void getAttestationsForBlock_shouldIncludeAttestationsThatPassValidation() {
     final Attestation attestation1 =
         addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 1);
@@ -165,7 +189,7 @@ class AggregatingAttestationPoolTest {
         .containsExactlyInAnyOrder(attestation2, attestation3);
   }
 
-  @Test
+  @TestTemplate
   public void getAttestationsForBlock_shouldAggregateAttestationsWhenPossible() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
@@ -177,7 +201,7 @@ class AggregatingAttestationPoolTest {
         .containsExactly(aggregateAttestations(attestation1, attestation2));
   }
 
-  @Test
+  @TestTemplate
   public void getAttestationsForBlock_shouldIncludeAttestationsWithDifferentData() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
@@ -191,7 +215,7 @@ class AggregatingAttestationPoolTest {
         .containsExactlyInAnyOrder(aggregateAttestations(attestation1, attestation2), attestation3);
   }
 
-  @Test
+  @TestTemplate
   void getAttestationsForBlock_shouldIncludeMoreRecentAttestationsFirst() {
     final AttestationData attestationData1 =
         dataStructureUtil.randomAttestationData(UInt64.valueOf(5));
@@ -209,7 +233,7 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation3, attestation2, attestation1);
   }
 
-  @Test
+  @TestTemplate
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
     final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
@@ -222,17 +246,17 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation1, attestation2);
   }
 
-  @Test
+  @TestTemplate
   void getAttestationsForBlock_shouldLimitPreviousEpochAttestations_capacityOf2() {
     testPrevEpochLimits(2);
   }
 
-  @Test
+  @TestTemplate
   void getAttestationsForBlock_shouldLimitPreviousEpochAttestations_capacityOf1() {
     testPrevEpochLimits(1);
   }
 
-  @Test
+  @TestTemplate
   void getAttestationsForBlock_shouldLimitPreviousEpochAttestations_capacityOf0() {
     testPrevEpochLimits(0);
   }
@@ -241,7 +265,15 @@ class AggregatingAttestationPoolTest {
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 startSlotAtCurrentEpoch = spec.computeStartSlotAtEpoch(currentEpoch);
     final BeaconState stateAtBlockSlot =
-        dataStructureUtil.stateBuilderPhase0(10, 20).slot(startSlotAtCurrentEpoch.plus(5)).build();
+        specMilestone.isGreaterThanOrEqualTo(ELECTRA)
+            ? dataStructureUtil
+                .stateBuilderElectra(10, 20)
+                .slot(startSlotAtCurrentEpoch.plus(5))
+                .build()
+            : dataStructureUtil
+                .stateBuilderPhase0(10, 20)
+                .slot(startSlotAtCurrentEpoch.plus(5))
+                .build();
     when(mockSpec.getPreviousEpochAttestationCapacity(stateAtBlockSlot))
         .thenReturn(prevEpochCapacity);
 
@@ -264,7 +296,7 @@ class AggregatingAttestationPoolTest {
         .containsExactlyElementsOf(expectedAttestations);
   }
 
-  @Test
+  @TestTemplate
   public void onSlot_shouldPruneAttestationsMoreThanTwoEpochsBehindCurrentSlot() {
     final AttestationData pruneAttestationData = dataStructureUtil.randomAttestationData(SLOT);
     final AttestationData preserveAttestationData =
@@ -284,7 +316,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
-  @Test
+  @TestTemplate
   public void getSize_shouldIncludeAttestationsAdded() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
@@ -293,7 +325,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
   }
 
-  @Test
+  @TestTemplate
   public void getSize_shouldDecreaseWhenAttestationsRemoved() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
@@ -302,7 +334,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
-  @Test
+  @TestTemplate
   public void getSize_shouldNotIncrementWhenAttestationAlreadyExists() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
@@ -311,7 +343,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
-  @Test
+  @TestTemplate
   public void getSize_shouldDecrementForAllRemovedAttestations() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     addAttestationFromValidators(attestationData, 1, 2, 3);
@@ -323,7 +355,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(0);
   }
 
-  @Test
+  @TestTemplate
   public void getSize_shouldAddTheRightData() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
@@ -334,7 +366,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
   }
 
-  @Test
+  @TestTemplate
   public void getSize_shouldDecrementForAllRemovedAttestationsWhileKeepingOthers() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
@@ -351,7 +383,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
   }
 
-  @Test
+  @TestTemplate
   void shouldRemoveOldSlotsWhenMaximumNumberOfAttestationsReached() {
     aggregatingPool = new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem(), 5);
     final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
@@ -375,7 +407,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker)).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   void shouldNotRemoveLastSlotEvenWhenMaximumNumberOfAttestationsReached() {
     aggregatingPool = new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem(), 5);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
@@ -395,7 +427,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(6);
   }
 
-  @Test
+  @TestTemplate
   public void getAttestationsForBlock_shouldNotAddAttestationsFromWrongFork() {
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ZERO);
     final AttestationData attestationData2 = dataStructureUtil.randomAttestationData(ZERO);
@@ -413,16 +445,20 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation2);
   }
 
-  @Test
+  @TestTemplate
   public void getAttestations_shouldReturnAllAttestations() {
+    // TODO EIP7549 Handle Electra attestations
+    assumeThat(specMilestone).isLessThan(ELECTRA);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3);
     assertThat(aggregatingPool.getAttestations(Optional.empty(), Optional.empty()))
         .containsExactly(attestation);
   }
 
-  @Test
+  @TestTemplate
   public void getAttestations_shouldReturnAttestationsForGivenCommitteeIndexOnly() {
+    // TODO EIP7549 Handle Electra attestations
+    assumeThat(specMilestone).isLessThan(ELECTRA);
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
     final AttestationData attestationData2 =
         new AttestationData(
@@ -439,7 +475,7 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation1);
   }
 
-  @Test
+  @TestTemplate
   public void getAttestations_shouldReturnAttestationsForGivenSlotOnly() {
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
     final AttestationData attestationData2 =
@@ -457,7 +493,7 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation1);
   }
 
-  @Test
+  @TestTemplate
   void onAttestationsIncludedInBlock_shouldNotAddAttestationsAlreadySeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     // Included in block before we see any attestations with this data
@@ -469,7 +505,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isZero();
   }
 
-  @Test
+  @TestTemplate
   void onAttestationsIncludedInBlock_shouldRemoveAttestationsWhenSeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 2, 3);
@@ -480,7 +516,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isZero();
   }
 
-  @Test
+  @TestTemplate
   void onReorg_shouldBeAbleToReadAttestations() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     // Included in block before we see any attestations with this data
@@ -503,13 +539,27 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation = createAttestation(data, validators);
     ValidatableAttestation validatableAttestation = ValidatableAttestation.from(spec, attestation);
     validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(
-        dataStructureUtil.randomBeaconState(100, 15));
+        dataStructureUtil.randomBeaconState(100, 15, data.getSlot()));
     aggregatingPool.add(validatableAttestation);
     return attestation;
   }
 
   private Attestation createAttestation(final AttestationData data, final int... validators) {
     final SszBitlist bitlist = attestationSchema.getAggregationBitsSchema().ofBits(20, validators);
-    return attestationSchema.create(bitlist, data, dataStructureUtil.randomSignature());
+
+    final Supplier<SszBitvector> committeeBits;
+
+    if (spec.atSlot(data.getSlot()).getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
+      committeeBits =
+          () ->
+              attestationSchema
+                  .getCommitteeBitsSchema()
+                  .orElseThrow()
+                  .ofBits(committeeIndex.orElseThrow().intValue());
+    } else {
+      committeeBits = () -> null;
+    }
+    return attestationSchema.create(
+        bitlist, data, committeeBits, dataStructureUtil.randomSignature());
   }
 }

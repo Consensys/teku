@@ -205,7 +205,8 @@ class MetricRecordingValidatorApiChannelTest {
         requestDataTest(
             "createAggregate",
             channel ->
-                channel.createAggregate(attestationData.getSlot(), attestationData.hashTreeRoot()),
+                channel.createAggregate(
+                    attestationData.getSlot(), attestationData.hashTreeRoot(), Optional.empty()),
             BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD,
             dataStructureUtil.randomAttestation()),
         requestDataTest(

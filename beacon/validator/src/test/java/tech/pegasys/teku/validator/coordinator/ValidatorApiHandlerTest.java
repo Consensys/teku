@@ -691,7 +691,7 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createAggregate(
-            ONE, dataStructureUtil.randomAttestationData().hashTreeRoot());
+            ONE, dataStructureUtil.randomAttestationData().hashTreeRoot(), Optional.empty());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -712,12 +712,15 @@ class ValidatorApiHandlerTest {
   public void createAggregate_shouldReturnAggregateFromAttestationPool() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
-    when(attestationPool.createAggregateFor(eq(attestationData.hashTreeRoot())))
+    when(attestationPool.createAggregateFor(
+            eq(attestationData.hashTreeRoot()), eq(Optional.empty())))
         .thenReturn(aggregate.map(attestation -> ValidatableAttestation.from(spec, attestation)));
 
     assertThat(
             validatorApiHandler.createAggregate(
-                aggregate.get().getData().getSlot(), attestationData.hashTreeRoot()))
+                aggregate.get().getData().getSlot(),
+                attestationData.hashTreeRoot(),
+                Optional.empty()))
         .isCompletedWithValue(aggregate);
   }
 
