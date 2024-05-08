@@ -697,7 +697,7 @@ class FailoverValidatorApiHandlerTest {
             Optional.of(mock(AttestationData.class))),
         getArguments(
             "createAggregate",
-            apiChannel -> apiChannel.createAggregate(slot, randomBytes32),
+            apiChannel -> apiChannel.createAggregate(slot, randomBytes32, Optional.empty()),
             BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD,
             Optional.of(attestation)),
         getArguments(

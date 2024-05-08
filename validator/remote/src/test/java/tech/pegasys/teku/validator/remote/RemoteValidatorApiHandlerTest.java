@@ -603,7 +603,8 @@ class RemoteValidatorApiHandlerTest {
 
     when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot))).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
+    SafeFuture<Optional<Attestation>> future =
+        apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -620,7 +621,8 @@ class RemoteValidatorApiHandlerTest {
     when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot)))
         .thenReturn(Optional.of(schemaAttestation));
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
+    SafeFuture<Optional<Attestation>> future =
+        apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
   }
