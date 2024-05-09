@@ -135,7 +135,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
    *     href="https://eips.ethereum.org/EIPS/eip-7549">EIP-7549</a>
    */
   private MatchingDataAttestationGroup getOrCreateAttestationGroup(
-      final AttestationData attestationData, Supplier<Int2IntMap> committeesSizeSupplier) {
+      final AttestationData attestationData, final Supplier<Int2IntMap> committeesSizeSupplier) {
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(attestationData.hashTreeRoot());
