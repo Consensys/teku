@@ -118,7 +118,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int peerRateLimit,
       final int peerRequestLimit,
       final Spec spec,
-      final KZG kzg) {
+      final KZG kzg,
+      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
 
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(
@@ -142,7 +143,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             requiredCheckpoint,
             peerRateLimit,
             peerRequestLimit,
-            kzg),
+            kzg,
+            discoveryNodeIdExtractor),
         statusMessageFactory,
         metadataMessagesFactory,
         rpcEncoding,

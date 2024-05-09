@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -35,6 +36,10 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
+
+  public Bytes convertPublicKeyToNodeId(Bytes publicKey) {
+    return new NodeRecordBuilder().publicKey(publicKey).build().getNodeId();
+  }
 
   public Optional<DiscoveryPeer> convertToDiscoveryPeer(
       final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
@@ -71,6 +76,7 @@ public class NodeRecordConverter {
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
+        nodeRecord.getNodeId(),
         address,
         enrForkId,
         persistentAttestationSubnets,

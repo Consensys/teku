@@ -14,10 +14,11 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import java.util.function.IntUnaryOperator;
+
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 /** Scores peers higher if they are tracking subnets that are not tracked by other peers. */
@@ -54,7 +55,7 @@ public class SubnetScorer implements PeerScorer {
         candidate.getPersistentAttestationSubnets(),
         candidate.getSyncCommitteeSubnets(),
         peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
-            MultiaddrUtil.getNodeId(candidate), candidate.getDasExtraCustodySubnetCount()));
+            UInt256.fromBytes(candidate.getNodeId()), candidate.getDasExtraCustodySubnetCount()));
   }
 
   //  @Override

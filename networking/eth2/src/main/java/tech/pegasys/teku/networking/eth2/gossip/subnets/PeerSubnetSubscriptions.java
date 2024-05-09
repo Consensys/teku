@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -205,7 +207,7 @@ public class PeerSubnetSubscriptions {
   }
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
-      final NodeId peerId, final int extraSubnetCount) {
+      final UInt256 peerId, final int extraSubnetCount) {
     return nodeIdToDataColumnSidecarSubnetsCalculator
         .calculateSubnets(peerId, extraSubnetCount)
         .orElse(dataColumnSidecarSubnetSubscriptions.getSubscriptionSchema().getDefault());

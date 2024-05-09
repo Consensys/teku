@@ -23,7 +23,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import io.libp2p.core.crypto.PubKey;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopic
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.peers.DiscoveryNodeIdExtractor;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -57,8 +61,10 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPeer;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -143,6 +149,17 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService dataColumnSidecarSubnetService =
         new SubnetSubscriptionService();
+
+    // TODO a bit hacky solution, subject to be refactored
+    DiscoveryNodeIdExtractor discoveryNodeIdExtractor =
+        peer -> {
+          LibP2PPeer libP2PPeer = (LibP2PPeer) peer;
+          PubKey libP2PPubKey = libP2PPeer.getPubKey();
+          Bytes discoveryNodeIdBytes = DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER.convertPublicKeyToNodeId(
+              Bytes.wrap(libP2PPubKey.raw()));
+          return UInt256.fromBytes(discoveryNodeIdBytes);
+        };
+
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
     if (statusMessageFactory == null) {
@@ -165,7 +182,8 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRateLimit(),
             config.getPeerRequestLimit(),
             spec,
-            kzg);
+            kzg,
+            discoveryNodeIdExtractor);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);

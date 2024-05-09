@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 @FunctionalInterface
 public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
-  Optional<SszBitvector> calculateSubnets(NodeId nodeId, int extraSubnetCount);
+  Optional<SszBitvector> calculateSubnets(UInt256 nodeId, int extraSubnetCount);
 
   NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, extraSubnetCount) -> Optional.empty();
 
@@ -43,7 +43,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
     return (nodeId, extraSubnetCount) -> {
       List<UInt64> nodeSubnets =
           miscHelpers.computeDataColumnSidecarBackboneSubnets(
-              UInt256.fromBytes(nodeId.toBytes()),
+              nodeId,
               currentEpoch,
               config.getCustodyRequirement() + extraSubnetCount);
       return Optional.of(

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -43,6 +44,7 @@ public interface Eth2Peer extends Peer, SyncSource {
   static Eth2Peer create(
       final Spec spec,
       final Peer peer,
+      final UInt256 discoveryNodeId,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
@@ -55,6 +57,7 @@ public interface Eth2Peer extends Peer, SyncSource {
     return new DefaultEth2Peer(
         spec,
         peer,
+        discoveryNodeId,
         rpcMethods,
         statusMessageFactory,
         metadataMessagesFactory,
@@ -134,6 +137,8 @@ public interface Eth2Peer extends Peer, SyncSource {
   SafeFuture<UInt64> sendPing();
 
   int getUnansweredPingCount();
+
+  UInt256 getDiscoveryNodeId();
 
   interface PeerStatusSubscriber {
     void onPeerStatus(final PeerStatus initialStatus);
