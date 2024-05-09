@@ -50,7 +50,7 @@ class AttestationBitsCalculatorElectra implements AttestationBitsCalculator {
 
   @Override
   public void aggregateWith(Attestation other) {
-    // assumption is
+    // assumes can aggregate refuses non-overlapping committees
     aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
 
@@ -62,7 +62,7 @@ class AttestationBitsCalculatorElectra implements AttestationBitsCalculator {
       return aggregationBits.isSuperSetOf(other.getAggregationBits());
     }
 
-    // we default to false, so we wont discard any potential attestations.
+    // we default to false, so we won't discard any potential attestations
     return false;
   }
 
@@ -72,7 +72,7 @@ class AttestationBitsCalculatorElectra implements AttestationBitsCalculator {
 
     // this is equivalent to intersect TODO: implement intersect in Bitvector
     final IntList committeeSetBits = committeeBits.getAllSetBits();
-    committeeSetBits.retainAll(other.getCommitteeBitsRequired().getAllSetBits());
+    committeeSetBits.removeAll(other.getCommitteeBitsRequired().getAllSetBits());
 
     return committeeSetBits.isEmpty() && !aggregationBits.intersects(other.getAggregationBits());
   }

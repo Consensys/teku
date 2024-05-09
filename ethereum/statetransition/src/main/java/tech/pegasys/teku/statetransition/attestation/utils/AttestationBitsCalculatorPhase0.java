@@ -67,6 +67,6 @@ class AttestationBitsCalculatorPhase0 implements AttestationBitsCalculator {
 
   @Override
   public boolean requiresCommitteeBits() {
-    return true;
+    return false;
   }
 }
