@@ -430,6 +430,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public long getAvailableDataColumnSidecarsRequestCount() {
+    return dataColumnSidecarsRequestTracker.getAvailableObjectCount();
+  }
+
+  @Override
   public Optional<RequestApproval> approveDataColumnSidecarsRequest(
       final ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount) {
     return approveObjectsRequest(

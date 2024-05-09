@@ -126,6 +126,8 @@ public interface Eth2Peer extends Peer, SyncSource {
   void adjustBlobSidecarsRequest(
       RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
 
+  long getAvailableDataColumnSidecarsRequestCount();
+
   Optional<RequestApproval> approveDataColumnSidecarsRequest(
       ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount);
 

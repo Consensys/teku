@@ -29,12 +29,19 @@ public interface RateTracker {
             RequestApproval requestApproval, long returnedObjectsCount) {}
 
         @Override
+        public long getAvailableObjectCount() {
+          return 0;
+        }
+
+        @Override
         public void pruneRequests() {}
       };
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
   Optional<RequestApproval> approveObjectsRequest(long objectsCount);
+
+  long getAvailableObjectCount();
 
   void adjustObjectsRequest(RequestApproval requestApproval, long returnedObjectsCount);
 

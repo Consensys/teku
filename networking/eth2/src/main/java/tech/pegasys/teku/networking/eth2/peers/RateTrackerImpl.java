@@ -58,6 +58,12 @@ public class RateTrackerImpl implements RateTracker {
   }
 
   @Override
+  public long getAvailableObjectCount() {
+    pruneRequests();
+    return peerRateLimit - objectsWithinWindow;
+  }
+
+  @Override
   public synchronized void adjustObjectsRequest(
       final RequestApproval requestApproval, final long returnedObjectsCount) {
     pruneRequests();
