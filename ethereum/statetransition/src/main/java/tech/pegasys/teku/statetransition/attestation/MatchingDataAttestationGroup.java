@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsCalculator;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -69,10 +71,11 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * <p>Pruning isn't required for this map because the entire attestation group is dropped by
    * {@link AggregatingAttestationPool} once it is too old to be included in blocks (32 slots).
    */
-  private final NavigableMap<UInt64, SszBitlist> includedValidatorsBySlot = new TreeMap<>();
+  private final NavigableMap<UInt64, AttestationBitsCalculator> includedValidatorsBySlot =
+      new TreeMap<>();
 
   /** Precalculated combined list of included validators across all blocks. */
-  private SszBitlist includedValidators;
+  private AttestationBitsCalculator includedValidators;
 
   public MatchingDataAttestationGroup(
       final Spec spec,
@@ -80,14 +83,13 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       @SuppressWarnings("unused") final Supplier<Int2IntMap> commiteesSizeSupplier) {
     this.spec = spec;
     this.attestationData = attestationData;
-    this.includedValidators = createEmptyAggregationBits();
+    this.includedValidators = createEmptyAttestationBits();
   }
 
-  private SszBitlist createEmptyAggregationBits() {
-    return spec.atSlot(attestationData.getSlot())
-        .getSchemaDefinitions()
-        .getAttestationSchema()
-        .createEmptyAggregationBits();
+  private AttestationBitsCalculator createEmptyAttestationBits() {
+    return AttestationBitsCalculator.fromEmptyFromAttestationSchema(
+        spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema(),
+        Int2IntOpenHashMap::new);
   }
 
   public AttestationData getAttestationData() {
@@ -102,7 +104,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidatableAttestation attestation) {
-    if (includedValidators.isSuperSetOf(attestation.getAttestation().getAggregationBits())) {
+    if (includedValidators.supersedes(attestation.getAttestation())) {
       // All attestation bits have already been included on chain
       return false;
     }
@@ -174,13 +176,21 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   public int onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     // Record validators in attestation as seen in this slot
     // Important to do even if the attestation is redundant so we handle re-orgs correctly
-    includedValidatorsBySlot.merge(slot, attestation.getAggregationBits(), SszBitlist::or);
+    includedValidatorsBySlot.compute(
+        slot,
+        (__, attestationBitsCalculator) -> {
+          if (attestationBitsCalculator == null) {
+            return AttestationBitsCalculator.of(attestation, Int2IntOpenHashMap::new);
+          }
+          attestationBitsCalculator.aggregateWith(attestation);
+          return attestationBitsCalculator;
+        });
 
-    if (includedValidators.isSuperSetOf(attestation.getAggregationBits())) {
+    if (includedValidators.supersedes(attestation)) {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    includedValidators = includedValidators.or(attestation.getAggregationBits());
+    includedValidators.aggregateWith(attestation);
 
     final Collection<Set<ValidatableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
@@ -190,7 +200,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       for (Iterator<ValidatableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidatableAttestation candidate = iterator.next();
-        if (includedValidators.isSuperSetOf(candidate.getAttestation().getAggregationBits())) {
+        if (includedValidators.supersedes(candidate.getAttestation())) {
           iterator.remove();
           numRemoved++;
         }
@@ -203,7 +213,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   }
 
   public void onReorg(final UInt64 commonAncestorSlot) {
-    final NavigableMap<UInt64, SszBitlist> removedSlots =
+    final NavigableMap<UInt64, AttestationBitsCalculator> removedSlots =
         includedValidatorsBySlot.tailMap(commonAncestorSlot, false);
     if (removedSlots.isEmpty()) {
       // No relevant attestations in affected slots, so nothing to do.
@@ -212,9 +222,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     removedSlots.clear();
     // Recalculate totalSeenAggregationBits as validators may have been seen in multiple blocks so
     // can't do a simple remove
-    includedValidators =
-        includedValidatorsBySlot.values().stream()
-            .reduce(createEmptyAggregationBits(), SszBitlist::or);
+    includedValidators = createEmptyAttestationBits();
+    includedValidatorsBySlot.values().forEach(includedValidators::aggregateWith);
   }
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
@@ -222,7 +231,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   }
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
-    private SszBitlist includedValidators = MatchingDataAttestationGroup.this.includedValidators;
+    private final AttestationBitsCalculator includedValidators =
+        AttestationBitsCalculator.of(MatchingDataAttestationGroup.this.includedValidators);
     private final Optional<UInt64> maybeCommitteeIndex;
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
@@ -241,11 +251,9 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       streamRemainingAttestations()
           .forEach(
               candidate -> {
-                final SszBitlist candidateAggregationBits =
-                    candidate.getAttestation().getAggregationBits();
                 if (builder.canAggregate(candidate)) {
                   builder.aggregate(candidate);
-                  includedValidators = includedValidators.or(candidateAggregationBits);
+                  includedValidators.aggregateWith(candidate.getAttestation());
                 }
               });
       return builder.buildAggregate();
@@ -255,10 +263,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::maybeFilterOnCommitteeIndex)
-          .filter(
-              candidate ->
-                  !includedValidators.isSuperSetOf(
-                      candidate.getAttestation().getAggregationBits()));
+          .filter(candidate -> !includedValidators.supersedes(candidate.getAttestation()));
     }
 
     /*
