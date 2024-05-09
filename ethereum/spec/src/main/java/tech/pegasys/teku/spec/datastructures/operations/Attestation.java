@@ -62,4 +62,6 @@ public interface Attestation extends SszData, SszContainer {
     return getCommitteeIndices()
         .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
   }
+
+  boolean requiresCommitteeBits();
 }

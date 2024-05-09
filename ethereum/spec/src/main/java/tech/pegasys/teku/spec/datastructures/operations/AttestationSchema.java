@@ -53,4 +53,6 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
   SszBitlistSchema<?> getAggregationBitsSchema();
 
   Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema();
+
+  boolean requiresCommitteeBits();
 }

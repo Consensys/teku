@@ -154,7 +154,7 @@ public class ValidatableAttestation {
     saveCommitteeShufflingSeed(state);
     // The committees size is only required when the committee_bits field is present in the
     // Attestation
-    if (attestation.getCommitteeBits().isPresent()) {
+    if (attestation.requiresCommitteeBits()) {
       saveCommitteesSize(state);
     }
   }

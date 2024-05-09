@@ -63,4 +63,9 @@ public class AttestationPhase0Schema
       final BLSSignature signature) {
     return new AttestationPhase0(this, aggregationBits, data, signature);
   }
+
+  @Override
+  public boolean requiresCommitteeBits() {
+    return false;
+  }
 }
