@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregatingAttestationPoolTest {
@@ -61,10 +62,14 @@ class AggregatingAttestationPoolTest {
   private AttestationSchema<?> attestationSchema;
   private Optional<UInt64> committeeIndex;
   private final Spec mockSpec = mock(Spec.class);
+  private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
 
   private AggregatingAttestationPool aggregatingPool =
       new AggregatingAttestationPool(
-          mockSpec, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+          mockSpec,
+          mockRecentChainData,
+          new NoOpMetricsSystem(),
+          DEFAULT_MAXIMUM_ATTESTATION_COUNT);
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
@@ -385,7 +390,8 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   void shouldRemoveOldSlotsWhenMaximumNumberOfAttestationsReached() {
-    aggregatingPool = new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem(), 5);
+    aggregatingPool =
+        new AggregatingAttestationPool(mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5);
     final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ONE);
     final AttestationData attestationData2 =
@@ -409,7 +415,8 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   void shouldNotRemoveLastSlotEvenWhenMaximumNumberOfAttestationsReached() {
-    aggregatingPool = new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem(), 5);
+    aggregatingPool =
+        new AggregatingAttestationPool(mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 1);
     addAttestationFromValidators(attestationData, 2);

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -23,6 +24,7 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
@@ -72,7 +74,10 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   /** Precalculated combined list of included validators across all blocks. */
   private SszBitlist includedValidators;
 
-  public MatchingDataAttestationGroup(final Spec spec, final AttestationData attestationData) {
+  public MatchingDataAttestationGroup(
+      final Spec spec,
+      final AttestationData attestationData,
+      @SuppressWarnings("unused") final Supplier<Int2IntMap> commiteesSizeSupplier) {
     this.spec = spec;
     this.attestationData = attestationData;
     this.includedValidators = createEmptyAggregationBits();

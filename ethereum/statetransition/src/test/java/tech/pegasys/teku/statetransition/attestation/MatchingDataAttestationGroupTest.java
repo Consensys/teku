@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +53,7 @@ class MatchingDataAttestationGroupTest {
     attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
     dataStructureUtil = specContext.getDataStructureUtil();
     attestationData = dataStructureUtil.randomAttestationData(SLOT);
-    group = new MatchingDataAttestationGroup(spec, attestationData);
+    group = new MatchingDataAttestationGroup(spec, attestationData, Int2IntOpenHashMap::new);
   }
 
   @TestTemplate

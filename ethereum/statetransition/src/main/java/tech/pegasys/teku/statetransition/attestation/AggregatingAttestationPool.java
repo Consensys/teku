@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,9 +40,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -80,13 +84,19 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
 
   private final Spec spec;
-  private final AtomicInteger size = new AtomicInteger(0);
+  private final RecentChainData recentChainData;
   private final SettableGauge sizeGauge;
   private final int maximumAttestationCount;
 
+  private final AtomicInteger size = new AtomicInteger(0);
+
   public AggregatingAttestationPool(
-      final Spec spec, final MetricsSystem metricsSystem, final int maximumAttestationCount) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final MetricsSystem metricsSystem,
+      final int maximumAttestationCount) {
     this.spec = spec;
+    this.recentChainData = recentChainData;
     this.sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -98,7 +108,15 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void add(final ValidatableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
-    final boolean add = getOrCreateAttestationGroup(attestationData).add(attestation);
+    final Supplier<Int2IntMap> commiteesSizeSupplier =
+        attestation
+            .getCommitteesSize()
+            .map(committeesSize -> (Supplier<Int2IntMap>) () -> committeesSize)
+            // fallback to querying the state in the cases when the committeesSize is not available
+            // in the ValidatableAttestation.
+            .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
+    final boolean add =
+        getOrCreateAttestationGroup(attestationData, commiteesSizeSupplier).add(attestation);
     if (add) {
       updateSize(1);
     }
@@ -112,14 +130,36 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     }
   }
 
+  /**
+   * @param committeesSizeSupplier Required for aggregating attestations as per <a
+   *     href="https://eips.ethereum.org/EIPS/eip-7549">EIP-7549</a>
+   */
   private MatchingDataAttestationGroup getOrCreateAttestationGroup(
-      final AttestationData attestationData) {
+      final AttestationData attestationData, Supplier<Int2IntMap> committeesSizeSupplier) {
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(attestationData.hashTreeRoot());
     return attestationGroupByDataHash.computeIfAbsent(
         attestationData.hashTreeRoot(),
-        key -> new MatchingDataAttestationGroup(spec, attestationData));
+        key -> new MatchingDataAttestationGroup(spec, attestationData, committeesSizeSupplier));
+  }
+
+  // We only have the committees size already available via attestations received in the gossip
+  // flow, so querying the state is required when we are tracking attestations coming from a block.
+  private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
+      final AttestationData attestationData) {
+    return () -> {
+      final SlotAndBlockRoot slotAndBlockRoot =
+          new SlotAndBlockRoot(attestationData.getSlot(), attestationData.getBeaconBlockRoot());
+      final BeaconState state =
+          recentChainData
+              .retrieveStateAtSlot(slotAndBlockRoot)
+              // the attestation pool flow is entirely synchronous so joining here
+              .join()
+              .orElseThrow(
+                  () -> new IllegalStateException("No state available for " + slotAndBlockRoot));
+      return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
+    };
   }
 
   @Override
@@ -158,7 +198,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     final AttestationData attestationData = attestation.getData();
-    final MatchingDataAttestationGroup attestations = getOrCreateAttestationGroup(attestationData);
+    final MatchingDataAttestationGroup attestations =
+        getOrCreateAttestationGroup(
+            attestationData, getCommitteesSizeSupplierUsingTheState(attestationData));
     final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
     updateSize(-numRemoved);
   }
