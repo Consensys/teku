@@ -11,18 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns;
+package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
-/** The class which searches for a specific {@link DataColumnSidecar} across nodes in the network */
-public interface DataColumnSidecarRetriever {
+import java.util.List;
+import java.util.Optional;
 
-  /**
-   * Queues the specified sidecar for search
-   *
-   * @return a future which may run indefinitely until finds a requested data or cancelled
-   */
-  SafeFuture<DataColumnSidecar> retrieve(ColumnSlotAndIdentifier columnId);
+public interface BatchDataColumnReqResp {
+
+  SafeFuture<List<DataColumnSidecar>> requestDataColumnSidecar(
+      UInt256 nodeId, List<DataColumnIdentifier> columnIdentifiers);
+
+  int getCurrentRequestLimit(UInt256 nodeId);
 }

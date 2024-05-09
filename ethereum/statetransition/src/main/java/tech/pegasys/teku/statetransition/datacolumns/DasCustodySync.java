@@ -22,8 +22,9 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
-public class CustodySync implements SlotEventsChannel {
+public class DasCustodySync implements SlotEventsChannel {
 
   private final UpdatableDataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
@@ -33,7 +34,7 @@ public class CustodySync implements SlotEventsChannel {
   private Map<ColumnSlotAndIdentifier, PendingRequest> pendingRequests = new HashMap<>();
   private boolean started = false;
 
-  public CustodySync(
+  public DasCustodySync(
       UpdatableDataColumnSidecarCustody custody, DataColumnSidecarRetriever retriever) {
     this.custody = custody;
     this.retriever = retriever;

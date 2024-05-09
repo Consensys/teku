@@ -15,7 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import org.apache.tuweni.units.bigints.UInt256;
 
-public interface DataColumnPeerManager extends DataColumnPeerSearcher {
+public interface DataColumnPeerManager {
 
   void addPeerListener(PeerListener listener);
 
@@ -23,7 +23,7 @@ public interface DataColumnPeerManager extends DataColumnPeerSearcher {
 
   interface PeerListener {
 
-    void peerConnected(UInt256 nodeId, int extraCustodySubnetCount);
+    void peerConnected(UInt256 nodeId);
 
     void peerDisconnected(UInt256 nodeId);
   }

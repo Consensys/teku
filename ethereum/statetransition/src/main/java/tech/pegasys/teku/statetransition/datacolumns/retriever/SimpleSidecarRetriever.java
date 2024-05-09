@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarValidator;
 
 // TODO improve thread-safety: external calls are better to do outside of the synchronize block to
@@ -41,15 +40,20 @@ public class SimpleSidecarRetriever
 
   private final Spec spec;
   private final DataColumnPeerManager peerManager;
+  private final DataColumnPeerSearcher peerSearcher;
+  private final DasPeerCustodyCountSupplier custodyCountSupplier;
   private final DataColumnReqResp reqResp;
 
   public SimpleSidecarRetriever(
       Spec spec,
       DataColumnPeerManager peerManager,
+      DataColumnPeerSearcher peerSearcher, DasPeerCustodyCountSupplier custodyCountSupplier,
       DataColumnReqResp reqResp,
       DataColumnSidecarValidator validator) {
     this.spec = spec;
     this.peerManager = peerManager;
+    this.peerSearcher = peerSearcher;
+    this.custodyCountSupplier = custodyCountSupplier;
     this.reqResp = new ValidatingDataColumnReqResp(peerManager, reqResp, validator);
     peerManager.addPeerListener(this);
   }
@@ -61,7 +65,7 @@ public class SimpleSidecarRetriever
   @Override
   public synchronized SafeFuture<DataColumnSidecar> retrieve(ColumnSlotAndIdentifier columnId) {
     DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest =
-        peerManager.requestPeers(columnId.slot(), columnId.identifier().getIndex());
+        peerSearcher.requestPeers(columnId.slot(), columnId.identifier().getIndex());
 
     synchronized (this) {
       RetrieveRequest existingRequest = pendingRequests.get(columnId);
@@ -145,8 +149,8 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public synchronized void peerConnected(UInt256 nodeId, int extraCustodySubnetCount) {
-    connectedPeers.put(nodeId, new ConnectedPeer(nodeId, extraCustodySubnetCount));
+  public synchronized void peerConnected(UInt256 nodeId) {
+    connectedPeers.put(nodeId, new ConnectedPeer(nodeId));
   }
 
   @Override
@@ -170,19 +174,20 @@ public class SimpleSidecarRetriever
 
   private class ConnectedPeer {
     final UInt256 nodeId;
-    final int extraCustodySubnetCount;
+//    final int extraCustodySubnetCount;
 
-    public ConnectedPeer(UInt256 nodeId, int extraCustodySubnetCount) {
+    public ConnectedPeer(UInt256 nodeId/*, int extraCustodySubnetCount*/) {
       this.nodeId = nodeId;
-      this.extraCustodySubnetCount = extraCustodySubnetCount;
+//      this.extraCustodySubnetCount = extraCustodySubnetCount;
     }
 
     private Set<UInt64> getNodeCustodyIndexes(UInt64 slot) {
       SpecVersion specVersion = spec.atSlot(slot);
-      int minCustodyRequirement =
-          SpecConfigEip7594.required(specVersion.getConfig()).getCustodyRequirement();
+//      int minCustodyRequirement =
+//          SpecConfigEip7594.required(specVersion.getConfig()).getCustodyRequirement();
       return MiscHelpersEip7594.required(specVersion.miscHelpers())
-          .computeCustodyColumnIndexes(nodeId, minCustodyRequirement + extraCustodySubnetCount);
+          .computeCustodyColumnIndexes(
+              nodeId, custodyCountSupplier.getCustodyCountForPeer(nodeId));
     }
 
     public boolean isCustodyFor(ColumnSlotAndIdentifier columnId) {
