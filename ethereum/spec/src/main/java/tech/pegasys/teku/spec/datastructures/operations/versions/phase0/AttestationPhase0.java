@@ -71,4 +71,9 @@ public class AttestationPhase0
   public BLSSignature getAggregateSignature() {
     return getField2().getSignature();
   }
+
+  @Override
+  public boolean requiresCommitteeBits() {
+    return false;
+  }
 }
