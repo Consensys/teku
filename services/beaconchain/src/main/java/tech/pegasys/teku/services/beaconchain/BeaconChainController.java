@@ -137,11 +137,18 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqRespBatchingImpl;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -288,6 +295,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile DataColumnSidecarCustody dataColumnSidecarCustody;
+  protected volatile DasCustodySync dasCustodySync;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -377,7 +385,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockManager.start(),
             syncService.start(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)),
+            SafeFuture.fromRunnable(() -> dasCustodySync.start()))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -636,14 +645,34 @@ public class BeaconChainController extends Service implements BeaconChainControl
     DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
             spec, blockRootResolver, sidecarDB, nodeId, totalCustodySubnets);
+    eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dataColumnSidecarCustodyImpl::onNewValidatedDataColumnSidecar);
     this.dataColumnSidecarCustody = dataColumnSidecarCustodyImpl;
-  }
 
-  protected void initDataColumnPeerManager() {
     DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
+
+    DataColumnReqResp dasRpc = new DataColumnReqRespBatchingImpl(dasPeerManager);
+    // TODO there is no generic solution to retrieve extra custody subnet count for a connected peer
+    DasPeerCustodyCountSupplier custodyCountSupplier =
+        DasPeerCustodyCountSupplier.createStub(custodyRequirement);
+    // TODO NOOP peer searcher should work for interop but needs to be implemented
+    DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
+    // TODO
+    DataColumnSidecarValidator dataColumnSidecarValidator = DataColumnSidecarValidator.NOOP;
+    DataColumnSidecarRetriever sidecarRetriever =
+        new SimpleSidecarRetriever(
+            spec,
+            dasPeerManager,
+            dataColumnPeerSearcher,
+            custodyCountSupplier,
+            dasRpc,
+            dataColumnSidecarValidator,
+            operationPoolAsyncRunner,
+            Duration.ofSeconds(1));
+    dasCustodySync = new DasCustodySync(dataColumnSidecarCustodyImpl, sidecarRetriever);
+    eventChannels.subscribe(SlotEventsChannel.class, dasCustodySync);
   }
 
   protected void initMergeMonitors() {

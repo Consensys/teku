@@ -28,20 +28,16 @@ public class DataColumnPeerManagerImpl implements DataColumnPeerManager, PeerCon
   }
 
   private void peerConnected(Eth2Peer peer) {
-    UInt256 uintPeerId = nodeIdToUInt(peer.getId());
-    listeners.forEach(l -> l.peerConnected(uintPeerId));
-    connectedPeers.put(uintPeerId, peer);
+    UInt256 nodeId = peer.getDiscoveryNodeId();
+    listeners.forEach(l -> l.peerConnected(nodeId));
+    connectedPeers.put(nodeId, peer);
     peer.subscribeDisconnect((__1, __2) -> peerDisconnected(peer));
   }
 
   private void peerDisconnected(Eth2Peer peer) {
-    UInt256 uintPeerId = nodeIdToUInt(peer.getId());
-    listeners.forEach(l -> l.peerDisconnected(uintPeerId));
-    connectedPeers.remove(uintPeerId);
-  }
-
-  private UInt256 nodeIdToUInt(NodeId nodeId) {
-    return UInt256.fromBytes(nodeId.toBytes());
+    UInt256 nodeId = peer.getDiscoveryNodeId();
+    listeners.forEach(l -> l.peerDisconnected(nodeId));
+    connectedPeers.remove(nodeId);
   }
 
   @Override

@@ -307,6 +307,7 @@ public class GossipForkManager {
           recentChainData.isChainHeadOptimistic());
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
+      currentDataColumnSidecarSubnets.forEach(subscription::subscribeToDataColumnSidecarSubnet);
     }
   }
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -22,12 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
@@ -37,23 +41,29 @@ import tech.pegasys.teku.statetransition.validation.DataColumnSidecarValidator;
 // prevent potential dead locks
 public class SimpleSidecarRetriever
     implements DataColumnSidecarRetriever, DataColumnPeerManager.PeerListener {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final DataColumnPeerManager peerManager;
   private final DataColumnPeerSearcher peerSearcher;
   private final DasPeerCustodyCountSupplier custodyCountSupplier;
   private final DataColumnReqResp reqResp;
+  private final AsyncRunner asyncRunner;
+  private final Duration roundPeriod;
 
   public SimpleSidecarRetriever(
       Spec spec,
       DataColumnPeerManager peerManager,
-      DataColumnPeerSearcher peerSearcher, DasPeerCustodyCountSupplier custodyCountSupplier,
+      DataColumnPeerSearcher peerSearcher,
+      DasPeerCustodyCountSupplier custodyCountSupplier,
       DataColumnReqResp reqResp,
-      DataColumnSidecarValidator validator) {
+      DataColumnSidecarValidator validator,
+      AsyncRunner asyncRunner,
+      Duration roundPeriod) {
     this.spec = spec;
-    this.peerManager = peerManager;
     this.peerSearcher = peerSearcher;
     this.custodyCountSupplier = custodyCountSupplier;
+    this.asyncRunner = asyncRunner;
+    this.roundPeriod = roundPeriod;
     this.reqResp = new ValidatingDataColumnReqResp(peerManager, reqResp, validator);
     peerManager.addPeerListener(this);
   }
@@ -61,6 +71,15 @@ public class SimpleSidecarRetriever
   private final Map<ColumnSlotAndIdentifier, RetrieveRequest> pendingRequests =
       new LinkedHashMap<>();
   private final Map<UInt256, ConnectedPeer> connectedPeers = new HashMap<>();
+  private boolean started = false;
+
+  private void startIfNecessary() {
+    if (!started) {
+      started = true;
+      asyncRunner.runWithFixedDelay(
+          this::nextRound, roundPeriod, err -> LOG.info("Unexpected error", err));
+    }
+  }
 
   @Override
   public synchronized SafeFuture<DataColumnSidecar> retrieve(ColumnSlotAndIdentifier columnId) {
@@ -72,6 +91,7 @@ public class SimpleSidecarRetriever
       if (existingRequest == null) {
         RetrieveRequest request = new RetrieveRequest(columnId, peerSearchRequest);
         pendingRequests.put(columnId, request);
+        startIfNecessary();
         return request.result;
       } else {
         peerSearchRequest.dispose();
@@ -121,7 +141,6 @@ public class SimpleSidecarRetriever
     }
   }
 
-  // TODO implement triggering of rounds or do it in a finer grained fashion
   void nextRound() {
     List<RequestMatch> matches = matchRequestsAndPeers();
     for (RequestMatch match : matches) {
@@ -174,17 +193,18 @@ public class SimpleSidecarRetriever
 
   private class ConnectedPeer {
     final UInt256 nodeId;
-//    final int extraCustodySubnetCount;
 
-    public ConnectedPeer(UInt256 nodeId/*, int extraCustodySubnetCount*/) {
+    //    final int extraCustodySubnetCount;
+
+    public ConnectedPeer(UInt256 nodeId /*, int extraCustodySubnetCount*/) {
       this.nodeId = nodeId;
-//      this.extraCustodySubnetCount = extraCustodySubnetCount;
+      //      this.extraCustodySubnetCount = extraCustodySubnetCount;
     }
 
     private Set<UInt64> getNodeCustodyIndexes(UInt64 slot) {
       SpecVersion specVersion = spec.atSlot(slot);
-//      int minCustodyRequirement =
-//          SpecConfigEip7594.required(specVersion.getConfig()).getCustodyRequirement();
+      //      int minCustodyRequirement =
+      //          SpecConfigEip7594.required(specVersion.getConfig()).getCustodyRequirement();
       return MiscHelpersEip7594.required(specVersion.miscHelpers())
           .computeCustodyColumnIndexes(
               nodeId, custodyCountSupplier.getCustodyCountForPeer(nodeId));
