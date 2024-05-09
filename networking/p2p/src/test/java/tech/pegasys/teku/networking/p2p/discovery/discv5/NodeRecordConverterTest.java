@@ -56,6 +56,7 @@ class NodeRecordConverterTest {
       SCHEMA_DEFINITIONS.getSyncnetsENRFieldSchema();
   private static final SszBitvector SYNCNETS = SYNCNETS_SCHEMA.getDefault();
   private static final NodeRecordConverter CONVERTER = new NodeRecordConverter();
+  private static final Bytes NODE_ID = CONVERTER.convertPublicKeyToNodeId(PUB_KEY);
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -64,10 +65,13 @@ class NodeRecordConverterTest {
 
     final NodeRecord nodeRecord = NodeRecordFactory.DEFAULT.fromBase64(enr);
 
+    Bytes pubKey =
+        Bytes.fromHexString("0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194");
+    Bytes nodeId = CONVERTER.convertPublicKeyToNodeId(pubKey);
     final DiscoveryPeer expectedPeer =
         new DiscoveryPeer(
-            Bytes.fromHexString(
-                "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
+            pubKey,
+            nodeId,
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             Optional.empty(),
             ATTNETS,
@@ -196,6 +200,7 @@ class NodeRecordConverterTest {
         .contains(
             new DiscoveryPeer(
                 PUB_KEY,
+                NODE_ID,
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
                 persistentSubnets,
@@ -216,6 +221,7 @@ class NodeRecordConverterTest {
         .contains(
             new DiscoveryPeer(
                 PUB_KEY,
+                NODE_ID,
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
                 ATT_SUBNET_SCHEMA.getDefault(),
@@ -235,7 +241,7 @@ class NodeRecordConverterTest {
     assertThat(result)
         .contains(
             new DiscoveryPeer(
-                PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, ATTNETS, syncnets));
+                PUB_KEY, NODE_ID, new InetSocketAddress("::1", 1234), ENR_FORK_ID, ATTNETS, syncnets));
   }
 
   @Test
@@ -253,7 +259,7 @@ class NodeRecordConverterTest {
     assertThat(result)
         .contains(
             new DiscoveryPeer(
-                PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, ATTNETS, SYNCNETS));
+                PUB_KEY, NODE_ID, new InetSocketAddress("::1", 1234), ENR_FORK_ID, ATTNETS, SYNCNETS));
   }
 
   @Test
@@ -270,6 +276,7 @@ class NodeRecordConverterTest {
         .contains(
             new DiscoveryPeer(
                 PUB_KEY,
+                NODE_ID,
                 new InetSocketAddress("::1", 1234),
                 Optional.of(enrForkId),
                 ATTNETS,
@@ -288,7 +295,7 @@ class NodeRecordConverterTest {
     assertThat(result)
         .contains(
             new DiscoveryPeer(
-                PUB_KEY, new InetSocketAddress("::1", 1234), Optional.empty(), ATTNETS, SYNCNETS));
+                PUB_KEY, NODE_ID, new InetSocketAddress("::1", 1234), Optional.empty(), ATTNETS, SYNCNETS));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(

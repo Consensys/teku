@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -71,6 +72,7 @@ class Eth2PeerTest {
       Eth2Peer.create(
           spec,
           delegate,
+          UInt256.ZERO,
           rpcMethods,
           statusMessageFactory,
           metadataMessagesFactory,
