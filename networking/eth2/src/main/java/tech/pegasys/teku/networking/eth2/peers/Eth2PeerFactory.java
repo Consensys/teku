@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.Optional;
+
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.kzg.KZG;
@@ -38,6 +39,7 @@ public class Eth2PeerFactory {
   private final int peerRateLimit;
   private final int peerRequestLimit;
   private final KZG kzg;
+  private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
 
   public Eth2PeerFactory(
       final Spec spec,
@@ -49,7 +51,8 @@ public class Eth2PeerFactory {
       final Optional<Checkpoint> requiredCheckpoint,
       final int peerRateLimit,
       final int peerRequestLimit,
-      final KZG kzg) {
+      final KZG kzg,
+      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
     this.spec = spec;
     this.metricsSystem = metricsSystem;
     this.chainDataClient = chainDataClient;
@@ -60,12 +63,14 @@ public class Eth2PeerFactory {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.kzg = kzg;
+    this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
   }
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
     return Eth2Peer.create(
         spec,
         peer,
+        discoveryNodeIdExtractor.calculateDiscoveryNodeId(peer),
         rpcMethods,
         statusMessageFactory,
         metadataMessagesFactory,
