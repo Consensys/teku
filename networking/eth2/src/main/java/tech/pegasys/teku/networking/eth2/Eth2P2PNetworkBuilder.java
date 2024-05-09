@@ -17,14 +17,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import io.libp2p.core.crypto.PubKey;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import io.libp2p.core.crypto.PubKey;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -155,8 +154,9 @@ public class Eth2P2PNetworkBuilder {
         peer -> {
           LibP2PPeer libP2PPeer = (LibP2PPeer) peer;
           PubKey libP2PPubKey = libP2PPeer.getPubKey();
-          Bytes discoveryNodeIdBytes = DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER.convertPublicKeyToNodeId(
-              Bytes.wrap(libP2PPubKey.raw()));
+          Bytes discoveryNodeIdBytes =
+              DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER.convertPublicKeyToNodeId(
+                  Bytes.wrap(libP2PPubKey.raw()));
           return UInt256.fromBytes(discoveryNodeIdBytes);
         };
 

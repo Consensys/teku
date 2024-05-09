@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
@@ -238,7 +239,8 @@ public class Eth2P2PNetworkFactory {
                 500,
                 50,
                 spec,
-                KZG.NOOP);
+                KZG.NOOP,
+                (pk) -> UInt256.ZERO);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()

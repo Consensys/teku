@@ -21,7 +21,9 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIde
 public interface DataColumnReqResp {
 
   class DataColumnReqRespException extends RuntimeException {}
+
   class DasColumnNotAvailableException extends DataColumnReqRespException {}
+
   class DasPeerDisconnectedException extends DataColumnReqRespException {}
 
   SafeFuture<DataColumnSidecar> requestDataColumnSidecar(

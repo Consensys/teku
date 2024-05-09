@@ -20,7 +20,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -43,9 +42,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
     return (nodeId, extraSubnetCount) -> {
       List<UInt64> nodeSubnets =
           miscHelpers.computeDataColumnSidecarBackboneSubnets(
-              nodeId,
-              currentEpoch,
-              config.getCustodyRequirement() + extraSubnetCount);
+              nodeId, currentEpoch, config.getCustodyRequirement() + extraSubnetCount);
       return Optional.of(
           bitvectorSchema.ofBits(nodeSubnets.stream().map(UInt64::intValue).toList()));
     };

@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -470,6 +471,7 @@ class ConnectionManagerTest {
   private static DiscoveryPeer createDiscoveryPeer(final Bytes peerId, final int... subnetIds) {
     return new DiscoveryPeer(
         peerId,
+        Bytes32.ZERO,
         new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
         ENR_FORK_ID,
         SCHEMA_DEFINITIONS_SUPPLIER.getAttnetsENRFieldSchema().ofBits(subnetIds),

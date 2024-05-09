@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.Optional;
-
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

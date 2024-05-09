@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import java.util.function.IntUnaryOperator;
-
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;

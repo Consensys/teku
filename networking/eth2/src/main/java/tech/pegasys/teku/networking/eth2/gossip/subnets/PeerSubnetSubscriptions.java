@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
-
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;

@@ -19,7 +19,7 @@ public interface DataColumnPeerSearcher {
 
   DataColumnPeerSearcher NOOP =
       new DataColumnPeerSearcher() {
-        private final PeerSearchRequest NOOP_REQUEST = () -> {};
+        private static final PeerSearchRequest NOOP_REQUEST = () -> {};
 
         @Override
         public PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex) {

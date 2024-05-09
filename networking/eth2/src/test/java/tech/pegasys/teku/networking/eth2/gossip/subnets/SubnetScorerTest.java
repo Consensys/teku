@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
@@ -204,9 +205,12 @@ class SubnetScorerTest {
 
   private DiscoveryPeer createDiscoveryPeer(SszBitvector attSubnets, SszBitvector syncSubnets) {
     try {
-      return new DiscoveryPeer(
+      Bytes pubKey =
           Bytes.fromHexString(
-              "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
+              "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194");
+      return new DiscoveryPeer(
+          pubKey,
+          DEFAULT_NODE_RECORD_CONVERTER.convertPublicKeyToNodeId(pubKey),
           new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
           Optional.empty(),
           attSubnets,

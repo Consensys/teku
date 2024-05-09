@@ -201,8 +201,8 @@ public class DataColumnSidecarCustodyImpl
 
     streamPotentiallyIncompleteSlotCustodies()
         .map(scan(CompleteIncomplete.ZERO, CompleteIncomplete::add))
-            .takeWhile(c -> c.firstIncomplete == null)
-                .reduce((a, b) -> b)
+        .takeWhile(c -> c.firstIncomplete == null)
+        .reduce((a, b) -> b)
         .flatMap(CompleteIncomplete::getFirstIncompleteSlot) // take the last lement
         .ifPresent(db::setFirstIncompleteSlot);
   }

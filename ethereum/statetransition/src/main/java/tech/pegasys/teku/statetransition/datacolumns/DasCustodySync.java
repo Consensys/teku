@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -75,7 +74,7 @@ public class DasCustodySync implements SlotEventsChannel {
     if (wasCancelledImplicitly(exception)) {
       // request was cancelled explicitly here
     } else {
-      LOG.warn("Unexpected exception", exception);
+      LOG.warn("Unexpected exception for request " + request, exception);
     }
   }
 
