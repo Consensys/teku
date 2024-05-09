@@ -83,7 +83,7 @@ public class DataColumnSidecarsByRootMessageHandler
       final DataColumnSidecarsByRootRequestMessage message,
       final ResponseCallback<DataColumnSidecar> callback) {
 
-    LOG.trace(
+    LOG.debug(
         "Peer {} requested {} data column sidecars with identifiers: {}",
         peer.getId(),
         message.size(),
@@ -170,7 +170,8 @@ public class DataColumnSidecarsByRootMessageHandler
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
               if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestedEpoch)
-                  || requestedEpoch.isLessThan(finalizedEpoch)) {
+                  // TODO uncomment when sync by range is ready
+                 /* || requestedEpoch.isLessThan(finalizedEpoch)*/) {
                 throw new RpcException(
                     INVALID_REQUEST_CODE,
                     String.format(

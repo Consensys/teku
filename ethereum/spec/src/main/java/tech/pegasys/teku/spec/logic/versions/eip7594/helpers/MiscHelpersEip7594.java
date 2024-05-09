@@ -16,13 +16,11 @@ package tech.pegasys.teku.spec.logic.versions.eip7594.helpers;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -84,7 +82,12 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     return columnIndex.mod(specConfigEip7594.getDataColumnSidecarSubnetCount());
   }
 
-  public Set<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int subnetCount) {
+  private UInt64 computeCustodySubnetIndex(final UInt256 nodeId) {
+    return bytesToUInt64(Hash.sha256(uint256ToBytes(nodeId)).slice(0, 8))
+        .mod(specConfigEip7594.getDataColumnSidecarSubnetCount());
+  }
+
+  public List<UInt64> computeCustodySubnetIndexes(final UInt256 nodeId, final int subnetCount) {
     //     assert custody_subnet_count <= DATA_COLUMN_SIDECAR_SUBNET_COUNT
     if (subnetCount > specConfigEip7594.getDataColumnSidecarSubnetCount()) {
       throw new IllegalArgumentException(
@@ -93,28 +96,30 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
               subnetCount, specConfigEip7594.getNumberOfColumns()));
     }
 
-    final List<UInt64> subnetIds = new ArrayList<>();
-    UInt256 curId = nodeId;
-    while (subnetIds.size() < subnetCount) {
-      final UInt64 subnetId =
-          bytesToUInt64(Hash.sha256(uint256ToBytes(curId)).slice(0, 8))
-              .mod(specConfigEip7594.getDataColumnSidecarSubnetCount());
-      if (!subnetIds.contains(subnetId)) {
-        subnetIds.add(subnetId);
-      }
-      if (curId.equals(UInt256.MAX_VALUE)) {
-        curId = UInt256.ZERO;
-      }
-      curId = curId.plus(1);
-    }
+    return Stream.iterate(nodeId, this::incrementByModule)
+        .map(this::computeCustodySubnetIndex)
+        .distinct()
+        .limit(subnetCount)
+        .sorted()
+        .toList();
+  }
 
+  private UInt256 incrementByModule(UInt256 n) {
+    if (n.equals(UInt256.MAX_VALUE)) {
+      return UInt256.ZERO;
+    } else {
+      return n.plus(1);
+    }
+  }
+
+  public List<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int subnetCount) {
+    List<UInt64> subnetIds = computeCustodySubnetIndexes(nodeId, subnetCount);
     final int columnsPerSubnet =
         specConfigEip7594
             .getNumberOfColumns()
             .dividedBy(specConfigEip7594.getDataColumnSidecarSubnetCount())
             .intValue();
     return subnetIds.stream()
-        .sorted()
         .flatMap(
             subnetId -> IntStream.range(0, columnsPerSubnet).mapToObj(i -> Pair.of(subnetId, i)))
         .map(
@@ -123,16 +128,13 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
                 specConfigEip7594.getDataColumnSidecarSubnetCount() * pair.getRight()
                     + pair.getLeft().intValue())
         .map(UInt64::valueOf)
-        .collect(Collectors.toUnmodifiableSet());
+        .sorted()
+        .toList();
   }
 
-  // TODO
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
       final UInt256 nodeId, final UInt64 epoch, final int subnetCount) {
-    // TODO: implement whatever formula is finalized
-    return IntStream.range(0, subnetCount)
-        .mapToObj(index -> computeSubscribedSubnet(nodeId, epoch, index))
-        .toList();
+    return computeCustodySubnetIndexes(nodeId, subnetCount);
   }
 
   @Override

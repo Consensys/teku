@@ -24,9 +24,11 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.schema.EnrField;
+import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
-import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -38,7 +40,13 @@ public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
 
   public Bytes convertPublicKeyToNodeId(Bytes publicKey) {
-    return new NodeRecordBuilder().publicKey(publicKey).build().getNodeId();
+    // TODO need to open an additional API in discovery instead of this hack
+    NodeRecord tempNodeRecord =
+        NodeRecordFactory.DEFAULT.createFromValues(
+            UInt64.ZERO,
+            new EnrField(EnrField.PKEY_SECP256K1, publicKey),
+            new EnrField(EnrField.ID, IdentitySchema.V4));
+    return tempNodeRecord.getNodeId();
   }
 
   public Optional<DiscoveryPeer> convertToDiscoveryPeer(

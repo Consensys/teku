@@ -19,6 +19,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,9 +37,13 @@ import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 public class DataColumnSidecarCustodyImpl
     implements UpdatableDataColumnSidecarCustody, SlotEventsChannel {
 
-  public interface BlockRootResolver {
+  public interface DataColumnBlockRootResolver {
 
-    Optional<Bytes32> getCanonicalBlockRootAtSlot(UInt64 slot);
+    /**
+     * Should return the canonical block root at slot if: - a block exist at this slot - block
+     * contains any blobs
+     */
+    Optional<Bytes32> getColumnBlockRootAtSlot(UInt64 slot);
   }
 
   private record SlotCustody(
@@ -62,6 +68,10 @@ public class DataColumnSidecarCustodyImpl
           .toList();
     }
 
+    public boolean isComplete() {
+      return canonicalBlockRoot().isPresent() && !isIncomplete();
+    }
+
     public boolean isIncomplete() {
       return !getIncompleteColumns().isEmpty();
     }
@@ -72,7 +82,7 @@ public class DataColumnSidecarCustodyImpl
 
   private final Spec spec;
   private final DataColumnSidecarDB db;
-  private final BlockRootResolver blockRootResolver;
+  private final DataColumnBlockRootResolver blockRootResolver;
   private final UInt256 nodeId;
   private final int totalCustodySubnetCount;
 
@@ -82,7 +92,7 @@ public class DataColumnSidecarCustodyImpl
 
   public DataColumnSidecarCustodyImpl(
       Spec spec,
-      BlockRootResolver blockRootResolver,
+      DataColumnBlockRootResolver blockRootResolver,
       DataColumnSidecarDB db,
       UInt256 nodeId,
       int totalCustodySubnetCount) {
@@ -114,11 +124,11 @@ public class DataColumnSidecarCustodyImpl
     return currentEpoch.minusMinZero(custodyPeriod).max(eip7594StartEpoch);
   }
 
-  private Set<UInt64> getCustodyColumnsForSlot(UInt64 slot) {
+  private List<UInt64> getCustodyColumnsForSlot(UInt64 slot) {
     return getCustodyColumnsForEpoch(spec.computeEpochAtSlot(slot));
   }
 
-  private Set<UInt64> getCustodyColumnsForEpoch(UInt64 epoch) {
+  private List<UInt64> getCustodyColumnsForEpoch(UInt64 epoch) {
     return MiscHelpersEip7594.required(spec.atEpoch(epoch).miscHelpers())
         .computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount);
   }
@@ -152,7 +162,7 @@ public class DataColumnSidecarCustodyImpl
   private void onEpoch(UInt64 epoch) {
     UInt64 pruneSlot = spec.computeStartSlotAtEpoch(getEarliestCustodyEpoch(epoch));
     db.pruneAllSidecars(pruneSlot);
-    advanceLatestCompleteSlot();
+    advanceFirstIncompleteSlot();
   }
 
   @Override
@@ -164,14 +174,40 @@ public class DataColumnSidecarCustodyImpl
     }
   }
 
-  private void advanceLatestCompleteSlot() {
-    streamSlotCustodies()
-        .dropWhile(slotCustody -> !slotCustody.isIncomplete())
-        .findFirst()
-        .ifPresent(firstIncomplete -> db.setFirstIncompleteSlot(firstIncomplete.slot));
+  private void advanceFirstIncompleteSlot() {
+    record CompleteIncomplete(SlotCustody firstIncomplete, SlotCustody lastComplete) {
+      static final CompleteIncomplete ZERO = new CompleteIncomplete(null, null);
+
+      CompleteIncomplete add(SlotCustody newCustody) {
+        if (firstIncomplete == null && newCustody.isIncomplete()) {
+          return new CompleteIncomplete(newCustody, lastComplete);
+        } else if (newCustody.isComplete()) {
+          return new CompleteIncomplete(firstIncomplete, newCustody);
+        } else {
+          return this;
+        }
+      }
+
+      Optional<UInt64> getFirstIncompleteSlot() {
+        if (firstIncomplete != null) {
+          return Optional.of(firstIncomplete.slot);
+        } else if (lastComplete != null) {
+          return Optional.of(lastComplete.slot.increment());
+        } else {
+          return Optional.empty();
+        }
+      }
+    }
+
+    streamPotentiallyIncompleteSlotCustodies()
+        .map(scan(CompleteIncomplete.ZERO, CompleteIncomplete::add))
+            .takeWhile(c -> c.firstIncomplete == null)
+                .reduce((a, b) -> b)
+        .flatMap(CompleteIncomplete::getFirstIncompleteSlot) // take the last lement
+        .ifPresent(db::setFirstIncompleteSlot);
   }
 
-  private Stream<SlotCustody> streamSlotCustodies() {
+  private Stream<SlotCustody> streamPotentiallyIncompleteSlotCustodies() {
     if (currentSlot == null) {
       return Stream.empty();
     }
@@ -180,14 +216,12 @@ public class DataColumnSidecarCustodyImpl
         db.getFirstIncompleteSlot().orElseGet(() -> getEarliestCustodySlot(currentSlot));
 
     return Stream.iterate(
-            firstIncompleteSlot,
-            slot -> slot.plus(gossipWaitSlots).isLessThanOrEqualTo(currentSlot),
-            UInt64::increment)
+            firstIncompleteSlot, slot -> slot.isLessThanOrEqualTo(currentSlot), UInt64::increment)
         .map(
             slot -> {
               Optional<Bytes32> maybeCanonicalBlockRoot =
-                  blockRootResolver.getCanonicalBlockRootAtSlot(slot);
-              Set<UInt64> requiredColumns = getCustodyColumnsForSlot(slot);
+                  blockRootResolver.getColumnBlockRootAtSlot(slot);
+              List<UInt64> requiredColumns = getCustodyColumnsForSlot(slot);
               List<DataColumnIdentifier> existingColumns =
                   db.streamColumnIdentifiers(slot).toList();
               return new SlotCustody(
@@ -197,10 +231,27 @@ public class DataColumnSidecarCustodyImpl
 
   @Override
   public Stream<ColumnSlotAndIdentifier> streamMissingColumns() {
-    return streamSlotCustodies()
+    return streamPotentiallyIncompleteSlotCustodies()
+        // waiting a column for [gossipWaitSlots] to be delivered by gossip
+        // and not considering it missing yet
+        .takeWhile(
+            slotCustody -> slotCustody.slot.plus(gossipWaitSlots).isLessThanOrEqualTo(currentSlot))
         .flatMap(
             slotCustody ->
                 slotCustody.getIncompleteColumns().stream()
                     .map(colId -> new ColumnSlotAndIdentifier(slotCustody.slot(), colId)));
+  }
+
+  private static <TElem, TAccum> Function<TElem, TAccum> scan(
+      TAccum identity, BiFunction<TAccum, TElem, TAccum> combiner) {
+    return new Function<>() {
+      private TAccum curValue = identity;
+
+      @Override
+      public TAccum apply(TElem elem) {
+        curValue = combiner.apply(curValue, elem);
+        return curValue;
+      }
+    };
   }
 }

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,10 +36,10 @@ public class GetCustodyColumnsTestExecutor implements TestExecutor {
     final GetCustodyColumnsMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", GetCustodyColumnsMetaData.class);
     final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
-    final Set<UInt64> actualResult =
+    final List<UInt64> actualResult =
         MiscHelpersEip7594.required(spec.miscHelpers())
             .computeCustodyColumnIndexes(metaData.getNodeId(), metaData.getCustodySubnetCount());
-    assertThat(actualResult).isEqualTo(metaData.getResult());
+    assertThat(new HashSet<>(actualResult)).isEqualTo(metaData.getResult());
   }
 
   private static class GetCustodyColumnsMetaData {
