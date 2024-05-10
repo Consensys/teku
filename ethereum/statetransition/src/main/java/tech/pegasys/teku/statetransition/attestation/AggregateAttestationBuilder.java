@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsCalculator;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
 /**
  * Builds an aggregate attestation, providing functions to test if an attestation can be added or is
@@ -34,7 +34,7 @@ class AggregateAttestationBuilder {
   private final Spec spec;
   private final Set<ValidatableAttestation> includedAttestations = new HashSet<>();
   private final AttestationData attestationData;
-  private AttestationBitsCalculator currentAggregateBits;
+  private AttestationBitsAggregator currentAggregateBits;
 
   AggregateAttestationBuilder(final Spec spec, final AttestationData attestationData) {
     this.spec = spec;
@@ -54,7 +54,7 @@ class AggregateAttestationBuilder {
   public void aggregate(final ValidatableAttestation attestation) {
     includedAttestations.add(attestation);
     if (currentAggregateBits == null) {
-      currentAggregateBits = AttestationBitsCalculator.of(attestation);
+      currentAggregateBits = AttestationBitsAggregator.of(attestation);
     } else {
       currentAggregateBits.aggregateWith(attestation.getAttestation());
     }

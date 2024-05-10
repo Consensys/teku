@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -29,14 +28,13 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsCalculator;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -58,6 +56,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   private final Spec spec;
   private Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private final AttestationData attestationData;
+  private final Supplier<Int2IntMap> commiteesSizeSupplier;
 
   /**
    * Tracks which validators were included in attestations at a given slot on the canonical chain.
@@ -71,25 +70,26 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * <p>Pruning isn't required for this map because the entire attestation group is dropped by
    * {@link AggregatingAttestationPool} once it is too old to be included in blocks (32 slots).
    */
-  private final NavigableMap<UInt64, AttestationBitsCalculator> includedValidatorsBySlot =
+  private final NavigableMap<UInt64, AttestationBitsAggregator> includedValidatorsBySlot =
       new TreeMap<>();
 
   /** Precalculated combined list of included validators across all blocks. */
-  private AttestationBitsCalculator includedValidators;
+  private AttestationBitsAggregator includedValidators;
 
   public MatchingDataAttestationGroup(
       final Spec spec,
       final AttestationData attestationData,
-      @SuppressWarnings("unused") final Supplier<Int2IntMap> commiteesSizeSupplier) {
+      final Supplier<Int2IntMap> commiteesSizeSupplier) {
     this.spec = spec;
     this.attestationData = attestationData;
+    this.commiteesSizeSupplier = commiteesSizeSupplier;
     this.includedValidators = createEmptyAttestationBits();
   }
 
-  private AttestationBitsCalculator createEmptyAttestationBits() {
-    return AttestationBitsCalculator.fromEmptyFromAttestationSchema(
+  private AttestationBitsAggregator createEmptyAttestationBits() {
+    return AttestationBitsAggregator.fromEmptyFromAttestationSchema(
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema(),
-        Int2IntOpenHashMap::new);
+        commiteesSizeSupplier);
   }
 
   public AttestationData getAttestationData() {
@@ -180,7 +180,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
         slot,
         (__, attestationBitsCalculator) -> {
           if (attestationBitsCalculator == null) {
-            return AttestationBitsCalculator.of(attestation, Int2IntOpenHashMap::new);
+            return AttestationBitsAggregator.of(attestation, commiteesSizeSupplier);
           }
           attestationBitsCalculator.aggregateWith(attestation);
           return attestationBitsCalculator;
@@ -213,7 +213,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   }
 
   public void onReorg(final UInt64 commonAncestorSlot) {
-    final NavigableMap<UInt64, AttestationBitsCalculator> removedSlots =
+    final NavigableMap<UInt64, AttestationBitsAggregator> removedSlots =
         includedValidatorsBySlot.tailMap(commonAncestorSlot, false);
     if (removedSlots.isEmpty()) {
       // No relevant attestations in affected slots, so nothing to do.
@@ -231,8 +231,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   }
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
-    private final AttestationBitsCalculator includedValidators =
-        AttestationBitsCalculator.of(MatchingDataAttestationGroup.this.includedValidators);
+    private final AttestationBitsAggregator includedValidators =
+        AttestationBitsAggregator.of(MatchingDataAttestationGroup.this.includedValidators);
     private final Optional<UInt64> maybeCommitteeIndex;
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
