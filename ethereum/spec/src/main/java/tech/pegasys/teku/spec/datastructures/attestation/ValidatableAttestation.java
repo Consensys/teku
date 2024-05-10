@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.attestation;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
@@ -51,6 +52,13 @@ public class ValidatableAttestation {
   public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
     return new ValidatableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), false);
+  }
+
+  @VisibleForTesting
+  public static ValidatableAttestation from(
+      final Spec spec, final Attestation attestation, final Int2IntMap committeeSizes) {
+    return new ValidatableAttestation(
+        spec, attestation, Optional.empty(), OptionalInt.empty(), false, committeeSizes);
   }
 
   public static ValidatableAttestation fromValidator(
@@ -108,6 +116,22 @@ public class ValidatableAttestation {
     this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
     this.producedLocally = producedLocally;
+  }
+
+  private ValidatableAttestation(
+      final Spec spec,
+      final Attestation attestation,
+      final Optional<SignedAggregateAndProof> aggregateAndProof,
+      final OptionalInt receivedSubnetId,
+      final boolean producedLocally,
+      final Int2IntMap committeeSizes) {
+    this.spec = spec;
+    this.maybeAggregate = aggregateAndProof;
+    this.attestation = attestation;
+    this.receivedSubnetId = receivedSubnetId;
+    this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
+    this.producedLocally = producedLocally;
+    this.committeesSize = Optional.of(committeeSizes);
   }
 
   public boolean isProducedLocally() {
