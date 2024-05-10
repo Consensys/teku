@@ -26,7 +26,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -35,8 +34,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class AttestationBitsCalculatorElectraTest {
-  private static final UInt64 SLOT = UInt64.valueOf(1234);
-
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationSchema<?> attestationSchema =
