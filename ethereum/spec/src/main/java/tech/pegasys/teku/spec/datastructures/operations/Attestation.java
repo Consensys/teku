@@ -43,6 +43,8 @@ public interface Attestation extends SszData, SszContainer {
 
   SszBitlist getAggregationBits();
 
+  int getFirstCommitteeIndex();
+
   default Optional<SszBitvector> getCommitteeBits() {
     return Optional.empty();
   }

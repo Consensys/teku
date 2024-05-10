@@ -148,11 +148,6 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
     final IntList committeeSetBits = committeeBits.getAllSetBits();
     committeeSetBits.removeAll(other.getCommitteeBitsRequired().getAllSetBits());
 
-    // we can aggregate only if the set are exactly the same (empty result) or they are completely
-    // disjointed (size remains the same)
-    boolean committeeBitsAggregatable =
-        committeeSetBits.isEmpty() || committeeSetBits.size() == committeeBits.getBitCount();
-
     // same committees bits and non-overlapping
 
     boolean sameCommitteesWithDisjointedAggregationBits =
