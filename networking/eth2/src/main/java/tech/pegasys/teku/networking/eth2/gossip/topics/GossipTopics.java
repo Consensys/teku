@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
@@ -69,6 +72,18 @@ public class GossipTopics {
         forkDigest, GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId), gossipEncoding);
   }
 
+  public static Set<String> getAllDataColumnSidecarSubnetTopics(
+      final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
+
+    return spec.getNetworkingConfigEip7594()
+        .map(
+            eip7594NetworkConfig ->
+                IntStream.range(0, eip7594NetworkConfig.getDataColumnSidecarSubnetCount())
+                    .mapToObj(i -> getDataColumnSidecarSubnetTopic(forkDigest, i, gossipEncoding))
+                    .collect(Collectors.toSet()))
+        .orElse(Collections.emptySet());
+  }
+
   public static Set<String> getAllTopics(
       final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
     final Set<String> topics = new HashSet<>();
@@ -84,13 +99,9 @@ public class GossipTopics {
         topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
       }
     }
-    spec.getNetworkingConfigEip7594()
-        .ifPresent(
-            eip7594NetworkConfig -> {
-              for (int i = 0; i < eip7594NetworkConfig.getDataColumnSidecarSubnetCount(); i++) {
-                topics.add(getDataColumnSidecarSubnetTopic(forkDigest, i, gossipEncoding));
-              }
-            });
+
+    topics.addAll(getAllDataColumnSidecarSubnetTopics(gossipEncoding, forkDigest, spec));
+
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }

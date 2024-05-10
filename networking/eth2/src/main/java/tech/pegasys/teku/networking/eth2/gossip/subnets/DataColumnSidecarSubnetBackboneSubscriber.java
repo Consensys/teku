@@ -22,7 +22,6 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
@@ -64,19 +63,22 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
     currentSubscribedSubnets = newSubscriptionsSet;
   }
 
+  private int getTotalSubnetCount(final UInt64 epoch) {
+    SpecConfigEip7594 configEip7594 = SpecConfigEip7594.required(spec.atEpoch(epoch).getConfig());
+    return Integer.min(
+        configEip7594.getDataColumnSidecarSubnetCount(),
+        configEip7594.getCustodyRequirement() + extraVoluntarySubnetCount);
+  }
+
   private void onEpoch(final UInt64 epoch) {
-    SpecVersion specVersion = spec.atEpoch(epoch);
-    specVersion
+    spec.atEpoch(epoch)
         .miscHelpers()
         .toVersionEip7594()
         .ifPresent(
             eip7594Spec -> {
-              int totalSubnetCount =
-                  SpecConfigEip7594.required(specVersion.getConfig()).getCustodyRequirement()
-                      + extraVoluntarySubnetCount;
               List<UInt64> subnets =
                   eip7594Spec.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, epoch, totalSubnetCount);
+                      nodeId, epoch, getTotalSubnetCount(epoch));
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }

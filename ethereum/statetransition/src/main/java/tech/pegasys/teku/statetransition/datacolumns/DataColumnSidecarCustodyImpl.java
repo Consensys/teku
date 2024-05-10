@@ -31,19 +31,20 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 
 public class DataColumnSidecarCustodyImpl
     implements UpdatableDataColumnSidecarCustody, SlotEventsChannel {
 
-  public interface DataColumnBlockRootResolver {
+  public interface CanonicalBlockResolver {
 
     /**
      * Should return the canonical block root at slot if: - a block exist at this slot - block
      * contains any blobs
      */
-    Optional<Bytes32> getColumnBlockRootAtSlot(UInt64 slot);
+    Optional<BeaconBlock> getBlockAtSlot(UInt64 slot);
   }
 
   private record SlotCustody(
@@ -82,7 +83,7 @@ public class DataColumnSidecarCustodyImpl
 
   private final Spec spec;
   private final DataColumnSidecarDB db;
-  private final DataColumnBlockRootResolver blockRootResolver;
+  private final CanonicalBlockResolver blockResolver;
   private final UInt256 nodeId;
   private final int totalCustodySubnetCount;
 
@@ -92,19 +93,19 @@ public class DataColumnSidecarCustodyImpl
 
   public DataColumnSidecarCustodyImpl(
       Spec spec,
-      DataColumnBlockRootResolver blockRootResolver,
+      CanonicalBlockResolver blockResolver,
       DataColumnSidecarDB db,
       UInt256 nodeId,
       int totalCustodySubnetCount) {
 
     checkNotNull(spec);
-    checkNotNull(blockRootResolver);
+    checkNotNull(blockResolver);
     checkNotNull(db);
     checkNotNull(nodeId);
 
     this.spec = spec;
     this.db = db;
-    this.blockRootResolver = blockRootResolver;
+    this.blockResolver = blockResolver;
     this.nodeId = nodeId;
     this.totalCustodySubnetCount = totalCustodySubnetCount;
     this.eip7594StartEpoch = spec.getForkSchedule().getFork(SpecMilestone.EIP7594).getEpoch();
@@ -219,14 +220,27 @@ public class DataColumnSidecarCustodyImpl
             firstIncompleteSlot, slot -> slot.isLessThanOrEqualTo(currentSlot), UInt64::increment)
         .map(
             slot -> {
-              Optional<Bytes32> maybeCanonicalBlockRoot =
-                  blockRootResolver.getColumnBlockRootAtSlot(slot);
+              Optional<Bytes32> maybeCanonicalBlockRoot = getBlockRootIfHaveBlobs(slot);
               List<UInt64> requiredColumns = getCustodyColumnsForSlot(slot);
               List<DataColumnIdentifier> existingColumns =
                   db.streamColumnIdentifiers(slot).toList();
               return new SlotCustody(
                   slot, maybeCanonicalBlockRoot, requiredColumns, existingColumns);
             });
+  }
+
+  private Optional<Bytes32> getBlockRootIfHaveBlobs(UInt64 slot) {
+    return blockResolver
+        .getBlockAtSlot(slot)
+        .filter(
+            block ->
+                block
+                        .getBeaconBlock()
+                        .flatMap(b -> b.getBody().toVersionEip7594())
+                        .map(b -> b.getBlobKzgCommitments().size())
+                        .orElse(0)
+                    > 0)
+        .map(BeaconBlock::getRoot);
   }
 
   @Override

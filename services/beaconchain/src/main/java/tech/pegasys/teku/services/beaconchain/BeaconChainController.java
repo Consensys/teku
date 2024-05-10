@@ -88,6 +88,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnPeerManagerImpl;
+import tech.pegasys.teku.networking.eth2.peers.GossipTopicDasPeerCustodyTracker;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
@@ -627,35 +628,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
     DataColumnSidecarDBImpl sidecarDB =
         new DataColumnSidecarDBImpl(
             combinedChainDataClient, eventChannels.getPublisher(SidecarUpdateChannel.class));
-    DataColumnSidecarCustodyImpl.DataColumnBlockRootResolver blockRootResolver =
+    DataColumnSidecarCustodyImpl.CanonicalBlockResolver blockRootResolver =
         slot ->
             combinedChainDataClient
                 .getBlockAtSlotExact(slot)
-                .thenApply(
-                    maybeBlock ->
-                        maybeBlock
-                            .filter(
-                                block ->
-                                    block
-                                            .getBeaconBlock()
-                                            .flatMap(b -> b.getBody().toVersionEip7594())
-                                            .map(b -> b.getBlobKzgCommitments().size())
-                                            .orElse(0)
-                                        > 0)
-                            .map(SignedBeaconBlock::getRoot))
+                .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock))
                 .join();
 
     int dasExtraCustodySubnetCount = beaconConfig.p2pConfig().getDasExtraCustodySubnetCount();
     SpecConfigEip7594 configEip7594 =
         SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
-    int custodyRequirement = configEip7594.getCustodyRequirement();
+    int minCustodyRequirement = configEip7594.getCustodyRequirement();
     int maxSubnets = configEip7594.getDataColumnSidecarSubnetCount();
-    int totalCustodySubnets =
-        Integer.min(maxSubnets, custodyRequirement + dasExtraCustodySubnetCount);
+    int totalMyCustodySubnets =
+        Integer.min(maxSubnets, minCustodyRequirement + dasExtraCustodySubnetCount);
 
     DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
-            spec, blockRootResolver, sidecarDB, nodeId, totalCustodySubnets);
+            spec, blockRootResolver, sidecarDB, nodeId, totalMyCustodySubnets);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dataColumnSidecarCustodyImpl::onNewValidatedDataColumnSidecar);
@@ -665,9 +655,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
     p2pNetwork.subscribeConnect(dasPeerManager);
 
     DataColumnReqResp dasRpc = new DataColumnReqRespBatchingImpl(dasPeerManager);
-    // TODO there is no generic solution to retrieve extra custody subnet count for a connected peer
+
+    GossipTopicDasPeerCustodyTracker peerCustodyTracker =
+        new GossipTopicDasPeerCustodyTracker(
+            spec,
+            p2pNetwork,
+            beaconConfig.p2pConfig().getGossipEncoding(),
+            () -> recentChainData.getCurrentForkInfo());
+
+    p2pNetwork.subscribeConnect(peerCustodyTracker);
     DasPeerCustodyCountSupplier custodyCountSupplier =
-        DasPeerCustodyCountSupplier.createStub(custodyRequirement);
+        DasPeerCustodyCountSupplier.capped(peerCustodyTracker, minCustodyRequirement, maxSubnets);
+
     // TODO NOOP peer searcher should work for interop but needs to be implemented
     DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
     // TODO
