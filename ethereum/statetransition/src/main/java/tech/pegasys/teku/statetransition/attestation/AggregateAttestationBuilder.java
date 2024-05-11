@@ -43,7 +43,7 @@ class AggregateAttestationBuilder {
 
   public boolean isFullyIncluded(final ValidatableAttestation candidate) {
     return currentAggregateBits != null
-        && currentAggregateBits.supersedes(candidate.getAttestation());
+        && currentAggregateBits.isSuperSetOf(candidate.getAttestation());
   }
 
   public boolean aggregate(final ValidatableAttestation attestation) {

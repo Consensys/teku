@@ -106,7 +106,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidatableAttestation attestation) {
-    if (includedValidators.supersedes(attestation.getAttestation())) {
+    if (includedValidators.isSuperSetOf(attestation.getAttestation())) {
       // All attestation bits have already been included on chain
       return false;
     }
@@ -188,7 +188,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
           return attestationBitsCalculator;
         });
 
-    if (includedValidators.supersedes(attestation)) {
+    if (includedValidators.isSuperSetOf(attestation)) {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
@@ -202,7 +202,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       for (Iterator<ValidatableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidatableAttestation candidate = iterator.next();
-        if (includedValidators.supersedes(candidate.getAttestation())) {
+        if (includedValidators.isSuperSetOf(candidate.getAttestation())) {
           iterator.remove();
           numRemoved++;
         }
@@ -225,7 +225,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     // Recalculate totalSeenAggregationBits as validators may have been seen in multiple blocks so
     // can't do a simple remove
     includedValidators = createEmptyAttestationBits();
-    includedValidatorsBySlot.values().forEach(includedValidators::aggregateWith);
+    includedValidatorsBySlot.values().forEach(includedValidators::aggregateNoCheck);
   }
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
@@ -251,7 +251,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
       if (maybeCommitteeIndex.isEmpty()) {
-        System.out.println("current includedValidators: " + includedValidators);
+        System.out.println("NEW ROUND");
       }
       streamRemainingAttestations()
           .forEach(
@@ -267,7 +267,13 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::maybeFilterOnCommitteeIndex)
-          .filter(candidate -> !includedValidators.supersedes(candidate.getAttestation()));
+          .filter(candidate -> {
+            System.out.println("candidate: " + candidate.getAttestation() );
+            System.out.println("includedValidators:" + includedValidators );
+            boolean ret = !includedValidators.isSuperSetOf(candidate.getAttestation());
+            System.out.println("result:" + ret );
+            return ret;
+          });
     }
 
     /*

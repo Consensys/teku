@@ -286,7 +286,7 @@ public class AttestationBitsAggregatorElectraTest {
   }
 
   @Test
-  void supersedes1() {
+  void isSuperSetOf1() {
 
     /*
      01|234 <- committee 0 and 1 indices
@@ -302,11 +302,11 @@ public class AttestationBitsAggregatorElectraTest {
 
     AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(singleCommitteeAttestation);
 
-    assertThat(aggregator.supersedes(otherSingleCommitteeAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.isSuperSetOf(otherSingleCommitteeAttestation.getAttestation())).isTrue();
   }
 
   @Test
-  void supersedes2() {
+  void isSuperSetOf2() {
 
     /*
      01|234 <- committee 0 and 1 indices
@@ -323,11 +323,11 @@ public class AttestationBitsAggregatorElectraTest {
 
     AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(singleCommitteeAttestation);
 
-    assertThat(aggregator.supersedes(otherSingleCommitteeAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.isSuperSetOf(otherSingleCommitteeAttestation.getAttestation())).isTrue();
   }
 
   @Test
-  void supersedes3() {
+  void isSuperSetOf3() {
 
     /*
      01|234 <- committee 0 and 1 indices
@@ -344,11 +344,11 @@ public class AttestationBitsAggregatorElectraTest {
 
     AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(singleCommitteeAttestation);
 
-    assertThat(aggregator.supersedes(otherSingleCommitteeAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.isSuperSetOf(otherSingleCommitteeAttestation.getAttestation())).isFalse();
   }
 
   @Test
-  void supersedes4() {
+  void isSuperSetOf4() {
 
     /*
      01|234 <- committee 0 and 1 indices
@@ -364,11 +364,11 @@ public class AttestationBitsAggregatorElectraTest {
 
     AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(singleCommitteeAttestation);
 
-    assertThat(aggregator.supersedes(otherSingleCommitteeAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.isSuperSetOf(otherSingleCommitteeAttestation.getAttestation())).isFalse();
   }
 
   @Test
-  void supersedes5() {
+  void isSuperSetOf5() {
 
     /*
      01 <- committee 0
@@ -384,7 +384,7 @@ public class AttestationBitsAggregatorElectraTest {
 
     AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(singleCommitteeAttestation);
 
-    assertThat(aggregator.supersedes(otherSingleCommitteeAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.isSuperSetOf(otherSingleCommitteeAttestation.getAttestation())).isFalse();
   }
 
   private ValidatableAttestation createAttestation(

@@ -73,13 +73,13 @@ public interface AttestationBitsAggregator {
     return new AttestationBitsAggregatorPhase0(attestationBitsCalculator.getAggregationBits());
   }
 
-  boolean aggregateWith(AttestationBitsAggregator other);
+  void aggregateNoCheck(AttestationBitsAggregator other);
 
   boolean aggregateWith(Attestation other);
 
   void aggregateNoCheck(Attestation other);
 
-  boolean supersedes(Attestation other);
+  boolean isSuperSetOf(Attestation other);
 
   SszBitlist getAggregationBits();
 

@@ -32,8 +32,8 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public boolean aggregateWith(AttestationBitsAggregator other) {
-    return aggregateWith(other.getAggregationBits());
+  public void aggregateNoCheck(AttestationBitsAggregator other) {
+    aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
 
   @Override
@@ -55,7 +55,7 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public boolean supersedes(Attestation other) {
+  public boolean isSuperSetOf(Attestation other) {
     return aggregationBits.isSuperSetOf(other.getAggregationBits());
   }
 

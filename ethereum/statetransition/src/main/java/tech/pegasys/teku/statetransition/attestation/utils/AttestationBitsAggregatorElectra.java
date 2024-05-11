@@ -49,8 +49,8 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public boolean aggregateWith(AttestationBitsAggregator other) {
-    return aggregateWith(other.getCommitteeBits(), other.getAggregationBits(), true);
+  public void aggregateNoCheck(AttestationBitsAggregator other) {
+    aggregateWith(other.getCommitteeBits(), other.getAggregationBits(), false);
   }
 
   @Override
@@ -174,7 +174,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public boolean supersedes(Attestation other) {
+  public boolean isSuperSetOf(Attestation other) {
     if (!committeeBits.isSuperSetOf(other.getCommitteeBitsRequired())) {
       return false;
     }
