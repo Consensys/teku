@@ -65,7 +65,7 @@ public interface AttestationBitsAggregator {
 
   static AttestationBitsAggregator of(AttestationBitsAggregator attestationBitsCalculator) {
     if (attestationBitsCalculator.requiresCommitteeBits()) {
-      new AttestationBitsAggregatorElectra(
+      return new AttestationBitsAggregatorElectra(
           attestationBitsCalculator.getAggregationBits(),
           attestationBitsCalculator.getCommitteeBits(),
           attestationBitsCalculator.getCommitteesSize());
@@ -73,13 +73,13 @@ public interface AttestationBitsAggregator {
     return new AttestationBitsAggregatorPhase0(attestationBitsCalculator.getAggregationBits());
   }
 
-  void aggregateWith(AttestationBitsAggregator other);
+  boolean aggregateWith(AttestationBitsAggregator other);
 
-  void aggregateWith(Attestation other);
+  boolean aggregateWith(Attestation other);
+
+  void aggregateNoCheck(Attestation other);
 
   boolean supersedes(Attestation other);
-
-  boolean canAggregateWith(Attestation other);
 
   SszBitlist getAggregationBits();
 

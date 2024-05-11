@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation.utils;
 
+import com.google.common.base.MoreObjects;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -31,23 +32,31 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public void aggregateWith(AttestationBitsAggregator other) {
-    aggregationBits = aggregationBits.or(other.getAggregationBits());
+  public boolean aggregateWith(AttestationBitsAggregator other) {
+    return aggregateWith(other.getAggregationBits());
   }
 
   @Override
-  public void aggregateWith(Attestation other) {
+  public boolean aggregateWith(Attestation other) {
+    return aggregateWith(other.getAggregationBits());
+  }
+
+  private boolean aggregateWith(final SszBitlist otherAggregationBits) {
+    if (aggregationBits.intersects(otherAggregationBits)) {
+      return false;
+    }
+    aggregationBits = aggregationBits.or(otherAggregationBits);
+    return true;
+  }
+
+  @Override
+  public void aggregateNoCheck(Attestation other) {
     aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
 
   @Override
   public boolean supersedes(Attestation other) {
     return aggregationBits.isSuperSetOf(other.getAggregationBits());
-  }
-
-  @Override
-  public boolean canAggregateWith(Attestation other) {
-    return !aggregationBits.intersects(other.getAggregationBits());
   }
 
   @Override
@@ -68,5 +77,10 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   @Override
   public boolean requiresCommitteeBits() {
     return false;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("aggregationBits", aggregationBits).toString();
   }
 }

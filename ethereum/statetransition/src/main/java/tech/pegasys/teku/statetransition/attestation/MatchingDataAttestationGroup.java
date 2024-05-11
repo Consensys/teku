@@ -36,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
  * AttestationData}.
@@ -248,12 +250,14 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     public ValidatableAttestation next() {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
+      if (maybeCommitteeIndex.isEmpty()) {
+        System.out.println("current includedValidators: " + includedValidators);
+      }
       streamRemainingAttestations()
           .forEach(
               candidate -> {
-                if (builder.canAggregate(candidate)) {
-                  builder.aggregate(candidate);
-                  includedValidators.aggregateWith(candidate.getAttestation());
+                if (builder.aggregate(candidate)) {
+                  includedValidators.aggregateNoCheck(candidate.getAttestation());
                 }
               });
       return builder.buildAggregate();
