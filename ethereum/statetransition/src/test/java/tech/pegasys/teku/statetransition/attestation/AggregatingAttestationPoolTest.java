@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationData
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-@TestSpecContext(milestone = {ELECTRA})
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
@@ -174,7 +174,8 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   void getAttestationsForBlock_shouldNotThrowExceptionWhenShufflingSeedIsUnknown() {
-    final Attestation attestation = dataStructureUtil.randomAttestation(1);
+    final Attestation attestation =
+        createAttestation(dataStructureUtil.randomAttestationData(ONE), 1, 2, 3, 4);
     // Receive the attestation from a block, prior to receiving it via gossip
     aggregatingPool.onAttestationsIncludedInBlock(ONE, List.of(attestation));
     // Attestation isn't added because it's already redundant
