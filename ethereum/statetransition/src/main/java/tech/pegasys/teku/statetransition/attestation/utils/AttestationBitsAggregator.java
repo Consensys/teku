@@ -73,11 +73,11 @@ public interface AttestationBitsAggregator {
     return new AttestationBitsAggregatorPhase0(attestationBitsCalculator.getAggregationBits());
   }
 
-  void aggregateNoCheck(AttestationBitsAggregator other);
+  void or(AttestationBitsAggregator other);
 
   boolean aggregateWith(Attestation other);
 
-  void aggregateNoCheck(Attestation other);
+  void or(Attestation other);
 
   boolean isSuperSetOf(Attestation other);
 

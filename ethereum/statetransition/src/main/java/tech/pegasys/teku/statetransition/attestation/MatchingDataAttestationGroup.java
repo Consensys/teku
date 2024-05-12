@@ -36,8 +36,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
  * AttestationData}.
@@ -50,7 +48,7 @@ import static com.google.common.base.Preconditions.checkState;
  * <p>Note that the resulting aggregate will be invalid if attestations with different
  * AttestationData are added.
  */
-class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
+public class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
 
   private final NavigableMap<Integer, Set<ValidatableAttestation>> attestationsByValidatorCount =
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
@@ -184,7 +182,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
           if (attestationBitsCalculator == null) {
             return AttestationBitsAggregator.of(attestation, commiteesSizeSupplier);
           }
-          attestationBitsCalculator.aggregateWith(attestation);
+          attestationBitsCalculator.or(attestation);
           return attestationBitsCalculator;
         });
 
@@ -192,7 +190,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    includedValidators.aggregateWith(attestation);
+    includedValidators.or(attestation);
 
     final Collection<Set<ValidatableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
@@ -225,7 +223,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     // Recalculate totalSeenAggregationBits as validators may have been seen in multiple blocks so
     // can't do a simple remove
     includedValidators = createEmptyAttestationBits();
-    includedValidatorsBySlot.values().forEach(includedValidators::aggregateNoCheck);
+    includedValidatorsBySlot.values().forEach(includedValidators::or);
   }
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
@@ -250,14 +248,11 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     public ValidatableAttestation next() {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
-      if (maybeCommitteeIndex.isEmpty()) {
-        System.out.println("NEW ROUND");
-      }
       streamRemainingAttestations()
           .forEach(
               candidate -> {
                 if (builder.aggregate(candidate)) {
-                  includedValidators.aggregateNoCheck(candidate.getAttestation());
+                  includedValidators.or(candidate.getAttestation());
                 }
               });
       return builder.buildAggregate();
@@ -267,13 +262,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::maybeFilterOnCommitteeIndex)
-          .filter(candidate -> {
-            System.out.println("candidate: " + candidate.getAttestation() );
-            System.out.println("includedValidators:" + includedValidators );
-            boolean ret = !includedValidators.isSuperSetOf(candidate.getAttestation());
-            System.out.println("result:" + ret );
-            return ret;
-          });
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()));
     }
 
     /*

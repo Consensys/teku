@@ -43,7 +43,7 @@ public class AggregatorUtil {
         participationIndices.addAll(attestation.getCommitteeBitsRequired().getAllSetBits());
         checkState(
             participationIndices.size() == 1,
-            "We currently do not support aggregation across different committees");
+            "this test util doesn't support generating cross-committee aggregations");
       }
     }
 

@@ -26,14 +26,18 @@ import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestati
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentMatchers;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -51,10 +55,11 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationData
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-@TestSpecContext(milestone = {PHASE0, ELECTRA})
+@TestSpecContext(milestone = {ELECTRA})
 class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
+  private static final int COMMITTEE_SIZE = 20;
 
   private Spec spec;
   private SpecMilestone specMilestone;
@@ -73,6 +78,8 @@ class AggregatingAttestationPoolTest {
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
+  private Int2IntMap committeeSizes;
+
   @BeforeEach
   public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
     spec = specContext.getSpec();
@@ -80,14 +87,22 @@ class AggregatingAttestationPoolTest {
     attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
     dataStructureUtil = specContext.getDataStructureUtil();
 
+    committeeSizes = new Int2IntOpenHashMap();
+    IntStream.range(0, spec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot())
+        .forEach(index -> committeeSizes.put(index, COMMITTEE_SIZE));
+
     if (specMilestone.equals(PHASE0)) {
       committeeIndex = Optional.empty();
     } else {
-      // TODO we have to test multiple committees when will be supported
       committeeIndex =
           Optional.of(
               dataStructureUtil.randomUInt64(
                   spec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
+
+      final BeaconState state = dataStructureUtil.randomBeaconState();
+      when(mockRecentChainData.retrieveStateAtSlot(any()))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+      when(mockSpec.getBeaconCommitteesSize(any(), any())).thenReturn(committeeSizes);
     }
 
     when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(true);
@@ -196,11 +211,11 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getAttestationsForBlock_shouldAggregateAttestationsWhenPossible() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4);
 
-    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(SLOT.increment());
 
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
         .containsExactly(aggregateAttestations(attestation1, attestation2));
@@ -544,7 +559,8 @@ class AggregatingAttestationPoolTest {
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
     final Attestation attestation = createAttestation(data, validators);
-    ValidatableAttestation validatableAttestation = ValidatableAttestation.from(spec, attestation);
+    ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestation, committeeSizes);
     validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(
         dataStructureUtil.randomBeaconState(100, 15, data.getSlot()));
     aggregatingPool.add(validatableAttestation);
@@ -552,7 +568,8 @@ class AggregatingAttestationPoolTest {
   }
 
   private Attestation createAttestation(final AttestationData data, final int... validators) {
-    final SszBitlist bitlist = attestationSchema.getAggregationBitsSchema().ofBits(20, validators);
+    final SszBitlist bitlist =
+        attestationSchema.getAggregationBitsSchema().ofBits(COMMITTEE_SIZE, validators);
 
     final Supplier<SszBitvector> committeeBits;
 

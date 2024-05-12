@@ -49,35 +49,28 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public void aggregateNoCheck(AttestationBitsAggregator other) {
-    aggregateWith(other.getCommitteeBits(), other.getAggregationBits(), false);
+  public void or(AttestationBitsAggregator other) {
+    or(other.getCommitteeBits(), other.getAggregationBits(), false);
   }
 
   @Override
   public boolean aggregateWith(Attestation other) {
-    return aggregateWith(other.getCommitteeBitsRequired(), other.getAggregationBits(), true);
+    return or(other.getCommitteeBitsRequired(), other.getAggregationBits(), true);
   }
 
   @Override
-  public void aggregateNoCheck(Attestation other) {
-    aggregateWith(other.getCommitteeBitsRequired(), other.getAggregationBits(), false);
+  public void or(Attestation other) {
+    or(other.getCommitteeBitsRequired(), other.getAggregationBits(), false);
   }
 
   private static class CannotAggregateException extends RuntimeException {}
 
-  private boolean aggregateWith(
-      final SszBitvector otherCommitteeBits, final SszBitlist otherAggregatedBits, final boolean check) {
-    // Assumption: can aggregate are exactly the same or non-overlapping
+  private boolean or(
+      final SszBitvector otherCommitteeBits,
+      final SszBitlist otherAggregatedBits,
+      final boolean isAggregation) {
+
     final SszBitvector aggregatedCommitteeBits = committeeBits.or(otherCommitteeBits);
-    if (aggregatedCommitteeBits.getBitCount() == committeeBits.getBitCount()) {
-      if (aggregationBits.intersects(otherAggregatedBits)) {
-        return false;
-      }
-      // they were the same, let's simply aggregate aggregationBits too
-      aggregationBits = aggregationBits.or(otherAggregatedBits);
-      committeeBits = aggregatedCommitteeBits;
-      return true;
-    }
 
     final Int2IntMap committeeBitsStartingPositions =
         calculateCommitteeStartingPositions(committeeBits);
@@ -121,8 +114,11 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
                 IntStream.range(0, committeeSize)
                     .forEach(
                         positionInCommittee -> {
-                          if (aggregateSingleBit(
-                              positionInCommittee, sources, sourcesStartingPosition, check)) {
+                          if (orSingleBit(
+                              positionInCommittee,
+                              sources,
+                              sourcesStartingPosition,
+                              isAggregation)) {
                             aggregationIndices.add(destinationStart + positionInCommittee);
                           }
                         });
@@ -142,11 +138,11 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
     return true;
   }
 
-  private boolean aggregateSingleBit(
+  private boolean orSingleBit(
       final int positionInCommittee,
       final List<SszBitlist> sources,
       final List<Integer> sourcesStartingPosition,
-      final boolean check) {
+      final boolean isAggregating) {
     boolean aggregatedBit = false;
     for (int s = 0; s < sources.size(); s++) {
       final boolean sourceBit =
@@ -154,7 +150,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
       if (!aggregatedBit && sourceBit) {
         aggregatedBit = true;
-      } else if (check && aggregatedBit && sourceBit) {
+      } else if (isAggregating && aggregatedBit && sourceBit) {
         throw new CannotAggregateException();
       }
     }
@@ -210,7 +206,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
                                   .getBit(otherStartingPosition + positionInCommittee)
                               && !aggregationBits.getBit(startingPosition + positionInCommittee));
             })
-        .noneMatch(aBitFoundInOtherButNotInThis -> true);
+        .noneMatch(aBitFoundInOtherButNotInThis -> aBitFoundInOtherButNotInThis);
   }
 
   @Override

@@ -32,7 +32,7 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public void aggregateNoCheck(AttestationBitsAggregator other) {
+  public void or(AttestationBitsAggregator other) {
     aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
 
@@ -50,7 +50,7 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public void aggregateNoCheck(Attestation other) {
+  public void or(Attestation other) {
     aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
 
