@@ -1,0 +1,16 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: teku
+  - el_type: erigon
+    cl_type: teku
+  - el_type: besu
+    cl_type: teku
+  - el_type: reth
+    cl_type: teku
+additional_services:
+  - assertoor
+assertoor_params:
+  run_stability_check: false
+  run_block_proposal_check: true

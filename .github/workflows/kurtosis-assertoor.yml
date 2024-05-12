@@ -1,0 +1,12 @@
+name: "Run Kurtosis Ethereum Testnet tests"
+on: [push, pull_request]
+
+jobs:
+  ethereum-testnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup kurtosis testnet and run assertoor tests
+        uses: ethpandaops/kurtosis-assertoor-github-action@v1
+        with:
+          ethereum_package_args: '.github/kurtosis-assertoor-config.yml'
