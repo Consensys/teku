@@ -232,10 +232,10 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
 
-    private Iterator<ValidatableAttestation> remainingAttestations;
-
     private final Optional<UInt64> maybeCommitteeIndex;
     private final AttestationBitsAggregator includedValidators;
+
+    private Iterator<ValidatableAttestation> remainingAttestations;
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
       this.maybeCommitteeIndex = committeeIndex;
