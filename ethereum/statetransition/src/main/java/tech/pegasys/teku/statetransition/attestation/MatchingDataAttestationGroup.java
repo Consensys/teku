@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -230,14 +231,16 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   }
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
+
     private Iterator<ValidatableAttestation> remainingAttestations;
 
-    private final AttestationBitsAggregator includedValidators =
-        AttestationBitsAggregator.of(MatchingDataAttestationGroup.this.includedValidators);
     private final Optional<UInt64> maybeCommitteeIndex;
+    private final AttestationBitsAggregator includedValidators;
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
       this.maybeCommitteeIndex = committeeIndex;
+      includedValidators =
+          AttestationBitsAggregator.of(MatchingDataAttestationGroup.this.includedValidators);
     }
 
     @Override
@@ -253,11 +256,11 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
       remainingAttestations.forEachRemaining(
-              candidate -> {
-                if (builder.aggregate(candidate)) {
-                  includedValidators.or(candidate.getAttestation());
-                }
-              });
+          candidate -> {
+            if (builder.aggregate(candidate)) {
+              includedValidators.or(candidate.getAttestation());
+            }
+          });
       return builder.buildAggregate();
     }
 
@@ -271,7 +274,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     /*
     If we have attestations with committeeBits (Electra) then, if maybeCommitteeIndex is specified, we will consider attestation related to that committee only
      */
-    private boolean maybeFilterOnCommitteeIndex(ValidatableAttestation candidate) {
+    private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
       final Optional<SszBitvector> maybeCommitteeBits =
           candidate.getAttestation().getCommitteeBits();
       if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
