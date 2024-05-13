@@ -92,7 +92,6 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
     final ExpectedWithdrawals withdrawals =
         spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
-    assertThat(withdrawals.getExpectedWithdrawals()).isPresent();
     assertThat(withdrawals.getWithdrawalList()).hasSize(1);
   }
 

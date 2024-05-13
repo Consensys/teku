@@ -18,6 +18,8 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -48,6 +50,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class ExpectedWithdrawals {
+  private static final Logger LOG = LogManager.getLogger();
   public static final ExpectedWithdrawals NOOP = new ExpectedWithdrawals(List.of(), 0);
   private final List<Withdrawal> withdrawalList;
   private Optional<SszList<Withdrawal>> maybeWithdrawalsSszList = Optional.empty();
@@ -55,6 +58,10 @@ public class ExpectedWithdrawals {
 
   private ExpectedWithdrawals(
       final List<Withdrawal> withdrawalList, final int partialWithdrawalCount) {
+    LOG.debug(
+        "Expected withdrawals created with withdrawals list size {}, partials {}",
+        withdrawalList == null ? -1 : withdrawalList.size(),
+        partialWithdrawalCount);
     this.withdrawalList = withdrawalList;
     this.partialWithdrawalCount = partialWithdrawalCount;
   }
@@ -65,6 +72,11 @@ public class ExpectedWithdrawals {
       final SchemaDefinitionsCapella schemaDefinitions) {
     this.withdrawalList = withdrawalList;
     this.partialWithdrawalCount = partialWithdrawalCount;
+    LOG.debug(
+        "Expected withdrawals created with withdrawals list size {}, partials {}, schema definition class: {}",
+        withdrawalList == null ? -1 : withdrawalList.size(),
+        partialWithdrawalCount,
+        schemaDefinitions.getClass());
 
     getExpectedWithdrawalsSszList(schemaDefinitions);
   }
@@ -138,13 +150,6 @@ public class ExpectedWithdrawals {
 
   public int getPartialWithdrawalCount() {
     return partialWithdrawalCount;
-  }
-
-  public Optional<List<Withdrawal>> getExpectedWithdrawals() {
-    if (withdrawalList.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.of(withdrawalList);
   }
 
   private static List<Withdrawal> getPendingPartialWithdrawals(
