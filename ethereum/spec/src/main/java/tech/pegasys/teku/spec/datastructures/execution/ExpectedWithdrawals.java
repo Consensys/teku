@@ -152,10 +152,6 @@ public class ExpectedWithdrawals {
     return partialWithdrawalCount;
   }
 
-  public List<Withdrawal> getExpectedWithdrawals() {
-    return withdrawalList;
-  }
-
   private static List<Withdrawal> getPendingPartialWithdrawals(
       final BeaconStateElectra preState,
       final SchemaDefinitionsElectra schemaDefinitions,
