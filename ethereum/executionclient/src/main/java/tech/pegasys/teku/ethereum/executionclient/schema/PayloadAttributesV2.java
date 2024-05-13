@@ -50,7 +50,7 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
   public static List<WithdrawalV1> getWithdrawals(
       final Optional<List<Withdrawal>> maybeWithdrawals) {
     if (maybeWithdrawals.isEmpty()) {
-      return null;
+      return List.of();
     }
 
     final List<WithdrawalV1> withdrawals = new ArrayList<>();
