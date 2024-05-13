@@ -63,16 +63,6 @@ public interface AttestationBitsAggregator {
         .orElseGet(() -> new AttestationBitsAggregatorPhase0(attestation.getAggregationBits()));
   }
 
-  static AttestationBitsAggregator of(AttestationBitsAggregator attestationBitsCalculator) {
-    if (attestationBitsCalculator.requiresCommitteeBits()) {
-      return new AttestationBitsAggregatorElectra(
-          attestationBitsCalculator.getAggregationBits(),
-          attestationBitsCalculator.getCommitteeBits(),
-          attestationBitsCalculator.getCommitteesSize());
-    }
-    return new AttestationBitsAggregatorPhase0(attestationBitsCalculator.getAggregationBits());
-  }
-
   void or(AttestationBitsAggregator other);
 
   boolean aggregateWith(Attestation other);
@@ -91,6 +81,10 @@ public interface AttestationBitsAggregator {
 
   /** Creates an independent copy of this instance */
   default AttestationBitsAggregator copy() {
-    return of(this);
+    if (requiresCommitteeBits()) {
+      return new AttestationBitsAggregatorElectra(
+          getAggregationBits(), getCommitteeBits(), getCommitteesSize());
+    }
+    return new AttestationBitsAggregatorPhase0(getAggregationBits());
   }
 }
