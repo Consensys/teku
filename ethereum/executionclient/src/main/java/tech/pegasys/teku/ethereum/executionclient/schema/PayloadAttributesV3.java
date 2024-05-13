@@ -49,7 +49,8 @@ public class PayloadAttributesV3 extends PayloadAttributesV2 {
                 payloadAttributes.getTimestamp(),
                 payloadAttributes.getPrevRandao(),
                 payloadAttributes.getFeeRecipient(),
-                getWithdrawals(payloadAttributes.getWithdrawals()),
+                getWithdrawals(
+                    payloadAttributes.getWithdrawals(), payloadAttributes.getProposalSlot()),
                 payloadAttributes.getParentBeaconBlockRoot()));
   }
 }
