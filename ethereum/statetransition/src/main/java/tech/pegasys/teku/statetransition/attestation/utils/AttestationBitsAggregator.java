@@ -88,4 +88,9 @@ public interface AttestationBitsAggregator {
   Int2IntMap getCommitteesSize();
 
   boolean requiresCommitteeBits();
+
+  /** Creates an independent copy of this instance */
+  default AttestationBitsAggregator copy() {
+    return of(this);
+  }
 }

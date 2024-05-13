@@ -239,8 +239,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
       this.maybeCommitteeIndex = committeeIndex;
-      includedValidators =
-          AttestationBitsAggregator.of(MatchingDataAttestationGroup.this.includedValidators);
+      includedValidators = MatchingDataAttestationGroup.this.includedValidators.copy();
     }
 
     @Override
