@@ -88,8 +88,8 @@ public class AttestationElectra
   }
 
   @Override
-  public int getFirstCommitteeIndex() {
-    return getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow();
+  public UInt64 getFirstCommitteeIndex() {
+    return UInt64.valueOf(getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow());
   }
 
   @Override

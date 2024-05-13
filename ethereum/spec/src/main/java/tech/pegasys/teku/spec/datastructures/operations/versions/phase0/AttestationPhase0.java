@@ -68,8 +68,8 @@ public class AttestationPhase0
   }
 
   @Override
-  public int getFirstCommitteeIndex() {
-    return getField1().getIndex().intValue();
+  public UInt64 getFirstCommitteeIndex() {
+    return getField1().getIndex();
   }
 
   @Override
