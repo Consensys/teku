@@ -42,19 +42,19 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void canAggregate_shouldBeTrueForFirstAttestation() {
-    assertThat(builder.canAggregate(createAttestation(1, 2, 3, 4, 5, 6, 7, 8, 9))).isTrue();
+    assertThat(builder.aggregate(createAttestation(1, 2, 3, 4, 5, 6, 7, 8, 9))).isTrue();
   }
 
   @Test
   public void canAggregate_shouldBeTrueWhenValidatorsDoNotOverlap() {
     builder.aggregate(createAttestation(1, 3, 5));
-    assertThat(builder.canAggregate(createAttestation(0, 2, 4))).isTrue();
+    assertThat(builder.aggregate(createAttestation(0, 2, 4))).isTrue();
   }
 
   @Test
   public void canAggregate_shouldBeFalseWhenValidatorsDoOverlap() {
     builder.aggregate(createAttestation(1, 3, 5));
-    assertThat(builder.canAggregate(createAttestation(1, 2, 4))).isFalse();
+    assertThat(builder.aggregate(createAttestation(1, 2, 4))).isFalse();
   }
 
   @Test

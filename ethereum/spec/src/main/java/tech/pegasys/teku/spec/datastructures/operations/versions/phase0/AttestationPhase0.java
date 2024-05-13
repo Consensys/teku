@@ -68,6 +68,11 @@ public class AttestationPhase0
   }
 
   @Override
+  public int getFirstCommitteeIndex() {
+    return getField1().getIndex().intValue();
+  }
+
+  @Override
   public BLSSignature getAggregateSignature() {
     return getField2().getSignature();
   }

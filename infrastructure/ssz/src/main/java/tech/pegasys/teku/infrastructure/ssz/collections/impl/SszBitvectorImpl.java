@@ -95,6 +95,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
+  public SszBitvector and(SszBitvector other) {
+    return new SszBitvectorImpl(getSchema(), value.and(toBitvectorImpl(other)));
+  }
+
+  @Override
   protected int sizeImpl() {
     return getSchema().getLength();
   }

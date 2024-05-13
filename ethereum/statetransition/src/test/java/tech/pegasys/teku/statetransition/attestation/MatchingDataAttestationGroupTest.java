@@ -18,6 +18,8 @@ import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +47,7 @@ class MatchingDataAttestationGroupTest {
   private AttestationData attestationData;
 
   private MatchingDataAttestationGroup group;
+  private Int2IntMap committeeSizes;
 
   @BeforeEach
   public void setUp(final SpecContext specContext) {
@@ -52,7 +55,10 @@ class MatchingDataAttestationGroupTest {
     attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
     dataStructureUtil = specContext.getDataStructureUtil();
     attestationData = dataStructureUtil.randomAttestationData(SLOT);
-    group = new MatchingDataAttestationGroup(spec, attestationData);
+    committeeSizes = new Int2IntOpenHashMap();
+    committeeSizes.put(0, 10);
+    committeeSizes.put(1, 10);
+    group = new MatchingDataAttestationGroup(spec, attestationData, () -> committeeSizes);
   }
 
   @TestTemplate
@@ -355,16 +361,14 @@ class MatchingDataAttestationGroupTest {
               attestationSchema
                   .getCommitteeBitsSchema()
                   .orElseThrow()
-                  .ofBits(
-                      committeeIndex.orElse(
-                          dataStructureUtil.randomPositiveInt(
-                              spec.atSlot(SLOT).getConfig().getMaxCommitteesPerSlot())));
+                  .ofBits(committeeIndex.orElse(0));
     } else {
       committeeBits = () -> null;
     }
     return ValidatableAttestation.from(
         spec,
         attestationSchema.create(
-            aggregationBits, attestationData, committeeBits, dataStructureUtil.randomSignature()));
+            aggregationBits, attestationData, committeeBits, dataStructureUtil.randomSignature()),
+        committeeSizes);
   }
 }

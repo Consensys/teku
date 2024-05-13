@@ -88,6 +88,11 @@ public class AttestationElectra
   }
 
   @Override
+  public int getFirstCommitteeIndex() {
+    return getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow();
+  }
+
+  @Override
   public boolean requiresCommitteeBits() {
     return true;
   }
