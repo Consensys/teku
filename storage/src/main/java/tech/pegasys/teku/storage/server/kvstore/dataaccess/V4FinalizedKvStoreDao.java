@@ -220,6 +220,12 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
+  public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
+    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
+        .map(ColumnEntry::getKey)
+        .map(ColumnSlotAndIdentifier::slot);
+  }
+
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
     return db.getRaw(var);
   }

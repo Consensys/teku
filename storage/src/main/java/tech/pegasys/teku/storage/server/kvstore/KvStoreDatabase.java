@@ -943,6 +943,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
+    return dao.getEarliestDataSidecarColumnSlot();
+  }
+
+  @Override
   public void setFirstIncompleteSlot(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.setFirstIncompleteSlot(slot);

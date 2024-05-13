@@ -269,6 +269,16 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestDataColumnSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final List<UInt64> columns,
+      final RpcResponseListener<DataColumnSidecar> listener) {
+    // TODO
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock> handler =
         PendingRequestHandler.createForSingleBlockRequest(

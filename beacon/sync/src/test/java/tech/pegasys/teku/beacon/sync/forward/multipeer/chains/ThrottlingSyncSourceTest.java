@@ -54,7 +54,8 @@ class ThrottlingSyncSourceTest {
           timeProvider,
           delegate,
           MAX_BLOCKS_PER_MINUTE,
-          Optional.of(MAX_BLOB_SIDECARS_PER_MINUTE));
+          Optional.of(MAX_BLOB_SIDECARS_PER_MINUTE),
+          Optional.empty());
 
   @Test
   void shouldDelegateDisconnectImmediately() {

@@ -550,6 +550,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
   }
 
+  @Override
+  public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
+    return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
+        .map(ColumnEntry::getKey)
+        .map(ColumnSlotAndIdentifier::slot);
+  }
+
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
     private final KvStoreTransaction transaction;
 

@@ -390,6 +390,23 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+              database.streamDataColumnIdentifiers(startSlot, endSlot).limit(limit.longValue())) {
+            return dataColumnIdentifiersStream.toList();
+          }
+        });
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
+    return SafeFuture.of(database::getEarliestDataColumnSidecarSlot);
+  }
+
+  @Override
   public void onFirstIncompleteSlot(final UInt64 slot) {
     database.setFirstIncompleteSlot(slot);
   }

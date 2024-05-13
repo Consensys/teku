@@ -252,6 +252,8 @@ public interface Database extends AutoCloseable {
     return streamDataColumnIdentifiers(slot, slot);
   }
 
+  Optional<UInt64> getEarliestDataColumnSidecarSlot();
+
   void setFirstIncompleteSlot(UInt64 slot);
 
   void addSidecar(DataColumnSidecar sidecar);

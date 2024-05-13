@@ -262,4 +262,16 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return asyncRunner.runAsync(() -> queryDelegate.getDataColumnIdentifiers(slot));
   }
+
+  @Override
+  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return asyncRunner.runAsync(
+        () -> queryDelegate.getDataColumnIdentifiers(startSlot, endSlot, limit));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
+    return asyncRunner.runAsync(queryDelegate::getEarliestDataColumnSidecarSlot);
+  }
 }

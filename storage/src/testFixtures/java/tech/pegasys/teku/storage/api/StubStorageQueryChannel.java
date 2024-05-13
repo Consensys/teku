@@ -194,4 +194,15 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return SafeFuture.completedFuture(Collections.emptyList());
   }
+
+  @Override
+  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
 }

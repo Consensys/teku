@@ -347,6 +347,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
+    return Optional.empty();
+  }
+
+  @Override
   public void setFirstIncompleteSlot(UInt64 slot) {}
 
   @Override

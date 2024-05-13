@@ -46,12 +46,20 @@ public class SyncSourceFactory {
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
     final Optional<Integer> maxBlobSidecarsPerMinute =
         spec.getMaxBlobsPerBlock().map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
+    final Optional<Integer> maxDataColumnSidecarsPerMinute =
+        spec.getNumberOfDataColumns()
+            .map(dataColumnsPerBlock -> maxBlocksPerMinute * dataColumnsPerBlock.intValue());
 
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
             new ThrottlingSyncSource(
-                asyncRunner, timeProvider, source, maxBlocksPerMinute, maxBlobSidecarsPerMinute));
+                asyncRunner,
+                timeProvider,
+                source,
+                maxBlocksPerMinute,
+                maxBlobSidecarsPerMinute,
+                maxDataColumnSidecarsPerMinute));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {

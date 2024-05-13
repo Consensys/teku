@@ -36,6 +36,7 @@ public class DataColumnSidecarsResponseInvalidResponseException extends InvalidR
   public enum InvalidResponseType {
     DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED(
         "KZG verification for DataColumnSidecar has failed"),
+    DATA_COLUMN_SIDECAR_SLOT_NOT_IN_RANGE("DataColumnSidecar's slot is not within requested range"),
     DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER(
         "DataColumnSidecar is not within requested identifiers");
 

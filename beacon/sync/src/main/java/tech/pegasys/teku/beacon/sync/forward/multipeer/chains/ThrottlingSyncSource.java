@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ThrottlingSyncSource implements SyncSource {
@@ -38,13 +40,15 @@ public class ThrottlingSyncSource implements SyncSource {
 
   private final RateTracker blocksRateTracker;
   private final RateTracker blobSidecarsRateTracker;
+  private final RateTracker dataColumnSidecarsRateTracker;
 
   public ThrottlingSyncSource(
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final SyncSource delegate,
       final int maxBlocksPerMinute,
-      final Optional<Integer> maybeMaxBlobSidecarsPerMinute) {
+      final Optional<Integer> maybeMaxBlobSidecarsPerMinute,
+      final Optional<Integer> maybeMaxDataColumnSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
     this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider);
@@ -53,6 +57,12 @@ public class ThrottlingSyncSource implements SyncSource {
             .map(
                 maxBlobSidecarsPerMinute ->
                     RateTracker.create(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider))
+            .orElse(RateTracker.NOOP);
+    this.dataColumnSidecarsRateTracker =
+        maybeMaxDataColumnSidecarsPerMinute
+            .map(
+                maxDataColumnSidecarsPerMinute ->
+                    RateTracker.create(maxDataColumnSidecarsPerMinute, TIME_OUT, timeProvider))
             .orElse(RateTracker.NOOP);
   }
 
@@ -79,6 +89,22 @@ public class ThrottlingSyncSource implements SyncSource {
     } else {
       return asyncRunner.runAfterDelay(
           () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
+    }
+  }
+
+  @Override
+  public SafeFuture<Void> requestDataColumnSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final List<UInt64> columns,
+      final RpcResponseListener<DataColumnSidecar> listener) {
+    if (dataColumnSidecarsRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
+      LOG.debug("Sending request for {} data column sidecars on {} columns", count, columns.size());
+      return delegate.requestDataColumnSidecarsByRange(startSlot, count, columns, listener);
+    } else {
+      return asyncRunner.runAfterDelay(
+          () -> requestDataColumnSidecarsByRange(startSlot, count, columns, listener),
+          PEER_REQUEST_DELAY);
     }
   }
 

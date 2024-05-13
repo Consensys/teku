@@ -28,6 +28,8 @@ public class BeaconChainMethodIds {
 
   static final String DATA_COLUMN_SIDECARS_BY_ROOT =
       "/eth2/beacon_chain/req/data_column_sidecars_by_root";
+  static final String DATA_COLUMN_SIDECARS_BY_RANGE =
+      "/eth2/beacon_chain/req/data_column_sidecars_by_range";
 
   static final String GET_METADATA = "/eth2/beacon_chain/req/metadata";
   static final String PING = "/eth2/beacon_chain/req/ping";

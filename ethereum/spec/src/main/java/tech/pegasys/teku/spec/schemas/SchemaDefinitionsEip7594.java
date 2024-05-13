@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7594.ExecutionPayloadHeaderSchemaEip7594;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7594.ExecutionPayloadSchemaEip7594;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7594.BeaconStateEip7594;
@@ -78,6 +79,9 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
   private final DataColumnSidecarsByRootRequestMessageSchema
       dataColumnSidecarsByRootRequestMessageSchema;
+  private final DataColumnSidecarsByRangeRequestMessage
+          .DataColumnSidecarsByRangeRequestMessageSchema
+      dataColumnSidecarsByRangeRequestMessageSchema;
 
   public SchemaDefinitionsEip7594(final SpecConfigEip7594 specConfig) {
     super(specConfig);
@@ -134,6 +138,9 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
             SignedBeaconBlockHeader.SSZ_SCHEMA, dataColumnSchema, specConfig);
     this.dataColumnSidecarsByRootRequestMessageSchema =
         new DataColumnSidecarsByRootRequestMessageSchema(specConfig);
+    this.dataColumnSidecarsByRangeRequestMessageSchema =
+        new DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema(
+            specConfig);
   }
 
   public static SchemaDefinitionsEip7594 required(final SchemaDefinitions schemaDefinitions) {
@@ -271,5 +278,10 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
   public DataColumnSidecarsByRootRequestMessageSchema
       getDataColumnSidecarsByRootRequestMessageSchema() {
     return dataColumnSidecarsByRootRequestMessageSchema;
+  }
+
+  public DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema
+      getDataColumnSidecarsByRangeRequestMessageSchema() {
+    return dataColumnSidecarsByRangeRequestMessageSchema;
   }
 }
