@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -231,6 +230,8 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   }
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
+    private Iterator<ValidatableAttestation> remainingAttestations;
+
     private final AttestationBitsAggregator includedValidators =
         AttestationBitsAggregator.of(MatchingDataAttestationGroup.this.includedValidators);
     private final Optional<UInt64> maybeCommitteeIndex;
@@ -241,15 +242,17 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
     @Override
     public boolean hasNext() {
-      return streamRemainingAttestations().findAny().isPresent();
+      if (remainingAttestations == null || !remainingAttestations.hasNext()) {
+        remainingAttestations = streamRemainingAttestations().iterator();
+      }
+      return remainingAttestations.hasNext();
     }
 
     @Override
     public ValidatableAttestation next() {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
-      streamRemainingAttestations()
-          .forEach(
+      remainingAttestations.forEachRemaining(
               candidate -> {
                 if (builder.aggregate(candidate)) {
                   includedValidators.or(candidate.getAttestation());
