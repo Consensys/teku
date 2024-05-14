@@ -58,7 +58,7 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   public void setFirstIncompleteSlot(final UInt64 slot) {
     Optional<UInt64> oldValue = getFirstIncompleteSlot();
     sidecarUpdateChannel.onFirstIncompleteSlot(slot);
-    if (oldValue.isEmpty() || oldValue.get() != slot) {
+    if (oldValue.isEmpty() || !oldValue.get().equals(slot)) {
       long oldSlotColCount = oldValue.map(s -> streamColumnIdentifiers(s).count()).orElse(0L);
       long newSlotCount = streamColumnIdentifiers(slot).count();
       LOG.info(
