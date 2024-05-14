@@ -166,8 +166,7 @@ public class AggregateAttestationValidator {
               }
 
               final IntList beaconCommittee =
-                  spec.getBeaconCommittee(
-                      state, aggregateSlot, UInt64.valueOf(aggregate.getFirstCommitteeIndex()));
+                  spec.getBeaconCommittee(state, aggregateSlot, aggregate.getFirstCommitteeIndex());
 
               final int aggregatorModulo =
                   specVersion.getValidatorsUtil().getAggregatorModulo(beaconCommittee.size());
