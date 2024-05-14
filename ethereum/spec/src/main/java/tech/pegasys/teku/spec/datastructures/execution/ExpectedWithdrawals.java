@@ -352,7 +352,7 @@ public class ExpectedWithdrawals {
   private static void assertWithdrawalsInExecutionPayloadMatchExpected(
       final ExecutionPayloadSummary payloadSummary, final SszList<Withdrawal> expectedWithdrawals)
       throws BlockProcessingException {
-    // the spec does a element-to-element comparison but Teku is comparing the hash of the tree
+    // the spec does an element-to-element comparison but Teku is comparing the hash of the tree
     if (payloadSummary.getOptionalWithdrawalsRoot().isEmpty()
         || !expectedWithdrawals
             .hashTreeRoot()

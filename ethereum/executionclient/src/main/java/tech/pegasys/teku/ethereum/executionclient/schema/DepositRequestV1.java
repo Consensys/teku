@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -54,6 +56,11 @@ public class DepositRequestV1 {
       @JsonProperty("amount") final UInt64 amount,
       @JsonProperty("signature") final Bytes signature,
       @JsonProperty("index") final UInt64 index) {
+    checkNotNull(pubkey, "pubkey");
+    checkNotNull(withdrawalCredentials, "withdrawalCredentials");
+    checkNotNull(amount, "amount");
+    checkNotNull(signature, "signature");
+    checkNotNull(index, "index");
     this.pubkey = pubkey;
     this.withdrawalCredentials = withdrawalCredentials;
     this.amount = amount;
