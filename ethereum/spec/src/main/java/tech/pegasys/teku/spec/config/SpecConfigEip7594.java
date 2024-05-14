@@ -40,9 +40,7 @@ public interface SpecConfigEip7594 extends SpecConfigDeneb, NetworkingSpecConfig
   /** DataColumnSidecar's */
   UInt64 getKzgCommitmentsInclusionProofDepth();
 
-  default UInt64 getNumberOfColumns() {
-    return getFieldElementsPerExtBlob().dividedBy(getFieldElementsPerCell());
-  }
+  int getNumberOfColumns();
 
   @Override
   Optional<SpecConfigEip7594> toVersionEip7594();

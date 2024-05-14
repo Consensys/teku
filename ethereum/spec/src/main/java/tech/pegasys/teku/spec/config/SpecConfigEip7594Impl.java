@@ -23,6 +23,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
   private final Bytes4 eip7594ForkVersion;
   private final UInt64 eip7594ForkEpoch;
 
+  private final int numberOfColumns;
   private final int dataColumnSidecarSubnetCount;
   private final int custodyRequirement;
   private final UInt64 fieldElementsPerCell;
@@ -38,6 +39,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
       final UInt64 fieldElementsPerCell,
       final UInt64 fieldElementsPerExtBlob,
       final UInt64 kzgCommitmentsInclusionProofDepth,
+      final int numberOfColumns,
       final int dataColumnSidecarSubnetCount,
       final int custodyRequirement,
       final int minEpochsForDataColumnSidecarsRequests,
@@ -48,6 +50,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
     this.fieldElementsPerCell = fieldElementsPerCell;
     this.fieldElementsPerExtBlob = fieldElementsPerExtBlob;
     this.kzgCommitmentsInclusionProofDepth = kzgCommitmentsInclusionProofDepth;
+    this.numberOfColumns = numberOfColumns;
     this.dataColumnSidecarSubnetCount = dataColumnSidecarSubnetCount;
     this.custodyRequirement = custodyRequirement;
     this.minEpochsForDataColumnSidecarsRequests = minEpochsForDataColumnSidecarsRequests;
@@ -77,6 +80,11 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
   @Override
   public UInt64 getKzgCommitmentsInclusionProofDepth() {
     return kzgCommitmentsInclusionProofDepth;
+  }
+
+  @Override
+  public int getNumberOfColumns() {
+    return numberOfColumns;
   }
 
   @Override
@@ -119,6 +127,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
         && Objects.equals(fieldElementsPerCell, that.fieldElementsPerCell)
         && Objects.equals(fieldElementsPerExtBlob, that.fieldElementsPerExtBlob)
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
+        && numberOfColumns == that.numberOfColumns
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
         && custodyRequirement == that.custodyRequirement
         && minEpochsForDataColumnSidecarsRequests == that.minEpochsForDataColumnSidecarsRequests
@@ -131,6 +140,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
         specConfig,
         eip7594ForkVersion,
         eip7594ForkEpoch,
+        numberOfColumns,
         dataColumnSidecarSubnetCount,
         custodyRequirement,
         fieldElementsPerCell,

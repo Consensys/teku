@@ -115,10 +115,8 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
   public List<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int subnetCount) {
     List<UInt64> subnetIds = computeCustodySubnetIndexes(nodeId, subnetCount);
     final int columnsPerSubnet =
-        specConfigEip7594
-            .getNumberOfColumns()
-            .dividedBy(specConfigEip7594.getDataColumnSidecarSubnetCount())
-            .intValue();
+        specConfigEip7594.getNumberOfColumns()
+            / specConfigEip7594.getDataColumnSidecarSubnetCount();
     return subnetIds.stream()
         .flatMap(
             subnetId -> IntStream.range(0, columnsPerSubnet).mapToObj(i -> Pair.of(subnetId, i)))
@@ -139,7 +137,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
 
   @Override
   public boolean verifyDataColumnSidecarKzgProof(KZG kzg, DataColumnSidecar dataColumnSidecar) {
-    final UInt64 dataColumns = specConfigEip7594.getNumberOfColumns();
+    final int dataColumns = specConfigEip7594.getNumberOfColumns();
     if (dataColumnSidecar.getIndex().isGreaterThanOrEqualTo(dataColumns)) {
       return false;
     }

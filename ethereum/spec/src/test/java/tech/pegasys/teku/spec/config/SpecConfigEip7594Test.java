@@ -85,6 +85,7 @@ public class SpecConfigEip7594Test {
         dataStructureUtil.randomUInt64(64),
         dataStructureUtil.randomUInt64(8192),
         dataStructureUtil.randomUInt64(10),
+        dataStructureUtil.randomPositiveInt(128),
         dataStructureUtil.randomPositiveInt(64),
         dataStructureUtil.randomPositiveInt(64),
         dataStructureUtil.randomPositiveInt(4096),
