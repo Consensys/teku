@@ -235,7 +235,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     private final Optional<UInt64> maybeCommitteeIndex;
     private final AttestationBitsAggregator includedValidators;
 
-    private Iterator<ValidatableAttestation> remainingAttestations;
+    private Iterator<ValidatableAttestation> remainingAttestations = getRemainingAttestations();
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
       this.maybeCommitteeIndex = committeeIndex;
@@ -244,8 +244,8 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
     @Override
     public boolean hasNext() {
-      if (remainingAttestations == null || !remainingAttestations.hasNext()) {
-        remainingAttestations = streamRemainingAttestations().iterator();
+      if (!remainingAttestations.hasNext()) {
+        remainingAttestations = getRemainingAttestations();
       }
       return remainingAttestations.hasNext();
     }
@@ -263,11 +263,12 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
       return builder.buildAggregate();
     }
 
-    public Stream<ValidatableAttestation> streamRemainingAttestations() {
+    public Iterator<ValidatableAttestation> getRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::maybeFilterOnCommitteeIndex)
-          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()));
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()))
+          .iterator();
     }
 
     /*
