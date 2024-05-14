@@ -94,7 +94,15 @@ public class EthereumTypes {
 
   public static final StringValueTypeDefinition<SpecMilestone> MILESTONE_TYPE =
       new EnumTypeDefinition<>(
-          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
+          SpecMilestone.class,
+          milestone -> {
+            // FIXME: remove me, bad hack to make Kurtosis working
+            if (milestone.equals(SpecMilestone.EIP7594)) {
+              return "deneb";
+            }
+            return milestone.name().toLowerCase(Locale.ROOT);
+          },
+          Set.of());
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {
