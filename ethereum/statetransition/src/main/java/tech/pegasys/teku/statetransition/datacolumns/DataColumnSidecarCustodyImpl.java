@@ -163,7 +163,6 @@ public class DataColumnSidecarCustodyImpl
   private void onEpoch(UInt64 epoch) {
     UInt64 pruneSlot = spec.computeStartSlotAtEpoch(getEarliestCustodyEpoch(epoch));
     db.pruneAllSidecars(pruneSlot);
-    advanceFirstIncompleteSlot();
   }
 
   @Override
@@ -173,6 +172,7 @@ public class DataColumnSidecarCustodyImpl
     if (slot.equals(spec.computeStartSlotAtEpoch(epoch))) {
       onEpoch(epoch);
     }
+    advanceFirstIncompleteSlot();
   }
 
   private void advanceFirstIncompleteSlot() {

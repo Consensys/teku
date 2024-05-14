@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +31,8 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
 
   private final CombinedChainDataClient combinedChainDataClient;
   private final SidecarUpdateChannel sidecarUpdateChannel;
+  private final AtomicInteger addCounter = new AtomicInteger();
+  private int maxAddedSlot = 0;
 
   public DataColumnSidecarDBImpl(
       final CombinedChainDataClient combinedChainDataClient,
@@ -73,6 +76,18 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   @Override
   public void addSidecar(final DataColumnSidecar sidecar) {
     sidecarUpdateChannel.onNewSidecar(sidecar);
+    addCounter.incrementAndGet();
+    int slot = sidecar.getSlot().intValue();
+    synchronized (this) {
+      if (slot > maxAddedSlot) {
+        LOG.info(
+            "DataColumnSidecarDB.addSidecar: new slot: {}, prevSlot count: {}, total count: {}",
+            slot,
+            streamColumnIdentifiers(UInt64.valueOf(maxAddedSlot)).count(),
+            addCounter.get());
+        maxAddedSlot = slot;
+      }
+    }
   }
 
   @Override

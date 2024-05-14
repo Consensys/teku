@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final BatchDataColumnReqResp batchRpc;
 
