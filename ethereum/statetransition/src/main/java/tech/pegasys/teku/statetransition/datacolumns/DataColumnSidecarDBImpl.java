@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
@@ -24,6 +26,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 // FIXME: remove stinky joins
 public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
+  private static final Logger LOG = LogManager.getLogger("das-nyota");
+
   private final CombinedChainDataClient combinedChainDataClient;
   private final SidecarUpdateChannel sidecarUpdateChannel;
 
@@ -52,7 +56,18 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
 
   @Override
   public void setFirstIncompleteSlot(final UInt64 slot) {
+    Optional<UInt64> oldValue = getFirstIncompleteSlot();
     sidecarUpdateChannel.onFirstIncompleteSlot(slot);
+    if (oldValue.isEmpty() || oldValue.get() != slot) {
+      long oldSlotColCount = oldValue.map(s -> streamColumnIdentifiers(s).count()).orElse(0L);
+      long newSlotCount = streamColumnIdentifiers(slot).count();
+      LOG.info(
+          "DataColumnSidecarDB: setFirstIncompleteSlot {} ({} cols) ~> {} ({} cols)",
+          oldValue.map(UInt64::toString).orElse("NA"),
+          oldSlotColCount,
+          slot,
+          newSlotCount);
+    }
   }
 
   @Override

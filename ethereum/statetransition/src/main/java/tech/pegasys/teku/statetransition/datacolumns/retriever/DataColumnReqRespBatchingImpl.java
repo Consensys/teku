@@ -17,12 +17,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final BatchDataColumnReqResp batchRpc;
 
@@ -62,6 +65,11 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   }
 
   private void flushForNode(UInt256 nodeId, List<RequestEntry> nodeRequests) {
+    LOG.info(
+        "Requesting batch of {} from {}, hash={}",
+        nodeRequests.size(),
+        nodeId.mod(65536).toHexString(),
+        nodeRequests.hashCode());
     SafeFuture<List<DataColumnSidecar>> response =
         SafeFuture.of(
             () ->
@@ -70,6 +78,11 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
     response.finish(
         resp -> {
+          LOG.info(
+              "Response batch of {} from {}, hash={}",
+              resp.size(),
+              nodeId.mod(65536).toHexString(),
+              nodeRequests.hashCode());
           Map<DataColumnIdentifier, DataColumnSidecar> byIds = new HashMap<>();
           for (DataColumnSidecar sidecar : resp) {
             byIds.put(
@@ -84,7 +97,16 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
             }
           }
         },
-        err -> nodeRequests.forEach(e -> e.promise().completeExceptionally(err)));
+        err ->
+            nodeRequests.forEach(
+                e -> {
+                  LOG.info(
+                      "Error batch from {}, hash={}, err: {}",
+                      nodeId.mod(65536).toHexString(),
+                      nodeRequests.hashCode(),
+                      e.toString());
+                  e.promise().completeExceptionally(err);
+                }));
   }
 
   @Override
