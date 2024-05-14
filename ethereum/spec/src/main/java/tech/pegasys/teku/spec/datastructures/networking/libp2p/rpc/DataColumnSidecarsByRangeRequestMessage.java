@@ -41,8 +41,7 @@ public class DataColumnSidecarsByRangeRequestMessage
           namedSchema("start_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema(
-              "columns",
-              SszUInt64ListSchema.create(specConfigEip7594.getNumberOfColumns().intValue())));
+              "columns", SszUInt64ListSchema.create(specConfigEip7594.getNumberOfColumns())));
     }
 
     @Override

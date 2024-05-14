@@ -63,8 +63,10 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
   private void flushForNode(UInt256 nodeId, List<RequestEntry> nodeRequests) {
     SafeFuture<List<DataColumnSidecar>> response =
-        batchRpc.requestDataColumnSidecar(
-            nodeId, nodeRequests.stream().map(e -> e.columnIdentifier).toList());
+        SafeFuture.of(
+            () ->
+                batchRpc.requestDataColumnSidecar(
+                    nodeId, nodeRequests.stream().map(e -> e.columnIdentifier).toList()));
 
     response.finish(
         resp -> {
