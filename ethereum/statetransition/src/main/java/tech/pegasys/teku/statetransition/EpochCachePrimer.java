@@ -94,7 +94,7 @@ public class EpochCachePrimer {
         stateEpoch.plus(spec.getSpecConfig(stateEpoch).getMinSeedLookahead());
     final UInt64 lookAheadEpochStartSlot = spec.computeStartSlotAtEpoch(lookaheadEpoch);
     UInt64.range(lookAheadEpochStartSlot, spec.computeStartSlotAtEpoch(lookaheadEpoch.plus(1)))
-        // Note: calculating the committeesSize also calculates the committees
+        // Note: calculating the committeesSize for a slot also calculates the committees
         .forEach(slot -> spec.getBeaconCommitteesSize(state, slot));
   }
 
