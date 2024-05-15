@@ -1,0 +1,25 @@
+{
+  "message": {
+    "aggregator_index": "4627014230341074699",
+    "aggregate": {
+      "aggregation_bits": "0xbead34a0a0526fe2ec",
+      "data": {
+        "slot": "1",
+        "index": "4630319196774442955",
+        "beacon_block_root": "0xda533c406bf3482d8e6e992e756be34172a8c47fc1cc0018350bfe98c946deda",
+        "source": {
+          "epoch": "537885853",
+          "root": "0x4d1a19402bb984ca4d0005336ba05e1098babeeb0781f5744712934ae78b2a1b"
+        },
+        "target": {
+          "epoch": "538270602",
+          "root": "0x27d82440eb21c640637a36dcc38e35768bb4c0c79aefa300ec0f0cba32cabb05"
+        }
+      },
+      "committee_bits": "0x06",
+      "signature": "0x8fb2d8f4d056846f0bfe4731a5fa0da0f5cafb2c310239c4f6ec9e613b46d63d9ddb7b4d1f9d91d0bac4e46a6945f075095556c49753d44d1a563e983489044a8890c9e8738be678d9570b8c6a70b0cdefca986d320e4d84c4e3474dc4d901db"
+    },
+    "selection_proof": "0xa5a2ff076e82a9a8d46ce076787166c4b906aa200ee04bf91900422b5a36f6328f8009dfc9d08990317dd0041521166a0d889ef4a74f44f9a746e8e5284b98f0b8424966b4a0dd02f594c87539dc37309c6f0e3d011cbaf69fe0019064aa31f5"
+  },
+  "signature": "0xa32991816eb9f297553b4732309a4cdba7b33287264611715b0ab3319bca19e581da6e2659912a4e0e94aafc01c488e30ffc96ed14e2a726b9d3c618405ee0bf54bf6ae7f2097465cb27ab8132ec24eb93d3c9159475304082f7f0e452b93b65"
+}
