@@ -377,7 +377,8 @@ public class AttestationGenerator {
         final Committee currentCommittee = new Committee(currentCommitteeIndex, indices);
         final BLSKeyPair validatorKeyPair = validatorKeySupplier.apply(validatorIndex);
         final AttestationData genericAttestationData =
-            spec.getGenericAttestationData(assignedSlot, headState, headBlock, currentCommitteeIndex);
+            spec.getGenericAttestationData(
+                assignedSlot, headState, headBlock, currentCommitteeIndex);
         nextAttestation =
             Optional.of(
                 createAttestation(
