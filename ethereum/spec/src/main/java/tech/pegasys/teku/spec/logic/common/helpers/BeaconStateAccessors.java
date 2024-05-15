@@ -316,12 +316,12 @@ public abstract class BeaconStateAccessors {
   }
 
   public Int2IntMap getBeaconCommitteesSize(final BeaconState state, final UInt64 slot) {
-    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommitteesSize()
         .get(
-            epoch,
+            slot,
             __ -> {
+              final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
               final UInt64 committees = getCommitteeCountPerSlot(state, epoch);
               final Int2IntMap committeesSize = new Int2IntOpenHashMap(committees.intValue());
               UInt64.range(UInt64.ZERO, committees)
