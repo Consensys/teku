@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -101,7 +103,11 @@ public class AttestationGenerator {
                 .map(attestation -> attestation.getAggregateSignature())
                 .collect(Collectors.toList()));
 
-    return attestationSchema.create(targetBitlist, srcAttestations.get(0).getData(), targetSig);
+    return attestationSchema.create(
+        targetBitlist,
+        srcAttestations.get(0).getData(),
+        () -> srcAttestations.get(0).getCommitteeBitsRequired(),
+        targetSig);
   }
 
   public Attestation validAttestation(final StateAndBlockSummary blockAndState) {
@@ -351,7 +357,8 @@ public class AttestationGenerator {
                     validatorKeyPair,
                     indexIntoCommittee,
                     committee,
-                    genericAttestationData));
+                    genericAttestationData,
+                    committeeIndex));
         break;
       }
 
@@ -374,7 +381,12 @@ public class AttestationGenerator {
         nextAttestation =
             Optional.of(
                 createAttestation(
-                    headState, validatorKeyPair, indexIntoCommittee, cc, genericAttestationData));
+                    headState,
+                    validatorKeyPair,
+                    indexIntoCommittee,
+                    cc,
+                    genericAttestationData,
+                    cc.getIndex()));
         schedule.next();
       }
     }
@@ -384,7 +396,8 @@ public class AttestationGenerator {
         BLSKeyPair attesterKeyPair,
         int indexIntoCommittee,
         Committee committee,
-        AttestationData attestationData) {
+        AttestationData attestationData,
+        UInt64 committeeIndex) {
       int committeeSize = committee.getCommitteeSize();
       final AttestationSchema<?> attestationSchema =
           spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
@@ -395,13 +408,26 @@ public class AttestationGenerator {
           new LocalSigner(spec, attesterKeyPair, SyncAsyncRunner.SYNC_RUNNER)
               .signAttestationData(attestationData, state.getForkInfo())
               .join();
-      return attestationSchema.create(aggregationBitfield, attestationData, signature);
+      return attestationSchema.create(
+          aggregationBitfield,
+          attestationData,
+          getCommitteeBitsSupplier(attestationSchema, committeeIndex),
+          signature);
     }
 
     private SszBitlist getAggregationBits(
         final AttestationSchema<?> attestationSchema, int committeeSize, int indexIntoCommittee) {
       // Create aggregation bitfield
       return attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, indexIntoCommittee);
+    }
+
+    private Supplier<SszBitvector> getCommitteeBitsSupplier(
+        final AttestationSchema<?> attestationSchema, final UInt64 committeeIndex) {
+      return () ->
+          attestationSchema
+              .getCommitteeBitsSchema()
+              .orElseThrow()
+              .ofBits(committeeIndex.intValue());
     }
   }
 }
