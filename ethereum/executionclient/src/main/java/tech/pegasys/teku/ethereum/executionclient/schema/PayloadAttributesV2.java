@@ -55,7 +55,6 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
   public static List<WithdrawalV1> getWithdrawals(
       final Optional<List<Withdrawal>> maybeWithdrawals, final UInt64 proposalSlot) {
     if (maybeWithdrawals.isEmpty()) {
-      // TODO: figure out the root cause
       LOG.error(
           "Withdrawals were expected to be part of the payload attributes for proposal slot {}",
           proposalSlot);
