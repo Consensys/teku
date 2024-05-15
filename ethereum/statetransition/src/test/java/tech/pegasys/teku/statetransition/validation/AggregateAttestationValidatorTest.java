@@ -154,15 +154,15 @@ class AggregateAttestationValidatorTest {
     signedAggregateAndProofSchema =
         specContext.getSchemaDefinitions().getSignedAggregateAndProofSchema();
     aggregateAndProofSchema = specContext.getSchemaDefinitions().getAggregateAndProofSchema();
-    storageSystem =
-            InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
 
     final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
     generator = new AggregateGenerator(spec, chainBuilder.getValidatorKeys());
 
     attestationValidator = mock(AttestationValidator.class);
-    final AsyncBLSSignatureVerifier signatureVerifier = AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
+    final AsyncBLSSignatureVerifier signatureVerifier =
+        AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
 
     validator = new AggregateAttestationValidator(spec, attestationValidator, signatureVerifier);
 
@@ -222,9 +222,6 @@ class AggregateAttestationValidatorTest {
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResultWithState.saveForFuture()));
-
-    System.out.println("*****");
-    System.out.println(attestation);
 
     assertThat(validator.validate(attestation))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
@@ -463,7 +460,11 @@ class AggregateAttestationValidatorTest {
   }
 
   @TestTemplate
-  public void shouldAcceptAggregateWithSameSlotAndDifferentAggregatorIndex() {
+  public void shouldAcceptAggregateWithSameSlotAndDifferentAggregatorIndex(
+      final SpecContext specContext) {
+    // can run only on phase 0, we should find magic combination for ELECTRA too
+    specContext.assumeIsNotOneOf(ELECTRA);
+
     final StateAndBlockSummary chainHead = storageSystem.getChainHead();
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
@@ -482,9 +483,6 @@ class AggregateAttestationValidatorTest {
     whenAttestationIsValid(aggregateAndProof1);
     whenAttestationIsValid(aggregateAndProof2);
 
-    System.out.println("aggregateAndProof1 " + aggregateAndProof1);
-    System.out.println("aggregateAndProof2 " + aggregateAndProof2);
-
     assertThat(
             validator.validate(
                 ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof1)))
@@ -496,7 +494,11 @@ class AggregateAttestationValidatorTest {
   }
 
   @TestTemplate
-  public void shouldAcceptAggregateWithSameAggregatorIndexAndDifferentSlot() {
+  public void shouldAcceptAggregateWithSameAggregatorIndexAndDifferentSlot(
+      final SpecContext specContext) {
+    // can run only on phase 0, we should find magic combination for ELECTRA too
+    specContext.assumeIsNotOneOf(ELECTRA);
+
     chainUpdater.setCurrentSlot(ONE);
     final BeaconBlockAndState chainHead = bestBlock.toUnsigned();
 
@@ -635,11 +637,10 @@ class AggregateAttestationValidatorTest {
   private void whenAttestationIsValid(final SignedAggregateAndProof aggregate) {
     final ValidatableAttestation attestation =
         ValidatableAttestation.aggregateFromValidator(spec, aggregate);
+    final BeaconState state = getStateFor(aggregate).orElseThrow();
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                InternalValidationResultWithState.accept(getStateFor(aggregate).orElseThrow())));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResultWithState.accept(state)));
   }
 
   private Optional<BeaconState> getStateFor(final SignedAggregateAndProof aggregate) {

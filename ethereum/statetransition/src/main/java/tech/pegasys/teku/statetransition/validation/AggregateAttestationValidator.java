@@ -284,8 +284,6 @@ public class AggregateAttestationValidator {
       final AsyncBatchBLSSignatureVerifier signatureVerifier,
       final ValidatableAttestation validatableAttestation,
       final OptionalInt receivedOnSubnetId) {
-    System.out.println("**singleOrAggregateAttestationChecks**");
-    System.out.println(validatableAttestation);
     return attestationValidator.singleOrAggregateAttestationChecks(
         AsyncBLSSignatureVerifier.wrap(signatureVerifier),
         validatableAttestation,
