@@ -42,6 +42,7 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
+  public static final int DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT = 0;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -173,7 +174,7 @@ public class P2PConfig {
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
-    private int dasExtraCustodySubnetCount = 0;
+    private int dasExtraCustodySubnetCount = DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;

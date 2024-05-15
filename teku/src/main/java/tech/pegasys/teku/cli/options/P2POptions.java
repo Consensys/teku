@@ -316,6 +316,14 @@ public class P2POptions {
       fallbackValue = "true")
   private boolean yamuxEnabled = NetworkConfig.DEFAULT_YAMUX_ENABLED;
 
+  @Option(
+      names = {"--Xdas-extra-custody-subnet-count"},
+      paramLabel = "<NUMBER>",
+      description = "Number of extra custody subnets",
+      arity = "1",
+      hidden = true)
+  private int dasExtraCustodySubnetCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -350,7 +358,8 @@ public class P2POptions {
                     .isGossipScoringEnabled(gossipScoringEnabled)
                     .peerRateLimit(peerRateLimit)
                     .allTopicsFilterEnabled(allTopicsFilterEnabled)
-                    .peerRequestLimit(peerRequestLimit))
+                    .peerRequestLimit(peerRequestLimit)
+                    .dasExtraCustodySubnetCount(dasExtraCustodySubnetCount))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {
