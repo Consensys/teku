@@ -211,6 +211,10 @@ public class P2PConfig {
       discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
       discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
 
+      if (subscribeAllSubnetsEnabled) {
+        dasExtraCustodySubnetCount = Integer.MAX_VALUE;
+      }
+
       return new P2PConfig(
           spec,
           networkConfig,

@@ -43,6 +43,8 @@ import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -157,7 +159,20 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkSyncCommitteeSubnetsSubscription =
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
-    dasExtraCustodySubnetCount.ifPresent(discoveryNetwork::setDASExtraCustodySubnetCount);
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
+      final int extraCustodySubnetCountConfig = dasExtraCustodySubnetCount.orElse(0);
+      final SpecConfigEip7594 configEip7594 =
+          SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
+      final int minCustodyRequirement = configEip7594.getCustodyRequirement();
+      final int maxSubnets = configEip7594.getDataColumnSidecarSubnetCount();
+      final int extraCustodySubnetCount =
+          Integer.min(
+              Integer.max(0, maxSubnets - minCustodyRequirement), extraCustodySubnetCountConfig);
+      LOG.info("Using extra custody sidecar columns count: {}", extraCustodySubnetCount);
+      if (extraCustodySubnetCount != 0) {
+        discoveryNetwork.setDASExtraCustodySubnetCount(extraCustodySubnetCount);
+      }
+    }
 
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
     if (allTopicsFilterEnabled) {

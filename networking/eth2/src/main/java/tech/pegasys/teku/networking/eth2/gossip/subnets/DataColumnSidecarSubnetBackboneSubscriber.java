@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
@@ -67,7 +68,8 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
     SpecConfigEip7594 configEip7594 = SpecConfigEip7594.required(spec.atEpoch(epoch).getConfig());
     return Integer.min(
         configEip7594.getDataColumnSidecarSubnetCount(),
-        configEip7594.getCustodyRequirement() + extraVoluntarySubnetCount);
+        MathHelpers.intPlusMaxIntCapped(
+            configEip7594.getCustodyRequirement(), extraVoluntarySubnetCount));
   }
 
   private void onEpoch(final UInt64 epoch) {

@@ -143,4 +143,12 @@ public class MathHelpers {
     // We should keep 32 bytes
     return Bytes32.leftPad(intBytes);
   }
+
+  public static int intPlusMaxIntCapped(final int a, final int b) {
+    final UInt64 sum = UInt64.valueOf(a).plus(b);
+    if (sum.isLessThanOrEqualTo(UInt64.valueOf(Integer.MAX_VALUE))) {
+      return sum.intValue();
+    }
+    return Integer.MAX_VALUE;
+  }
 }
