@@ -68,7 +68,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     LOG.info(
         "[nyota] Requesting batch of {} from {}, hash={}",
         nodeRequests.size(),
-        nodeId.mod(65536).toHexString(),
+        "0x..." + nodeId.toHexString().substring(58),
         nodeRequests.hashCode());
     SafeFuture<List<DataColumnSidecar>> response =
         SafeFuture.of(
@@ -81,7 +81,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
           LOG.info(
               "[nyota] Response batch of {} from {}, hash={}",
               resp.size(),
-              nodeId.mod(65536).toHexString(),
+              "0x..." + nodeId.toHexString().substring(58),
               nodeRequests.hashCode());
           Map<DataColumnIdentifier, DataColumnSidecar> byIds = new HashMap<>();
           for (DataColumnSidecar sidecar : resp) {
