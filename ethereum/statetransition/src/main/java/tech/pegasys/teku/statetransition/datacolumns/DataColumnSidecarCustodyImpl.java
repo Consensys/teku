@@ -33,10 +33,12 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 public class DataColumnSidecarCustodyImpl
-    implements UpdatableDataColumnSidecarCustody, SlotEventsChannel {
+    implements UpdatableDataColumnSidecarCustody, SlotEventsChannel, FinalizedCheckpointChannel {
 
   public interface CanonicalBlockResolver {
 
@@ -172,10 +174,14 @@ public class DataColumnSidecarCustodyImpl
     if (slot.equals(spec.computeStartSlotAtEpoch(epoch))) {
       onEpoch(epoch);
     }
-    advanceFirstIncompleteSlot();
   }
 
-  private void advanceFirstIncompleteSlot() {
+  @Override
+  public void onNewFinalizedCheckpoint(Checkpoint checkpoint, boolean fromOptimisticBlock) {
+    advanceFirstIncompleteSlot(checkpoint.getEpoch());
+  }
+
+  private void advanceFirstIncompleteSlot(UInt64 finalizedEpoch) {
     record CompleteIncomplete(SlotCustody firstIncomplete, SlotCustody lastComplete) {
       static final CompleteIncomplete ZERO = new CompleteIncomplete(null, null);
 
@@ -200,11 +206,15 @@ public class DataColumnSidecarCustodyImpl
       }
     }
 
+    UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch.increment());
+
     streamPotentiallyIncompleteSlotCustodies()
+        // will move FirstIncompleteSlot only to finalized slots
+        .takeWhile(sc -> sc.slot.isLessThan(firstNonFinalizedSlot))
         .map(scan(CompleteIncomplete.ZERO, CompleteIncomplete::add))
         .takeWhile(c -> c.firstIncomplete == null)
-        .reduce((a, b) -> b)
-        .flatMap(CompleteIncomplete::getFirstIncompleteSlot) // take the last lement
+        .reduce((a, b) -> b) // takeLast()
+        .flatMap(CompleteIncomplete::getFirstIncompleteSlot)
         .ifPresent(db::setFirstIncompleteSlot);
   }
 

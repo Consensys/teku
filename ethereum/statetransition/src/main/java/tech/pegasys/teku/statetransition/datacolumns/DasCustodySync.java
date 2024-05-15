@@ -74,7 +74,7 @@ public class DasCustodySync implements SlotEventsChannel {
     if (wasCancelledImplicitly(exception)) {
       // request was cancelled explicitly here
     } else {
-      LOG.warn("Unexpected exception for request " + request, exception);
+      LOG.warn("[nyota] Unexpected exception for request " + request, exception);
     }
   }
 
@@ -114,7 +114,7 @@ public class DasCustodySync implements SlotEventsChannel {
               .map(ColumnSlotAndIdentifier::slot)
               .collect(Collectors.toSet());
       LOG.info(
-          "DataCustodySync.fillUp: synced={} pending={}, missingColumns={}({})",
+          "[nyota] DataCustodySync.fillUp: synced={} pending={}, missingColumns={}({})",
           syncedColumnCount,
           pendingRequests.size(),
           missingColumnsToRequest.size(),

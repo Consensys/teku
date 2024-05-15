@@ -650,6 +650,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new DataColumnSidecarCustodyImpl(
             spec, blockRootResolver, sidecarDB, nodeId, totalMyCustodySubnets);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dataColumnSidecarCustodyImpl::onNewValidatedDataColumnSidecar);
     this.dataColumnSidecarCustody = dataColumnSidecarCustodyImpl;

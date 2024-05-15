@@ -66,7 +66,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
   private void flushForNode(UInt256 nodeId, List<RequestEntry> nodeRequests) {
     LOG.info(
-        "Requesting batch of {} from {}, hash={}",
+        "[nyota] Requesting batch of {} from {}, hash={}",
         nodeRequests.size(),
         nodeId.mod(65536).toHexString(),
         nodeRequests.hashCode());
@@ -79,7 +79,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     response.finish(
         resp -> {
           LOG.info(
-              "Response batch of {} from {}, hash={}",
+              "[nyota] Response batch of {} from {}, hash={}",
               resp.size(),
               nodeId.mod(65536).toHexString(),
               nodeRequests.hashCode());
@@ -101,7 +101,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
             nodeRequests.forEach(
                 e -> {
                   LOG.info(
-                      "Error batch from {}, hash={}, err: {}",
+                      "[nyota] Error batch from {}, hash={}, err: {}",
                       nodeId.mod(65536).toHexString(),
                       nodeRequests.hashCode(),
                       e.toString());

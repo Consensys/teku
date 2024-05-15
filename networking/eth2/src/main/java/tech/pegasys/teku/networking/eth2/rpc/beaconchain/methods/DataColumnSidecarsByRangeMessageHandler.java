@@ -58,6 +58,7 @@ public class DataColumnSidecarsByRangeMessageHandler
         DataColumnSidecarsByRangeRequestMessage, DataColumnSidecar> {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG_DAS = LogManager.getLogger("das-nyota");
 
   private final Spec spec;
   private final SpecConfigEip7594 specConfigEip7594;
@@ -102,6 +103,12 @@ public class DataColumnSidecarsByRangeMessageHandler
         message.getCount(),
         columns,
         startSlot);
+    LOG_DAS.info(
+        "[nyota] DataColumnSidecarsByRangeMessageHandler: REQUEST {} slots with columns {} of data column sidecars starting at slot {} from {}",
+        message.getCount(),
+        columns,
+        startSlot,
+        peer.getId());
 
     final int requestedCount = message.getMaximumResponseChunks();
 
@@ -185,11 +192,19 @@ public class DataColumnSidecarsByRangeMessageHandler
               }
               LOG.trace(
                   "Sent {} data column sidecars to peer {}.", sentDataColumnSidecars, peer.getId());
+              LOG_DAS.info(
+                  "[nyota] DataColumnSidecarsByRangeMessageHandler: RESPONSE sent {} sidecars to {}",
+                  sentDataColumnSidecars,
+                  peer.getId());
               callback.completeSuccessfully();
             },
             error -> {
               peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
               handleProcessingRequestError(error, callback);
+              LOG_DAS.info(
+                  "[nyota] DataColumnSidecarsByRangeMessageHandler: ERROR to {}: {}",
+                  peer.getId(),
+                  error.toString());
             });
     ;
   }

@@ -50,6 +50,7 @@ public class DataColumnSidecarsByRootMessageHandler
         DataColumnSidecarsByRootRequestMessage, DataColumnSidecar> {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG_DAS = LogManager.getLogger("das-nyota");
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -88,6 +89,10 @@ public class DataColumnSidecarsByRootMessageHandler
         peer.getId(),
         message.size(),
         message);
+    LOG_DAS.info(
+        "[nyota] DataColumnSidecarsByRootMessageHandler: REQUEST {} data column sidecars from {}",
+        message.size(),
+        peer.getId());
 
     final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
         peer.approveDataColumnSidecarsRequest(callback, message.size());
@@ -130,10 +135,18 @@ public class DataColumnSidecarsByRootMessageHandler
                 dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecars.get());
           }
           callback.completeSuccessfully();
+          LOG_DAS.info(
+              "[nyota] DataColumnSidecarsByRootMessageHandler: RESPOND {} data column sidecars to {}",
+              sentDataColumnSidecars.get(),
+              peer.getId());
         },
         err -> {
           peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
           handleError(callback, err);
+          LOG_DAS.info(
+              "[nyota] DataColumnSidecarsByRootMessageHandler: ERROR to {}: {}",
+              peer.getId(),
+              err.toString());
         });
   }
 
