@@ -676,7 +676,7 @@ class AggregateAttestationValidatorTest {
       throws JsonProcessingException {
     specContext.assumeElectraActive();
 
-    SignedAggregateAndProof signedAggregateAndProof =
+    final SignedAggregateAndProof signedAggregateAndProof =
         JsonUtil.parse(
             readResource("signedAggregateAndProof_wrong1.json"),
             spec.getGenesisSchemaDefinitions()
