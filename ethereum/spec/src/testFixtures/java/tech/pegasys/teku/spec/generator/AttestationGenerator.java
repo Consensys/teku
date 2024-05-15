@@ -370,41 +370,41 @@ public class AttestationGenerator {
       if (schedule.isDone()) {
         nextAttestation = Optional.empty();
       } else {
-        final UInt64 currentCommittee = schedule.getCurrentCommittee();
-        final IntList indices = schedule.getCommittee(currentCommittee);
+        final UInt64 currentCommitteeIndex = schedule.getCurrentCommittee();
+        final IntList indices = schedule.getCommittee(currentCommitteeIndex);
         final Integer indexIntoCommittee = schedule.getIndexIntoCommittee();
         final Integer validatorIndex = indices.getInt(indexIntoCommittee);
-        final Committee cc = new Committee(currentCommittee, indices);
+        final Committee currentCommittee = new Committee(currentCommitteeIndex, indices);
         final BLSKeyPair validatorKeyPair = validatorKeySupplier.apply(validatorIndex);
         final AttestationData genericAttestationData =
-            spec.getGenericAttestationData(assignedSlot, headState, headBlock, currentCommittee);
+            spec.getGenericAttestationData(assignedSlot, headState, headBlock, currentCommitteeIndex);
         nextAttestation =
             Optional.of(
                 createAttestation(
                     headState,
                     validatorKeyPair,
                     indexIntoCommittee,
-                    cc,
+                    currentCommittee,
                     genericAttestationData,
-                    cc.getIndex()));
+                    currentCommittee.getIndex()));
         schedule.next();
       }
     }
 
     private Attestation createAttestation(
-        BeaconState state,
-        BLSKeyPair attesterKeyPair,
-        int indexIntoCommittee,
-        Committee committee,
-        AttestationData attestationData,
-        UInt64 committeeIndex) {
-      int committeeSize = committee.getCommitteeSize();
+        final BeaconState state,
+        final BLSKeyPair attesterKeyPair,
+        final int indexIntoCommittee,
+        final Committee committee,
+        final AttestationData attestationData,
+        final UInt64 committeeIndex) {
+      final int committeeSize = committee.getCommitteeSize();
       final AttestationSchema<?> attestationSchema =
           spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
-      SszBitlist aggregationBitfield =
+      final SszBitlist aggregationBitfield =
           getAggregationBits(attestationSchema, committeeSize, indexIntoCommittee);
 
-      BLSSignature signature =
+      final BLSSignature signature =
           new LocalSigner(spec, attesterKeyPair, SyncAsyncRunner.SYNC_RUNNER)
               .signAttestationData(attestationData, state.getForkInfo())
               .join();
