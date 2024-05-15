@@ -161,6 +161,23 @@ public class AttestationValidator {
                         attestation.getAggregationBits().size(), committee.size()));
               }
 
+              if (attestation.requiresCommitteeBits()) {
+                // [REJECT] len(committee_indices) == 1, where committee_indices =
+                // get_committee_indices(attestation)
+                if (attestation.getCommitteeBitsRequired().getBitCount() != 1) {
+                  return SafeFuture.completedFuture(
+                      InternalValidationResultWithState.reject(
+                          "Rejecting aggregate attestation because committee bits count is not 1"));
+                }
+
+                // [REJECT] attestation.data.index == 0
+                if (!attestation.getData().getIndex().isZero()) {
+                  return SafeFuture.completedFuture(
+                      InternalValidationResultWithState.reject(
+                          "Rejecting aggregate attestation because attestation data index must be 0"));
+                }
+              }
+
               return spec.isValidIndexedAttestation(
                       state, validatableAttestation, signatureVerifier)
                   .thenApply(

@@ -149,6 +149,23 @@ public class AggregateAttestationValidator {
                         "Rejecting aggregate attestation because it does not have participants"));
               }
 
+              if (attestation.getAttestation().requiresCommitteeBits()) {
+                // [REJECT] len(committee_indices) == 1, where committee_indices =
+                // get_committee_indices(attestation)
+                if (attestation.getAttestation().getCommitteeBitsRequired().getBitCount() != 1) {
+                  return SafeFuture.completedFuture(
+                      reject(
+                          "Rejecting aggregate attestation because committee bits count is not 1"));
+                }
+
+                // [REJECT] attestation.data.index == 0
+                if (!attestation.getAttestation().getData().getIndex().isZero()) {
+                  return SafeFuture.completedFuture(
+                      reject(
+                          "Rejecting aggregate attestation because attestation data index must be 0"));
+                }
+              }
+
               final Optional<BLSPublicKey> aggregatorPublicKey =
                   spec.getValidatorPubKey(state, aggregateAndProof.getIndex());
               if (aggregatorPublicKey.isEmpty()) {
@@ -267,6 +284,8 @@ public class AggregateAttestationValidator {
       final AsyncBatchBLSSignatureVerifier signatureVerifier,
       final ValidatableAttestation validatableAttestation,
       final OptionalInt receivedOnSubnetId) {
+    System.out.println("**singleOrAggregateAttestationChecks**");
+    System.out.println(validatableAttestation);
     return attestationValidator.singleOrAggregateAttestationChecks(
         AsyncBLSSignatureVerifier.wrap(signatureVerifier),
         validatableAttestation,
