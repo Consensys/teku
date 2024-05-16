@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import com.google.common.base.Suppliers;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.HashMap;
@@ -108,19 +109,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void add(final ValidatableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
-    final Supplier<Int2IntMap> commiteesSizeSupplier =
+    final Supplier<Int2IntMap> committeesSizeSupplier =
         attestation
             .getCommitteesSize()
             .<Supplier<Int2IntMap>>map(committeesSize -> () -> committeesSize)
-            .orElse(
-                () -> {
-                  LOG.debug(
-                      "Committees size was not readily available for attestation {}. Will attempt to retrieve it using the target checkpoint state.",
-                      attestation);
-                  return getCommitteesSizeUsingTheState(attestationData);
-                });
+            .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestation.getAttestation()));
     final boolean add =
-        getOrCreateAttestationGroup(attestationData, commiteesSizeSupplier).add(attestation);
+        getOrCreateAttestationGroup(attestationData, committeesSizeSupplier).add(attestation);
     if (add) {
       updateSize(1);
     }
@@ -150,16 +145,24 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   // We only have the committees size already available via attestations received in the gossip
   // flow and have been successfully validated, so querying the state is required for other cases
-  private Int2IntMap getCommitteesSizeUsingTheState(final AttestationData attestationData) {
-    final BeaconState state =
-        recentChainData
-            .getStore()
-            .getCheckpointStateIfAvailable(attestationData.getTarget())
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "No state available for checkpoint " + attestationData.getTarget()));
-    return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
+  private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
+      final Attestation attestation) {
+    return Suppliers.memoize(
+        () -> {
+          LOG.debug(
+              "Committees size was not readily available for attestation {}. Will attempt to retrieve it using the target checkpoint state.",
+              attestation);
+          final AttestationData attestationData = attestation.getData();
+          final BeaconState state =
+              recentChainData
+                  .getStore()
+                  .getCheckpointStateIfAvailable(attestationData.getTarget())
+                  .orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "No state available for checkpoint " + attestationData.getTarget()));
+          return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
+        });
   }
 
   @Override
@@ -197,10 +200,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    final AttestationData attestationData = attestation.getData();
+    final Supplier<Int2IntMap> committeesSizeSupplier =
+        getCommitteesSizeSupplierUsingTheState(attestation);
     final MatchingDataAttestationGroup attestations =
-        getOrCreateAttestationGroup(
-            attestationData, () -> getCommitteesSizeUsingTheState(attestationData));
+        getOrCreateAttestationGroup(attestation.getData(), committeesSizeSupplier);
     final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
     updateSize(-numRemoved);
   }
