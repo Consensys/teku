@@ -37,7 +37,6 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentMatchers;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -54,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregatingAttestationPoolTest {
@@ -100,8 +100,9 @@ class AggregatingAttestationPoolTest {
                   spec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
 
       final BeaconState state = dataStructureUtil.randomBeaconState();
-      when(mockRecentChainData.retrieveStateAtSlot(any()))
-          .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+      final UpdatableStore mockStore = mock(UpdatableStore.class);
+      when(mockRecentChainData.getStore()).thenReturn(mockStore);
+      when(mockStore.getBlockStateIfAvailable(any())).thenReturn(Optional.of(state));
       when(mockSpec.getBeaconCommitteesSize(any(), any())).thenReturn(committeeSizes);
     }
 
