@@ -188,7 +188,7 @@ public class BlockImporterTest {
     List<Attestation> attestations =
         attestationGenerator.getAttestationsForSlot(stateAndBlock, currentSlot);
     List<Attestation> aggregatedAttestations =
-        AttestationGenerator.groupAndAggregateAttestations(attestations);
+        attestationGenerator.groupAndAggregateAttestations(attestations, stateAndBlock.getState());
 
     currentSlot = currentSlot.plus(UInt64.ONE);
 
@@ -212,7 +212,7 @@ public class BlockImporterTest {
     List<Attestation> attestations =
         attestationGenerator.getAttestationsForSlot(stateAndBlock, currentSlot);
     List<Attestation> aggregatedAttestations =
-        AttestationGenerator.groupAndAggregateAttestations(attestations);
+        attestationGenerator.groupAndAggregateAttestations(attestations, stateAndBlock.getState());
 
     // make one attestation signature invalid
     int invalidAttIdx = aggregatedAttestations.size() / 2;

@@ -5,7 +5,7 @@
       "aggregation_bits": "0x9827585d426605",
       "data": {
         "slot": "1",
-        "index": "4669978815449698508",
+        "index": "0",
         "beacon_block_root": "0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9",
         "source": {
           "epoch": "542502839",

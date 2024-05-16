@@ -26,11 +26,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.io.Resources;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -45,7 +40,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -68,7 +62,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AggregateGenerator;
-import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -253,10 +246,13 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
     final List<Attestation> aggregatesForSlot =
-        AttestationGenerator.groupAndAggregateAttestations(
-            generator
-                .getAttestationGenerator()
-                .getAttestationsForSlot(chainHead, chainHead.getSlot()));
+        generator
+            .getAttestationGenerator()
+            .groupAndAggregateAttestations(
+                generator
+                    .getAttestationGenerator()
+                    .getAttestationsForSlot(chainHead, chainHead.getSlot()),
+                chainHead.getState());
     final Attestation aggregate2 =
         aggregatesForSlot.stream()
             .filter(attestation -> hasSameCommitteeIndex(aggregateAndProof1, attestation))
@@ -475,10 +471,13 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
     final List<Attestation> aggregatesForSlot =
-        AttestationGenerator.groupAndAggregateAttestations(
-            generator
-                .getAttestationGenerator()
-                .getAttestationsForSlot(chainHead, chainHead.getSlot()));
+        generator
+            .getAttestationGenerator()
+            .groupAndAggregateAttestations(
+                generator
+                    .getAttestationGenerator()
+                    .getAttestationsForSlot(chainHead, chainHead.getSlot()),
+                chainHead.getState());
     final Attestation aggregate2 =
         aggregatesForSlot.stream()
             .filter(attestation -> !hasSameCommitteeIndex(aggregateAndProof1, attestation))
@@ -633,85 +632,6 @@ class AggregateAttestationValidatorTest {
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
-  @TestTemplate
-  public void shouldRejectAggregateForMultipleCommittees(final SpecContext specContext)
-      throws JsonProcessingException {
-    specContext.assumeElectraActive();
-
-    final SignedAggregateAndProof signedAggregateAndProof =
-        JsonUtil.parse(
-            readResource("signedAggregateAndProof_wrong2.json"),
-            spec.getGenesisSchemaDefinitions()
-                .getSignedAggregateAndProofSchema()
-                .getJsonTypeDefinition());
-
-    // Sanity check
-    assertThat(
-            signedAggregateAndProof
-                .getMessage()
-                .getAggregate()
-                .getCommitteeBitsRequired()
-                .getBitCount())
-        .isGreaterThan(1);
-
-    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
-    final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(chainHead);
-
-    final ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.aggregateFromValidator(spec, signedAggregateAndProof);
-
-    final BeaconState state = getStateFor(aggregate).orElseThrow();
-    when(attestationValidator.singleOrAggregateAttestationChecks(
-            any(), eq(validatableAttestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResultWithState.accept(state)));
-
-    assertThat(validator.validate(validatableAttestation))
-        .isCompletedWithValue(
-            InternalValidationResult.reject(
-                "Rejecting aggregate attestation because committee bits count is not 1"));
-  }
-
-  @TestTemplate
-  public void shouldRejectAggregateWithAttestationDataIndexNonZero(final SpecContext specContext)
-      throws JsonProcessingException {
-    specContext.assumeElectraActive();
-
-    final SignedAggregateAndProof signedAggregateAndProof =
-        JsonUtil.parse(
-            readResource("signedAggregateAndProof_wrong1.json"),
-            spec.getGenesisSchemaDefinitions()
-                .getSignedAggregateAndProofSchema()
-                .getJsonTypeDefinition());
-
-    // Sanity check
-    assertThat(signedAggregateAndProof.getMessage().getAggregate().getData().getIndex().isZero())
-        .isFalse();
-
-    assertThat(
-            signedAggregateAndProof
-                .getMessage()
-                .getAggregate()
-                .getCommitteeBitsRequired()
-                .getBitCount())
-        .isEqualTo(1);
-
-    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
-    final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(chainHead);
-
-    final ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.aggregateFromValidator(spec, signedAggregateAndProof);
-
-    final BeaconState state = getStateFor(aggregate).orElseThrow();
-    when(attestationValidator.singleOrAggregateAttestationChecks(
-            any(), eq(validatableAttestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResultWithState.accept(state)));
-
-    assertThat(validator.validate(validatableAttestation))
-        .isCompletedWithValue(
-            InternalValidationResult.reject(
-                "Rejecting aggregate attestation because attestation data index must be 0"));
-  }
-
   private boolean hasSameCommitteeIndex(
       final SignedAggregateAndProof aggregateAndProof, final Attestation attestation) {
     return attestation
@@ -745,13 +665,5 @@ class AggregateAttestationValidatorTest {
       final AttestationSchema<?> attestationSchema, final UInt64 committeeIndex) {
     return () ->
         attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndex.intValue());
-  }
-
-  private static String readResource(final String resource) {
-    try {
-      return Resources.toString(Resources.getResource(resource), StandardCharsets.UTF_8);
-    } catch (IOException ex) {
-      throw new UncheckedIOException(ex);
-    }
   }
 }

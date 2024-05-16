@@ -1,0 +1,18 @@
+{
+  "aggregation_bits": "0x9827585d426605",
+  "data": {
+    "slot": "1",
+    "index": "4669978815449698508",
+    "beacon_block_root": "0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9",
+    "source": {
+      "epoch": "542502839",
+      "root": "0x8200a6402ca295554fb9562193cc71d60272d63beeaf2201fdf53e846e77f919"
+    },
+    "target": {
+      "epoch": "542887588",
+      "root": "0x5cbeb140ec0ad7cb653388caecba483cf66bd817821ed18ca1f3b7f3b9b58a04"
+    }
+  },
+  "committee_bits": "0x01",
+  "signature": "0xae401f767ab1917f925fe299ad51a57d52f7cc80deb1cc20fa2b3aa983e4e4d23056d79f01f3c97e29c8905da17e70e30c2a3f6bdd83dbc4ddf530e02e8f4d7ba22260e12e5f5fe7875b48e79660615b275597e87b2d33e076664b3da1737852"
+}

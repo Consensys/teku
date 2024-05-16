@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.spec.generator;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -49,6 +51,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.util.EpochAttestationSchedule;
 import tech.pegasys.teku.spec.logic.common.util.SlotAttestationSchedule;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
 public class AttestationGenerator {
   private final Spec spec;
@@ -77,36 +80,43 @@ public class AttestationGenerator {
    * @return a list of aggregated {@link Attestation}s with distinct {@link
    *     tech.pegasys.teku.spec.datastructures.operations.AttestationData}
    */
-  public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
+  public List<Attestation> groupAndAggregateAttestations(
+      final List<Attestation> srcAttestations, final BeaconState state) {
     Collection<List<Attestation>> groupedAtt =
         srcAttestations.stream().collect(Collectors.groupingBy(Attestation::getData)).values();
+
     return groupedAtt.stream()
-        .map(AttestationGenerator::aggregateAttestations)
+        .map(attestations -> aggregateAttestations(attestations, state))
         .collect(Collectors.toList());
   }
 
-  private static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
-    Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
+  private Int2IntMap getCommitteesSize(final BeaconState state, final UInt64 slot) {
+    return spec.atSlot(slot).beaconStateAccessors().getBeaconCommitteesSize(state, slot);
+  }
+
+  private Attestation aggregateAttestations(
+      final List<Attestation> srcAttestations, final BeaconState state) {
+    checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
     AttestationSchema<? extends Attestation> attestationSchema = srcAttestations.get(0).getSchema();
-    int targetBitlistSize =
-        srcAttestations.stream().mapToInt(a -> a.getAggregationBits().size()).max().getAsInt();
-    SszBitlist targetBitlist =
-        srcAttestations.stream()
-            .map(Attestation::getAggregationBits)
-            .reduce(
-                attestationSchema.getAggregationBitsSchema().ofBits(targetBitlistSize),
-                SszBitlist::or,
-                SszBitlist::or);
+    final Int2IntMap committeesSize =
+        getCommitteesSize(state, srcAttestations.get(0).getData().getSlot());
+
+    AttestationBitsAggregator targetBitlist =
+        AttestationBitsAggregator.fromEmptyFromAttestationSchema(
+            attestationSchema, () -> committeesSize);
+
+    srcAttestations.forEach(
+        attestation ->
+            checkArgument(
+                targetBitlist.aggregateWith(attestation), "attestation is not aggregatable"));
+
     BLSSignature targetSig =
-        BLS.aggregate(
-            srcAttestations.stream()
-                .map(attestation -> attestation.getAggregateSignature())
-                .collect(Collectors.toList()));
+        BLS.aggregate(srcAttestations.stream().map(Attestation::getAggregateSignature).toList());
 
     return attestationSchema.create(
-        targetBitlist,
+        targetBitlist.getAggregationBits(),
         srcAttestations.get(0).getData(),
-        () -> srcAttestations.get(0).getCommitteeBitsRequired(),
+        targetBitlist::getCommitteeBits,
         targetSig);
   }
 
