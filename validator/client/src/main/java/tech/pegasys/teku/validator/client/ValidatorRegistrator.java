@@ -135,6 +135,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {
