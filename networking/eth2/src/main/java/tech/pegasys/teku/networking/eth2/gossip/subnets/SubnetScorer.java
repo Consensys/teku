@@ -54,7 +54,7 @@ public class SubnetScorer implements PeerScorer {
         candidate.getPersistentAttestationSubnets(),
         candidate.getSyncCommitteeSubnets(),
         peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
-            UInt256.fromBytes(candidate.getNodeId()), candidate.getDasExtraCustodySubnetCount()));
+            UInt256.fromBytes(candidate.getNodeId()), candidate.getDasCustodySubnetCount()));
   }
 
   //  @Override

@@ -139,7 +139,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .sszSerialize());
   }
 
-  public void setDASExtraCustodySubnetCount(int count) {
+  public void setDASTotalCustodySubnetCount(int count) {
     discoveryService.updateCustomENRField(
         DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, SszUInt64.of(UInt64.valueOf(count)).sszSerialize());
   }

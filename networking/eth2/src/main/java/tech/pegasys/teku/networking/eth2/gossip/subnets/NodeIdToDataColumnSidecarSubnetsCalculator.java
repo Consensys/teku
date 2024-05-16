@@ -29,9 +29,9 @@ import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 @FunctionalInterface
 public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
-  Optional<SszBitvector> calculateSubnets(UInt256 nodeId, int extraSubnetCount);
+  Optional<SszBitvector> calculateSubnets(UInt256 nodeId, Optional<Integer> subnetCount);
 
-  NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, extraSubnetCount) -> Optional.empty();
+  NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, subnetCount) -> Optional.empty();
 
   /** Creates a calculator instance for the specific slot */
   private static NodeIdToDataColumnSidecarSubnetsCalculator createAtSlot(
@@ -39,10 +39,10 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
     UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
     SszBitvectorSchema<SszBitvector> bitvectorSchema =
         SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount());
-    return (nodeId, extraSubnetCount) -> {
+    return (nodeId, subnetCount) -> {
       List<UInt64> nodeSubnets =
           miscHelpers.computeDataColumnSidecarBackboneSubnets(
-              nodeId, currentEpoch, config.getCustodyRequirement() + extraSubnetCount);
+              nodeId, currentEpoch, subnetCount.orElse(config.getCustodyRequirement()));
       return Optional.of(
           bitvectorSchema.ofBits(nodeSubnets.stream().map(UInt64::intValue).toList()));
     };
@@ -52,7 +52,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
   static NodeIdToDataColumnSidecarSubnetsCalculator create(
       Spec spec, Supplier<Optional<UInt64>> currentSlotSupplier) {
 
-    return (nodeId, extraSubnetCount) ->
+    return (nodeId, subnetCount) ->
         currentSlotSupplier
             .get()
             .flatMap(
@@ -68,7 +68,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
                   } else {
                     calculatorAtSlot = NOOP;
                   }
-                  return calculatorAtSlot.calculateSubnets(nodeId, extraSubnetCount);
+                  return calculatorAtSlot.calculateSubnets(nodeId, subnetCount);
                 });
   }
 }

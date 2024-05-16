@@ -28,7 +28,7 @@ public class DiscoveryPeer {
   private final Optional<EnrForkId> enrForkId;
   private final SszBitvector persistentAttestationSubnets;
   private final SszBitvector syncCommitteeSubnets;
-  private final int dasExtraCustodySubnetCount;
+  private final Optional<Integer> dasCustodySubnetCount;
 
   public DiscoveryPeer(
       final Bytes publicKey,
@@ -37,14 +37,14 @@ public class DiscoveryPeer {
       final Optional<EnrForkId> enrForkId,
       final SszBitvector persistentAttestationSubnets,
       final SszBitvector syncCommitteeSubnets,
-      final Optional<Integer> dasExtraCustodySubnetCount) {
+      final Optional<Integer> dasCustodySubnetCount) {
     this.publicKey = publicKey;
     this.nodeId = nodeId;
     this.nodeAddress = nodeAddress;
     this.enrForkId = enrForkId;
     this.persistentAttestationSubnets = persistentAttestationSubnets;
     this.syncCommitteeSubnets = syncCommitteeSubnets;
-    this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount.orElse(0);
+    this.dasCustodySubnetCount = dasCustodySubnetCount;
   }
 
   public Bytes getPublicKey() {
@@ -71,8 +71,8 @@ public class DiscoveryPeer {
     return syncCommitteeSubnets;
   }
 
-  public int getDasExtraCustodySubnetCount() {
-    return dasExtraCustodySubnetCount;
+  public Optional<Integer> getDasCustodySubnetCount() {
+    return dasCustodySubnetCount;
   }
 
   @Override

@@ -73,7 +73,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final SubnetSubscriptionService dataColumnSidecarSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
-  private final int dasExtraCustodySubnetCount;
+  private final int dasTotalCustodySubnetCount;
 
   private final GossipForkManager gossipForkManager;
 
@@ -98,7 +98,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
-      final int dasExtraCustodySubnetCount,
+      final int dasTotalCustodySubnetCount,
       final boolean allTopicsFilterEnabled) {
     super(discoveryNetwork);
     this.spec = spec;
@@ -114,7 +114,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.syncCommitteeSubnetService = syncCommitteeSubnetService;
     this.dataColumnSidecarSubnetService = dataColumnSidecarSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
-    this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
+    this.dasTotalCustodySubnetCount = dasTotalCustodySubnetCount;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
@@ -159,10 +159,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
     if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
-      LOG.info("Using extra custody sidecar columns count: {}", dasExtraCustodySubnetCount);
-      if (dasExtraCustodySubnetCount != 0) {
-        discoveryNetwork.setDASExtraCustodySubnetCount(dasExtraCustodySubnetCount);
-      }
+      LOG.info("Using custody sidecar columns count: {}", dasTotalCustodySubnetCount);
+      discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
     }
 
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());

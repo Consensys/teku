@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -206,9 +207,9 @@ public class PeerSubnetSubscriptions {
   }
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
-      final UInt256 peerId, final int extraSubnetCount) {
+      final UInt256 peerId, final Optional<Integer> custodySubnetCount) {
     return nodeIdToDataColumnSidecarSubnetsCalculator
-        .calculateSubnets(peerId, extraSubnetCount)
+        .calculateSubnets(peerId, custodySubnetCount)
         .orElse(dataColumnSidecarSubnetSubscriptions.getSubscriptionSchema().getDefault());
   }
 

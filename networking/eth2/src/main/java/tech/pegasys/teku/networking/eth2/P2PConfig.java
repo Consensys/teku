@@ -132,12 +132,6 @@ public class P2PConfig {
     return subscribeAllSubnetsEnabled;
   }
 
-  public int getDasExtraCustodySubnetCount(SpecVersion specVersion) {
-    SpecConfigEip7594 configEip7594 = SpecConfigEip7594.required(specVersion.getConfig());
-    int minCustodyRequirement = configEip7594.getCustodyRequirement();
-    return getTotalCustodySubnetCount(specVersion) - minCustodyRequirement;
-  }
-
   public int getTotalCustodySubnetCount(SpecVersion specVersion) {
     SpecConfigEip7594 configEip7594 = SpecConfigEip7594.required(specVersion.getConfig());
     int minCustodyRequirement = configEip7594.getCustodyRequirement();

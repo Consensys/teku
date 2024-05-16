@@ -75,7 +75,7 @@ public class NodeRecordConverter {
     final SszBitvector syncCommitteeSubnets =
         parseField(nodeRecord, SYNC_COMMITTEE_SUBNET_ENR_FIELD, syncnetsSchema::fromBytes)
             .orElse(syncnetsSchema.getDefault());
-    final Optional<Integer> dasExtraCustodySubnetCount =
+    final Optional<Integer> dasTotalCustodySubnetCount =
         parseField(
                 nodeRecord,
                 DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD,
@@ -89,7 +89,7 @@ public class NodeRecordConverter {
         enrForkId,
         persistentAttestationSubnets,
         syncCommitteeSubnets,
-        dasExtraCustodySubnetCount);
+        dasTotalCustodySubnetCount);
   }
 
   private static <T> Optional<T> parseField(
