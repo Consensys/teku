@@ -112,9 +112,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         attestation
             .getCommitteesSize()
             .map(committeesSize -> (Supplier<Int2IntMap>) () -> committeesSize)
-            // fallback to querying the state in the cases when the committeesSize is not available
-            // in the ValidatableAttestation.
-            .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
+            .orElseGet(
+                () -> {
+                  LOG.warn(
+                      "Committees size was not readily available in {}. Will attempt to retrieve the committees size from a relevant state.",
+                      attestation);
+                  return getCommitteesSizeSupplierUsingTheState(attestationData);
+                });
     final boolean add =
         getOrCreateAttestationGroup(attestationData, commiteesSizeSupplier).add(attestation);
     if (add) {
