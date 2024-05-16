@@ -222,7 +222,7 @@ public class SpecConfigReader {
       if (!ignoreUnknownConfigItems) {
         throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
       } else {
-        LOG.info("Ignoring unknown items in network configuration: {}", unknownKeys);
+        LOG.warn("Ignoring unknown items in network configuration: {}", unknownKeys);
       }
     }
   }
