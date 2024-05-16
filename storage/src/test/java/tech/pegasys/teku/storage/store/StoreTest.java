@@ -704,7 +704,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   private BeaconState justifiedState(final UpdatableStore store) {
-    return safeJoin(store.retrieveCheckpointState(store.getJustifiedCheckpoint())).orElseThrow();
+    return store.getCheckpointStateIfAvailable(store.getJustifiedCheckpoint()).orElseThrow();
   }
 
   private void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {

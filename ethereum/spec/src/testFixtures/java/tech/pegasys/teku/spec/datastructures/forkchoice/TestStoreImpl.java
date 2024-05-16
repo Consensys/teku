@@ -198,6 +198,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return getCheckpointState(checkpoint);
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
   }

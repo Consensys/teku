@@ -554,6 +554,11 @@ class Store extends CacheableStore {
   }
 
   @Override
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return checkpointStates.getIfAvailable(checkpoint.toSlotAndBlockRoot(spec));
+  }
+
+  @Override
   public boolean isHeadWeak(final Bytes32 root) {
     final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(root);
     return maybeBlockData

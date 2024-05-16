@@ -153,15 +153,14 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
       final AttestationData attestationData) {
     return () -> {
-      final Bytes32 targetRoot = attestationData.getTarget().getRoot();
       final BeaconState state =
           recentChainData
               .getStore()
-              .getBlockStateIfAvailable(targetRoot)
+              .getCheckpointStateIfAvailable(attestationData.getTarget())
               .orElseThrow(
                   () ->
                       new IllegalStateException(
-                          "No state available for checkpoint with root " + targetRoot));
+                          "No state available for checkpoint " + attestationData.getTarget()));
       return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
     };
   }

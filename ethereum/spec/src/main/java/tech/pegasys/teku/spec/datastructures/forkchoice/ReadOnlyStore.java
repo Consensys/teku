@@ -102,11 +102,19 @@ public interface ReadOnlyStore extends TimeProvider {
    * @param blockRoot The block root of the block to retrieve
    * @return The block if available.
    */
-  Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
+  Optional<SignedBeaconBlock> getBlockIfAvailable(Bytes32 blockRoot);
+
+  /**
+   * Returns a checkpoint state only if it is immediately available (not pruned).
+   *
+   * @param checkpoint The checkpoint corresponding to the state to retrieve
+   * @return The state if available.
+   */
+  Optional<BeaconState> getCheckpointStateIfAvailable(Checkpoint checkpoint);
 
   Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
 
-  default SafeFuture<Optional<BeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
+  default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
     return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));
   }
 
@@ -135,8 +143,8 @@ public interface ReadOnlyStore extends TimeProvider {
   // implements is_parent_strong from fork-choice Consensus Spec
   boolean isParentStrong(Bytes32 parentRoot);
 
-  void computeBalanceThresholds(final BeaconState justifiedState);
+  void computeBalanceThresholds(BeaconState justifiedState);
 
   // implements is_ffg_competitive from Consensus Spec
-  Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot);
+  Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
 }

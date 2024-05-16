@@ -479,6 +479,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
+    return Optional.ofNullable(blockData.get(checkpoint.getRoot()))
+        .map(SignedBlockAndState::getState)
+        .or(() -> store.getCheckpointStateIfAvailable(checkpoint));
+  }
+
+  @Override
   public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot))
