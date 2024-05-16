@@ -155,7 +155,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               .getStore()
               .getBlockStateIfAvailable(targetRoot)
               .orElseThrow(
-                  () -> new IllegalStateException("No state available for block " + targetRoot));
+                  () ->
+                      new IllegalStateException(
+                          "No state available for checkpoint with root " + targetRoot));
       return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
     };
   }
