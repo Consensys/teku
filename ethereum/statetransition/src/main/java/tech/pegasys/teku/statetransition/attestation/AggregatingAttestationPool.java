@@ -40,7 +40,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -150,15 +149,15 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
       final AttestationData attestationData) {
     return () -> {
-      final SlotAndBlockRoot slotAndBlockRoot =
-          new SlotAndBlockRoot(attestationData.getSlot(), attestationData.getBeaconBlockRoot());
       final BeaconState state =
           recentChainData
-              .retrieveStateAtSlot(slotAndBlockRoot)
+              .retrieveBlockState(attestationData.getBeaconBlockRoot())
               // the attestation pool flow is entirely synchronous so joining here
               .join()
               .orElseThrow(
-                  () -> new IllegalStateException("No state available for " + slotAndBlockRoot));
+                  () ->
+                      new IllegalStateException(
+                          "No state available for block " + attestationData.getBeaconBlockRoot()));
       return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
     };
   }
