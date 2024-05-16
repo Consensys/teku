@@ -132,7 +132,7 @@ class RemoteSpecLoader {
     apiEndpoints = stripAuthentication(apiEndpoints);
     final OkHttpClient okHttpClient = httpClientBuilder.build();
     return apiEndpoints.stream()
-        .map(apiEndpoint -> new OkHttpValidatorMinimalTypeDefClient(okHttpClient, apiEndpoint))
+        .map(apiEndpoint -> new OkHttpValidatorMinimalTypeDefClient(apiEndpoint, okHttpClient))
         .toList();
   }
 
