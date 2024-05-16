@@ -34,14 +34,14 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   AttestationBitsAggregatorElectra(
       final SszBitlist aggregationBits,
       final SszBitvector committeeBits,
-      Int2IntMap committeesSize) {
+      final Int2IntMap committeesSize) {
     this.aggregationBits = aggregationBits;
     this.committeeBits = committeeBits;
     this.committeesSize = committeesSize;
   }
 
   static AttestationBitsAggregator fromAttestationSchema(
-      AttestationSchema<?> attestationSchema, Int2IntMap committeesSize) {
+      final AttestationSchema<?> attestationSchema, final Int2IntMap committeesSize) {
     return new AttestationBitsAggregatorElectra(
         attestationSchema.createEmptyAggregationBits(),
         attestationSchema.createEmptyCommitteeBits().orElseThrow(),
