@@ -182,6 +182,7 @@ public class P2PConfig {
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+    private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private int dasExtraCustodySubnetCount = DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
@@ -219,7 +220,7 @@ public class P2PConfig {
       discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
       discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
 
-      if (subscribeAllSubnetsEnabled) {
+      if (subscribeAllCustodySubnetsEnabled) {
         dasExtraCustodySubnetCount = Integer.MAX_VALUE;
       }
 
@@ -285,6 +286,13 @@ public class P2PConfig {
 
     public Builder dasExtraCustodySubnetCount(int dasExtraCustodySubnetCount) {
       this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
+      return this;
+    }
+
+    public Builder subscribeAllCustodySubnetsEnabled(
+        final Boolean subscribeAllCustodySubnetsEnabled) {
+      checkNotNull(subscribeAllCustodySubnetsEnabled);
+      this.subscribeAllCustodySubnetsEnabled = subscribeAllCustodySubnetsEnabled;
       return this;
     }
 

@@ -223,6 +223,16 @@ public class P2POptions {
   private boolean subscribeAllSubnetsEnabled = P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
 
   @Option(
+      names = {"--p2p-subscribe-all-custody-subnets-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean subscribeAllCustodySubnetsEnabled =
+      P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+
+  @Option(
       names = {"--Xp2p-gossip-scoring-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -350,6 +360,7 @@ public class P2POptions {
         .p2p(
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                    .subscribeAllCustodySubnetsEnabled(subscribeAllCustodySubnetsEnabled)
                     .batchVerifyMaxThreads(batchVerifyMaxThreads)
                     .batchVerifyQueueCapacity(batchVerifyQueueCapacity)
                     .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
