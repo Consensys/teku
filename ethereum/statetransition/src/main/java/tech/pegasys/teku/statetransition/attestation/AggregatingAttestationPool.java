@@ -111,16 +111,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final Supplier<Int2IntMap> commiteesSizeSupplier =
         attestation
             .getCommitteesSize()
-            .map(committeesSize -> (Supplier<Int2IntMap>) () -> committeesSize)
-            // fallback to querying the state in the cases when the committeesSize is not available
-            // in the ValidatableAttestation.
-            .orElse(
-                () -> {
-                  LOG.warn(
-                      "Committees size was not readily available in {}. Will attempt to retrieve the committees size from a relevant state.",
-                      attestation);
-                  return getCommitteesSizeUsingTheState(attestationData);
-                });
+            .<Supplier<Int2IntMap>>map(committeesSize -> () -> committeesSize)
+            .orElse(() -> getCommitteesSizeUsingTheState(attestationData));
     final boolean add =
         getOrCreateAttestationGroup(attestationData, commiteesSizeSupplier).add(attestation);
     if (add) {
@@ -151,7 +143,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   // We only have the committees size already available via attestations received in the gossip
-  // flow, so querying the state is required when we are tracking attestations coming from a block.
+  // flow and have been successfully validated, so querying the state is required for other cases
   private Int2IntMap getCommitteesSizeUsingTheState(final AttestationData attestationData) {
     final BeaconState state =
         recentChainData
