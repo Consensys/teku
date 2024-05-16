@@ -26,15 +26,20 @@ public class RateTrackerImpl implements RateTracker {
   private final UInt64 timeoutSeconds;
   private long objectsWithinWindow = 0L;
   private final TimeProvider timeProvider;
+  private final String name;
 
   private final AtomicInteger newRequestId = new AtomicInteger(0);
 
   public RateTrackerImpl(
-      final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
+      final int peerRateLimit,
+      final long timeoutSeconds,
+      final TimeProvider timeProvider,
+      final String name) {
     this.timeoutSeconds = UInt64.valueOf(timeoutSeconds);
     requests = new TreeMap<>();
     this.peerRateLimit = peerRateLimit;
     this.timeProvider = timeProvider;
+    this.name = name;
   }
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
@@ -84,5 +89,18 @@ public class RateTrackerImpl implements RateTracker {
         requests.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
     headMap.values().forEach(value -> objectsWithinWindow -= value);
     headMap.clear();
+  }
+
+  @Override
+  public String toString() {
+    return "RateTrackerImpl{"
+        + "peerRateLimit="
+        + peerRateLimit
+        + ", objectsWithinWindow="
+        + objectsWithinWindow
+        + ", name='"
+        + name
+        + '\''
+        + '}';
   }
 }

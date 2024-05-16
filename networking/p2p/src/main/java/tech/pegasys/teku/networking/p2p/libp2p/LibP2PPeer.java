@@ -145,7 +145,7 @@ public class LibP2PPeer implements Peer {
     disconnectLocallyInitiated = locallyInitiated;
     SafeFuture.of(connection.close())
         .finish(
-            () -> LOG.trace("Disconnected from {} because {}", getId(), reason),
+            () -> LOG.info("Disconnected from {} because {}", getId(), reason),
             error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
   }
 
@@ -171,7 +171,7 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
-    LOG.trace("Disconnecting peer {} because {}", getId(), reason);
+    LOG.info("Disconnecting peer {} because {}", getId(), reason);
     connected.set(false);
     disconnectReason = Optional.of(reason);
     disconnectLocallyInitiated = true;

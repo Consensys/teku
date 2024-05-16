@@ -184,17 +184,17 @@ public class SimpleSidecarRetriever
 
   @Override
   public synchronized void peerConnected(UInt256 nodeId) {
-    LOG.info("[nyota] SimpleSidecarRetriever.peerConnected: {}",
-            "0x..." + nodeId.toHexString().substring(58)
-    );
+    LOG.info(
+        "[nyota] SimpleSidecarRetriever.peerConnected: {}",
+        "0x..." + nodeId.toHexString().substring(58));
     connectedPeers.put(nodeId, new ConnectedPeer(nodeId));
   }
 
   @Override
   public synchronized void peerDisconnected(UInt256 nodeId) {
-    LOG.info("[nyota] SimpleSidecarRetriever.peerDisconnected: {}",
-            "0x..." + nodeId.toHexString().substring(58)
-    );
+    LOG.info(
+        "[nyota] SimpleSidecarRetriever.peerDisconnected: {}",
+        "0x..." + nodeId.toHexString().substring(58));
     connectedPeers.remove(nodeId);
   }
 

@@ -48,7 +48,10 @@ public interface RateTracker {
   void pruneRequests();
 
   static RateTracker create(
-      final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
-    return new RateTrackerImpl(peerRateLimit, timeoutSeconds, timeProvider);
+      final int peerRateLimit,
+      final long timeoutSeconds,
+      final TimeProvider timeProvider,
+      final String name) {
+    return new RateTrackerImpl(peerRateLimit, timeoutSeconds, timeProvider, name);
   }
 }

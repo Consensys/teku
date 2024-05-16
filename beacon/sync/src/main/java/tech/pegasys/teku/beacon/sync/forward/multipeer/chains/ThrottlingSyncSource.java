@@ -51,18 +51,24 @@ public class ThrottlingSyncSource implements SyncSource {
       final Optional<Integer> maybeMaxDataColumnSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider);
+    this.blocksRateTracker =
+        RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider, "throttling-blocks");
     this.blobSidecarsRateTracker =
         maybeMaxBlobSidecarsPerMinute
             .map(
                 maxBlobSidecarsPerMinute ->
-                    RateTracker.create(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider))
+                    RateTracker.create(
+                        maxBlobSidecarsPerMinute, TIME_OUT, timeProvider, "throttling-blobs"))
             .orElse(RateTracker.NOOP);
     this.dataColumnSidecarsRateTracker =
         maybeMaxDataColumnSidecarsPerMinute
             .map(
                 maxDataColumnSidecarsPerMinute ->
-                    RateTracker.create(maxDataColumnSidecarsPerMinute, TIME_OUT, timeProvider))
+                    RateTracker.create(
+                        maxDataColumnSidecarsPerMinute,
+                        TIME_OUT,
+                        timeProvider,
+                        "throttling-dataColumn"))
             .orElse(RateTracker.NOOP);
   }
 
