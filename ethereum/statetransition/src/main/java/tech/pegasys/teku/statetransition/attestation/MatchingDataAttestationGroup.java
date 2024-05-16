@@ -231,44 +231,50 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   }
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
-    private final AttestationBitsAggregator includedValidators =
-        AttestationBitsAggregator.of(MatchingDataAttestationGroup.this.includedValidators);
+
     private final Optional<UInt64> maybeCommitteeIndex;
+    private final AttestationBitsAggregator includedValidators;
+
+    private Iterator<ValidatableAttestation> remainingAttestations = getRemainingAttestations();
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
       this.maybeCommitteeIndex = committeeIndex;
+      includedValidators = MatchingDataAttestationGroup.this.includedValidators.copy();
     }
 
     @Override
     public boolean hasNext() {
-      return streamRemainingAttestations().findAny().isPresent();
+      if (!remainingAttestations.hasNext()) {
+        remainingAttestations = getRemainingAttestations();
+      }
+      return remainingAttestations.hasNext();
     }
 
     @Override
     public ValidatableAttestation next() {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
-      streamRemainingAttestations()
-          .forEach(
-              candidate -> {
-                if (builder.aggregate(candidate)) {
-                  includedValidators.or(candidate.getAttestation());
-                }
-              });
+      remainingAttestations.forEachRemaining(
+          candidate -> {
+            if (builder.aggregate(candidate)) {
+              includedValidators.or(candidate.getAttestation());
+            }
+          });
       return builder.buildAggregate();
     }
 
-    public Stream<ValidatableAttestation> streamRemainingAttestations() {
+    public Iterator<ValidatableAttestation> getRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::maybeFilterOnCommitteeIndex)
-          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()));
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()))
+          .iterator();
     }
 
     /*
     If we have attestations with committeeBits (Electra) then, if maybeCommitteeIndex is specified, we will consider attestation related to that committee only
      */
-    private boolean maybeFilterOnCommitteeIndex(ValidatableAttestation candidate) {
+    private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
       final Optional<SszBitvector> maybeCommitteeBits =
           candidate.getAttestation().getCommitteeBits();
       if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
