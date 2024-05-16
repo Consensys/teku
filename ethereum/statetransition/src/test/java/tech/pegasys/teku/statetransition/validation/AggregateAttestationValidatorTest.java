@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AggregateGenerator;
+import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -246,13 +247,10 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
     final List<Attestation> aggregatesForSlot =
-        generator
-            .getAttestationGenerator()
-            .groupAndAggregateAttestations(
-                generator
-                    .getAttestationGenerator()
-                    .getAttestationsForSlot(chainHead, chainHead.getSlot()),
-                chainHead.getState());
+        AttestationGenerator.groupAndAggregateAttestations(
+            generator
+                .getAttestationGenerator()
+                .getAttestationsForSlot(chainHead, chainHead.getSlot()));
     final Attestation aggregate2 =
         aggregatesForSlot.stream()
             .filter(attestation -> hasSameCommitteeIndex(aggregateAndProof1, attestation))
@@ -471,13 +469,10 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
 
     final List<Attestation> aggregatesForSlot =
-        generator
-            .getAttestationGenerator()
-            .groupAndAggregateAttestations(
-                generator
-                    .getAttestationGenerator()
-                    .getAttestationsForSlot(chainHead, chainHead.getSlot()),
-                chainHead.getState());
+        AttestationGenerator.groupAndAggregateAttestations(
+            generator
+                .getAttestationGenerator()
+                .getAttestationsForSlot(chainHead, chainHead.getSlot()));
     final Attestation aggregate2 =
         aggregatesForSlot.stream()
             .filter(attestation -> !hasSameCommitteeIndex(aggregateAndProof1, attestation))

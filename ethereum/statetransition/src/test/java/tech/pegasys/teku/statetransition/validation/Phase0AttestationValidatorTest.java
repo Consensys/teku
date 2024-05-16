@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
 public class Phase0AttestationValidatorTest extends AbstractAttestationValidatorTest {
@@ -141,10 +142,8 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
   @Test
   public void shouldRejectAggregatedAttestation() {
     final Attestation attestation =
-        attestationGenerator
-            .groupAndAggregateAttestations(
-                attestationGenerator.getAttestationsForSlot(storageSystem.getChainHead()),
-                storageSystem.getChainHead().getState())
+        AttestationGenerator.groupAndAggregateAttestations(
+                attestationGenerator.getAttestationsForSlot(storageSystem.getChainHead()))
             .get(0);
 
     assertThat(validate(attestation).code()).isEqualTo(REJECT);

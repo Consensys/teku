@@ -188,7 +188,6 @@ public class BlockArchiveGenerator {
             : attestationGenerator.getAttestationsForSlot(
                 stateAndBlockSummary, previousSlot, attestationCommitteeAssignments);
 
-    return attestationGenerator.groupAndAggregateAttestations(
-        attestations, stateAndBlockSummary.getState());
+    return AttestationGenerator.groupAndAggregateAttestations(attestations);
   }
 }
