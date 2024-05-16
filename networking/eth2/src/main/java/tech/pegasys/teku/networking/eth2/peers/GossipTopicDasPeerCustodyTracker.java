@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -21,7 +22,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -33,6 +37,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCou
 
 public class GossipTopicDasPeerCustodyTracker
     implements DasPeerCustodyCountSupplier, PeerConnectedSubscriber<Eth2Peer> {
+  private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   public static final int NO_SUBNET_COUNT_INFO = -1;
 
@@ -47,11 +52,16 @@ public class GossipTopicDasPeerCustodyTracker
       Spec spec,
       GossipNetwork gossipNetwork,
       GossipEncoding gossipEncoding,
-      Supplier<Optional<ForkInfo>> currentForkInfoSupplier) {
+      Supplier<Optional<ForkInfo>> currentForkInfoSupplier,
+      AsyncRunner asyncRunner) {
     this.spec = spec;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.currentForkInfoSupplier = currentForkInfoSupplier;
+    asyncRunner.runWithFixedDelay(
+        this::refreshExistingSubscriptions,
+        Duration.ofSeconds(1),
+        e -> LOG.warn("[nyota] Error {}", e, e));
   }
 
   @Override
@@ -76,7 +86,7 @@ public class GossipTopicDasPeerCustodyTracker
         .orElse(Collections.emptySet());
   }
 
-  private void refreshExistingSubscriptions() {
+  private synchronized void refreshExistingSubscriptions() {
     Map<String, Collection<NodeId>> subscribersByTopic = gossipNetwork.getSubscribersByTopic();
     Set<String> dasTopics = getCurrentDasTopics();
     record NodeTopic(NodeId nodeId, String topic) {}

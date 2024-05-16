@@ -116,7 +116,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -636,15 +635,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock))
                 .join();
 
-    int dasExtraCustodySubnetCount = beaconConfig.p2pConfig().getDasExtraCustodySubnetCount();
     SpecConfigEip7594 configEip7594 =
         SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
     int minCustodyRequirement = configEip7594.getCustodyRequirement();
     int maxSubnets = configEip7594.getDataColumnSidecarSubnetCount();
     int totalMyCustodySubnets =
-        Integer.min(
-            maxSubnets,
-            MathHelpers.intPlusMaxIntCapped(minCustodyRequirement, dasExtraCustodySubnetCount));
+        beaconConfig
+            .p2pConfig()
+            .getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594));
 
     DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
@@ -665,7 +663,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             p2pNetwork,
             beaconConfig.p2pConfig().getGossipEncoding(),
-            () -> recentChainData.getCurrentForkInfo());
+            () -> recentChainData.getCurrentForkInfo(),
+            operationPoolAsyncRunner);
 
     p2pNetwork.subscribeConnect(peerCustodyTracker);
     DasPeerCustodyCountSupplier custodyCountSupplier =
@@ -992,7 +991,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
     DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
-            spec, p2pNetwork, nodeId, beaconConfig.p2pConfig().getDasExtraCustodySubnetCount());
+            spec,
+            p2pNetwork,
+            nodeId,
+            beaconConfig
+                .p2pConfig()
+                .getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594)));
+
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
   }
 

@@ -22,27 +22,22 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
-  private final int extraVoluntarySubnetCount;
+  private final int totalSubnetCount;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
 
   public DataColumnSidecarSubnetBackboneSubscriber(
-      final Spec spec,
-      final Eth2P2PNetwork eth2P2PNetwork,
-      UInt256 nodeId,
-      int extraVoluntarySubnetCount) {
+      final Spec spec, final Eth2P2PNetwork eth2P2PNetwork, UInt256 nodeId, int totalSubnetCount) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    this.extraVoluntarySubnetCount = extraVoluntarySubnetCount;
+    this.totalSubnetCount = totalSubnetCount;
   }
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
@@ -64,14 +59,6 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
     currentSubscribedSubnets = newSubscriptionsSet;
   }
 
-  private int getTotalSubnetCount(final UInt64 epoch) {
-    SpecConfigEip7594 configEip7594 = SpecConfigEip7594.required(spec.atEpoch(epoch).getConfig());
-    return Integer.min(
-        configEip7594.getDataColumnSidecarSubnetCount(),
-        MathHelpers.intPlusMaxIntCapped(
-            configEip7594.getCustodyRequirement(), extraVoluntarySubnetCount));
-  }
-
   private void onEpoch(final UInt64 epoch) {
     spec.atEpoch(epoch)
         .miscHelpers()
@@ -80,7 +67,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
             eip7594Spec -> {
               List<UInt64> subnets =
                   eip7594Spec.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, epoch, getTotalSubnetCount(epoch));
+                      nodeId, epoch, totalSubnetCount);
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }

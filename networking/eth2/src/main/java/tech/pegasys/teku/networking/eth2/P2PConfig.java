@@ -25,8 +25,11 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class P2PConfig {
 
@@ -129,8 +132,19 @@ public class P2PConfig {
     return subscribeAllSubnetsEnabled;
   }
 
-  public int getDasExtraCustodySubnetCount() {
-    return dasExtraCustodySubnetCount;
+  public int getDasExtraCustodySubnetCount(SpecVersion specVersion) {
+    SpecConfigEip7594 configEip7594 = SpecConfigEip7594.required(specVersion.getConfig());
+    int minCustodyRequirement = configEip7594.getCustodyRequirement();
+    return getTotalCustodySubnetCount(specVersion) - minCustodyRequirement;
+  }
+
+  public int getTotalCustodySubnetCount(SpecVersion specVersion) {
+    SpecConfigEip7594 configEip7594 = SpecConfigEip7594.required(specVersion.getConfig());
+    int minCustodyRequirement = configEip7594.getCustodyRequirement();
+    int maxSubnets = configEip7594.getDataColumnSidecarSubnetCount();
+    return Integer.min(
+        maxSubnets,
+        MathHelpers.intPlusMaxIntCapped(minCustodyRequirement, dasExtraCustodySubnetCount));
   }
 
   public int getPeerRateLimit() {

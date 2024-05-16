@@ -74,6 +74,7 @@ import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -196,10 +197,8 @@ public class Eth2P2PNetworkBuilder {
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
-    final Optional<Integer> dasExtraCustodySubnetCount =
-        config.getDasExtraCustodySubnetCount() == 0
-            ? Optional.empty()
-            : Optional.of(config.getDasExtraCustodySubnetCount());
+    int dasExtraCustodySubnetCount =
+        config.getDasExtraCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594));
 
     return new ActiveEth2P2PNetwork(
         config.getSpec(),
