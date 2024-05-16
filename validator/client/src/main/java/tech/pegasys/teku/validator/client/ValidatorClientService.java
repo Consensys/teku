@@ -213,7 +213,8 @@ public class ValidatorClientService extends Service {
               new SignedValidatorRegistrationFactory(
                   proposerConfigManager.get(), services.getTimeProvider()),
               validatorApiChannel,
-              validatorConfig.getBuilderRegistrationSendingBatchSize());
+              validatorConfig.getBuilderRegistrationSendingBatchSize(),
+              asyncRunner);
       validatorStatusProvider.subscribeValidatorStatusesUpdates(
           validatorRegistratorImpl::onUpdatedValidatorStatuses);
       validatorRegistrator = Optional.of(validatorRegistratorImpl);
