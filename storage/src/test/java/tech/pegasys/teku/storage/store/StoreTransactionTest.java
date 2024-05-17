@@ -258,10 +258,10 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(epochStartSlot);
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
-    UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
-    Optional<BeaconState> result = tx.getCheckpointStateIfAvailable(checkpoint);
+    final Optional<BeaconState> result = tx.getCheckpointStateIfAvailable(checkpoint);
     assertThat(result).isEqualTo(Optional.of(blockAndState.getState()));
   }
 
