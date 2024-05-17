@@ -166,21 +166,22 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   // flow and have been successfully validated, so querying the state is required for other cases
   private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
       final AttestationData attestationData) {
-    return Suppliers.memoize(() -> {
-      final Bytes32 targetRoot = attestationData.getTarget().getRoot();
-      LOG.debug(
-          "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
-          targetRoot);
-      final BeaconState state =
-          recentChainData
-              .getStore()
-              .getBlockStateIfAvailable(targetRoot)
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "No state available for attestation with target root " + targetRoot));
-      return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
-    });
+    return Suppliers.memoize(
+        () -> {
+          final Bytes32 targetRoot = attestationData.getTarget().getRoot();
+          LOG.debug(
+              "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
+              targetRoot);
+          final BeaconState state =
+              recentChainData
+                  .getStore()
+                  .getBlockStateIfAvailable(targetRoot)
+                  .orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "No state available for attestation with target root " + targetRoot));
+          return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
+        });
   }
 
   @Override
