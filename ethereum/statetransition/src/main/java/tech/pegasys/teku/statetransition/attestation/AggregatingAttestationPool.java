@@ -111,8 +111,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     getOrCreateAttestationGroup(attestation.getAttestation(), committeesSize)
         .ifPresent(
             attestationGroup -> {
-              final boolean add = attestationGroup.add(attestation);
-              if (add) {
+              final boolean added = attestationGroup.add(attestation);
+              if (added) {
                 updateSize(1);
               }
             });
