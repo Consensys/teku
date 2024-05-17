@@ -210,7 +210,7 @@ jobs:
           no_output_timeout: 20m
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
+            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
             cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
       - run:
           name: "Gather test artifacts"
