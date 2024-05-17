@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import com.google.common.base.Suppliers;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.HashMap;
@@ -113,12 +114,14 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             .getCommitteesSize()
             .<Supplier<Int2IntMap>>map(committeesSize -> () -> committeesSize)
             .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
-    final boolean add =
-        getOrCreateAttestationGroup(attestationData, committeesSizeSupplier).add(attestation);
-    if (add) {
-      updateSize(1);
+    if (attestationIsApplicable(attestation.getAttestation(), committeesSizeSupplier)) {
+      final boolean add =
+          getOrCreateAttestationGroup(attestationData, committeesSizeSupplier).add(attestation);
+      if (add) {
+        updateSize(1);
+      }
     }
-    // Always keep the latest slot attestations so we don't discard everything
+    // Always keep the latest slot attestations, so we don't discard everything
     int currentSize = getSize();
     while (dataHashBySlot.size() > 1 && currentSize > maximumAttestationCount) {
       LOG.trace("Attestation cache at {} exceeds {}, ", currentSize, maximumAttestationCount);
@@ -126,6 +129,23 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       removeAttestationsPriorToSlot(firstSlotToKeep);
       currentSize = getSize();
     }
+  }
+
+  // TODO: Refactor
+  private boolean attestationIsApplicable(
+      final Attestation attestation, final Supplier<Int2IntMap> committeesSizeSupplier) {
+    if (attestation.requiresCommitteeBits()) {
+      // if an attestation has committee bits, committees size should be computed without
+      // exceptions. If this is not the case, we can ignore this attestation and not add it to the
+      // pool
+      try {
+        committeesSizeSupplier.get();
+        return true;
+      } catch (Exception ex) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -146,7 +166,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   // flow and have been successfully validated, so querying the state is required for other cases
   private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
       final AttestationData attestationData) {
-    return () -> {
+    return Suppliers.memoize(() -> {
       final Bytes32 targetRoot = attestationData.getTarget().getRoot();
       LOG.debug(
           "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
@@ -160,7 +180,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                       new IllegalStateException(
                           "No state available for attestation with target root " + targetRoot));
       return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
-    };
+    });
   }
 
   @Override
@@ -200,10 +220,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     final Supplier<Int2IntMap> committeesSizeSupplier =
         getCommitteesSizeSupplierUsingTheState(attestation.getData());
-    final MatchingDataAttestationGroup attestations =
-        getOrCreateAttestationGroup(attestation.getData(), committeesSizeSupplier);
-    final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
-    updateSize(-numRemoved);
+    if (attestationIsApplicable(attestation, committeesSizeSupplier)) {
+      final MatchingDataAttestationGroup attestations =
+          getOrCreateAttestationGroup(attestation.getData(), committeesSizeSupplier);
+      final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
+      updateSize(-numRemoved);
+    }
   }
 
   private void updateSize(final int delta) {
@@ -264,7 +286,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
-    // TODO fix for electra
+    // TODO fix for electra (only used in Beacon API)
     final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
         (group) ->
             maybeCommitteeIndex
