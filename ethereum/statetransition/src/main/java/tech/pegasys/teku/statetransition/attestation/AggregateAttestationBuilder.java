@@ -71,7 +71,7 @@ class AggregateAttestationBuilder {
             .create(
                 currentAggregateBits.getAggregationBits(),
                 attestationData,
-                () -> currentAggregateBits.getCommitteeBits(),
+                currentAggregateBits::getCommitteeBits,
                 BLS.aggregate(
                     includedAttestations.stream()
                         .map(ValidatableAttestation::getAttestation)
