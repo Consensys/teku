@@ -108,14 +108,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized void add(final ValidatableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
     final Optional<Int2IntMap> committeesSize;
-    if (attestation.getAttestation().requiresCommitteeBits()) {
-      committeesSize =
-          attestation
-              .getCommitteesSize()
-              .or(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
-    } else {
-      committeesSize = Optional.empty();
-    }
+    committeesSize =
+        attestation
+            .getCommitteesSize()
+            .or(() -> retrieveCommitteesSize(attestation.getAttestation()));
     if (attestationIsApplicable(attestation.getAttestation(), committeesSize)) {
       final boolean add =
           getOrCreateAttestationGroup(attestationData, committeesSize).add(attestation);
@@ -131,6 +127,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       removeAttestationsPriorToSlot(firstSlotToKeep);
       currentSize = getSize();
     }
+  }
+
+  private Optional<Int2IntMap> retrieveCommitteesSize(final Attestation attestation) {
+    if (attestation.requiresCommitteeBits()) {
+      return getCommitteesSizeSupplierUsingTheState(attestation.getData());
+    }
+    return Optional.empty();
   }
 
   private boolean attestationIsApplicable(
@@ -206,12 +209,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    final Optional<Int2IntMap> committeesSize;
-    if (attestation.requiresCommitteeBits()) {
-      committeesSize = getCommitteesSizeSupplierUsingTheState(attestation.getData());
-    } else {
-      committeesSize = Optional.empty();
-    }
+    final Optional<Int2IntMap> committeesSize = retrieveCommitteesSize(attestation);
     if (attestationIsApplicable(attestation, committeesSize)) {
       final MatchingDataAttestationGroup attestations =
           getOrCreateAttestationGroup(attestation.getData(), committeesSize);
