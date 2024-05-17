@@ -15,16 +15,12 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.io.Resources;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTest {
 
@@ -34,27 +30,56 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
   }
 
   @Test
-  public void shouldRejectAttestationForMultipleCommittees() throws JsonProcessingException {
-
+  public void shouldRejectAttestationForMultipleCommittees() {
     final Attestation attestation =
-        JsonUtil.parse(
-            readResource("attestation_wrong1.json"),
-            spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition());
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
+
+    final Attestation wrongAttestation =
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationSchema()
+            .create(
+                attestation.getAggregationBits(),
+                attestation.getData(),
+                () -> attestation.getSchema().getCommitteeBitsSchema().orElseThrow().ofBits(1, 3),
+                attestation.getAggregateSignature());
 
     // Sanity check
-    assertThat(attestation.getCommitteeBitsRequired().getBitCount()).isGreaterThan(1);
+    assertThat(wrongAttestation.getCommitteeBitsRequired().getBitCount()).isGreaterThan(1);
 
-    assertThat(validate(attestation))
+    assertThat(validate(wrongAttestation))
         .isEqualTo(
             InternalValidationResult.reject(
-                "Rejecting aggregate attestation because committee bits count is not 1"));
+                "Rejecting attestation because committee bits count is not 1"));
   }
 
-  private static String readResource(final String resource) {
-    try {
-      return Resources.toString(Resources.getResource(resource), StandardCharsets.UTF_8);
-    } catch (IOException ex) {
-      throw new UncheckedIOException(ex);
-    }
+  @Test
+  public void shouldRejectAggregateWithAttestationDataIndexNonZero() {
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
+
+    final AttestationData nonZeroIndexData =
+        new AttestationData(
+            attestation.getData().getSlot(),
+            UInt64.ONE,
+            attestation.getData().getBeaconBlockRoot(),
+            attestation.getData().getSource(),
+            attestation.getData().getTarget());
+
+    final Attestation wrongAttestation =
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationSchema()
+            .create(
+                attestation.getAggregationBits(),
+                nonZeroIndexData,
+                attestation::getCommitteeBitsRequired,
+                attestation.getAggregateSignature());
+
+    // Sanity check
+    assertThat(wrongAttestation.getData().getIndex()).isNotEqualTo(UInt64.ZERO);
+
+    assertThat(validate(wrongAttestation))
+        .isEqualTo(
+            InternalValidationResult.reject(
+                "Rejecting attestation because attestation data index must be 0"));
   }
 }
