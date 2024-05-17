@@ -87,17 +87,19 @@ public class AttestationGenerator {
 
   private static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
-    AttestationSchema<? extends Attestation> attestationSchema = srcAttestations.get(0).getSchema();
-    int targetBitlistSize =
+
+    final AttestationSchema<? extends Attestation> attestationSchema =
+        srcAttestations.get(0).getSchema();
+    final int targetBitlistSize =
         srcAttestations.stream().mapToInt(a -> a.getAggregationBits().size()).max().getAsInt();
-    SszBitlist targetBitlist =
+    final SszBitlist targetBitlist =
         srcAttestations.stream()
             .map(Attestation::getAggregationBits)
             .reduce(
                 attestationSchema.getAggregationBitsSchema().ofBits(targetBitlistSize),
                 SszBitlist::or,
                 SszBitlist::or);
-    BLSSignature targetSig =
+    final BLSSignature targetSig =
         BLS.aggregate(
             srcAttestations.stream()
                 .map(attestation -> attestation.getAggregateSignature())

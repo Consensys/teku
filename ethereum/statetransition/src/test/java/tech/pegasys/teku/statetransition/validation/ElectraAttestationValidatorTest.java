@@ -57,13 +57,15 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
 
+    final AttestationData correctAttestationData = attestation.getData();
+
     final AttestationData nonZeroIndexData =
         new AttestationData(
-            attestation.getData().getSlot(),
+            correctAttestationData.getSlot(),
             UInt64.ONE,
-            attestation.getData().getBeaconBlockRoot(),
-            attestation.getData().getSource(),
-            attestation.getData().getTarget());
+            correctAttestationData.getBeaconBlockRoot(),
+            correctAttestationData.getSource(),
+            correctAttestationData.getTarget());
 
     final Attestation wrongAttestation =
         spec.getGenesisSchemaDefinitions()
