@@ -151,7 +151,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         () -> {
           final Bytes32 targetRoot = attestationData.getTarget().getRoot();
           LOG.debug(
-              "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the target checkpoint state.",
+              "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
               targetRoot);
           final BeaconState state =
               recentChainData
