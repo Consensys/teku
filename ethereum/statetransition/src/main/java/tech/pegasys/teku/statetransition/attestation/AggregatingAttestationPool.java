@@ -40,7 +40,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -109,15 +108,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void add(final ValidatableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
-    final Supplier<Int2IntMap> commiteesSizeSupplier =
+    final Supplier<Int2IntMap> committeesSizeSupplier =
         attestation
             .getCommitteesSize()
-            .map(committeesSize -> (Supplier<Int2IntMap>) () -> committeesSize)
-            // fallback to querying the state in the cases when the committeesSize is not available
-            // in the ValidatableAttestation.
+            .<Supplier<Int2IntMap>>map(committeesSize -> () -> committeesSize)
             .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
     final boolean add =
-        getOrCreateAttestationGroup(attestationData, commiteesSizeSupplier).add(attestation);
+        getOrCreateAttestationGroup(attestationData, committeesSizeSupplier).add(attestation);
     if (add) {
       updateSize(1);
     }
@@ -146,19 +143,22 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   // We only have the committees size already available via attestations received in the gossip
-  // flow, so querying the state is required when we are tracking attestations coming from a block.
+  // flow and have been successfully validated, so querying the state is required for other cases
   private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
       final AttestationData attestationData) {
     return () -> {
-      final SlotAndBlockRoot slotAndBlockRoot =
-          new SlotAndBlockRoot(attestationData.getSlot(), attestationData.getBeaconBlockRoot());
+      final Bytes32 targetRoot = attestationData.getTarget().getRoot();
+      LOG.debug(
+          "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
+          targetRoot);
       final BeaconState state =
           recentChainData
-              .retrieveStateAtSlot(slotAndBlockRoot)
-              // the attestation pool flow is entirely synchronous so joining here
-              .join()
+              .getStore()
+              .getBlockStateIfAvailable(targetRoot)
               .orElseThrow(
-                  () -> new IllegalStateException("No state available for " + slotAndBlockRoot));
+                  () ->
+                      new IllegalStateException(
+                          "No state available for attestation with target root " + targetRoot));
       return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
     };
   }
@@ -198,10 +198,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    final AttestationData attestationData = attestation.getData();
+    final Supplier<Int2IntMap> committeesSizeSupplier =
+        getCommitteesSizeSupplierUsingTheState(attestation.getData());
     final MatchingDataAttestationGroup attestations =
-        getOrCreateAttestationGroup(
-            attestationData, getCommitteesSizeSupplierUsingTheState(attestationData));
+        getOrCreateAttestationGroup(attestation.getData(), committeesSizeSupplier);
     final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
     updateSize(-numRemoved);
   }
