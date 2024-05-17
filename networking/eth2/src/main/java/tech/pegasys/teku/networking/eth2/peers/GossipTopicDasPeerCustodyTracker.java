@@ -46,7 +46,7 @@ public class GossipTopicDasPeerCustodyTracker
   private final GossipEncoding gossipEncoding;
   private final Supplier<Optional<ForkInfo>> currentForkInfoSupplier;
 
-  private final Map<UInt256, Entry> connectedPeerExtraSubnets = new ConcurrentHashMap<>();
+  private final Map<UInt256, Entry> connectedPeerSubnets = new ConcurrentHashMap<>();
 
   public GossipTopicDasPeerCustodyTracker(
       Spec spec,
@@ -66,14 +66,14 @@ public class GossipTopicDasPeerCustodyTracker
 
   @Override
   public void onConnected(Eth2Peer peer) {
-    connectedPeerExtraSubnets.put(
+    connectedPeerSubnets.put(
         peer.getDiscoveryNodeId(), new Entry(peer.getId(), NO_SUBNET_COUNT_INFO));
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
     refreshExistingSubscriptions();
   }
 
   private void peerDisconnected(Eth2Peer peer) {
-    connectedPeerExtraSubnets.remove(peer.getDiscoveryNodeId());
+    connectedPeerSubnets.remove(peer.getDiscoveryNodeId());
   }
 
   private Set<String> getCurrentDasTopics() {
@@ -98,7 +98,7 @@ public class GossipTopicDasPeerCustodyTracker
                     entry.getValue().stream().map(nodeId -> new NodeTopic(nodeId, entry.getKey())))
             .filter(entry -> dasTopics.contains(entry.topic()))
             .collect(Collectors.groupingBy(NodeTopic::nodeId, Collectors.counting()));
-    connectedPeerExtraSubnets.replaceAll(
+    connectedPeerSubnets.replaceAll(
         (nodeId, entry) -> {
           Long maybeCount = nodeToSubnetCount.get(entry.libp2pPeerId());
           int count = maybeCount == null ? NO_SUBNET_COUNT_INFO : maybeCount.intValue();
@@ -108,7 +108,7 @@ public class GossipTopicDasPeerCustodyTracker
 
   @Override
   public int getCustodyCountForPeer(UInt256 nodeId) {
-    Entry entry = connectedPeerExtraSubnets.get(nodeId);
+    Entry entry = connectedPeerSubnets.get(nodeId);
     return entry != null ? entry.subnetCount() : 0;
   }
 
