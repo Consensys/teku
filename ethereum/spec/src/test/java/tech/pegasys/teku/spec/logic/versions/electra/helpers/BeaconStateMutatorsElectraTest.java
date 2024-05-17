@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -146,5 +148,31 @@ class BeaconStateMutatorsElectraTest {
         postState.getPendingBalanceDeposits();
     assertThat(postPendingBalanceDeposits.size()).isEqualTo(1);
     assertThat(postPendingBalanceDeposits.get(0).getAmount()).isEqualTo(validatorBalance);
+  }
+
+  @Test
+  void switchToCompoundingValidator_shouldGeneratePendingBalanceDeposit() {
+    final int index = 3;
+    MutableBeaconStateElectra state =
+        BeaconStateElectra.required(
+                dataStructureUtil
+                    .randomBeaconState()
+                    .updated(
+                        mutableBeaconState ->
+                            mutableBeaconState
+                                .getBalances()
+                                .set(index, SszUInt64.of(UInt64.valueOf(33_000_000_000L)))))
+            .createWritableCopy();
+    state
+        .getValidators()
+        .update(
+            index,
+            validator ->
+                validator.withWithdrawalCredentials(
+                    Bytes32.wrap(dataStructureUtil.randomEth1WithdrawalCredentials())));
+    stateMutatorsElectra.switchToCompoundingValidator(state, index);
+    assertThat(state.getBalances().get(index).get()).isEqualTo(UInt64.valueOf(32_000_000_000L));
+    assertThat(state.getPendingBalanceDeposits().get(0).getAmount())
+        .isEqualTo(UInt64.valueOf(1_000_000_000L));
   }
 }
