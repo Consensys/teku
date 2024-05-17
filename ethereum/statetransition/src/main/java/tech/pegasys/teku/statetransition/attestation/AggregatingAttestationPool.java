@@ -128,12 +128,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private Optional<Int2IntMap> getCommitteesSize(final Attestation attestation) {
     if (attestation.requiresCommitteeBits()) {
-      final AttestationData attestationData = attestation.getData();
-      LOG.debug(
-          "Committees size was not found for attestation at slot {} and block root {}. Will attempt to retrieve it using the relevant state.",
-          attestationData.getTarget().getRoot(),
-          attestationData.getBeaconBlockRoot());
-      return getCommitteesSizeUsingTheState(attestationData);
+      return getCommitteesSizeUsingTheState(attestation.getData());
     }
     return Optional.empty();
   }
@@ -149,7 +144,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     // not the case, we should ignore this attestation and not add it to the pool
     if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
       LOG.debug(
-          "Committees size was not available for attestation at slot {} and block root {}. Will not add this attestation to the pool.",
+          "Committees size was not available for attestation at slot {} and block root {}. Will NOT add this attestation to the pool.",
           attestationData.getTarget().getRoot(),
           attestationData.getBeaconBlockRoot());
       return Optional.empty();
