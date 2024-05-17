@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.TreeMap;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
@@ -56,14 +55,14 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   private final Spec spec;
   private Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private final AttestationData attestationData;
-  private final Supplier<Int2IntMap> commiteesSizeSupplier;
+  private final Optional<Int2IntMap> committeesSize;
 
   /**
    * Tracks which validators were included in attestations at a given slot on the canonical chain.
    *
    * <p>When a reorg occurs we can accurately compute the set of included validators at the common
    * ancestor by removing blocks in slots after the ancestor then recalculating {@link
-   * #includedValidators}. Otherwise we might remove a validator from the included list because it
+   * #includedValidators}. Otherwise, we might remove a validator from the included list because it
    * was in a block moved off the canonical chain even though that validator was also included in an
    * earlier block which is still on the canonical chain.
    *
@@ -79,17 +78,17 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   public MatchingDataAttestationGroup(
       final Spec spec,
       final AttestationData attestationData,
-      final Supplier<Int2IntMap> commiteesSizeSupplier) {
+      final Optional<Int2IntMap> committeesSize) {
     this.spec = spec;
     this.attestationData = attestationData;
-    this.commiteesSizeSupplier = commiteesSizeSupplier;
-    this.includedValidators = createEmptyAttestationBits();
+    this.committeesSize = committeesSize;
+    includedValidators = createEmptyAttestationBits();
   }
 
   private AttestationBitsAggregator createEmptyAttestationBits() {
     return AttestationBitsAggregator.fromEmptyFromAttestationSchema(
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema(),
-        commiteesSizeSupplier);
+        committeesSize);
   }
 
   public AttestationData getAttestationData() {
@@ -180,7 +179,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
         slot,
         (__, attestationBitsCalculator) -> {
           if (attestationBitsCalculator == null) {
-            return AttestationBitsAggregator.of(attestation, commiteesSizeSupplier);
+            return AttestationBitsAggregator.of(attestation, committeesSize);
           }
           attestationBitsCalculator.or(attestation);
           return attestationBitsCalculator;

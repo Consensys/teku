@@ -66,7 +66,7 @@ public class AttestationBitsAggregatorElectraTest {
 
     AttestationBitsAggregator aggregator =
         AttestationBitsAggregator.fromEmptyFromAttestationSchema(
-            attestationSchema, () -> committeeSizes);
+            attestationSchema, Optional.of(committeeSizes));
 
     assertThat(aggregator.aggregateWith(initialAttestation.getAttestation())).isTrue();
 

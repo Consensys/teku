@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import com.google.common.base.Suppliers;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,7 +26,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -109,14 +107,18 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void add(final ValidatableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
-    final Supplier<Int2IntMap> committeesSizeSupplier =
-        attestation
-            .getCommitteesSize()
-            .<Supplier<Int2IntMap>>map(committeesSize -> () -> committeesSize)
-            .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
-    if (attestationIsApplicable(attestation.getAttestation(), committeesSizeSupplier)) {
+    final Optional<Int2IntMap> committeesSize;
+    if (attestation.getAttestation().requiresCommitteeBits()) {
+      committeesSize =
+          attestation
+              .getCommitteesSize()
+              .or(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
+    } else {
+      committeesSize = Optional.empty();
+    }
+    if (attestationIsApplicable(attestation.getAttestation(), committeesSize)) {
       final boolean add =
-          getOrCreateAttestationGroup(attestationData, committeesSizeSupplier).add(attestation);
+          getOrCreateAttestationGroup(attestationData, committeesSize).add(attestation);
       if (add) {
         updateSize(1);
       }
@@ -131,57 +133,42 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     }
   }
 
-  // TODO: Refactor
   private boolean attestationIsApplicable(
-      final Attestation attestation, final Supplier<Int2IntMap> committeesSizeSupplier) {
+      final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
     if (attestation.requiresCommitteeBits()) {
-      // if an attestation has committee bits, committees size should be computed without
-      // exceptions. If this is not the case, we can ignore this attestation and not add it to the
-      // pool
-      try {
-        committeesSizeSupplier.get();
-        return true;
-      } catch (Exception ex) {
-        return false;
-      }
+      // if an attestation has committee bits, committees size should have been computed. If this is
+      // not the case, we can ignore this attestation and not add it to the pool
+      return committeesSize.isPresent();
     }
     return true;
   }
 
   /**
-   * @param committeesSizeSupplier Required for aggregating attestations as per <a
+   * @param committeesSize Required for aggregating attestations as per <a
    *     href="https://eips.ethereum.org/EIPS/eip-7549">EIP-7549</a>
    */
   private MatchingDataAttestationGroup getOrCreateAttestationGroup(
-      final AttestationData attestationData, final Supplier<Int2IntMap> committeesSizeSupplier) {
+      final AttestationData attestationData, final Optional<Int2IntMap> committeesSize) {
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(attestationData.hashTreeRoot());
     return attestationGroupByDataHash.computeIfAbsent(
         attestationData.hashTreeRoot(),
-        key -> new MatchingDataAttestationGroup(spec, attestationData, committeesSizeSupplier));
+        key -> new MatchingDataAttestationGroup(spec, attestationData, committeesSize));
   }
 
   // We only have the committees size already available via attestations received in the gossip
   // flow and have been successfully validated, so querying the state is required for other cases
-  private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
+  private Optional<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
       final AttestationData attestationData) {
-    return Suppliers.memoize(
-        () -> {
-          final Bytes32 targetRoot = attestationData.getTarget().getRoot();
-          LOG.debug(
-              "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
-              targetRoot);
-          final BeaconState state =
-              recentChainData
-                  .getStore()
-                  .getBlockStateIfAvailable(targetRoot)
-                  .orElseThrow(
-                      () ->
-                          new IllegalStateException(
-                              "No state available for attestation with target root " + targetRoot));
-          return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
-        });
+    final Bytes32 targetRoot = attestationData.getTarget().getRoot();
+    LOG.debug(
+        "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
+        targetRoot);
+    return recentChainData
+        .getStore()
+        .getBlockStateIfAvailable(targetRoot)
+        .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
   }
 
   @Override
@@ -219,11 +206,15 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    final Supplier<Int2IntMap> committeesSizeSupplier =
-        getCommitteesSizeSupplierUsingTheState(attestation.getData());
-    if (attestationIsApplicable(attestation, committeesSizeSupplier)) {
+    final Optional<Int2IntMap> committeesSize;
+    if (attestation.requiresCommitteeBits()) {
+      committeesSize = getCommitteesSizeSupplierUsingTheState(attestation.getData());
+    } else {
+      committeesSize = Optional.empty();
+    }
+    if (attestationIsApplicable(attestation, committeesSize)) {
       final MatchingDataAttestationGroup attestations =
-          getOrCreateAttestationGroup(attestation.getData(), committeesSizeSupplier);
+          getOrCreateAttestationGroup(attestation.getData(), committeesSize);
       final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
       updateSize(-numRemoved);
     }
