@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.attestation.utils;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import java.util.function.Supplier;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -24,13 +24,13 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 public interface AttestationBitsAggregator {
 
   static AttestationBitsAggregator fromEmptyFromAttestationSchema(
-      AttestationSchema<?> attestationSchema, Supplier<Int2IntMap> committeesSize) {
+      AttestationSchema<?> attestationSchema, Optional<Int2IntMap> committeesSize) {
     return attestationSchema
         .toVersionElectra()
         .map(
             schema ->
                 AttestationBitsAggregatorElectra.fromAttestationSchema(
-                    schema, committeesSize.get()))
+                    schema, committeesSize.orElseThrow()))
         .orElseGet(() -> AttestationBitsAggregatorPhase0.fromAttestationSchema(attestationSchema));
   }
 
@@ -52,14 +52,13 @@ public interface AttestationBitsAggregator {
   }
 
   static AttestationBitsAggregator of(
-      Attestation attestation, Supplier<Int2IntMap> committeesSize) {
+      Attestation attestation, Optional<Int2IntMap> committeesSize) {
     return attestation
         .getCommitteeBits()
-        .map(
+        .<AttestationBitsAggregator>map(
             committeeBits ->
-                (AttestationBitsAggregator)
-                    new AttestationBitsAggregatorElectra(
-                        attestation.getAggregationBits(), committeeBits, committeesSize.get()))
+                new AttestationBitsAggregatorElectra(
+                    attestation.getAggregationBits(), committeeBits, committeesSize.orElseThrow()))
         .orElseGet(() -> new AttestationBitsAggregatorPhase0(attestation.getAggregationBits()));
   }
 

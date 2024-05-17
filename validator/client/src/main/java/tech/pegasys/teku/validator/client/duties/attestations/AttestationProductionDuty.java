@@ -214,10 +214,8 @@ public class AttestationProductionDuty implements Duty {
     final Supplier<SszBitvector> committeeBitsSupplier =
         attestationSchema
             .getCommitteeBitsSchema()
-            .map(
-                committeeBitsSchema ->
-                    (Supplier<SszBitvector>)
-                        () -> committeeBitsSchema.ofBits(validator.committeeIndex()))
+            .<Supplier<SszBitvector>>map(
+                committeeBitsSchema -> () -> committeeBitsSchema.ofBits(validator.committeeIndex()))
             .orElse(() -> null);
     return attestationSchema.create(
         aggregationBits, attestationData, committeeBitsSupplier, signature);

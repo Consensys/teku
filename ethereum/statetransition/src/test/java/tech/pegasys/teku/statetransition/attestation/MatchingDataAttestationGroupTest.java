@@ -58,7 +58,7 @@ class MatchingDataAttestationGroupTest {
     committeeSizes = new Int2IntOpenHashMap();
     committeeSizes.put(0, 10);
     committeeSizes.put(1, 10);
-    group = new MatchingDataAttestationGroup(spec, attestationData, () -> committeeSizes);
+    group = new MatchingDataAttestationGroup(spec, attestationData, Optional.of(committeeSizes));
   }
 
   @TestTemplate
