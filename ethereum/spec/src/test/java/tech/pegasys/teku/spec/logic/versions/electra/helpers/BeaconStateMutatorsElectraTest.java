@@ -151,15 +151,16 @@ class BeaconStateMutatorsElectraTest {
   }
 
   @Test
-  void switchToCompoundingValidator_shouldmergePendingBalanceDeposit() {
+  void switchToCompoundingValidator_shouldGeneratePendingBalanceDeposit() {
     final int index = 3;
     MutableBeaconStateElectra state =
         BeaconStateElectra.required(
                 dataStructureUtil
                     .randomBeaconState()
                     .updated(
-                        s ->
-                            s.getBalances()
+                        mutableBeaconState ->
+                            mutableBeaconState
+                                .getBalances()
                                 .set(index, SszUInt64.of(UInt64.valueOf(33_000_000_000L)))))
             .createWritableCopy();
     state
@@ -170,7 +171,7 @@ class BeaconStateMutatorsElectraTest {
                 validator.withWithdrawalCredentials(
                     Bytes32.wrap(dataStructureUtil.randomEth1WithdrawalCredentials())));
     stateMutatorsElectra.switchToCompoundingValidator(state, index);
-    assertThat(state.getBalances().get(3).get()).isEqualTo(UInt64.valueOf(32_000_000_000L));
+    assertThat(state.getBalances().get(index).get()).isEqualTo(UInt64.valueOf(32_000_000_000L));
     assertThat(state.getPendingBalanceDeposits().get(0).getAmount())
         .isEqualTo(UInt64.valueOf(1_000_000_000L));
   }
