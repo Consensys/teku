@@ -15,10 +15,18 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,6 +35,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -90,15 +99,20 @@ public class DataColumnSidecarCustodyImpl
   private final int totalCustodySubnetCount;
 
   private final UInt64 eip7594StartEpoch;
+  private final Duration requestTimeout;
 
   private UInt64 currentSlot = null;
+
+  @VisibleForTesting
+  Map<DataColumnIdentifier, List<SafeFuture<DataColumnSidecar>>> pendingRequests = new HashMap<>();
 
   public DataColumnSidecarCustodyImpl(
       Spec spec,
       CanonicalBlockResolver blockResolver,
       DataColumnSidecarDB db,
       UInt256 nodeId,
-      int totalCustodySubnetCount) {
+      int totalCustodySubnetCount,
+      Duration requestTimeout) {
 
     checkNotNull(spec);
     checkNotNull(blockResolver);
@@ -111,6 +125,7 @@ public class DataColumnSidecarCustodyImpl
     this.nodeId = nodeId;
     this.totalCustodySubnetCount = totalCustodySubnetCount;
     this.eip7594StartEpoch = spec.getForkSchedule().getFork(SpecMilestone.EIP7594).getEpoch();
+    this.requestTimeout = requestTimeout;
   }
 
   private UInt64 getEarliestCustodySlot(UInt64 currentSlot) {
@@ -137,10 +152,22 @@ public class DataColumnSidecarCustodyImpl
   }
 
   @Override
-  public void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
+  public synchronized void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
     if (isMyCustody(dataColumnSidecar.getSlot(), dataColumnSidecar.getIndex())) {
       db.addSidecar(dataColumnSidecar);
+      final List<SafeFuture<DataColumnSidecar>> pendingRequests =
+          this.pendingRequests.remove(DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
+      if (pendingRequests != null) {
+        for (SafeFuture<DataColumnSidecar> pendingRequest : pendingRequests) {
+          pendingRequest.complete(dataColumnSidecar);
+        }
+      }
     }
+  }
+
+  private synchronized void clearCancelledPendingRequests() {
+    pendingRequests.values().forEach(promises -> promises.removeIf(CompletableFuture::isDone));
+    pendingRequests.entrySet().removeIf(e -> e.getValue().isEmpty());
   }
 
   private boolean isMyCustody(UInt64 slot, UInt64 columnIndex) {
@@ -157,9 +184,27 @@ public class DataColumnSidecarCustodyImpl
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
+  public synchronized SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
       DataColumnIdentifier columnId) {
-    return SafeFuture.completedFuture(db.getSidecar(columnId));
+    Optional<DataColumnSidecar> existingColumn = db.getSidecar(columnId);
+    if (existingColumn.isPresent()) {
+      return SafeFuture.completedFuture(existingColumn);
+    } else {
+      clearCancelledPendingRequests();
+      SafeFuture<DataColumnSidecar> promise = new SafeFuture<>();
+      pendingRequests.computeIfAbsent(columnId, __ -> new ArrayList<>()).add(promise);
+      return promise
+          .orTimeout(requestTimeout)
+          .thenApply(Optional::of)
+          .exceptionally(
+              err -> {
+                if (ExceptionUtil.hasCause(err, TimeoutException.class)) {
+                  return Optional.empty();
+                } else {
+                  throw new CompletionException(err);
+                }
+              });
+    }
   }
 
   private void onEpoch(UInt64 epoch) {

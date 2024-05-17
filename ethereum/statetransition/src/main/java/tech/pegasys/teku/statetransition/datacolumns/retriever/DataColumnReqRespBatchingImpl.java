@@ -85,8 +85,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
               nodeRequests.hashCode());
           Map<DataColumnIdentifier, DataColumnSidecar> byIds = new HashMap<>();
           for (DataColumnSidecar sidecar : resp) {
-            byIds.put(
-                new DataColumnIdentifier(sidecar.getBlockRoot(), sidecar.getIndex()), sidecar);
+            byIds.put(DataColumnIdentifier.createFromSidecar(sidecar), sidecar);
           }
           for (RequestEntry nodeRequest : nodeRequests) {
             DataColumnSidecar maybeResponse = byIds.get(nodeRequest.columnIdentifier);

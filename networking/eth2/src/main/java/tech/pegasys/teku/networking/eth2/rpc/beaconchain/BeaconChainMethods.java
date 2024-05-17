@@ -67,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -129,6 +130,7 @@ public class BeaconChainMethods {
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
+      final DataColumnSidecarCustody dataColumnSidecarCustody,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
@@ -168,6 +170,7 @@ public class BeaconChainMethods {
             metricsSystem,
             asyncRunner,
             combinedChainDataClient,
+            dataColumnSidecarCustody,
             peerLookup,
             rpcEncoding,
             recentChainData),
@@ -384,6 +387,7 @@ public class BeaconChainMethods {
           final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
+          final DataColumnSidecarCustody dataColumnSidecarCustody,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData) {
@@ -396,7 +400,8 @@ public class BeaconChainMethods {
             spec, recentChainData, ForkDigestPayloadContext.DATA_COLUMN_SIDECAR);
 
     final DataColumnSidecarsByRootMessageHandler dataColumnSidecarsByRootMessageHandler =
-        new DataColumnSidecarsByRootMessageHandler(spec, metricsSystem, combinedChainDataClient);
+        new DataColumnSidecarsByRootMessageHandler(
+            spec, metricsSystem, combinedChainDataClient, dataColumnSidecarCustody);
     final DataColumnSidecarsByRootRequestMessageSchema
         dataColumnSidecarsByRootRequestMessageSchema =
             SchemaDefinitionsEip7594.required(

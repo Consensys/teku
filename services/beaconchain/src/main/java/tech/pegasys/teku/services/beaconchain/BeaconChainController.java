@@ -138,12 +138,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
-import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBImpl;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.*;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
@@ -295,7 +290,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
-  protected volatile DataColumnSidecarCustody dataColumnSidecarCustody;
+  //  protected volatile DataColumnSidecarCustody dataColumnSidecarCustody;
+  protected volatile LateInitDataColumnSidecarCustody dataColumnSidecarCustody =
+      new LateInitDataColumnSidecarCustody();
   protected volatile DasCustodySync dasCustodySync;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
@@ -646,12 +643,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
-            spec, blockRootResolver, sidecarDB, nodeId, totalMyCustodySubnets);
+            spec,
+            blockRootResolver,
+            sidecarDB,
+            nodeId,
+            totalMyCustodySubnets,
+            Duration.ofSeconds(5));
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dataColumnSidecarCustodyImpl::onNewValidatedDataColumnSidecar);
-    this.dataColumnSidecarCustody = dataColumnSidecarCustodyImpl;
+    // TODO fix this dirty hack
+    // This is to resolve the initialization loop Network <--> DAS Custody
+    this.dataColumnSidecarCustody.init(dataColumnSidecarCustodyImpl);
 
     DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
@@ -1222,6 +1226,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
+            .dataColumnSidecarCustody(dataColumnSidecarCustody)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedDataColumnSidecarOperationProcessor(

@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 
 public class DataColumnIdentifier extends Container2<DataColumnIdentifier, SszBytes32, SszUInt64> {
 
@@ -41,6 +42,10 @@ public class DataColumnIdentifier extends Container2<DataColumnIdentifier, SszBy
   }
 
   public static final DataColumnIdentifierSchema SSZ_SCHEMA = new DataColumnIdentifierSchema();
+
+  public static DataColumnIdentifier createFromSidecar(DataColumnSidecar sidecar) {
+    return new DataColumnIdentifier(sidecar.getBlockRoot(), sidecar.getIndex());
+  }
 
   private DataColumnIdentifier(final TreeNode node) {
     super(SSZ_SCHEMA, node);

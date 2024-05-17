@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -54,6 +55,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final DataColumnSidecarCustody dataColumnSidecarCustody;
 
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
@@ -61,7 +63,8 @@ public class DataColumnSidecarsByRootMessageHandler
   public DataColumnSidecarsByRootMessageHandler(
       final Spec spec,
       final MetricsSystem metricsSystem,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final DataColumnSidecarCustody dataColumnSidecarCustody) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
@@ -75,6 +78,7 @@ public class DataColumnSidecarsByRootMessageHandler
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_root_requested_blob_sidecars_total",
             "Total number of data column sidecars requested in accepted data column sidecars by root requests from peers");
+    this.dataColumnSidecarCustody = dataColumnSidecarCustody;
   }
 
   @Override
@@ -197,7 +201,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
       final DataColumnIdentifier identifier) {
-    return combinedChainDataClient.getSidecar(identifier);
+    return dataColumnSidecarCustody.getCustodyDataColumnSidecar(identifier);
   }
 
   private void handleError(

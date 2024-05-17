@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodyBuilderEip7594;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodySchemaEip7594;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodySchemaEip7594Impl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BlindedBeaconBlockBodySchemaEip7594Impl;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
@@ -159,7 +160,7 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
+  public BeaconBlockBodySchemaEip7594<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
   }
 

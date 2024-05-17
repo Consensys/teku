@@ -50,7 +50,7 @@ public class DataColumnSidecarsByRootValidator {
 
   public void validate(final DataColumnSidecar dataColumnSidecar) {
     final DataColumnIdentifier dataColumnIdentifier =
-        new DataColumnIdentifier(dataColumnSidecar.getBlockRoot(), dataColumnSidecar.getIndex());
+        DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
     if (!expectedDataColumnIdentifiers.remove(dataColumnIdentifier)) {
       throw new DataColumnSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);

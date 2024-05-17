@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;

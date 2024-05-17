@@ -89,6 +89,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
@@ -105,6 +106,7 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
+  protected DataColumnSidecarCustody dataColumnSidecarCustody;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
@@ -170,6 +172,7 @@ public class Eth2P2PNetworkBuilder {
         Eth2PeerManager.create(
             asyncRunner,
             combinedChainDataClient,
+            dataColumnSidecarCustody,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,
@@ -446,6 +449,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
+    assertNotNull("dataColumnSidecarCustody", dataColumnSidecarCustody);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
     assertNotNull("gossipedBlockProcessor", gossipedBlockProcessor);
@@ -482,6 +486,13 @@ public class Eth2P2PNetworkBuilder {
       final CombinedChainDataClient combinedChainDataClient) {
     checkNotNull(combinedChainDataClient);
     this.combinedChainDataClient = combinedChainDataClient;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder dataColumnSidecarCustody(
+      DataColumnSidecarCustody dataColumnSidecarCustody) {
+    checkNotNull(dataColumnSidecarCustody);
+    this.dataColumnSidecarCustody = dataColumnSidecarCustody;
     return this;
   }
 
