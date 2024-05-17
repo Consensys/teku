@@ -145,7 +145,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private Optional<MatchingDataAttestationGroup> getOrCreateAttestationGroup(
       final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
     // if an attestation has committee bits, committees size should have been computed. If this is
-    // not the case, we can ignore this attestation and not add it to the pool
+    // not the case, we should ignore this attestation and not add it to the pool
     if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
       return Optional.empty();
     }
