@@ -130,10 +130,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     if (attestation.requiresCommitteeBits()) {
       final AttestationData attestationData = attestation.getData();
       LOG.debug(
-          "Committees size was not found for target root {} for attestation at slot {}. Will attempt to retrieve it using a relevant state.",
+          "Committees size was not found for target root {} for attestation at slot {}. Will attempt to retrieve it using the relevant state.",
           attestationData.getTarget().getRoot(),
           attestationData.getSlot());
-      return getCommitteesSizeSupplierUsingTheState(attestationData);
+      return getCommitteesSizeUsingTheState(attestationData);
     }
     return Optional.empty();
   }
@@ -162,7 +162,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   // We only have the committees size already available via attestations received in the gossip
   // flow and have been successfully validated, so querying the state is required for other cases
-  private Optional<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
+  private Optional<Int2IntMap> getCommitteesSizeUsingTheState(
       final AttestationData attestationData) {
     return recentChainData
         .getStore()
