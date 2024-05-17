@@ -885,7 +885,9 @@ public class Spec {
 
   // Attestation helpers
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
-    return atState(state).getAttestationUtil().getAttestingIndices(state, attestation);
+    return atSlot(attestation.getData().getSlot())
+        .getAttestationUtil()
+        .getAttestingIndices(state, attestation);
   }
 
   public AttestationData getGenericAttestationData(
