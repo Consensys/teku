@@ -128,7 +128,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private Optional<Int2IntMap> getCommitteesSize(final Attestation attestation) {
     if (attestation.requiresCommitteeBits()) {
-      return getCommitteesSizeSupplierUsingTheState(attestation.getData());
+      final AttestationData attestationData = attestation.getData();
+      LOG.debug(
+          "Committees size was not found for target root {} for attestation at slot {}. Will attempt to retrieve it using a relevant state.",
+          attestationData.getTarget().getRoot(),
+          attestationData.getSlot());
+      return getCommitteesSizeSupplierUsingTheState(attestationData);
     }
     return Optional.empty();
   }
@@ -159,13 +164,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   // flow and have been successfully validated, so querying the state is required for other cases
   private Optional<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
       final AttestationData attestationData) {
-    final Bytes32 targetRoot = attestationData.getTarget().getRoot();
-    LOG.debug(
-        "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the relevant state.",
-        targetRoot);
     return recentChainData
         .getStore()
-        .getBlockStateIfAvailable(targetRoot)
+        .getBlockStateIfAvailable(attestationData.getTarget().getRoot())
         .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
   }
 
@@ -204,8 +205,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    final Optional<Int2IntMap> committeesSize = retrieveCommitteesSize(attestation);
-    getOrCreateAttestationGroup(attestation, committeesSize)
+    getOrCreateAttestationGroup(attestation, getCommitteesSize(attestation))
         .ifPresent(
             attestationGroup -> {
               final int numRemoved =
