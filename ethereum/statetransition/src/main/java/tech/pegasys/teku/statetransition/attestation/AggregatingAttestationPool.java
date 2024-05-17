@@ -113,7 +113,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         attestation
             .getCommitteesSize()
             .<Supplier<Int2IntMap>>map(committeesSize -> () -> committeesSize)
-            .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestation.getAttestation()));
+            .orElseGet(() -> getCommitteesSizeSupplierUsingTheState(attestationData));
     final boolean add =
         getOrCreateAttestationGroup(attestationData, committeesSizeSupplier).add(attestation);
     if (add) {
@@ -146,21 +146,21 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   // We only have the committees size already available via attestations received in the gossip
   // flow and have been successfully validated, so querying the state is required for other cases
   private Supplier<Int2IntMap> getCommitteesSizeSupplierUsingTheState(
-      final Attestation attestation) {
+      final AttestationData attestationData) {
     return Suppliers.memoize(
         () -> {
+          final Bytes32 targetRoot = attestationData.getTarget().getRoot();
           LOG.debug(
-              "Committees size was not readily available for attestation {}. Will attempt to retrieve it using the target checkpoint state.",
-              attestation);
-          final AttestationData attestationData = attestation.getData();
+              "Committees size was not readily available for attestation with target root {}. Will attempt to retrieve it using the target checkpoint state.",
+              targetRoot);
           final BeaconState state =
               recentChainData
                   .getStore()
-                  .getCheckpointStateIfAvailable(attestationData.getTarget())
+                  .getBlockStateIfAvailable(targetRoot)
                   .orElseThrow(
                       () ->
                           new IllegalStateException(
-                              "No state available for checkpoint " + attestationData.getTarget()));
+                              "No state available for attestation with target root " + targetRoot));
           return spec.getBeaconCommitteesSize(state, attestationData.getSlot());
         });
   }
@@ -201,7 +201,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     final Supplier<Int2IntMap> committeesSizeSupplier =
-        getCommitteesSizeSupplierUsingTheState(attestation);
+        getCommitteesSizeSupplierUsingTheState(attestation.getData());
     final MatchingDataAttestationGroup attestations =
         getOrCreateAttestationGroup(attestation.getData(), committeesSizeSupplier);
     final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);

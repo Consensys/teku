@@ -261,8 +261,8 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
-    final Optional<BeaconState> result = tx.getCheckpointStateIfAvailable(checkpoint);
-    assertThat(result).isEqualTo(Optional.of(blockAndState.getState()));
+    final SafeFuture<Optional<BeaconState>> result = tx.retrieveCheckpointState(checkpoint);
+    assertThat(result).isCompletedWithValue(Optional.of(blockAndState.getState()));
   }
 
   @Test

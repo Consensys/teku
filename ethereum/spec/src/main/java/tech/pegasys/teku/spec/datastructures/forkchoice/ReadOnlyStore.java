@@ -104,14 +104,6 @@ public interface ReadOnlyStore extends TimeProvider {
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(Bytes32 blockRoot);
 
-  /**
-   * Returns a checkpoint state only if it is immediately available (not pruned).
-   *
-   * @param checkpoint The checkpoint corresponding to the state to retrieve
-   * @return The state if available.
-   */
-  Optional<BeaconState> getCheckpointStateIfAvailable(Checkpoint checkpoint);
-
   Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
 
   default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {

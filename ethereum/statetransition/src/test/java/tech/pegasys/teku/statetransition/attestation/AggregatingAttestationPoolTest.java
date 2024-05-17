@@ -102,7 +102,7 @@ class AggregatingAttestationPoolTest {
       final BeaconState state = dataStructureUtil.randomBeaconState();
       final UpdatableStore mockStore = mock(UpdatableStore.class);
       when(mockRecentChainData.getStore()).thenReturn(mockStore);
-      when(mockStore.getCheckpointStateIfAvailable(any())).thenReturn(Optional.of(state));
+      when(mockStore.getBlockStateIfAvailable(any())).thenReturn(Optional.of(state));
       when(mockSpec.getBeaconCommitteesSize(any(), any())).thenReturn(committeeSizes);
     }
 
