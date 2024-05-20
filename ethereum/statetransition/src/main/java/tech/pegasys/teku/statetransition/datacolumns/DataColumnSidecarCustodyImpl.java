@@ -49,15 +49,6 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 public class DataColumnSidecarCustodyImpl
     implements UpdatableDataColumnSidecarCustody, SlotEventsChannel, FinalizedCheckpointChannel {
 
-  public interface CanonicalBlockResolver {
-
-    /**
-     * Should return the canonical block root at slot if: - a block exist at this slot - block
-     * contains any blobs
-     */
-    Optional<BeaconBlock> getBlockAtSlot(UInt64 slot);
-  }
-
   private record SlotCustody(
       UInt64 slot,
       Optional<Bytes32> canonicalBlockRoot,

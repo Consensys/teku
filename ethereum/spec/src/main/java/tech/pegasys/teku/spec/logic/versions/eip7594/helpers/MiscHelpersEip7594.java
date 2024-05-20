@@ -22,10 +22,12 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,7 +43,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumn;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodyEip7594;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodySchemaEip7594;
@@ -187,11 +191,23 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final SignedBeaconBlock signedBeaconBlock, final List<Blob> blobs, final KZG kzg) {
+    return constructDataColumnSidecars(
+        signedBeaconBlock.getMessage(),
+        signedBeaconBlock.asHeader(),
+        blobs.stream().map(SszByteVectorImpl::getBytes).toList(),
+        kzg);
+  }
+
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final BeaconBlock beaconBlock,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes> blobs,
+      final KZG kzg) {
     if (blobs.isEmpty()) {
       return Collections.emptyList();
     }
     final BeaconBlockBodyEip7594 beaconBlockBody =
-        BeaconBlockBodyEip7594.required(signedBeaconBlock.getMessage().getBody());
+        BeaconBlockBodyEip7594.required(beaconBlock.getBody());
     final SszList<SszKZGCommitment> sszKZGCommitments = beaconBlockBody.getBlobKzgCommitments();
     final List<Bytes32> kzgCommitmentsInclusionProof =
         computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
@@ -204,7 +220,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
         dataColumnSidecarSchema.getKzgProofsSchema();
 
     List<List<KZGCellAndProof>> blobsCellsAndProofs =
-        blobs.stream().parallel().map(blob -> kzg.computeCellsAndProofs(blob.getBytes())).toList();
+        blobs.stream().parallel().map(kzg::computeCellsAndProofs).toList();
 
     int columnCount = blobsCellsAndProofs.get(0).size();
 
@@ -232,7 +248,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
                   dataColumn,
                   sszKZGCommitments,
                   columnProofs,
-                  signedBeaconBlock.asHeader(),
+                  signedBeaconBlockHeader,
                   kzgCommitmentsInclusionProof);
             })
         .toList();

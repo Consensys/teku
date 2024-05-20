@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -64,6 +65,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             asyncRunner,
             peerLookup,
             combinedChainDataClient,
+            DataColumnSidecarCustody.NOOP,
             recentChainData,
             new NoOpMetricsSystem(),
             new StatusMessageFactory(recentChainData),

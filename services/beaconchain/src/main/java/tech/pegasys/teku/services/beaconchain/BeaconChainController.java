@@ -119,6 +119,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -138,6 +139,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBImpl;
@@ -149,6 +151,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSea
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqRespBatchingImpl;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -630,7 +633,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     DataColumnSidecarDBImpl sidecarDB =
         new DataColumnSidecarDBImpl(
             combinedChainDataClient, eventChannels.getPublisher(SidecarUpdateChannel.class));
-    DataColumnSidecarCustodyImpl.CanonicalBlockResolver blockRootResolver =
+    CanonicalBlockResolver canonicalBlockResolver =
         slot ->
             combinedChainDataClient
                 .getBlockAtSlotExact(slot)
@@ -649,7 +652,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
             spec,
-            blockRootResolver,
+            canonicalBlockResolver,
             sidecarDB,
             nodeId,
             totalMyCustodySubnets,
@@ -693,7 +696,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dataColumnSidecarValidator,
             operationPoolAsyncRunner,
             Duration.ofSeconds(1));
-    dasCustodySync = new DasCustodySync(dataColumnSidecarCustodyImpl, sidecarRetriever);
+    MiscHelpersEip7594 miscHelpersEip7594 =
+        MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
+    RecoveringSidecarRetriever recoveringSidecarRetriever =
+        new RecoveringSidecarRetriever(
+            sidecarRetriever,
+            kzg,
+            miscHelpersEip7594,
+            canonicalBlockResolver,
+            sidecarDB,
+            operationPoolAsyncRunner,
+            Duration.ofMinutes(5),
+            configEip7594.getNumberOfColumns());
+    dasCustodySync = new DasCustodySync(dataColumnSidecarCustodyImpl, recoveringSidecarRetriever);
     eventChannels.subscribe(SlotEventsChannel.class, dasCustodySync);
   }
 

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -80,6 +81,8 @@ public class SimpleSidecarRetriever
       new LinkedHashMap<>();
   private final Map<UInt256, ConnectedPeer> connectedPeers = new HashMap<>();
   private boolean started = false;
+  private AtomicLong retrieveCounter = new AtomicLong();
+  private AtomicLong errorCounter = new AtomicLong();
 
   private void startIfNecessary() {
     if (!started) {
@@ -107,7 +110,7 @@ public class SimpleSidecarRetriever
   }
 
   private synchronized List<RequestMatch> matchRequestsAndPeers() {
-    disposeCancelledRequests();
+    disposeCompletedRequests();
     RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()
         .filter(entry -> entry.getValue().activeRpcRequest == null)
@@ -137,13 +140,13 @@ public class SimpleSidecarRetriever
         .toList();
   }
 
-  private void disposeCancelledRequests() {
+  private void disposeCompletedRequests() {
     Iterator<Map.Entry<ColumnSlotAndIdentifier, RetrieveRequest>> pendingIterator =
         pendingRequests.entrySet().iterator();
     while (pendingIterator.hasNext()) {
       Map.Entry<ColumnSlotAndIdentifier, RetrieveRequest> pendingEntry = pendingIterator.next();
       RetrieveRequest pendingRequest = pendingEntry.getValue();
-      if (pendingRequest.result.isCancelled()) {
+      if (pendingRequest.result.isDone()) {
         pendingIterator.remove();
         pendingRequest.peerSearchRequest.dispose();
         if (pendingRequest.activeRpcRequest != null) {
@@ -168,7 +171,9 @@ public class SimpleSidecarRetriever
     long activeRequestCount =
         pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
     LOG.info(
-        "[nyota] SimpleSidecarRetriever.nextRound: total pending: {}, active pending: {}, new pending: {}, number of custody peers: {}",
+        "[nyota] SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new pending: {}, number of custody peers: {}",
+        retrieveCounter,
+        errorCounter,
         pendingRequests.size(),
         activeRequestCount,
         matches.size(),
@@ -186,8 +191,10 @@ public class SimpleSidecarRetriever
       }
       request.result.complete(maybeResult);
       request.peerSearchRequest.dispose();
+      retrieveCounter.incrementAndGet();
     } else {
       request.activeRpcRequest = null;
+      errorCounter.incrementAndGet();
     }
   }
 

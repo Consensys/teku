@@ -33,7 +33,7 @@ public class RateTrackerTest {
 
   @Test
   public void shouldAllowAddingItemsWithinLimit() {
-    final RateTracker tracker = RateTracker.create(1, 1, timeProvider);
+    final RateTracker tracker = RateTracker.create(1, 1, timeProvider, "");
     final long objectsCount = 1;
     final Optional<RequestApproval> objectRequests = tracker.approveObjectsRequest(objectsCount);
     assertRequestsAllowed(objectRequests, objectsCount, timeProvider);
@@ -41,7 +41,7 @@ public class RateTrackerTest {
 
   @Test
   public void shouldNotUnderflowWhenTimeWindowGreaterThanCurrentTime() {
-    final RateTracker tracker = RateTracker.create(1, 15000, timeProvider);
+    final RateTracker tracker = RateTracker.create(1, 15000, timeProvider, "");
     final long objectsCount = 1;
     final Optional<RequestApproval> objectRequests = tracker.approveObjectsRequest(objectsCount);
     assertRequestsAllowed(objectRequests, objectsCount, timeProvider);
@@ -49,7 +49,7 @@ public class RateTrackerTest {
 
   @Test
   public void shouldAllowAddingItemsAfterTimeoutPasses() {
-    final RateTracker tracker = RateTracker.create(1, 1, timeProvider);
+    final RateTracker tracker = RateTracker.create(1, 1, timeProvider, "");
     long objectsCount = 1;
 
     Optional<RequestApproval> objectRequests = tracker.approveObjectsRequest(objectsCount);
@@ -63,7 +63,7 @@ public class RateTrackerTest {
 
   @Test
   public void shouldReturnFalseIfCacheFull() {
-    final RateTracker tracker = RateTracker.create(1, 1, timeProvider);
+    final RateTracker tracker = RateTracker.create(1, 1, timeProvider, "");
     final long objectsCount = 1;
     Optional<RequestApproval> objectRequests = tracker.approveObjectsRequest(objectsCount);
     assertRequestsAllowed(objectRequests, objectsCount, timeProvider);
@@ -74,7 +74,7 @@ public class RateTrackerTest {
 
   @Test
   public void shouldAddMultipleValuesToCache() throws InterruptedException {
-    final RateTracker tracker = RateTracker.create(10, 1, timeProvider);
+    final RateTracker tracker = RateTracker.create(10, 1, timeProvider, "");
     long objectsCount = 10;
     Optional<RequestApproval> objectRequests = tracker.approveObjectsRequest(objectsCount);
     assertRequestsAllowed(objectRequests, objectsCount, timeProvider);
@@ -91,7 +91,7 @@ public class RateTrackerTest {
 
   @Test
   public void shouldMaintainCounterOverTime() {
-    final RateTracker tracker = RateTracker.create(10, 2, timeProvider);
+    final RateTracker tracker = RateTracker.create(10, 2, timeProvider, "");
 
     long objectsCount = 9;
     Optional<RequestApproval> objectRequests = tracker.approveObjectsRequest(objectsCount);
@@ -156,7 +156,7 @@ public class RateTrackerTest {
 
   @Test
   public void shouldAdjustObjectsCount() {
-    final RateTracker tracker = RateTracker.create(10, 2, timeProvider);
+    final RateTracker tracker = RateTracker.create(10, 2, timeProvider, "");
 
     // time: 1000, tracker count: 0, limit: 10, remaining: 10
     Optional<RequestApproval> objectRequests = tracker.approveObjectsRequest(10);

@@ -151,6 +151,12 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
+  public Bytes computeBlob(List<KZGCell> cells) {
+    Bytes cellsBytes = Bytes.wrap(cells.stream().map(KZGCell::bytes).toList());
+    return Bytes.wrap(CKZG4844JNI.cellsToBlob(cellsBytes.toArrayUnsafe()));
+  }
+
+  @Override
   public List<KZGCell> computeCells(Bytes blob) {
     byte[] cellBytes = CKZG4844JNI.computeCells(blob.toArrayUnsafe());
     return KZGCell.splitBytes(Bytes.wrap(cellBytes));

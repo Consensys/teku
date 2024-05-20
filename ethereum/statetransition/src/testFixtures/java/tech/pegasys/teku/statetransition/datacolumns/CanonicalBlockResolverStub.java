@@ -22,8 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class CanonicalBlockResolverStub
-    implements DataColumnSidecarCustodyImpl.CanonicalBlockResolver {
+public class CanonicalBlockResolverStub implements CanonicalBlockResolver {
 
   private final Map<UInt64, BeaconBlock> chain = new HashMap<>();
 
@@ -34,9 +33,13 @@ public class CanonicalBlockResolverStub
   }
 
   public BeaconBlock addBlock(int slot, boolean hasBlobs) {
+    return addBlock(slot, hasBlobs ? 1 : 0);
+  }
+
+  public BeaconBlock addBlock(int slot, int blobCount) {
     UInt64 slotU = UInt64.valueOf(slot);
     BeaconBlockBody beaconBlockBody =
-        dataStructureUtil.randomBeaconBlockBodyWithCommitments(hasBlobs ? 1 : 0);
+        dataStructureUtil.randomBeaconBlockBodyWithCommitments(blobCount);
     BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
     chain.put(slotU, block);
     return block;

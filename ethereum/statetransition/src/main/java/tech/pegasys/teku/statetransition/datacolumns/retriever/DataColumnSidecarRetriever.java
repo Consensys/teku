@@ -13,17 +13,39 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
 
 /** The class which searches for a specific {@link DataColumnSidecar} across nodes in the network */
 public interface DataColumnSidecarRetriever {
 
   /**
+   * The request may complete with this exception when requested column is no more on our local
+   * canonical chain
+   */
+  class NotOnCanonicalChainException extends RuntimeException {
+    public NotOnCanonicalChainException(String msg) {
+      super(msg);
+    }
+
+    public NotOnCanonicalChainException(
+        ColumnSlotAndIdentifier columnId, Optional<BeaconBlock> maybeCanonicalBlock) {
+      super(
+          "The column requested is not on local canonical chain: "
+              + columnId
+              + ", canonical block is "
+              + maybeCanonicalBlock.map(BeaconBlock::getRoot));
+    }
+  }
+
+  /**
    * Queues the specified sidecar for search
    *
-   * @return a future which may run indefinitely until finds a requested data or cancelled
+   * @return a future which may run indefinitely until finds a requested data or cancelled or may
+   *     complete exceptionally when cancelled or with {@link NotOnCanonicalChainException}
    */
   SafeFuture<DataColumnSidecar> retrieve(ColumnSlotAndIdentifier columnId);
 }

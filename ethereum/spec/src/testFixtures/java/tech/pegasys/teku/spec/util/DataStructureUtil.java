@@ -2104,7 +2104,13 @@ public final class DataStructureUtil {
 
   public Blob randomBlob() {
     final BlobSchema blobSchema = getDenebSchemaDefinitions(randomSlot()).getBlobSchema();
-    return blobSchema.create(randomBytes(blobSchema.getLength()));
+    List<Bytes> blobElements =
+        Stream.generate(this::randomBlobElement).limit(blobSchema.getLength() / 32).toList();
+    return blobSchema.create(Bytes.wrap(blobElements));
+  }
+
+  private Bytes randomBlobElement() {
+    return Bytes.wrap(Bytes.of(0), randomBytes(31));
   }
 
   public Bytes randomBlobBytes() {

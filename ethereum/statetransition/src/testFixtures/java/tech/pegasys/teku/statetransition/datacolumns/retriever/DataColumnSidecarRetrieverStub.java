@@ -11,17 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns;
+package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
 
-public interface DataColumnSidecarCustody {
+public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetriever {
 
-  DataColumnSidecarCustody NOOP = (__) -> SafeFuture.completedFuture(Optional.empty());
+  public record RetrieveRequest(
+      ColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> promise) {}
 
-  SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-      DataColumnIdentifier columnId);
+  public List<RetrieveRequest> requests = new ArrayList<>();
+
+  @Override
+  public SafeFuture<DataColumnSidecar> retrieve(ColumnSlotAndIdentifier columnId) {
+    RetrieveRequest request = new RetrieveRequest(columnId, new SafeFuture<>());
+    requests.add(request);
+    return request.promise;
+  }
 }

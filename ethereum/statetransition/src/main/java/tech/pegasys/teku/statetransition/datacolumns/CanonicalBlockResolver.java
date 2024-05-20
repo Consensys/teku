@@ -14,14 +14,11 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
-public interface DataColumnSidecarCustody {
+public interface CanonicalBlockResolver {
 
-  DataColumnSidecarCustody NOOP = (__) -> SafeFuture.completedFuture(Optional.empty());
-
-  SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-      DataColumnIdentifier columnId);
+  /** Should return the canonical block at slot */
+  Optional<BeaconBlock> getBlockAtSlot(UInt64 slot);
 }

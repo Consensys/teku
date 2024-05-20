@@ -75,6 +75,11 @@ public interface KZG {
         }
 
         @Override
+        public Bytes computeBlob(List<KZGCell> cells) {
+          return Bytes.EMPTY;
+        }
+
+        @Override
         public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
           return computeCells(blob).stream()
               .map(cell -> new KZGCellAndProof(cell, KZGProof.fromBytesCompressed(Bytes48.ZERO)))
@@ -120,6 +125,8 @@ public interface KZG {
   KZGProof computeBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment) throws KZGException;
 
   // EIP-7594 methods
+
+  Bytes computeBlob(List<KZGCell> cells);
 
   List<KZGCell> computeCells(Bytes blob);
 
