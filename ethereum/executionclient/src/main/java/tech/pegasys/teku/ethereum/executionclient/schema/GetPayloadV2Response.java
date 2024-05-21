@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -28,8 +30,10 @@ public class GetPayloadV2Response {
   public final UInt256 blockValue;
 
   public GetPayloadV2Response(
-      @JsonProperty("executionPayload") final ExecutionPayloadV2 executionPayload,
-      @JsonProperty("blockValue") final UInt256 blockValue) {
+      final @JsonProperty("executionPayload") ExecutionPayloadV2 executionPayload,
+      final @JsonProperty("blockValue") UInt256 blockValue) {
+    checkNotNull(executionPayload, "executionPayload");
+    checkNotNull(blockValue, "blockValue");
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
   }
