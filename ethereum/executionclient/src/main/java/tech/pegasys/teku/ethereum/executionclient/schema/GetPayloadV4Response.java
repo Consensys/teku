@@ -40,8 +40,7 @@ public class GetPayloadV4Response {
       final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder) {
     checkNotNull(executionPayload, "executionPayload");
     checkNotNull(blockValue, "blockValue");
-    checkNotNull(executionPayload, "blobsBundle");
-    checkNotNull(blockValue, "shouldOverrideBuilder");
+    checkNotNull(blobsBundle, "blobsBundle");
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
     this.blobsBundle = blobsBundle;
