@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -43,6 +45,9 @@ public class WithdrawalRequestV1 {
       @JsonProperty("sourceAddress") final Bytes20 sourceAddress,
       @JsonProperty("validatorPublicKey") final Bytes48 validatorPublicKey,
       @JsonProperty("amount") final UInt64 amount) {
+    checkNotNull(sourceAddress, "sourceAddress");
+    checkNotNull(validatorPublicKey, "validatorPublicKey");
+    checkNotNull(amount, "amount");
     this.sourceAddress = sourceAddress;
     this.validatorPublicKey = validatorPublicKey;
     this.amount = amount;

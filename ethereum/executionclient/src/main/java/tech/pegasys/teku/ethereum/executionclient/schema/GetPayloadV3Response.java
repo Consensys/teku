@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -32,10 +34,14 @@ public class GetPayloadV3Response {
   public final boolean shouldOverrideBuilder;
 
   public GetPayloadV3Response(
-      @JsonProperty("executionPayload") final ExecutionPayloadV3 executionPayload,
-      @JsonProperty("blockValue") final UInt256 blockValue,
-      @JsonProperty("blobsBundle") final BlobsBundleV1 blobsBundle,
-      @JsonProperty("shouldOverrideBuilder") final boolean shouldOverrideBuilder) {
+      final @JsonProperty("executionPayload") ExecutionPayloadV3 executionPayload,
+      final @JsonProperty("blockValue") UInt256 blockValue,
+      final @JsonProperty("blobsBundle") BlobsBundleV1 blobsBundle,
+      final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder) {
+    checkNotNull(executionPayload, "executionPayload");
+    checkNotNull(blockValue, "blockValue");
+    checkNotNull(executionPayload, "blobsBundle");
+    checkNotNull(blockValue, "shouldOverrideBuilder");
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
     this.blobsBundle = blobsBundle;
