@@ -806,7 +806,7 @@ class ValidatorLoaderTest {
     } finally {
       // Ensure all files and directories within tempDir are deleted
       try (Stream<Path> stream = Files.walk(tempDir)) {
-        stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+        stream.map(Path::toFile).forEach(File::delete);
       }
     }
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
