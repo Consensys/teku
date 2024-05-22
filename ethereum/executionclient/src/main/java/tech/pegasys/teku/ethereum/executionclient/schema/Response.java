@@ -38,7 +38,7 @@ public class Response<T> {
   }
 
   public static <T> Response<T> withNullPayload() {
-    return new Response<>(null, null);
+    return new Response<>(null);
   }
 
   public static <T> Response<T> withErrorMessage(final String errorMessage) {

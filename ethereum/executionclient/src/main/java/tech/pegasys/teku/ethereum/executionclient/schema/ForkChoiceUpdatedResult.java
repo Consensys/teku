@@ -32,7 +32,7 @@ public class ForkChoiceUpdatedResult {
   public ForkChoiceUpdatedResult(
       final @JsonProperty("payloadStatus") PayloadStatusV1 payloadStatus,
       final @JsonProperty("payloadId") Bytes8 payloadId) {
-    checkNotNull(payloadStatus, "payloadStatus cannot be null");
+    checkNotNull(payloadStatus, "payloadStatus");
     this.payloadStatus = payloadStatus;
     this.payloadId = payloadId;
   }

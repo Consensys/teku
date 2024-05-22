@@ -16,19 +16,19 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.ArrayList;
+import com.google.common.base.MoreObjects;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
@@ -65,28 +65,8 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
         baseFeePerGas,
         blockHash,
         transactions);
+    checkNotNull(withdrawals, "withdrawals");
     this.withdrawals = withdrawals;
-  }
-
-  public static ExecutionPayloadV2 fromInternalExecutionPayload(
-      final ExecutionPayload executionPayload) {
-    List<WithdrawalV1> withdrawalsList = getWithdrawals(executionPayload.getOptionalWithdrawals());
-    return new ExecutionPayloadV2(
-        executionPayload.getParentHash(),
-        executionPayload.getFeeRecipient(),
-        executionPayload.getStateRoot(),
-        executionPayload.getReceiptsRoot(),
-        executionPayload.getLogsBloom(),
-        executionPayload.getPrevRandao(),
-        executionPayload.getBlockNumber(),
-        executionPayload.getGasLimit(),
-        executionPayload.getGasUsed(),
-        executionPayload.getTimestamp(),
-        executionPayload.getExtraData(),
-        executionPayload.getBaseFeePerGas(),
-        executionPayload.getBlockHash(),
-        executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList(),
-        withdrawalsList);
   }
 
   @Override
@@ -96,7 +76,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
     return super.applyToBuilder(executionPayloadSchema, builder)
         .withdrawals(
             () ->
-                checkNotNull(withdrawals, "Withdrawals not provided when required").stream()
+                withdrawals.stream()
                     .map(
                         withdrawalV1 ->
                             createInternalWithdrawal(withdrawalV1, executionPayloadSchema))
@@ -114,18 +94,76 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
             withdrawalV1.amount);
   }
 
-  public static List<WithdrawalV1> getWithdrawals(
-      final Optional<SszList<Withdrawal>> maybeWithdrawals) {
-    if (maybeWithdrawals.isEmpty()) {
-      return List.of();
-    }
+  public static ExecutionPayloadV2 fromInternalExecutionPayload(
+      final ExecutionPayload executionPayload) {
+    return new ExecutionPayloadV2(
+        executionPayload.getParentHash(),
+        executionPayload.getFeeRecipient(),
+        executionPayload.getStateRoot(),
+        executionPayload.getReceiptsRoot(),
+        executionPayload.getLogsBloom(),
+        executionPayload.getPrevRandao(),
+        executionPayload.getBlockNumber(),
+        executionPayload.getGasLimit(),
+        executionPayload.getGasUsed(),
+        executionPayload.getTimestamp(),
+        executionPayload.getExtraData(),
+        executionPayload.getBaseFeePerGas(),
+        executionPayload.getBlockHash(),
+        getTransactions(executionPayload),
+        getWithdrawals(ExecutionPayloadCapella.required(executionPayload).getWithdrawals()));
+  }
 
-    final List<WithdrawalV1> withdrawals = new ArrayList<>();
+  public static List<WithdrawalV1> getWithdrawals(final SszList<Withdrawal> withdrawals) {
+    return withdrawals.stream()
+        .map(
+            withdrawal ->
+                new WithdrawalV1(
+                    withdrawal.getIndex(),
+                    withdrawal.getValidatorIndex(),
+                    withdrawal.getAddress(),
+                    withdrawal.getAmount()))
+        .toList();
+  }
 
-    for (Withdrawal w : maybeWithdrawals.get()) {
-      withdrawals.add(
-          new WithdrawalV1(w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()));
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
     }
-    return withdrawals;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    final ExecutionPayloadV2 that = (ExecutionPayloadV2) o;
+    return Objects.equals(withdrawals, that.withdrawals);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), withdrawals);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("parentHash", parentHash)
+        .add("feeRecipient", feeRecipient)
+        .add("stateRoot", stateRoot)
+        .add("receiptsRoot", receiptsRoot)
+        .add("logsBloom", logsBloom)
+        .add("prevRandao", prevRandao)
+        .add("blockNumber", blockNumber)
+        .add("gasLimit", gasLimit)
+        .add("gasUsed", gasUsed)
+        .add("timestamp", timestamp)
+        .add("extraData", extraData)
+        .add("baseFeePerGas", baseFeePerGas)
+        .add("blockHash", blockHash)
+        .add("transactions", transactions)
+        .add("withdrawals", withdrawals)
+        .toString();
   }
 }

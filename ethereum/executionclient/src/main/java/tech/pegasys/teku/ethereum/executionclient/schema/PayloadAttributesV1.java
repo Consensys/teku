@@ -60,7 +60,7 @@ public class PayloadAttributesV1 {
   public static Optional<PayloadAttributesV1> fromInternalPayloadBuildingAttributes(
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
-        (payloadAttributes) ->
+        payloadAttributes ->
             new PayloadAttributesV1(
                 payloadAttributes.getTimestamp(),
                 payloadAttributes.getPrevRandao(),

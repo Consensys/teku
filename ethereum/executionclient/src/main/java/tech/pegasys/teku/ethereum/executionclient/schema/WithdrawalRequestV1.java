@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
@@ -43,8 +47,39 @@ public class WithdrawalRequestV1 {
       @JsonProperty("sourceAddress") final Bytes20 sourceAddress,
       @JsonProperty("validatorPublicKey") final Bytes48 validatorPublicKey,
       @JsonProperty("amount") final UInt64 amount) {
+    checkNotNull(sourceAddress, "sourceAddress");
+    checkNotNull(validatorPublicKey, "validatorPublicKey");
+    checkNotNull(amount, "amount");
     this.sourceAddress = sourceAddress;
     this.validatorPublicKey = validatorPublicKey;
     this.amount = amount;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final WithdrawalRequestV1 that = (WithdrawalRequestV1) o;
+    return Objects.equals(sourceAddress, that.sourceAddress)
+        && Objects.equals(validatorPublicKey, that.validatorPublicKey)
+        && Objects.equals(amount, that.amount);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(sourceAddress, validatorPublicKey, amount);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("sourceAddress", sourceAddress)
+        .add("validatorPublicKey", validatorPublicKey)
+        .add("amount", amount)
+        .toString();
   }
 }
