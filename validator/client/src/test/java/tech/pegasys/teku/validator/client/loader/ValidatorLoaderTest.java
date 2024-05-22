@@ -809,7 +809,7 @@ class ValidatorLoaderTest {
         stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
       }
     }
-    OwnedValidators validators = validatorLoader.getOwnedValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
     assertThat(validators.getValidatorCount()).isEqualTo(0);
     checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
