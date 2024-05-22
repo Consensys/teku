@@ -17,7 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -61,11 +63,23 @@ public class StartupLogConfigTest {
             .validatorRestApiAllow(List.of("127.0.0.1", "localhost"))
             .build();
 
-    assertThat(config.getReport())
+    List<String> report = config.getReport();
+
+    assertThat(report)
+        .elements(0, 2, 3)
         .containsExactly(
             "Configuration | Network: mainnet, Storage Mode: PRUNE",
-            "Host Configuration | Maximum Heap Size: 4.00 GB, Total Memory: 16.00 GB, CPU Cores: 10",
             restApiReport,
             "Validator Api Configuration | Listen Address: 127.0.0.1, Port 6789, Allow: [127.0.0.1, localhost]");
+    String escapedDecimalSeparator =
+        Pattern.quote("" + DecimalFormatSymbols.getInstance().getDecimalSeparator());
+    assertThat(report.get(1))
+        .matches(
+            Pattern.compile(
+                "Host Configuration \\| Maximum Heap Size: \\d+"
+                    + escapedDecimalSeparator
+                    + "\\d+ GB, Total Memory: 16"
+                    + escapedDecimalSeparator
+                    + "00 GB, CPU Cores: 10"));
   }
 }
