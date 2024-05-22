@@ -33,9 +33,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -776,31 +778,38 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldThrowWhenAnyErrorOccurs(@TempDir Path tempDir) throws Exception {
-    writeKeystore(tempDir);
-    writeBadKeystore(tempDir);
-    final ValidatorConfig config =
-        ValidatorConfig.builder()
-            .validatorKeys(
-                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
-            .build();
-    final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(
-            spec,
-            config,
-            disabledInteropConfig,
-            httpClientFactory,
-            slashingProtector,
-            slashingProtectionLogger,
-            publicKeyLoader,
-            asyncRunner,
-            metricsSystem,
-            Optional.empty(),
-            (publicKey) -> Optional.empty());
+    final ValidatorLoader validatorLoader;
+    try {
+      writeKeystore(tempDir);
+      writeBadKeystore(tempDir);
+      final ValidatorConfig config =
+          ValidatorConfig.builder()
+              .validatorKeys(
+                  List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
+              .build();
+      validatorLoader =
+          ValidatorLoader.create(
+              spec,
+              config,
+              disabledInteropConfig,
+              httpClientFactory,
+              slashingProtector,
+              slashingProtectionLogger,
+              publicKeyLoader,
+              asyncRunner,
+              metricsSystem,
+              Optional.empty(),
+              (publicKey) -> Optional.empty());
 
-    assertThatThrownBy(validatorLoader::loadValidators)
-        .isExactlyInstanceOf(InvalidConfigurationException.class);
-    final OwnedValidators validators = validatorLoader.getOwnedValidators();
-
+      assertThatThrownBy(validatorLoader::loadValidators)
+          .isExactlyInstanceOf(InvalidConfigurationException.class);
+    } finally {
+      // Ensure all files and directories within tempDir are deleted
+      try (Stream<Path> stream = Files.walk(tempDir)) {
+        stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+      }
+    }
+    OwnedValidators validators = validatorLoader.getOwnedValidators();
     assertThat(validators.getValidatorCount()).isEqualTo(0);
     checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }
