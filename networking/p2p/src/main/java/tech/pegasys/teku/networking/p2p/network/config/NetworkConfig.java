@@ -75,7 +75,7 @@ public class NetworkConfig {
     this.privateKeySource = privateKeySource;
     this.networkInterfaces = networkInterfaces;
 
-    this.advertisedIps = advertisedIps.filter(ips -> ips.stream().anyMatch(Strings::isBlank));
+    this.advertisedIps = advertisedIps.filter(ips -> ips.stream().noneMatch(Strings::isBlank));
     this.isEnabled = isEnabled;
     this.advertisedIps.ifPresent(
         ips ->
