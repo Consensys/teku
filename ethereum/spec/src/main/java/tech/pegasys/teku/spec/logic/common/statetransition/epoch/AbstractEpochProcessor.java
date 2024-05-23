@@ -64,8 +64,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   private static final Logger LOG = LogManager.getLogger();
   protected final UInt64 maxEffectiveBalance;
-  // Used to log once per epoch (throttlingPeriod = 1)
-  private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.ONE);
+  // Used to log once per minute (throttlingPeriod = 60 seconds)
+  private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.valueOf(60));
+  private final Supplier<UInt64> timeSupplier;
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
@@ -85,6 +86,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.validatorStatusFactory = validatorStatusFactory;
     this.schemaDefinitions = schemaDefinitions;
     this.maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
+    this.timeSupplier = () -> UInt64.valueOf(System.currentTimeMillis() / 1000);
   }
 
   /**
@@ -129,7 +131,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processSyncCommitteeUpdates(state);
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
-      loggerThrottler.invoke(currentEpoch, (log) -> log.info("Beacon chain is in inactivity leak"));
+      loggerThrottler.invoke(
+          timeSupplier.get(), (log) -> log.info("Beacon chain is in inactivity leak"));
     }
   }
 
