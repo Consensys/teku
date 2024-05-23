@@ -29,59 +29,64 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 @SuppressWarnings("AddressSelection")
 class NetworkConfigTest {
 
-  private Optional<String> advertisedIp = Optional.empty();
+  private Optional<List<String>> advertisedIps = Optional.empty();
   private String listenIp = "0.0.0.0";
 
   @Test
   void getAdvertisedIp_shouldUseAdvertisedAddressWhenSet() {
-    final String expected = "1.2.3.4";
-    advertisedIp = Optional.of(expected);
-    assertThat(createConfig().getAdvertisedIp()).isEqualTo(expected);
+    final List<String> expected = List.of("1.2.3.4");
+    advertisedIps = Optional.of(expected);
+    assertThat(createConfig().getAdvertisedIps()).isEqualTo(expected);
   }
 
   @Test
   void getAdvertisedIp_shouldResolveAnyLocalAdvertisedAddress() {
-    advertisedIp = Optional.of("0.0.0.0");
-    assertThat(createConfig().getAdvertisedIp()).isNotEqualTo("0.0.0.0");
+    advertisedIps = Optional.of(List.of("0.0.0.0"));
+    assertThat(createConfig().getAdvertisedIps()).doesNotContain("0.0.0.0");
   }
 
   @Test
   void getAdvertisedIp_shouldReturnInterfaceIpWhenNotSet() {
     listenIp = "127.0.0.1";
-    assertThat(createConfig().getAdvertisedIp()).isEqualTo(listenIp);
+    assertThat(createConfig().getAdvertisedIps()).containsExactly(listenIp);
   }
 
   @Test
   void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocal() {
     listenIp = "0.0.0.0";
-    assertThat(createConfig().getAdvertisedIp()).isNotEqualTo("0.0.0.0");
+    assertThat(createConfig().getAdvertisedIps()).doesNotContain("0.0.0.0");
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6()
-      throws UnknownHostException {
+  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() {
     listenIp = "::0";
-    final String result;
+    final List<String> result;
     try {
-      result = createConfig().getAdvertisedIp();
+      result = createConfig().getAdvertisedIps();
     } catch (Exception ex) {
       // local IPv6 not supported
       assertThat(ex.getCause()).isInstanceOf(UnknownHostException.class);
       assertThat(ex.getMessage()).contains("Unable to determine local IPv6 Address");
       return;
     }
-    assertThat(result).isNotEqualTo("::0");
-    assertThat(result).isNotEqualTo("0.0.0.0");
-    // check the advertised IP is IPv6
-    assertThat(InetAddress.getByName(result)).isInstanceOf(Inet6Address.class);
+    assertThat(result)
+        .hasSize(1)
+        .first()
+        .isNotEqualTo("::0")
+        .isNotEqualTo("0.0.0.0")
+        .satisfies(
+            ip -> {
+              // check the advertised IP is IPv6
+              assertThat(InetAddress.getByName(ip)).isInstanceOf(Inet6Address.class);
+            });
   }
 
   @Test
   void checkPrivateKeySourceCreatedCorrectly() {
     final NetworkConfig config =
         NetworkConfig.builder()
-            .advertisedIp(advertisedIp)
-            .networkInterface(listenIp)
+            .advertisedIps(advertisedIps)
+            .networkInterfaces(List.of(listenIp))
             .privateKeyFile("file.txt")
             .build();
     final Optional<PrivateKeySource> source = config.getPrivateKeySource();
@@ -92,7 +97,10 @@ class NetworkConfigTest {
   }
 
   private NetworkConfig createConfig() {
-    return NetworkConfig.builder().advertisedIp(advertisedIp).networkInterface(listenIp).build();
+    return NetworkConfig.builder()
+        .advertisedIps(advertisedIps)
+        .networkInterfaces(List.of(listenIp))
+        .build();
   }
 
   @Test
@@ -108,8 +116,8 @@ class NetworkConfigTest {
 
     final NetworkConfig config =
         NetworkConfig.builder()
-            .advertisedIp(advertisedIp)
-            .networkInterface(listenIp)
+            .advertisedIps(advertisedIps)
+            .networkInterfaces(List.of(listenIp))
             .directPeers(directPeers)
             .build();
 
