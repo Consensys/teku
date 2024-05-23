@@ -63,7 +63,7 @@ class AbstractEpochProcessorTest {
     // Logger throttler called 3 times
     verify(loggerThrottler, times(3)).invoke(any(), any());
 
-    // Real logger only called 2 times (one per epoch)
+    // Real logger only called 2 times (one per second)
     verify(LOGGER, times(2)).info(anyString());
   }
 
