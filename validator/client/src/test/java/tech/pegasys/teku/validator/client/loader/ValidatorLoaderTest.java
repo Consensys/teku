@@ -804,6 +804,8 @@ class ValidatorLoaderTest {
           .isExactlyInstanceOf(InvalidConfigurationException.class);
     } finally {
       // Ensure all files and directories within tempDir are deleted
+      // attempt to workaround issue related to @TempDir and Windows file system
+      // https://github.com/junit-team/junit5/issues/2811
       try (Stream<Path> stream = Files.walk(tempDir)) {
         stream.map(Path::toFile).forEach(File::delete);
       }
