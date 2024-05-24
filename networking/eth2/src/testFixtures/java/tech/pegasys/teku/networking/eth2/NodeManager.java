@@ -97,7 +97,7 @@ public class NodeManager {
 
   public SafeFuture<Peer> connect(final NodeManager peer) {
     final PeerAddress peerAddress =
-        eth2P2PNetwork.createPeerAddress(peer.network().getNodeAddress());
+        eth2P2PNetwork.createPeerAddress(peer.network().getNodeAddresses().get(0));
     return eth2P2PNetwork.connect(peerAddress);
   }
 

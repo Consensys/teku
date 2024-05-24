@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.network.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.libp2p.core.multiformats.Multiaddr;
 import java.net.Inet6Address;
@@ -22,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.DirectPeerManager;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -126,5 +128,38 @@ class NetworkConfigTest {
 
     assert manager.isDirectPeer(peerId1);
     assert !manager.isDirectPeer(peerId2);
+  }
+
+  @Test
+  void failsIfInvalidNumberOfNetworkInterfacesAreSet() {
+    assertThatThrownBy(
+            () ->
+                NetworkConfig.builder()
+                    .networkInterfaces(List.of("0.0.0.0", "::", "1.2.3.4"))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Invalid number of --p2p-interfaces. It should be either 1 or 2, but it was 3");
+  }
+
+  @Test
+  void failsIfTwoIPv4NetworkInterfacesAreSet() {
+    assertThatThrownBy(
+            () -> NetworkConfig.builder().networkInterfaces(List.of("0.0.0.0", "1.2.3.4")).build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage(
+            "Expected an IPv4 and an IPv6 address for --p2p-advertised-ips but only [IP_V6] was set");
+  }
+
+  @Test
+  void failsIfTwoIPv6AdvertisedIpsAreSet() {
+    assertThatThrownBy(
+            () ->
+                NetworkConfig.builder()
+                    .advertisedIps(
+                        Optional.of(List.of("::", "2001:db8:3333:4444:5555:6666:7777:8888")))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage(
+            "Expected an IPv4 and an IPv6 address for --p2p-interfaces but only [IP_V6] was set");
   }
 }

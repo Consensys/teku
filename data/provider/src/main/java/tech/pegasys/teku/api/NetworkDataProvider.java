@@ -57,17 +57,8 @@ public class NetworkDataProvider {
     return network.streamPeers().count();
   }
 
-  /**
-   * Get the listen port
-   *
-   * @return the port this client is listening on
-   */
-  public int getListenPort() {
-    return network.getListenPort();
-  }
-
   public List<String> getListeningAddresses() {
-    return List.of(network.getNodeAddress());
+    return network.getNodeAddresses();
   }
 
   public List<String> getDiscoveryAddresses() {
@@ -89,11 +80,6 @@ public class NetworkDataProvider {
 
   public List<Eth2Peer> getPeerScores() {
     return network.streamPeers().toList();
-  }
-
-  public Optional<Peer> getPeerById(final String peerId) {
-    final NodeId nodeId = network.parseNodeId(peerId);
-    return network.getPeer(nodeId).map(this::toPeer);
   }
 
   public Optional<Eth2Peer> getEth2PeerById(final String peerId) {

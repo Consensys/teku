@@ -82,7 +82,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.localNodePrivateKey = SecretKeyParser.fromLibP2pPrivKey(privateKey);
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     this.nodeRecordConverter = nodeRecordConverter;
-    // TODO: DiscV5 support listening to only one IP?
+    // TODO: https://github.com/Consensys/discovery/issues/176
     final String listenAddress = p2pConfig.getNetworkInterfaces().get(0);
     final int listenUdpPort = discoConfig.getListenUdpPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIps().get(0);

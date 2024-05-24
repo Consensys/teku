@@ -46,7 +46,7 @@ public class P2POptions {
       names = {"--p2p-interface", "--p2p-interfaces"},
       paramLabel = "<NETWORK>",
       description =
-          "P2P network interface(s). Takes at most two values, one for IPv4 and one for IPv6.",
+          "P2P network interface(s). Takes at most two values, one for IPv4 and one for IPv6 (Default: 0.0.0.0)",
       split = ",",
       arity = "1..2")
   private List<String> p2pInterfaces = NetworkConfig.DEFAULT_P2P_INTERFACE;
@@ -59,9 +59,10 @@ public class P2POptions {
   private int p2pPort = NetworkConfig.DEFAULT_P2P_PORT;
 
   @Option(
-      names = {"--p2p-port-ipv6"},
+      names = {"--Xp2p-port-ipv6"},
       paramLabel = "<INTEGER>",
-      description = "P2P IPv6 port",
+      description =
+          "P2P IPv6 port. This port is only used when listening over both IPv4 and IPv6. If listening over only IPv6, the value of --p2p-port will be used.",
       arity = "1")
   private int p2pPortIpv6 = NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 
@@ -106,10 +107,12 @@ public class P2POptions {
   private Integer p2pAdvertisedPort;
 
   @Option(
-      names = {"--p2p-advertised-port-ipv6"},
+      names = {"--Xp2p-advertised-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
-          "P2P advertised IPv6 port. The default is the port specified in --Xp2p-port-ipv6",
+          """
+             P2P advertised IPv6 port. The default is the port specified in --Xp2p-port-ipv6. This port is only used when advertising both IPv4 and IPv6 addresses.
+             If advertising only an IPv6 address, the value of ---p2p-advertised-port will be used.""",
       arity = "1")
   private Integer p2pAdvertisedPortIpv6;
 
@@ -167,7 +170,7 @@ public class P2POptions {
           "Specifies a list of 'static' peers with which to establish and maintain connections",
       split = ",",
       arity = "0..*")
-  private List<String> p2pStaticPeers = new ArrayList<>();
+  private List<List<String>> p2pStaticPeers = new ArrayList<List<String>>();
 
   @Option(
       names = {"--p2p-direct-peers"},
@@ -179,7 +182,7 @@ public class P2POptions {
               Such peers will also need to enable you as direct in order to work.""",
       split = ",",
       arity = "0..*")
-  private List<String> p2pDirectPeers = new ArrayList<>();
+  private List<List<String>> p2pDirectPeers = new ArrayList<List<String>>();
 
   @Option(
       names = {"--Xp2p-multipeer-sync-enabled"},

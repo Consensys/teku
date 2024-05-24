@@ -34,6 +34,7 @@ import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -102,23 +103,48 @@ public class LibP2PNetworkBuilder {
     // Setup peers
     peerManager = createPeerManager();
 
-    host = createHost();
+    final PrivKey privKey = privateKeyProvider.get();
+    final NodeId nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
-    final NodeId nodeId = new LibP2PNodeId(host.getPeerId());
-    final Multiaddr advertisedAddr =
-        MultiaddrUtil.fromInetSocketAddress(
-            new InetSocketAddress(config.getAdvertisedIps().get(0), config.getAdvertisedPort()),
-            nodeId);
+    final List<Multiaddr> advertisedAddresses;
+    final List<String> advertisedIps = config.getAdvertisedIps();
+    if (advertisedIps.size() == 1) {
+      advertisedAddresses =
+          Collections.singletonList(
+              MultiaddrUtil.fromInetSocketAddress(
+                  new InetSocketAddress(advertisedIps.get(0), config.getAdvertisedPort()), nodeId));
+    } else {
+      // IPv4 and IPv6
+      advertisedAddresses =
+          advertisedIps.stream()
+              .map(
+                  advertisedIp -> {
+                    final int advertisedPort =
+                        switch (IPVersionResolver.resolve(advertisedIp)) {
+                          case IP_V4 -> config.getAdvertisedPort();
+                          case IP_V6 -> config.getAdvertisedPortIpv6();
+                        };
+                    return MultiaddrUtil.fromInetSocketAddress(
+                        new InetSocketAddress(advertisedIp, advertisedPort), nodeId);
+                  })
+              .toList();
+    }
 
-    // TODO: multiple advertisedAddrs and multiple listen ports
+    host = createHost(privKey, advertisedAddresses);
+
+    final List<Integer> listenPorts =
+        advertisedAddresses.size() == 2
+            ? List.of(config.getListenPort(), config.getListenPortIpv6())
+            : List.of(config.getListenPort());
+
     return new LibP2PNetwork(
         host.getPrivKey(),
         nodeId,
         host,
         peerManager,
-        advertisedAddr,
+        advertisedAddresses,
         gossipNetwork,
-        config.getListenPort());
+        listenPorts);
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
@@ -148,38 +174,32 @@ public class LibP2PNetworkBuilder {
   }
 
   @SuppressWarnings("AddressSelection")
-  protected Host createHost() {
-    final PrivKey privKey = privateKeyProvider.get();
-    final NodeId nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
-
-    final List<Multiaddr> advertisedAddrs =
-        config.getAdvertisedIps().stream()
-            .map(
-                advertisedIp -> {
-                  final int advertisedPort =
-                      switch (IPVersionResolver.resolve(advertisedIp)) {
-                        case IP_V4 -> config.getAdvertisedPort();
-                        case IP_V6 -> config.getAdvertisedPortIpv6();
-                      };
-                  return MultiaddrUtil.fromInetSocketAddress(
-                      new InetSocketAddress(advertisedIp, advertisedPort), nodeId);
-                })
-            .toList();
-    final String[] listenAddrs =
-        config.getNetworkInterfaces().stream()
-            .map(
-                networkInterface -> {
-                  final int listenPort =
-                      switch (IPVersionResolver.resolve(networkInterface)) {
-                        case IP_V4 -> config.getListenPort();
-                        case IP_V6 -> config.getListenPortIpv6();
-                      };
-                  final Multiaddr addr =
-                      MultiaddrUtil.fromInetSocketAddress(
-                          new InetSocketAddress(networkInterface, listenPort));
-                  return addr.toString();
-                })
-            .toArray(String[]::new);
+  protected Host createHost(final PrivKey privKey, final List<Multiaddr> advertisedAddresses) {
+    final String[] listenAddrs;
+    final List<String> networkInterfaces = config.getNetworkInterfaces();
+    if (networkInterfaces.size() == 1) {
+      final Multiaddr addr =
+          MultiaddrUtil.fromInetSocketAddress(
+              new InetSocketAddress(networkInterfaces.get(0), config.getListenPort()));
+      listenAddrs = new String[] {addr.toString()};
+    } else {
+      // IPv4 and IPv6
+      listenAddrs =
+          networkInterfaces.stream()
+              .map(
+                  networkInterface -> {
+                    final int listenPort =
+                        switch (IPVersionResolver.resolve(networkInterface)) {
+                          case IP_V4 -> config.getListenPort();
+                          case IP_V6 -> config.getListenPortIpv6();
+                        };
+                    final Multiaddr addr =
+                        MultiaddrUtil.fromInetSocketAddress(
+                            new InetSocketAddress(networkInterface, listenPort));
+                    return addr.toString();
+                  })
+              .toArray(String[]::new);
+    }
 
     return BuilderJKt.hostJ(
         hostBuilderDefaults,
@@ -197,7 +217,7 @@ public class LibP2PNetworkBuilder {
           b.getMuxers().add(StreamMuxerProtocol.getMplex());
 
           b.getNetwork().listen(listenAddrs);
-          advertisedAddrs.forEach(
+          advertisedAddresses.forEach(
               advertisedAddr ->
                   b.getProtocols()
                       .addAll(getDefaultProtocols(privKey.publicKey(), advertisedAddr)));

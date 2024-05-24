@@ -17,8 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 import java.io.UncheckedIOException;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -28,11 +26,15 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.utils.Strings;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.IPVersionResolver;
+import tech.pegasys.teku.infrastructure.io.IPVersionResolver.IPVersion;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.DirectPeerManager;
@@ -156,8 +158,8 @@ public class NetworkConfig {
     try {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
       if (advertisedAddress.isAnyLocalAddress()) {
-        final boolean useIPV6 = advertisedAddress instanceof Inet6Address;
-        return getLocalAddress(useIPV6);
+        final IPVersion ipVersion = IPVersionResolver.resolve(advertisedAddress);
+        return getLocalAddress(ipVersion);
       } else {
         return ipAddress;
       }
@@ -166,7 +168,7 @@ public class NetworkConfig {
     }
   }
 
-  private String getLocalAddress(final boolean useIPV6) throws UnknownHostException {
+  private String getLocalAddress(final IPVersion ipVersion) throws UnknownHostException {
     try {
       final Enumeration<NetworkInterface> networkInterfaces =
           NetworkInterface.getNetworkInterfaces();
@@ -175,15 +177,20 @@ public class NetworkConfig {
         final Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
         while (inetAddresses.hasMoreElements()) {
           final InetAddress inetAddress = inetAddresses.nextElement();
-          // IPv4 (include only site local addresses)
-          if (!useIPV6 && inetAddress instanceof Inet4Address && inetAddress.isSiteLocalAddress()) {
-            return inetAddress.getHostAddress();
+          if (IPVersionResolver.resolve(inetAddress) != ipVersion) {
+            // incompatible IP version
+            continue;
           }
-          // IPv6 (include site local or unique local addresses)
-          if (useIPV6
-              && inetAddress instanceof Inet6Address
-              && (inetAddress.isSiteLocalAddress() || isUniqueLocalAddress(inetAddress))) {
-            return inetAddress.getHostAddress();
+          if (ipVersion == IPVersion.IP_V4) {
+            // IPv4 (include only site local addresses)
+            if (inetAddress.isSiteLocalAddress()) {
+              return inetAddress.getHostAddress();
+            }
+          } else {
+            // IPv6 (include site local or unique local addresses)
+            if (inetAddress.isSiteLocalAddress() || isUniqueLocalAddress(inetAddress)) {
+              return inetAddress.getHostAddress();
+            }
           }
         }
       }
@@ -192,7 +199,7 @@ public class NetworkConfig {
       throw new UnknownHostException(ex.getMessage());
     }
     throw new UnknownHostException(
-        String.format("Unable to determine local %s Address", useIPV6 ? "IPv6" : "IPv4"));
+        String.format("Unable to determine local %s Address", ipVersion.getName()));
   }
 
   private boolean isUniqueLocalAddress(final InetAddress inetAddress) {
@@ -273,6 +280,7 @@ public class NetworkConfig {
 
     public Builder networkInterfaces(final List<String> networkInterfaces) {
       checkNotNull(networkInterfaces);
+      validateAddresses(networkInterfaces, "--p2p-interfaces");
       this.networkInterfaces = networkInterfaces;
       return this;
     }
@@ -283,32 +291,33 @@ public class NetworkConfig {
 
     public Builder advertisedIps(final Optional<List<String>> advertisedIps) {
       checkNotNull(advertisedIps);
+      advertisedIps.ifPresent(ips -> validateAddresses(ips, "--p2p-advertised-ips"));
       this.advertisedIps = advertisedIps;
       return this;
     }
 
     public Builder listenPort(final int listenPort) {
-      validatePort("listenPort", listenPort);
+      validatePort(listenPort, "--p2p-port");
       this.listenPort = listenPort;
       return this;
     }
 
     public Builder listenPortIpv6(final int listenPortIpv6) {
-      validatePort("IPv6 listenPort", listenPortIpv6);
+      validatePort(listenPortIpv6, "--Xp2p-port-ipv6");
       this.listenPortIpv6 = listenPortIpv6;
       return this;
     }
 
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
-      advertisedPort.ifPresent(port -> validatePort("advertisedPort", port));
+      advertisedPort.ifPresent(port -> validatePort(port, "--p2p-advertised-port"));
       this.advertisedPort = advertisedPort;
       return this;
     }
 
     public Builder advertisedPortIpv6(final OptionalInt advertisedPortIpv6) {
       checkNotNull(advertisedPortIpv6);
-      advertisedPortIpv6.ifPresent(port -> validatePort("IPv6 advertisedPort", port));
+      advertisedPortIpv6.ifPresent(port -> validatePort(port, "--Xp2p-advertised-port-ipv6"));
       this.advertisedPortIpv6 = advertisedPortIpv6;
       return this;
     }
@@ -325,9 +334,28 @@ public class NetworkConfig {
       return this;
     }
 
-    private void validatePort(final String type, final int port) {
+    private void validateAddresses(final List<String> addresses, final String cliOption) {
+      if (addresses.isEmpty() || addresses.size() > 2) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid number of %s. It should be either 1 or 2, but it was %d",
+                cliOption, addresses.size()));
+      }
+      if (addresses.size() == 2) {
+        final Set<IPVersion> ipVersions =
+            addresses.stream().map(IPVersionResolver::resolve).collect(Collectors.toSet());
+        if (ipVersions.size() != 2) {
+          throw new InvalidConfigurationException(
+              String.format(
+                  "Expected an IPv4 and an IPv6 address for %s but only %s was set",
+                  cliOption, ipVersions));
+        }
+      }
+    }
+
+    private void validatePort(final int port, final String cliOption) {
       if (!PortAvailability.isPortValid(port)) {
-        throw new InvalidConfigurationException(String.format("Invalid %s: %d", type, port));
+        throw new InvalidConfigurationException(String.format("Invalid %s: %d", cliOption, port));
       }
     }
   }

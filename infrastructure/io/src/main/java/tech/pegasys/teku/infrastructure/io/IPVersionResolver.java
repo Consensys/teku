@@ -21,8 +21,18 @@ import java.net.UnknownHostException;
 public class IPVersionResolver {
 
   public enum IPVersion {
-    IP_V4,
-    IP_V6;
+    IP_V4("IPv4"),
+    IP_V6("IPv6");
+
+    private final String name;
+
+    IPVersion(final String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
   }
 
   public static IPVersion resolve(final String address) {
