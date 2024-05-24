@@ -31,9 +31,7 @@ public class DiscoveryConfig {
 
   private final boolean isDiscoveryEnabled;
   private final int listenUdpPort;
-  private final OptionalInt listenUpdPortIpv6;
   private final OptionalInt advertisedUdpPort;
-  private final OptionalInt advertisedUdpPortIpv6;
   private final List<String> staticPeers;
   private final List<String> bootnodes;
   private final int minPeers;
@@ -44,9 +42,7 @@ public class DiscoveryConfig {
   private DiscoveryConfig(
       final boolean isDiscoveryEnabled,
       final int listenUdpPort,
-      final OptionalInt listenUpdPortIpv6,
       final OptionalInt advertisedUdpPort,
-      final OptionalInt advertisedUdpPortIpv6,
       final List<String> staticPeers,
       final List<String> bootnodes,
       final int minPeers,
@@ -55,9 +51,7 @@ public class DiscoveryConfig {
       final boolean siteLocalAddressesEnabled) {
     this.isDiscoveryEnabled = isDiscoveryEnabled;
     this.listenUdpPort = listenUdpPort;
-    this.listenUpdPortIpv6 = listenUpdPortIpv6;
     this.advertisedUdpPort = advertisedUdpPort;
-    this.advertisedUdpPortIpv6 = advertisedUdpPortIpv6;
     this.staticPeers = staticPeers;
     this.bootnodes = bootnodes;
     this.minPeers = minPeers;
@@ -80,10 +74,6 @@ public class DiscoveryConfig {
 
   public int getAdvertisedUdpPort() {
     return advertisedUdpPort.orElse(listenUdpPort);
-  }
-
-  public OptionalInt getAdvertisedUdpPortIpv6() {
-    return advertisedUdpPortIpv6.isPresent() ? advertisedUdpPortIpv6 : listenUpdPortIpv6;
   }
 
   public List<String> getStaticPeers() {
@@ -118,9 +108,7 @@ public class DiscoveryConfig {
     private int maxPeers = DEFAULT_P2P_PEERS_UPPER_BOUND;
     private OptionalInt minRandomlySelectedPeers = OptionalInt.empty();
     private OptionalInt listenUdpPort = OptionalInt.empty();
-    private OptionalInt listenUdpPortIpv6 = OptionalInt.empty();
     private OptionalInt advertisedUdpPort = OptionalInt.empty();
-    private OptionalInt advertisedUdpPortIpv6 = OptionalInt.empty();
     private boolean siteLocalAddressesEnabled = DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED;
 
     private Builder() {}
@@ -131,9 +119,7 @@ public class DiscoveryConfig {
       return new DiscoveryConfig(
           isDiscoveryEnabled,
           listenUdpPort.orElseThrow(),
-          listenUdpPortIpv6,
           advertisedUdpPort,
-          advertisedUdpPortIpv6,
           staticPeers,
           bootnodes == null ? Collections.emptyList() : bootnodes,
           minPeers,
@@ -170,15 +156,6 @@ public class DiscoveryConfig {
       return this;
     }
 
-    public Builder listenUdpPortIpv6(final int listenUdpPortIpv6) {
-      if (!PortAvailability.isPortValid(listenUdpPortIpv6)) {
-        throw new InvalidConfigurationException(
-            String.format("Invalid listenUdpPort: %d", listenUdpPortIpv6));
-      }
-      this.listenUdpPortIpv6 = OptionalInt.of(listenUdpPortIpv6);
-      return this;
-    }
-
     public Builder listenUdpPortDefault(final int listenUdpPort) {
       if (!PortAvailability.isPortValid(listenUdpPort)) {
         throw new InvalidConfigurationException(
@@ -199,18 +176,6 @@ public class DiscoveryConfig {
         }
       }
       this.advertisedUdpPort = advertisedUdpPort;
-      return this;
-    }
-
-    public Builder advertisedUdpPortIpv6(final OptionalInt advertisedUdpPortIpv6) {
-      checkNotNull(advertisedUdpPortIpv6);
-      if (advertisedUdpPortIpv6.isPresent()) {
-        if (!PortAvailability.isPortValid(advertisedUdpPortIpv6.getAsInt())) {
-          throw new InvalidConfigurationException(
-              String.format("Invalid advertisedUdpPort: %d", advertisedUdpPortIpv6.getAsInt()));
-        }
-      }
-      this.advertisedUdpPortIpv6 = advertisedUdpPortIpv6;
       return this;
     }
 

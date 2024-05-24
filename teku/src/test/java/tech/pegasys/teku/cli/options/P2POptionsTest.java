@@ -108,18 +108,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void advertisedIp_shouldDefaultToEmpty() {
+  public void advertisedIps_shouldDefaultToEmpty() {
     final NetworkConfig config = getTekuConfigurationFromArguments().network();
     assertThat(config.hasUserExplicitlySetAdvertisedIp()).isFalse();
   }
 
   @Test
-  public void advertisedIp_shouldAcceptValue() {
+  public void advertisedIps_shouldAcceptValue() {
     final String ip = "10.0.1.200";
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-advertised-ip", ip);
     assertThat(tekuConfiguration.network().getAdvertisedIps())
-        .anyMatch(advertisedIp -> advertisedIp.contains(ip));
+        .allMatch(advertisedIp -> advertisedIp.contains(ip));
   }
 
   @Test

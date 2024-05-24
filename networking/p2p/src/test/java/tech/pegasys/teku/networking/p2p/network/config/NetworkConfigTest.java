@@ -29,36 +29,36 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 @SuppressWarnings("AddressSelection")
 class NetworkConfigTest {
 
-  private Optional<List<String>> advertisedIps = Optional.empty();
+  private Optional<String> advertisedIp = Optional.empty();
   private String listenIp = "0.0.0.0";
 
   @Test
-  void getAdvertisedIp_shouldUseAdvertisedAddressWhenSet() {
-    final List<String> expected = List.of("1.2.3.4");
-    advertisedIps = Optional.of(expected);
-    assertThat(createConfig().getAdvertisedIps()).isEqualTo(expected);
+  void getAdvertisedIps_shouldUseAdvertisedAddressWhenSet() {
+    final String expected = "1.2.3.4";
+    advertisedIp = Optional.of(expected);
+    assertThat(createConfig().getAdvertisedIps()).containsExactly(expected);
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveAnyLocalAdvertisedAddress() {
-    advertisedIps = Optional.of(List.of("0.0.0.0"));
-    assertThat(createConfig().getAdvertisedIps()).doesNotContain("0.0.0.0");
+  void getAdvertisedIps_shouldResolveAnyLocalAdvertisedAddress() {
+    advertisedIp = Optional.of("0.0.0.0");
+    assertThat(createConfig().getAdvertisedIps()).hasSize(1).doesNotContain("0.0.0.0");
   }
 
   @Test
-  void getAdvertisedIp_shouldReturnInterfaceIpWhenNotSet() {
+  void getAdvertisedIps_shouldReturnInterfaceIpWhenNotSet() {
     listenIp = "127.0.0.1";
     assertThat(createConfig().getAdvertisedIps()).containsExactly(listenIp);
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocal() {
+  void getAdvertisedIps_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocal() {
     listenIp = "0.0.0.0";
-    assertThat(createConfig().getAdvertisedIps()).doesNotContain("0.0.0.0");
+    assertThat(createConfig().getAdvertisedIps()).hasSize(1).doesNotContain("0.0.0.0");
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() {
+  void getAdvertisedIps_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() {
     listenIp = "::0";
     final List<String> result;
     try {
@@ -85,8 +85,8 @@ class NetworkConfigTest {
   void checkPrivateKeySourceCreatedCorrectly() {
     final NetworkConfig config =
         NetworkConfig.builder()
-            .advertisedIps(advertisedIps)
-            .networkInterfaces(List.of(listenIp))
+            .advertisedIp(advertisedIp)
+            .networkInterface(listenIp)
             .privateKeyFile("file.txt")
             .build();
     final Optional<PrivateKeySource> source = config.getPrivateKeySource();
@@ -97,10 +97,7 @@ class NetworkConfigTest {
   }
 
   private NetworkConfig createConfig() {
-    return NetworkConfig.builder()
-        .advertisedIps(advertisedIps)
-        .networkInterfaces(List.of(listenIp))
-        .build();
+    return NetworkConfig.builder().advertisedIp(advertisedIp).networkInterface(listenIp).build();
   }
 
   @Test
@@ -116,8 +113,8 @@ class NetworkConfigTest {
 
     final NetworkConfig config =
         NetworkConfig.builder()
-            .advertisedIps(advertisedIps)
-            .networkInterfaces(List.of(listenIp))
+            .advertisedIp(advertisedIp)
+            .networkInterface(listenIp)
             .directPeers(directPeers)
             .build();
 

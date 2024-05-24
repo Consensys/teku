@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
@@ -71,21 +72,22 @@ public class NetworkConfig {
       final OptionalInt advertisedPort,
       final OptionalInt advertisedPortIpv6,
       final boolean yamuxEnabled) {
-
     this.privateKeySource = privateKeySource;
     this.networkInterfaces = networkInterfaces;
-
-    this.advertisedIps = advertisedIps.filter(ips -> ips.stream().noneMatch(Strings::isBlank));
-    this.isEnabled = isEnabled;
-    this.advertisedIps.ifPresent(
+    advertisedIps.ifPresent(
         ips ->
             ips.forEach(
                 ip -> {
+                  if (Strings.isBlank(ip)) {
+                    throw new InvalidConfigurationException("Advertised ip is blank");
+                  }
                   if (!isInetAddress(ip)) {
                     throw new InvalidConfigurationException(
-                        String.format("Advertised ip (%s) is set incorrectly.", ip));
+                        String.format("Advertised ip (%s) is set incorrectly", ip));
                   }
                 }));
+    this.advertisedIps = advertisedIps;
+    this.isEnabled = isEnabled;
     this.listenPort = listenPort;
     this.listenPortIpv6 = listenPortIpv6;
     this.advertisedPort = advertisedPort;
@@ -265,10 +267,18 @@ public class NetworkConfig {
       return this;
     }
 
+    public Builder networkInterface(final String networkInterface) {
+      return networkInterfaces(Collections.singletonList(networkInterface));
+    }
+
     public Builder networkInterfaces(final List<String> networkInterfaces) {
       checkNotNull(networkInterfaces);
       this.networkInterfaces = networkInterfaces;
       return this;
+    }
+
+    public Builder advertisedIp(final Optional<String> advertisedIp) {
+      return advertisedIps(advertisedIp.map(Collections::singletonList));
     }
 
     public Builder advertisedIps(final Optional<List<String>> advertisedIps) {
@@ -278,43 +288,27 @@ public class NetworkConfig {
     }
 
     public Builder listenPort(final int listenPort) {
-      if (!PortAvailability.isPortValid(listenPort)) {
-        throw new InvalidConfigurationException(
-            String.format("Invalid listenPort: %d", listenPort));
-      }
+      validatePort("listenPort", listenPort);
       this.listenPort = listenPort;
       return this;
     }
 
     public Builder listenPortIpv6(final int listenPortIpv6) {
-      if (!PortAvailability.isPortValid(listenPortIpv6)) {
-        throw new InvalidConfigurationException(
-            String.format("Invalid IPv6 listenPort: %d", listenPortIpv6));
-      }
+      validatePort("IPv6 listenPort", listenPortIpv6);
       this.listenPortIpv6 = listenPortIpv6;
       return this;
     }
 
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
-      if (advertisedPort.isPresent()) {
-        if (!PortAvailability.isPortValid(advertisedPort.getAsInt())) {
-          throw new InvalidConfigurationException(
-              String.format("Invalid advertisedPort: %d", advertisedPort.getAsInt()));
-        }
-      }
+      advertisedPort.ifPresent(port -> validatePort("advertisedPort", port));
       this.advertisedPort = advertisedPort;
       return this;
     }
 
     public Builder advertisedPortIpv6(final OptionalInt advertisedPortIpv6) {
       checkNotNull(advertisedPortIpv6);
-      if (advertisedPortIpv6.isPresent()) {
-        if (!PortAvailability.isPortValid(advertisedPortIpv6.getAsInt())) {
-          throw new InvalidConfigurationException(
-              String.format("Invalid advertisedPort: %d", advertisedPortIpv6.getAsInt()));
-        }
-      }
+      advertisedPortIpv6.ifPresent(port -> validatePort("IPv6 advertisedPort", port));
       this.advertisedPortIpv6 = advertisedPortIpv6;
       return this;
     }
@@ -329,6 +323,12 @@ public class NetworkConfig {
       final DirectPeerManager directPeerManager = directPeers::contains;
       this.gossipConfigBuilder.directPeerManager(directPeerManager);
       return this;
+    }
+
+    private void validatePort(final String type, final int port) {
+      if (!PortAvailability.isPortValid(port)) {
+        throw new InvalidConfigurationException(String.format("Invalid %s: %d", type, port));
+      }
     }
   }
 }

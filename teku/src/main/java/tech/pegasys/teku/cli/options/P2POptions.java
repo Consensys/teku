@@ -43,7 +43,7 @@ public class P2POptions {
   private boolean p2pEnabled = true;
 
   @Option(
-      names = {"--p2p-interface", "--Xp2p-interfaces"},
+      names = {"--p2p-interface", "--p2p-interfaces"},
       paramLabel = "<NETWORK>",
       description =
           "P2P network interface(s). Takes at most two values, one for IPv4 and one for IPv6.",
@@ -59,7 +59,7 @@ public class P2POptions {
   private int p2pPort = NetworkConfig.DEFAULT_P2P_PORT;
 
   @Option(
-      names = {"--Xp2p-port-ipv6"},
+      names = {"--p2p-port-ipv6"},
       paramLabel = "<INTEGER>",
       description = "P2P IPv6 port",
       arity = "1")
@@ -71,14 +71,6 @@ public class P2POptions {
       description = "UDP port used for discovery. The default is the port specified in --p2p-port",
       arity = "1")
   private Integer p2pUdpPort;
-
-  @Option(
-      names = {"--Xp2p-udp-port-ipv6"},
-      paramLabel = "<INTEGER>",
-      description =
-          "UDP IPv6 port used for discovery. The default is the port specified in --Xp2p-port-ipv6",
-      arity = "1")
-  private Integer p2pUdpPortIpv6;
 
   @Option(
       names = {"--p2p-discovery-enabled"},
@@ -98,7 +90,7 @@ public class P2POptions {
   private List<String> p2pDiscoveryBootnodes = null;
 
   @Option(
-      names = {"--p2p-advertised-ip", "--Xp2p-advertised-ips"},
+      names = {"--p2p-advertised-ip", "--p2p-advertised-ips"},
       paramLabel = "<NETWORK>",
       description =
           "P2P advertised IP(s). Takes at most two values, one for IPv4 and one for IPv6 (Default: 127.0.0.1)",
@@ -114,10 +106,10 @@ public class P2POptions {
   private Integer p2pAdvertisedPort;
 
   @Option(
-      names = {"--Xp2p-advertised-port-ipv6"},
+      names = {"--p2p-advertised-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
-          "P2P IPv6 advertised port. The default is the port specified in --Xp2p-port-ipv6",
+          "P2P advertised IPv6 port. The default is the port specified in --Xp2p-port-ipv6",
       arity = "1")
   private Integer p2pAdvertisedPortIpv6;
 
@@ -128,14 +120,6 @@ public class P2POptions {
           "Advertised UDP port to external peers. The default is the port specified in --p2p-advertised-port",
       arity = "1")
   private Integer p2pAdvertisedUdpPort;
-
-  @Option(
-      names = {"--Xp2p-advertised-udp-port-ipv6"},
-      paramLabel = "<INTEGER>",
-      description =
-          "Advertised IPv6 UDP port to external peers. The default is the port specified in --Xp2p-advertised-port-ipv6",
-      arity = "1")
-  private Integer p2pAdvertisedUdpPortIpv6;
 
   @Option(
       names = {"--p2p-private-key-file"},
@@ -409,14 +393,8 @@ public class P2POptions {
               if (p2pUdpPort != null) {
                 d.listenUdpPort(p2pUdpPort);
               }
-              if (p2pUdpPortIpv6 != null) {
-                d.listenUdpPortIpv6(p2pUdpPortIpv6);
-              }
               if (p2pAdvertisedUdpPort != null) {
                 d.advertisedUdpPort(OptionalInt.of(p2pAdvertisedUdpPort));
-              }
-              if (p2pAdvertisedUdpPortIpv6 != null) {
-                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedUdpPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
                   .staticPeers(p2pStaticPeers)

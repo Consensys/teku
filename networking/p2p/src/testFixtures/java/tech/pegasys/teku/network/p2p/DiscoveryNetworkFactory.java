@@ -97,8 +97,8 @@ public class DiscoveryNetworkFactory {
         final NetworkConfig config =
             NetworkConfig.builder()
                 .listenPort(port)
-                .advertisedIps(Optional.of(List.of("127.0.0.1")))
-                .networkInterfaces(List.of("127.0.0.1"))
+                .advertisedIp(Optional.of("127.0.0.1"))
+                .networkInterface("127.0.0.1")
                 .build();
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final PeerPools peerPools = new PeerPools();

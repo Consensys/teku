@@ -288,9 +288,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     TekuConfiguration expected =
-        expectedConfigurationBuilder()
-            .network(n -> n.networkInterfaces(List.of("1.2.3.5")))
-            .build();
+        expectedConfigurationBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuAndLoggingConfiguration(expected, expectedLoggingBuilder().build());
   }
 
@@ -309,9 +307,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration expected =
-        expectedCompleteConfigInFileBuilder()
-            .network(n -> n.networkInterfaces(List.of("1.2.3.5")))
-            .build();
+        expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuAndLoggingConfiguration(
         expected, expectedCompleteConfigInFileLoggingBuilder().build());
   }
@@ -326,9 +322,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration expected =
-        expectedCompleteConfigInFileBuilder()
-            .network(n -> n.networkInterfaces(List.of("1.2.3.5")))
-            .build();
+        expectedCompleteConfigInFileBuilder().network(n -> n.networkInterface("1.2.3.5")).build();
     assertTekuAndLoggingConfiguration(
         expected, expectedCompleteConfigInFileLoggingBuilder().build());
   }
@@ -597,7 +591,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .network(
             n ->
                 n.advertisedPort(OptionalInt.empty())
-                    .networkInterfaces(List.of("0.0.0.0"))
+                    .networkInterface("0.0.0.0")
                     .listenPort(9000)
                     .privateKeyFile(""))
         .validator(
@@ -641,10 +635,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .network(
             n ->
                 n.isEnabled(false)
-                    .networkInterfaces(List.of("1.2.3.4"))
+                    .networkInterface("1.2.3.4")
                     .listenPort(1234)
                     .advertisedPort(OptionalInt.of(9000))
-                    .advertisedIps(Optional.empty())
+                    .advertisedIp(Optional.empty())
                     .privateKeyFile("path/to/file"))
         .sync(s -> s.isSyncEnabled(false).isMultiPeerSyncEnabled(true))
         .restApi(
