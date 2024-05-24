@@ -170,7 +170,7 @@ public class P2POptions {
           "Specifies a list of 'static' peers with which to establish and maintain connections",
       split = ",",
       arity = "0..*")
-  private List<List<String>> p2pStaticPeers = new ArrayList<List<String>>();
+  private List<String> p2pStaticPeers = new ArrayList<>();
 
   @Option(
       names = {"--p2p-direct-peers"},
@@ -182,7 +182,7 @@ public class P2POptions {
               Such peers will also need to enable you as direct in order to work.""",
       split = ",",
       arity = "0..*")
-  private List<List<String>> p2pDirectPeers = new ArrayList<List<String>>();
+  private List<String> p2pDirectPeers = new ArrayList<>();
 
   @Option(
       names = {"--Xp2p-multipeer-sync-enabled"},
