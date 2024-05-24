@@ -63,6 +63,7 @@ public class P2POptions {
       paramLabel = "<INTEGER>",
       description =
           "P2P IPv6 port. This port is only used when listening over both IPv4 and IPv6. If listening over only IPv6, the value of --p2p-port will be used.",
+      hidden = true,
       arity = "1")
   private int p2pPortIpv6 = NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 
@@ -113,6 +114,7 @@ public class P2POptions {
           """
              P2P advertised IPv6 port. The default is the port specified in --Xp2p-port-ipv6. This port is only used when advertising both IPv4 and IPv6 addresses.
              If advertising only an IPv6 address, the value of ---p2p-advertised-port will be used.""",
+      hidden = true,
       arity = "1")
   private Integer p2pAdvertisedPortIpv6;
 
