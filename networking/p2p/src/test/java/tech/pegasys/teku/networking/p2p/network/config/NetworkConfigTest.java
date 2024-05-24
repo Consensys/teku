@@ -147,7 +147,7 @@ class NetworkConfigTest {
             () -> NetworkConfig.builder().networkInterfaces(List.of("0.0.0.0", "1.2.3.4")).build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage(
-            "Expected an IPv4 and an IPv6 address for --p2p-advertised-ips but only [IP_V6] was set");
+            "Expected an IPv4 and an IPv6 address for --p2p-interfaces but only [IP_V4] was set");
   }
 
   @Test
@@ -160,6 +160,6 @@ class NetworkConfigTest {
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage(
-            "Expected an IPv4 and an IPv6 address for --p2p-interfaces but only [IP_V6] was set");
+            "Expected an IPv4 and an IPv6 address for --p2p-advertised-ips but only [IP_V6] was set");
   }
 }
