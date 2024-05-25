@@ -198,10 +198,21 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final MutableBeaconState state,
       final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
+    final UInt64 slot = state.getSlot();
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
+
+    LOG.debug(
+        "process_execution_layer_withdrawal_request: {} execution layer withdrawal request to process from block at "
+            + "slot {}",
+        withdrawalRequests.size(),
+        slot);
 
     withdrawalRequests.forEach(
         withdrawalRequest -> {
+          LOG.debug(
+              "process_execution_layer_withdrawal_request: processing execution layer withdrawal request {}",
+              withdrawalRequest);
+
           // If partial withdrawal queue is full, only full exits are processed
           final boolean isFullExitRequest =
               withdrawalRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
@@ -209,12 +220,17 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
                   >= specConfigElectra.getPendingPartialWithdrawalsLimit();
           if (partialWithdrawalsQueueFull && !isFullExitRequest) {
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: partial withdrawal queue is full");
             return;
           }
 
           final Optional<Integer> maybeValidatorIndex =
               validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPublicKey());
           if (maybeValidatorIndex.isEmpty()) {
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: no matching validator for public key {}",
+                withdrawalRequest.getValidatorPublicKey());
             return;
           }
 
@@ -225,27 +241,44 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final boolean hasExecutionAddress =
               predicatesElectra.hasExecutionWithdrawalCredential(validator);
           if (!hasExecutionAddress) {
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: validator index {} does not have execution withdrawal "
+                    + "credentials set",
+                validatorIndex);
             return;
           }
 
           // Check withdrawalRequest source_address matches validator eth1 withdrawal credentials
-          final Bytes20 executionAddress =
+          final Bytes20 validatorExecutionAddress =
               new Bytes20(validator.getWithdrawalCredentials().slice(12));
+          final Bytes20 withdrawalRequestSourceAddress = withdrawalRequest.getSourceAddress();
           final boolean isCorrectSourceAddress =
-              executionAddress.equals(withdrawalRequest.getSourceAddress());
+              validatorExecutionAddress.equals(withdrawalRequestSourceAddress);
           if (!isCorrectSourceAddress) {
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: WithdrawalRequest source_address {} does not match "
+                    + "validator {} withdrawal credentials {}",
+                withdrawalRequestSourceAddress,
+                validatorIndex,
+                validatorExecutionAddress);
             return;
           }
 
           // Check if validator is active
           final boolean isValidatorActive = predicates.isActiveValidator(validator, currentEpoch);
           if (!isValidatorActive) {
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: Validator {} is not active",
+                validatorIndex);
             return;
           }
 
           // Check if validator has already initiated exit
           final boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
           if (hasInitiatedExit) {
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: Validator {} has already initiated exit",
+                validatorIndex);
             return;
           }
 
@@ -254,6 +287,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               currentEpoch.isGreaterThanOrEqualTo(
                   validator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()));
           if (!validatorActiveLongEnough) {
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: Validator {} is not active long enough",
+                validatorIndex);
             return;
           }
 
@@ -262,6 +298,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           if (isFullExitRequest) {
             // Only exit validator if it has no pending withdrawals in the queue
             if (pendingBalanceToWithdraw.isZero()) {
+              LOG.debug(
+                  "process_execution_layer_withdrawal_request: Initiating exit for validator {}",
+                  validatorIndex);
+
               beaconStateMutators.initiateValidatorExit(
                   state, validatorIndex, validatorExitContextSupplier);
               return;
@@ -291,6 +331,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                 beaconStateMutatorsElectra.computeExitEpochAndUpdateChurn(electraState, toWithdraw);
             final UInt64 withdrawableEpoch =
                 exitQueueEpoch.plus(specConfigElectra.getMinValidatorWithdrawabilityDelay());
+
+            LOG.debug(
+                "process_execution_layer_withdrawal_request: Creating pending partial withdrawal for validator {}",
+                validatorIndex);
 
             electraState
                 .getPendingPartialWithdrawals()
