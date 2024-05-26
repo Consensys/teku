@@ -54,7 +54,8 @@ class RemoteSpecLoader {
     } catch (final Throwable ex) {
       final String errMsg =
           String.format(
-              "Failed to retrieve network spec from beacon node endpoint '%s'.\nDetails: %s",
+              "Failed to retrieve network spec from beacon node endpoint '%s'.\nDetails: %s."
+                  + "\nEnsure local and remote software versions are up-to-date.",
               apiClient.getBaseEndpoint(), ex.getMessage());
       throw new InvalidConfigurationException(errMsg, ex);
     }
