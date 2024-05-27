@@ -114,14 +114,8 @@ public class CoreTypes {
     return stringBuilder().description(description).example(example).build();
   }
 
-  public static StringValueTypeDefinition<String> flag(
-      final String description, final String example) {
-    return stringBuilder()
-        .description(description)
-        .example(example)
-        .minLength(0)
-        .maxLength(0)
-        .build();
+  public static StringValueTypeDefinition<String> flag(final String description) {
+    return stringBuilder().description(description).minLength(0).maxLength(0).build();
   }
 
   private static StringTypeBuilder<String> stringBuilder() {
