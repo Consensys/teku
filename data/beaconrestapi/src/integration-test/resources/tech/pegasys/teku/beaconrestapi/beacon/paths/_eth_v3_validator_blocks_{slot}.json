@@ -35,11 +35,14 @@
       }
     }, {
       "name" : "skip_randao_verification",
+      "allowEmptyValue" : true,
       "in" : "query",
       "schema" : {
-        "type": "string",
+        "type" : "string",
         "description" : "Skip verification of the `randao_reveal` value. If this flag is set then the\n `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n  is a flag and does not take a value",
-        "example": "true"
+        "example" : "",
+        "minLength" : 0,
+        "maxLength" : 0
       }
     }, {
       "name" : "builder_boost_factor",
