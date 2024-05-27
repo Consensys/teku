@@ -85,6 +85,7 @@ public class EndpointMetadata {
   private final Map<String, StringValueTypeDefinition<?>> pathParams;
   private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryParams;
+  private final Map<String, StringValueTypeDefinition<?>> queryParamsAllowEmpty;
   private final Map<String, StringValueTypeDefinition<?>> queryListParams;
   private final Map<String, StringValueTypeDefinition<?>> requiredHeaders;
   private final Map<String, StringValueTypeDefinition<?>> headers;
@@ -105,6 +106,7 @@ public class EndpointMetadata {
       final List<String> tags,
       final Map<String, StringValueTypeDefinition<?>> pathParams,
       final Map<String, StringValueTypeDefinition<?>> queryParams,
+      final Map<String, StringValueTypeDefinition<?>> queryParamsAllowEmpty,
       final Map<String, StringValueTypeDefinition<?>> requiredQueryParams,
       final Map<String, StringValueTypeDefinition<?>> queryListParams,
       final Map<String, StringValueTypeDefinition<?>> requiredHeaders,
@@ -124,6 +126,7 @@ public class EndpointMetadata {
     this.tags = tags;
     this.pathParams = pathParams;
     this.queryParams = queryParams;
+    this.queryParamsAllowEmpty = queryParamsAllowEmpty;
     this.requiredQueryParams = requiredQueryParams;
     this.queryListParams = queryListParams;
     this.requiredHeaders = requiredHeaders;
@@ -223,12 +226,15 @@ public class EndpointMetadata {
     checkArgument(
         requiredQueryParams.containsKey(parameterName)
             || queryParams.containsKey(parameterName)
+            || queryParamsAllowEmpty.containsKey(parameterName)
             || queryListParams.containsKey(parameterName),
         "Query parameter " + parameterName + " was not found in endpoint metadata");
     if (requiredQueryParams.containsKey(parameterName)) {
       return requiredQueryParams.get(parameterName);
     } else if (queryParams.containsKey(parameterName)) {
       return queryParams.get(parameterName);
+    } else if (queryParamsAllowEmpty.containsKey(parameterName)) {
+      return queryParamsAllowEmpty.get(parameterName);
     }
 
     return queryListParams.get(parameterName);
@@ -310,17 +316,19 @@ public class EndpointMetadata {
     }
     if (pathParams.size() > 0
         || queryParams.size() > 0
+        || queryParamsAllowEmpty.size() > 0
         || requiredQueryParams.size() > 0
         || queryListParams.size() > 0
         || requiredHeaders.size() > 0
         || headers.size() > 0) {
       gen.writeArrayFieldStart("parameters");
-      writeParameters(gen, pathParams, "path", true, false);
-      writeParameters(gen, requiredQueryParams, "query", true, false);
-      writeParameters(gen, queryParams, "query", false, false);
-      writeParameters(gen, queryListParams, "query", false, true);
-      writeParameters(gen, requiredHeaders, "header", true, false);
-      writeParameters(gen, headers, "header", false, false);
+      writeParameters(gen, pathParams, "path", true, false, false);
+      writeParameters(gen, requiredQueryParams, "query", true, false, false);
+      writeParameters(gen, queryParams, "query", false, false, false);
+      writeParameters(gen, queryParamsAllowEmpty, "query", false, false, true);
+      writeParameters(gen, queryListParams, "query", false, true, false);
+      writeParameters(gen, requiredHeaders, "header", true, false, false);
+      writeParameters(gen, headers, "header", false, false, false);
       gen.writeEndArray();
     }
 
@@ -364,13 +372,17 @@ public class EndpointMetadata {
       final Map<String, StringValueTypeDefinition<?>> fields,
       final String parameterUsedIn,
       final boolean isMandatoryField,
-      final boolean isList)
+      final boolean isList,
+      final boolean allowEmptyValue)
       throws IOException {
     for (Map.Entry<String, StringValueTypeDefinition<?>> entry : fields.entrySet()) {
       gen.writeStartObject();
       gen.writeObjectField("name", entry.getKey());
       if (isMandatoryField) {
         gen.writeObjectField("required", true);
+      }
+      if (allowEmptyValue) {
+        gen.writeObjectField("allowEmptyValue", true);
       }
       gen.writeObjectField("in", parameterUsedIn);
       gen.writeFieldName("schema");
@@ -384,6 +396,7 @@ public class EndpointMetadata {
       } else { // Handle regular parameter
         entry.getValue().serializeOpenApiTypeOrReference(gen);
       }
+
       gen.writeEndObject();
     }
   }
@@ -430,6 +443,8 @@ public class EndpointMetadata {
     private boolean requiredRequestBody = true;
     private final Map<String, StringValueTypeDefinition<?>> pathParams = new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryParams = new LinkedHashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> queryParamsAllowEmpty =
+        new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryListParams = new LinkedHashMap<>();
@@ -465,6 +480,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder queryParam(final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
       if (queryParams.containsKey(param)
+          || queryParamsAllowEmpty.containsKey(param)
           || requiredQueryParams.containsKey(param)
           || queryListParams.containsKey(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
@@ -473,10 +489,24 @@ public class EndpointMetadata {
       return this;
     }
 
+    public EndpointMetaDataBuilder queryParamAllowsEmpty(
+        final ParameterMetadata<?> parameterMetadata) {
+      final String param = parameterMetadata.getName();
+      if (queryParams.containsKey(param)
+          || queryParamsAllowEmpty.containsKey(param)
+          || requiredQueryParams.containsKey(param)
+          || queryListParams.containsKey(param)) {
+        throw new IllegalStateException("Query parameters already contains " + param);
+      }
+      queryParamsAllowEmpty.put(parameterMetadata.getName(), parameterMetadata.getType());
+      return this;
+    }
+
     public EndpointMetaDataBuilder queryParamRequired(
         final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
       if (queryParams.containsKey(param)
+          || queryParamsAllowEmpty.containsKey(param)
           || requiredQueryParams.containsKey(param)
           || queryListParams.containsKey(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
@@ -488,6 +518,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder queryListParam(final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
       if (queryParams.containsKey(param)
+          || queryParamsAllowEmpty.containsKey(param)
           || requiredQueryParams.containsKey(param)
           || queryListParams.containsKey(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
@@ -752,6 +783,7 @@ public class EndpointMetadata {
           tags,
           pathParams,
           queryParams,
+          queryParamsAllowEmpty,
           requiredQueryParams,
           queryListParams,
           requiredHeaders,
