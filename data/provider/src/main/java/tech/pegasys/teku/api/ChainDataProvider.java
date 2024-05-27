@@ -766,4 +766,13 @@ public class ChainDataProvider {
         .getState()
         .thenApply(maybeStateData -> maybeStateData.map(blockData -> blockData.map(mapper)));
   }
+
+  public SafeFuture<Optional<UInt64>> getFinalizedStateSlot(final UInt64 beforeSlot) {
+    return combinedChainDataClient
+        .getLatestAvailableFinalizedState(beforeSlot)
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState::getSlot));
+  }
 }
