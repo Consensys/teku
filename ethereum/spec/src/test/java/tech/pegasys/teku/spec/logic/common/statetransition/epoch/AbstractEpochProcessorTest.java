@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -45,26 +44,26 @@ class AbstractEpochProcessorTest {
   private final EpochProcessorCapella epochProcessor =
       (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
 
-  private final int throttlingPeriod = 1; // expect maximum of one call per epoch
+  private final int throttlingPeriod = 1; // expect maximum of one call per second
   private static final Logger LOGGER = mock(Logger.class);
   private final Throttler<Logger> loggerThrottler = spyLogThrottler(LOGGER, throttlingPeriod);
   private final BeaconState state = createStateInInactivityLeak();
-  private final UInt64 currentEpoch = spec.getCurrentEpoch(state);
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(state.getSlot());
 
   @Test
   public void shouldThrottleInactivityLeakLogs() throws Exception {
-    // First two processEpoch calls within the same epoch
+    // First two processEpoch calls within the same second
     epochProcessor.processEpoch(state);
     epochProcessor.processEpoch(advanceNSlots(state, 1));
-    // Third processEpoch call in the next epoch
+    // Wait 1 second
+    Thread.sleep(1000);
+    // Third processEpoch call after one second
     epochProcessor.processEpoch(advanceNSlots(state, slotsPerEpoch));
 
     // Logger throttler called 3 times
-    verify(loggerThrottler, times(2)).invoke(eq(currentEpoch), any());
-    verify(loggerThrottler, times(1)).invoke(eq(currentEpoch.increment()), any());
+    verify(loggerThrottler, times(3)).invoke(any(), any());
 
-    // Real logger only called 2 times (one per epoch)
+    // Real logger only called 2 times (one per second)
     verify(LOGGER, times(2)).info(anyString());
   }
 

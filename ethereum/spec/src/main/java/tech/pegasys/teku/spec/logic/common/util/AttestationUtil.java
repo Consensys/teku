@@ -102,7 +102,7 @@ public abstract class AttestationUtil {
 
     final IndexedAttestationSchema indexedAttestationSchema =
         schemaDefinitions.getIndexedAttestationSchema();
-    specConfig.getMaxCommitteesPerSlot();
+
     return indexedAttestationSchema.create(
         attestingIndices.stream()
             .sorted()
@@ -123,11 +123,9 @@ public abstract class AttestationUtil {
    *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#get_attesting_indices</a>
    */
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
-    return IntList.of(streamAttestingIndices(state, attestation).toArray());
-  }
-
-  public IntStream streamAttestingIndices(final BeaconState state, final Attestation attestation) {
-    return streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits());
+    return IntList.of(
+        streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits())
+            .toArray());
   }
 
   public IntStream streamAttestingIndices(
@@ -189,7 +187,7 @@ public abstract class AttestationUtil {
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
-                attestation.saveCommitteeShufflingSeed(state);
+                attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 attestation.setValidIndexedAttestation();
               }
               return result;

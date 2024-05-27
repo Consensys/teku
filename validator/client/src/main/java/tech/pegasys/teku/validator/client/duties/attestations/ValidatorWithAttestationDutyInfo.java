@@ -31,16 +31,4 @@ record ValidatorWithAttestationDutyInfo(
   public BLSPublicKey publicKey() {
     return validator.getPublicKey();
   }
-
-  @Override
-  public String toString() {
-    return "ValidatorWithAttestationDutyInfo{"
-        + "validator="
-        + validator
-        + ", committeePosition="
-        + committeePosition
-        + ", validatorIndex="
-        + validatorIndex
-        + '}';
-  }
 }

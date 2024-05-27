@@ -187,7 +187,7 @@ public class BeaconStateUtil {
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
-    final UInt64 committeeIndex = attestation.getData().getIndex();
+    final UInt64 committeeIndex = attestation.getFirstCommitteeIndex();
     return computeSubnetForCommittee(state, attestationSlot, committeeIndex);
   }
 

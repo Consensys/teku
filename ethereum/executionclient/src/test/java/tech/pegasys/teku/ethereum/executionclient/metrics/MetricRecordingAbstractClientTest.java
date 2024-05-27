@@ -68,7 +68,7 @@ public class MetricRecordingAbstractClientTest {
 
   @Test
   public void shouldCountRequestWithResponseFailure() {
-    final Response<String> response = new Response<>(null, "error");
+    final Response<String> response = Response.withErrorMessage("error");
     setupResponse(SafeFuture.completedFuture(response));
     final SafeFuture<Response<String>> result = clientTest.testMethod("test");
 

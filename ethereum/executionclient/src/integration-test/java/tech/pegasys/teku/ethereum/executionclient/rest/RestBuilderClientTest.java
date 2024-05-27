@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -61,7 +62,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 @TestSpecContext(
-    milestone = {BELLATRIX, CAPELLA, DENEB},
+    milestone = {BELLATRIX, CAPELLA, DENEB, ELECTRA},
     network = Eth2Network.MAINNET)
 class RestBuilderClientTest {
 

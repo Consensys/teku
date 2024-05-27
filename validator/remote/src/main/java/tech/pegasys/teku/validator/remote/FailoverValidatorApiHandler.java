@@ -183,9 +183,11 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.createAggregate(slot, attestationHashTreeRoot),
+        apiChannel -> apiChannel.createAggregate(slot, attestationHashTreeRoot, committeeIndex),
         BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD);
   }
 

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -65,7 +67,8 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         extraData,
         baseFeePerGas,
         blockHash);
-    this.transactions = transactions != null ? transactions : List.of();
+    checkNotNull(transactions, "transactions");
+    this.transactions = transactions;
   }
 
   public ExecutionPayload asInternalExecutionPayload(
@@ -110,7 +113,11 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         executionPayload.getExtraData(),
         executionPayload.getBaseFeePerGas(),
         executionPayload.getBlockHash(),
-        executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList());
+        getTransactions(executionPayload));
+  }
+
+  public static List<Bytes> getTransactions(final ExecutionPayload executionPayload) {
+    return executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList();
   }
 
   @Override

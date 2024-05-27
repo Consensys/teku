@@ -71,7 +71,7 @@ public class GetAggregateAttestation extends RestApiEndpoint {
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
 
     final SafeFuture<Optional<Attestation>> future =
-        provider.createAggregate(slot, beaconBlockRoot);
+        provider.createAggregate(slot, beaconBlockRoot, Optional.empty());
 
     request.respondAsync(
         future.thenApply(

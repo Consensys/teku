@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.time;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,21 @@ public class ThrottlerTest {
   private final AtomicInteger resource = new AtomicInteger(0);
   private final UInt64 throttingPeriod = UInt64.valueOf(10);
   private final Throttler<AtomicInteger> throttler = new Throttler<>(resource, throttingPeriod);
+
+  @Test
+  public void init_mustThrowWhenThrottlingPeriodIsNull() {
+    assertThatThrownBy(() -> new Throttler<>(resource, null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("Missing throttling period");
+  }
+
+  @Test
+  public void invoke_mustThrowWhenCurrentTimeIsNull() {
+    assertThatThrownBy(() -> throttler.invoke(null, AtomicInteger::incrementAndGet))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("Missing current time");
+    assertThat(resource.get()).isEqualTo(0);
+  }
 
   @Test
   public void invoke_initialInvocationShouldRun_atTimeZero() {

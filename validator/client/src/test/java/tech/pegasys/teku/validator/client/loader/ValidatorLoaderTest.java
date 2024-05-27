@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -776,31 +777,40 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldThrowWhenAnyErrorOccurs(@TempDir Path tempDir) throws Exception {
-    writeKeystore(tempDir);
-    writeBadKeystore(tempDir);
-    final ValidatorConfig config =
-        ValidatorConfig.builder()
-            .validatorKeys(
-                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
-            .build();
-    final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(
-            spec,
-            config,
-            disabledInteropConfig,
-            httpClientFactory,
-            slashingProtector,
-            slashingProtectionLogger,
-            publicKeyLoader,
-            asyncRunner,
-            metricsSystem,
-            Optional.empty(),
-            (publicKey) -> Optional.empty());
+    final ValidatorLoader validatorLoader;
+    try {
+      writeKeystore(tempDir);
+      writeBadKeystore(tempDir);
+      final ValidatorConfig config =
+          ValidatorConfig.builder()
+              .validatorKeys(
+                  List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
+              .build();
+      validatorLoader =
+          ValidatorLoader.create(
+              spec,
+              config,
+              disabledInteropConfig,
+              httpClientFactory,
+              slashingProtector,
+              slashingProtectionLogger,
+              publicKeyLoader,
+              asyncRunner,
+              metricsSystem,
+              Optional.empty(),
+              (publicKey) -> Optional.empty());
 
-    assertThatThrownBy(validatorLoader::loadValidators)
-        .isExactlyInstanceOf(InvalidConfigurationException.class);
+      assertThatThrownBy(validatorLoader::loadValidators)
+          .isExactlyInstanceOf(InvalidConfigurationException.class);
+    } finally {
+      // Ensure all files and directories within tempDir are deleted
+      // attempt to workaround issue related to @TempDir and Windows file system
+      // https://github.com/junit-team/junit5/issues/2811
+      try (Stream<Path> stream = Files.walk(tempDir)) {
+        stream.map(Path::toFile).forEach(File::delete);
+      }
+    }
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
-
     assertThat(validators.getValidatorCount()).isEqualTo(0);
     checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }

@@ -41,6 +41,10 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
     return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()));
   }
 
+  default Optional<SszBitvector> createEmptyCommitteeBits() {
+    return getCommitteeBitsSchema().map(SszBitvectorSchema::ofBits);
+  }
+
   @SuppressWarnings("unchecked")
   default AttestationSchema<Attestation> castTypeToAttestationSchema() {
     return (AttestationSchema<Attestation>) this;
@@ -53,4 +57,6 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
   SszBitlistSchema<?> getAggregationBitsSchema();
 
   Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema();
+
+  boolean requiresCommitteeBits();
 }

@@ -476,13 +476,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return SafeFuture.completedFuture(
         attestationPool
-            .createAggregateFor(attestationHashTreeRoot)
+            .createAggregateFor(attestationHashTreeRoot, committeeIndex)
             .filter(attestation -> attestation.getData().getSlot().equals(slot))
             .map(ValidatableAttestation::getAttestation));
   }

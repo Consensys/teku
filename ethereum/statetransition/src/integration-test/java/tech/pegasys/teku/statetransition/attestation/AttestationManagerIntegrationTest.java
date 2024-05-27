@@ -75,7 +75,7 @@ class AttestationManagerIntegrationTest {
 
   private final AggregatingAttestationPool attestationPool =
       new AggregatingAttestationPool(
-          spec, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+          spec, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
   private final ForkChoice forkChoice =

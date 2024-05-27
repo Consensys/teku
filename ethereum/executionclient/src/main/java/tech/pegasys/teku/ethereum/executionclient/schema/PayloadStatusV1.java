@@ -37,7 +37,7 @@ public class PayloadStatusV1 {
       final @JsonProperty("status") ExecutionPayloadStatus status,
       final @JsonProperty("latestValidHash") Bytes32 latestValidHash,
       final @JsonProperty("validationError") String validationError) {
-    checkNotNull(status, "status cannot be null");
+    checkNotNull(status, "status");
     this.status = status;
     this.latestValidHash = latestValidHash;
     this.validationError = validationError;

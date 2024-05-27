@@ -99,6 +99,36 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
 
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
+  void or_testEqualList(SszBitvector bitvector) {
+    SszBitvector res = bitvector.or(bitvector);
+    assertThat(res).isEqualTo(bitvector);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void or_shouldThrowIfBitvectorSizeIsLarger(SszBitvector bitvector) {
+    SszBitvectorSchema<SszBitvector> largerSchema =
+        SszBitvectorSchema.create(bitvector.getSchema().getMaxLength() + 1);
+    SszBitvector largerBitvector = largerSchema.ofBits(bitvector.size() - 1, bitvector.size());
+    assertThatThrownBy(() -> bitvector.or(largerBitvector))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void or_shouldThrowIfBitvectorSizeIsSmaller(SszBitvector bitvector) {
+    if (bitvector.getSchema().getMaxLength() == 1) {
+      return;
+    }
+    SszBitvectorSchema<SszBitvector> smallerSchema =
+        SszBitvectorSchema.create(bitvector.getSchema().getMaxLength() - 1);
+    SszBitvector smallerBitvector = smallerSchema.ofBits();
+    assertThatThrownBy(() -> bitvector.or(smallerBitvector))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
   void getBitCount_shouldReturnCorrectCount(SszBitvector bitvector) {
     long bitCount = bitvector.stream().filter(AbstractSszPrimitive::get).count();
     assertThat(bitvector.getBitCount()).isEqualTo(bitCount);
@@ -175,6 +205,25 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
       assertThat(vector.getBit(i)).isEqualTo(bitsIndices.contains(i));
     }
     assertThat(vector.getBitCount()).isEqualTo(bitsIndices.size());
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void testOr(SszBitvector bitvector) {
+    SszBitvector orVector = random(bitvector.getSchema());
+    SszBitvector res = bitvector.or(orVector);
+    assertThat(res.size()).isEqualTo(bitvector.size());
+    assertThat(res.getSchema()).isEqualTo(bitvector.getSchema());
+    for (int i = 0; i < bitvector.size(); i++) {
+      assertThat(res.getBit(i)).isEqualTo(bitvector.getBit(i) || orVector.getBit(i));
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void testOrWithEmptyBitvector(SszBitvector bitvector) {
+    SszBitvector empty = bitvector.getSchema().ofBits();
+    assertThat(bitvector.or(empty)).isEqualTo(bitvector);
   }
 
   @ParameterizedTest

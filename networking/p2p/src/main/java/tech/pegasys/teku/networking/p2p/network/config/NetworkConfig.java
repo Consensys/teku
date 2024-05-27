@@ -16,6 +16,9 @@ package tech.pegasys.teku.networking.p2p.network.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
+import java.io.UncheckedIOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -130,40 +133,51 @@ public class NetworkConfig {
     try {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
       if (advertisedAddress.isAnyLocalAddress()) {
-        return getSiteLocalAddress();
+        final boolean useIPV6 = advertisedAddress instanceof Inet6Address;
+        return getSiteLocalOrUniqueLocalAddress(useIPV6);
       } else {
         return ipAddress;
       }
-    } catch (UnknownHostException err) {
-      LOG.error(
-          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
-      return ipAddress;
+    } catch (final UnknownHostException ex) {
+      throw new UncheckedIOException(ex);
     }
   }
 
-  private String getSiteLocalAddress() throws UnknownHostException {
+  private String getSiteLocalOrUniqueLocalAddress(final boolean useIPV6)
+      throws UnknownHostException {
     try {
-      final InetAddress address = InetAddress.getLocalHost();
-      if (address.isAnyLocalAddress()) {
-        return address.getHostAddress();
-      }
       final Enumeration<NetworkInterface> networkInterfaces =
           NetworkInterface.getNetworkInterfaces();
       while (networkInterfaces.hasMoreElements()) {
-        NetworkInterface n = networkInterfaces.nextElement();
-        final Enumeration<InetAddress> inetAddresses = n.getInetAddresses();
+        final NetworkInterface networkInterface = networkInterfaces.nextElement();
+        final Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
         while (inetAddresses.hasMoreElements()) {
-          InetAddress i = inetAddresses.nextElement();
-          if (i.isSiteLocalAddress()) {
-            return i.getHostAddress();
+          final InetAddress inetAddress = inetAddresses.nextElement();
+          // IPv4 (include only site local addresses)
+          if (!useIPV6 && inetAddress instanceof Inet4Address && inetAddress.isSiteLocalAddress()) {
+            return inetAddress.getHostAddress();
+          }
+          // IPv6 (include only site local addresses or ULAs)
+          if (useIPV6
+              && inetAddress instanceof Inet6Address
+              && (inetAddress.isSiteLocalAddress() || isUniqueLocalAddress(inetAddress))) {
+            return inetAddress.getHostAddress();
           }
         }
       }
-    } catch (SocketException e) {
-      LOG.error("Failed to find site local address", e);
-      throw new UnknownHostException(e.getMessage());
+    } catch (final SocketException ex) {
+      LOG.error("Failed to find site local or unique local address", ex);
+      throw new UnknownHostException(ex.getMessage());
     }
-    throw new UnknownHostException("Unable to determine local IP Address");
+    throw new UnknownHostException(
+        String.format("Unable to determine local %s Address", useIPV6 ? "IPv6" : "IPv4"));
+  }
+
+  private boolean isUniqueLocalAddress(final InetAddress inetAddress) {
+    // Check the first byte to determine if it's in the fc00::/7 range
+    // Unique local IPv6 addresses start with 0xfc or 0xfd
+    final int firstByte = inetAddress.getAddress()[0] & 0xff; // Convert to unsigned
+    return (firstByte == 0xfc || firstByte == 0xfd);
   }
 
   public static class Builder {

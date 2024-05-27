@@ -68,7 +68,17 @@ public class AttestationPhase0
   }
 
   @Override
+  public UInt64 getFirstCommitteeIndex() {
+    return getField1().getIndex();
+  }
+
+  @Override
   public BLSSignature getAggregateSignature() {
     return getField2().getSignature();
+  }
+
+  @Override
+  public boolean requiresCommitteeBits() {
+    return false;
   }
 }

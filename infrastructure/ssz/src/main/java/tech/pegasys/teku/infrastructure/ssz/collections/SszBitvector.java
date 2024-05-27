@@ -38,6 +38,10 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit>, SszBi
 
   SszBitvector withBit(int i);
 
+  SszBitvector or(SszBitvector other);
+
+  SszBitvector and(SszBitvector other);
+
   /** Returns individual bit value */
   boolean getBit(int i);
 

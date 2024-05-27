@@ -34,4 +34,9 @@ class ConfigProviderTest {
     final SpecConfig expectedConfig = spec.getGenesisSpecConfig();
     assertThat(specConfig).isEqualToComparingFieldByField(expectedConfig);
   }
+
+  @Test
+  void nullInNullOut() {
+    assertThat(ConfigProvider.formatValue(null)).isNull();
+  }
 }

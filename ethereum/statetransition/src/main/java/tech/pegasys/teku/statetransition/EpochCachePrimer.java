@@ -93,12 +93,9 @@ public class EpochCachePrimer {
     final UInt64 lookaheadEpoch =
         stateEpoch.plus(spec.getSpecConfig(stateEpoch).getMinSeedLookahead());
     final UInt64 lookAheadEpochStartSlot = spec.computeStartSlotAtEpoch(lookaheadEpoch);
-    final UInt64 committeeCount = spec.getCommitteeCountPerSlot(state, lookaheadEpoch);
     UInt64.range(lookAheadEpochStartSlot, spec.computeStartSlotAtEpoch(lookaheadEpoch.plus(1)))
-        .forEach(
-            slot ->
-                UInt64.range(UInt64.ZERO, committeeCount)
-                    .forEach(index -> spec.getBeaconCommittee(state, slot, index)));
+        // Note: calculating the committeesSize for a slot also calculates the committees
+        .forEach(slot -> spec.getBeaconCommitteesSize(state, slot));
   }
 
   private void primeJustifiedState(final Checkpoint justifiedCheckpoint) {
