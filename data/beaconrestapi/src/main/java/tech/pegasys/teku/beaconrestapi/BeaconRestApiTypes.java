@@ -144,7 +144,7 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<String> SKIP_RANDAO_VERIFICATION_PARAMETER =
       new ParameterMetadata<>(
           RestApiConstants.SKIP_RANDAO_VERIFICATION,
-          CoreTypes.string(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION, "true"));
+          CoreTypes.flag(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION, ""));
 
   public static final ParameterMetadata<UInt64> BUILDER_BOOST_FACTOR_PARAMETER =
       new ParameterMetadata<>(
