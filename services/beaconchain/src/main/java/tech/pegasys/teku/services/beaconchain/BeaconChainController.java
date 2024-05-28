@@ -758,7 +758,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .build();
   }
 
-  private boolean getLivenessTrackingEnabled(BeaconChainConfiguration beaconConfig) {
+  private boolean getLivenessTrackingEnabled(final BeaconChainConfiguration beaconConfig) {
     return beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()
         || beaconConfig.validatorConfig().isDoppelgangerDetectionEnabled();
   }

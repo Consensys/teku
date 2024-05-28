@@ -56,7 +56,7 @@ public class AttestationElectraSchema
   }
 
   @Override
-  public AttestationElectra createFromBackingNode(TreeNode node) {
+  public AttestationElectra createFromBackingNode(final TreeNode node) {
     return new AttestationElectra(this, node);
   }
 

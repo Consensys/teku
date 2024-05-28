@@ -39,7 +39,7 @@ public class NoOpKeyManager implements KeyManager {
   }
 
   @Override
-  public Optional<Validator> getValidatorByPublicKey(BLSPublicKey publicKey) {
+  public Optional<Validator> getValidatorByPublicKey(final BLSPublicKey publicKey) {
     return Optional.empty();
   }
 
@@ -50,7 +50,7 @@ public class NoOpKeyManager implements KeyManager {
   }
 
   @Override
-  public DeleteRemoteKeysResponse deleteExternalValidators(List<BLSPublicKey> validators) {
+  public DeleteRemoteKeysResponse deleteExternalValidators(final List<BLSPublicKey> validators) {
     return new DeleteRemoteKeysResponse(Collections.emptyList());
   }
 
@@ -66,7 +66,7 @@ public class NoOpKeyManager implements KeyManager {
 
   @Override
   public List<PostKeyResult> importExternalValidators(
-      List<ExternalValidator> validators,
+      final List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
       final SlashingRiskAction doppelgangerDetectionAction) {
     return Collections.emptyList();

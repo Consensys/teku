@@ -38,7 +38,7 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   private final NodeId nodeId = new MockNodeId();
 
   @Override
-  public SafeFuture<Peer> connect(PeerAddress peer) {
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 

@@ -107,7 +107,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   }
 
   @Override
-  public SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message) {
+  public SafeFuture<ValidationResult> handleMessage(final PreparedGossipMessage message) {
     return SafeFuture.of(() -> deserialize(message))
         .thenCompose(
             deserialized -> {
@@ -205,7 +205,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     return networkingConfig.getGossipMaxSize();
   }
 
-  protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {
+  protected MessageT deserialize(final PreparedGossipMessage message) throws DecodingException {
     return getGossipEncoding().decodeMessage(message, getMessageType());
   }
 

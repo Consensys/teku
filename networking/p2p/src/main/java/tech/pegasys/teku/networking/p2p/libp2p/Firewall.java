@@ -35,26 +35,27 @@ public class Firewall extends ChannelInboundHandlerAdapter {
 
   private final Duration writeTimeout;
 
-  public Firewall(Duration writeTimeout) {
+  public Firewall(final Duration writeTimeout) {
     this.writeTimeout = writeTimeout;
   }
 
   @Override
-  public void handlerAdded(ChannelHandlerContext ctx) {
+  public void handlerAdded(final ChannelHandlerContext ctx) {
     ctx.channel().config().setWriteBufferWaterMark(new WriteBufferWaterMark(100, 1024));
     ctx.pipeline().addLast(new WriteTimeoutHandler(writeTimeout.toMillis(), TimeUnit.MILLISECONDS));
     ctx.pipeline().addLast(new FirewallExceptionHandler());
   }
 
   @Override
-  public void channelWritabilityChanged(ChannelHandlerContext ctx) {
+  public void channelWritabilityChanged(final ChannelHandlerContext ctx) {
     ctx.channel().config().setAutoRead(ctx.channel().isWritable());
     ctx.fireChannelWritabilityChanged();
   }
 
   class FirewallExceptionHandler extends ChannelInboundHandlerAdapter {
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause)
+        throws Exception {
       if (cause instanceof WriteTimeoutException) {
         LOG.debug("Firewall closed channel by write timeout. No writes during " + writeTimeout);
       } else {

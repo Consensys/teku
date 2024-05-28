@@ -37,8 +37,8 @@ public class BeaconBlockBodyFuzzInput
   }
 
   public BeaconBlockBodyFuzzInput(
-      ContainerSchema2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyCapella> type,
-      TreeNode backingNode) {
+      final ContainerSchema2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyCapella> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

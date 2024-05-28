@@ -258,7 +258,7 @@ public class ConnectionManager extends Service {
     peerPredicates.add(predicate);
   }
 
-  private boolean isPeerValid(DiscoveryPeer peer) {
+  private boolean isPeerValid(final DiscoveryPeer peer) {
     return !peer.getNodeAddress().getAddress().isAnyLocalAddress()
         && peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
   }

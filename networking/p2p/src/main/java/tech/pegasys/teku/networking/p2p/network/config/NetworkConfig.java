@@ -235,7 +235,7 @@ public class NetworkConfig {
       return this;
     }
 
-    public Builder setPrivateKeySource(PrivateKeySource privateKeySource) {
+    public Builder setPrivateKeySource(final PrivateKeySource privateKeySource) {
       checkNotNull(privateKeySource);
       this.privateKeySource = Optional.of(privateKeySource);
       return this;

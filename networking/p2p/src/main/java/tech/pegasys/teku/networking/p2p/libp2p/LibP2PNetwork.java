@@ -60,13 +60,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final int listenPort;
 
   protected LibP2PNetwork(
-      PrivKey privKey,
-      NodeId nodeId,
-      Host host,
-      PeerManager peerManager,
-      Multiaddr advertisedAddr,
-      GossipNetwork gossipNetwork,
-      int listenPort) {
+      final PrivKey privKey,
+      final NodeId nodeId,
+      final Host host,
+      final PeerManager peerManager,
+      final Multiaddr advertisedAddr,
+      final GossipNetwork gossipNetwork,
+      final int listenPort) {
     this.privKey = privKey;
     this.nodeId = nodeId;
     this.host = host;

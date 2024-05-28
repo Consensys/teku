@@ -41,7 +41,7 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
   }
 
   @Override
-  public void respondAndCompleteSuccessfully(TResponse data) {
+  public void respondAndCompleteSuccessfully(final TResponse data) {
     respond(data)
         .thenRun(this::completeSuccessfully)
         .finish(

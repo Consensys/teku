@@ -196,7 +196,7 @@ public class LibP2PNetworkBuilder {
   }
 
   protected List<ProtocolBinding<?>> getDefaultProtocols(
-      PubKey nodePubKey, Multiaddr advertisedAddr) {
+      final PubKey nodePubKey, final Multiaddr advertisedAddr) {
     final Ping ping = new Ping();
     IdentifyOuterClass.Identify identifyMsg =
         IdentifyOuterClass.Identify.newBuilder()
@@ -216,12 +216,12 @@ public class LibP2PNetworkBuilder {
     return LibP2PGossipNetworkBuilder.create();
   }
 
-  public LibP2PNetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+  public LibP2PNetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
     this.asyncRunner = asyncRunner;
     return this;
   }
 
-  public LibP2PNetworkBuilder config(NetworkConfig config) {
+  public LibP2PNetworkBuilder config(final NetworkConfig config) {
     this.config = config;
     return this;
   }
@@ -232,53 +232,53 @@ public class LibP2PNetworkBuilder {
     return this;
   }
 
-  public LibP2PNetworkBuilder privateKeyProvider(PrivateKeyProvider privateKeyProvider) {
+  public LibP2PNetworkBuilder privateKeyProvider(final PrivateKeyProvider privateKeyProvider) {
     this.privateKeyProvider = privateKeyProvider;
     return this;
   }
 
-  public LibP2PNetworkBuilder reputationManager(ReputationManager reputationManager) {
+  public LibP2PNetworkBuilder reputationManager(final ReputationManager reputationManager) {
     this.reputationManager = reputationManager;
     return this;
   }
 
-  public LibP2PNetworkBuilder metricsSystem(MetricsSystem metricsSystem) {
+  public LibP2PNetworkBuilder metricsSystem(final MetricsSystem metricsSystem) {
     this.metricsSystem = metricsSystem;
     return this;
   }
 
-  public LibP2PNetworkBuilder rpcMethods(List<RpcMethod<?, ?, ?>> rpcMethods) {
+  public LibP2PNetworkBuilder rpcMethods(final List<RpcMethod<?, ?, ?>> rpcMethods) {
     this.rpcMethods = rpcMethods;
     return this;
   }
 
-  public LibP2PNetworkBuilder peerHandlers(List<PeerHandler> peerHandlers) {
+  public LibP2PNetworkBuilder peerHandlers(final List<PeerHandler> peerHandlers) {
     this.peerHandlers = peerHandlers;
     return this;
   }
 
   public LibP2PNetworkBuilder preparedGossipMessageFactory(
-      PreparedGossipMessageFactory preparedGossipMessageFactory) {
+      final PreparedGossipMessageFactory preparedGossipMessageFactory) {
     this.preparedGossipMessageFactory = preparedGossipMessageFactory;
     return this;
   }
 
-  public LibP2PNetworkBuilder gossipTopicFilter(GossipTopicFilter gossipTopicFilter) {
+  public LibP2PNetworkBuilder gossipTopicFilter(final GossipTopicFilter gossipTopicFilter) {
     this.gossipTopicFilter = gossipTopicFilter;
     return this;
   }
 
-  public LibP2PNetworkBuilder hostBuilderDefaults(Defaults hostBuilderDefaults) {
+  public LibP2PNetworkBuilder hostBuilderDefaults(final Defaults hostBuilderDefaults) {
     this.hostBuilderDefaults = hostBuilderDefaults;
     return this;
   }
 
-  public LibP2PNetworkBuilder firewall(Firewall firewall) {
+  public LibP2PNetworkBuilder firewall(final Firewall firewall) {
     this.firewall = firewall;
     return this;
   }
 
-  public LibP2PNetworkBuilder muxFirewall(MuxFirewall muxFirewall) {
+  public LibP2PNetworkBuilder muxFirewall(final MuxFirewall muxFirewall) {
     this.muxFirewall = muxFirewall;
     return this;
   }

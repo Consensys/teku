@@ -281,7 +281,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         : spec.getBlockRootAtSlot(stateAndBlock.getState(), epochStartSlot);
   }
 
-  static long getLongFromRoot(Bytes32 root) {
+  static long getLongFromRoot(final Bytes32 root) {
     return root.getLong(24, ByteOrder.LITTLE_ENDIAN);
   }
 

@@ -140,7 +140,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     return files == null ? List.of() : Arrays.asList(files);
   }
 
-  private ValidatorProvider getValidatorProvider(File file) {
+  private ValidatorProvider getValidatorProvider(final File file) {
     try {
       String content = Files.readString(file.toPath());
       ExternalValidator externalValidator = parse(content, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);
@@ -177,7 +177,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     return delete(publicKey);
   }
 
-  private DeleteKeyResult delete(BLSPublicKey publicKey) {
+  private DeleteKeyResult delete(final BLSPublicKey publicKey) {
     final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
     final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
     final Path path =

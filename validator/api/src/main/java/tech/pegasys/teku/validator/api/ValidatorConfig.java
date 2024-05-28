@@ -149,8 +149,8 @@ public class ValidatorConfig {
       final int executorMaxQueueSize,
       final int executorThreads,
       final Optional<String> sentryNodeConfigurationFile,
-      boolean isLocalSlashingProtectionSynchronizedModeEnabled,
-      boolean dvtSelectionsEndpointEnabled) {
+      final boolean isLocalSlashingProtectionSynchronizedModeEnabled,
+      final boolean dvtSelectionsEndpointEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -421,13 +421,13 @@ public class ValidatorConfig {
 
     private Builder() {}
 
-    public Builder validatorKeys(List<String> validatorKeys) {
+    public Builder validatorKeys(final List<String> validatorKeys) {
       this.validatorKeys = validatorKeys;
       return this;
     }
 
     public Builder validatorExternalSignerPublicKeySources(
-        List<String> validatorExternalSignerPublicKeySources) {
+        final List<String> validatorExternalSignerPublicKeySources) {
       checkNotNull(validatorExternalSignerPublicKeySources);
       this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
       return this;
@@ -460,7 +460,7 @@ public class ValidatorConfig {
     }
 
     public Builder validatorExternalSignerConcurrentRequestLimit(
-        int validatorExternalSignerConcurrentRequestLimit) {
+        final int validatorExternalSignerConcurrentRequestLimit) {
       if (validatorExternalSignerConcurrentRequestLimit < 0) {
         throw new InvalidConfigurationException(
             String.format(
