@@ -272,7 +272,7 @@ public class NetworkConfig {
 
     public Builder networkInterfaces(final List<String> networkInterfaces) {
       checkNotNull(networkInterfaces);
-      validateAddresses(networkInterfaces, "--p2p-interfaces");
+      validateAddresses(networkInterfaces, "--p2p-interface");
       this.networkInterfaces = networkInterfaces;
       return this;
     }
@@ -295,7 +295,7 @@ public class NetworkConfig {
                         String.format("Advertised ip (%s) is set incorrectly", ip));
                   }
                 });
-            validateAddresses(ips, "--p2p-advertised-ips");
+            validateAddresses(ips, "--p2p-advertised-ip");
           });
       this.advertisedIps = advertisedIps;
       return this;
