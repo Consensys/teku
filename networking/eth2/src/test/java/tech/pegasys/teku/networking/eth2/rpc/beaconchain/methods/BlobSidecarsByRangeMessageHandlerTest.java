@@ -243,7 +243,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldCompleteSuccessfullyIfNoBlobSidecarsInRange() {
-    when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), any()))
+    when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), anyLong()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(ZERO, count, maxBlobsPerBlock);
@@ -414,15 +414,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
     final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> headerAndKeys =
         setupKeyAndHeaderList(startSlot, maxSlot);
-    when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), eq(maxSlot), any()))
+    when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), eq(maxSlot), anyLong()))
         .thenAnswer(
             args ->
                 SafeFuture.completedFuture(
                     headerAndKeys
                         .subList(
-                            0,
-                            Math.min(
-                                headerAndKeys.size(), ((UInt64) args.getArgument(2)).intValue()))
+                            0, Math.min(headerAndKeys.size(), Math.toIntExact(args.getArgument(2))))
                         .stream()
                         .map(Pair::getValue)
                         .toList()));
