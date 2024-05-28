@@ -66,9 +66,11 @@ class CombinedStorageChannelSplitterTest {
         .map(
             parameter -> {
               if (parameter.getType().isPrimitive()) {
-                return switch (parameter.getType().getName()) {
-                  case "int", "long" -> 0;
-                  default -> throw new RuntimeException("unsupported primitive type");
+                final String type = parameter.getType().getName();
+                return switch (type) {
+                  case "int" -> 0;
+                  case "long" -> 0L;
+                  default -> throw new RuntimeException("unsupported primitive type: " + type);
                 };
               } else {
                 return null;
