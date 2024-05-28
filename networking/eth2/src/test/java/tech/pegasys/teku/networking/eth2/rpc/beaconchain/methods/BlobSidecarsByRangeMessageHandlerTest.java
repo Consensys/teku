@@ -145,17 +145,32 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
+  public void validateRequest_shouldRejectRequestWhenCountIsZero() {
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock));
+
+    assertThat(result)
+        .hasValue(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
+  }
+
+  @Test
+  public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
         UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);
 
-    handler.onIncomingMessage(protocolId, peer, request, listener);
+    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
 
-    // Rate limiter not invoked
-    verify(peer, never()).approveBlobSidecarsRequest(any(), anyLong());
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
 
     final long rateLimitedCount =
         metricsSystem
@@ -163,14 +178,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
             .getValue("count_too_big");
 
     assertThat(rateLimitedCount).isOne();
-
-    verify(listener)
-        .completeWithErrorResponse(
-            new RpcException(
-                INVALID_REQUEST_CODE,
-                String.format(
-                    "Only a maximum of %s blob sidecars can be requested per request",
-                    maxRequestBlobSidecars)));
   }
 
   @Test

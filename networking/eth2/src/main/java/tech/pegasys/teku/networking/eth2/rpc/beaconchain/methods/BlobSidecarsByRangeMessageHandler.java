@@ -59,6 +59,7 @@ public class BlobSidecarsByRangeMessageHandler
 
   private final Spec spec;
   private final SpecConfigDeneb specConfigDeneb;
+  private final UInt64 maxRequestBlobSidecars;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobSidecarsRequestedCounter;
@@ -70,6 +71,7 @@ public class BlobSidecarsByRangeMessageHandler
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
     this.specConfigDeneb = specConfigDeneb;
+    maxRequestBlobSidecars = UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -82,6 +84,29 @@ public class BlobSidecarsByRangeMessageHandler
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requested_sidecars_total",
             "Total number of blob sidecars requested in accepted blob sidecars by range requests from peers");
+  }
+
+  @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
+    if (request.getCount().isZero()) {
+      requestCounter.labels("invalid_count").inc();
+      return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
+    }
+
+    final UInt64 requestedCount = calculateRequestedCount(request);
+
+    if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Only a maximum of %s blob sidecars can be requested per request",
+                  maxRequestBlobSidecars)));
+    }
+
+    return Optional.empty();
   }
 
   @Override
@@ -99,24 +124,10 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock());
-    final UInt64 maxRequestBlobSidecars =
-        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
-    final UInt64 requestedCount = message.getCount().times(maxBlobsPerBlock);
-
-    if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
-      requestCounter.labels("count_too_big").inc();
-      callback.completeWithErrorResponse(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              String.format(
-                  "Only a maximum of %s blob sidecars can be requested per request",
-                  maxRequestBlobSidecars)));
-      return;
-    }
+    final long requestedCount = calculateRequestedCount(message).longValue();
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
-        peer.approveBlobSidecarsRequest(callback, requestedCount.longValue());
+        peer.approveBlobSidecarsRequest(callback, requestedCount);
 
     if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -171,7 +182,7 @@ public class BlobSidecarsByRangeMessageHandler
         .finish(
             requestState -> {
               final int sentBlobSidecars = requestState.sentBlobSidecars.get();
-              if (sentBlobSidecars != requestedCount.longValue()) {
+              if (sentBlobSidecars != requestedCount) {
                 peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), sentBlobSidecars);
               }
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
@@ -181,6 +192,10 @@ public class BlobSidecarsByRangeMessageHandler
               peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
               handleProcessingRequestError(error, callback);
             });
+  }
+
+  private UInt64 calculateRequestedCount(final BlobSidecarsByRangeRequestMessage message) {
+    return message.getCount().times(specConfigDeneb.getMaxBlobsPerBlock());
   }
 
   private boolean checkBlobSidecarsAreAvailable(

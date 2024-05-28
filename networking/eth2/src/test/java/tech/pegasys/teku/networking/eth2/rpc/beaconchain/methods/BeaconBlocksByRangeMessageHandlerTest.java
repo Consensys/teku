@@ -173,6 +173,19 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
+  public void validateRequest_shouldRejectRequestWhenCountIsZero() {
+    final int startBlock = 15;
+
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BeaconBlocksByRangeRequestMessage(UInt64.valueOf(startBlock), ZERO, ONE));
+
+    assertThat(result)
+        .hasValue(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
+  }
+
+  @Test
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final int startBlock = 15;
     final int skip = 1;

@@ -95,6 +95,11 @@ public class BeaconBlocksByRangeMessageHandler
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     }
 
+    if (request.getCount().isZero()) {
+      requestCounter.labels("invalid_count").inc();
+      return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
+    }
+
     final UInt64 maxRequestBlocks =
         spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks();
 
@@ -165,7 +170,6 @@ public class BeaconBlocksByRangeMessageHandler
     final UInt64 startSlot = message.getStartSlot();
     final UInt64 count = message.getCount();
     final UInt64 step = message.getStep();
-    final UInt64 endSlot = startSlot.plus(step.times(count)).minus(ONE);
 
     return combinedChainDataClient
         .getEarliestAvailableBlockSlot()
@@ -183,7 +187,7 @@ public class BeaconBlocksByRangeMessageHandler
                       .map(MinimalBeaconBlockSummary::getSlot)
                       .orElse(ZERO);
               final NavigableMap<UInt64, Bytes32> hotRoots;
-              if (combinedChainDataClient.isFinalized(endSlot)) {
+              if (combinedChainDataClient.isFinalized(message.getMaxSlot())) {
                 // All blocks are finalized so skip scanning the protoarray
                 hotRoots = new TreeMap<>();
               } else {
