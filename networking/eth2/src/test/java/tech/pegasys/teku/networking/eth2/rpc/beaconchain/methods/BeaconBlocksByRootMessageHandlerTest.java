@@ -115,7 +115,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
             .map(__ -> Bytes32.ZERO)
             .collect(Collectors.toList());
 
-    Optional<RpcException> result =
+    final Optional<RpcException> result =
         handler.validateRequest(
             V2_PROTOCOL_ID,
             new BeaconBlocksByRootRequestMessage(
