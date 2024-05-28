@@ -342,7 +342,7 @@ public class NetworkConfig {
     private void validateAddresses(final List<String> addresses, final String cliOption) {
       checkState(
           addresses.size() == 1 || addresses.size() == 2,
-          "Invalid number of %s. It should be either 1 or 2, but it was %d",
+          "Invalid number of %s. It should be either 1 or 2, but it was %s",
           cliOption,
           addresses.size());
       if (addresses.size() == 2) {
