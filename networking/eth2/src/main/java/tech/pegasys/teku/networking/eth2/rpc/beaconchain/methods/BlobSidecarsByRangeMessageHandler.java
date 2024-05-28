@@ -59,7 +59,6 @@ public class BlobSidecarsByRangeMessageHandler
 
   private final Spec spec;
   private final SpecConfigDeneb specConfigDeneb;
-  private final UInt64 maxRequestBlobSidecars;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobSidecarsRequestedCounter;
@@ -71,7 +70,6 @@ public class BlobSidecarsByRangeMessageHandler
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
     this.specConfigDeneb = specConfigDeneb;
-    maxRequestBlobSidecars = UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -94,16 +92,16 @@ public class BlobSidecarsByRangeMessageHandler
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
     }
 
-    final UInt64 requestedCount = calculateRequestedCount(request);
+    final long requestedCount = calculateRequestedCount(request);
 
-    if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
+    if (requestedCount > specConfigDeneb.getMaxRequestBlobSidecars()) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
                   "Only a maximum of %s blob sidecars can be requested per request",
-                  maxRequestBlobSidecars)));
+                  specConfigDeneb.getMaxRequestBlobSidecars())));
     }
 
     return Optional.empty();
@@ -124,7 +122,7 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final long requestedCount = calculateRequestedCount(message).longValue();
+    final long requestedCount = calculateRequestedCount(message);
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -167,13 +165,7 @@ public class BlobSidecarsByRangeMessageHandler
               }
 
               final RequestState initialState =
-                  new RequestState(
-                      callback,
-                      maxRequestBlobSidecars,
-                      startSlot,
-                      endSlot,
-                      canonicalHotRoots,
-                      finalizedSlot);
+                  new RequestState(callback, startSlot, endSlot, canonicalHotRoots, finalizedSlot);
               if (initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }
@@ -194,8 +186,8 @@ public class BlobSidecarsByRangeMessageHandler
             });
   }
 
-  private UInt64 calculateRequestedCount(final BlobSidecarsByRangeRequestMessage message) {
-    return message.getCount().times(specConfigDeneb.getMaxBlobsPerBlock());
+  private long calculateRequestedCount(final BlobSidecarsByRangeRequestMessage message) {
+    return specConfigDeneb.getMaxBlobsPerBlock() * message.getCount().longValue();
   }
 
   private boolean checkBlobSidecarsAreAvailable(
@@ -241,13 +233,16 @@ public class BlobSidecarsByRangeMessageHandler
   @VisibleForTesting
   class RequestState {
 
-    private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
+    private final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
+
     private final ResponseCallback<BlobSidecar> callback;
-    private final UInt64 maxRequestBlobSidecars;
     private final UInt64 startSlot;
     private final UInt64 endSlot;
     private final UInt64 finalizedSlot;
     private final Map<UInt64, Bytes32> canonicalHotRoots;
+
+    private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
 
     // since our storage stores hot and finalized blobs on the same "table", this iterator can span
     // over hot and finalized blobs
@@ -256,13 +251,11 @@ public class BlobSidecarsByRangeMessageHandler
 
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
-        final UInt64 maxRequestBlobSidecars,
         final UInt64 startSlot,
         final UInt64 endSlot,
         final Map<UInt64, Bytes32> canonicalHotRoots,
         final UInt64 finalizedSlot) {
       this.callback = callback;
-      this.maxRequestBlobSidecars = maxRequestBlobSidecars;
       this.startSlot = startSlot;
       this.endSlot = endSlot;
       this.finalizedSlot = finalizedSlot;
