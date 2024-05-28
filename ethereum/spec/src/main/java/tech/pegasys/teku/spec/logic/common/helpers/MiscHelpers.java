@@ -100,20 +100,22 @@ public class MiscHelpers {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
 
     final Sha256 sha256 = getSha256Instance();
+    final UInt64 maxEffectiveBalance = getProposerMaxEffectiveBalance();
 
     int i = 0;
     final int total = indices.size();
     byte[] hash = null;
     while (true) {
-      int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
+      final int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
         hash = sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
-      int randomByte = UnsignedBytes.toInt(hash[i % 32]);
-      UInt64 effectiveBalance = state.getValidators().get(candidateIndex).getEffectiveBalance();
+      final int randomByte = UnsignedBytes.toInt(hash[i % 32]);
+      final UInt64 effectiveBalance =
+          state.getValidators().get(candidateIndex).getEffectiveBalance();
       if (effectiveBalance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(randomByte))) {
+          .isGreaterThanOrEqualTo(maxEffectiveBalance.times(randomByte))) {
         return candidateIndex;
       }
       i++;
@@ -387,5 +389,9 @@ public class MiscHelpers {
 
   public Optional<MiscHelpersElectra> toVersionElectra() {
     return Optional.empty();
+  }
+
+  protected UInt64 getProposerMaxEffectiveBalance() {
+    return specConfig.getMaxEffectiveBalance();
   }
 }

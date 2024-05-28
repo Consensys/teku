@@ -14,8 +14,10 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -59,5 +61,10 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
     return state
         .getEth1DepositIndex()
         .equals(BeaconStateElectra.required(state).getDepositReceiptsStartIndex());
+  }
+
+  @Override
+  protected UInt64 getProposerMaxEffectiveBalance() {
+    return SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra();
   }
 }

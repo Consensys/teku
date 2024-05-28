@@ -14,12 +14,19 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
@@ -39,6 +46,13 @@ public class MiscHelpersElectraTest {
           predicates,
           schemaDefinitionsElectra);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  final BeaconStateAccessorsElectra beaconStateAccessors =
+      new BeaconStateAccessorsElectra(
+          spec.getGenesisSpecConfig(),
+          new PredicatesElectra(spec.getGenesisSpecConfig()),
+          miscHelpersElectra);
+
+  private final IntList validatorIndices = IntArrayList.of(1, 2, 3, 4, 5, 6, 7, 0);
 
   @Test
   public void isFormerDepositMechanismDisabled_returnsTrueIfDisabled() {
@@ -72,5 +86,46 @@ public class MiscHelpersElectraTest {
                 });
 
     assertThat(miscHelpersElectra.isFormerDepositMechanismDisabled(state)).isFalse();
+  }
+
+  @Test
+  void consolidatedValidatorsMoreLikelyToPropose() {
+    final int consolidationAmount = 16;
+    final BeaconState state = randomStateWithConsolidatedValidator(consolidationAmount);
+    int idx3ProposalCount = 0;
+    for (int i = 1; i < 8; i++) {
+      final UInt64 slot = UInt64.valueOf(8 + i);
+      final Bytes32 seed =
+          Hash.sha256(
+              beaconStateAccessors.getSeed(state, UInt64.ONE, Domain.BEACON_PROPOSER),
+              uint64ToBytes(slot));
+
+      if (miscHelpersElectra.computeProposerIndex(state, validatorIndices, seed) == 3) {
+        idx3ProposalCount++;
+      }
+    }
+    assertThat(idx3ProposalCount).isEqualTo(4);
+  }
+
+  private BeaconState randomStateWithConsolidatedValidator(int consolidationAmount) {
+    final BeaconState preState = dataStructureUtil.randomBeaconState(8);
+    return BeaconStateElectra.required(preState)
+        .updated(
+            mutableState -> {
+              mutableState
+                  .getValidators()
+                  .set(
+                      3,
+                      dataStructureUtil
+                          .validatorBuilder()
+                          .withdrawalCredentials(
+                              dataStructureUtil.randomCompoundingWithdrawalCredentials())
+                          .effectiveBalance(UInt64.THIRTY_TWO_ETH.times(consolidationAmount))
+                          .build());
+              mutableState
+                  .getBalances()
+                  .set(3, SszUInt64.of(UInt64.THIRTY_TWO_ETH.times(consolidationAmount)));
+              mutableState.setSlot(UInt64.valueOf(8));
+            });
   }
 }
