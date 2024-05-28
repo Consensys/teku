@@ -43,10 +43,9 @@ public class P2POptions {
   private boolean p2pEnabled = true;
 
   @Option(
-      names = {"--p2p-interface", "--p2p-interfaces"},
+      names = {"--p2p-interface"},
       paramLabel = "<NETWORK>",
-      description =
-          "P2P network interface(s). Takes at most two values, one for IPv4 and one for IPv6 (Default: 0.0.0.0)",
+      description = "P2P network interface",
       split = ",",
       arity = "1..2")
   private List<String> p2pInterfaces = NetworkConfig.DEFAULT_P2P_INTERFACE;
@@ -92,10 +91,9 @@ public class P2POptions {
   private List<String> p2pDiscoveryBootnodes = null;
 
   @Option(
-      names = {"--p2p-advertised-ip", "--p2p-advertised-ips"},
+      names = {"--p2p-advertised-ip"},
       paramLabel = "<NETWORK>",
-      description =
-          "P2P advertised IP(s). Takes at most two values, one for IPv4 and one for IPv6 (Default: 127.0.0.1)",
+      description = "P2P advertised IP (Default: 127.0.0.1)",
       split = ",",
       arity = "1..2")
   private List<String> p2pAdvertisedIps;

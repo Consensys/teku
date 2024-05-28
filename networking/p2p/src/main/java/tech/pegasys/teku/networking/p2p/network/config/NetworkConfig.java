@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.network.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 import java.io.UncheckedIOException;
@@ -76,18 +77,6 @@ public class NetworkConfig {
       final boolean yamuxEnabled) {
     this.privateKeySource = privateKeySource;
     this.networkInterfaces = networkInterfaces;
-    advertisedIps.ifPresent(
-        ips ->
-            ips.forEach(
-                ip -> {
-                  if (Strings.isBlank(ip)) {
-                    throw new InvalidConfigurationException("Advertised ip is blank");
-                  }
-                  if (!isInetAddress(ip)) {
-                    throw new InvalidConfigurationException(
-                        String.format("Advertised ip (%s) is set incorrectly", ip));
-                  }
-                }));
     this.advertisedIps = advertisedIps;
     this.isEnabled = isEnabled;
     this.listenPort = listenPort;
@@ -181,15 +170,18 @@ public class NetworkConfig {
             // incompatible IP version
             continue;
           }
-          if (ipVersion == IPVersion.IP_V4) {
-            // IPv4 (include only site local addresses)
-            if (inetAddress.isSiteLocalAddress()) {
-              return inetAddress.getHostAddress();
+          switch (ipVersion) {
+            case IP_V4 -> {
+              // IPv4 (include only site local addresses)
+              if (inetAddress.isSiteLocalAddress()) {
+                return inetAddress.getHostAddress();
+              }
             }
-          } else {
-            // IPv6 (include site local or unique local addresses)
-            if (inetAddress.isSiteLocalAddress() || isUniqueLocalAddress(inetAddress)) {
-              return inetAddress.getHostAddress();
+            case IP_V6 -> {
+              // IPv6 (include site local or unique local addresses)
+              if (inetAddress.isSiteLocalAddress() || isUniqueLocalAddress(inetAddress)) {
+                return inetAddress.getHostAddress();
+              }
             }
           }
         }
@@ -291,7 +283,20 @@ public class NetworkConfig {
 
     public Builder advertisedIps(final Optional<List<String>> advertisedIps) {
       checkNotNull(advertisedIps);
-      advertisedIps.ifPresent(ips -> validateAddresses(ips, "--p2p-advertised-ips"));
+      advertisedIps.ifPresent(
+          ips -> {
+            ips.forEach(
+                ip -> {
+                  if (Strings.isBlank(ip)) {
+                    throw new InvalidConfigurationException("Advertised ip is blank");
+                  }
+                  if (!isInetAddress(ip)) {
+                    throw new InvalidConfigurationException(
+                        String.format("Advertised ip (%s) is set incorrectly", ip));
+                  }
+                });
+            validateAddresses(ips, "--p2p-advertised-ips");
+          });
       this.advertisedIps = advertisedIps;
       return this;
     }
@@ -335,12 +340,11 @@ public class NetworkConfig {
     }
 
     private void validateAddresses(final List<String> addresses, final String cliOption) {
-      if (addresses.isEmpty() || addresses.size() > 2) {
-        throw new InvalidConfigurationException(
-            String.format(
-                "Invalid number of %s. It should be either 1 or 2, but it was %d",
-                cliOption, addresses.size()));
-      }
+      checkState(
+          addresses.size() == 1 || addresses.size() == 2,
+          "Invalid number of %s. It should be either 1 or 2, but it was %d",
+          cliOption,
+          addresses.size());
       if (addresses.size() == 2) {
         final Set<IPVersion> ipVersions =
             addresses.stream().map(IPVersionResolver::resolve).collect(Collectors.toSet());
