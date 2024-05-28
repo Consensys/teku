@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_OPEN_STREAMS_RATE_LIMIT;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT;
 
+import com.google.common.base.Preconditions;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
@@ -108,13 +109,16 @@ public class LibP2PNetworkBuilder {
 
     final List<Multiaddr> advertisedAddresses;
     final List<String> advertisedIps = config.getAdvertisedIps();
+    Preconditions.checkState(
+        advertisedIps.size() == 1 || advertisedIps.size() == 2,
+        "The configured advertised IPs must be either 1 or 2");
     if (advertisedIps.size() == 1) {
       advertisedAddresses =
           Collections.singletonList(
               MultiaddrUtil.fromInetSocketAddress(
                   new InetSocketAddress(advertisedIps.get(0), config.getAdvertisedPort()), nodeId));
     } else {
-      // IPv4 and IPv6
+      // IPv4 and IPv6 (dual-stack)
       advertisedAddresses =
           advertisedIps.stream()
               .map(
@@ -177,13 +181,16 @@ public class LibP2PNetworkBuilder {
   protected Host createHost(final PrivKey privKey, final List<Multiaddr> advertisedAddresses) {
     final String[] listenAddrs;
     final List<String> networkInterfaces = config.getNetworkInterfaces();
+    Preconditions.checkState(
+        networkInterfaces.size() == 1 || networkInterfaces.size() == 2,
+        "The configured network interfaces must be either 1 or 2");
     if (networkInterfaces.size() == 1) {
       final Multiaddr addr =
           MultiaddrUtil.fromInetSocketAddress(
               new InetSocketAddress(networkInterfaces.get(0), config.getListenPort()));
       listenAddrs = new String[] {addr.toString()};
     } else {
-      // IPv4 and IPv6
+      // IPv4 and IPv6 (dual-stack)
       listenAddrs =
           networkInterfaces.stream()
               .map(
