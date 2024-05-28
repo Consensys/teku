@@ -103,7 +103,7 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getAllBlobSidecarKeys(UInt64 slot);
 
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
-      UInt64 startSlot, UInt64 endSlot, UInt64 limit);
+      UInt64 startSlot, UInt64 endSlot, long limit);
 
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       SlotAndBlockRoot slotAndBlockRoot);

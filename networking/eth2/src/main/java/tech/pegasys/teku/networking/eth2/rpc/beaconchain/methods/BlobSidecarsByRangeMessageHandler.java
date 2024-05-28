@@ -233,9 +233,6 @@ public class BlobSidecarsByRangeMessageHandler
   @VisibleForTesting
   class RequestState {
 
-    private final UInt64 maxRequestBlobSidecars =
-        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
-
     private final ResponseCallback<BlobSidecar> callback;
     private final UInt64 startSlot;
     private final UInt64 endSlot;
@@ -269,7 +266,7 @@ public class BlobSidecarsByRangeMessageHandler
     SafeFuture<Optional<BlobSidecar>> loadNextBlobSidecar() {
       if (blobSidecarKeysIterator.isEmpty()) {
         return combinedChainDataClient
-            .getBlobSidecarKeys(startSlot, endSlot, maxRequestBlobSidecars)
+            .getBlobSidecarKeys(startSlot, endSlot, specConfigDeneb.getMaxRequestBlobSidecars())
             .thenCompose(
                 keys -> {
                   blobSidecarKeysIterator = Optional.of(keys.iterator());
