@@ -68,7 +68,7 @@ public class AttestationElectraSchema
       final Supplier<SszBitvector> committeeBits) {
     final SszBitvector suppliedCommitteeBits = committeeBits.get();
     checkNotNull(suppliedCommitteeBits, "committeeBits must be provided in Electra");
-    return new AttestationElectra(this, aggregationBits, data, suppliedCommitteeBits, signature);
+    return new AttestationElectra(this, aggregationBits, data, signature, suppliedCommitteeBits);
   }
 
   public AttestationElectra create(
@@ -76,7 +76,7 @@ public class AttestationElectraSchema
       final AttestationData data,
       final BLSSignature signature,
       final SszBitvector committeeBits) {
-    return new AttestationElectra(this, aggregationBits, data, committeeBits, signature);
+    return new AttestationElectra(this, aggregationBits, data, signature, committeeBits);
   }
 
   @Override
