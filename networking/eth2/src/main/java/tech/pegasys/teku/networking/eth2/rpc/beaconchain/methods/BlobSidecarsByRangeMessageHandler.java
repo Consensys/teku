@@ -162,7 +162,7 @@ public class BlobSidecarsByRangeMessageHandler
 
               final RequestState initialState =
                   new RequestState(callback, startSlot, endSlot, canonicalHotRoots, finalizedSlot);
-              if (initialState.isComplete()) {
+              if (message.getCount().isZero()) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendBlobSidecars(initialState);
@@ -303,8 +303,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return endSlot.isLessThan(startSlot)
-          || blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
+      return blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }
