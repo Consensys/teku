@@ -223,7 +223,11 @@ public class BeaconBlocksByRangeMessageHandler
     // Ensure blocks are loaded off of the event thread
     return requestState
         .loadNextBlock()
-        .thenCompose(block -> handleLoadedBlock(requestState, block));
+        .thenCompose(
+            block -> {
+              requestState.decrementRemainingBlocks();
+              return handleLoadedBlock(requestState, block);
+            });
   }
 
   /** Sends the block and returns true if the request is now complete. */
@@ -287,13 +291,11 @@ public class BeaconBlocksByRangeMessageHandler
       if (step.isGreaterThan(1L)) {
         remainingBlocks = ZERO;
       }
-      return callback
-          .respond(block)
-          .thenRun(
-              () -> {
-                sentBlocks.incrementAndGet();
-                remainingBlocks = remainingBlocks.minusMinZero(1);
-              });
+      return callback.respond(block).thenRun(sentBlocks::incrementAndGet);
+    }
+
+    void decrementRemainingBlocks() {
+      remainingBlocks = remainingBlocks.minusMinZero(1);
     }
 
     void incrementCurrentSlot() {
