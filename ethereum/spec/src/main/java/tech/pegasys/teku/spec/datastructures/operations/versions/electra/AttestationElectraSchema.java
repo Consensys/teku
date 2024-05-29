@@ -52,7 +52,7 @@ public class AttestationElectraSchema
 
   @Override
   public Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema() {
-    return Optional.of((SszBitvectorSchema<?>) getFieldSchema2());
+    return Optional.of((SszBitvectorSchema<?>) getFieldSchema3());
   }
 
   @Override
