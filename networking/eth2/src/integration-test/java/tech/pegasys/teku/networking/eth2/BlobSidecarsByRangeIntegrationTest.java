@@ -52,6 +52,15 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
+  public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsWhenCountIsZero()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
+    final List<BlobSidecar> blobSidecars =
+        requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.ZERO);
+    assertThat(blobSidecars).isEmpty();
+  }
+
+  @Test
   public void requestBlobSidecars_shouldReturnCanonicalBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());

@@ -145,16 +145,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void validateRequest_shouldRejectRequestWhenCountIsZero() {
-    final Optional<RpcException> result =
-        handler.validateRequest(
-            protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock));
-
-    assertThat(result)
-        .hasValue(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
-  }
-
-  @Test
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
         UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());

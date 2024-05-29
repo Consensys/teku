@@ -87,10 +87,6 @@ public class BlobSidecarsByRangeMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
-    if (request.getCount().isZero()) {
-      requestCounter.labels("invalid_count").inc();
-      return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
-    }
 
     final long requestedCount = calculateRequestedCount(request);
 

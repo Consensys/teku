@@ -95,11 +95,6 @@ public class BeaconBlocksByRangeMessageHandler
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     }
 
-    if (request.getCount().isZero()) {
-      requestCounter.labels("invalid_count").inc();
-      return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Count must be greater than zero"));
-    }
-
     final UInt64 maxRequestBlocks =
         spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks();
 
@@ -199,8 +194,12 @@ public class BeaconBlocksByRangeMessageHandler
               // finalized
               // so we don't need to worry about inconsistent blocks
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
-              return sendNextBlock(
-                  new RequestState(startSlot, step, count, headSlot, hotRoots, callback));
+              final RequestState initialState =
+                  new RequestState(startSlot, step, count, headSlot, hotRoots, callback);
+              if (initialState.isComplete()) {
+                return SafeFuture.completedFuture(initialState);
+              }
+              return sendNextBlock(initialState);
             });
   }
 
@@ -264,7 +263,7 @@ public class BeaconBlocksByRangeMessageHandler
       this.knownBlockRoots = knownBlockRoots;
       // Minus 1 to account for sending the block at startSlot.
       // We only decrement this when moving to the next slot but we're already at the first slot
-      this.remainingBlocks = count.minus(ONE);
+      this.remainingBlocks = count.minusMinZero(ONE);
       this.step = step;
       this.headSlot = headSlot;
       this.callback = callback;
@@ -292,7 +291,7 @@ public class BeaconBlocksByRangeMessageHandler
     }
 
     void incrementCurrentSlot() {
-      remainingBlocks = remainingBlocks.minus(ONE);
+      remainingBlocks = remainingBlocks.minusMinZero(ONE);
       currentSlot = currentSlot.plus(step);
     }
 
