@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class MiscHelpersElectraTest {
 
   private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private static final int PROPOSER_INDEX = 3;
   private final Predicates predicates = new Predicates(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsElectra schemaDefinitionsElectra =
       SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
@@ -92,7 +93,7 @@ public class MiscHelpersElectraTest {
   void consolidatedValidatorsMoreLikelyToPropose() {
     final int consolidationAmount = 16;
     final BeaconState state = randomStateWithConsolidatedValidator(consolidationAmount);
-    int idx3ProposalCount = 0;
+    int proposerIndexCount = 0;
     for (int i = 1; i < 8; i++) {
       final UInt64 slot = UInt64.valueOf(8 + i);
       final Bytes32 seed =
@@ -100,11 +101,12 @@ public class MiscHelpersElectraTest {
               beaconStateAccessors.getSeed(state, UInt64.ONE, Domain.BEACON_PROPOSER),
               uint64ToBytes(slot));
 
-      if (miscHelpersElectra.computeProposerIndex(state, validatorIndices, seed) == 3) {
-        idx3ProposalCount++;
+      if (miscHelpersElectra.computeProposerIndex(state, validatorIndices, seed)
+          == PROPOSER_INDEX) {
+        proposerIndexCount++;
       }
     }
-    assertThat(idx3ProposalCount).isEqualTo(4);
+    assertThat(proposerIndexCount).isEqualTo(4);
   }
 
   private BeaconState randomStateWithConsolidatedValidator(int consolidationAmount) {
@@ -115,7 +117,7 @@ public class MiscHelpersElectraTest {
               mutableState
                   .getValidators()
                   .set(
-                      3,
+                      PROPOSER_INDEX,
                       dataStructureUtil
                           .validatorBuilder()
                           .withdrawalCredentials(
