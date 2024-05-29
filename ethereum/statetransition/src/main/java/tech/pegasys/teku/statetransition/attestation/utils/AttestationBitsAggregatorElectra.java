@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   private SszBitlist aggregationBits;
   private SszBitvector committeeBits;
+  private Int2IntMap committeeBitsStartingPositions;
   private final Int2IntMap committeesSize;
 
   AttestationBitsAggregatorElectra(
@@ -38,6 +39,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
     this.aggregationBits = aggregationBits;
     this.committeeBits = committeeBits;
     this.committeesSize = committeesSize;
+    this.committeeBitsStartingPositions = calculateCommitteeStartingPositions(committeeBits);
   }
 
   static AttestationBitsAggregator fromAttestationSchema(
@@ -72,20 +74,10 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
     final SszBitvector aggregatedCommitteeBits = committeeBits.or(otherCommitteeBits);
 
-    final Int2IntMap committeeBitsStartingPositions =
-        calculateCommitteeStartingPositions(committeeBits);
     final Int2IntMap otherCommitteeBitsStartingPositions =
         calculateCommitteeStartingPositions(otherCommitteeBits);
     final Int2IntMap aggregatedCommitteeBitsStartingPositions =
         calculateCommitteeStartingPositions(aggregatedCommitteeBits);
-
-    final IntList aggregatedCommitteeIndices = aggregatedCommitteeBits.getAllSetBits();
-
-    // create an aggregation bit big as last boundary for last committee bit
-    final int lastCommitteeIndex =
-        aggregatedCommitteeIndices.getInt(aggregatedCommitteeIndices.size() - 1);
-    final int lastCommitteeStartingPosition =
-        aggregatedCommitteeBitsStartingPositions.get(lastCommitteeIndex);
 
     final IntList aggregationIndices = new IntArrayList();
 
@@ -127,13 +119,23 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       return false;
     }
 
+    final IntList aggregatedCommitteeIndices = aggregatedCommitteeBits.getAllSetBits();
+
+    // create an aggregation bit big as last boundary for last committee bit
+    final int lastCommitteeIndex =
+            aggregatedCommitteeIndices.getInt(aggregatedCommitteeIndices.size() - 1);
+    final int lastCommitteeStartingPosition =
+            aggregatedCommitteeBitsStartingPositions.get(lastCommitteeIndex);
+    final int aggregationBitsSize = lastCommitteeStartingPosition + committeesSize.get(lastCommitteeIndex);
+
     committeeBits = aggregatedCommitteeBits;
     aggregationBits =
         aggregationBits
             .getSchema()
             .ofBits(
-                lastCommitteeStartingPosition + committeesSize.get(lastCommitteeIndex),
+                    aggregationBitsSize,
                 aggregationIndices.toIntArray());
+    committeeBitsStartingPositions = aggregatedCommitteeBitsStartingPositions;
 
     return true;
   }
@@ -181,8 +183,6 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
     final SszBitvector otherCommitteeBits = other.getCommitteeBitsRequired();
 
-    final Int2IntMap committeeBitsStartingPositions =
-        calculateCommitteeStartingPositions(committeeBits);
     final Int2IntMap otherCommitteeBitsStartingPositions =
         calculateCommitteeStartingPositions(otherCommitteeBits);
 
@@ -235,6 +235,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         .add("aggregationBits", aggregationBits)
         .add("committeeBits", committeeBits)
         .add("committeesSize", committeesSize)
+            .add("committeeBitsStartingPositions", committeeBitsStartingPositions)
         .toString();
   }
 }
