@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 public class WeakSubjectivityUpdate {
   private final Optional<Checkpoint> weakSubjectivityCheckpoint;
 
-  private WeakSubjectivityUpdate(Optional<Checkpoint> weakSubjectivityCheckpoint) {
+  private WeakSubjectivityUpdate(final Optional<Checkpoint> weakSubjectivityCheckpoint) {
     this.weakSubjectivityCheckpoint = weakSubjectivityCheckpoint;
   }
 

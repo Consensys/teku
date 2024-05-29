@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 public class SetGasLimitException extends IllegalArgumentException {
 
-  public SetGasLimitException(String message) {
+  public SetGasLimitException(final String message) {
     super(message);
   }
 }

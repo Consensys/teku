@@ -49,15 +49,15 @@ public class GossipConfig {
   private final GossipScoringConfig scoringConfig;
 
   private GossipConfig(
-      int d,
-      int dLow,
-      int dHigh,
-      int dLazy,
-      Duration fanoutTTL,
-      int advertise,
-      int history,
-      Duration heartbeatInterval,
-      Duration seenTTL,
+      final int d,
+      final int dLow,
+      final int dHigh,
+      final int dLazy,
+      final Duration fanoutTTL,
+      final int advertise,
+      final int history,
+      final Duration heartbeatInterval,
+      final Duration seenTTL,
       final GossipScoringConfig scoringConfig) {
     this.d = d;
     this.dLow = dLow;

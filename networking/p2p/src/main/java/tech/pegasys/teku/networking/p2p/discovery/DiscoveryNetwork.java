@@ -119,7 +119,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     return discoveryService.getDiscoveryAddress();
   }
 
-  public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
+  public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
         currentSchemaDefinitionsSupplier
@@ -128,7 +128,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .sszSerialize());
   }
 
-  public void setSyncCommitteeSubnetSubscriptions(Iterable<Integer> subnetIds) {
+  public void setSyncCommitteeSubnetSubscriptions(final Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         SYNC_COMMITTEE_SUBNET_ENR_FIELD,
         currentSchemaDefinitionsSupplier
@@ -167,7 +167,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     this.enrForkId = Optional.of(enrForkId);
   }
 
-  private boolean dontConnectPeersWithDifferentForkDigests(DiscoveryPeer peer) {
+  private boolean dontConnectPeersWithDifferentForkDigests(final DiscoveryPeer peer) {
     return enrForkId
         .map(EnrForkId::getForkDigest)
         .flatMap(

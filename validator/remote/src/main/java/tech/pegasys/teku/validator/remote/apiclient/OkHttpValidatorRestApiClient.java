@@ -179,7 +179,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     final BeaconCommitteeSubscriptionRequest[] body =
         requests.stream()
             .map(
@@ -244,13 +244,14 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void prepareBeaconProposer(List<BeaconPreparableProposer> beaconPreparableProposers) {
+  public void prepareBeaconProposer(
+      final List<BeaconPreparableProposer> beaconPreparableProposers) {
     post(PREPARE_BEACON_PROPOSER, beaconPreparableProposers, createHandler());
   }
 
   @Override
   public Optional<PostValidatorLivenessResponse> sendValidatorsLiveness(
-      UInt64 epoch, List<UInt64> validatorsIndices) {
+      final UInt64 epoch, final List<UInt64> validatorsIndices) {
     return post(
         SEND_VALIDATOR_LIVENESS,
         Map.of("epoch", epoch.toString()),

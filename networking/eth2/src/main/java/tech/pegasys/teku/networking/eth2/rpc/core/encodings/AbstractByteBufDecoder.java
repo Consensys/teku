@@ -33,7 +33,7 @@ public abstract class AbstractByteBufDecoder<TMessage, TException extends Except
   private boolean closed = false;
 
   @Override
-  public Optional<TMessage> decodeOneMessage(ByteBuf in) throws TException {
+  public Optional<TMessage> decodeOneMessage(final ByteBuf in) throws TException {
     if (!in.isReadable()) {
       return Optional.empty();
     }

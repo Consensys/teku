@@ -361,7 +361,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public Optional<RequestApproval> approveBlocksRequest(
-      final ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
+      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return approveObjectsRequest("blocks", blockRequestTracker, blocksCount, callback);
   }
 
@@ -373,7 +373,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public Optional<RequestApproval> approveBlobSidecarsRequest(
-      final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
+      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return approveObjectsRequest(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
   }

@@ -44,7 +44,7 @@ public class BlobSidecarsResponseInvalidResponseException extends InvalidRespons
 
     private final String description;
 
-    InvalidResponseType(String description) {
+    InvalidResponseType(final String description) {
       this.description = description;
     }
 

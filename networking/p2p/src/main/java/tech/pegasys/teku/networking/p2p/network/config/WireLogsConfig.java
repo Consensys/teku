@@ -22,10 +22,10 @@ public class WireLogsConfig {
   private final boolean logWireGossip;
 
   private WireLogsConfig(
-      boolean logWireCipher,
-      boolean logWirePlain,
-      boolean logWireMuxFrames,
-      boolean logWireGossip) {
+      final boolean logWireCipher,
+      final boolean logWirePlain,
+      final boolean logWireMuxFrames,
+      final boolean logWireGossip) {
     this.logWireCipher = logWireCipher;
     this.logWirePlain = logWirePlain;
     this.logWireMuxFrames = logWireMuxFrames;

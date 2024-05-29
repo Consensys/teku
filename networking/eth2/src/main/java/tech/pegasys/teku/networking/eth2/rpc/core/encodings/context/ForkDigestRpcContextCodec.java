@@ -46,7 +46,7 @@ class ForkDigestRpcContextCodec<TPayload extends SszData>
   }
 
   @Override
-  public Bytes encodeContext(TPayload responsePayload) {
+  public Bytes encodeContext(final TPayload responsePayload) {
     final UInt64 slot = payloadContext.getSlotFromPayload(responsePayload);
     final SpecMilestone specMilestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
     return recentChainData

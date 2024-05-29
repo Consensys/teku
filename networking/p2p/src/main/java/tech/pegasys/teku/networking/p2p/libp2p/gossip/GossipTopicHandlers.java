@@ -22,11 +22,11 @@ public class GossipTopicHandlers {
 
   private final Map<String, TopicHandler> topicToHandlerMap = new ConcurrentHashMap<>();
 
-  public void add(String topic, TopicHandler handler) {
+  public void add(final String topic, final TopicHandler handler) {
     topicToHandlerMap.put(topic, handler);
   }
 
-  public Optional<TopicHandler> getHandlerForTopic(String topic) {
+  public Optional<TopicHandler> getHandlerForTopic(final String topic) {
     return Optional.ofNullable(topicToHandlerMap.get(topic));
   }
 }

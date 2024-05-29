@@ -61,5 +61,5 @@ public class NoOpDiscoveryService implements DiscoveryService {
   }
 
   @Override
-  public void updateCustomENRField(String fieldName, Bytes value) {}
+  public void updateCustomENRField(final String fieldName, final Bytes value) {}
 }

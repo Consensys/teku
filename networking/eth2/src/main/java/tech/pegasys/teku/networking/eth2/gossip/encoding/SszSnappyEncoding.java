@@ -39,8 +39,8 @@ class SszSnappyEncoding implements GossipEncoding {
   }
 
   @Override
-  public <T extends SszData> T decodeMessage(PreparedGossipMessage message, SszSchema<T> valueType)
-      throws DecodingException {
+  public <T extends SszData> T decodeMessage(
+      final PreparedGossipMessage message, final SszSchema<T> valueType) throws DecodingException {
     try {
       return sszCodec.decode(message.getDecodedMessage().getDecodedMessageOrElseThrow(), valueType);
     } catch (GossipDecodingException e) {
@@ -50,7 +50,7 @@ class SszSnappyEncoding implements GossipEncoding {
 
   @Override
   public Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory(
-      ForkDigestToMilestone forkDigestToMilestone) {
+      final ForkDigestToMilestone forkDigestToMilestone) {
     return new SnappyPreparedGossipMessageFactory(snappyCompressor, forkDigestToMilestone);
   }
 }

@@ -34,8 +34,8 @@ public class ProposerSlashingFuzzInput
   }
 
   public ProposerSlashingFuzzInput(
-      ContainerSchema2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing> type,
-      TreeNode backingNode) {
+      final ContainerSchema2<ProposerSlashingFuzzInput, BeaconState, ProposerSlashing> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

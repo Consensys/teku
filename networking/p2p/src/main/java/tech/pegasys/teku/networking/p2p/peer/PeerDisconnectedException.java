@@ -17,7 +17,7 @@ public class PeerDisconnectedException extends RuntimeException {
 
   public PeerDisconnectedException() {}
 
-  public PeerDisconnectedException(Throwable cause) {
+  public PeerDisconnectedException(final Throwable cause) {
     super(cause);
   }
 }
