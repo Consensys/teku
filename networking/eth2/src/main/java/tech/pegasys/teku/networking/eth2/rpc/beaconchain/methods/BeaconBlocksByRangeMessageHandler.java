@@ -244,12 +244,14 @@ public class BeaconBlocksByRangeMessageHandler
   }
 
   private class RequestState {
+
     private final UInt64 headSlot;
     private final ResponseCallback<SignedBeaconBlock> callback;
     private final UInt64 step;
     private final NavigableMap<UInt64, Bytes32> knownBlockRoots;
     private UInt64 currentSlot;
     private UInt64 remainingBlocks;
+
     private final AtomicInteger sentBlocks = new AtomicInteger(0);
 
     RequestState(
@@ -261,9 +263,7 @@ public class BeaconBlocksByRangeMessageHandler
         final ResponseCallback<SignedBeaconBlock> callback) {
       this.currentSlot = startSlot;
       this.knownBlockRoots = knownBlockRoots;
-      // Minus 1 to account for sending the block at startSlot.
-      // We only decrement this when moving to the next slot but we're already at the first slot
-      this.remainingBlocks = count.minusMinZero(ONE);
+      this.remainingBlocks = count;
       this.step = step;
       this.headSlot = headSlot;
       this.callback = callback;
@@ -287,11 +287,16 @@ public class BeaconBlocksByRangeMessageHandler
       if (step.isGreaterThan(1L)) {
         remainingBlocks = ZERO;
       }
-      return callback.respond(block).thenRun(sentBlocks::incrementAndGet);
+      return callback
+          .respond(block)
+          .thenRun(
+              () -> {
+                sentBlocks.incrementAndGet();
+                remainingBlocks = remainingBlocks.minusMinZero(1);
+              });
     }
 
     void incrementCurrentSlot() {
-      remainingBlocks = remainingBlocks.minusMinZero(ONE);
       currentSlot = currentSlot.plus(step);
     }
 
