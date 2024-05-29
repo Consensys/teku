@@ -305,7 +305,7 @@ public class AttestationBitsAggregatorElectraTest {
     */
     final ValidatableAttestation otherAttestation = createAttestation(List.of(0), 1);
 
-    AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
 
     assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isTrue();
 

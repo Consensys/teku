@@ -18,8 +18,6 @@ import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -91,29 +89,38 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
                 int committeeSize = committeesSize.get(committeeIndex);
                 int destinationStart = aggregatedCommitteeBitsStartingPositions.get(committeeIndex);
 
-                final List<SszBitlist> sources = new ArrayList<>();
-                final List<Integer> sourcesStartingPosition = new ArrayList<>();
+                SszBitlist source1 = null, maybeSource2 = null;
+                int source1StartingPosition = 0, source2StartingPosition = 0;
+
                 if (committeeBitsStartingPositions.containsKey(committeeIndex)) {
-                  sources.add(aggregationBits);
-                  sourcesStartingPosition.add(committeeBitsStartingPositions.get(committeeIndex));
+                  source1 = aggregationBits;
+                  source1StartingPosition = committeeBitsStartingPositions.get(committeeIndex);
                 }
                 if (otherCommitteeBitsStartingPositions.containsKey(committeeIndex)) {
-                  sources.add(otherAggregatedBits);
-                  sourcesStartingPosition.add(
-                      otherCommitteeBitsStartingPositions.get(committeeIndex));
+                  if (source1 != null) {
+                    maybeSource2 = otherAggregatedBits;
+                    source2StartingPosition =
+                        otherCommitteeBitsStartingPositions.get(committeeIndex);
+                  } else {
+                    source1 = otherAggregatedBits;
+                    source1StartingPosition =
+                        otherCommitteeBitsStartingPositions.get(committeeIndex);
+                  }
                 }
 
-                IntStream.range(0, committeeSize)
-                    .forEach(
-                        positionInCommittee -> {
-                          if (orSingleBit(
-                              positionInCommittee,
-                              sources,
-                              sourcesStartingPosition,
-                              isAggregation)) {
-                            aggregationIndices.add(destinationStart + positionInCommittee);
-                          }
-                        });
+                for (int positionInCommittee = 0;
+                    positionInCommittee < committeeSize;
+                    positionInCommittee++) {
+                  if (orSingleBit(
+                      positionInCommittee,
+                      source1,
+                      source1StartingPosition,
+                      maybeSource2,
+                      source2StartingPosition,
+                      isAggregation)) {
+                    aggregationIndices.add(destinationStart + positionInCommittee);
+                  }
+                }
               });
     } catch (final CannotAggregateException __) {
       return false;
@@ -136,21 +143,25 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   private boolean orSingleBit(
       final int positionInCommittee,
-      final List<SszBitlist> sources,
-      final List<Integer> sourcesStartingPosition,
+      final SszBitlist source1,
+      final int source1StartingPosition,
+      final SszBitlist maybeSource2,
+      final int source2StartingPosition,
       final boolean isAggregating) {
-    boolean aggregatedBit = false;
-    for (int s = 0; s < sources.size(); s++) {
-      final boolean sourceBit =
-          sources.get(s).getBit(sourcesStartingPosition.get(s) + positionInCommittee);
 
-      if (!aggregatedBit && sourceBit) {
-        aggregatedBit = true;
-      } else if (isAggregating && aggregatedBit && sourceBit) {
-        throw new CannotAggregateException();
-      }
+    final boolean source1Bit = source1.getBit(source1StartingPosition + positionInCommittee);
+
+    if (maybeSource2 == null) {
+      return source1Bit;
     }
-    return aggregatedBit;
+
+    final boolean source2Bit = maybeSource2.getBit(source2StartingPosition + positionInCommittee);
+
+    if (isAggregating && source1Bit && source2Bit) {
+      throw new CannotAggregateException();
+    }
+
+    return source1Bit || source2Bit;
   }
 
   private Int2IntMap calculateCommitteeStartingPositions(final SszBitvector committeeBits) {
