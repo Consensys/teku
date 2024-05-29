@@ -82,7 +82,8 @@ public class WeakSubjectivityInitializer {
   }
 
   @NotNull
-  private AnchorPoint getAnchorPoint(Spec spec, String stateResource, String sanitizedResource)
+  private AnchorPoint getAnchorPoint(
+      final Spec spec, final String stateResource, final String sanitizedResource)
       throws IOException {
     STATUS_LOG.loadingInitialStateResource(sanitizedResource);
     final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
@@ -102,8 +103,8 @@ public class WeakSubjectivityInitializer {
 
   public SafeFuture<WeakSubjectivityConfig> finalizeAndStoreConfig(
       final WeakSubjectivityConfig config,
-      StorageQueryChannel storageQueryChannel,
-      StorageUpdateChannel storageUpdateChannel) {
+      final StorageQueryChannel storageQueryChannel,
+      final StorageUpdateChannel storageUpdateChannel) {
     return storageQueryChannel
         .getWeakSubjectivityState()
         .thenCompose(

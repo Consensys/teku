@@ -69,7 +69,7 @@ public class PostVoluntaryExit extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     final Optional<UInt64> maybeEpoch = request.getOptionalQueryParameter(EPOCH_QUERY_TYPE);
     final SafeFuture<SignedVoluntaryExit> future =

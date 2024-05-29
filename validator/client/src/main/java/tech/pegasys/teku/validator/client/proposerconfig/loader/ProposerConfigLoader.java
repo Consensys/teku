@@ -58,7 +58,7 @@ public class ProposerConfigLoader {
   }
 
   private static String getErrorMessage(
-      final URL source, final String exceptionMessage, Optional<JsonLocation> maybeLocation) {
+      final URL source, final String exceptionMessage, final Optional<JsonLocation> maybeLocation) {
     return String.format(
         "Failed to load proposer config from '%s' - %s%s",
         UrlSanitizer.sanitizePotentialUrl(source.toString()),

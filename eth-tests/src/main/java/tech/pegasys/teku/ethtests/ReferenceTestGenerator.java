@@ -32,7 +32,7 @@ public class ReferenceTestGenerator {
 
   public static final Charset CHARSET = StandardCharsets.UTF_8;
 
-  public static void main(String[] args) throws IOException {
+  public static void main(final String[] args) throws IOException {
     final Path outputDir = Path.of(args[0]);
     try (final Stream<TestDefinition> tests = ReferenceTestFinder.findReferenceTests()) {
       tests.forEach(testDefinition -> generateReferenceTest(outputDir, testDefinition));

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 public class GraffitiLoaderException extends Exception {
-  public GraffitiLoaderException(String message) {
+  public GraffitiLoaderException(final String message) {
     super(message);
   }
 

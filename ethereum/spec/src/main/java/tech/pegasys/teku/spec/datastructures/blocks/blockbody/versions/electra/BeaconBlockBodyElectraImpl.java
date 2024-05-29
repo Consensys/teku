@@ -55,20 +55,20 @@ public class BeaconBlockBodyElectraImpl
     implements BeaconBlockBodyElectra {
 
   BeaconBlockBodyElectraImpl(
-      BeaconBlockBodySchemaElectraImpl type,
-      SszSignature randaoReveal,
-      Eth1Data eth1Data,
-      SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits,
-      SyncAggregate syncAggregate,
-      ExecutionPayloadElectraImpl executionPayload,
-      SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
-      SszList<SszKZGCommitment> blobKzgCommitments,
-      SszList<SignedConsolidation> consolidations) {
+      final BeaconBlockBodySchemaElectraImpl type,
+      final SszSignature randaoReveal,
+      final Eth1Data eth1Data,
+      final SszBytes32 graffiti,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Attestation> attestations,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits,
+      final SyncAggregate syncAggregate,
+      final ExecutionPayloadElectraImpl executionPayload,
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
+      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final SszList<SignedConsolidation> consolidations) {
     super(
         type,
         randaoReveal,

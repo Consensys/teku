@@ -30,13 +30,13 @@ public final class RpcResponseEncoder<TPayload extends SszData, TContext> {
     this.contextCodec = contextCodec;
   }
 
-  public Bytes encodeSuccessfulResponse(TPayload response) {
+  public Bytes encodeSuccessfulResponse(final TPayload response) {
     final Bytes context = contextCodec.encodeContext(response);
     return Bytes.concatenate(
         Bytes.of(SUCCESS_RESPONSE_CODE), context, encoding.encodePayload(response));
   }
 
-  public Bytes encodeErrorResponse(RpcException error) {
+  public Bytes encodeErrorResponse(final RpcException error) {
     return Bytes.concatenate(
         Bytes.of(error.getResponseCode()), encoding.encodePayload(error.getErrorMessage()));
   }

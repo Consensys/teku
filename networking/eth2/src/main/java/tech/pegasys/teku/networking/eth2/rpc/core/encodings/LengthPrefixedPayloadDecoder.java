@@ -164,7 +164,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
   private static class VarIntDecoder extends AbstractByteBufDecoder<Long, RuntimeException> {
     @Override
-    protected Optional<Long> decodeOneImpl(ByteBuf in) {
+    protected Optional<Long> decodeOneImpl(final ByteBuf in) {
       long length = ByteBufExtKt.readUvarint(in);
       if (length < 0) {
         // wait for more byte to read length field
@@ -174,7 +174,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
     }
 
     @Override
-    protected void throwUnprocessedDataException(int dataLeft) throws RuntimeException {
+    protected void throwUnprocessedDataException(final int dataLeft) throws RuntimeException {
       // Do nothing, exceptional case is handled upstream
     }
   }

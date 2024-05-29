@@ -47,7 +47,7 @@ class AsyncResponseProcessor<TResponse> {
     this.onError = onError;
   }
 
-  public void processResponse(TResponse response) throws RpcException {
+  public void processResponse(final TResponse response) throws RpcException {
     if (allResponsesDelivered.get()) {
       throw new AdditionalDataReceivedException();
     }
@@ -66,7 +66,7 @@ class AsyncResponseProcessor<TResponse> {
   }
 
   /** Stop processing and clear any pending requests */
-  private void cancel(Throwable error) {
+  private void cancel(final Throwable error) {
     cancelled.set(true);
     queuedResponses.clear();
     finishedProcessing.completeExceptionally(error);

@@ -62,7 +62,7 @@ public class LibP2PRpcStream implements RpcStream {
     return toSafeFuture(ctx.channel().disconnect());
   }
 
-  private SafeFuture<Void> toSafeFuture(ChannelFuture channelFuture) {
+  private SafeFuture<Void> toSafeFuture(final ChannelFuture channelFuture) {
     final SafeFuture<Void> future = new SafeFuture<>();
     channelFuture.addListener(
         (f) -> {

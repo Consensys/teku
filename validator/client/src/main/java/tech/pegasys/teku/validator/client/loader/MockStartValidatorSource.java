@@ -50,7 +50,7 @@ public class MockStartValidatorSource implements ValidatorSource {
   private final ThrottlingTaskQueueWithPriority externalSignerTaskQueue;
   private final MetricsSystem metricsSystem;
 
-  private MockStartValidatorSource(Builder builder) {
+  private MockStartValidatorSource(final Builder builder) {
     this.spec = builder.spec;
     this.interopConfig = builder.interopConfig;
     this.asyncRunner = builder.asyncRunner;
@@ -108,7 +108,8 @@ public class MockStartValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddValidatorResult addValidator(BLSPublicKey publicKey, Optional<URL> signerUrl) {
+  public AddValidatorResult addValidator(
+      final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     throw new UnsupportedOperationException();
   }
 
@@ -145,35 +146,36 @@ public class MockStartValidatorSource implements ValidatorSource {
     private ThrottlingTaskQueueWithPriority externalSignerTaskQueue;
     private MetricsSystem metricsSystem;
 
-    public Builder(Spec spec, InteropConfig interopConfig, AsyncRunner asyncRunner) {
+    public Builder(
+        final Spec spec, final InteropConfig interopConfig, final AsyncRunner asyncRunner) {
       this.spec = spec;
       this.interopConfig = interopConfig;
       this.asyncRunner = asyncRunner;
     }
 
-    public Builder useExternalSigner(boolean useExternalSigner) {
+    public Builder useExternalSigner(final boolean useExternalSigner) {
       this.useExternalSigner = useExternalSigner;
       return this;
     }
 
-    public Builder config(ValidatorConfig config) {
+    public Builder config(final ValidatorConfig config) {
       this.config = config;
       return this;
     }
 
     public Builder externalSignerHttpClientFactory(
-        Supplier<HttpClient> externalSignerHttpClientFactory) {
+        final Supplier<HttpClient> externalSignerHttpClientFactory) {
       this.externalSignerHttpClientFactory = externalSignerHttpClientFactory;
       return this;
     }
 
     public Builder externalSignerTaskQueue(
-        ThrottlingTaskQueueWithPriority externalSignerTaskQueue) {
+        final ThrottlingTaskQueueWithPriority externalSignerTaskQueue) {
       this.externalSignerTaskQueue = externalSignerTaskQueue;
       return this;
     }
 
-    public Builder metricsSystem(MetricsSystem metricsSystem) {
+    public Builder metricsSystem(final MetricsSystem metricsSystem) {
       this.metricsSystem = metricsSystem;
       return this;
     }

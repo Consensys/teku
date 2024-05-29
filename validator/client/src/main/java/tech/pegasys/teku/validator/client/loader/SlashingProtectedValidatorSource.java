@@ -66,7 +66,8 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public AddValidatorResult addValidator(BLSPublicKey publicKey, Optional<URL> signerUrl) {
+  public AddValidatorResult addValidator(
+      final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     return delegate.addValidator(publicKey, signerUrl);
   }
 

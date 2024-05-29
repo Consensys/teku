@@ -31,7 +31,7 @@ public class OperationMilestoneValidator<T> {
     this.getEpochForMessage = getEpochForMessage;
   }
 
-  public boolean isValid(T message) {
+  public boolean isValid(final T message) {
     final UInt64 messageEpoch = getEpochForMessage.apply(message);
     final Fork actualFork = spec.getForkSchedule().getFork(messageEpoch);
     return expectedFork.equals(actualFork);

@@ -121,7 +121,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   private NewAddressHandler maybeUpdateNodeRecord(
-      boolean userExplicitlySetAdvertisedIpOrPort, final int advertisedTcpPort) {
+      final boolean userExplicitlySetAdvertisedIpOrPort, final int advertisedTcpPort) {
     if (userExplicitlySetAdvertisedIpOrPort) {
       return (oldRecord, newAddress) -> Optional.of(oldRecord);
     } else {
@@ -132,7 +132,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     }
   }
 
-  private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
+  private void localNodeRecordUpdated(final NodeRecord oldRecord, final NodeRecord newRecord) {
     kvStore.put(SEQ_NO_STORE_KEY, newRecord.getSeq().toBytes());
   }
 
@@ -222,7 +222,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
-  public void updateCustomENRField(String fieldName, Bytes value) {
+  public void updateCustomENRField(final String fieldName, final Bytes value) {
     discoverySystem.updateCustomFieldValue(fieldName, value);
   }
 
