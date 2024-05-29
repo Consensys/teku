@@ -186,9 +186,7 @@ public class ChainStorageTest {
       assertThatSafeFuture(blockResult).isCompletedWithEmptyOptional();
       final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> sidecarKeysResult =
           chainStorage.getBlobSidecarKeys(
-              missingHistoricalBlock.getSlot(),
-              missingHistoricalBlock.getSlot(),
-              UInt64.valueOf(Long.MAX_VALUE));
+              missingHistoricalBlock.getSlot(), missingHistoricalBlock.getSlot(), Long.MAX_VALUE);
       assertThatSafeFuture(sidecarKeysResult).isCompletedWithValueMatching(List::isEmpty);
     }
 
@@ -233,7 +231,7 @@ public class ChainStorageTest {
               .getBlobSidecarKeys(
                   missingHistoricalBlock.getSlot(),
                   missingHistoricalBlock.getSlot(),
-                  UInt64.valueOf(Long.MAX_VALUE))
+                  Long.MAX_VALUE)
               .thenCompose(
                   list ->
                       SafeFuture.collectAll(
@@ -308,9 +306,7 @@ public class ChainStorageTest {
       assertThatSafeFuture(blockResult).isCompletedWithEmptyOptional();
       final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> sidecarKeysResult =
           chainStorage.getBlobSidecarKeys(
-              missingHistoricalBlock.getSlot(),
-              missingHistoricalBlock.getSlot(),
-              UInt64.valueOf(Long.MAX_VALUE));
+              missingHistoricalBlock.getSlot(), missingHistoricalBlock.getSlot(), Long.MAX_VALUE);
       assertThatSafeFuture(sidecarKeysResult).isCompletedWithValueMatching(List::isEmpty);
     }
 

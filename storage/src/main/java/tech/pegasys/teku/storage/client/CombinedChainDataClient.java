@@ -637,7 +637,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
-      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+      final UInt64 startSlot, final UInt64 endSlot, final long limit) {
     return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
   }
 
