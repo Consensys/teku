@@ -479,10 +479,7 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder queryParam(final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
-      if (queryParams.containsKey(param)
-          || queryParamsAllowEmpty.containsKey(param)
-          || requiredQueryParams.containsKey(param)
-          || queryListParams.containsKey(param)) {
+      if (queryParamAlreadyAdded(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       queryParams.put(parameterMetadata.getName(), parameterMetadata.getType());
@@ -492,10 +489,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder queryParamAllowsEmpty(
         final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
-      if (queryParams.containsKey(param)
-          || queryParamsAllowEmpty.containsKey(param)
-          || requiredQueryParams.containsKey(param)
-          || queryListParams.containsKey(param)) {
+      if (queryParamAlreadyAdded(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       queryParamsAllowEmpty.put(parameterMetadata.getName(), parameterMetadata.getType());
@@ -505,10 +499,7 @@ public class EndpointMetadata {
     public EndpointMetaDataBuilder queryParamRequired(
         final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
-      if (queryParams.containsKey(param)
-          || queryParamsAllowEmpty.containsKey(param)
-          || requiredQueryParams.containsKey(param)
-          || queryListParams.containsKey(param)) {
+      if (queryParamAlreadyAdded(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       requiredQueryParams.put(parameterMetadata.getName(), parameterMetadata.getType());
@@ -517,14 +508,18 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder queryListParam(final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
-      if (queryParams.containsKey(param)
-          || queryParamsAllowEmpty.containsKey(param)
-          || requiredQueryParams.containsKey(param)
-          || queryListParams.containsKey(param)) {
+      if (queryParamAlreadyAdded(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       queryListParams.put(parameterMetadata.getName(), parameterMetadata.getType());
       return this;
+    }
+
+    private boolean queryParamAlreadyAdded(final String param) {
+      return queryParams.containsKey(param)
+          || queryParamsAllowEmpty.containsKey(param)
+          || requiredQueryParams.containsKey(param)
+          || queryListParams.containsKey(param);
     }
 
     public EndpointMetaDataBuilder headerRequired(final ParameterMetadata<?> headerMetadata) {
