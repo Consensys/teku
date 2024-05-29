@@ -314,13 +314,13 @@ public class EndpointMetadata {
     if (deprecated) {
       gen.writeBooleanField("deprecated", true);
     }
-    if (pathParams.size() > 0
-        || queryParams.size() > 0
-        || queryParamsAllowEmpty.size() > 0
-        || requiredQueryParams.size() > 0
-        || queryListParams.size() > 0
-        || requiredHeaders.size() > 0
-        || headers.size() > 0) {
+    if (!pathParams.isEmpty()
+        || !queryParams.isEmpty()
+        || !queryParamsAllowEmpty.isEmpty()
+        || !requiredQueryParams.isEmpty()
+        || !queryListParams.isEmpty()
+        || !requiredHeaders.isEmpty()
+        || !headers.isEmpty()) {
       gen.writeArrayFieldStart("parameters");
       writeParameters(gen, pathParams, "path", true, false, false);
       writeParameters(gen, requiredQueryParams, "query", true, false, false);
