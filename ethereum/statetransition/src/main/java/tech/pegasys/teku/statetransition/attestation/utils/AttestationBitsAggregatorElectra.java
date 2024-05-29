@@ -119,22 +119,16 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       return false;
     }
 
-    final IntList aggregatedCommitteeIndices = aggregatedCommitteeBits.getAllSetBits();
-
     // create an aggregation bit big as last boundary for last committee bit
-    final int lastCommitteeIndex =
-            aggregatedCommitteeIndices.getInt(aggregatedCommitteeIndices.size() - 1);
+    final int lastCommitteeIndex = aggregatedCommitteeBits.getLastSetBitIndex();
     final int lastCommitteeStartingPosition =
-            aggregatedCommitteeBitsStartingPositions.get(lastCommitteeIndex);
-    final int aggregationBitsSize = lastCommitteeStartingPosition + committeesSize.get(lastCommitteeIndex);
+        aggregatedCommitteeBitsStartingPositions.get(lastCommitteeIndex);
+    final int aggregationBitsSize =
+        lastCommitteeStartingPosition + committeesSize.get(lastCommitteeIndex);
 
     committeeBits = aggregatedCommitteeBits;
     aggregationBits =
-        aggregationBits
-            .getSchema()
-            .ofBits(
-                    aggregationBitsSize,
-                aggregationIndices.toIntArray());
+        aggregationBits.getSchema().ofBits(aggregationBitsSize, aggregationIndices.toIntArray());
     committeeBitsStartingPositions = aggregatedCommitteeBitsStartingPositions;
 
     return true;
@@ -177,7 +171,9 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       return false;
     }
 
-    if (committeeBits.equals(other.getCommitteeBitsRequired())) {
+    if (committeeBits.getBitCount() == other.getCommitteeBitsRequired().getBitCount()) {
+      // this committeeBits is a superset of the other, and bit count is the same, so they are the
+      // same set and we can directly compare aggregation bits.
       return aggregationBits.isSuperSetOf(other.getAggregationBits());
     }
 
@@ -235,7 +231,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         .add("aggregationBits", aggregationBits)
         .add("committeeBits", committeeBits)
         .add("committeesSize", committeesSize)
-            .add("committeeBitsStartingPositions", committeeBitsStartingPositions)
+        .add("committeeBitsStartingPositions", committeeBitsStartingPositions)
         .toString();
   }
 }

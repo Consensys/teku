@@ -80,6 +80,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
+  public int getLastSetBitIndex() {
+    return value.getLastSetBitIndex();
+  }
+
+  @Override
   public IntStream streamAllSetBits() {
     return value.streamAllSetBits();
   }
