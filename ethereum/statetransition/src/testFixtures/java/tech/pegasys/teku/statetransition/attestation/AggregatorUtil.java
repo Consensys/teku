@@ -66,7 +66,7 @@ public class AggregatorUtil {
         .create(
             aggregateBits,
             firstAttestation.getData(),
-            committeeBitsSupplier,
-            BLS.aggregate(signatures));
+            BLS.aggregate(signatures),
+            committeeBitsSupplier);
   }
 }
