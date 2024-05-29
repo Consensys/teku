@@ -45,7 +45,7 @@ class AbstractEpochProcessorTest {
   private final EpochProcessorCapella epochProcessor =
       (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
 
-  private final int throttlingPeriod = 1; // expect maximum of one call per second
+  private final int throttlingPeriod = 2; // expect maximum of one call every 2 seconds
   private static final Logger LOGGER = mock(Logger.class);
   private final Throttler<Logger> loggerThrottler = spyLogThrottler(LOGGER, throttlingPeriod);
   private final BeaconState state = createStateInInactivityLeak();
@@ -56,15 +56,15 @@ class AbstractEpochProcessorTest {
     // First two processEpoch calls within the same second
     epochProcessor.processEpoch(state);
     epochProcessor.processEpoch(advanceNSlots(state, 1));
-    // Wait 2 seconds
-    TimeUnit.SECONDS.sleep(2);
-    // Third processEpoch call after 2 seconds
+    // Wait 5 seconds
+    TimeUnit.SECONDS.sleep(5);
+    // Third processEpoch call after 5 seconds
     epochProcessor.processEpoch(advanceNSlots(state, slotsPerEpoch));
 
     // Logger throttler called 3 times
     verify(loggerThrottler, times(3)).invoke(any(), any());
 
-    // Real logger only called 2 times (one per second)
+    // Real logger only called 2 times (one every 2 seconds)
     verify(LOGGER, times(2)).info(anyString());
   }
 
