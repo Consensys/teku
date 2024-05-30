@@ -394,45 +394,6 @@ public class AttestationBitsAggregatorElectraTest {
   }
 
   @Test
-  void asd() {
-    committeeSizes = new Int2IntOpenHashMap();
-    IntStream.range(0, 64).forEach(i -> committeeSizes.put(i, 600));
-
-    List<Integer> committee1 =
-        IntStream.range(0, 64).mapToObj(__ -> dataStructureUtil.randomPositiveInt(64)).toList();
-    int[] aggregation1 =
-        IntStream.range(0, 600).map(__ -> dataStructureUtil.randomPositiveInt(600)).toArray();
-
-    List<Integer> committee2 =
-        IntStream.range(0, 64).mapToObj(__ -> dataStructureUtil.randomPositiveInt(64)).toList();
-    int[] aggregation2 =
-        IntStream.range(0, 600).map(__ -> dataStructureUtil.randomPositiveInt(600)).toArray();
-
-    ValidatableAttestation asd = createAttestation(committee1, aggregation1);
-
-    committee2 = committee1.subList(0, committee1.size() - 1);
-
-    ValidatableAttestation asd2 = createAttestation(committee2, aggregation2);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(asd);
-
-    long now = System.currentTimeMillis();
-    for (int i = 0; i < 100000; i++) {
-      aggregator.or(asd2.getAttestation());
-    }
-    long finalTime = System.currentTimeMillis() - now;
-    System.out.println("time: " + finalTime + " ms - ops per millisecond: " + 100000f / finalTime);
-
-    //     now = System.currentTimeMillis();
-    //    for(int i = 0; i < 10000; i++) {
-    //
-    // asd2.getAttestation().getAggregationBits().or(asd.getAttestation().getAggregationBits());
-    //    }
-    //     finalTime = System.currentTimeMillis() - now;
-    //    System.out.println("time: " + finalTime + " ms - ops per millisecond: " + 10000f /
-    // finalTime);
-  }
-
-  @Test
   void isSuperSetOf1() {
 
     /*

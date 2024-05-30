@@ -135,6 +135,28 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     assertThat(bitlist2.sszSerialize()).isEqualTo(bitlist1.sszSerialize());
   }
 
+  @Test
+  void wrapBitSet_shouldDropBitsIfBitSetIsLarger() {
+    final BitSet bitSet = new BitSet(100);
+    bitSet.set(99);
+    assertThat(bitSet.stream().count()).isEqualTo(1);
+
+    final SszBitlist sszBitlist = schema.wrapBitSet(10, bitSet);
+    final SszBitlist expectedSszBitlist = schema.ofBits(10);
+
+    assertThat(sszBitlist).isEqualTo(expectedSszBitlist);
+    assertThat(sszBitlist.hashCode()).isEqualTo(expectedSszBitlist.hashCode());
+    assertThat(sszBitlist.hashTreeRoot()).isEqualTo(expectedSszBitlist.hashTreeRoot());
+    assertThat(sszBitlist.sszSerialize()).isEqualTo(expectedSszBitlist.sszSerialize());
+  }
+
+  @Test
+  void wrapBitSet_shouldThrowIfSizeIsLargerThanSchemaMaxLength() {
+    assertThatThrownBy(
+            () -> schema.wrapBitSet(Math.toIntExact(schema.getMaxLength() + 1), new BitSet()))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void testTreeRoundtrip(SszBitlist bitlist1) {
