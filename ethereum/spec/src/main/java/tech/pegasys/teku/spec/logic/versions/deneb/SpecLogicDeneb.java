@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.deneb;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -91,7 +92,9 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
   }
 
   public static SpecLogicDeneb create(
-      final SpecConfigDeneb config, final SchemaDefinitionsDeneb schemaDefinitions) {
+      final SpecConfigDeneb config,
+      final SchemaDefinitionsDeneb schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersDeneb miscHelpers =
@@ -141,7 +144,8 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);

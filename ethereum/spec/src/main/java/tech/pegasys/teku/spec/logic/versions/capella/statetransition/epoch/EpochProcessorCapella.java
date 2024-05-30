@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch;
 
+import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
@@ -40,7 +43,8 @@ public class EpochProcessorCapella extends EpochProcessorBellatrix {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     super(
         specConfig,
         miscHelpers,
@@ -49,8 +53,25 @@ public class EpochProcessorCapella extends EpochProcessorBellatrix {
         validatorsUtil,
         beaconStateUtil,
         validatorStatusFactory,
-        schemaDefinitions);
+        schemaDefinitions,
+        timeProvider);
     this.schemaDefinitions = schemaDefinitions;
+  }
+
+  @VisibleForTesting
+  public EpochProcessorCapella(
+      final EpochProcessorCapella processor, final TimeProvider timeProvider) {
+    super(
+        SpecConfigBellatrix.required(processor.specConfig),
+        processor.miscHelpersAltair,
+        processor.beaconStateAccessorsAltair,
+        processor.beaconStateMutators,
+        processor.validatorsUtil,
+        processor.beaconStateUtil,
+        processor.validatorStatusFactory,
+        processor.schemaDefinitions,
+        timeProvider);
+    this.schemaDefinitions = processor.schemaDefinitions;
   }
 
   @Override
