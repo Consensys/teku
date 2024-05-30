@@ -189,13 +189,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"-X"};
 
     beaconNodeCommand.parse(args);
-    String str = getCommandLineOutput();
 
-    final Pattern p = Pattern.compile("--[^X][^ ]+");
-    final Matcher matcher = p.matcher(str);
+    final Pattern p = Pattern.compile("--[^X][^ ]+=");
+    final Matcher matcher = p.matcher(getCommandLineOutput());
     final List<String> errors = new ArrayList<>();
     while (matcher.find()) {
-      MatchResult current = matcher.toMatchResult();
+      final MatchResult current = matcher.toMatchResult();
       LOG.debug("found {} at position {}", current.group().trim(), current.start());
       errors.add(current.group().trim());
     }

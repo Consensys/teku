@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec;
 
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
+
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -66,37 +68,43 @@ public class SpecVersion extends DelegatingSpecLogic {
 
   static SpecVersion createPhase0(final SpecConfig specConfig) {
     final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(specConfig);
-    final SpecLogic specLogic = SpecLogicPhase0.create(specConfig, schemaDefinitions);
+    final SpecLogic specLogic =
+        SpecLogicPhase0.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.PHASE0, specConfig, schemaDefinitions, specLogic);
   }
 
   static SpecVersion createAltair(final SpecConfigAltair specConfig) {
     final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
-    final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
+    final SpecLogic specLogic =
+        SpecLogicAltair.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.ALTAIR, specConfig, schemaDefinitions, specLogic);
   }
 
   static SpecVersion createBellatrix(final SpecConfigBellatrix specConfig) {
     final SchemaDefinitionsBellatrix schemaDefinitions = new SchemaDefinitionsBellatrix(specConfig);
-    final SpecLogic specLogic = SpecLogicBellatrix.create(specConfig, schemaDefinitions);
+    final SpecLogic specLogic =
+        SpecLogicBellatrix.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.BELLATRIX, specConfig, schemaDefinitions, specLogic);
   }
 
   static SpecVersion createCapella(final SpecConfigCapella specConfig) {
     final SchemaDefinitionsCapella schemaDefinitions = new SchemaDefinitionsCapella(specConfig);
-    final SpecLogicCapella specLogic = SpecLogicCapella.create(specConfig, schemaDefinitions);
+    final SpecLogicCapella specLogic =
+        SpecLogicCapella.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.CAPELLA, specConfig, schemaDefinitions, specLogic);
   }
 
   static SpecVersion createDeneb(final SpecConfigDeneb specConfig) {
     final SchemaDefinitionsDeneb schemaDefinitions = new SchemaDefinitionsDeneb(specConfig);
-    final SpecLogicDeneb specLogic = SpecLogicDeneb.create(specConfig, schemaDefinitions);
+    final SpecLogicDeneb specLogic =
+        SpecLogicDeneb.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.DENEB, specConfig, schemaDefinitions, specLogic);
   }
 
   static SpecVersion createElectra(final SpecConfigElectra specConfig) {
     final SchemaDefinitionsElectra schemaDefinitions = new SchemaDefinitionsElectra(specConfig);
-    final SpecLogicElectra specLogic = SpecLogicElectra.create(specConfig, schemaDefinitions);
+    final SpecLogicElectra specLogic =
+        SpecLogicElectra.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.ELECTRA, specConfig, schemaDefinitions, specLogic);
   }
 

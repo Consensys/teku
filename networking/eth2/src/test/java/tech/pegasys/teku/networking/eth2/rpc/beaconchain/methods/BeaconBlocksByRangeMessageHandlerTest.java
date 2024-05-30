@@ -79,7 +79,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
       blocksWStates.stream()
           .map(StateAndBlockSummary::getSignedBeaconBlock)
           .flatMap(Optional::stream)
-          .collect(Collectors.toList());
+          .toList();
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
