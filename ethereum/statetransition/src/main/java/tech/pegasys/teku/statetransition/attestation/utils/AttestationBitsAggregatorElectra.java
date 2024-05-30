@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.attestation.utils;
 import com.google.common.base.MoreObjects;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.BitSet;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
@@ -166,12 +165,14 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   private Int2IntMap calculateCommitteeStartingPositions(final SszBitvector committeeBits) {
     final Int2IntMap committeeBitsStartingPositions = new Int2IntOpenHashMap();
-    final IntList committeeIndices = committeeBits.getAllSetBits();
-    int currentOffset = 0;
-    for (final int index : committeeIndices) {
-      committeeBitsStartingPositions.put(index, currentOffset);
-      currentOffset += committeesSize.get(index);
-    }
+    final int[] currentOffset = {0};
+    committeeBits
+        .streamAllSetBits()
+        .forEach(
+            index -> {
+              committeeBitsStartingPositions.put(index, currentOffset[0]);
+              currentOffset[0] += committeesSize.get(index);
+            });
 
     return committeeBitsStartingPositions;
   }
