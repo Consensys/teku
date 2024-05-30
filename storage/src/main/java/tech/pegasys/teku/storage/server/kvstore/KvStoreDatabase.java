@@ -566,7 +566,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {
+  public void updateWeakSubjectivityState(final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     try (final HotUpdater updater = hotUpdater()) {
       Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
       checkpoint.ifPresentOrElse(
@@ -576,14 +576,14 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeReconstructedFinalizedState(BeaconState state, Bytes32 blockRoot) {
+  public void storeReconstructedFinalizedState(final BeaconState state, final Bytes32 blockRoot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addReconstructedFinalizedState(blockRoot, state);
       handleAddFinalizedStateRoot(state, updater);
     }
   }
 
-  private void handleAddFinalizedStateRoot(BeaconState state, FinalizedUpdater updater) {
+  private void handleAddFinalizedStateRoot(final BeaconState state, final FinalizedUpdater updater) {
     final Optional<BeaconState> maybeLastState =
         getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
     maybeLastState.ifPresentOrElse(
@@ -915,7 +915,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {
+  public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
     try (final HotUpdater updater = hotUpdater()) {
       updater.setFinalizedDepositSnapshot(finalizedDepositSnapshot);
       updater.commit();
@@ -1113,7 +1113,7 @@ public class KvStoreDatabase implements Database {
   }
 
   private void updateFinalizedDataArchiveMode(
-      Map<Bytes32, Bytes32> finalizedChildToParentMap,
+          final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
 
@@ -1166,7 +1166,7 @@ public class KvStoreDatabase implements Database {
   }
 
   private void updateFinalizedDataPruneMode(
-      Map<Bytes32, Bytes32> finalizedChildToParentMap,
+          final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
     final Optional<Bytes32> initialBlockRoot = dao.getAnchor().map(Checkpoint::getRoot);
 
@@ -1231,7 +1231,7 @@ public class KvStoreDatabase implements Database {
   }
 
   private void putFinalizedState(
-      FinalizedUpdater updater, final Bytes32 blockRoot, final BeaconState state) {
+          final FinalizedUpdater updater, final Bytes32 blockRoot, final BeaconState state) {
     if (stateStorageMode.storesFinalizedStates()) {
       updater.addFinalizedState(blockRoot, state);
       updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot());

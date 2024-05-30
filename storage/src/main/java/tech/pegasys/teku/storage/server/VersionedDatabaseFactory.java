@@ -326,7 +326,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     }
   }
 
-  private void createDirectories(DatabaseVersion dbVersion) {
+  private void createDirectories(final DatabaseVersion dbVersion) {
     if (!dbDirectory.mkdirs() && !dbDirectory.isDirectory()) {
       throw DatabaseStorageException.unrecoverable(
           String.format(

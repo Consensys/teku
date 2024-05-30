@@ -519,7 +519,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     private final FinalizedStateUpdater<S> stateStorageUpdater;
 
     V4CombinedUpdater(
-        final KvStoreAccessor db, final S schema, FinalizedStateUpdater<S> stateStorageUpdater) {
+        final KvStoreAccessor db, final S schema, final FinalizedStateUpdater<S> stateStorageUpdater) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;
@@ -552,7 +552,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void setWeakSubjectivityCheckpoint(Checkpoint checkpoint) {
+    public void setWeakSubjectivityCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableWeakSubjectivityCheckpoint(), checkpoint);
     }
 
@@ -710,7 +710,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+    public void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       stateStorageUpdater.addReconstructedFinalizedState(db, transaction, schema, state);
     }
 

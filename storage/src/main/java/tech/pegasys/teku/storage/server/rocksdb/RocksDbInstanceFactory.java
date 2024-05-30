@@ -117,7 +117,7 @@ public class RocksDbInstanceFactory {
     }
   }
 
-  private static ColumnFamilyHandle getDefaultHandle(List<ColumnFamilyHandle> columnHandles) {
+  private static ColumnFamilyHandle getDefaultHandle(final List<ColumnFamilyHandle> columnHandles) {
     return columnHandles.stream()
         .filter(
             handle -> {

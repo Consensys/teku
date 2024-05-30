@@ -48,7 +48,7 @@ public class DatabaseNetwork {
   }
 
   public static DatabaseNetwork init(
-      final File source, Bytes4 forkVersion, Eth1Address depositContract) throws IOException {
+      final File source, final Bytes4 forkVersion, final Eth1Address depositContract) throws IOException {
     final String forkVersionString = forkVersion.toHexString().toLowerCase(Locale.ROOT);
     final String depositContractString = depositContract.toHexString().toLowerCase(Locale.ROOT);
     final ObjectMapper objectMapper =
@@ -76,7 +76,7 @@ public class DatabaseNetwork {
     }
   }
 
-  private static String formatMessage(String fieldName, String expected, String actual) {
+  private static String formatMessage(final String fieldName, final String expected, final String actual) {
     return String.format(
         "Supplied %s (%s) does not match the stored database (%s). "
             + "Check that the existing database matches the current network settings.",
