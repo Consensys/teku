@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.collections.PrimitiveCollectionAssert.assertThatIntCollection;
 
+import java.util.BitSet;
 import java.util.OptionalInt;
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -29,6 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
@@ -86,11 +88,11 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
   }
 
   public Stream<Arguments> nonEmptyBitlistArgs() {
-    return sszData().filter(b -> b.size() > 0).map(Arguments::of);
+    return sszData().filter(b -> !b.isEmpty()).map(Arguments::of);
   }
 
   public Stream<Arguments> emptyBitlistArgs() {
-    return sszData().filter(b -> b.size() == 0).map(Arguments::of);
+    return sszData().filter(SszCollection::isEmpty).map(Arguments::of);
   }
 
   @ParameterizedTest
@@ -111,6 +113,48 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
     Bytes ssz2 = bitlist2.sszSerialize();
     assertThat(ssz2).isEqualTo(ssz1);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitlistArgs")
+  void testWrapBitSet(SszBitlist bitlist1) {
+    final BitSet bits = new BitSet(bitlist1.size());
+
+    bitlist1.streamAllSetBits().forEach(bits::set);
+
+    final SszBitlist bitlist2 = bitlist1.getSchema().wrapBitSet(bitlist1.size(), bits);
+
+    for (int i = 0; i < bitlist1.size(); i++) {
+      assertThat(bitlist2.getBit(i)).isEqualTo(bitlist1.getBit(i));
+      assertThat(bitlist2.get(i)).isEqualTo(bitlist1.get(i));
+    }
+
+    assertThat(bitlist2).isEqualTo(bitlist1);
+    assertThat(bitlist2.hashCode()).isEqualTo(bitlist1.hashCode());
+    assertThat(bitlist2.hashTreeRoot()).isEqualTo(bitlist1.hashTreeRoot());
+    assertThat(bitlist2.sszSerialize()).isEqualTo(bitlist1.sszSerialize());
+  }
+
+  @Test
+  void wrapBitSet_shouldDropBitsIfBitSetIsLarger() {
+    final BitSet bitSet = new BitSet(100);
+    bitSet.set(99);
+    assertThat(bitSet.stream().count()).isEqualTo(1);
+
+    final SszBitlist sszBitlist = schema.wrapBitSet(10, bitSet);
+    final SszBitlist expectedSszBitlist = schema.ofBits(10);
+
+    assertThat(sszBitlist).isEqualTo(expectedSszBitlist);
+    assertThat(sszBitlist.hashCode()).isEqualTo(expectedSszBitlist.hashCode());
+    assertThat(sszBitlist.hashTreeRoot()).isEqualTo(expectedSszBitlist.hashTreeRoot());
+    assertThat(sszBitlist.sszSerialize()).isEqualTo(expectedSszBitlist.sszSerialize());
+  }
+
+  @Test
+  void wrapBitSet_shouldThrowIfSizeIsLargerThanSchemaMaxLength() {
+    assertThatThrownBy(
+            () -> schema.wrapBitSet(Math.toIntExact(schema.getMaxLength() + 1), new BitSet()))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @ParameterizedTest
