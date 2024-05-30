@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
+import java.util.BitSet;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitlistSchemaImpl;
@@ -29,4 +30,6 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
   }
 
   SszBitlistT ofBits(int size, int... setBitIndices);
+
+  SszBitlistT wrapBitSet(int size, BitSet bitSet);
 }
