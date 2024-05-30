@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.bellatrix;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -92,7 +93,9 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
   }
 
   public static SpecLogicBellatrix create(
-      final SpecConfigBellatrix config, final SchemaDefinitionsBellatrix schemaDefinitions) {
+      final SpecConfigBellatrix config,
+      final SchemaDefinitionsBellatrix schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersBellatrix miscHelpers = new MiscHelpersBellatrix(config);
@@ -141,7 +144,8 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);

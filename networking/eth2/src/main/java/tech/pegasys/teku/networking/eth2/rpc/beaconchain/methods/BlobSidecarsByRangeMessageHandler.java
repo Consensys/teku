@@ -85,6 +85,25 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
+
+    final long requestedCount = calculateRequestedCount(request);
+
+    if (requestedCount > specConfigDeneb.getMaxRequestBlobSidecars()) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Only a maximum of %s blob sidecars can be requested per request",
+                  specConfigDeneb.getMaxRequestBlobSidecars())));
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
   public void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
@@ -99,24 +118,10 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock());
-    final UInt64 maxRequestBlobSidecars =
-        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
-    final UInt64 requestedCount = message.getCount().times(maxBlobsPerBlock);
-
-    if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
-      requestCounter.labels("count_too_big").inc();
-      callback.completeWithErrorResponse(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              String.format(
-                  "Only a maximum of %s blob sidecars can be requested per request",
-                  maxRequestBlobSidecars)));
-      return;
-    }
+    final long requestedCount = calculateRequestedCount(message);
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
-        peer.approveBlobSidecarsRequest(callback, requestedCount.longValue());
+        peer.approveBlobSidecarsRequest(callback, requestedCount);
 
     if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -156,14 +161,8 @@ public class BlobSidecarsByRangeMessageHandler
               }
 
               final RequestState initialState =
-                  new RequestState(
-                      callback,
-                      maxRequestBlobSidecars,
-                      startSlot,
-                      endSlot,
-                      canonicalHotRoots,
-                      finalizedSlot);
-              if (initialState.isComplete()) {
+                  new RequestState(callback, startSlot, endSlot, canonicalHotRoots, finalizedSlot);
+              if (message.getCount().isZero()) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendBlobSidecars(initialState);
@@ -171,7 +170,7 @@ public class BlobSidecarsByRangeMessageHandler
         .finish(
             requestState -> {
               final int sentBlobSidecars = requestState.sentBlobSidecars.get();
-              if (sentBlobSidecars != requestedCount.longValue()) {
+              if (sentBlobSidecars != requestedCount) {
                 peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), sentBlobSidecars);
               }
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
@@ -181,6 +180,10 @@ public class BlobSidecarsByRangeMessageHandler
               peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
               handleProcessingRequestError(error, callback);
             });
+  }
+
+  private long calculateRequestedCount(final BlobSidecarsByRangeRequestMessage message) {
+    return specConfigDeneb.getMaxBlobsPerBlock() * message.getCount().longValue();
   }
 
   private boolean checkBlobSidecarsAreAvailable(
@@ -226,13 +229,13 @@ public class BlobSidecarsByRangeMessageHandler
   @VisibleForTesting
   class RequestState {
 
-    private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     private final ResponseCallback<BlobSidecar> callback;
-    private final UInt64 maxRequestBlobSidecars;
     private final UInt64 startSlot;
     private final UInt64 endSlot;
     private final UInt64 finalizedSlot;
     private final Map<UInt64, Bytes32> canonicalHotRoots;
+
+    private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
 
     // since our storage stores hot and finalized blobs on the same "table", this iterator can span
     // over hot and finalized blobs
@@ -241,13 +244,11 @@ public class BlobSidecarsByRangeMessageHandler
 
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
-        final UInt64 maxRequestBlobSidecars,
         final UInt64 startSlot,
         final UInt64 endSlot,
         final Map<UInt64, Bytes32> canonicalHotRoots,
         final UInt64 finalizedSlot) {
       this.callback = callback;
-      this.maxRequestBlobSidecars = maxRequestBlobSidecars;
       this.startSlot = startSlot;
       this.endSlot = endSlot;
       this.finalizedSlot = finalizedSlot;
@@ -261,7 +262,7 @@ public class BlobSidecarsByRangeMessageHandler
     SafeFuture<Optional<BlobSidecar>> loadNextBlobSidecar() {
       if (blobSidecarKeysIterator.isEmpty()) {
         return combinedChainDataClient
-            .getBlobSidecarKeys(startSlot, endSlot, maxRequestBlobSidecars)
+            .getBlobSidecarKeys(startSlot, endSlot, specConfigDeneb.getMaxRequestBlobSidecars())
             .thenCompose(
                 keys -> {
                   blobSidecarKeysIterator = Optional.of(keys.iterator());
@@ -302,8 +303,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return endSlot.isLessThan(startSlot)
-          || blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
+      return blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

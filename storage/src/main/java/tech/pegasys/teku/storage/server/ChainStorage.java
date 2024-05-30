@@ -342,15 +342,13 @@ public class ChainStorage
 
   @Override
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
-      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+      final UInt64 startSlot, final UInt64 endSlot, final long limit) {
     return SafeFuture.of(
         () -> {
-          final List<SlotAndBlockRootAndBlobIndex> result;
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
-            result = blobSidecars.limit(limit.longValue()).toList();
+            return blobSidecars.limit(limit).toList();
           }
-          return result;
         });
   }
 

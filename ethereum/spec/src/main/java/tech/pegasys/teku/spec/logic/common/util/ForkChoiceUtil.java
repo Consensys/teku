@@ -136,7 +136,7 @@ public class ForkChoiceUtil {
       final UInt64 count) {
     final NavigableMap<UInt64, Bytes32> roots = new TreeMap<>();
     // minus(ONE) because the start block is included
-    final UInt64 endSlot = startSlot.plus(step.times(count)).minus(UInt64.ONE);
+    final UInt64 endSlot = startSlot.plus(step.times(count)).minusMinZero(1);
     Bytes32 parentRoot = root;
     Optional<UInt64> parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
     while (parentSlot.isPresent() && parentSlot.get().compareTo(startSlot) > 0) {

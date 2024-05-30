@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.time.Throttler;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -66,7 +67,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final UInt64 maxEffectiveBalance;
   // Used to log once per minute (throttlingPeriod = 60 seconds)
   private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.valueOf(60));
-  private final Supplier<UInt64> timeSupplier;
+  private final TimeProvider timeProvider;
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
@@ -76,7 +77,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
@@ -86,7 +88,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.validatorStatusFactory = validatorStatusFactory;
     this.schemaDefinitions = schemaDefinitions;
     this.maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
-    this.timeSupplier = () -> UInt64.valueOf(System.currentTimeMillis() / 1000);
+    this.timeProvider = timeProvider;
   }
 
   /**
@@ -132,7 +134,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
       loggerThrottler.invoke(
-          timeSupplier.get(), (log) -> log.info("Beacon chain is in inactivity leak"));
+          timeProvider.getTimeInSeconds(), (log) -> log.info("Beacon chain is in inactivity leak"));
     }
   }
 

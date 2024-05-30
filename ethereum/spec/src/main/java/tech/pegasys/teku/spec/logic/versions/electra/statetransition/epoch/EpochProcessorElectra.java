@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -58,7 +59,8 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     super(
         specConfig,
         miscHelpers,
@@ -67,7 +69,8 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         validatorsUtil,
         beaconStateUtil,
         validatorStatusFactory,
-        schemaDefinitions);
+        schemaDefinitions,
+        timeProvider);
     this.minActivationBalance =
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
