@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -190,7 +191,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   }
 
   private String formatOptionalTimestamp(final Optional<UInt64> maybeTimestamp) {
-    return formatOptionalTimestamp(maybeTimestamp, new SystemTimeProvider());
+    return formatOptionalTimestamp(maybeTimestamp, SYSTEM_TIME_PROVIDER);
   }
 
   @VisibleForTesting
