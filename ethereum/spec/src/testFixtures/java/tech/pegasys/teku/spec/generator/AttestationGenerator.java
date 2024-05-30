@@ -60,11 +60,11 @@ public class AttestationGenerator {
     this.validatorKeys = validatorKeys;
   }
 
-  public static int getSingleAttesterIndex(Attestation attestation) {
+  public static int getSingleAttesterIndex(final Attestation attestation) {
     return attestation.getAggregationBits().streamAllSetBits().findFirst().orElse(-1);
   }
 
-  public static AttestationData diffSlotAttestationData(UInt64 slot, AttestationData data) {
+  public static AttestationData diffSlotAttestationData(final UInt64 slot, final AttestationData data) {
     return new AttestationData(
         slot, data.getIndex(), data.getBeaconBlockRoot(), data.getSource(), data.getTarget());
   }
@@ -77,7 +77,7 @@ public class AttestationGenerator {
    * @return a list of aggregated {@link Attestation}s with distinct {@link
    *     tech.pegasys.teku.spec.datastructures.operations.AttestationData}
    */
-  public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
+  public static List<Attestation> groupAndAggregateAttestations(final List<Attestation> srcAttestations) {
     Collection<List<Attestation>> groupedAtt =
         srcAttestations.stream().collect(Collectors.groupingBy(Attestation::getData)).values();
     return groupedAtt.stream()
@@ -85,7 +85,7 @@ public class AttestationGenerator {
         .collect(Collectors.toList());
   }
 
-  private static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
+  private static Attestation aggregateAttestations(final List<Attestation> srcAttestations) {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
 
     final AttestationSchema<? extends Attestation> attestationSchema =
@@ -419,7 +419,7 @@ public class AttestationGenerator {
     }
 
     private SszBitlist getAggregationBits(
-        final AttestationSchema<?> attestationSchema, int committeeSize, int indexIntoCommittee) {
+        final AttestationSchema<?> attestationSchema, final int committeeSize, final int indexIntoCommittee) {
       // Create aggregation bitfield
       return attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, indexIntoCommittee);
     }

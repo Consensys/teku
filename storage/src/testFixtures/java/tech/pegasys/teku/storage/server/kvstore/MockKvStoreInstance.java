@@ -43,8 +43,8 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
   public MockKvStoreInstance(
-      Collection<KvStoreColumn<?, ?>> columns,
-      Collection<KvStoreVariable<?>> variables,
+      final Collection<KvStoreColumn<?, ?>> columns,
+      final Collection<KvStoreVariable<?>> variables,
       final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData,
       final Map<KvStoreVariable<?>, Bytes> variableData) {
     this.columns = new HashSet<>(columns);
@@ -62,7 +62,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   public static MockKvStoreInstance createEmpty(
-      final Collection<KvStoreColumn<?, ?>> columns, Collection<KvStoreVariable<?>> variables) {
+      final Collection<KvStoreColumn<?, ?>> columns, final Collection<KvStoreVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
@@ -148,7 +148,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
-  public <K, V> Stream<K> streamKeys(KvStoreColumn<K, V> column) {
+  public <K, V> Stream<K> streamKeys(final KvStoreColumn<K, V> column) {
     return streamKeysRaw(column)
         .map(entry -> column.getKeySerializer().deserialize(entry.toArrayUnsafe()));
   }
@@ -163,7 +163,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
-  public Stream<Bytes> streamKeysRaw(KvStoreColumn<?, ?> column) {
+  public Stream<Bytes> streamKeysRaw(final KvStoreColumn<?, ?> column) {
     assertOpen();
     assertValidColumn(column);
     return columnData.get(column).keySet().stream();
@@ -190,7 +190,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
 
   @Override
   public <K extends Comparable<K>, V> Stream<K> streamKeys(
-      KvStoreColumn<K, V> column, K from, K to) {
+          final KvStoreColumn<K, V> column, final K from, final K to) {
     assertOpen();
     return columnData
         .get(column)
@@ -228,11 +228,11 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     return ColumnEntry.create(entry.getKey(), entry.getValue());
   }
 
-  private <K, V> Bytes keyToBytes(final KvStoreColumn<K, V> column, K key) {
+  private <K, V> Bytes keyToBytes(final KvStoreColumn<K, V> column, final K key) {
     return Bytes.wrap(column.getKeySerializer().serialize(key));
   }
 
-  private <K, V> Bytes valueToBytes(final KvStoreColumn<K, V> column, V value) {
+  private <K, V> Bytes valueToBytes(final KvStoreColumn<K, V> column, final V value) {
     return Bytes.wrap(column.getValueSerializer().serialize(value));
   }
 
@@ -241,11 +241,11 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     closed.set(true);
   }
 
-  private void assertValidVariable(KvStoreVariable<?> variable) {
+  private void assertValidVariable(final KvStoreVariable<?> variable) {
     checkArgument(variables.contains(variable), "Unknown RocksDbVariable supplied");
   }
 
-  private void assertValidColumn(KvStoreColumn<?, ?> column) {
+  private void assertValidColumn(final KvStoreColumn<?, ?> column) {
     checkArgument(columns.contains(column), "Unknown RocksDbColumn %s supplied", column.getId());
   }
 
@@ -320,7 +320,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     }
 
     @Override
-    public <T> void delete(KvStoreVariable<T> variable) {
+    public <T> void delete(final KvStoreVariable<T> variable) {
       assertOpen();
       dbInstance.assertValidVariable(variable);
       variableUpdates.put(variable, Optional.empty());
