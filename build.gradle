@@ -226,7 +226,6 @@ allprojects {
       check('ReferenceComparison', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
       // These checks are imported from errorprone-checks dependency but not required in Teku
-      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
@@ -242,6 +241,7 @@ allprojects {
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
     }
