@@ -69,26 +69,26 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       final SszBitlist otherAggregatedBits,
       final boolean isAggregation) {
 
-    final SszBitvector aggregatedCommitteeBits = committeeBits.or(otherCommitteeBits);
+    final SszBitvector combinedCommitteeBits = committeeBits.or(otherCommitteeBits);
 
     final Int2IntMap otherCommitteeBitsStartingPositions =
         calculateCommitteeStartingPositions(otherCommitteeBits);
     final Int2IntMap aggregatedCommitteeBitsStartingPositions =
-        calculateCommitteeStartingPositions(aggregatedCommitteeBits);
+        calculateCommitteeStartingPositions(combinedCommitteeBits);
 
     // create an aggregation bit big as last boundary for last committee bit
-    final int lastCommitteeIndex = aggregatedCommitteeBits.getLastSetBitIndex();
+    final int lastCommitteeIndex = combinedCommitteeBits.getLastSetBitIndex();
     final int lastCommitteeStartingPosition =
         aggregatedCommitteeBitsStartingPositions.get(lastCommitteeIndex);
-    final int aggregationBitsSize =
+    final int combinedAggregationBitsSize =
         lastCommitteeStartingPosition + committeesSize.get(lastCommitteeIndex);
 
-    final BitSet aggregationIndices = new BitSet(aggregationBitsSize);
+    final BitSet combinedAggregationIndices = new BitSet(combinedAggregationBitsSize);
 
-    // aggregateBits contains a new set of bits
-
+    // let's go over all aggregated committees to calculate indices for the combined aggregation
+    // bits
     try {
-      aggregatedCommitteeBits
+      combinedCommitteeBits
           .streamAllSetBits()
           .forEach(
               committeeIndex -> {
@@ -114,6 +114,10 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
                   }
                 }
 
+                // Now that we know:
+                // 1. which aggregationBits (this or other or both) will contribute to the result
+                // 2. the offset of the committee for each contributing aggregation bits
+                // We can go over the committee and calculate the combined aggregate bits
                 for (int positionInCommittee = 0;
                     positionInCommittee < committeeSize;
                     positionInCommittee++) {
@@ -124,7 +128,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
                       maybeSource2,
                       source2StartingPosition,
                       isAggregation)) {
-                    aggregationIndices.set(destinationStart + positionInCommittee);
+                    combinedAggregationIndices.set(destinationStart + positionInCommittee);
                   }
                 }
               });
@@ -132,9 +136,11 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       return false;
     }
 
-    committeeBits = aggregatedCommitteeBits;
+    committeeBits = combinedCommitteeBits;
     aggregationBits =
-        aggregationBits.getSchema().wrapBitSet(aggregationBitsSize, aggregationIndices);
+        aggregationBits
+            .getSchema()
+            .wrapBitSet(combinedAggregationBitsSize, combinedAggregationIndices);
     committeeBitsStartingPositions = aggregatedCommitteeBitsStartingPositions;
 
     return true;
@@ -146,7 +152,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       final int source1StartingPosition,
       final SszBitlist maybeSource2,
       final int source2StartingPosition,
-      final boolean isAggregating) {
+      final boolean isAggregation) {
 
     final boolean source1Bit = source1.getBit(source1StartingPosition + positionInCommittee);
 
@@ -156,7 +162,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
     final boolean source2Bit = maybeSource2.getBit(source2StartingPosition + positionInCommittee);
 
-    if (isAggregating && source1Bit && source2Bit) {
+    if (isAggregation && source1Bit && source2Bit) {
       throw new CannotAggregateException();
     }
 
