@@ -48,7 +48,7 @@
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "Skip verification of the `randao_reveal` value. If this flag is set then the\n `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n  is a flag and does not take a value",
+        "description" : "Skip verification of the `randao_reveal` value (currently ignored by Teku implementation). If this flag is set then the\n `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n  is a flag and does not take a value",
         "minLength" : 0,
         "maxLength" : 0
       }
