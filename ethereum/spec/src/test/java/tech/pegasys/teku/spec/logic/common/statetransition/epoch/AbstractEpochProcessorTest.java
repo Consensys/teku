@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
@@ -55,9 +56,9 @@ class AbstractEpochProcessorTest {
     // First two processEpoch calls within the same second
     epochProcessor.processEpoch(state);
     epochProcessor.processEpoch(advanceNSlots(state, 1));
-    // Wait 1 second
-    Thread.sleep(1000);
-    // Third processEpoch call after one second
+    // Wait 2 seconds
+    TimeUnit.SECONDS.sleep(2);
+    // Third processEpoch call after 2 seconds
     epochProcessor.processEpoch(advanceNSlots(state, slotsPerEpoch));
 
     // Logger throttler called 3 times

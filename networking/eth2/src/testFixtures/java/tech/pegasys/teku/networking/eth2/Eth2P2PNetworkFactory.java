@@ -454,7 +454,7 @@ public class Eth2P2PNetworkFactory {
 
     private P2PConfig generateConfig() {
       final List<String> peerAddresses =
-          peers.stream().map(P2PNetwork::getNodeAddress).collect(toList());
+          peers.stream().flatMap(peer -> peer.getNodeAddresses().stream()).collect(toList());
 
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);

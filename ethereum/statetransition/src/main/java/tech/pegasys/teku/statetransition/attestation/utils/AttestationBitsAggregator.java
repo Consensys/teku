@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 public interface AttestationBitsAggregator {
 
   static AttestationBitsAggregator fromEmptyFromAttestationSchema(
-      AttestationSchema<?> attestationSchema, Optional<Int2IntMap> committeesSize) {
+      final AttestationSchema<?> attestationSchema, final Optional<Int2IntMap> committeesSize) {
     return attestationSchema
         .toVersionElectra()
         .map(
@@ -34,7 +34,7 @@ public interface AttestationBitsAggregator {
         .orElseGet(() -> AttestationBitsAggregatorPhase0.fromAttestationSchema(attestationSchema));
   }
 
-  static AttestationBitsAggregator of(ValidatableAttestation attestation) {
+  static AttestationBitsAggregator of(final ValidatableAttestation attestation) {
     return attestation
         .getAttestation()
         .getCommitteeBits()
@@ -52,7 +52,7 @@ public interface AttestationBitsAggregator {
   }
 
   static AttestationBitsAggregator of(
-      Attestation attestation, Optional<Int2IntMap> committeesSize) {
+      final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
     return attestation
         .getCommitteeBits()
         .<AttestationBitsAggregator>map(

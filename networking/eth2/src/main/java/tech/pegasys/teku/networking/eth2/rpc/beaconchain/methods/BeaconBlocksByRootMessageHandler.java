@@ -71,6 +71,22 @@ public class BeaconBlocksByRootMessageHandler
   }
 
   @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final BeaconBlocksByRootRequestMessage request) {
+    final UInt64 maxRequestBlocks = getMaxRequestBlocks();
+
+    if (request.size() > maxRequestBlocks.intValue()) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "Only a maximum of " + maxRequestBlocks + " blocks can be requested per request"));
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
   public void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
@@ -78,19 +94,6 @@ public class BeaconBlocksByRootMessageHandler
       final ResponseCallback<SignedBeaconBlock> callback) {
     LOG.trace(
         "Peer {} requested {} BeaconBlocks with roots: {}", peer.getId(), message.size(), message);
-
-    final UInt64 maxRequestBlocks = getMaxRequestBlocks();
-
-    if (message.size() > maxRequestBlocks.intValue()) {
-      requestCounter.labels("count_too_big").inc();
-      callback.completeWithErrorResponse(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              "Only a maximum of " + maxRequestBlocks + " blocks can be requested per request"));
-      return;
-    }
-
-    SafeFuture<Void> future = SafeFuture.COMPLETE;
 
     final Optional<RequestApproval> blocksRequestApproval =
         peer.approveBlocksRequest(callback, message.size());
@@ -104,7 +107,9 @@ public class BeaconBlocksByRootMessageHandler
     totalBlocksRequestedCounter.inc(message.size());
     final AtomicInteger sentBlocks = new AtomicInteger(0);
 
-    for (SszBytes32 blockRoot : message) {
+    SafeFuture<Void> future = SafeFuture.COMPLETE;
+
+    for (final SszBytes32 blockRoot : message) {
       future =
           future.thenCompose(
               __ ->

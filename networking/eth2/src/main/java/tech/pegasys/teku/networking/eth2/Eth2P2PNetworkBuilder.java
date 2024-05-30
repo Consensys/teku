@@ -426,7 +426,7 @@ public class Eth2P2PNetworkBuilder {
         "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
   }
 
-  private void assertNotNull(String fieldName, Object fieldValue) {
+  private void assertNotNull(final String fieldName, final Object fieldValue) {
     checkState(fieldValue != null, "Field " + fieldName + " must be set.");
   }
 

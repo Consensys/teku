@@ -18,7 +18,8 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipSubValidationUtil {
 
-  public static ValidationResult fromInternalValidationResult(InternalValidationResult result) {
+  public static ValidationResult fromInternalValidationResult(
+      final InternalValidationResult result) {
     switch (result.code()) {
       case ACCEPT:
         return ValidationResult.Valid;

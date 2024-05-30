@@ -170,7 +170,7 @@ public final class RpcResponseDecoder<T extends SszData, TContext> {
   }
 
   private <TMessage> Optional<RpcException> completeDecoder(
-      Optional<RpcByteBufDecoder<TMessage>> decoder) {
+      final Optional<RpcByteBufDecoder<TMessage>> decoder) {
     try {
       if (decoder.isPresent()) {
         decoder.get().complete();

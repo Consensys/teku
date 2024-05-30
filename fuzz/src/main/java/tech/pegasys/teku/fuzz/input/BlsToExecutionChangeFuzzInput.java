@@ -38,8 +38,9 @@ public class BlsToExecutionChangeFuzzInput
   }
 
   public BlsToExecutionChangeFuzzInput(
-      ContainerSchema2<BlsToExecutionChangeFuzzInput, BeaconState, SignedBlsToExecutionChange> type,
-      TreeNode backingNode) {
+      final ContainerSchema2<BlsToExecutionChangeFuzzInput, BeaconState, SignedBlsToExecutionChange>
+          type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

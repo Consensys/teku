@@ -52,10 +52,10 @@ public class NetworkDataProviderTest {
   @Test
   void getListeningAddresses_shouldReturnAddressFromNetwork() {
     final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final String nodeAddress = "/some/libp2p/addr";
+    final List<String> nodeAddresses = List.of("/some/libp2p/addr");
 
-    when(p2pNetwork.getNodeAddress()).thenReturn(nodeAddress);
+    when(p2pNetwork.getNodeAddresses()).thenReturn(nodeAddresses);
 
-    assertThat(network.getListeningAddresses()).isEqualTo(List.of(nodeAddress));
+    assertThat(network.getListeningAddresses()).isEqualTo(nodeAddresses);
   }
 }

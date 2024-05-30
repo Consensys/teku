@@ -49,17 +49,17 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public void or(AttestationBitsAggregator other) {
+  public void or(final AttestationBitsAggregator other) {
     or(other.getCommitteeBits(), other.getAggregationBits(), false);
   }
 
   @Override
-  public boolean aggregateWith(Attestation other) {
+  public boolean aggregateWith(final Attestation other) {
     return or(other.getCommitteeBitsRequired(), other.getAggregationBits(), true);
   }
 
   @Override
-  public void or(Attestation other) {
+  public void or(final Attestation other) {
     or(other.getCommitteeBitsRequired(), other.getAggregationBits(), false);
   }
 
@@ -170,7 +170,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public boolean isSuperSetOf(Attestation other) {
+  public boolean isSuperSetOf(final Attestation other) {
     if (!committeeBits.isSuperSetOf(other.getCommitteeBitsRequired())) {
       return false;
     }

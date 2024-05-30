@@ -46,7 +46,9 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
   }
 
   private static <T extends SszData> void addItems(
-      MoreObjects.ToStringHelper stringBuilder, String keyPrefix, SszList<T> items) {
+      final MoreObjects.ToStringHelper stringBuilder,
+      final String keyPrefix,
+      final SszList<T> items) {
     for (int i = 0; i < items.size(); i++) {
       stringBuilder.add(keyPrefix + "[" + i + "]", items.get(i));
     }
