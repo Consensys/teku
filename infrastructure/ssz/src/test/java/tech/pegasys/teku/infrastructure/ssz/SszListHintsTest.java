@@ -105,14 +105,11 @@ public class SszListHintsTest {
 
     listVariants1.forEach(
         listVariant1 ->
-            listVariants2.forEach(
-                listVariant2 -> assertListEquals(type, listVariant1, listVariant2)));
+            listVariants2.forEach(listVariant2 -> assertListEquals(listVariant1, listVariant2)));
   }
 
   <TElement extends SszData> void assertListEquals(
-      final SszListSchema<TElement, ?> type,
-      final SszList<TElement> list1,
-      final SszList<TElement> list2) {
+      final SszList<TElement> list1, final SszList<TElement> list2) {
 
     assertThat(list1.size()).isEqualTo(list2.size());
     assertThat(list1).isEqualTo(list2);
