@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import java.util.function.Function;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -40,7 +41,8 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     super(
         specConfig,
         miscHelpers,
@@ -49,7 +51,8 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
         validatorsUtil,
         beaconStateUtil,
         validatorStatusFactory,
-        schemaDefinitions);
+        schemaDefinitions,
+        timeProvider);
   }
 
   @Override

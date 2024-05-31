@@ -22,13 +22,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversalMode;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -42,8 +43,10 @@ class AbstractEpochProcessorTest {
 
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100_000L);
   private final EpochProcessorCapella epochProcessor =
-      (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
+      new EpochProcessorCapella(
+          (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor(), timeProvider);
 
   private final int throttlingPeriod = 1; // expect maximum of one call per second
   private static final Logger LOGGER = mock(Logger.class);
@@ -56,9 +59,7 @@ class AbstractEpochProcessorTest {
     // First two processEpoch calls within the same second
     epochProcessor.processEpoch(state);
     epochProcessor.processEpoch(advanceNSlots(state, 1));
-    // Wait 2 seconds
-    TimeUnit.SECONDS.sleep(2);
-    // Third processEpoch call after 2 seconds
+    timeProvider.advanceTimeBy(Duration.ofSeconds(1));
     epochProcessor.processEpoch(advanceNSlots(state, slotsPerEpoch));
 
     // Logger throttler called 3 times

@@ -74,4 +74,5 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:kzg'))
     testImplementation testFixtures(project(':infrastructure:ssz'))
     testImplementation testFixtures(project(':infrastructure:metrics'))
+    testImplementation testFixtures(project(':infrastructure:time'))
 }
