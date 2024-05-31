@@ -116,6 +116,10 @@ class BitvectorImpl {
     return size;
   }
 
+  public int getLastSetBitIndex() {
+    return data.length() - 1;
+  }
+
   public IntStream streamAllSetBits() {
     return data.stream();
   }
@@ -128,14 +132,13 @@ class BitvectorImpl {
   }
 
   public BitvectorImpl rightShift(final int i) {
-    int length = this.getSize();
-    BitSet newData = new BitSet(getSize());
-    for (int j = 0; j < length - i; j++) {
+    final BitSet newData = new BitSet(size);
+    for (int j = 0; j < size - i; j++) {
       if (this.getBit(j)) {
         newData.set(j + i);
       }
     }
-    return new BitvectorImpl(newData, getSize());
+    return new BitvectorImpl(newData, size);
   }
 
   @Override

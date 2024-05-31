@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch;
 
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
@@ -39,7 +40,8 @@ public class EpochProcessorBellatrix extends EpochProcessorAltair {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     super(
         specConfig,
         miscHelpers,
@@ -48,7 +50,8 @@ public class EpochProcessorBellatrix extends EpochProcessorAltair {
         validatorsUtil,
         beaconStateUtil,
         validatorStatusFactory,
-        schemaDefinitions);
+        schemaDefinitions,
+        timeProvider);
     specConfigBellatrix = specConfig;
   }
 

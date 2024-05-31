@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.BitSet;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
@@ -70,6 +71,11 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   public static SszBitlistImpl ofBits(
       final SszBitlistSchema<?> schema, final int size, final int... bits) {
     return new SszBitlistImpl(schema, new BitlistImpl(size, schema.getMaxLength(), bits));
+  }
+
+  public static SszBitlistImpl wrapBitSet(
+      final SszBitlistSchema<?> schema, final int size, final BitSet bitSet) {
+    return new SszBitlistImpl(schema, new BitlistImpl(size, schema.getMaxLength(), bitSet));
   }
 
   private final BitlistImpl value;

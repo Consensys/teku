@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -60,7 +61,8 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     super(
         specConfig,
         miscHelpers,
@@ -69,7 +71,8 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
         validatorsUtil,
         beaconStateUtil,
         validatorStatusFactory,
-        schemaDefinitions);
+        schemaDefinitions,
+        timeProvider);
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;
