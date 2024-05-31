@@ -96,7 +96,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   private final List<?> testsToSkip;
 
-  public ForkChoiceTestExecutor(String... testsToSkip) {
+  public ForkChoiceTestExecutor(final String... testsToSkip) {
     this.testsToSkip = List.of(testsToSkip);
   }
 

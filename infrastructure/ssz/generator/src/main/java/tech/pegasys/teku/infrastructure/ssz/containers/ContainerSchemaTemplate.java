@@ -48,18 +48,16 @@ public abstract class /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<
     };
   }
 
-  @SuppressWarnings("MethodInputParametersMustBeFinal")
   protected /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/(
-      /*$$FieldsDeclarations*/ SszSchema<V0> fieldSchema1,
+      /*$$FieldsDeclarations*/ final SszSchema<V0> fieldSchema1,
       final SszSchema<V1> fieldSchema2 /*$$*/) {
 
     super(List.of(/*$$Fields*/ fieldSchema1, fieldSchema2 /*$$*/));
   }
 
-  @SuppressWarnings("MethodInputParametersMustBeFinal")
   protected /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/(
       final String containerName,
-      /*$$NamedFieldsDeclarations*/ NamedSchema<V0> fieldNamedSchema0,
+      /*$$NamedFieldsDeclarations*/ final NamedSchema<V0> fieldNamedSchema0,
       final NamedSchema<V1> fieldNamedSchema1 /*$$*/) {
 
     super(containerName, List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/));
