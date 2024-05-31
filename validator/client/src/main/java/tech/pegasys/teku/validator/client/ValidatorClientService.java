@@ -449,9 +449,9 @@ public class ValidatorClientService extends Service {
   }
 
   private void scheduleValidatorsDuties(
-      ValidatorClientConfiguration config,
-      ValidatorApiChannel validatorApiChannel,
-      AsyncRunner asyncRunner) {
+      final ValidatorClientConfiguration config,
+      final ValidatorApiChannel validatorApiChannel,
+      final AsyncRunner asyncRunner) {
     validatorTimingChannels.add(validatorStatusProvider);
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);

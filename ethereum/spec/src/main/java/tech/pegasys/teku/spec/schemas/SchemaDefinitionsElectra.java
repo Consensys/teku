@@ -344,7 +344,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  long getMaxValidatorPerAttestation(SpecConfig specConfig) {
+  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 }

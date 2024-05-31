@@ -142,8 +142,8 @@ public class StatusLogger {
     log.error("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
   }
 
-  public void listeningForLibP2P(final String address) {
-    log.info("Listening for connections on: {}", address);
+  public void listeningForLibP2P(final List<String> addresses) {
+    log.info("Listening for connections on: {}", String.join(",", addresses));
   }
 
   public void listeningForDiscv5PreGenesis(final String enr) {

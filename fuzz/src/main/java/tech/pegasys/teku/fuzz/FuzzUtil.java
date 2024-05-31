@@ -334,7 +334,7 @@ public class FuzzUtil {
     }
   }
 
-  private <T extends SszData> T deserialize(byte[] data, SszSchema<T> type) {
+  private <T extends SszData> T deserialize(final byte[] data, final SszSchema<T> type) {
     // allow exception to propagate on failure - indicates a preprocessing or deserializing error
     T structuredInput = type.sszDeserialize(Bytes.wrap(data));
     if (structuredInput == null) {

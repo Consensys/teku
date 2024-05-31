@@ -37,7 +37,7 @@ public class DvtAttestationAggregations {
   private final int expectedDutiesCount;
 
   public DvtAttestationAggregations(
-      final ValidatorApiChannel validatorApiChannel, int expectedDutiesCount) {
+      final ValidatorApiChannel validatorApiChannel, final int expectedDutiesCount) {
     this.validatorApiChannel = validatorApiChannel;
     this.expectedDutiesCount = expectedDutiesCount;
   }

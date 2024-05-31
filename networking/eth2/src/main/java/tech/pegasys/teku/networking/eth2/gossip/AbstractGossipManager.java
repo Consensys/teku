@@ -75,7 +75,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
     return topicHandler;
   }
 
-  protected void publishMessage(T message) {
+  protected void publishMessage(final T message) {
     channel.ifPresent(c -> c.gossip(gossipEncoding.encode(message)));
   }
 

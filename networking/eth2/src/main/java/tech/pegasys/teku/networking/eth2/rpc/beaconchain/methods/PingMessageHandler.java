@@ -24,7 +24,7 @@ public class PingMessageHandler extends PeerRequiredLocalMessageHandler<PingMess
   private static final Logger LOG = LogManager.getLogger();
   private final MetadataMessagesFactory metadataMessagesFactory;
 
-  public PingMessageHandler(MetadataMessagesFactory metadataMessagesFactory) {
+  public PingMessageHandler(final MetadataMessagesFactory metadataMessagesFactory) {
     this.metadataMessagesFactory = metadataMessagesFactory;
   }
 

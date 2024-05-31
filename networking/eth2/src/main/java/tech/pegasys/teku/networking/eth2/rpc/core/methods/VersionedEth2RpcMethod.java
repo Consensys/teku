@@ -106,9 +106,9 @@ public class VersionedEth2RpcMethod<
 
   @Override
   public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
-      String protocolId,
+      final String protocolId,
       final TRequest request,
-      Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
+      final Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     final Eth2RpcMethod<TRequest, TResponse> method = protocolToMethod.get(protocolId);
     return method.createOutgoingRequestHandler(protocolId, request, responseHandler);
   }

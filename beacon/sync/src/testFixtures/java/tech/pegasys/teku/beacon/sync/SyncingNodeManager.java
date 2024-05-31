@@ -222,7 +222,7 @@ public class SyncingNodeManager {
 
   public SafeFuture<Peer> connect(final SyncingNodeManager peer) {
     final PeerAddress peerAddress =
-        eth2P2PNetwork.createPeerAddress(peer.network().getNodeAddress());
+        eth2P2PNetwork.createPeerAddress(peer.network().getNodeAddresses().get(0));
     return eth2P2PNetwork.connect(peerAddress);
   }
 

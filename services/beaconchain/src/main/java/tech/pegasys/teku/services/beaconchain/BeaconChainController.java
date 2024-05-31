@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -374,7 +375,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
               Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof BindException) {
                 final String errorWhilePerformingDescription =
-                    "starting P2P services on port " + this.p2pNetwork.getListenPort() + ".";
+                    "starting P2P services on port(s) "
+                        + p2pNetwork.getListenPorts().stream()
+                            .map(Object::toString)
+                            .collect(Collectors.joining(","))
+                        + ".";
                 STATUS_LOG.fatalError(errorWhilePerformingDescription, rootCause);
                 System.exit(FATAL_EXIT_CODE);
               } else {
@@ -758,7 +763,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .build();
   }
 
-  private boolean getLivenessTrackingEnabled(BeaconChainConfiguration beaconConfig) {
+  private boolean getLivenessTrackingEnabled(final BeaconChainConfiguration beaconConfig) {
     return beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()
         || beaconConfig.validatorConfig().isDoppelgangerDetectionEnabled();
   }

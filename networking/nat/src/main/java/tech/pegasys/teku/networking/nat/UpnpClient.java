@@ -90,7 +90,7 @@ public class UpnpClient {
 
   @SuppressWarnings("unchecked")
   public SafeFuture<NatPortMapping> requestPortForward(
-      final int port, NetworkProtocol protocol, NatServiceType serviceType) {
+      final int port, final NetworkProtocol protocol, final NatServiceType serviceType) {
     return requestPortForward(
         new PortMapping(
             true,

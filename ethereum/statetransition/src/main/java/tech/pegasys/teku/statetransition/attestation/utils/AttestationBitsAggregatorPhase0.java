@@ -27,17 +27,18 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
     this.aggregationBits = aggregationBits;
   }
 
-  static AttestationBitsAggregator fromAttestationSchema(AttestationSchema<?> attestationSchema) {
+  static AttestationBitsAggregator fromAttestationSchema(
+      final AttestationSchema<?> attestationSchema) {
     return new AttestationBitsAggregatorPhase0(attestationSchema.createEmptyAggregationBits());
   }
 
   @Override
-  public void or(AttestationBitsAggregator other) {
+  public void or(final AttestationBitsAggregator other) {
     aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
 
   @Override
-  public boolean aggregateWith(Attestation other) {
+  public boolean aggregateWith(final Attestation other) {
     return aggregateWith(other.getAggregationBits());
   }
 
@@ -50,12 +51,12 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public void or(Attestation other) {
+  public void or(final Attestation other) {
     aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
 
   @Override
-  public boolean isSuperSetOf(Attestation other) {
+  public boolean isSuperSetOf(final Attestation other) {
     return aggregationBits.isSuperSetOf(other.getAggregationBits());
   }
 

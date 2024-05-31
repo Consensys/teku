@@ -22,12 +22,12 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
 public class NoopDecoder extends AbstractByteBufDecoder<ByteBuf, CompressionException> {
   private final int expectedBytes;
 
-  public NoopDecoder(int expectedBytes) {
+  public NoopDecoder(final int expectedBytes) {
     this.expectedBytes = expectedBytes;
   }
 
   @Override
-  protected Optional<ByteBuf> decodeOneImpl(ByteBuf in) {
+  protected Optional<ByteBuf> decodeOneImpl(final ByteBuf in) {
     if (in.readableBytes() < expectedBytes) {
       return Optional.empty();
     }
@@ -35,7 +35,7 @@ public class NoopDecoder extends AbstractByteBufDecoder<ByteBuf, CompressionExce
   }
 
   @Override
-  protected void throwUnprocessedDataException(int dataLeft) throws CompressionException {
+  protected void throwUnprocessedDataException(final int dataLeft) throws CompressionException {
     throw new PayloadSmallerThanExpectedException(
         "The stream complete, but unprocessed data left: " + dataLeft);
   }

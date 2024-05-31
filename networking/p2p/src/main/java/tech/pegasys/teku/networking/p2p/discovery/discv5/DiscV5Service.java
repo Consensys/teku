@@ -82,9 +82,10 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.localNodePrivateKey = SecretKeyParser.fromLibP2pPrivKey(privateKey);
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     this.nodeRecordConverter = nodeRecordConverter;
-    final String listenAddress = p2pConfig.getNetworkInterface();
+    // TODO: https://github.com/Consensys/discovery/issues/176
+    final String listenAddress = p2pConfig.getNetworkInterfaces().get(0);
     final int listenUdpPort = discoConfig.getListenUdpPort();
-    final String advertisedAddress = p2pConfig.getAdvertisedIp();
+    final String advertisedAddress = p2pConfig.getAdvertisedIps().get(0);
     final int advertisedTcpPort = p2pConfig.getAdvertisedPort();
     final int advertisedUdpPort = discoConfig.getAdvertisedUdpPort();
     final UInt64 seqNo =
@@ -121,7 +122,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   private NewAddressHandler maybeUpdateNodeRecord(
-      boolean userExplicitlySetAdvertisedIpOrPort, final int advertisedTcpPort) {
+      final boolean userExplicitlySetAdvertisedIpOrPort, final int advertisedTcpPort) {
     if (userExplicitlySetAdvertisedIpOrPort) {
       return (oldRecord, newAddress) -> Optional.of(oldRecord);
     } else {
@@ -132,7 +133,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     }
   }
 
-  private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
+  private void localNodeRecordUpdated(final NodeRecord oldRecord, final NodeRecord newRecord) {
     kvStore.put(SEQ_NO_STORE_KEY, newRecord.getSeq().toBytes());
   }
 
@@ -222,7 +223,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
-  public void updateCustomENRField(String fieldName, Bytes value) {
+  public void updateCustomENRField(final String fieldName, final Bytes value) {
     discoverySystem.updateCustomFieldValue(fieldName, value);
   }
 

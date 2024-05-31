@@ -77,7 +77,7 @@ class BlindedBeaconBlockBodyElectraImpl
       final ExecutionPayloadHeaderElectraImpl executionPayloadHeader,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
       final SszList<SszKZGCommitment> blobKzgCommitments,
-      SszList<SignedConsolidation> consolidations) {
+      final SszList<SignedConsolidation> consolidations) {
     super(
         type,
         randaoReveal,

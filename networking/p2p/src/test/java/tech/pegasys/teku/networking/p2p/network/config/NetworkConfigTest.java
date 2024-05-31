@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.network.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.libp2p.core.multiformats.Multiaddr;
 import java.net.Inet6Address;
@@ -22,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.DirectPeerManager;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -33,47 +35,52 @@ class NetworkConfigTest {
   private String listenIp = "0.0.0.0";
 
   @Test
-  void getAdvertisedIp_shouldUseAdvertisedAddressWhenSet() {
+  void getAdvertisedIps_shouldUseAdvertisedAddressWhenSet() {
     final String expected = "1.2.3.4";
     advertisedIp = Optional.of(expected);
-    assertThat(createConfig().getAdvertisedIp()).isEqualTo(expected);
+    assertThat(createConfig().getAdvertisedIps()).containsExactly(expected);
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveAnyLocalAdvertisedAddress() {
+  void getAdvertisedIps_shouldResolveAnyLocalAdvertisedAddress() {
     advertisedIp = Optional.of("0.0.0.0");
-    assertThat(createConfig().getAdvertisedIp()).isNotEqualTo("0.0.0.0");
+    assertThat(createConfig().getAdvertisedIps()).hasSize(1).doesNotContain("0.0.0.0");
   }
 
   @Test
-  void getAdvertisedIp_shouldReturnInterfaceIpWhenNotSet() {
+  void getAdvertisedIps_shouldReturnInterfaceIpWhenNotSet() {
     listenIp = "127.0.0.1";
-    assertThat(createConfig().getAdvertisedIp()).isEqualTo(listenIp);
+    assertThat(createConfig().getAdvertisedIps()).containsExactly(listenIp);
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocal() {
+  void getAdvertisedIps_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocal() {
     listenIp = "0.0.0.0";
-    assertThat(createConfig().getAdvertisedIp()).isNotEqualTo("0.0.0.0");
+    assertThat(createConfig().getAdvertisedIps()).hasSize(1).doesNotContain("0.0.0.0");
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6()
-      throws UnknownHostException {
+  void getAdvertisedIps_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() {
     listenIp = "::0";
-    final String result;
+    final List<String> result;
     try {
-      result = createConfig().getAdvertisedIp();
+      result = createConfig().getAdvertisedIps();
     } catch (Exception ex) {
       // local IPv6 not supported
       assertThat(ex.getCause()).isInstanceOf(UnknownHostException.class);
       assertThat(ex.getMessage()).contains("Unable to determine local IPv6 Address");
       return;
     }
-    assertThat(result).isNotEqualTo("::0");
-    assertThat(result).isNotEqualTo("0.0.0.0");
-    // check the advertised IP is IPv6
-    assertThat(InetAddress.getByName(result)).isInstanceOf(Inet6Address.class);
+    assertThat(result)
+        .hasSize(1)
+        .first()
+        .isNotEqualTo("::0")
+        .isNotEqualTo("0.0.0.0")
+        .satisfies(
+            ip -> {
+              // check the advertised IP is IPv6
+              assertThat(InetAddress.getByName(ip)).isInstanceOf(Inet6Address.class);
+            });
   }
 
   @Test
@@ -121,5 +128,53 @@ class NetworkConfigTest {
 
     assert manager.isDirectPeer(peerId1);
     assert !manager.isDirectPeer(peerId2);
+  }
+
+  @Test
+  void checkSetBothIPv4andIPv6() {
+    final NetworkConfig config =
+        NetworkConfig.builder()
+            .networkInterfaces(List.of("192.0.2.146", "2a01:4b00:875c:9500:d55c:71df:3af7:9f1f"))
+            .advertisedIps(
+                Optional.of(List.of("1.2.3.4", "2001:db8:3333:4444:5555:6666:7777:8888")))
+            .build();
+
+    assertThat(config.getNetworkInterfaces())
+        .containsExactly("192.0.2.146", "2a01:4b00:875c:9500:d55c:71df:3af7:9f1f");
+    assertThat(config.getAdvertisedIps())
+        .containsExactly("1.2.3.4", "2001:db8:3333:4444:5555:6666:7777:8888");
+  }
+
+  @Test
+  void failsIfInvalidNumberOfNetworkInterfacesAreSet() {
+    assertThatThrownBy(
+            () ->
+                NetworkConfig.builder()
+                    .networkInterfaces(List.of("0.0.0.0", "::", "1.2.3.4"))
+                    .build())
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Invalid number of --p2p-interface. It should be either 1 or 2, but it was 3");
+  }
+
+  @Test
+  void failsIfTwoIPv4NetworkInterfacesAreSet() {
+    assertThatThrownBy(
+            () -> NetworkConfig.builder().networkInterfaces(List.of("0.0.0.0", "1.2.3.4")).build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage(
+            "Expected an IPv4 and an IPv6 address for --p2p-interface but only [IP_V4] was set");
+  }
+
+  @Test
+  void failsIfTwoIPv6AdvertisedIpsAreSet() {
+    assertThatThrownBy(
+            () ->
+                NetworkConfig.builder()
+                    .advertisedIps(
+                        Optional.of(List.of("::", "2001:db8:3333:4444:5555:6666:7777:8888")))
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage(
+            "Expected an IPv4 and an IPv6 address for --p2p-advertised-ip but only [IP_V6] was set");
   }
 }
