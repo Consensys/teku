@@ -124,15 +124,15 @@ public class MerkleTree {
     if (depth == 0) {
       return zeroHashes.get(0);
     }
-    int mutableDepth = depth - 1;
-    Bytes32 deeperRoot = calcViewBoundaryRoot(mutableDepth, viewLimit);
+    final int deeperDepth = depth - 1;
+    final Bytes32 deeperRoot = calcViewBoundaryRoot(deeperDepth, viewLimit);
     // Check if given the viewLimit at the leaf layer, is root in left or right subtree
-    if ((viewLimit & (1 << mutableDepth)) != 0) {
+    if ((viewLimit & (1 << deeperDepth)) != 0) {
       // For the right subtree
-      return Hash.sha256(tree.get(mutableDepth).get((viewLimit >> mutableDepth) - 1), deeperRoot);
+      return Hash.sha256(tree.get(deeperDepth).get((viewLimit >> deeperDepth) - 1), deeperRoot);
     } else {
       // For the left subtree
-      return Hash.sha256(deeperRoot, zeroHashes.get(mutableDepth));
+      return Hash.sha256(deeperRoot, zeroHashes.get(deeperDepth));
     }
   }
 
