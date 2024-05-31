@@ -228,7 +228,7 @@ public class DepositsFetcherTest {
   }
 
   private DepositContract.DepositEventEventResponse mockDepositEventEventResponse(
-      final long index, String blockHash, final long blockNumber) {
+      final long index, final String blockHash, final long blockNumber) {
     Log log = mock(Log.class);
     when(log.getBlockHash()).thenReturn(blockHash);
     when(log.getBlockNumber()).thenReturn(BigInteger.valueOf(blockNumber));

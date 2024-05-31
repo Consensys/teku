@@ -44,7 +44,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
   static SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(500);
   static SszBitlistSchema<SszBitlist> hugeSchema = SszBitlistSchema.create(1L << 62);
 
-  static SszBitlist random(SszBitlistSchema<?> schema, int size) {
+  static SszBitlist random(final SszBitlistSchema<?> schema, final int size) {
     return schema.ofBits(
         size, IntStream.range(0, size).filter(__ -> random.nextBoolean()).toArray());
   }
@@ -95,7 +95,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void testSszRoundtrip(SszBitlist bitlist1) {
+  void testSszRoundtrip(final SszBitlist bitlist1) {
     Bytes ssz1 = bitlist1.sszSerialize();
     SszBitlist bitlist2 = bitlist1.getSchema().sszDeserialize(ssz1);
 
@@ -115,7 +115,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void testTreeRoundtrip(SszBitlist bitlist1) {
+  void testTreeRoundtrip(final SszBitlist bitlist1) {
     TreeNode tree = bitlist1.getBackingNode();
     SszBitlist bitlist2 = bitlist1.getSchema().createFromBackingNode(tree);
 
@@ -133,14 +133,14 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void or_testEqualList(SszBitlist bitlist) {
+  void or_testEqualList(final SszBitlist bitlist) {
     SszBitlist res = bitlist.or(bitlist);
     assertThat(res).isEqualTo(bitlist);
   }
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void or_shouldThrowIfBitlistSizeIsLarger(SszBitlist bitlist) {
+  void or_shouldThrowIfBitlistSizeIsLarger(final SszBitlist bitlist) {
     SszBitlistSchema<SszBitlist> largerSchema =
         SszBitlistSchema.create(bitlist.getSchema().getMaxLength() + 1);
     SszBitlist largerBitlist = largerSchema.ofBits(bitlist.size() + 1, bitlist.size());
@@ -150,20 +150,20 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void getBitCount_shouldReturnCorrectCount(SszBitlist bitlist) {
+  void getBitCount_shouldReturnCorrectCount(final SszBitlist bitlist) {
     long bitCount = bitlist.stream().filter(AbstractSszPrimitive::get).count();
     assertThat(bitlist.getBitCount()).isEqualTo(bitCount);
   }
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void intersects_shouldNotIntersectWithEmpty(SszBitlist bitlist) {
+  void intersects_shouldNotIntersectWithEmpty(final SszBitlist bitlist) {
     assertThat(bitlist.intersects(bitlist.getSchema().empty())).isFalse();
   }
 
   @ParameterizedTest
   @MethodSource("nonEmptyBitlistArgs")
-  void intersects_shouldIntersectWithSelf(SszBitlist bitlist) {
+  void intersects_shouldIntersectWithSelf(final SszBitlist bitlist) {
     if (bitlist.getBitCount() == 0) {
       return;
     }
@@ -172,19 +172,19 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("nonEmptyBitlistArgs")
-  void intersects_shouldNotIntersectWithZeroes(SszBitlist bitlist) {
+  void intersects_shouldNotIntersectWithZeroes(final SszBitlist bitlist) {
     assertThat(bitlist.intersects(bitlist.getSchema().ofBits(bitlist.size()))).isFalse();
   }
 
   @ParameterizedTest
   @MethodSource("nonEmptyBitlistArgs")
-  void intersects_shouldNotIntersectWithNotSelf(SszBitlist bitlist) {
+  void intersects_shouldNotIntersectWithNotSelf(final SszBitlist bitlist) {
     assertThat(bitlist.intersects(SszTestUtils.not(bitlist))).isFalse();
   }
 
   @ParameterizedTest
   @MethodSource("nonEmptyBitlistArgs")
-  void intersects_shouldIntersectWithLargerBitlist(SszBitlist bitlist) {
+  void intersects_shouldIntersectWithLargerBitlist(final SszBitlist bitlist) {
     if (bitlist.getBitCount() == 0) {
       return;
     }
@@ -199,7 +199,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("nonEmptyBitlistArgs")
-  void intersects_shouldIntersectWithFirstBit(SszBitlist bitlist) {
+  void intersects_shouldIntersectWithFirstBit(final SszBitlist bitlist) {
     OptionalInt maybeFirstBit = bitlist.streamAllSetBits().findFirst();
     if (maybeFirstBit.isEmpty()) {
       return;
@@ -210,7 +210,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("nonEmptyBitlistArgs")
-  void intersects_shouldIntersectWithLastBit(SszBitlist bitlist) {
+  void intersects_shouldIntersectWithLastBit(final SszBitlist bitlist) {
     OptionalInt maybeLastBit = bitlist.streamAllSetBits().max();
     if (maybeLastBit.isEmpty()) {
       return;
@@ -221,19 +221,19 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void isSupersetOf_shouldReturnTrueForSelf(SszBitlist bitlist) {
+  void isSupersetOf_shouldReturnTrueForSelf(final SszBitlist bitlist) {
     assertThat(bitlist.isSuperSetOf(bitlist)).isTrue();
   }
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void isSupersetOf_shouldReturnTrueForEmpty(SszBitlist bitlist) {
+  void isSupersetOf_shouldReturnTrueForEmpty(final SszBitlist bitlist) {
     assertThat(bitlist.isSuperSetOf(bitlist.getSchema().empty())).isTrue();
   }
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void isSupersetOf_shouldReturnFalseForLarger(SszBitlist bitlist) {
+  void isSupersetOf_shouldReturnFalseForLarger(final SszBitlist bitlist) {
     SszBitlist largerBitlist =
         SszBitlistSchema.create(bitlist.size() + 1).ofBits(bitlist.size() + 1, bitlist.size());
     assertThat(bitlist.isSuperSetOf(largerBitlist)).isFalse();
@@ -241,7 +241,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("nonEmptyBitlistArgs")
-  void isSupersetOf_shouldReturnFalseForNotSelf(SszBitlist bitlist) {
+  void isSupersetOf_shouldReturnFalseForNotSelf(final SszBitlist bitlist) {
     if (bitlist.getBitCount() == bitlist.size()) {
       return;
     }
@@ -250,7 +250,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void testOr(SszBitlist bitlist) {
+  void testOr(final SszBitlist bitlist) {
     IntStream.of(1, 2, bitlist.size() - 1, bitlist.size())
         .filter(i -> i >= 0 && i < bitlist.size())
         .distinct()
@@ -272,7 +272,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void testOrWithEmptyBitlist(SszBitlist bitlist) {
+  void testOrWithEmptyBitlist(final SszBitlist bitlist) {
     SszBitlist empty = bitlist.getSchema().empty();
     assertThat(bitlist.or(empty)).isEqualTo(bitlist);
   }
@@ -292,7 +292,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void nullableOr_test(SszBitlist bitlist) {
+  void nullableOr_test(final SszBitlist bitlist) {
     assertThatThrownBy(() -> SszBitlist.nullableOr(null, null))
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(SszBitlist.nullableOr(bitlist, null)).isEqualTo(bitlist);
@@ -303,7 +303,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void createWritableCopy_shouldThrow(SszBitlist bitlist) {
+  void createWritableCopy_shouldThrow(final SszBitlist bitlist) {
     assertThatThrownBy(bitlist::createWritableCopy)
         .isInstanceOf(UnsupportedOperationException.class);
   }
@@ -343,7 +343,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("emptyBitlistArgs")
-  void testBitEmptyListSsz(SszBitlist bitlist) {
+  void testBitEmptyListSsz(final SszBitlist bitlist) {
 
     assertThat(bitlist.sszSerialize()).isEqualTo(Bytes.of(1));
 

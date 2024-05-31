@@ -25,11 +25,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 
 public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAssert<T>, T> {
 
-  public static <T extends SszData> SszDataAssert<T> assertThatSszData(T sszData) {
+  public static <T extends SszData> SszDataAssert<T> assertThatSszData(final T sszData) {
     return new SszDataAssert<>(sszData, SszDataAssert.class);
   }
 
-  private SszDataAssert(T t, Class<?> selfType) {
+  private SszDataAssert(final T t, final Class<?> selfType) {
     super(t, selfType);
   }
 
@@ -155,7 +155,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> List<T> prepend(final List<T> list, T... args) {
+  private static <T> List<T> prepend(final List<T> list, final T... args) {
     return Stream.concat(Stream.of(args), list.stream()).collect(Collectors.toList());
   }
 }

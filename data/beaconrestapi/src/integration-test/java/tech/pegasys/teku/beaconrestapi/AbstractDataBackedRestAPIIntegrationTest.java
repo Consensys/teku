@@ -300,7 +300,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return createBlocksAtSlots(unsignedSlots);
   }
 
-  public void setCurrentSlot(long slot) {
+  public void setCurrentSlot(final long slot) {
     chainUpdater.setCurrentSlot(UInt64.valueOf(slot));
   }
 

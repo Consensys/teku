@@ -64,7 +64,7 @@ public class MuxFirewallTest {
         .addLast(
             new ChannelInboundHandlerAdapter() {
               @Override
-              public void channelRead(final ChannelHandlerContext ctx, Object msg) {
+              public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
                 passedMessages.add(msg.toString());
               }
             });

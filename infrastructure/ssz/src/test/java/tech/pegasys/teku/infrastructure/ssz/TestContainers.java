@@ -295,9 +295,9 @@ public class TestContainers {
 
     public TestDoubleSuperContainer(
         final long l1,
-        TestByteVectorContainer c1,
+        final TestByteVectorContainer c1,
         final long l2,
-        TestByteVectorContainer c2,
+        final TestByteVectorContainer c2,
         final long l3) {
       super(
           SSZ_SCHEMA,
@@ -387,7 +387,7 @@ public class TestContainers {
   public static class SubContainerWriteImpl extends SszMutableContainerImpl
       implements WritableMutableSubContainer {
 
-    public SubContainerWriteImpl(SubContainerReadImpl backingImmutableView) {
+    public SubContainerWriteImpl(final SubContainerReadImpl backingImmutableView) {
       super(backingImmutableView);
     }
 
@@ -410,7 +410,9 @@ public class TestContainers {
     }
 
     public ContainerReadImpl(
-        final SszCompositeSchema<?> type, TreeNode backingNode, final IntCache<SszData> cache) {
+        final SszCompositeSchema<?> type,
+        final TreeNode backingNode,
+        final IntCache<SszData> cache) {
       super(type, backingNode, cache);
     }
 

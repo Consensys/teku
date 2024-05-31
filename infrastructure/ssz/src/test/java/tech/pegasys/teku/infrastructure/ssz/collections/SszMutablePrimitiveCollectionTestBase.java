@@ -27,7 +27,7 @@ public interface SszMutablePrimitiveCollectionTestBase
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default <ElT, SszT extends SszPrimitive<ElT>> void setElement_throwsIndexOutOfBounds(
-      SszMutablePrimitiveCollection<ElT, SszT> collection) {
+      final SszMutablePrimitiveCollection<ElT, SszT> collection) {
     assertThatThrownBy(
             () ->
                 collection.setElement(
@@ -39,7 +39,7 @@ public interface SszMutablePrimitiveCollectionTestBase
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default <ElT, SszT extends SszPrimitive<ElT>> void setElement_extendsExtendableCollection(
-      SszMutablePrimitiveCollection<ElT, SszT> collection) {
+      final SszMutablePrimitiveCollection<ElT, SszT> collection) {
     if (collection.size() < collection.getSchema().getMaxLength()) {
       // collection is extendable (List effectively)
       int origSize = collection.size();
