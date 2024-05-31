@@ -53,7 +53,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void put(final KvStoreVariable<T> variable,final T value) {
+  public <T> void put(final KvStoreVariable<T> variable, final T value) {
     final Bytes serialized = Bytes.wrap(variable.getSerializer().serialize(value));
     putRaw(variable, serialized);
   }

@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 
 public class Utils {
 
-  static <T> Iterator<T> fromSupplier(Supplier<T> supplier) {
+  static <T> Iterator<T> fromSupplier(final Supplier<T> supplier) {
     return new Iterator<T>() {
 
       T next = supplier.get();

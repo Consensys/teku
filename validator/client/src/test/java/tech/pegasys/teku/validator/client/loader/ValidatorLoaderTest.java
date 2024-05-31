@@ -256,7 +256,8 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir Path tempDir) throws Exception {
+  void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir final Path tempDir)
+      throws Exception {
     writeKeystore(tempDir);
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -299,7 +300,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldInitializeLocalAndMutableValidators(
-      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+      @TempDir final Path tempDir, @TempDir final Path tempDirMutable) throws Exception {
     final BLSPublicKey mutableValidatorPubKey =
         BLSPublicKey.fromSSZBytes(
             Bytes.fromHexString(
@@ -345,7 +346,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldReturnErrorIfDeleteOnReadOnlySource(@TempDir Path tempDir) throws Exception {
+  void shouldReturnErrorIfDeleteOnReadOnlySource(@TempDir final Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
     final ValidatorConfig config =
@@ -375,7 +376,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldInitializeOnlyLocalValidatorsWhenRestDisabled(
-      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+      @TempDir final Path tempDir, @TempDir final Path tempDirMutable) throws Exception {
     final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDirMutable);
     writeKeystore(tempDir);
     writeMutableKeystore(dataDirLayout);
@@ -431,7 +432,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldNotInitializeMutableValidatorsWithoutDirectoryStructure(
-      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+      @TempDir final Path tempDir, @TempDir final Path tempDirMutable) throws Exception {
     final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDirMutable);
     writeKeystore(tempDir);
 
@@ -468,7 +469,7 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithDuplicateKeysInLocalAndExternalSignersTakesExternalAsPriority(
-      @TempDir Path tempDir) throws Exception {
+      @TempDir final Path tempDir) throws Exception {
     writeKeystore(tempDir);
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -507,7 +508,8 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldEnableSlashingProtectionForLocalValidators(@TempDir Path tempDir) throws Exception {
+  void shouldEnableSlashingProtectionForLocalValidators(@TempDir final Path tempDir)
+      throws Exception {
     writeKeystore(tempDir);
 
     final ValidatorConfig config =
@@ -776,7 +778,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldThrowWhenAnyErrorOccurs(@TempDir Path tempDir) throws Exception {
+  void shouldThrowWhenAnyErrorOccurs(@TempDir final Path tempDir) throws Exception {
     final ValidatorLoader validatorLoader;
     try {
       writeKeystore(tempDir);

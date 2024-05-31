@@ -32,7 +32,8 @@ public class AbstractSszImmutableContainerTest extends SszContainerTest {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  void createWritableCopy_throwsUnsupportedOperation(AbstractSszImmutableContainer container) {
+  void createWritableCopy_throwsUnsupportedOperation(
+      final AbstractSszImmutableContainer container) {
     assertThatThrownBy(container::createWritableCopy)
         .isInstanceOf(UnsupportedOperationException.class);
   }

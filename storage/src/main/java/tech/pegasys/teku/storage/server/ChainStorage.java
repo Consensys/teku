@@ -132,7 +132,7 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Void> onReconstructedFinalizedState(
-          final BeaconState finalizedState, final Bytes32 blockRoot) {
+      final BeaconState finalizedState, final Bytes32 blockRoot) {
     return SafeFuture.fromRunnable(
         () -> database.storeReconstructedFinalizedState(finalizedState, blockRoot));
   }
@@ -143,7 +143,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onWeakSubjectivityUpdate(final WeakSubjectivityUpdate weakSubjectivityUpdate) {
+  public SafeFuture<Void> onWeakSubjectivityUpdate(
+      final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.fromRunnable(
         () -> database.updateWeakSubjectivityState(weakSubjectivityUpdate));
   }

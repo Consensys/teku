@@ -54,7 +54,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private Optional<Bytes32> proposerBoostRoot = Optional.empty();
   private UInt64 proposerBoostAmount = UInt64.ZERO;
 
-  private ForkChoiceStrategy(final Spec spec, final ProtoArray protoArray, final List<UInt64> balances) {
+  private ForkChoiceStrategy(
+      final Spec spec, final ProtoArray protoArray, final List<UInt64> balances) {
     this.spec = spec;
     this.protoArray = protoArray;
     this.balances = balances;
@@ -227,7 +228,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   void processAttestation(
-          final VoteUpdater voteUpdater, final UInt64 validatorIndex, final Bytes32 blockRoot, final UInt64 targetEpoch) {
+      final VoteUpdater voteUpdater,
+      final UInt64 validatorIndex,
+      final Bytes32 blockRoot,
+      final UInt64 targetEpoch) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
     // Not updating anything for equivocated validators
     if (vote.isEquivocating()) {
@@ -407,7 +411,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    *     processing
    */
   @Override
-  public void processHashesInChainWhile(final Bytes32 head, final HaltableNodeProcessor nodeProcessor) {
+  public void processHashesInChainWhile(
+      final Bytes32 head, final HaltableNodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
       final Optional<ProtoNode> startingNode = getProtoNode(head);

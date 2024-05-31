@@ -47,7 +47,7 @@ public class DepositGenerator implements AutoCloseable {
         });
   }
 
-  private SafeFuture<TransactionReceipt> sendDeposit(ValidatorKeys validatorKeys) {
+  private SafeFuture<TransactionReceipt> sendDeposit(final ValidatorKeys validatorKeys) {
     return depositSenderService.sendDeposit(validatorKeys);
   }
 

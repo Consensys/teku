@@ -264,7 +264,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElseGet(TreeMap::new);
   }
 
-  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(final UInt64 startSlot, final Bytes32 root) {
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
+      final UInt64 startSlot, final Bytes32 root) {
     return spec.getAncestorsOnFork(store.getForkChoiceStrategy(), root, startSlot);
   }
 

@@ -21,7 +21,8 @@ import java.io.IOException;
 public class DoubleDeserializer extends JsonDeserializer<Double> {
 
   @Override
-  public Double deserialize(final JsonParser p, final DeserializationContext ctxt) throws IOException {
+  public Double deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     return Double.valueOf(p.getValueAsString());
   }
 }

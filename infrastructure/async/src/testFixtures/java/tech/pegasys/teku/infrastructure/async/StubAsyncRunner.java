@@ -62,7 +62,7 @@ public class StubAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-          final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
+      final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
     return schedule(action, timeProvider.getTimeInMillis().longValue() + delay.toMillis());
   }
 

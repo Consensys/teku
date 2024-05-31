@@ -42,11 +42,13 @@ public class BeaconBlockBodyLists {
     blockBodySchema = spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
-  public SszList<ProposerSlashing> createProposerSlashings(final ProposerSlashing... proposerSlashings) {
+  public SszList<ProposerSlashing> createProposerSlashings(
+      final ProposerSlashing... proposerSlashings) {
     return blockBodySchema.getProposerSlashingsSchema().of(proposerSlashings);
   }
 
-  public SszList<AttesterSlashing> createAttesterSlashings(final AttesterSlashing... attesterSlashings) {
+  public SszList<AttesterSlashing> createAttesterSlashings(
+      final AttesterSlashing... attesterSlashings) {
     return blockBodySchema.getAttesterSlashingsSchema().of(attesterSlashings);
   }
 
@@ -58,12 +60,13 @@ public class BeaconBlockBodyLists {
     return blockBodySchema.getDepositsSchema().of(deposits);
   }
 
-  public SszList<SignedVoluntaryExit> createVoluntaryExits(final SignedVoluntaryExit... voluntaryExits) {
+  public SszList<SignedVoluntaryExit> createVoluntaryExits(
+      final SignedVoluntaryExit... voluntaryExits) {
     return blockBodySchema.getVoluntaryExitsSchema().of(voluntaryExits);
   }
 
   public SszList<SignedBlsToExecutionChange> createBlsToExecutionChanges(
-          final SignedBlsToExecutionChange... blsToExecutionChanges) {
+      final SignedBlsToExecutionChange... blsToExecutionChanges) {
     return blockBodySchema
         .toVersionCapella()
         .map(schema -> schema.getBlsToExecutionChangesSchema().of(blsToExecutionChanges))

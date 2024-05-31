@@ -236,8 +236,8 @@ public class BeaconChainUtil {
     return createBlockAndStateAtSlot(slot, withValidProposer).getBlock();
   }
 
-  public SignedBlockAndState createBlockAndStateAtSlot(final UInt64 slot, final boolean withValidProposer)
-      throws Exception {
+  public SignedBlockAndState createBlockAndStateAtSlot(
+      final UInt64 slot, final boolean withValidProposer) throws Exception {
     return createBlockAndStateAtSlot(
         slot,
         withValidProposer,

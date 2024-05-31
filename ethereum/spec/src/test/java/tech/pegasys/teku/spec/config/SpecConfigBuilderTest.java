@@ -168,7 +168,7 @@ class SpecConfigBuilderTest {
         .isEqualTo(randomUInt64);
   }
 
-  private Spec getSpec(Consumer<SpecConfigBuilder> consumer) {
+  private Spec getSpec(final Consumer<SpecConfigBuilder> consumer) {
     final SpecConfig config = SpecConfigLoader.loadConfig("mainnet", consumer);
     return SpecFactory.create(config);
   }

@@ -27,7 +27,7 @@ import tech.pegasys.teku.bls.BLSTestUtil;
  */
 public class KeyFileGenerator {
 
-  public static void main(String[] args) throws Exception {
+  public static void main(final String[] args) throws Exception {
     final int randomSeed = 0;
     final Iterator<BLSKeyPair> keyPairIterator =
         IntStream.range(randomSeed, randomSeed + Integer.MAX_VALUE)
@@ -62,7 +62,7 @@ public class KeyFileGenerator {
 
   // Used by other processes to read the keys generated and stored in bls-key-pairs
   // can specify up to 3_276_800 keys and a list will be returned to the caller
-  public static List<BLSKeyPair> readValidatorKeys(int limit) {
+  public static List<BLSKeyPair> readValidatorKeys(final int limit) {
     if (limit > 3_276_800) {
       System.out.println(
           "Only resource files up to 3200K validators has been generated, insufficient stored keys to satisfy request.");

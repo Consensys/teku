@@ -268,7 +268,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   @Override
   @MustBeClosed
   public <K extends Comparable<K>, V> Stream<K> streamKeys(
-          final KvStoreColumn<K, V> column, final K from, final K to) {
+      final KvStoreColumn<K, V> column, final K from, final K to) {
     final byte[] fromBytes = getColumnKey(column, from);
     final byte[] toBytes = getColumnKey(column, to);
     return streamKeys(column, fromBytes, toBytes);

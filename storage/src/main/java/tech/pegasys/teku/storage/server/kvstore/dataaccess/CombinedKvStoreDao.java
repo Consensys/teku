@@ -519,7 +519,9 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     private final FinalizedStateUpdater<S> stateStorageUpdater;
 
     V4CombinedUpdater(
-        final KvStoreAccessor db, final S schema, final FinalizedStateUpdater<S> stateStorageUpdater) {
+        final KvStoreAccessor db,
+        final S schema,
+        final FinalizedStateUpdater<S> stateStorageUpdater) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;

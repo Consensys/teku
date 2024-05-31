@@ -51,7 +51,7 @@ public class BeaconBlockBuilder {
   }
 
   public BeaconBlockBuilder blsToExecutionChanges(
-          final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     this.blsToExecutionChanges = blsToExecutionChanges;
     return this;
   }

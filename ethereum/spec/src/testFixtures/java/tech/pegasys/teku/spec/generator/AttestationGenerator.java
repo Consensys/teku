@@ -64,7 +64,8 @@ public class AttestationGenerator {
     return attestation.getAggregationBits().streamAllSetBits().findFirst().orElse(-1);
   }
 
-  public static AttestationData diffSlotAttestationData(final UInt64 slot, final AttestationData data) {
+  public static AttestationData diffSlotAttestationData(
+      final UInt64 slot, final AttestationData data) {
     return new AttestationData(
         slot, data.getIndex(), data.getBeaconBlockRoot(), data.getSource(), data.getTarget());
   }
@@ -77,7 +78,8 @@ public class AttestationGenerator {
    * @return a list of aggregated {@link Attestation}s with distinct {@link
    *     tech.pegasys.teku.spec.datastructures.operations.AttestationData}
    */
-  public static List<Attestation> groupAndAggregateAttestations(final List<Attestation> srcAttestations) {
+  public static List<Attestation> groupAndAggregateAttestations(
+      final List<Attestation> srcAttestations) {
     Collection<List<Attestation>> groupedAtt =
         srcAttestations.stream().collect(Collectors.groupingBy(Attestation::getData)).values();
     return groupedAtt.stream()
@@ -419,7 +421,9 @@ public class AttestationGenerator {
     }
 
     private SszBitlist getAggregationBits(
-        final AttestationSchema<?> attestationSchema, final int committeeSize, final int indexIntoCommittee) {
+        final AttestationSchema<?> attestationSchema,
+        final int committeeSize,
+        final int indexIntoCommittee) {
       // Create aggregation bitfield
       return attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, indexIntoCommittee);
     }

@@ -62,7 +62,8 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   public static MockKvStoreInstance createEmpty(
-      final Collection<KvStoreColumn<?, ?>> columns, final Collection<KvStoreVariable<?>> variables) {
+      final Collection<KvStoreColumn<?, ?>> columns,
+      final Collection<KvStoreVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
@@ -190,7 +191,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
 
   @Override
   public <K extends Comparable<K>, V> Stream<K> streamKeys(
-          final KvStoreColumn<K, V> column, final K from, final K to) {
+      final KvStoreColumn<K, V> column, final K from, final K to) {
     assertOpen();
     return columnData
         .get(column)

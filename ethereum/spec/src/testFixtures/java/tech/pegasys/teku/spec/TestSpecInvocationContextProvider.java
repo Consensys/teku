@@ -38,7 +38,7 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
 
   @Override
   public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
-          final ExtensionContext extensionContext) {
+      final ExtensionContext extensionContext) {
 
     Class<?> clazz = extensionContext.getRequiredTestClass();
     TestSpecContext testSpecContext = clazz.getAnnotation(TestSpecContext.class);
@@ -97,7 +97,10 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     private final SpecMilestone specMilestone;
     private final Eth2Network network;
 
-    SpecContext(final SpecMilestone specMilestone, final Eth2Network network, final boolean doNotGenerateSpec) {
+    SpecContext(
+        final SpecMilestone specMilestone,
+        final Eth2Network network,
+        final boolean doNotGenerateSpec) {
       if (doNotGenerateSpec) {
         spec = null;
         dataStructureUtil = null;
@@ -186,14 +189,14 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
 
     @Override
     public boolean supportsParameter(
-            final ParameterContext parameterContext, final ExtensionContext extensionContext)
+        final ParameterContext parameterContext, final ExtensionContext extensionContext)
         throws ParameterResolutionException {
       return parameterContext.getParameter().getType().isInstance(data);
     }
 
     @Override
     public Object resolveParameter(
-            final ParameterContext parameterContext, final ExtensionContext extensionContext)
+        final ParameterContext parameterContext, final ExtensionContext extensionContext)
         throws ParameterResolutionException {
       return data;
     }

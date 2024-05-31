@@ -78,7 +78,7 @@ public class MerkleTreeTest {
     assertThatBooleanCollection(results).allSatisfy(Assertions::assertTrue);
   }
 
-  private SszBytes32Vector toSszBytes32Vector(List<Bytes32> list) {
+  private SszBytes32Vector toSszBytes32Vector(final List<Bytes32> list) {
     return SszBytes32VectorSchema.create(list.size()).of(list);
   }
 

@@ -46,7 +46,7 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-          final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
+      final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
     final Executor executor = getDelayedExecutor(delay.toMillis(), TimeUnit.MILLISECONDS);
     return runAsync(action, executor);
   }

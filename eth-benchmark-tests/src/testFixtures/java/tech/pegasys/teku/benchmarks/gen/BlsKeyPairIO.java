@@ -47,11 +47,11 @@ public class BlsKeyPairIO {
     private final BufferedReader reader;
     private int pairsToRead = Integer.MAX_VALUE;
 
-    public Reader(BufferedReader reader) {
+    public Reader(final BufferedReader reader) {
       this.reader = reader;
     }
 
-    public Reader withLimit(int limit) {
+    public Reader withLimit(final int limit) {
       pairsToRead = limit;
       return this;
     }
@@ -68,7 +68,7 @@ public class BlsKeyPairIO {
     }
 
     @SuppressWarnings("EmptyCatch")
-    public List<BLSKeyPair> readAll(int limit) {
+    public List<BLSKeyPair> readAll(final int limit) {
       try {
         return StreamSupport.stream(withLimit(limit).spliterator(), false)
             .collect(Collectors.toList());
@@ -119,12 +119,12 @@ public class BlsKeyPairIO {
     private final Supplier<BLSKeyPair> generator;
     private final BufferedWriter writer;
 
-    private Writer(Supplier<BLSKeyPair> generator, BufferedWriter writer) {
+    private Writer(final Supplier<BLSKeyPair> generator, final BufferedWriter writer) {
       this.generator = generator;
       this.writer = writer;
     }
 
-    public void write(int count) throws IOException {
+    public void write(final int count) throws IOException {
       for (int i = 0; i < count; i++) {
         BLSKeyPair blsKeyPair = generator.get();
         writer
@@ -151,7 +151,7 @@ public class BlsKeyPairIO {
     return createReaderForResource("/bls-key-pairs/bls-pairs-1m-seed_1.gz");
   }
 
-  public static Reader createReaderForResource(String resourceName) {
+  public static Reader createReaderForResource(final String resourceName) {
     try {
       return createReaderFromStream(
           BlsKeyPairIO.class.getResourceAsStream(resourceName), resourceName.endsWith(".gz"));
@@ -160,7 +160,7 @@ public class BlsKeyPairIO {
     }
   }
 
-  public static Reader createReaderForFile(File file) {
+  public static Reader createReaderForFile(final File file) {
     try {
       return createReaderFromStream(new FileInputStream(file), file.getName().endsWith(".gz"));
     } catch (IOException e) {
@@ -168,7 +168,7 @@ public class BlsKeyPairIO {
     }
   }
 
-  public static Reader createReaderFromStream(InputStream input, boolean gzipped)
+  public static Reader createReaderFromStream(final InputStream input, final boolean gzipped)
       throws IOException {
     BufferedReader reader =
         new BufferedReader(
@@ -176,7 +176,7 @@ public class BlsKeyPairIO {
     return new Reader(reader);
   }
 
-  public static Writer createWriter(File outFile, Supplier<BLSKeyPair> generator) {
+  public static Writer createWriter(final File outFile, final Supplier<BLSKeyPair> generator) {
     try {
       return new Writer(generator, new BufferedWriter(new FileWriter(outFile, UTF_8)));
     } catch (IOException e) {

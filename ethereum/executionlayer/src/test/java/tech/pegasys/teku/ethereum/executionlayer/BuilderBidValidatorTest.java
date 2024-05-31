@@ -225,7 +225,7 @@ public class BuilderBidValidatorTest {
   }
 
   private void prepareGasLimit(
-      UInt64 parentGasLimit, UInt64 proposedGasLimit, UInt64 preferredGasLimit) {
+      final UInt64 parentGasLimit, final UInt64 proposedGasLimit, final UInt64 preferredGasLimit) {
 
     UInt64 slot = dataStructureUtil.randomUInt64();
 
@@ -275,7 +275,7 @@ public class BuilderBidValidatorTest {
   }
 
   private ExecutionPayloadHeader createExecutionPayloadHeaderWithGasLimit(
-      SchemaDefinitionsBellatrix schemaDefinitions, UInt64 gasLimit) {
+      final SchemaDefinitionsBellatrix schemaDefinitions, final UInt64 gasLimit) {
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
         .createExecutionPayloadHeader(

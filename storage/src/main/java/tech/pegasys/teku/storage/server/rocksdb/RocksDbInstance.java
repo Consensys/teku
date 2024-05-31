@@ -104,7 +104,8 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
-  public <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(final KvStoreColumn<K, V> column, final K key) {
+  public <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(
+      final KvStoreColumn<K, V> column, final K key) {
     assertOpen();
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
     final Consumer<RocksIterator> setupIterator = it -> it.seekForPrev(keyBytes);
@@ -188,7 +189,7 @@ public class RocksDbInstance implements KvStoreAccessor {
   @Override
   @MustBeClosed
   public <K extends Comparable<K>, V> Stream<K> streamKeys(
-          final KvStoreColumn<K, V> column, final K from, final K to) {
+      final KvStoreColumn<K, V> column, final K from, final K to) {
     assertOpen();
     return createKeyStream(
         column,
@@ -208,21 +209,21 @@ public class RocksDbInstance implements KvStoreAccessor {
 
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
-          final KvStoreColumn<K, V> column, final Consumer<RocksIterator> setupIterator) {
+      final KvStoreColumn<K, V> column, final Consumer<RocksIterator> setupIterator) {
     return createStream(column, setupIterator, key -> true);
   }
 
   @MustBeClosed
   private <K, V> Stream<K> createKeyStream(
-          final KvStoreColumn<K, V> column, final Consumer<RocksIterator> setupIterator) {
+      final KvStoreColumn<K, V> column, final Consumer<RocksIterator> setupIterator) {
     return createKeyStream(column, setupIterator, key -> true);
   }
 
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
-          final KvStoreColumn<K, V> column,
-          final Consumer<RocksIterator> setupIterator,
-          final Predicate<K> continueTest) {
+      final KvStoreColumn<K, V> column,
+      final Consumer<RocksIterator> setupIterator,
+      final Predicate<K> continueTest) {
 
     return createStreamRaw(column, setupIterator, continueTest)
         .map(
@@ -234,9 +235,9 @@ public class RocksDbInstance implements KvStoreAccessor {
 
   @MustBeClosed
   private <K, V> Stream<K> createKeyStream(
-          final KvStoreColumn<K, V> column,
-          final Consumer<RocksIterator> setupIterator,
-          final Predicate<K> continueTest) {
+      final KvStoreColumn<K, V> column,
+      final Consumer<RocksIterator> setupIterator,
+      final Predicate<K> continueTest) {
 
     return createStreamKeyRaw(column, setupIterator, continueTest)
         .map(entry -> column.getKeySerializer().deserialize(entry));
@@ -245,9 +246,9 @@ public class RocksDbInstance implements KvStoreAccessor {
   @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<byte[], byte[]>> createStreamRaw(
-          final KvStoreColumn<K, V> column,
-          final Consumer<RocksIterator> setupIterator,
-          final Predicate<K> continueTest) {
+      final KvStoreColumn<K, V> column,
+      final Consumer<RocksIterator> setupIterator,
+      final Predicate<K> continueTest) {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
@@ -257,9 +258,9 @@ public class RocksDbInstance implements KvStoreAccessor {
   @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed
   private <K, V> Stream<byte[]> createStreamKeyRaw(
-          final KvStoreColumn<K, V> column,
-          final Consumer<RocksIterator> setupIterator,
-          final Predicate<K> continueTest) {
+      final KvStoreColumn<K, V> column,
+      final Consumer<RocksIterator> setupIterator,
+      final Predicate<K> continueTest) {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);

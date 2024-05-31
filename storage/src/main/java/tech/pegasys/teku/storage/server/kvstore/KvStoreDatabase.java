@@ -583,7 +583,8 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  private void handleAddFinalizedStateRoot(final BeaconState state, final FinalizedUpdater updater) {
+  private void handleAddFinalizedStateRoot(
+      final BeaconState state, final FinalizedUpdater updater) {
     final Optional<BeaconState> maybeLastState =
         getLatestAvailableFinalizedState(state.getSlot().minusMinZero(ONE));
     maybeLastState.ifPresentOrElse(
@@ -1113,7 +1114,7 @@ public class KvStoreDatabase implements Database {
   }
 
   private void updateFinalizedDataArchiveMode(
-          final Map<Bytes32, Bytes32> finalizedChildToParentMap,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
 
@@ -1166,7 +1167,7 @@ public class KvStoreDatabase implements Database {
   }
 
   private void updateFinalizedDataPruneMode(
-          final Map<Bytes32, Bytes32> finalizedChildToParentMap,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
     final Optional<Bytes32> initialBlockRoot = dao.getAnchor().map(Checkpoint::getRoot);
 
@@ -1231,7 +1232,7 @@ public class KvStoreDatabase implements Database {
   }
 
   private void putFinalizedState(
-          final FinalizedUpdater updater, final Bytes32 blockRoot, final BeaconState state) {
+      final FinalizedUpdater updater, final Bytes32 blockRoot, final BeaconState state) {
     if (stateStorageMode.storesFinalizedStates()) {
       updater.addFinalizedState(blockRoot, state);
       updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot());

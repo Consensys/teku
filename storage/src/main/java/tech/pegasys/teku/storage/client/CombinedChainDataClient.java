@@ -506,7 +506,8 @@ public class CombinedChainDataClient {
     return !recentChainData.isPreGenesis() && !recentChainData.isPreForkChoice();
   }
 
-  public List<CommitteeAssignment> getCommitteesFromState(final BeaconState state, final UInt64 epoch) {
+  public List<CommitteeAssignment> getCommitteesFromState(
+      final BeaconState state, final UInt64 epoch) {
     List<CommitteeAssignment> result = new ArrayList<>();
     final int slotsPerEpoch = spec.slotsPerEpoch(epoch);
     final UInt64 startingSlot = spec.computeStartSlotAtEpoch(epoch);

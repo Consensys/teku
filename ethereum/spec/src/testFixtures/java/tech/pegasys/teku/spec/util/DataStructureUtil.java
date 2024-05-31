@@ -311,17 +311,17 @@ public final class DataStructureUtil {
   }
 
   public <T extends SszData> SszList<T> randomSszList(
-          final SszListSchema<T, ?> schema, final Supplier<T> valueGenerator, final long numItems) {
+      final SszListSchema<T, ?> schema, final Supplier<T> valueGenerator, final long numItems) {
     return randomSszList(schema, numItems, valueGenerator);
   }
 
   public <T extends SszData> SszList<T> randomFullSszList(
-          final SszListSchema<T, ?> schema, final Supplier<T> valueGenerator) {
+      final SszListSchema<T, ?> schema, final Supplier<T> valueGenerator) {
     return randomSszList(schema, schema.getMaxLength(), valueGenerator);
   }
 
   public <T extends SszData> SszList<T> randomSszList(
-          final SszListSchema<T, ?> schema, final long numItems, final Supplier<T> valueGenerator) {
+      final SszListSchema<T, ?> schema, final long numItems, final Supplier<T> valueGenerator) {
     return Stream.generate(valueGenerator)
         .limit(Math.min(numItems, schema.getMaxLength()))
         .collect(schema.collector());
@@ -373,7 +373,8 @@ public final class DataStructureUtil {
 
   public <SszElementT extends SszData, VectorT extends SszVector<SszElementT>>
       VectorT randomSszVector(
-          final SszVectorSchema<SszElementT, VectorT> schema, final Supplier<SszElementT> valueGenerator) {
+          final SszVectorSchema<SszElementT, VectorT> schema,
+          final Supplier<SszElementT> valueGenerator) {
     final int numItems = schema.getLength() / 10;
     final SszElementT defaultElement = schema.getElementSchema().getDefault();
     return Stream.concat(

@@ -156,7 +156,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setFinalizedCheckpoint(final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
+  public void setFinalizedCheckpoint(
+      final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
     this.finalizedCheckpoint = Optional.of(finalizedCheckpoint);
     this.finalizedCheckpointOptimistic = fromOptimisticBlock;
   }
@@ -406,7 +407,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
     SignedBlockAndState inMemoryCheckpointBlockState =
         blockData.get(slotAndBlockRoot.getBlockRoot());
     if (inMemoryCheckpointBlockState != null) {

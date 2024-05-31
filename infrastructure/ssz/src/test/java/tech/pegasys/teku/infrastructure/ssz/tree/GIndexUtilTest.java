@@ -59,7 +59,7 @@ public class GIndexUtilTest {
 
   @ParameterizedTest
   @MethodSource("compareCases")
-  void testCompare(long idx1, long idx2, NodeRelation expected) {
+  void testCompare(final long idx1, final long idx2, final NodeRelation expected) {
     if (expected != null) {
       assertThat(GIndexUtil.gIdxCompare(idx1, idx2)).isEqualTo(expected);
       assertThat(GIndexUtil.gIdxCompare(idx2, idx1)).isEqualTo(expected.inverse());
@@ -243,7 +243,7 @@ public class GIndexUtilTest {
   @ParameterizedTest
   @ValueSource(
       ints = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 50, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104})
-  void shouldReverseChildIndex(long rootGIndex) {
+  void shouldReverseChildIndex(final long rootGIndex) {
     final int treeDepth = 4;
     final int childIndex = 9;
     final long childGIndex = GIndexUtil.gIdxChildGIndex(rootGIndex, childIndex, treeDepth);

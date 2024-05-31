@@ -46,7 +46,7 @@ public class InMemoryKvStoreDatabaseFactory {
   }
 
   public static Database createV6(
-          final MockKvStoreInstance db,
+      final MockKvStoreInstance db,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -57,7 +57,7 @@ public class InMemoryKvStoreDatabaseFactory {
   }
 
   public static Database createTree(
-          final MockKvStoreInstance db,
+      final MockKvStoreInstance db,
       final StateStorageMode storageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
