@@ -51,6 +51,14 @@ class BitlistImpl {
     }
   }
 
+  public BitlistImpl(final int size, final long maxSize, final BitSet bitSet) {
+    checkArgument(size >= 0, "Negative size");
+    checkArgument(maxSize >= size, "maxSize should be >= size");
+    this.size = size;
+    this.data = bitSet;
+    this.maxSize = maxSize;
+  }
+
   private BitlistImpl(final int size, final BitSet data, final long maxSize) {
     this.size = size;
     this.data = data;

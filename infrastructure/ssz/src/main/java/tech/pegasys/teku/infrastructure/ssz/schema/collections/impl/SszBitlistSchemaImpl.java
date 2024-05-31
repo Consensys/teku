@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -54,6 +55,12 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
   public SszBitlist ofBits(final int size, final int... setBitIndices) {
     Preconditions.checkArgument(size <= getMaxLength(), "size > maxLength");
     return SszBitlistImpl.ofBits(this, size, setBitIndices);
+  }
+
+  @Override
+  public SszBitlist wrapBitSet(int size, BitSet bitSet) {
+    Preconditions.checkArgument(size <= getMaxLength(), "size > maxLength");
+    return SszBitlistImpl.wrapBitSet(this, size, bitSet);
   }
 
   @Override

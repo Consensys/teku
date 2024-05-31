@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.executionlayer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -139,7 +139,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final Spec spec,
       final boolean enableTransitionEmulation,
       final Optional<Bytes32> terminalBlockHashInTTDMode) {
-    this(spec, new SystemTimeProvider(), enableTransitionEmulation, terminalBlockHashInTTDMode);
+    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation, terminalBlockHashInTTDMode);
   }
 
   public void addPowBlock(final PowBlock block) {

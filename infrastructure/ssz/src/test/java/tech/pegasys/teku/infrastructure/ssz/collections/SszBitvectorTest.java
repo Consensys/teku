@@ -228,6 +228,14 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
 
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
+  void testGetLastSetBitIndex(SszBitvector bitvector) {
+    int result = bitvector.getLastSetBitIndex();
+    int expected = bitvector.streamAllSetBits().reduce((first, second) -> second).orElse(-1);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
   void get_shouldThrowIndexOutOfBounds(SszBitvector vector) {
     assertThatThrownBy(() -> vector.get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
   }
