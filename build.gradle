@@ -114,6 +114,19 @@ dependencyRules {
   }
 }
 
+def isNonStable = { String version ->
+  def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { keyword -> version.toUpperCase().contains(keyword) }
+  def regex = /^[0-9,.v-]+(-r)?$/
+  return !stableKeyword && !(version ==~ regex)
+}
+
+// reject all non stable versions
+tasks.named("dependencyUpdates").configure {
+  rejectVersionIf {
+    isNonStable(it.candidate.version)
+  }
+}
+
 allprojects {
   apply plugin: 'java-library'
   apply plugin: 'java-test-fixtures'
@@ -248,6 +261,7 @@ allprojects {
     options.encoding = 'UTF-8'
 
   }
+
   /*
    * Pass some system properties provided on the gradle command line to test executions for
    * convenience.
