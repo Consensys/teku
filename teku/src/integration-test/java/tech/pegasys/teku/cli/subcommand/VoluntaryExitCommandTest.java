@@ -108,7 +108,7 @@ public class VoluntaryExitCommandTest {
   private List<String> commandArgs;
 
   @BeforeEach
-  public void setup(ClientAndServer server) throws IOException {
+  public void setup(final ClientAndServer server) throws IOException {
     this.mockBeaconServer = server;
     configureSuccessfulHeadResponse(mockBeaconServer);
     configureSuccessfulGenesisResponse(mockBeaconServer);
@@ -609,11 +609,11 @@ public class VoluntaryExitCommandTest {
     return JsonUtil.serialize(new ConfigProvider(spec).getConfig(), GET_SPEC_RESPONSE_TYPE);
   }
 
-  private String extractValidatorId(String pubKey) {
+  private String extractValidatorId(final String pubKey) {
     return pubKey.substring(2, 9);
   }
 
-  private void assertValidatorsExited(String... args) {
+  private void assertValidatorsExited(final String... args) {
     Arrays.stream(args)
         .forEach(
             arg -> {
@@ -622,7 +622,7 @@ public class VoluntaryExitCommandTest {
             });
   }
 
-  private void assertValidatorsNotExited(String... args) {
+  private void assertValidatorsNotExited(final String... args) {
     Arrays.stream(args)
         .forEach(
             arg -> {

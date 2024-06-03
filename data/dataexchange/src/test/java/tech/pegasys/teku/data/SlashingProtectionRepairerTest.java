@@ -111,7 +111,8 @@ public class SlashingProtectionRepairerTest {
   }
 
   @Test
-  public void shouldNotUpdateFilesWithInvalidPubkeys(@TempDir Path tempDir) throws IOException {
+  public void shouldNotUpdateFilesWithInvalidPubkeys(@TempDir final Path tempDir)
+      throws IOException {
     setupPathForTest(tempDir, Map.of("a.yml", Optional.of(validatorSigningRecord)));
     SlashingProtectionRepairer repairer =
         SlashingProtectionRepairer.create(subCommandLogger, tempDir, true);
@@ -126,7 +127,7 @@ public class SlashingProtectionRepairerTest {
   }
 
   @Test
-  public void shouldUpdateValidAndInvalidFiles(@TempDir Path tempDir) throws IOException {
+  public void shouldUpdateValidAndInvalidFiles(@TempDir final Path tempDir) throws IOException {
     setupPathForTest(tempDir, testData);
     SlashingProtectionRepairer repairer =
         SlashingProtectionRepairer.create(subCommandLogger, tempDir, true);
@@ -152,7 +153,7 @@ public class SlashingProtectionRepairerTest {
   }
 
   @Test
-  public void shouldUpdateInvalidFiles(@TempDir Path tempDir) throws IOException {
+  public void shouldUpdateInvalidFiles(@TempDir final Path tempDir) throws IOException {
     setupPathForTest(tempDir, testData);
     SlashingProtectionRepairer repairer =
         SlashingProtectionRepairer.create(subCommandLogger, tempDir, false);
@@ -187,7 +188,8 @@ public class SlashingProtectionRepairerTest {
   }
 
   private void setupPathForTest(
-      Path slashingProtectionPath, Map<String, Optional<ValidatorSigningRecord>> records)
+      final Path slashingProtectionPath,
+      final Map<String, Optional<ValidatorSigningRecord>> records)
       throws IOException {
     syncDataAccessor = SyncDataAccessor.create(slashingProtectionPath);
     for (Map.Entry<String, Optional<ValidatorSigningRecord>> entry : records.entrySet()) {

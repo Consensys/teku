@@ -62,7 +62,9 @@ class DepositTransactionSender {
   }
 
   public SafeFuture<TransactionReceipt> sendDepositTransaction(
-      BLSKeyPair validatorKeyPair, final Bytes32 withdrawalCredentials, final UInt64 amountInGwei) {
+      final BLSKeyPair validatorKeyPair,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amountInGwei) {
 
     final DepositData depositData =
         depositGenerator.createDepositData(validatorKeyPair, amountInGwei, withdrawalCredentials);

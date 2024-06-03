@@ -318,7 +318,7 @@ public class FallbackAwareEth1ProviderTest {
   }
 
   private static SafeFuture<List<EthLog.LogResult<?>>> failingProviderGetLogsWithError(
-      Throwable error) {
+      final Throwable error) {
     final SafeFuture<List<EthLog.LogResult<?>>> logListSafeFuture = new SafeFuture<>();
     logListSafeFuture.completeExceptionally(error);
     return logListSafeFuture;

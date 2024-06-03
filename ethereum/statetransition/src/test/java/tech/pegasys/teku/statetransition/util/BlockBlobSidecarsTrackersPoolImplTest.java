@@ -1054,7 +1054,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertStats("block", "gossip", 2);
   }
 
-  private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
+  private Checkpoint finalizedCheckpoint(final SignedBeaconBlock block) {
     final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot()).plus(UInt64.ONE);
     final Bytes32 root = block.getMessage().hashTreeRoot();
 

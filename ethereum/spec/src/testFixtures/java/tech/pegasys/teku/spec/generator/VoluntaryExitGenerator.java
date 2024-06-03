@@ -37,7 +37,7 @@ public class VoluntaryExitGenerator {
   }
 
   private SignedVoluntaryExit create(
-      ForkInfo forkInfo, UInt64 epoch, int validatorIndex, boolean valid) {
+      final ForkInfo forkInfo, final UInt64 epoch, final int validatorIndex, final boolean valid) {
     VoluntaryExit exit = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
 
     BLSSignature exitSignature =
@@ -48,13 +48,16 @@ public class VoluntaryExitGenerator {
     return new SignedVoluntaryExit(exit, exitSignature);
   }
 
-  public SignedVoluntaryExit withInvalidSignature(BeaconState state, int validatorIndex) {
+  public SignedVoluntaryExit withInvalidSignature(
+      final BeaconState state, final int validatorIndex) {
     return create(
         state.getForkInfo(), spec.computeEpochAtSlot(state.getSlot()), validatorIndex, false);
   }
 
   public SignedVoluntaryExit valid(
-      BeaconState state, int validatorIndex, boolean checkForHavingBeenActiveLongEnough) {
+      final BeaconState state,
+      final int validatorIndex,
+      final boolean checkForHavingBeenActiveLongEnough) {
     if (checkForHavingBeenActiveLongEnough) {
       checkForValidatorHavingBeenActiveLongEnough(state, validatorIndex);
     }
@@ -62,22 +65,24 @@ public class VoluntaryExitGenerator {
         state.getForkInfo(), spec.computeEpochAtSlot(state.getSlot()), validatorIndex, true);
   }
 
-  public SignedVoluntaryExit valid(BeaconState state, int validatorIndex) {
+  public SignedVoluntaryExit valid(final BeaconState state, final int validatorIndex) {
     return valid(state, validatorIndex, true);
   }
 
-  public SignedVoluntaryExit withEpoch(BeaconState state, int epoch, int validatorIndex) {
+  public SignedVoluntaryExit withEpoch(
+      final BeaconState state, final int epoch, final int validatorIndex) {
     return create(state.getForkInfo(), UInt64.valueOf(epoch), validatorIndex, true);
   }
 
-  private BLSKeyPair getKeypair(int validatorIndex, boolean valid) {
+  private BLSKeyPair getKeypair(final int validatorIndex, final boolean valid) {
     return valid ? validatorKeys.get(validatorIndex) : BLSTestUtil.randomKeyPair(12345);
   }
 
   // It is easy to miss to update the state to a slot where validator can finally exit. This check
   // is to
   // ensure that the passed state slot is high enough to make sure that doesn't happen.
-  private void checkForValidatorHavingBeenActiveLongEnough(BeaconState state, int validatorIndex) {
+  private void checkForValidatorHavingBeenActiveLongEnough(
+      final BeaconState state, final int validatorIndex) {
     if (state
             .getValidators()
             .get(validatorIndex)

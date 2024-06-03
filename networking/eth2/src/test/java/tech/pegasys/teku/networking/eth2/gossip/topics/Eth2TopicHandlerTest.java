@@ -352,7 +352,8 @@ public class Eth2TopicHandlerTest {
     }
 
     @Override
-    public SignedBeaconBlock deserialize(PreparedGossipMessage message) throws DecodingException {
+    public SignedBeaconBlock deserialize(final PreparedGossipMessage message)
+        throws DecodingException {
       return deserializer.deserialize(message);
     }
 

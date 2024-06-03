@@ -236,7 +236,8 @@ class ValidatorTypesTest {
   }
 
   private void checkExternalValidatorStoreRoundTrip(
-      BLSPublicKey publicKey, Optional<URL> url, String expected) throws JsonProcessingException {
+      final BLSPublicKey publicKey, final Optional<URL> url, final String expected)
+      throws JsonProcessingException {
     ExternalValidator value = new ExternalValidator(publicKey, url);
 
     String serializedValue = serialize(value, ValidatorTypes.EXTERNAL_VALIDATOR_STORE);

@@ -264,7 +264,7 @@ public class PendingPoolTest {
     assertThat(pendingPool.size()).isEqualTo(maxItems);
   }
 
-  private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
+  private Checkpoint finalizedCheckpoint(final SignedBeaconBlock block) {
     final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot()).plus(UInt64.ONE);
     final Bytes32 root = block.getMessage().hashTreeRoot();
 

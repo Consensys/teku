@@ -28,7 +28,8 @@ public class TempDirUtils {
     }
   }
 
-  public static boolean deleteDirLenient(Path dir, int maxDeleteAttempts, boolean throwIfFailed) {
+  public static boolean deleteDirLenient(
+      final Path dir, final int maxDeleteAttempts, final boolean throwIfFailed) {
     IOException lastException = null;
     for (int i = 0; i < maxDeleteAttempts; i++) {
       try {

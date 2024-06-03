@@ -497,7 +497,7 @@ class OkHttpValidatorRestApiClientTest {
         .isEqualTo(response);
   }
 
-  private String asJson(Object object) {
+  private String asJson(final Object object) {
     try {
       return jsonProvider.objectToJSON(object);
     } catch (JsonProcessingException e) {

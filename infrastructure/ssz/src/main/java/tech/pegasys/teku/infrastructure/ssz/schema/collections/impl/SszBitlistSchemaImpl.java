@@ -58,7 +58,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
   }
 
   @Override
-  public SszBitlist wrapBitSet(int size, BitSet bitSet) {
+  public SszBitlist wrapBitSet(final int size, final BitSet bitSet) {
     Preconditions.checkArgument(size <= getMaxLength(), "size > maxLength");
     return SszBitlistImpl.wrapBitSet(this, size, bitSet);
   }

@@ -247,8 +247,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   private void assertResponseWithHeaders(
-      Response response,
-      boolean blinded,
+      final Response response,
+      final boolean blinded,
       final UInt256 executionPayloadValue,
       final UInt256 consensusBlockValue) {
     assertThat(response.code()).isEqualTo(SC_OK);

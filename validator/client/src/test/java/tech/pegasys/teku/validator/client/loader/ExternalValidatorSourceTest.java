@@ -78,7 +78,7 @@ public class ExternalValidatorSourceTest {
   public ExternalValidatorSourceTest() {}
 
   @BeforeEach
-  void setup(@TempDir Path tempDir) throws IOException, InterruptedException {
+  void setup(@TempDir final Path tempDir) throws IOException, InterruptedException {
     config =
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(new URL("http://localhost:9000"))
@@ -110,7 +110,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldDeleteValidator(@TempDir Path tempDir) throws IOException {
+  void shouldDeleteValidator(@TempDir final Path tempDir) throws IOException {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
@@ -131,7 +131,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldReturnErrorWhenDeleteNonExistentValidator(@TempDir Path tempDir) {
+  void shouldReturnErrorWhenDeleteNonExistentValidator(@TempDir final Path tempDir) {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
@@ -152,7 +152,8 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void addValidator_shouldGetConfigUrlWhenNotProvided(@TempDir Path tempDir) throws IOException {
+  void addValidator_shouldGetConfigUrlWhenNotProvided(@TempDir final Path tempDir)
+      throws IOException {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
@@ -164,7 +165,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void addValidator_shouldGetUrlIfProvided(@TempDir Path tempDir) throws IOException {
+  void addValidator_shouldGetUrlIfProvided(@TempDir final Path tempDir) throws IOException {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final URL url = new URL("http://host.com");
 
@@ -179,7 +180,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void addValidator_shouldDetectDuplicate(@TempDir Path tempDir) throws IOException {
+  void addValidator_shouldDetectDuplicate(@TempDir final Path tempDir) throws IOException {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
 
     final ExternalValidatorSource externalValidatorSource =
@@ -197,7 +198,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldLoadExternalValidators(@TempDir Path tempDir) throws IOException {
+  void shouldLoadExternalValidators(@TempDir final Path tempDir) throws IOException {
     final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDir);
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
@@ -229,7 +230,7 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
-  void shouldGetAvailableReadOnlyValidators(@TempDir Path tempDir) throws IOException {
+  void shouldGetAvailableReadOnlyValidators(@TempDir final Path tempDir) throws IOException {
     final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
     final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
     when(publicKeyLoader.getPublicKeys(any())).thenReturn(List.of(publicKey1, publicKey2));
@@ -257,7 +258,8 @@ public class ExternalValidatorSourceTest {
   }
 
   private void createRemoteKeyFile(
-      DataDirLayout dataDirLayout, BLSPublicKey publicKey, Optional<URL> url) throws IOException {
+      final DataDirLayout dataDirLayout, final BLSPublicKey publicKey, final Optional<URL> url)
+      throws IOException {
     final String urlContent = url.map(value -> ",\"url\":\"" + value + "\"").orElse("");
     final String content = "{\"pubkey\":\"" + publicKey + "\"" + urlContent + "}";
 
@@ -269,7 +271,8 @@ public class ExternalValidatorSourceTest {
     Files.writeString(tempFile, content, StandardCharsets.UTF_8);
   }
 
-  private void assertFileContent(Path tempDir, BLSPublicKey publicKey, String expectedContent)
+  private void assertFileContent(
+      final Path tempDir, final BLSPublicKey publicKey, final String expectedContent)
       throws IOException {
     final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString() + ".json";
     final Path path =
@@ -279,7 +282,7 @@ public class ExternalValidatorSourceTest {
     assertThat(Files.readString(path, Charsets.UTF_8)).isEqualTo(expectedContent);
   }
 
-  private void assertImportedSuccessfully(AddValidatorResult result, URL expectedUrl) {
+  private void assertImportedSuccessfully(final AddValidatorResult result, final URL expectedUrl) {
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
     assertThat(result.getSigner()).isNotEmpty();
     assertThat(result.getSigner().get().getSigningServiceUrl()).isNotEmpty();
@@ -304,13 +307,13 @@ public class ExternalValidatorSourceTest {
     private final BLSPublicKey publicKey;
     private final URL url;
 
-    ValidatorProviderInfo(BLSPublicKey publicKey, URL url) {
+    ValidatorProviderInfo(final BLSPublicKey publicKey, final URL url) {
       this.publicKey = publicKey;
       this.url = url;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) {
         return true;
       }

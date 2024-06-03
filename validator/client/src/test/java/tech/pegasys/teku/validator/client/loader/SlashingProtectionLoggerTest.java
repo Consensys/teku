@@ -148,13 +148,13 @@ public class SlashingProtectionLoggerTest {
     verify(validatorLogger, never()).outdatedSlashingProtection(any(), any());
   }
 
-  private Validator createProtectedValidator(BLSPublicKey publicKey) {
+  private Validator createProtectedValidator(final BLSPublicKey publicKey) {
     Signer localSigner = new NoOpLocalSigner();
     Signer signer = new SlashingProtectedSigner(publicKey, slashingProtector, localSigner);
     return new Validator(publicKey, signer, mock(GraffitiProvider.class));
   }
 
-  private Validator createUnProtectedValidator(BLSPublicKey publicKey) {
+  private Validator createUnProtectedValidator(final BLSPublicKey publicKey) {
     ExternalSigner externalSigner;
     try {
       externalSigner =

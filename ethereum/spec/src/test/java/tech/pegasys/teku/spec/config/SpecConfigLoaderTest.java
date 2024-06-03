@@ -75,7 +75,7 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
-  public void shouldLoadMainnetFromFile(@TempDir Path tempDir) throws Exception {
+  public void shouldLoadMainnetFromFile(@TempDir final Path tempDir) throws Exception {
     try (final InputStream inputStream = getMainnetConfigAsStream()) {
       final Path file = tempDir.resolve("mainnet.yml");
       writeStreamToFile(inputStream, file);
@@ -96,7 +96,8 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
-  public void shouldHandleInvalidPresetValue_wrongType(@TempDir Path tempDir) throws Exception {
+  public void shouldHandleInvalidPresetValue_wrongType(@TempDir final Path tempDir)
+      throws Exception {
     try (final InputStream inputStream = loadInvalidFile("invalidPreset_wrongType.yaml")) {
       final Path file = tempDir.resolve("invalid.yml");
       writeStreamToFile(inputStream, file);
@@ -112,7 +113,8 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
-  public void shouldHandleInvalidPresetValue_unknownPreset(@TempDir Path tempDir) throws Exception {
+  public void shouldHandleInvalidPresetValue_unknownPreset(@TempDir final Path tempDir)
+      throws Exception {
     try (final InputStream inputStream = loadInvalidFile("invalidPreset_unknown.yaml")) {
       final Path file = tempDir.resolve("invalid.yml");
       writeStreamToFile(inputStream, file);

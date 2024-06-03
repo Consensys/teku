@@ -22,7 +22,8 @@ import org.apache.tuweni.bytes.Bytes48;
 public class Bytes48KeyDeserializer extends KeyDeserializer {
 
   @Override
-  public Object deserializeKey(String key, DeserializationContext ctxt) throws JacksonException {
+  public Object deserializeKey(final String key, final DeserializationContext ctxt)
+      throws JacksonException {
     try {
       return Bytes48.fromHexStringStrict(key);
     } catch (RuntimeException ex) {

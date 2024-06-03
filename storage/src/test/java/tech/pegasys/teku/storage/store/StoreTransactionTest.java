@@ -415,7 +415,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
             mainChainBlock4.getRoot());
   }
 
-  private void setTime(UpdatableStore store, final UInt64 newTime) {
+  private void setTime(final UpdatableStore store, final UInt64 newTime) {
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.setTimeMillis(newTime);
     assertThat(tx.commit()).isCompleted();

@@ -145,7 +145,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   @ParameterizedTest
   @MethodSource("denebMethods")
   void shouldProvideExpectedMethodsForDeneb(
-      EngineApiMethod method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
@@ -181,7 +181,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   @ParameterizedTest
   @MethodSource("electraMethods")
   void shouldProvideExpectedMethodsForElectra(
-      EngineApiMethod method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec electraSpec = TestSpecFactory.createMinimalElectra();
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =

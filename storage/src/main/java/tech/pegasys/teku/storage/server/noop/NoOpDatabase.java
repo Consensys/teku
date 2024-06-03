@@ -222,10 +222,10 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {}
+  public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
-  public UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit) {
+  public UInt64 pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
     return lastSlotToPrune;
   }
 
@@ -236,7 +236,7 @@ public class NoOpDatabase implements Database {
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {}
 
   @Override
-  public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {}
+  public void removeDepositsFromBlockEvents(final List<UInt64> blockNumbers) {}
 
   @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}

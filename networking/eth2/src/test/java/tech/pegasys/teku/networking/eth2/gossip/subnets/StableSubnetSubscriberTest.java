@@ -109,7 +109,7 @@ public class StableSubnetSubscriberTest {
         .isEqualTo(UInt64.valueOf(spec.getNetworkingConfig().getEpochsPerSubnetSubscription()));
   }
 
-  private void assertSubnetsAreDistinct(Set<SubnetSubscription> subnetSubscriptions) {
+  private void assertSubnetsAreDistinct(final Set<SubnetSubscription> subnetSubscriptions) {
     IntSet subnetIds =
         IntOpenHashSet.toSet(
             subnetSubscriptions.stream()

@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 
 public class TestUtil {
 
-  public static <C> List<C> waitAll(List<Future<C>> futures) {
+  public static <C> List<C> waitAll(final List<Future<C>> futures) {
     return futures.stream()
         .map(
             f -> {
@@ -37,7 +37,7 @@ public class TestUtil {
         .collect(Collectors.toList());
   }
 
-  public static <C> List<Future<C>> executeParallel(Callable<C> task, int threadNum) {
+  public static <C> List<Future<C>> executeParallel(final Callable<C> task, final int threadNum) {
     ExecutorService threadPool = Executors.newFixedThreadPool(threadNum);
     CountDownLatch latch = new CountDownLatch(threadNum);
     try {

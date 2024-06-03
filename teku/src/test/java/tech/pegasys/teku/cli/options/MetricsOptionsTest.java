@@ -50,7 +50,7 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest(name = "{0}")
   @EnumSource(TekuMetricCategory.class)
-  public void metricsCategories_shouldAcceptValues(MetricCategory category) {
+  public void metricsCategories_shouldAcceptValues(final MetricCategory category) {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-categories", category.toString());
     final MetricsConfig config = tekuConfiguration.metricsConfig();
@@ -59,7 +59,8 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest(name = "{0}")
   @EnumSource(StandardMetricCategory.class)
-  public void metricsCategories_shouldAcceptStandardMetricCategories(MetricCategory category) {
+  public void metricsCategories_shouldAcceptStandardMetricCategories(
+      final MetricCategory category) {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-categories", category.toString());
     final MetricsConfig config = tekuConfiguration.metricsConfig();

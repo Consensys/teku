@@ -981,12 +981,12 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setSkipStateTransition(boolean skipStateTransition) {
+    public BlockOptions setSkipStateTransition(final boolean skipStateTransition) {
       this.skipStateTransition = skipStateTransition;
       return this;
     }
 
-    public BlockOptions setWrongProposer(boolean wrongProposer) {
+    public BlockOptions setWrongProposer(final boolean wrongProposer) {
       this.wrongProposer = wrongProposer;
       return this;
     }

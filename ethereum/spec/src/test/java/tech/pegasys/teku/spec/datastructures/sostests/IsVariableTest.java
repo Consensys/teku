@@ -71,13 +71,13 @@ public class IsVariableTest {
 
   @ParameterizedTest
   @MethodSource("variableSizeTypes")
-  void testTheTypeIsVariableSize(SszSchema<?> type) {
+  void testTheTypeIsVariableSize(final SszSchema<?> type) {
     assertFalse(type.isFixedSize());
   }
 
   @ParameterizedTest
   @MethodSource("fixedSizeTypes")
-  void testTheTypeIsFixedSize(SszSchema<?> type) {
+  void testTheTypeIsFixedSize(final SszSchema<?> type) {
     assertTrue(type.isFixedSize());
   }
 }
