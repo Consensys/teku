@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public class SszContainerTypeDefinition {
@@ -45,6 +46,9 @@ public class SszContainerTypeDefinition {
           final String childName,
           final int fieldIndex) {
     final SszSchema<?> childSchema = schema.getChildSchema(fieldIndex);
+    if (childSchema.equals(SszPrimitiveSchemas.NONE_SCHEMA)) {
+      return;
+    }
     builder.withField(
         childName,
         childSchema.getJsonTypeDefinition(),

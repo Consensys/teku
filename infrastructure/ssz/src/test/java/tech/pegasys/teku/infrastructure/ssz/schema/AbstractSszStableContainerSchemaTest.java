@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszImmutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
@@ -93,7 +95,7 @@ public class AbstractSszStableContainerSchemaTest {
   }
 
   @Test
-  void profileSanityTest() {
+  void profileSanityTest() throws JsonProcessingException {
     ProfileSchema squareProfileSchema =
         new ProfileSchema(
             "Square",
@@ -124,5 +126,13 @@ public class AbstractSszStableContainerSchemaTest {
 
     System.out.println(squareProfile.sszSerialize());
     System.out.println(circleProfile.sszSerialize());
+
+    String squareJson =
+        JsonUtil.serialize(squareProfile, squareProfileSchema.getJsonTypeDefinition());
+    System.out.println(squareJson);
+
+    String circleJson =
+        JsonUtil.serialize(circleProfile, circleProfileSchema.getJsonTypeDefinition());
+    System.out.println(circleJson);
   }
 }
