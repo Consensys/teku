@@ -51,7 +51,7 @@ public class BlockArchiveGenerator {
   private final ValidatorsUtil validatorsUtil;
   private final BeaconStateAccessors beaconStateAccessors;
 
-  public static void main(String[] args) throws Exception {
+  public static void main(final String[] args) throws Exception {
     // default values if nothing is specified
     int validatorCount = 32_768;
     int epochCount = 50;

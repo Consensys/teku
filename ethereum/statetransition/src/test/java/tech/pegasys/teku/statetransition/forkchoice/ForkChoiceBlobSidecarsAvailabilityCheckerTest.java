@@ -456,7 +456,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void assertAvailable(
-      SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
+      final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
         .isCompletedWithValueMatching(result -> !result.isFailure(), "is not failure")
         .isCompletedWithValueMatching(BlobSidecarsAndValidationResult::isValid, "is valid")

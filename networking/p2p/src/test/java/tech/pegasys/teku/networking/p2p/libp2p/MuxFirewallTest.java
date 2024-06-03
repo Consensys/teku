@@ -64,7 +64,7 @@ public class MuxFirewallTest {
         .addLast(
             new ChannelInboundHandlerAdapter() {
               @Override
-              public void channelRead(ChannelHandlerContext ctx, Object msg) {
+              public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
                 passedMessages.add(msg.toString());
               }
             });
@@ -75,7 +75,7 @@ public class MuxFirewallTest {
     YAMUX
   }
 
-  private void writeOneInbound(Object message) {
+  private void writeOneInbound(final Object message) {
     try {
       boolean res = channel.writeOneInbound(message).await(1000L);
       assertThat(res).isTrue();

@@ -38,7 +38,7 @@ public class BLSTestUtil {
    * @param entropy to seed the key pair generation
    * @return the signature
    */
-  public static BLSSignature randomSignature(int entropy) {
+  public static BLSSignature randomSignature(final int entropy) {
     BLSKeyPair keyPair = randomKeyPair(entropy);
     byte[] message = "Hello, world!".getBytes(UTF_8);
     return BLS.sign(keyPair.getSecretKey(), Bytes.wrap(message));
@@ -49,7 +49,7 @@ public class BLSTestUtil {
    *
    * @return PublicKey The public key, not null
    */
-  public static BLSPublicKey randomPublicKey(int seed) {
+  public static BLSPublicKey randomPublicKey(final int seed) {
     return randomKeyPair(seed).getPublicKey();
   }
 
@@ -60,7 +60,7 @@ public class BLSTestUtil {
    *
    * @return a keypair generated from a seed
    */
-  public static BLSKeyPair randomKeyPair(int seed) {
+  public static BLSKeyPair randomKeyPair(final int seed) {
     BLSSecretKey pseudoRandomSecretBytes =
         BLSSecretKey.fromBytesModR(Bytes32.random(new Random(seed)));
     return new BLSKeyPair(pseudoRandomSecretBytes);

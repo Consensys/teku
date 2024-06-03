@@ -199,7 +199,8 @@ public class DepositProcessingControllerTest {
     verifyNoInteractions(depositFetcher);
   }
 
-  private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {
+  private void mockBlockForEth1Provider(
+      final String blockHash, final long blockNumber, final long timestamp) {
     EthBlock.Block block = mock(EthBlock.Block.class);
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
@@ -209,7 +210,7 @@ public class DepositProcessingControllerTest {
   }
 
   @SuppressWarnings("unchecked")
-  private void pushLatestCanonicalBlockWithNumber(long latestBlockNumber) {
+  private void pushLatestCanonicalBlockWithNumber(final long latestBlockNumber) {
     final ArgumentCaptor<ValueObserver<UInt64>> captor =
         ArgumentCaptor.forClass(ValueObserver.class);
     verify(headTracker).subscribe(captor.capture());

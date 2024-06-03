@@ -75,7 +75,7 @@ public class ValidatorClientCommandTest {
           outputWriter, errorWriter, Collections.emptyMap(), startAction, loggingConfigurator);
 
   @BeforeEach
-  public void setup(ClientAndServer server) {
+  public void setup(final ClientAndServer server) {
     this.mockBeaconServer = server;
     this.failoverMockBeaconServer =
         ClientAndServer.startClientAndServer(PortFactory.findFreePort());

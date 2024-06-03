@@ -43,7 +43,7 @@ public class PingIntegrationTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
-  public void setUp(Duration pingInterval) throws Exception {
+  public void setUp(final Duration pingInterval) throws Exception {
     network1 = networkFactory.builder().eth2RpcPingInterval(pingInterval).startNetwork();
     network2 =
         networkFactory.builder().eth2RpcPingInterval(pingInterval).peer(network1).startNetwork();
@@ -159,7 +159,7 @@ public class PingIntegrationTest {
     waitFor(() -> assertThat(peer1.isConnected()).isFalse());
   }
 
-  private Eth2PeerManager getPeerManager(Eth2P2PNetwork eth2P2PNetwork) {
+  private Eth2PeerManager getPeerManager(final Eth2P2PNetwork eth2P2PNetwork) {
     return ((ActiveEth2P2PNetwork) eth2P2PNetwork).getPeerManager();
   }
 }

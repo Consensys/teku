@@ -218,7 +218,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             new SystemTimeProvider());
   }
 
-  private void setupAndStartRestAPI(BeaconRestApiConfig config) {
+  private void setupAndStartRestAPI(final BeaconRestApiConfig config) {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         DataProvider.builder()
@@ -259,7 +259,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupAndStartRestAPI(CONFIG);
   }
 
-  protected void startPreGenesisRestAPIWithConfig(BeaconRestApiConfig config) {
+  protected void startPreGenesisRestAPIWithConfig(final BeaconRestApiConfig config) {
     setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0);
     // Start API
     setupAndStartRestAPI(config);
@@ -294,17 +294,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupAndStartRestAPI(config);
   }
 
-  public List<SignedBlockAndState> createBlocksAtSlots(long... slots) {
+  public List<SignedBlockAndState> createBlocksAtSlots(final long... slots) {
     final UInt64[] unsignedSlots =
         Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlots(unsignedSlots);
   }
 
-  public void setCurrentSlot(long slot) {
+  public void setCurrentSlot(final long slot) {
     chainUpdater.setCurrentSlot(UInt64.valueOf(slot));
   }
 
-  public List<SignedBlockAndState> createBlocksAtSlots(UInt64... slots) {
+  public List<SignedBlockAndState> createBlocksAtSlots(final UInt64... slots) {
     final ArrayList<SignedBlockAndState> results = new ArrayList<>();
     for (UInt64 slot : slots) {
       final SignedBlockAndState block = chainUpdater.advanceChain(slot);
@@ -314,7 +314,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return results;
   }
 
-  public SignedBlockAndState finalizeChainAtEpoch(UInt64 epoch) {
+  public SignedBlockAndState finalizeChainAtEpoch(final UInt64 epoch) {
     return chainUpdater.finalizeEpoch(epoch);
   }
 
@@ -376,7 +376,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   protected Response getResponse(
-      final String route, Map<String, String> getParams, final String contentType)
+      final String route, final Map<String, String> getParams, final String contentType)
       throws IOException {
     return getResponse(route + prepareQueryParams(getParams), contentType);
   }
@@ -433,7 +433,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return client.newCall(requestBuilder.build()).execute();
   }
 
-  protected String mapToJson(Map<String, Object> postParams) throws JsonProcessingException {
+  protected String mapToJson(final Map<String, Object> postParams) throws JsonProcessingException {
     return objectMapper.writer().writeValueAsString(postParams);
   }
 

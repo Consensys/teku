@@ -99,7 +99,7 @@ public class TerminalPowBlockMonitorTest {
             bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
   }
 
-  private void setUpCommon(Consumer<BellatrixBuilder> bellatrixBuilder) {
+  private void setUpCommon(final Consumer<BellatrixBuilder> bellatrixBuilder) {
     spec =
         TestSpecFactory.createBellatrix(
             SpecConfigLoader.loadConfig(
@@ -126,13 +126,13 @@ public class TerminalPowBlockMonitorTest {
     terminalPowBlockMonitor.onNodeSyncStateChanged(true);
   }
 
-  private void goToSlot(UInt64 slot) {
+  private void goToSlot(final UInt64 slot) {
     storageSystem
         .chainUpdater()
         .updateBestBlock(storageSystem.chainUpdater().advanceChainUntil(slot));
   }
 
-  private void doMerge(Bytes32 terminalBlockHash) {
+  private void doMerge(final Bytes32 terminalBlockHash) {
     SignedBlockAndState newBlockWithExecutionPayloadAtopTerminalBlock =
         storageSystem
             .chainUpdater()

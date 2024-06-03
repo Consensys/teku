@@ -43,7 +43,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class SszListHintsTest {
 
   <TElement extends SszData> List<SszList<TElement>> createListVariants(
-      SszListSchema<TElement, ?> type, SszList<TElement> list0) {
+      final SszListSchema<TElement, ?> type, final SszList<TElement> list0) {
     List<SszList<TElement>> ret = new ArrayList<>();
     ret.add(list0);
     if (!(list0 instanceof SszMutableData)) {
@@ -54,12 +54,12 @@ public class SszListHintsTest {
   }
 
   <TElement extends SszData> void assertEmptyListVariants(
-      SszListSchema<TElement, ?> type, SszList<TElement> list0) {
+      final SszListSchema<TElement, ?> type, final SszList<TElement> list0) {
     createListVariants(type, list0).forEach(l -> assertEmptyList(type, l));
   }
 
   <TElement extends SszData> void assertEmptyList(
-      SszListSchema<TElement, ?> type, SszList<TElement> list) {
+      final SszListSchema<TElement, ?> type, final SszList<TElement> list) {
 
     if (!(list instanceof SszMutableData)) {
       assertThat(list.hashTreeRoot()).isEqualTo(type.getDefaultTree().hashTreeRoot());
@@ -74,12 +74,16 @@ public class SszListHintsTest {
   }
 
   <TElement extends SszData> void assertListElementsVariants(
-      SszListSchema<TElement, ?> type, SszList<TElement> list0, List<TElement> expectedElements) {
+      final SszListSchema<TElement, ?> type,
+      final SszList<TElement> list0,
+      final List<TElement> expectedElements) {
     createListVariants(type, list0).forEach(l -> assertListElements(type, l, expectedElements));
   }
 
   <TElement extends SszData> void assertListElements(
-      SszListSchema<TElement, ?> type, SszList<TElement> list, List<TElement> expectedElements) {
+      final SszListSchema<TElement, ?> type,
+      final SszList<TElement> list,
+      final List<TElement> expectedElements) {
 
     assertThat(list.isEmpty()).isFalse();
     assertThat(list.size()).isEqualTo(expectedElements.size());
@@ -93,18 +97,19 @@ public class SszListHintsTest {
   }
 
   <TElement extends SszData> void assertListEqualsVariants(
-      SszListSchema<TElement, ?> type, SszList<TElement> list1, SszList<TElement> list2) {
+      final SszListSchema<TElement, ?> type,
+      final SszList<TElement> list1,
+      final SszList<TElement> list2) {
     List<SszList<TElement>> listVariants1 = createListVariants(type, list1);
     List<SszList<TElement>> listVariants2 = createListVariants(type, list2);
 
     listVariants1.forEach(
         listVariant1 ->
-            listVariants2.forEach(
-                listVariant2 -> assertListEquals(type, listVariant1, listVariant2)));
+            listVariants2.forEach(listVariant2 -> assertListEquals(listVariant1, listVariant2)));
   }
 
   <TElement extends SszData> void assertListEquals(
-      SszListSchema<TElement, ?> type, SszList<TElement> list1, SszList<TElement> list2) {
+      final SszList<TElement> list1, final SszList<TElement> list2) {
 
     assertThat(list1.size()).isEqualTo(list2.size());
     assertThat(list1).isEqualTo(list2);
@@ -180,7 +185,7 @@ public class SszListHintsTest {
   }
 
   static <TElement extends SszData> List<SszListSchema<TElement, ?>> generateTypesWithHints(
-      SszListSchema<TElement, ?> originalType) {
+      final SszListSchema<TElement, ?> originalType) {
     return Stream.concat(
             Stream.of(originalType),
             IntStream.of(0, 1, 2, 4, 8, 10)
@@ -199,9 +204,9 @@ public class SszListHintsTest {
   @ParameterizedTest
   @MethodSource("listTypesTestParameters")
   <TElement extends SszData> void testIdenticalTypes(
-      SszSchema<TElement> listElementType,
-      long maxListSize,
-      Supplier<TElement> listElementsFactory) {
+      final SszSchema<TElement> listElementType,
+      final long maxListSize,
+      final Supplier<TElement> listElementsFactory) {
 
     List<SszListSchema<TElement, ?>> types =
         generateTypesWithHints(SszListSchema.create(listElementType, maxListSize));
@@ -227,9 +232,9 @@ public class SszListHintsTest {
 
   @SuppressWarnings("JavaCase")
   <TElement extends SszData> void testList(
-      SszListSchema<TElement, ?> type,
-      Supplier<TElement> listElementsFactory,
-      Consumer<SszList<TElement>> results) {
+      final SszListSchema<TElement, ?> type,
+      final Supplier<TElement> listElementsFactory,
+      final Consumer<SszList<TElement>> results) {
 
     SszList<TElement> def = type.getDefault();
     assertEmptyListVariants(type, def);
@@ -339,7 +344,7 @@ public class SszListHintsTest {
     private final List<T> memory = new ArrayList<>();
     private int memoryPos = 0;
 
-    public RewindingSupplier(Supplier<T> origin) {
+    public RewindingSupplier(final Supplier<T> origin) {
       this.origin = origin;
     }
 

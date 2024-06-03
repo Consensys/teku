@@ -110,7 +110,7 @@ public class Eth2OutgoingRequestHandler<
   }
 
   @Override
-  public void active(NodeId nodeId, RpcStream rpcStream) {}
+  public void active(final NodeId nodeId, final RpcStream rpcStream) {}
 
   @Override
   public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
@@ -166,7 +166,7 @@ public class Eth2OutgoingRequestHandler<
         });
   }
 
-  private String bufToString(ByteBuf buf) {
+  private String bufToString(final ByteBuf buf) {
     final int contentSize = Integer.min(buf.readableBytes(), 1024);
     String bufContent = "";
     if (contentSize > 0) {
@@ -182,7 +182,7 @@ public class Eth2OutgoingRequestHandler<
   }
 
   @Override
-  public void readComplete(NodeId nodeId, RpcStream rpcStream) {
+  public void readComplete(final NodeId nodeId, final RpcStream rpcStream) {
     if (!transferToState(READ_COMPLETE, List.of(DATA_COMPLETED, EXPECT_DATA))) {
       abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
       return;
@@ -197,7 +197,7 @@ public class Eth2OutgoingRequestHandler<
   }
 
   @Override
-  public void closed(NodeId nodeId, RpcStream rpcStream) {
+  public void closed(final NodeId nodeId, final RpcStream rpcStream) {
     if (!transferToState(CLOSED, List.of(READ_COMPLETE))) {
       abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
     }
@@ -207,7 +207,7 @@ public class Eth2OutgoingRequestHandler<
     return responseHandler.getCompletedFuture();
   }
 
-  private boolean transferToState(State toState, Collection<State> fromStates) {
+  private boolean transferToState(final State toState, final Collection<State> fromStates) {
     for (State fromState : fromStates) {
       if (state.compareAndSet(fromState, toState)) {
         return true;
@@ -244,11 +244,11 @@ public class Eth2OutgoingRequestHandler<
         .ifExceptionGetsHereRaiseABug();
   }
 
-  private void abortRequest(final RpcStream rpcStream, Throwable error) {
+  private void abortRequest(final RpcStream rpcStream, final Throwable error) {
     abortRequest(rpcStream, error, false);
   }
 
-  private void abortRequest(final RpcStream rpcStream, Throwable error, final boolean force) {
+  private void abortRequest(final RpcStream rpcStream, final Throwable error, final boolean force) {
     if (!transferToState(ABORTED, List.of(EXPECT_DATA, DATA_COMPLETED, READ_COMPLETE)) && !force) {
       return;
     }

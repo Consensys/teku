@@ -32,7 +32,7 @@ class FileResourceLoaderTest {
   private final FileResourceLoader loader = new FileResourceLoader(__ -> true);
 
   @Test
-  public void shouldLoadFile(@TempDir Path tempDir) throws Exception {
+  public void shouldLoadFile(@TempDir final Path tempDir) throws Exception {
     final Path file = tempDir.resolve("test.txt");
     Files.write(file, MESSAGE);
 
@@ -40,12 +40,12 @@ class FileResourceLoaderTest {
   }
 
   @Test
-  public void shouldReturnEmptyWhenFileDoesNotExist(@TempDir Path tempDir) throws Exception {
+  public void shouldReturnEmptyWhenFileDoesNotExist(@TempDir final Path tempDir) throws Exception {
     assertThat(loader.load(tempDir.resolve("test.txt").toAbsolutePath().toString())).isEmpty();
   }
 
   @Test
-  public void shouldThrowWhenPathIsADirectory(@TempDir Path tempDir) throws Exception {
+  public void shouldThrowWhenPathIsADirectory(@TempDir final Path tempDir) throws Exception {
 
     // should throw either on opening InputStream from directory or reading from created InputStream
     assertThatThrownBy(

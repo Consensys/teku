@@ -781,7 +781,8 @@ class RemoteValidatorApiHandlerTest {
   }
 
   private boolean validatorIsLive(
-      List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches, UInt64 validatorIndex) {
+      final List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches,
+      final UInt64 validatorIndex) {
     return validatorLivenessAtEpoches.stream()
         .anyMatch(
             validatorLivenessAtEpoch ->
@@ -789,7 +790,7 @@ class RemoteValidatorApiHandlerTest {
                     && validatorLivenessAtEpoch.isLive());
   }
 
-  private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {
+  private <T> Optional<T> unwrapToOptional(final SafeFuture<Optional<T>> future) {
     try {
       asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future);
@@ -799,7 +800,7 @@ class RemoteValidatorApiHandlerTest {
     }
   }
 
-  private <T> T unwrapToValue(SafeFuture<Optional<T>> future) {
+  private <T> T unwrapToValue(final SafeFuture<Optional<T>> future) {
     try {
       asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future).orElseThrow();

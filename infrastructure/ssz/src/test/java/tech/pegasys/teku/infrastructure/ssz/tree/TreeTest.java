@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUpdates.Update;
 
 public class TreeTest {
 
-  public static LeafNode newTestLeaf(long l) {
+  public static LeafNode newTestLeaf(final long l) {
     return LeafNode.create(Bytes32.leftPad(Bytes.ofUnsignedLong(l, ByteOrder.BIG_ENDIAN)));
   }
 
@@ -243,7 +243,7 @@ public class TreeTest {
     assertThatLongCollection(iteratedIndices).containsExactly(0b1L, 0b11L, 0b110L, 0b111L);
   }
 
-  static List<LeafNode> collectLeaves(TreeNode n, long from, long to) {
+  static List<LeafNode> collectLeaves(final TreeNode n, final long from, final long to) {
     List<LeafNode> ret = new ArrayList<>();
     TreeUtil.iterateLeaves(n, from, to, ret::add);
     return ret;

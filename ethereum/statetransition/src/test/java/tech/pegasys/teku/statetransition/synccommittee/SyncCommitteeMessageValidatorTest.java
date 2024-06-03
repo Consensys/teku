@@ -386,21 +386,23 @@ class SyncCommitteeMessageValidatorTest {
   }
 
   private ValidatableSyncCommitteeMessage fromValidatorSpy(
-      SyncCommitteeMessage message, final IntSet subcommitteeIds) {
+      final SyncCommitteeMessage message, final IntSet subcommitteeIds) {
     final ValidatableSyncCommitteeMessage validateableMessage =
         ValidatableSyncCommitteeMessage.fromValidator(message);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
   private ValidatableSyncCommitteeMessage fromNetworkSpy(
-      SyncCommitteeMessage message, final int receivedSubnetId, final IntSet subcommitteeIds) {
+      final SyncCommitteeMessage message,
+      final int receivedSubnetId,
+      final IntSet subcommitteeIds) {
     final ValidatableSyncCommitteeMessage validateableMessage =
         ValidatableSyncCommitteeMessage.fromNetwork(message, receivedSubnetId);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
   private ValidatableSyncCommitteeMessage createSpy(
-      ValidatableSyncCommitteeMessage validateableMessage, final IntSet subcommitteeIds) {
+      final ValidatableSyncCommitteeMessage validateableMessage, final IntSet subcommitteeIds) {
     // Create spies
     final ValidatableSyncCommitteeMessage validateableMessageSpy = spy(validateableMessage);
     validateableMessage.calculateAssignments(

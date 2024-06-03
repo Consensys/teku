@@ -50,7 +50,7 @@ public class Web3SignerNode extends Node {
   }
 
   public static Web3SignerNode create(
-      final Network network, Consumer<Web3SignerNode.Config> configOptions) {
+      final Network network, final Consumer<Web3SignerNode.Config> configOptions) {
 
     final Web3SignerNode.Config config = new Web3SignerNode.Config();
     configOptions.accept(config);
