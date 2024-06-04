@@ -972,7 +972,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory);
+            blockProductionPerformanceFactory,
+            beaconConfig.validatorConfig().isValidateLocallyCreatedBlocksEnabled());
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)

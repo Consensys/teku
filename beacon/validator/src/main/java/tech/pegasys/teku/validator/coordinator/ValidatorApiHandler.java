@@ -21,6 +21,8 @@ import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTEST
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
@@ -141,6 +143,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+  private final boolean validateLocallyCreatedBlocks;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
@@ -167,7 +170,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
-          blockProductionAndPublishingPerformanceFactory) {
+          blockProductionAndPublishingPerformanceFactory,
+      final boolean validateLocallyCreatedBlocks) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -187,6 +191,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
+    this.validateLocallyCreatedBlocks = validateLocallyCreatedBlocks;
     this.blockPublisher =
         new MilestoneBasedBlockPublisher(
             spec,
@@ -647,9 +652,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
-            // no validation required for locally created blocks
-            isLocallyCreatedBlock(maybeBlindedBlockContainer)
-                ? BroadcastValidationLevel.NOT_REQUIRED
+            !validateLocallyCreatedBlocks
+                    && broadcastValidationLevel == GOSSIP
+                    && isLocallyCreatedBlock(maybeBlindedBlockContainer)
+                ? NOT_REQUIRED
                 : broadcastValidationLevel,
             blockPublishingPerformance)
         .exceptionally(
