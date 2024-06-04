@@ -13,4 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-public interface SszStableContainer extends SszContainer {}
+public interface SszStableContainer extends SszContainer {
+  boolean isFieldActive(int index);
+}

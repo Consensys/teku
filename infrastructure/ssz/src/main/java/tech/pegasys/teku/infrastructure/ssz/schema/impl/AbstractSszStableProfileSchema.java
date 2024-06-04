@@ -24,17 +24,19 @@ public abstract class AbstractSszStableProfileSchema<C extends SszStableContaine
     extends AbstractSszStableContainerSchema<C> {
 
   public AbstractSszStableProfileSchema(
-      String name, Map<Integer, NamedSchema<?>> childrenSchemas, int maxFieldCount) {
+      final String name,
+      final Map<Integer, NamedSchema<?>> childrenSchemas,
+      final int maxFieldCount) {
     super(name, childrenSchemas, maxFieldCount);
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     return super.sszSerializeTreeAsProfile(node, writer);
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
+  public TreeNode sszDeserializeTree(final SszReader reader) {
     return super.sszDeserializeTreeAsProfile(reader);
   }
 
@@ -44,7 +46,7 @@ public abstract class AbstractSszStableProfileSchema<C extends SszStableContaine
   }
 
   @Override
-  public int getSszSize(TreeNode node) {
+  public int getSszSize(final TreeNode node) {
     return super.getSszSizeAsProfile(node);
   }
 }

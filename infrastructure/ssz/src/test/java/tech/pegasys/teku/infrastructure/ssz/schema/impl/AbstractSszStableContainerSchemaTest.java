@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
@@ -109,6 +112,24 @@ public class AbstractSszStableContainerSchemaTest {
 
     System.out.println("square sc root: " + square.hashTreeRoot());
     System.out.println("circle sc root: " + circle.hashTreeRoot());
+
+    StableContainer deserializedCircle =
+        circleStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
+
+    assertThat(deserializedCircle).isEqualTo(circle);
+    assertThat(deserializedCircle.get(1))
+        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1));
+    assertThat(deserializedCircle.get(2)).isEqualTo(SszUInt64.of(UInt64.valueOf(0x42)));
+    assertThatThrownBy(() -> deserializedCircle.get(0));
+
+    StableContainer deserializedSquare =
+        squareStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
+
+    assertThat(deserializedSquare).isEqualTo(square);
+    assertThat(deserializedSquare.get(1))
+        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1));
+    assertThat(deserializedSquare.get(0)).isEqualTo(SszUInt64.of(UInt64.valueOf(0x42)));
+    assertThatThrownBy(() -> deserializedSquare.get(2));
   }
 
   @Test
@@ -117,30 +138,46 @@ public class AbstractSszStableContainerSchemaTest {
 
     ProfileSchema circleProfileSchema = new ProfileSchema("Circle", circleSchemas, maxFieldCount);
 
-    StableContainer circleProfile =
+    StableContainer circle =
         circleProfileSchema.createFromFieldValues(
             List.of(
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
                 SszUInt64.of(UInt64.valueOf(0x42))));
 
-    StableContainer squareProfile =
+    StableContainer square =
         squareProfileSchema.createFromFieldValues(
             List.of(
                 SszUInt64.of(UInt64.valueOf(0x42)),
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
 
-    System.out.println("square profile serialization: " + squareProfile.sszSerialize());
-    System.out.println("circle profile serialization: " + circleProfile.sszSerialize());
+    System.out.println("square profile serialization: " + square.sszSerialize());
+    System.out.println("circle profile serialization: " + circle.sszSerialize());
 
-    String squareJson =
-        JsonUtil.serialize(squareProfile, squareProfileSchema.getJsonTypeDefinition());
+    String squareJson = JsonUtil.serialize(square, squareProfileSchema.getJsonTypeDefinition());
     System.out.println("square profile json: " + squareJson);
 
-    String circleJson =
-        JsonUtil.serialize(circleProfile, circleProfileSchema.getJsonTypeDefinition());
+    String circleJson = JsonUtil.serialize(circle, circleProfileSchema.getJsonTypeDefinition());
     System.out.println("circle profile json: " + circleJson);
 
-    System.out.println("square profile root: " + squareProfile.hashTreeRoot());
-    System.out.println("circle profile root: " + circleProfile.hashTreeRoot());
+    System.out.println("square profile root: " + square.hashTreeRoot());
+    System.out.println("circle profile root: " + circle.hashTreeRoot());
+
+    StableContainer deserializedCircle =
+        circleProfileSchema.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
+
+    assertThat(deserializedCircle).isEqualTo(circle);
+    assertThat(deserializedCircle.get(1))
+        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1));
+    assertThat(deserializedCircle.get(2)).isEqualTo(SszUInt64.of(UInt64.valueOf(0x42)));
+    assertThatThrownBy(() -> deserializedCircle.get(0));
+
+    StableContainer deserializedSquare =
+        squareProfileSchema.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));
+
+    assertThat(deserializedSquare).isEqualTo(square);
+    assertThat(deserializedSquare.get(1))
+        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1));
+    assertThat(deserializedSquare.get(0)).isEqualTo(SszUInt64.of(UInt64.valueOf(0x42)));
+    assertThatThrownBy(() -> deserializedSquare.get(2));
   }
 }

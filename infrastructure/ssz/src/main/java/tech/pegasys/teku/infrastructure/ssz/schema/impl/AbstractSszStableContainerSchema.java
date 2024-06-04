@@ -40,7 +40,9 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   private final SszBitvector activeFieldsBitvector;
 
   public AbstractSszStableContainerSchema(
-      String name, Map<Integer, NamedSchema<?>> childrenSchemas, int maxFieldCount) {
+      final String name,
+      final Map<Integer, NamedSchema<?>> childrenSchemas,
+      final int maxFieldCount) {
     super(name, createAllSchemas(childrenSchemas, maxFieldCount));
 
     this.childrenActiveSchemas = childrenSchemas;
@@ -72,24 +74,27 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
 
   @Override
   public boolean isActiveField(final int index) {
-    checkArgument(index < childrenActiveSchemas.size(), "Wrong number of filed values");
+    checkArgument(
+        index < activeFieldsBitvectorSchema.getMaxLength(), "Wrong number of filed values");
     return childrenActiveSchemas.containsKey(index);
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int size1 = activeFieldsBitvector.sszSerialize(writer);
     int size2 = super.sszSerializeTree(node, writer);
     return size1 + size2;
   }
 
-  public int sszSerializeTreeAsProfile(TreeNode node, SszWriter writer) {
+  public int sszSerializeTreeAsProfile(final TreeNode node, final SszWriter writer) {
     return super.sszSerializeTree(node, writer);
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
-    SszBitvector bitvector = activeFieldsBitvectorSchema.sszDeserialize(reader);
+  public TreeNode sszDeserializeTree(final SszReader reader) {
+    final SszReader activeFieldsReader =
+        reader.slice(activeFieldsBitvectorSchema.getSszFixedPartSize());
+    final SszBitvector bitvector = activeFieldsBitvectorSchema.sszDeserialize(activeFieldsReader);
     if (!bitvector.equals(activeFieldsBitvector)) {
       throw new SszDeserializeException(
           "Invalid StableContainer bitvector: "
@@ -102,7 +107,7 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     return super.sszDeserializeTree(reader);
   }
 
-  public TreeNode sszDeserializeTreeAsProfile(SszReader reader) {
+  public TreeNode sszDeserializeTreeAsProfile(final SszReader reader) {
     return super.sszDeserializeTree(reader);
   }
 
@@ -116,16 +121,16 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   @Override
-  public int getSszSize(TreeNode node) {
+  public int getSszSize(final TreeNode node) {
     return super.getSszSize(node) + activeFieldsBitvectorSchema.getSszFixedPartSize();
   }
 
-  public int getSszSizeAsProfile(TreeNode node) {
+  public int getSszSizeAsProfile(final TreeNode node) {
     return super.getSszSize(node);
   }
 
   private static List<? extends NamedSchema<?>> createAllSchemas(
-      Map<Integer, NamedSchema<?>> childrenSchemas, int maxFieldCount) {
+      final Map<Integer, NamedSchema<?>> childrenSchemas, final int maxFieldCount) {
 
     checkArgument(childrenSchemas.keySet().stream().allMatch(i -> i < maxFieldCount));
 
