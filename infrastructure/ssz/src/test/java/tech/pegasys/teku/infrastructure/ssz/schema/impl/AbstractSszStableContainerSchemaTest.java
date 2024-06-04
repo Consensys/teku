@@ -45,7 +45,7 @@ public class AbstractSszStableContainerSchemaTest {
           namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
 
   static class StableContainer extends SszStableContainerImpl {
-    protected StableContainer(SszStableContainerSchema schema, TreeNode backingNode) {
+    protected StableContainer(SszStableContainerSchema<?> schema, TreeNode backingNode) {
       super(schema, backingNode);
     }
   }
@@ -77,7 +77,7 @@ public class AbstractSszStableContainerSchemaTest {
   }
 
   @Test
-  void stableContainerSanityTest() {
+  void stableContainerSanityTest() throws JsonProcessingException {
     StableContainerSchema squareStableContainerSchema =
         new StableContainerSchema("Square", squareSchemas, maxFieldCount);
 
@@ -96,8 +96,19 @@ public class AbstractSszStableContainerSchemaTest {
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
                 SszUInt64.of(UInt64.valueOf(0x42))));
 
-    System.out.println(square.sszSerialize());
-    System.out.println(circle.sszSerialize());
+    System.out.println("square sc serialization: " + square.sszSerialize());
+    System.out.println("circle sc serialization: " + circle.sszSerialize());
+
+    String squareJson =
+        JsonUtil.serialize(square, squareStableContainerSchema.getJsonTypeDefinition());
+    System.out.println("square sc json: " + squareJson);
+
+    String circleJson =
+        JsonUtil.serialize(circle, circleStableContainerSchema.getJsonTypeDefinition());
+    System.out.println("circle sc json: " + circleJson);
+
+    System.out.println("square sc root: " + square.hashTreeRoot());
+    System.out.println("circle sc root: " + circle.hashTreeRoot());
   }
 
   @Test
@@ -118,18 +129,18 @@ public class AbstractSszStableContainerSchemaTest {
                 SszUInt64.of(UInt64.valueOf(0x42)),
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
 
-    System.out.println(squareProfile.sszSerialize());
-    System.out.println(circleProfile.sszSerialize());
+    System.out.println("square profile serialization: " + squareProfile.sszSerialize());
+    System.out.println("circle profile serialization: " + circleProfile.sszSerialize());
 
     String squareJson =
         JsonUtil.serialize(squareProfile, squareProfileSchema.getJsonTypeDefinition());
-    System.out.println(squareJson);
+    System.out.println("square profile json: " + squareJson);
 
     String circleJson =
         JsonUtil.serialize(circleProfile, circleProfileSchema.getJsonTypeDefinition());
-    System.out.println(circleJson);
+    System.out.println("circle profile json: " + circleJson);
 
-    System.out.println(squareProfile.hashTreeRoot());
-    System.out.println(circleProfile.hashTreeRoot());
+    System.out.println("square profile root: " + squareProfile.hashTreeRoot());
+    System.out.println("circle profile root: " + circleProfile.hashTreeRoot());
   }
 }
