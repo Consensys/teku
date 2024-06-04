@@ -25,27 +25,28 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszStableContainerImpl extends SszContainerImpl implements SszStableContainer {
+public abstract class AbstractSszStableContainer extends SszContainerImpl
+    implements SszStableContainer {
   private final Supplier<Bytes32> hashTreeRootSupplier =
       () ->
           Hash.getSha256Instance()
               .wrappedDigest(super.hashTreeRoot(), getActiveFields().hashTreeRoot());
 
-  public SszStableContainerImpl(SszStableContainerSchema<?> type) {
+  public AbstractSszStableContainer(SszStableContainerSchema<?> type) {
     super(type);
   }
 
-  public SszStableContainerImpl(SszStableContainerSchema<?> type, TreeNode backingNode) {
+  public AbstractSszStableContainer(SszStableContainerSchema<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SszStableContainerImpl(
+  public AbstractSszStableContainer(
       SszStableContainerSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
   @Override
-  public SszData get(int index) {
+  public final SszData get(int index) {
     checkArgument(isFieldActive(index), "Field is not active");
     return super.get(index);
   }
