@@ -11,25 +11,41 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz.schema;
+package tech.pegasys.teku.infrastructure.ssz.schema.impl;
+
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszImmutableContainer;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableProfileSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AbstractSszStableContainerSchemaTest {
+  static final int maxFieldCount = 4;
+  static final Map<Integer, NamedSchema<?>> squareSchemas =
+      Map.of(
+          0,
+          namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
+          1,
+          namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA));
 
-  static class StableContainer extends AbstractSszImmutableContainer {
-    protected StableContainer(
-        SszContainerSchema<? extends AbstractSszImmutableContainer> schema, TreeNode backingNode) {
+  static final Map<Integer, NamedSchema<?>> circleSchemas =
+      Map.of(
+          1,
+          namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
+          2,
+          namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
+
+  static class StableContainer extends SszStableContainerImpl {
+    protected StableContainer(SszStableContainerSchema schema, TreeNode backingNode) {
       super(schema, backingNode);
     }
   }
@@ -37,7 +53,7 @@ public class AbstractSszStableContainerSchemaTest {
   static class StableContainerSchema extends AbstractSszStableContainerSchema<StableContainer> {
 
     public StableContainerSchema(
-        String name, List<NamedIndexedSchema<?>> childrenSchemas, int maxFieldCount) {
+        String name, Map<Integer, NamedSchema<?>> childrenSchemas, int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
     }
 
@@ -50,7 +66,7 @@ public class AbstractSszStableContainerSchemaTest {
   static class ProfileSchema extends AbstractSszStableProfileSchema<StableContainer> {
 
     public ProfileSchema(
-        String name, List<NamedIndexedSchema<?>> childrenSchemas, int maxFieldCount) {
+        String name, Map<Integer, NamedSchema<?>> childrenSchemas, int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
     }
 
@@ -63,20 +79,10 @@ public class AbstractSszStableContainerSchemaTest {
   @Test
   void stableContainerSanityTest() {
     StableContainerSchema squareStableContainerSchema =
-        new StableContainerSchema(
-            "Square",
-            List.of(
-                new NamedIndexedSchema<>("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
-                new NamedIndexedSchema<>("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA)),
-            4);
+        new StableContainerSchema("Square", squareSchemas, maxFieldCount);
 
     StableContainerSchema circleStableContainerSchema =
-        new StableContainerSchema(
-            "Circle",
-            List.of(
-                new NamedIndexedSchema<>("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
-                new NamedIndexedSchema<>("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA)),
-            4);
+        new StableContainerSchema("Circle", circleSchemas, maxFieldCount);
 
     StableContainer square =
         squareStableContainerSchema.createFromFieldValues(
@@ -96,21 +102,9 @@ public class AbstractSszStableContainerSchemaTest {
 
   @Test
   void profileSanityTest() throws JsonProcessingException {
-    ProfileSchema squareProfileSchema =
-        new ProfileSchema(
-            "Square",
-            List.of(
-                new NamedIndexedSchema<>("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
-                new NamedIndexedSchema<>("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA)),
-            4);
+    ProfileSchema squareProfileSchema = new ProfileSchema("Square", squareSchemas, maxFieldCount);
 
-    ProfileSchema circleProfileSchema =
-        new ProfileSchema(
-            "Circle",
-            List.of(
-                new NamedIndexedSchema<>("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
-                new NamedIndexedSchema<>("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA)),
-            4);
+    ProfileSchema circleProfileSchema = new ProfileSchema("Circle", circleSchemas, maxFieldCount);
 
     StableContainer circleProfile =
         circleProfileSchema.createFromFieldValues(

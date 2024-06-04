@@ -13,38 +13,38 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
-import java.util.List;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import java.util.Map;
+import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public abstract class AbstractSszStableProfileSchema<C extends SszContainer>
+public abstract class AbstractSszStableProfileSchema<C extends SszStableContainer>
     extends AbstractSszStableContainerSchema<C> {
 
   public AbstractSszStableProfileSchema(
-      String name, List<NamedIndexedSchema<?>> childrenSchemas, int maxFieldCount) {
+      String name, Map<Integer, NamedSchema<?>> childrenSchemas, int maxFieldCount) {
     super(name, childrenSchemas, maxFieldCount);
   }
 
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
-    return super.sszSerializeParentTree(node, writer);
+    return super.sszSerializeTreeAsProfile(node, writer);
   }
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    return super.sszDeserializeParentTree(reader);
+    return super.sszDeserializeTreeAsProfile(reader);
   }
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    return super.getParentSszLengthBounds();
+    return super.getSszLengthBoundsAsProfile();
   }
 
   @Override
   public int getSszSize(TreeNode node) {
-    return super.getParentSszSize(node);
+    return super.getSszSizeAsProfile(node);
   }
 }

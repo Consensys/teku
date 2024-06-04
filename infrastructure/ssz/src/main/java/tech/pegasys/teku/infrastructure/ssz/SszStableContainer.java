@@ -11,14 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz.schema;
+package tech.pegasys.teku.infrastructure.ssz;
 
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-
-/** Just an indicator interface for now */
-public interface SszStableContainerSchema<C extends SszContainer> extends SszContainerSchema<C> {
-  boolean isActiveField(int index);
-
-  SszBitvector getActiveFields();
-}
+public interface SszStableContainer extends SszContainer {}
