@@ -254,7 +254,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       return executionPayloadBlinded;
     }
 
-    public void setExecutionPayloadBlinded(Boolean executionPayloadBlinded) {
+    public void setExecutionPayloadBlinded(final Boolean executionPayloadBlinded) {
       this.executionPayloadBlinded = executionPayloadBlinded;
     }
 
@@ -262,7 +262,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       return consensusBlockValue;
     }
 
-    public void setConsensusBlockValue(UInt256 consensusBlockValue) {
+    public void setConsensusBlockValue(final UInt256 consensusBlockValue) {
       this.consensusBlockValue = consensusBlockValue;
     }
 
@@ -270,7 +270,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       return executionPayloadValue;
     }
 
-    public void setExecutionPayloadValue(UInt256 executionPayloadValue) {
+    public void setExecutionPayloadValue(final UInt256 executionPayloadValue) {
       this.executionPayloadValue = executionPayloadValue;
     }
 

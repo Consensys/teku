@@ -56,7 +56,7 @@ public class AttestationElectraSchema
   }
 
   @Override
-  public AttestationElectra createFromBackingNode(TreeNode node) {
+  public AttestationElectra createFromBackingNode(final TreeNode node) {
     return new AttestationElectra(this, node);
   }
 
@@ -82,5 +82,10 @@ public class AttestationElectraSchema
   @Override
   public Optional<AttestationElectraSchema> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  @Override
+  public boolean requiresCommitteeBits() {
+    return true;
   }
 }

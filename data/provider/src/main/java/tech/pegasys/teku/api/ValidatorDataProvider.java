@@ -240,8 +240,10 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
-    return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot);
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
+    return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot, committeeIndex);
   }
 
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(

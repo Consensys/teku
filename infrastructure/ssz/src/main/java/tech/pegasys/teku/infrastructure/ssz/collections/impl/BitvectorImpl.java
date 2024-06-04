@@ -76,6 +76,26 @@ class BitvectorImpl {
     return data.stream().boxed().toList();
   }
 
+  public BitvectorImpl or(final BitvectorImpl other) {
+    if (other.getSize() != getSize()) {
+      throw new IllegalArgumentException(
+          "Argument bitfield size is different: " + other.getSize() + " != " + getSize());
+    }
+    final BitSet newData = (BitSet) this.data.clone();
+    newData.or(other.data);
+    return new BitvectorImpl(newData, size);
+  }
+
+  public BitvectorImpl and(final BitvectorImpl other) {
+    if (other.getSize() != getSize()) {
+      throw new IllegalArgumentException(
+          "Argument bitfield size is different: " + other.getSize() + " != " + getSize());
+    }
+    final BitSet newData = (BitSet) this.data.clone();
+    newData.and(other.data);
+    return new BitvectorImpl(newData, size);
+  }
+
   public BitvectorImpl withBit(final int i) {
     checkElementIndex(i, size);
     BitSet newSet = (BitSet) data.clone();
@@ -96,6 +116,10 @@ class BitvectorImpl {
     return size;
   }
 
+  public int getLastSetBitIndex() {
+    return data.length() - 1;
+  }
+
   public IntStream streamAllSetBits() {
     return data.stream();
   }
@@ -108,14 +132,13 @@ class BitvectorImpl {
   }
 
   public BitvectorImpl rightShift(final int i) {
-    int length = this.getSize();
-    BitSet newData = new BitSet(getSize());
-    for (int j = 0; j < length - i; j++) {
+    final BitSet newData = new BitSet(size);
+    for (int j = 0; j < size - i; j++) {
       if (this.getBit(j)) {
         newData.set(j + i);
       }
     }
-    return new BitvectorImpl(newData, getSize());
+    return new BitvectorImpl(newData, size);
   }
 
   @Override

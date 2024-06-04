@@ -73,7 +73,7 @@ public class ChainStorage
       final Database database,
       final Spec spec,
       final StateStorageMode dataStorageMode,
-      int stateRebuildTimeoutSeconds) {
+      final int stateRebuildTimeoutSeconds) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
         database,
@@ -132,7 +132,7 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Void> onReconstructedFinalizedState(
-      BeaconState finalizedState, Bytes32 blockRoot) {
+      final BeaconState finalizedState, final Bytes32 blockRoot) {
     return SafeFuture.fromRunnable(
         () -> database.storeReconstructedFinalizedState(finalizedState, blockRoot));
   }
@@ -143,7 +143,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate) {
+  public SafeFuture<Void> onWeakSubjectivityUpdate(
+      final WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.fromRunnable(
         () -> database.updateWeakSubjectivityState(weakSubjectivityUpdate));
   }
@@ -242,7 +243,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(UInt64 slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(final UInt64 slot) {
     if (dataStorageMode.storesFinalizedStates()) {
       return SafeFuture.of(() -> getLatestAvailableFinalizedStateSync(slot));
     }
@@ -342,15 +343,13 @@ public class ChainStorage
 
   @Override
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
-      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+      final UInt64 startSlot, final UInt64 endSlot, final long limit) {
     return SafeFuture.of(
         () -> {
-          final List<SlotAndBlockRootAndBlobIndex> result;
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
-            result = blobSidecars.limit(limit.longValue()).toList();
+            return blobSidecars.limit(limit).toList();
           }
-          return result;
         });
   }
 

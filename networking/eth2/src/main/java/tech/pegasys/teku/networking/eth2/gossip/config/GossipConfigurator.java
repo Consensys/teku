@@ -35,7 +35,7 @@ public interface GossipConfigurator {
             final Eth2Context eth2Context) {}
       };
 
-  static GossipConfigurator scoringEnabled(Spec spec) {
+  static GossipConfigurator scoringEnabled(final Spec spec) {
     return new GossipScoringConfigurator(spec);
   }
 

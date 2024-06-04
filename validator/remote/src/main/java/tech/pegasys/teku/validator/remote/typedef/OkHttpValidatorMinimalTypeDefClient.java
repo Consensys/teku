@@ -26,7 +26,7 @@ public class OkHttpValidatorMinimalTypeDefClient {
   private final GetSpecRequest getSpecRequest;
 
   public OkHttpValidatorMinimalTypeDefClient(
-      final OkHttpClient okHttpClient, final HttpUrl baseEndpoint) {
+      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
     this.getSpecRequest = new GetSpecRequest(baseEndpoint, okHttpClient);

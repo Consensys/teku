@@ -230,7 +230,7 @@ public class SpecConfigReaderTest {
     }
   }
 
-  private InputStream getFileFromResourceAsStream(String fileName) {
+  private InputStream getFileFromResourceAsStream(final String fileName) {
     InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
     if (inputStream == null) {
       throw new IllegalArgumentException("File not found: " + fileName);

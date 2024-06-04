@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -54,10 +58,47 @@ public class DepositRequestV1 {
       @JsonProperty("amount") final UInt64 amount,
       @JsonProperty("signature") final Bytes signature,
       @JsonProperty("index") final UInt64 index) {
+    checkNotNull(pubkey, "pubkey");
+    checkNotNull(withdrawalCredentials, "withdrawalCredentials");
+    checkNotNull(amount, "amount");
+    checkNotNull(signature, "signature");
+    checkNotNull(index, "index");
     this.pubkey = pubkey;
     this.withdrawalCredentials = withdrawalCredentials;
     this.amount = amount;
     this.signature = signature;
     this.index = index;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final DepositRequestV1 that = (DepositRequestV1) o;
+    return Objects.equals(pubkey, that.pubkey)
+        && Objects.equals(withdrawalCredentials, that.withdrawalCredentials)
+        && Objects.equals(amount, that.amount)
+        && Objects.equals(signature, that.signature)
+        && Objects.equals(index, that.index);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(pubkey, withdrawalCredentials, amount, signature, index);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("pubkey", pubkey)
+        .add("withdrawalCredentials", withdrawalCredentials)
+        .add("amount", amount)
+        .add("signature", signature)
+        .add("index", index)
+        .toString();
   }
 }

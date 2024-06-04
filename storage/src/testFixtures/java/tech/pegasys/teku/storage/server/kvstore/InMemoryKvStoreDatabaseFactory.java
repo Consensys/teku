@@ -24,8 +24,8 @@ import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState
 
 public class InMemoryKvStoreDatabaseFactory {
   public static Database createV4(
-      MockKvStoreInstance hotDb,
-      MockKvStoreInstance coldDb,
+      final MockKvStoreInstance hotDb,
+      final MockKvStoreInstance coldDb,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -46,7 +46,7 @@ public class InMemoryKvStoreDatabaseFactory {
   }
 
   public static Database createV6(
-      MockKvStoreInstance db,
+      final MockKvStoreInstance db,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -57,7 +57,7 @@ public class InMemoryKvStoreDatabaseFactory {
   }
 
   public static Database createTree(
-      MockKvStoreInstance db,
+      final MockKvStoreInstance db,
       final StateStorageMode storageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {

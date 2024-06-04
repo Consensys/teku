@@ -175,7 +175,7 @@ class MiscHelpersTest {
   @ParameterizedTest
   @MethodSource("provideSubnetsForNodeIds")
   public void testDiscoveryNodeBasedSubnetIds(
-      final UInt256 nodeId, final UInt64 epoch, List<UInt64> subnetIds) {
+      final UInt256 nodeId, final UInt64 epoch, final List<UInt64> subnetIds) {
     final List<UInt64> nodeSubnetIds = miscHelpers.computeSubscribedSubnets(nodeId, epoch);
     assertThat(nodeSubnetIds).hasSize(subnetIds.size());
     assertThat(nodeSubnetIds).isEqualTo(subnetIds);
@@ -220,7 +220,8 @@ class MiscHelpersTest {
 
   @ParameterizedTest
   @MethodSource("getCommitteeComputationArguments")
-  public void committeeComputationShouldNotOverflow(int activeValidatorsCount, int committeeIndex) {
+  public void committeeComputationShouldNotOverflow(
+      final int activeValidatorsCount, final int committeeIndex) {
     final IntList indices = IntList.of(IntStream.range(0, activeValidatorsCount).toArray());
     Assertions.assertDoesNotThrow(
         () -> {

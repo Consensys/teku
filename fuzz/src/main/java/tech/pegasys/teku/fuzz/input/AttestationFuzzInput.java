@@ -34,7 +34,8 @@ public class AttestationFuzzInput
   }
 
   private AttestationFuzzInput(
-      ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> type, TreeNode backingNode) {
+      final ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

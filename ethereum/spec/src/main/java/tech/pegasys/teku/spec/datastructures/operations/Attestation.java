@@ -43,6 +43,8 @@ public interface Attestation extends SszData, SszContainer {
 
   SszBitlist getAggregationBits();
 
+  UInt64 getFirstCommitteeIndex();
+
   default Optional<SszBitvector> getCommitteeBits() {
     return Optional.empty();
   }
@@ -62,4 +64,6 @@ public interface Attestation extends SszData, SszContainer {
     return getCommitteeIndices()
         .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
   }
+
+  boolean requiresCommitteeBits();
 }

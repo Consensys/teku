@@ -24,7 +24,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 public class Eth1AddressDeserializer extends JsonDeserializer<Eth1Address> {
 
   @Override
-  public Eth1Address deserialize(JsonParser p, DeserializationContext ctxt)
+  public Eth1Address deserialize(final JsonParser p, final DeserializationContext ctxt)
       throws JacksonException {
     try {
       return Eth1Address.fromHexString(p.getValueAsString());

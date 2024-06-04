@@ -78,7 +78,7 @@ public class P2PConfig {
       final int batchVerifyMaxBatchSize,
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean p2pDumpsToFileEnabled,
-      boolean allTopicsFilterEnabled) {
+      final boolean allTopicsFilterEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;

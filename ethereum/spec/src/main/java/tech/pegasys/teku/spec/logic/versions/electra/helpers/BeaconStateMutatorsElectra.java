@@ -191,6 +191,7 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
               index,
               validator ->
                   validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
+      queueExcessActiveBalance(state, index);
     }
   }
 

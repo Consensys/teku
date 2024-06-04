@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
+import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory.DiscoveryTestNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 
 public class DiscoveryNetworkIntegrationTest {
@@ -37,16 +38,14 @@ public class DiscoveryNetworkIntegrationTest {
   @Test
   public void shouldConnectToStaticPeers() throws Exception {
     final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<?> network2 =
-        discoveryNetworkFactory.builder().staticPeer(network1.getNodeAddress()).buildAndStart();
+    final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
     assertConnected(network1, network2);
   }
 
   @Test
   public void shouldReconnectToStaticPeersAfterDisconnection() throws Exception {
     final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<?> network2 =
-        discoveryNetworkFactory.builder().staticPeer(network1.getNodeAddress()).buildAndStart();
+    final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
     assertConnected(network1, network2);
 
     // Peers disconnect
@@ -62,13 +61,11 @@ public class DiscoveryNetworkIntegrationTest {
   @Test
   public void shouldReconnectToStaticPeersWhenAlreadyConnected() throws Exception {
     final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<?> network2 =
-        discoveryNetworkFactory.builder().staticPeer(network1.getNodeAddress()).buildAndStart();
+    final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
     assertConnected(network1, network2);
 
     // Already connected, but now tell network1 to maintain a persistent connection to network2.
-    network1.addStaticPeer(network2.getNodeAddress());
-
+    network2.getNodeAddresses().forEach(network1::addStaticPeer);
     network1
         .getPeer(network2.getNodeId())
         .orElseThrow()
@@ -101,6 +98,13 @@ public class DiscoveryNetworkIntegrationTest {
         discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
     assertConnected(network1, network3);
     assertConnected(network2, network3);
+  }
+
+  private DiscoveryNetwork<?> buildAndStartNetworkWithStaticPeers(final DiscoveryNetwork<?> network)
+      throws Exception {
+    final DiscoveryTestNetworkBuilder builder = discoveryNetworkFactory.builder();
+    network.getNodeAddresses().forEach(builder::staticPeer);
+    return builder.buildAndStart();
   }
 
   private void assertConnected(

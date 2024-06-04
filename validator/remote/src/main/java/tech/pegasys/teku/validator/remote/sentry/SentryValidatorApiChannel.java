@@ -121,10 +121,12 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
-        .createAggregate(slot, attestationHashTreeRoot);
+        .createAggregate(slot, attestationHashTreeRoot, committeeIndex);
   }
 
   @Override
@@ -218,7 +220,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
-      List<UInt64> validatorIndices, UInt64 epoch) {
+      final List<UInt64> validatorIndices, final UInt64 epoch) {
     return dutiesProviderChannel.getValidatorsLiveness(validatorIndices, epoch);
   }
 

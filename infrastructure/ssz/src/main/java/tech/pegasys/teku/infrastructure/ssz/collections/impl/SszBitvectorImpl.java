@@ -80,6 +80,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
+  public int getLastSetBitIndex() {
+    return value.getLastSetBitIndex();
+  }
+
+  @Override
   public IntStream streamAllSetBits() {
     return value.streamAllSetBits();
   }
@@ -87,6 +92,16 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   @Override
   public SszBitvector withBit(final int i) {
     return new SszBitvectorImpl(getSchema(), value.withBit(i));
+  }
+
+  @Override
+  public SszBitvector or(final SszBitvector other) {
+    return new SszBitvectorImpl(getSchema(), value.or(toBitvectorImpl(other)));
+  }
+
+  @Override
+  public SszBitvector and(final SszBitvector other) {
+    return new SszBitvectorImpl(getSchema(), value.and(toBitvectorImpl(other)));
   }
 
   @Override
@@ -107,5 +122,9 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   @Override
   public String toString() {
     return "SszBitvector{size=" + this.size() + ", " + value.toString() + "}";
+  }
+
+  private BitvectorImpl toBitvectorImpl(final SszBitvector bv) {
+    return ((SszBitvectorImpl) bv).value;
   }
 }

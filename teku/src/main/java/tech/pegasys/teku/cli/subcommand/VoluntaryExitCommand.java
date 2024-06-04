@@ -485,7 +485,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
   private String getFailedToConnectMessage() {
     return String.format(
-        "Failed to connect to beacon node. Check that %s is available.",
+        "Failed to connect to beacon node. Check that %s is available and REST API is enabled.",
         config
             .validatorClient()
             .getValidatorConfig()

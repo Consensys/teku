@@ -73,7 +73,7 @@ public class OwnedKeyManager implements KeyManager {
   }
 
   @Override
-  public Optional<Validator> getValidatorByPublicKey(BLSPublicKey publicKey) {
+  public Optional<Validator> getValidatorByPublicKey(final BLSPublicKey publicKey) {
     return validatorLoader.getOwnedValidators().getValidator(publicKey);
   }
 

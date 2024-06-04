@@ -39,7 +39,7 @@ public interface GossipForkSubscriptions {
 
   void publishBlock(SignedBeaconBlock block);
 
-  default void publishBlobSidecar(BlobSidecar blobSidecar) {
+  default void publishBlobSidecar(final BlobSidecar blobSidecar) {
     // since Deneb
   }
 
@@ -47,11 +47,11 @@ public interface GossipForkSubscriptions {
 
   void unsubscribeFromAttestationSubnetId(int subnetId);
 
-  default void publishSyncCommitteeMessage(ValidatableSyncCommitteeMessage message) {
+  default void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     // since Altair
   }
 
-  default void publishSyncCommitteeContribution(SignedContributionAndProof message) {
+  default void publishSyncCommitteeContribution(final SignedContributionAndProof message) {
     // since Altair
   }
 
@@ -61,13 +61,13 @@ public interface GossipForkSubscriptions {
 
   void publishVoluntaryExit(SignedVoluntaryExit message);
 
-  default void subscribeToSyncCommitteeSubnet(int subnetId) {
+  default void subscribeToSyncCommitteeSubnet(final int subnetId) {
     // since Altair
   }
 
-  default void unsubscribeFromSyncCommitteeSubnet(int subnetId) {
+  default void unsubscribeFromSyncCommitteeSubnet(final int subnetId) {
     // since Altair
   }
 
-  default void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message) {}
+  default void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {}
 }

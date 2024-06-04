@@ -65,7 +65,7 @@ public class Eth2IncomingRequestHandler<
   }
 
   @Override
-  public void active(NodeId nodeId, RpcStream rpcStream) {
+  public void active(final NodeId nodeId, final RpcStream rpcStream) {
     ensureRequestReceivedWithinTimeLimit(rpcStream);
   }
 
@@ -83,7 +83,7 @@ public class Eth2IncomingRequestHandler<
   }
 
   @Override
-  public void readComplete(NodeId nodeId, RpcStream rpcStream) {
+  public void readComplete(final NodeId nodeId, final RpcStream rpcStream) {
     try {
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       requestDecoder
@@ -96,10 +96,12 @@ public class Eth2IncomingRequestHandler<
   }
 
   @Override
-  public void closed(NodeId nodeId, RpcStream rpcStream) {}
+  public void closed(final NodeId nodeId, final RpcStream rpcStream) {}
 
   private void handleRequest(
-      Optional<Eth2Peer> peer, TRequest request, ResponseCallback<TResponse> callback) {
+      final Optional<Eth2Peer> peer,
+      final TRequest request,
+      final ResponseCallback<TResponse> callback) {
     try {
       requestHandled.set(true);
       final Optional<RpcException> requestValidationError =

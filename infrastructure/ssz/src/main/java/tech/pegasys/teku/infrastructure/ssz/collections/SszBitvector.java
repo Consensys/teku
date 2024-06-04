@@ -38,6 +38,10 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit>, SszBi
 
   SszBitvector withBit(int i);
 
+  SszBitvector or(SszBitvector other);
+
+  SszBitvector and(SszBitvector other);
+
   /** Returns individual bit value */
   boolean getBit(int i);
 
@@ -54,6 +58,9 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit>, SszBi
 
   /** Returns indices of all bits set in this {@link SszBitvector} */
   IntList getAllSetBits();
+
+  /** Returns last bit set index, -1 if no bits are set * */
+  int getLastSetBitIndex();
 
   /** Streams indices of all bits set in this {@link SszBitvector} */
   @Override

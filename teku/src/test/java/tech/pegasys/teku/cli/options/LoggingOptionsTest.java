@@ -156,7 +156,7 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
         "OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "ALL", "off", "fatal", "error",
         "warn", "info", "debug", "trace", "all"
       })
-  public void loglevel_shouldAcceptValues(String level) {
+  public void loglevel_shouldAcceptValues(final String level) {
     final String[] args = {"--logging", level};
     final LoggingConfig config = getLoggingConfigurationFromArguments(args);
     assertThat(config.getLogLevel().orElseThrow().toString()).isEqualToIgnoringCase(level);
@@ -164,7 +164,7 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"Off", "Fatal", "eRRoR", "WaRN", "InfO", "DebUG", "trACE", "All"})
-  public void loglevel_shouldAcceptValuesMixedCase(String level) {
+  public void loglevel_shouldAcceptValuesMixedCase(final String level) {
     final String[] args = {"--logging", level};
     final LoggingConfig config = getLoggingConfigurationFromArguments(args);
     assertThat(config.getLogLevel().orElseThrow().toString())

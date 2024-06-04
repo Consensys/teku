@@ -1,0 +1,24 @@
+participants:
+  - el_type: besu
+    el_image: hyperledger/besu:latest
+    cl_type: teku
+    cl_image: consensys/teku:latest
+  - el_type: besu
+    el_image: hyperledger/besu:latest
+    cl_type: teku
+    cl_image: consensys/teku:latest
+  - el_type: besu
+    el_image: hyperledger/besu:latest
+    cl_type: teku
+    cl_image: consensys/teku:latest
+  - el_type: besu
+    el_image: hyperledger/besu:latest
+    cl_type: teku
+    cl_image: consensys/teku:latest
+network_params:
+  preset: mainnet
+additional_services:
+  - dora
+  - el_forkmon
+  - prometheus_grafana
+snooper_enabled: true

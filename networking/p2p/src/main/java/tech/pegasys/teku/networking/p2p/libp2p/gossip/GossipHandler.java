@@ -82,7 +82,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
   }
 
-  public void gossip(Bytes bytes) {
+  public void gossip(final Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
     SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
         .finish(

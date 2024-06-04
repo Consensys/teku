@@ -78,7 +78,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final HttpUrl baseEndpoint,
       final Spec spec,
       final boolean preferSszBlockEncoding) {
-    super(okHttpClient, baseEndpoint);
+    super(baseEndpoint, okHttpClient);
     this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -33,7 +35,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -164,7 +165,7 @@ public class DebugToolsCommand implements Runnable {
             Optional.empty(),
             keyManager,
             dataDirLayout,
-            new SystemTimeProvider(),
+            SYSTEM_TIME_PROVIDER,
             Optional.empty(),
             new DoppelgangerDetectionAlert(),
             new NoOpGraffitiManager());

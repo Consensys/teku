@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -23,12 +22,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversalMode;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -42,29 +43,29 @@ class AbstractEpochProcessorTest {
 
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100_000L);
   private final EpochProcessorCapella epochProcessor =
-      (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
+      new EpochProcessorCapella(
+          (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor(), timeProvider);
 
-  private final int throttlingPeriod = 1; // expect maximum of one call per epoch
+  private final int throttlingPeriod = 1; // expect maximum of one call per second
   private static final Logger LOGGER = mock(Logger.class);
   private final Throttler<Logger> loggerThrottler = spyLogThrottler(LOGGER, throttlingPeriod);
   private final BeaconState state = createStateInInactivityLeak();
-  private final UInt64 currentEpoch = spec.getCurrentEpoch(state);
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(state.getSlot());
 
   @Test
   public void shouldThrottleInactivityLeakLogs() throws Exception {
-    // First two processEpoch calls within the same epoch
+    // First two processEpoch calls within the same second
     epochProcessor.processEpoch(state);
     epochProcessor.processEpoch(advanceNSlots(state, 1));
-    // Third processEpoch call in the next epoch
+    timeProvider.advanceTimeBy(Duration.ofSeconds(1));
     epochProcessor.processEpoch(advanceNSlots(state, slotsPerEpoch));
 
     // Logger throttler called 3 times
-    verify(loggerThrottler, times(2)).invoke(eq(currentEpoch), any());
-    verify(loggerThrottler, times(1)).invoke(eq(currentEpoch.increment()), any());
+    verify(loggerThrottler, times(3)).invoke(any(), any());
 
-    // Real logger only called 2 times (one per epoch)
+    // Real logger only called 2 times (one per second)
     verify(LOGGER, times(2)).info(anyString());
   }
 

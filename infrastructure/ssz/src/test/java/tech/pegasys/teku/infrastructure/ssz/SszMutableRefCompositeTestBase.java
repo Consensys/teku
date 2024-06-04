@@ -53,7 +53,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
   @MethodSource("sszMutableByRefCompositeArguments")
   @ParameterizedTest
   default void getByRef_childUpdatedByRefShouldCommit(
-      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+      final SszMutableRefComposite<SszData, SszMutableData> data, final int updateChildIndex) {
     SszComposite<SszData> origData = data.commitChanges();
 
     SszMutableData mutableChild = data.getByRef(updateChildIndex);
@@ -90,7 +90,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
   @MethodSource("sszMutableByRefCompositeArguments")
   @ParameterizedTest
   default void getByRef_invalidatorShouldBeCalledWhenChildUpdated(
-      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+      final SszMutableRefComposite<SszData, SszMutableData> data, final int updateChildIndex) {
     AtomicInteger counter = new AtomicInteger();
     data.setInvalidator(__ -> counter.incrementAndGet());
     SszMutableData mutableChild = data.getByRef(updateChildIndex);
@@ -102,7 +102,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
   @MethodSource("sszMutableByRefCompositeArguments")
   @ParameterizedTest
   default void getByRef_childSetThenUpdatedByRefShouldWork(
-      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+      final SszMutableRefComposite<SszData, SszMutableData> data, final int updateChildIndex) {
     SszComposite<SszData> origData = data.commitChanges();
     SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
 
@@ -123,7 +123,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
   @MethodSource("sszMutableByRefCompositeArguments")
   @ParameterizedTest
   default void set_mutableValueShouldNotBeShared(
-      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+      final SszMutableRefComposite<SszData, SszMutableData> data, final int updateChildIndex) {
     SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
 
     SszData newChildValue = GENERATOR.randomData(childSchema);
@@ -162,7 +162,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
   @MethodSource("sszMutableByRefCompositeArguments")
   @ParameterizedTest
   default void getByRef_childUpdateByRefThenSetShouldWork(
-      SszMutableRefComposite<SszData, SszMutableData> data, int updateChildIndex) {
+      final SszMutableRefComposite<SszData, SszMutableData> data, final int updateChildIndex) {
     SszSchema<?> childSchema = data.getSchema().getChildSchema(updateChildIndex);
 
     SszMutableData byRef = data.getByRef(updateChildIndex);
@@ -179,7 +179,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
   }
 
   @SuppressWarnings("unchecked")
-  static SszData updateSomething(SszMutableData mutableData) {
+  static SszData updateSomething(final SszMutableData mutableData) {
     Assumptions.assumeTrue(mutableData instanceof SszMutableComposite);
     SszMutableComposite<SszData> mutableComposite = (SszMutableComposite<SszData>) mutableData;
     Assumptions.assumeTrue(mutableComposite.size() > 0);

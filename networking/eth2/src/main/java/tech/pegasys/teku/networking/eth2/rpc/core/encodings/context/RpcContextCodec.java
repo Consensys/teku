@@ -31,7 +31,7 @@ public interface RpcContextCodec<TContext, TPayload extends SszData> {
   static <T extends SszData> RpcContextCodec<Bytes4, T> forkDigest(
       final Spec spec,
       final RecentChainData recentChainData,
-      ForkDigestPayloadContext<T> payloadContext) {
+      final ForkDigestPayloadContext<T> payloadContext) {
     return new ForkDigestRpcContextCodec<T>(spec, recentChainData, payloadContext);
   }
 

@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -255,7 +256,8 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir Path tempDir) throws Exception {
+  void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir final Path tempDir)
+      throws Exception {
     writeKeystore(tempDir);
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -298,7 +300,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldInitializeLocalAndMutableValidators(
-      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+      @TempDir final Path tempDir, @TempDir final Path tempDirMutable) throws Exception {
     final BLSPublicKey mutableValidatorPubKey =
         BLSPublicKey.fromSSZBytes(
             Bytes.fromHexString(
@@ -344,7 +346,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldReturnErrorIfDeleteOnReadOnlySource(@TempDir Path tempDir) throws Exception {
+  void shouldReturnErrorIfDeleteOnReadOnlySource(@TempDir final Path tempDir) throws Exception {
     writeKeystore(tempDir);
 
     final ValidatorConfig config =
@@ -374,7 +376,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldInitializeOnlyLocalValidatorsWhenRestDisabled(
-      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+      @TempDir final Path tempDir, @TempDir final Path tempDirMutable) throws Exception {
     final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDirMutable);
     writeKeystore(tempDir);
     writeMutableKeystore(dataDirLayout);
@@ -430,7 +432,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldNotInitializeMutableValidatorsWithoutDirectoryStructure(
-      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+      @TempDir final Path tempDir, @TempDir final Path tempDirMutable) throws Exception {
     final DataDirLayout dataDirLayout = new SimpleDataDirLayout(tempDirMutable);
     writeKeystore(tempDir);
 
@@ -467,7 +469,7 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithDuplicateKeysInLocalAndExternalSignersTakesExternalAsPriority(
-      @TempDir Path tempDir) throws Exception {
+      @TempDir final Path tempDir) throws Exception {
     writeKeystore(tempDir);
     final ValidatorConfig config =
         ValidatorConfig.builder()
@@ -506,7 +508,8 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldEnableSlashingProtectionForLocalValidators(@TempDir Path tempDir) throws Exception {
+  void shouldEnableSlashingProtectionForLocalValidators(@TempDir final Path tempDir)
+      throws Exception {
     writeKeystore(tempDir);
 
     final ValidatorConfig config =
@@ -775,32 +778,41 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldThrowWhenAnyErrorOccurs(@TempDir Path tempDir) throws Exception {
-    writeKeystore(tempDir);
-    writeBadKeystore(tempDir);
-    final ValidatorConfig config =
-        ValidatorConfig.builder()
-            .validatorKeys(
-                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
-            .build();
-    final ValidatorLoader validatorLoader =
-        ValidatorLoader.create(
-            spec,
-            config,
-            disabledInteropConfig,
-            httpClientFactory,
-            slashingProtector,
-            slashingProtectionLogger,
-            publicKeyLoader,
-            asyncRunner,
-            metricsSystem,
-            Optional.empty(),
-            (publicKey) -> Optional.empty());
+  void shouldThrowWhenAnyErrorOccurs(@TempDir final Path tempDir) throws Exception {
+    final ValidatorLoader validatorLoader;
+    try {
+      writeKeystore(tempDir);
+      writeBadKeystore(tempDir);
+      final ValidatorConfig config =
+          ValidatorConfig.builder()
+              .validatorKeys(
+                  List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
+              .build();
+      validatorLoader =
+          ValidatorLoader.create(
+              spec,
+              config,
+              disabledInteropConfig,
+              httpClientFactory,
+              slashingProtector,
+              slashingProtectionLogger,
+              publicKeyLoader,
+              asyncRunner,
+              metricsSystem,
+              Optional.empty(),
+              (publicKey) -> Optional.empty());
 
-    assertThatThrownBy(validatorLoader::loadValidators)
-        .isExactlyInstanceOf(InvalidConfigurationException.class);
+      assertThatThrownBy(validatorLoader::loadValidators)
+          .isExactlyInstanceOf(InvalidConfigurationException.class);
+    } finally {
+      // Ensure all files and directories within tempDir are deleted
+      // attempt to workaround issue related to @TempDir and Windows file system
+      // https://github.com/junit-team/junit5/issues/2811
+      try (Stream<Path> stream = Files.walk(tempDir)) {
+        stream.map(Path::toFile).forEach(File::delete);
+      }
+    }
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
-
     assertThat(validators.getValidatorCount()).isEqualTo(0);
     checkGraffitiProviderTypes(validators.getValidators(), FileBackedGraffitiProvider.class);
   }

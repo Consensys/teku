@@ -183,9 +183,11 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.createAggregate(slot, attestationHashTreeRoot),
+        apiChannel -> apiChannel.createAggregate(slot, attestationHashTreeRoot, committeeIndex),
         BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD);
   }
 
@@ -199,7 +201,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
+  public SafeFuture<Void> subscribeToBeaconCommittee(
+      final List<CommitteeSubscriptionRequest> requests) {
     return relayRequest(
         apiChannel -> apiChannel.subscribeToBeaconCommittee(requests),
         BeaconNodeRequestLabels.BEACON_COMMITTEE_SUBSCRIPTION_METHOD,
@@ -208,7 +211,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
-      Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     return relayRequest(
         apiChannel -> apiChannel.subscribeToSyncCommitteeSubnets(subscriptions),
         BeaconNodeRequestLabels.SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_METHOD,
@@ -217,7 +220,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> subscribeToPersistentSubnets(
-      Set<SubnetSubscription> subnetSubscriptions) {
+      final Set<SubnetSubscription> subnetSubscriptions) {
     return relayRequest(
         apiChannel -> apiChannel.subscribeToPersistentSubnets(subnetSubscriptions),
         BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD,
@@ -225,7 +228,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations) {
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
+      final List<Attestation> attestations) {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedAttestations(attestations),
         BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,

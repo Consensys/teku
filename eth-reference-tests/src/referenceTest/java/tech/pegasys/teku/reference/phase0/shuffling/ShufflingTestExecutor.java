@@ -67,7 +67,7 @@ public class ShufflingTestExecutor implements TestExecutor {
       return mapping;
     }
 
-    public int getMapping(int index) {
+    public int getMapping(final int index) {
       return mapping[index];
     }
   }

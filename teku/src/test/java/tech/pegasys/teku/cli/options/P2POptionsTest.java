@@ -48,8 +48,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     final NetworkConfig networkConfig = tekuConfig.network();
     assertThat(networkConfig.isEnabled()).isTrue();
-    assertThat(networkConfig.getAdvertisedIp()).isEqualTo("127.200.0.1");
-    assertThat(networkConfig.getNetworkInterface()).isEqualTo("127.100.0.1");
+    assertThat(networkConfig.getAdvertisedIps()).containsExactly("127.200.0.1");
+    assertThat(networkConfig.getNetworkInterfaces()).containsExactly("127.100.0.1");
     assertThat(networkConfig.getListenPort()).isEqualTo(4321);
     assertThat(networkConfig.getPrivateKeySource()).containsInstanceOf(FilePrivateKeySource.class);
     assertThat(((FilePrivateKeySource) networkConfig.getPrivateKeySource().get()).getFileName())
@@ -108,17 +108,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void advertisedIp_shouldDefaultToEmpty() {
+  public void advertisedIps_shouldDefaultToEmpty() {
     final NetworkConfig config = getTekuConfigurationFromArguments().network();
     assertThat(config.hasUserExplicitlySetAdvertisedIp()).isFalse();
   }
 
   @Test
-  public void advertisedIp_shouldAcceptValue() {
+  public void advertisedIps_shouldAcceptValue() {
     final String ip = "10.0.1.200";
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-advertised-ip", ip);
-    assertThat(tekuConfiguration.network().getAdvertisedIp()).contains(ip);
+    assertThat(tekuConfiguration.network().getAdvertisedIps())
+        .allMatch(advertisedIp -> advertisedIp.contains(ip));
   }
 
   @Test

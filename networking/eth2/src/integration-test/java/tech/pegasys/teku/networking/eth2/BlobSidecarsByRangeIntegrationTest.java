@@ -52,25 +52,26 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
+  public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsWhenCountIsZero()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
+
+    // finalize chain 2 blobs per block
+    finalizeChainWithBlobs(2);
+
+    final List<BlobSidecar> blobSidecars =
+        requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.ZERO);
+
+    assertThat(blobSidecars).isEmpty();
+  }
+
+  @Test
   public void requestBlobSidecars_shouldReturnCanonicalBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
 
     // finalize chain 2 blobs per block
-    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
-    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(2));
-
-    final List<SignedBlockAndState> finalizedBlocksAndStates =
-        peerStorage
-            .chainBuilder()
-            .finalizeCurrentChain(Optional.of(peerStorage.chainUpdater().blockOptions));
-    finalizedBlocksAndStates.forEach(
-        blockAndState -> {
-          final List<BlobSidecar> blobSidecars =
-              peerStorage.chainBuilder().getBlobSidecars(blockAndState.getRoot());
-          peerStorage.chainUpdater().saveBlock(blockAndState, blobSidecars);
-          peerStorage.chainUpdater().updateBestBlock(blockAndState);
-        });
+    finalizeChainWithBlobs(2);
 
     final ChainBuilder fork = peerStorage.chainBuilder().fork();
 
@@ -116,6 +117,23 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer, startSlot, slotCount);
     assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedCanonicalBlobSidecars);
     assertThat(blobSidecars).doesNotContainAnyElementsOf(nonCanonicalBlobSidecars);
+  }
+
+  private void finalizeChainWithBlobs(final int blobsPerBlock) {
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(blobsPerBlock));
+
+    final List<SignedBlockAndState> finalizedBlocksAndStates =
+        peerStorage
+            .chainBuilder()
+            .finalizeCurrentChain(Optional.of(peerStorage.chainUpdater().blockOptions));
+    finalizedBlocksAndStates.forEach(
+        blockAndState -> {
+          final List<BlobSidecar> blobSidecars =
+              peerStorage.chainBuilder().getBlobSidecars(blockAndState.getRoot());
+          peerStorage.chainUpdater().saveBlock(blockAndState, blobSidecars);
+          peerStorage.chainUpdater().updateBestBlock(blockAndState);
+        });
   }
 
   private List<BlobSidecar> requestBlobSidecarsByRange(

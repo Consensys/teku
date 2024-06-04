@@ -41,6 +41,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -66,6 +67,7 @@ class ValidatorRegistratorTest {
       mock(SignedValidatorRegistrationFactory.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final Signer signer = mock(Signer.class);
+  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
   private SpecContext specContext;
   private DataStructureUtil dataStructureUtil;
@@ -110,7 +112,8 @@ class ValidatorRegistratorTest {
             proposerConfigPropertiesProvider,
             signedValidatorRegistrationFactory,
             validatorApiChannel,
-            BATCH_SIZE);
+            BATCH_SIZE,
+            stubAsyncRunner);
 
     when(signedValidatorRegistrationFactory.createSignedValidatorRegistration(any(), any(), any()))
         .thenAnswer(
@@ -403,7 +406,8 @@ class ValidatorRegistratorTest {
             proposerConfigPropertiesProvider,
             signedValidatorRegistrationFactory,
             validatorApiChannel,
-            2);
+            2,
+            stubAsyncRunner);
     setOwnedValidators(validator1, validator2, validator3);
 
     runRegistrationFlowWithSubscription(0);
@@ -428,7 +432,8 @@ class ValidatorRegistratorTest {
             proposerConfigPropertiesProvider,
             signedValidatorRegistrationFactory,
             validatorApiChannel,
-            2);
+            2,
+            stubAsyncRunner);
     setOwnedValidators(validator1, validator2, validator3);
 
     runRegistrationFlowWithSubscription(0);
@@ -440,6 +445,30 @@ class ValidatorRegistratorTest {
     final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(1);
 
     verifyRegistrations(registrationCalls.get(0), List.of(validator1, validator2));
+  }
+
+  @TestTemplate
+  void schedulesRetryOnFailure() {
+    when(validatorApiChannel.registerValidators(any()))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")))
+        .thenReturn(SafeFuture.COMPLETE);
+
+    setOwnedValidators(validator1, validator2, validator3);
+
+    runRegistrationFlowWithSubscription(0);
+
+    assertThat(stubAsyncRunner.countDelayedActions()).isOne();
+
+    // execute the delayed future
+    stubAsyncRunner.executeQueuedActions();
+
+    // no more retries
+    assertThat(stubAsyncRunner.countDelayedActions()).isZero();
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    verifyRegistrations(registrationCalls.get(0), List.of(validator1, validator2, validator3));
+    verifyRegistrations(registrationCalls.get(1), List.of(validator1, validator2, validator3));
   }
 
   @TestTemplate

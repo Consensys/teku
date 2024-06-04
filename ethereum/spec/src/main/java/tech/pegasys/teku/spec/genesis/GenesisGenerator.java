@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.genesis;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -64,9 +64,9 @@ public class GenesisGenerator {
     final SchemaDefinitions schemaDefinitions = genesisSpec.getSchemaDefinitions();
 
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
-    Bytes32 latestBlockRoot =
+    final Bytes32 latestBlockRoot =
         schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
-    BeaconBlockHeader beaconBlockHeader =
+    final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             SpecConfig.GENESIS_SLOT, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatestBlockHeader(beaconBlockHeader);
@@ -91,11 +91,15 @@ public class GenesisGenerator {
     state.setEth1Data(
         new Eth1Data(
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      MutableBeaconStateElectra.required(state)
+          .setDepositReceiptsStartIndex(UNSET_DEPOSIT_RECEIPTS_START_INDEX);
+    }
 
     // Process deposits
     deposits.forEach(
         deposit -> {
-          LOG.trace("About to process deposit: {}", depositDataList::size);
+          LOG.trace("About to process deposit: {}", depositDataList.size());
           depositDataList.append(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
@@ -105,15 +109,30 @@ public class GenesisGenerator {
               .processDepositWithoutCheckingMerkleProof(
                   state, deposit, Optional.of(keyCache), false);
 
-          processActivation(deposit);
+          if (!genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+            processActivation(deposit);
+          }
         });
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      // because block processing was made, all deposits will be pending, so at this point
+      // we need to consume all the pending deposits
+      MutableBeaconStateElectra.required(state)
+          .setDepositReceiptsStartIndex(UNSET_DEPOSIT_RECEIPTS_START_INDEX);
+      final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+      final List<Integer> uniqueValidatorIndices =
+          stateElectra.getPendingBalanceDeposits().stream().toList().stream()
+              .map(PendingBalanceDeposit::getIndex)
+              .distinct()
+              .toList();
+      for (int i = 0; i < uniqueValidatorIndices.size(); i++) {
+        consumePendingBalance(stateElectra, uniqueValidatorIndices.get(i));
+        processActivation(uniqueValidatorIndices.get(i));
+      }
+    }
   }
 
   private void consumePendingBalance(
-      final MutableBeaconStateElectra stateElectra,
-      final SpecConfig specConfig,
-      final SpecVersion genesisSpec,
-      final int validatorIndex) {
+      final MutableBeaconStateElectra stateElectra, final int validatorIndex) {
     final SchemaDefinitionsElectra schemaDefinitionsElectra =
         SchemaDefinitionsElectra.required(genesisSpec.getSchemaDefinitions());
     final BeaconStateMutatorsElectra mutatorsElectra =
@@ -123,17 +142,19 @@ public class GenesisGenerator {
             genesisSpec.beaconStateAccessors(),
             schemaDefinitionsElectra);
     final List<PendingBalanceDeposit> pendingBalanceDeposits =
-        stateElectra.getPendingBalanceDeposits().stream().toList();
+        stateElectra.getPendingBalanceDeposits().asList();
 
     final UInt64 depositAmount =
         pendingBalanceDeposits.stream()
             .filter(z -> z.getIndex() == validatorIndex)
-            .map(z -> z.getAmount())
+            .map(PendingBalanceDeposit::getAmount)
             .reduce(UInt64::plus)
-            .get();
-    if (depositAmount.isGreaterThanOrEqualTo(
-        SpecConfigElectra.required(specConfig).getMinActivationBalance())) {
-      mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
+            .orElse(UInt64.ZERO);
+    mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
+    if (pendingBalanceDeposits.isEmpty()) {
+      stateElectra.setPendingBalanceDeposits(
+          schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(List.of()));
+    } else {
       stateElectra.setPendingBalanceDeposits(
           schemaDefinitionsElectra
               .getPendingBalanceDepositsSchema()
@@ -145,21 +166,20 @@ public class GenesisGenerator {
   }
 
   private void processActivation(final Deposit deposit) {
-    final int index = keyCache.getOrDefault(deposit.getData().getPubkey(), -1);
+    processActivation(keyCache.getOrDefault(deposit.getData().getPubkey(), -1));
+  }
+
+  private void processActivation(final int index) {
     if (index == -1) {
       // Could be absent if the deposit was invalid
       return;
     }
-    Validator validator = state.getValidators().get(index);
+    final Validator validator = state.getValidators().get(index);
     if (validator.getActivationEpoch().equals(GENESIS_EPOCH)) {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
 
-    if (genesisSpec.getMilestone().equals(SpecMilestone.ELECTRA)) {
-      consumePendingBalance(
-          MutableBeaconStateElectra.required(state), specConfig, genesisSpec, index);
-    }
     final UInt64 balance = state.getBalances().getElement(index);
     final UInt64 effectiveBalance =
         balance

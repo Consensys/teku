@@ -40,7 +40,10 @@ public abstract class TekuNode extends Node {
   protected Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
 
   protected TekuNode(
-      Network network, String dockerImageName, TekuDockerVersion dockerImageVersion, Logger log) {
+      final Network network,
+      final String dockerImageName,
+      final TekuDockerVersion dockerImageVersion,
+      final Logger log) {
     super(network, dockerImageName, dockerImageVersion, log);
   }
 
@@ -135,7 +138,7 @@ public abstract class TekuNode extends Node {
         });
   }
 
-  private String getEventUrl(List<EventType> events) {
+  private String getEventUrl(final List<EventType> events) {
     final String eventTypes =
         events.isEmpty()
             ? ""

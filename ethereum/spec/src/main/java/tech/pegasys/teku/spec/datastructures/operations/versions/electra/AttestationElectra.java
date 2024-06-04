@@ -86,4 +86,14 @@ public class AttestationElectra
     return Optional.of(
         getCommitteeBitsRequired().getAllSetBits().intStream().mapToObj(UInt64::valueOf).toList());
   }
+
+  @Override
+  public UInt64 getFirstCommitteeIndex() {
+    return UInt64.valueOf(getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow());
+  }
+
+  @Override
+  public boolean requiresCommitteeBits() {
+    return true;
+  }
 }

@@ -362,7 +362,7 @@ public class PeerChainValidatorTest {
   }
 
   private void assertPeerChainRejected(
-      final SafeFuture<Boolean> result, DisconnectReason goodbyeReason) {
+      final SafeFuture<Boolean> result, final DisconnectReason goodbyeReason) {
     assertThat(result).isCompletedWithValue(false);
     verify(peer).disconnectCleanly(goodbyeReason);
   }
@@ -478,7 +478,7 @@ public class PeerChainValidatorTest {
         .thenReturn(blockResult);
   }
 
-  private SignedBeaconBlock randomBlock(UInt64 slot) {
+  private SignedBeaconBlock randomBlock(final UInt64 slot) {
     return dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
   }
 

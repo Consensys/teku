@@ -28,13 +28,15 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -43,7 +45,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -60,53 +63,68 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregationDutyTest {
 
   private static final String TYPE = "aggregate";
   private static final UInt64 SLOT = UInt64.valueOf(2832);
-  private final Spec spec = TestSpecFactory.createDefault();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AggregateAndProofSchema aggregateAndProofSchema =
-      spec.getGenesisSchemaDefinitions().getAggregateAndProofSchema();
-  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema =
-      spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema();
-  private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final Signer signer1 = mock(Signer.class);
   private final Signer signer2 = mock(Signer.class);
-  private final Validator validator1 =
-      new Validator(dataStructureUtil.randomPublicKey(), signer1, new FileBackedGraffitiProvider());
-  private final Validator validator2 =
-      new Validator(dataStructureUtil.randomPublicKey(), signer2, new FileBackedGraffitiProvider());
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
   private final ValidatorDutyMetrics validatorDutyMetrics =
       spy(ValidatorDutyMetrics.create(new StubMetricsSystem()));
 
-  private final AggregationDuty duty =
-      new AggregationDuty(
-          spec,
-          SLOT,
-          validatorApiChannel,
-          forkProvider,
-          validatorLogger,
-          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs),
-          validatorDutyMetrics);
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private AggregateAndProofSchema aggregateAndProofSchema;
+  private SignedAggregateAndProofSchema signedAggregateAndProofSchema;
+  private ForkInfo forkInfo;
+  private Validator validator1;
+  private Validator validator2;
+
+  private AggregationDuty duty;
 
   @BeforeEach
-  public void setUp() {
+  public void setUp(final SpecContext specContext) {
+    spec = specContext.getSpec();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    aggregateAndProofSchema = spec.getGenesisSchemaDefinitions().getAggregateAndProofSchema();
+    signedAggregateAndProofSchema =
+        spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema();
+    forkInfo = dataStructureUtil.randomForkInfo();
+
+    validator1 =
+        new Validator(
+            dataStructureUtil.randomPublicKey(), signer1, new FileBackedGraffitiProvider());
+    validator2 =
+        new Validator(
+            dataStructureUtil.randomPublicKey(), signer2, new FileBackedGraffitiProvider());
+
+    duty =
+        new AggregationDuty(
+            spec,
+            SLOT,
+            validatorApiChannel,
+            forkProvider,
+            validatorLogger,
+            new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs),
+            validatorDutyMetrics);
+
     when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
     when(validatorApiChannel.sendAggregateAndProofs(any()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
   }
 
-  @Test
+  @TestTemplate
   public void shouldBeCompleteWhenNoValidatorsAdded() {
     performAndReportDuty();
     verifyNoInteractions(validatorApiChannel, validatorLogger);
   }
 
-  @Test
+  @TestTemplate
   public void shouldProduceAggregateAndProof() {
     final int validatorIndex = 1;
     final int attestationCommitteeIndex = 2;
@@ -120,7 +138,10 @@ class AggregationDutyTest {
         attestationCommitteeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(
+            SLOT,
+            attestationData.hashTreeRoot(),
+            Optional.of(UInt64.valueOf(attestationCommitteeIndex))))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
@@ -144,7 +165,7 @@ class AggregationDutyTest {
   }
 
   @SuppressWarnings("unchecked")
-  @Test
+  @TestTemplate
   public void shouldProduceAggregateAndProofForMultipleCommittees() {
     final int validator1Index = 1;
     final int validator1CommitteeIndex = 2;
@@ -171,9 +192,15 @@ class AggregationDutyTest {
         validator2CommitteeIndex,
         completedFuture(Optional.of(committee2AttestationData)));
 
-    when(validatorApiChannel.createAggregate(SLOT, committee1AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(
+            SLOT,
+            committee1AttestationData.hashTreeRoot(),
+            Optional.of(UInt64.valueOf(validator1CommitteeIndex))))
         .thenReturn(completedFuture(Optional.of(committee1Aggregate)));
-    when(validatorApiChannel.createAggregate(SLOT, committee2AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(
+            SLOT,
+            committee2AttestationData.hashTreeRoot(),
+            Optional.of(UInt64.valueOf(validator2CommitteeIndex))))
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
@@ -207,7 +234,7 @@ class AggregationDutyTest {
         .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
   }
 
-  @Test
+  @TestTemplate
   public void shouldProduceSingleAggregateAndProofWhenMultipleValidatorsAggregateSameCommittee() {
     final int committeeIndex = 2;
 
@@ -232,7 +259,8 @@ class AggregationDutyTest {
         committeeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(
+            SLOT, attestationData.hashTreeRoot(), Optional.of(UInt64.valueOf(committeeIndex))))
         .thenReturn(completedFuture(Optional.of(aggregate)));
     when(validatorApiChannel.sendAggregateAndProofs(anyList()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
@@ -262,7 +290,7 @@ class AggregationDutyTest {
         .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
   }
 
-  @Test
+  @TestTemplate
   public void shouldFailWhenAttestationDataNotCreated() {
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
@@ -280,7 +308,7 @@ class AggregationDutyTest {
     verifyNoInteractions(validatorDutyMetrics);
   }
 
-  @Test
+  @TestTemplate
   public void shouldFailWhenAttestationDataCompletesExceptionally() {
     final RuntimeException exception = new RuntimeException("Doh!");
     duty.addValidator(
@@ -295,7 +323,7 @@ class AggregationDutyTest {
     verifyNoInteractions(validatorDutyMetrics);
   }
 
-  @Test
+  @TestTemplate
   public void shouldReportWhenAggregateNotCreated() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     duty.addValidator(
@@ -304,12 +332,13 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(
+            SLOT, attestationData.hashTreeRoot(), Optional.of(UInt64.valueOf(2))))
         .thenReturn(completedFuture(Optional.empty()));
 
     assertThat(duty.performDuty()).isCompleted();
     verify(validatorApiChannel, never()).sendAggregateAndProofs(anyList());
-    verify(validatorLogger).aggregationSkipped(SLOT, 2);
+    verify(validatorLogger).aggregationSkipped(SLOT, UInt64.valueOf(2));
     verifyNoMoreInteractions(validatorLogger);
 
     // Even when we fail creating the aggregation, we capture the time taken
@@ -319,7 +348,7 @@ class AggregationDutyTest {
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
-  @Test
+  @TestTemplate
   public void shouldFailWhenAggregateFails() {
     final Exception exception = new RuntimeException("Whoops");
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
@@ -329,7 +358,8 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(
+            SLOT, attestationData.hashTreeRoot(), Optional.of(UInt64.valueOf(2))))
         .thenReturn(failedFuture(exception));
 
     performAndReportDuty();

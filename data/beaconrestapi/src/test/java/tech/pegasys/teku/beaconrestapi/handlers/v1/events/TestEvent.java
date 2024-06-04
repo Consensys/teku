@@ -19,7 +19,7 @@ public class TestEvent extends Event<String> {
   private static final SerializableTypeDefinition<String> EVENT_TYPE =
       SerializableTypeDefinition.object(String.class).build();
 
-  TestEvent(String data) {
+  TestEvent(final String data) {
     super(EVENT_TYPE, data);
   }
 }

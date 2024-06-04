@@ -424,7 +424,7 @@ public class Eth2OutgoingRequestHandlerTest
     assertAllReceivedSuccessfully(0);
   }
 
-  private void assertAllReceivedSuccessfully(int chunkCount) throws InterruptedException {
+  private void assertAllReceivedSuccessfully(final int chunkCount) throws InterruptedException {
     asyncRequestRunner.waitForExactly(chunkCount);
     timeoutRunner.executeUntilDone();
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());

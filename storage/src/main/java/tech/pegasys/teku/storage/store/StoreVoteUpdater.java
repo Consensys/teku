@@ -41,7 +41,7 @@ public class StoreVoteUpdater implements VoteUpdater {
   }
 
   @Override
-  public VoteTracker getVote(UInt64 validatorIndex) {
+  public VoteTracker getVote(final UInt64 validatorIndex) {
     VoteTracker txVote = votes.get(validatorIndex);
     if (txVote != null) {
       return txVote;
@@ -57,7 +57,7 @@ public class StoreVoteUpdater implements VoteUpdater {
   }
 
   @Override
-  public void putVote(UInt64 validatorIndex, VoteTracker vote) {
+  public void putVote(final UInt64 validatorIndex, final VoteTracker vote) {
     votes.put(validatorIndex, vote);
     highestVotedValidatorIndex = highestVotedValidatorIndex.max(validatorIndex);
   }

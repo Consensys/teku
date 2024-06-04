@@ -492,7 +492,7 @@ public class DepositProviderTest {
         .isEqualTo(UInt64.valueOf(30));
   }
 
-  private void checkThatDepositProofIsValid(List<DepositWithIndex> depositsWithIndex) {
+  private void checkThatDepositProofIsValid(final List<DepositWithIndex> depositsWithIndex) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     depositsWithIndex.forEach(
         depositWithIndex ->
@@ -509,14 +509,14 @@ public class DepositProviderTest {
                 .isTrue());
   }
 
-  private void createDepositEvents(int n) {
+  private void createDepositEvents(final int n) {
     allSeenDepositsList =
         IntStream.range(0, n)
             .mapToObj(i -> dataStructureUtil.randomDepositEvent(UInt64.valueOf(i)))
             .collect(Collectors.toList());
   }
 
-  private void mockDepositsFromEth1Block(int startIndex, int n) {
+  private void mockDepositsFromEth1Block(final int startIndex, final int n) {
     allSeenDepositsList.subList(startIndex, n).stream()
         .map(depositUtil::convertDepositEventToOperationDeposit)
         .map(depositWithIndex -> depositWithIndex.deposit().getData().hashTreeRoot())
@@ -529,11 +529,11 @@ public class DepositProviderTest {
     depositProvider.onDepositsFromBlock(depositsFromBlockEvent);
   }
 
-  private void updateStateEth1Data(Eth1Data eth1Data) {
+  private void updateStateEth1Data(final Eth1Data eth1Data) {
     state = state.updated(mutableState -> mutableState.setEth1Data(eth1Data));
   }
 
-  private void updateStateEth1DataDepositCount(int n) {
+  private void updateStateEth1DataDepositCount(final int n) {
     final Eth1Data eth1Data =
         new Eth1Data(
             dataStructureUtil.randomBytes32(),
@@ -542,11 +542,11 @@ public class DepositProviderTest {
     updateStateEth1Data(eth1Data);
   }
 
-  private void updateStateEth1DepositIndex(int n) {
+  private void updateStateEth1DepositIndex(final int n) {
     state = state.updated(mutableState -> mutableState.setEth1DepositIndex(UInt64.valueOf(n)));
   }
 
-  private void updateStateDepositReceiptsStartIndex(int n) {
+  private void updateStateDepositReceiptsStartIndex(final int n) {
     state =
         state.updated(
             mutableState ->

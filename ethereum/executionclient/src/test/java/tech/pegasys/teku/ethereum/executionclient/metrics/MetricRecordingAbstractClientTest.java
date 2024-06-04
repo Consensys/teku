@@ -68,7 +68,7 @@ public class MetricRecordingAbstractClientTest {
 
   @Test
   public void shouldCountRequestWithResponseFailure() {
-    final Response<String> response = new Response<>(null, "error");
+    final Response<String> response = Response.withErrorMessage("error");
     setupResponse(SafeFuture.completedFuture(response));
     final SafeFuture<Response<String>> result = clientTest.testMethod("test");
 
@@ -83,9 +83,9 @@ public class MetricRecordingAbstractClientTest {
     private final TestClient delegate;
 
     protected TestClient(
-        TestClient delegate,
-        TimeProvider timeProvider,
-        MetricsCountersByIntervals clientRequestsCountersByIntervals) {
+        final TestClient delegate,
+        final TimeProvider timeProvider,
+        final MetricsCountersByIntervals clientRequestsCountersByIntervals) {
       super(timeProvider, clientRequestsCountersByIntervals);
       this.delegate = delegate;
     }

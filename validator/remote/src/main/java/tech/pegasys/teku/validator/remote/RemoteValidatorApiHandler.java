@@ -189,7 +189,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
-      final List<BLSPublicKey> batch, Function<StateValidatorData, T> valueExtractor) {
+      final List<BLSPublicKey> batch, final Function<StateValidatorData, T> valueExtractor) {
     return typeDefClient
         .getStateValidators(convertPublicKeysToValidatorIds(batch))
         .map(responses -> convertToValidatorMapTypeDef(responses, valueExtractor));
@@ -335,7 +335,9 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     return sendRequest(
         () ->
             apiClient

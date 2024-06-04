@@ -51,7 +51,7 @@ public class Consolidation extends Container3<Consolidation, SszUInt64, SszUInt6
     }
 
     @Override
-    public Consolidation createFromBackingNode(TreeNode node) {
+    public Consolidation createFromBackingNode(final TreeNode node) {
       return new Consolidation(this, node);
     }
   }
@@ -61,7 +61,7 @@ public class Consolidation extends Container3<Consolidation, SszUInt64, SszUInt6
     super(schema);
   }
 
-  private Consolidation(Consolidation.ConsolidationSchema type, final TreeNode backingNode) {
+  private Consolidation(final Consolidation.ConsolidationSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

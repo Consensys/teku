@@ -36,10 +36,10 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
   private Optional<UInt64> maybeSlotOfLastBlock = Optional.empty();
 
   public BlocksByRangeListenerWrapper(
-      Peer peer,
-      RpcResponseListener<SignedBeaconBlock> blockResponseListener,
-      UInt64 startSlot,
-      UInt64 count) {
+      final Peer peer,
+      final RpcResponseListener<SignedBeaconBlock> blockResponseListener,
+      final UInt64 startSlot,
+      final UInt64 count) {
     this.peer = peer;
     this.blockResponseListener = blockResponseListener;
     this.startSlot = startSlot;
@@ -47,7 +47,7 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
   }
 
   @Override
-  public SafeFuture<?> onResponse(SignedBeaconBlock response) {
+  public SafeFuture<?> onResponse(final SignedBeaconBlock response) {
     return SafeFuture.of(
         () -> {
           UInt64 blockSlot = response.getSlot();
@@ -71,11 +71,11 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
         });
   }
 
-  private boolean blockSlotIsInRange(UInt64 blockSlot) {
+  private boolean blockSlotIsInRange(final UInt64 blockSlot) {
     return blockSlot.isGreaterThanOrEqualTo(startSlot) && blockSlot.isLessThanOrEqualTo(endSlot);
   }
 
-  private boolean blockSlotGreaterThanPreviousBlockSlot(UInt64 blockSlot) {
+  private boolean blockSlotGreaterThanPreviousBlockSlot(final UInt64 blockSlot) {
     if (maybeSlotOfLastBlock.isEmpty()) {
       return true;
     }
@@ -84,7 +84,7 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
     return blockSlot.isGreaterThan(lastBlockSlot);
   }
 
-  private boolean blockParentRootMatches(Bytes32 blockParentRoot) {
+  private boolean blockParentRootMatches(final Bytes32 blockParentRoot) {
     if (maybeRootOfLastBlock.isEmpty()) {
       return true;
     }
