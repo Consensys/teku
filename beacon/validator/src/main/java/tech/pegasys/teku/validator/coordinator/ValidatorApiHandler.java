@@ -143,7 +143,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
-  private final boolean validateLocallyCreatedBlocks;
+  private final boolean locallyCreatedBlocksValidationEnabled;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
@@ -171,7 +171,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-      final boolean validateLocallyCreatedBlocks) {
+      final boolean locallyCreatedBlocksValidationEnabled) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -191,7 +191,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
-    this.validateLocallyCreatedBlocks = validateLocallyCreatedBlocks;
+    this.locallyCreatedBlocksValidationEnabled = locallyCreatedBlocksValidationEnabled;
     this.blockPublisher =
         new MilestoneBasedBlockPublisher(
             spec,
@@ -652,7 +652,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
-            !validateLocallyCreatedBlocks
+            !locallyCreatedBlocksValidationEnabled
                     && broadcastValidationLevel == GOSSIP
                     && isLocallyCreatedBlock(maybeBlindedBlockContainer)
                 ? NOT_REQUIRED

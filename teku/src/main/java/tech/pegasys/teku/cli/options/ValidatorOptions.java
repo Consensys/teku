@@ -146,7 +146,7 @@ public class ValidatorOptions {
   private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
 
   @Option(
-      names = {"--Xvalidate-locally-created-blocks"},
+      names = {"--Xlocally-created-blocks-validation-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
           """
@@ -156,8 +156,8 @@ public class ValidatorOptions {
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean validateLocallyCreatedBlocks =
-      ValidatorConfig.DEFAULT_VALIDATE_LOCALLY_CREATED_BLOCKS;
+  private boolean locallyCreatedBlocksValidationEnabled =
+      ValidatorConfig.DEFAULT_LOCALLY_CREATED_BLOCKS_VALIDATION_ENABLED;
 
   @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
@@ -208,7 +208,7 @@ public class ValidatorOptions {
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .executorThreads(executorThreads)
                 .blockV3enabled(blockV3Enabled)
-                .validateLocallyCreatedBlocks(validateLocallyCreatedBlocks)
+                .locallyCreatedBlocksValidationEnabled(locallyCreatedBlocksValidationEnabled)
                 .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
                 .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed));
     validatorProposerOptions.configure(builder);

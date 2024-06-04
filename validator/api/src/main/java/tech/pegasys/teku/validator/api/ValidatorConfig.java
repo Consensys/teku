@@ -46,7 +46,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
   public static final boolean DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED = true;
   public static final boolean DEFAULT_BLOCK_V3_ENABLED = false;
-  public static final boolean DEFAULT_VALIDATE_LOCALLY_CREATED_BLOCKS = false;
+  public static final boolean DEFAULT_LOCALLY_CREATED_BLOCKS_VALIDATION_ENABLED = false;
   public static final boolean DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED = true;
@@ -98,7 +98,7 @@ public class ValidatorConfig {
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final boolean failoversPublishSignedDutiesEnabled;
   private final boolean blockV3Enabled;
-  private final boolean validateLocallyCreatedBlocks;
+  private final boolean locallyCreatedBlocksValidationEnabled;
   private final boolean exitWhenNoValidatorKeysEnabled;
   private final boolean shutdownWhenValidatorSlashedEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
@@ -142,7 +142,7 @@ public class ValidatorConfig {
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final boolean failoversPublishSignedDutiesEnabled,
       final boolean blockV3Enabled,
-      final boolean validateLocallyCreatedBlocks,
+      final boolean locallyCreatedBlocksValidationEnabled,
       final boolean exitWhenNoValidatorKeysEnabled,
       final boolean shutdownWhenValidatorSlashedEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
@@ -186,7 +186,7 @@ public class ValidatorConfig {
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
     this.blockV3Enabled = blockV3Enabled;
-    this.validateLocallyCreatedBlocks = validateLocallyCreatedBlocks;
+    this.locallyCreatedBlocksValidationEnabled = locallyCreatedBlocksValidationEnabled;
     this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
     this.shutdownWhenValidatorSlashedEnabled = shutdownWhenValidatorSlashedEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
@@ -328,8 +328,8 @@ public class ValidatorConfig {
     return blockV3Enabled;
   }
 
-  public boolean isValidateLocallyCreatedBlocksEnabled() {
-    return validateLocallyCreatedBlocks;
+  public boolean isLocallyCreatedBlocksValidationEnabled() {
+    return locallyCreatedBlocksValidationEnabled;
   }
 
   public boolean isExitWhenNoValidatorKeysEnabled() {
@@ -412,7 +412,8 @@ public class ValidatorConfig {
     private boolean failoversPublishSignedDutiesEnabled =
         DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
     private boolean blockV3Enabled = DEFAULT_BLOCK_V3_ENABLED;
-    private boolean validateLocallyCreatedBlocks = DEFAULT_VALIDATE_LOCALLY_CREATED_BLOCKS;
+    private boolean locallyCreatedBlocksValidationEnabled =
+        DEFAULT_LOCALLY_CREATED_BLOCKS_VALIDATION_ENABLED;
     private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
     private boolean shutdownWhenValidatorSlashedEnabled =
         DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
@@ -618,8 +619,9 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validateLocallyCreatedBlocks(final boolean validateLocallyCreatedBlocks) {
-      this.validateLocallyCreatedBlocks = validateLocallyCreatedBlocks;
+    public Builder locallyCreatedBlocksValidationEnabled(
+        final boolean locallyCreatedBlocksValidationEnabled) {
+      this.locallyCreatedBlocksValidationEnabled = locallyCreatedBlocksValidationEnabled;
       return this;
     }
 
@@ -718,7 +720,7 @@ public class ValidatorConfig {
           failoversSendSubnetSubscriptionsEnabled,
           failoversPublishSignedDutiesEnabled,
           blockV3Enabled,
-          validateLocallyCreatedBlocks,
+          locallyCreatedBlocksValidationEnabled,
           exitWhenNoValidatorKeysEnabled,
           shutdownWhenValidatorSlashedEnabled,
           builderRegistrationDefaultGasLimit,
