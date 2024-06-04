@@ -134,5 +134,8 @@ public class AbstractSszStableContainerSchemaTest {
     String circleJson =
         JsonUtil.serialize(circleProfile, circleProfileSchema.getJsonTypeDefinition());
     System.out.println(circleJson);
+
+    System.out.println(squareProfile.hashTreeRoot());
+    System.out.println(circleProfile.hashTreeRoot());
   }
 }
