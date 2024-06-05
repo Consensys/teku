@@ -85,7 +85,7 @@ public class ValidatorIndexCache {
     if (latestFinalizedIndex.get() >= updatedIndex) {
       validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
     } else {
-      LOG.trace("Ingoring invalidateWithNewValue {}:{}", pubKey, updatedIndex);
+      LOG.trace("Ignoring invalidateWithNewValue {}:{}", pubKey, updatedIndex);
     }
   }
 
