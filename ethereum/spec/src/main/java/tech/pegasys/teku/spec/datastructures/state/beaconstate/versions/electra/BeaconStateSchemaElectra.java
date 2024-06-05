@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateStableSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConso
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class BeaconStateSchemaElectra
-    extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
+    extends AbstractBeaconStateStableSchema<BeaconStateElectra, MutableBeaconStateElectra> {
   public static final int DEPOSIT_RECEIPTS_START_INDEX = 28;
   public static final int DEPOSIT_BALANCE_TO_CONSUME_INDEX = 29;
   public static final int EXIT_BALANCE_TO_CONSUME_INDEX = 30;
@@ -54,9 +54,11 @@ public class BeaconStateSchemaElectra
   public static final int PENDING_PARTIAL_WITHDRAWALS_INDEX = 35;
   public static final int PENDING_CONSOLIDATIONS_INDEX = 36;
 
+  public static final int MAX_BEACON_STATE_FIELDS = 128;
+
   @VisibleForTesting
   BeaconStateSchemaElectra(final SpecConfig specConfig) {
-    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig);
+    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig, MAX_BEACON_STATE_FIELDS);
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {

@@ -17,7 +17,11 @@ import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStableSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
@@ -34,6 +38,11 @@ public class MutableBeaconStateElectraImpl
   MutableBeaconStateElectraImpl(
       final BeaconStateElectraImpl backingImmutableView, final boolean builder) {
     super(backingImmutableView, builder);
+  }
+
+  @Override
+  public BeaconStateStableSchema<? extends BeaconState, ? extends MutableBeaconState> getBeaconStateSchema() {
+    return (BeaconStateStableSchema<? extends BeaconState, ? extends MutableBeaconState> )super.getBeaconStateSchema();
   }
 
   @Override
@@ -59,5 +68,10 @@ public class MutableBeaconStateElectraImpl
   @Override
   public MutableBeaconStateElectra createWritableCopy() {
     return (MutableBeaconStateElectra) super.createWritableCopy();
+  }
+
+  @Override
+  public boolean isFieldActive(final int index) {
+    return getBeaconStateSchema().isActiveField(index);
   }
 }

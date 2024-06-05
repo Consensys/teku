@@ -47,7 +47,7 @@ public abstract class AbstractSszImmutableStableContainer extends AbstractSszImm
   }
 
   public AbstractSszImmutableStableContainer(
-      SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
+      final SszCompositeSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
