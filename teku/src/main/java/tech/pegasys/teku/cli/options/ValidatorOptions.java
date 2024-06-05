@@ -151,7 +151,7 @@ public class ValidatorOptions {
       description =
           """
              Enable gossip validation when publishing a block which has been created locally.
-             This is only applicable when "gossip" broadcast validation level has been requested,""",
+             This is only applicable when "gossip" broadcast validation level has been requested.""",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
