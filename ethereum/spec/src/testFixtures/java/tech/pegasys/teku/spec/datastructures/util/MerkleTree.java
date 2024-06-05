@@ -51,7 +51,7 @@ public class MerkleTree {
 
   public void add(final Bytes32 leaf) {
     if (!tree.get(0).isEmpty()
-            && tree.get(0).get(tree.get(0).size() - 1).equals(zeroHashes.get(0))) {
+        && tree.get(0).get(tree.get(0).size() - 1).equals(zeroHashes.get(0))) {
       tree.get(0).remove(tree.get(0).size() - 1);
     }
     int mutableStageSize = tree.get(0).size();
@@ -68,9 +68,9 @@ public class MerkleTree {
         final List<Bytes32> previousStage = tree.get(depth - 1);
         final int previousStageSize = previousStage.size();
         stage.add(
-                Hash.sha256(
-                        previousStage.get(previousStageSize - 2),
-                        previousStage.get(previousStageSize - 1)));
+            Hash.sha256(
+                previousStage.get(previousStageSize - 2),
+                previousStage.get(previousStageSize - 1)));
       }
       if (stage.size() % 2 == 1 && depth != treeDepth) {
         stage.add(zeroHashes.get(depth));
@@ -162,7 +162,7 @@ public class MerkleTree {
       int limit = viewLimit >> i;
 
       checkArgument(
-              limit <= tree.get(i).size(), "MerkleTree: Tree is too small for given limit at height");
+          limit <= tree.get(i).size(), "MerkleTree: Tree is too small for given limit at height");
 
       // If the sibling is equal to the limit,
       if (siblingIndex == limit) {
@@ -185,7 +185,7 @@ public class MerkleTree {
 
   public Bytes32 calcMixInValue(final int viewLimit) {
     return (Bytes32)
-            Bytes.concatenate(Bytes.ofUnsignedLong(viewLimit, LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
+        Bytes.concatenate(Bytes.ofUnsignedLong(viewLimit, LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
   }
 
   public Bytes32 calcMixInValue() {
@@ -216,16 +216,16 @@ public class MerkleTree {
 
   private String centerPrint(final List<Bytes32> stageItems, final int numLeaves) {
     final String emptySpaceOnSide =
-            numLeaves == stageItems.size()
-                    ? "                "
-                    : IntStream.range(0, (numLeaves - stageItems.size()))
-                    .mapToObj(i -> "    ")
-                    .collect(Collectors.joining("    "));
+        numLeaves == stageItems.size()
+            ? "                "
+            : IntStream.range(0, (numLeaves - stageItems.size()))
+                .mapToObj(i -> "    ")
+                .collect(Collectors.joining("    "));
 
     final String stageString =
-            stageItems.stream()
-                    .map(item -> item.toHexString().substring(63))
-                    .collect(Collectors.joining(emptySpaceOnSide));
+        stageItems.stream()
+            .map(item -> item.toHexString().substring(63))
+            .collect(Collectors.joining(emptySpaceOnSide));
 
     return emptySpaceOnSide.concat(stageString).concat(emptySpaceOnSide);
   }
