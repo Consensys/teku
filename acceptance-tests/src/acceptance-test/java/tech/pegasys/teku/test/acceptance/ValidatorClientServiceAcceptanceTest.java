@@ -162,6 +162,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
             TekuNodeConfigBuilder.createValidatorClient()
                 .withInteropModeDisabled()
                 .withBeaconNodes(beaconNode)
+                .withValidatorApiEnabled()
                 .withExitWhenNoValidatorKeysEnabled(true)
                 .build());
     beaconNode.start();
