@@ -18,12 +18,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
@@ -38,6 +41,21 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   private final Map<Integer, NamedSchema<?>> childrenActiveSchemas;
   private final SszBitvectorSchema<SszBitvector> activeFieldsBitvectorSchema;
   private final SszBitvector activeFieldsBitvector;
+
+  public static Map<Integer, NamedSchema<?>> continuousActiveNamedSchemas(
+      final List<? extends NamedSchema<?>> namedSchemas) {
+    return IntStream.range(0, namedSchemas.size())
+        .boxed()
+        .collect(Collectors.toMap(Function.identity(), namedSchemas::get));
+  }
+
+  public static Map<Integer, NamedSchema<?>> continuousActiveSchemas(
+      final List<SszSchema<?>> schemas) {
+    return IntStream.range(0, schemas.size())
+        .boxed()
+        .collect(
+            Collectors.toMap(Function.identity(), i -> namedSchema("field-" + i, schemas.get(i))));
+  }
 
   public AbstractSszStableContainerSchema(
       final String name,

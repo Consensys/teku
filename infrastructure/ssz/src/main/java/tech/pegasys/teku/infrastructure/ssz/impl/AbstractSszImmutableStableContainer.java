@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Suppliers;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -22,37 +23,48 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public abstract class AbstractSszStableContainer extends SszContainerImpl
+public abstract class AbstractSszImmutableStableContainer extends AbstractSszImmutableContainer
     implements SszStableContainer {
   private final Supplier<Bytes32> hashTreeRootSupplier =
-      () ->
-          Hash.getSha256Instance()
-              .wrappedDigest(super.hashTreeRoot(), getActiveFields().hashTreeRoot());
+      Suppliers.memoize(
+          () ->
+              Hash.getSha256Instance()
+                  .wrappedDigest(super.hashTreeRoot(), getActiveFields().hashTreeRoot()));
 
-  public AbstractSszStableContainer(SszStableContainerSchema<?> type) {
+  public AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> type) {
     super(type);
   }
 
-  public AbstractSszStableContainer(SszStableContainerSchema<?> type, TreeNode backingNode) {
+  public AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public AbstractSszStableContainer(
-      SszStableContainerSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
+  public AbstractSszImmutableStableContainer(
+      SszCompositeSchema<?> type, TreeNode backingNode, IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
+  public AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema,
+      final SszData... memberValues) {
+    super(schema, memberValues);
+  }
+
   @Override
-  public final SszData get(int index) {
+  public final SszData get(final int index) {
     checkArgument(isFieldActive(index), "Field is not active");
     return super.get(index);
   }
 
   @Override
-  public boolean isFieldActive(int index) {
+  public boolean isFieldActive(final int index) {
     return getStableSchema().isActiveField(index);
   }
 

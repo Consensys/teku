@@ -30,6 +30,7 @@ public class ContainersGenerator {
   private final String viewPackagePath = "tech/pegasys/teku/infrastructure/ssz/containers/";
   private final String containerTypeTemplateFile = "ContainerSchemaTemplate.java";
   private final String containerViewTemplateFile = "ContainerTemplate.java";
+  private final String stableProfileTypeTemplateFile = "StableProfileSchemaTemplate.java";
 
   public ContainersGenerator(final Path templateSourcePath, final Path destinationSourcePath) {
     templateSrcPath = templateSourcePath;
@@ -66,13 +67,25 @@ public class ContainersGenerator {
 
   public void generateAll() {
     for (int i = 1; i <= maxFields; i++) {
-      generateContainerClasses(i);
+      generateContainerClasses(
+          i, "ContainerSchema", "Container", containerTypeTemplateFile, containerViewTemplateFile);
+      generateContainerClasses(
+          i,
+          "StableProfileSchema",
+          "StableProfile",
+          stableProfileTypeTemplateFile,
+          containerViewTemplateFile);
     }
   }
 
-  public void generateContainerClasses(final int fieldsCount) {
-    String typeClassName = "ContainerSchema" + fieldsCount;
-    String viewClassName = "Container" + fieldsCount;
+  public void generateContainerClasses(
+      final int fieldsCount,
+      final String baseTypeClassName,
+      final String baseViewClassName,
+      final String containerTypeTemplateFile,
+      final String containerViewTemplateFile) {
+    String typeClassName = baseTypeClassName + fieldsCount;
+    String viewClassName = baseViewClassName + fieldsCount;
     Map<String, String> vars =
         Map.ofEntries(
             Map.entry("TypeClassName", typeClassName),

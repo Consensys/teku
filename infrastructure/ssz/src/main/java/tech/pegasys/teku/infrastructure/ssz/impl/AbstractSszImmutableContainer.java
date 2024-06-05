@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -38,6 +39,11 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
       final SszContainerSchema<? extends AbstractSszImmutableContainer> schema,
       final TreeNode backingNode) {
     super(schema, backingNode);
+  }
+
+  public AbstractSszImmutableContainer(
+      final SszCompositeSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
+    super(type, backingNode, cache);
   }
 
   protected AbstractSszImmutableContainer(
