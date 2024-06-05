@@ -704,7 +704,7 @@ public class SafeFutureTest {
     assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 
-  private static boolean hasDependents(CompletableFuture<?> fut) {
+  private static boolean hasDependents(final CompletableFuture<?> fut) {
     return fut.getNumberOfDependents() > 0;
   }
 

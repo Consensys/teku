@@ -69,7 +69,7 @@ class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
 
   @Override
   protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
-      Consumer<BeaconBlockBodyBuilder> contentProvider) {
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
     return bodyBuilder.build().toBlindedVersionDeneb().orElseThrow();

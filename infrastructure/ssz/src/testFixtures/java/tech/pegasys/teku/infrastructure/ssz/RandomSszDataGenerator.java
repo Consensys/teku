@@ -55,7 +55,7 @@ public class RandomSszDataGenerator {
     this(new Random(1), 16 * 1024);
   }
 
-  public RandomSszDataGenerator(Random random, final int maxListSize) {
+  public RandomSszDataGenerator(final Random random, final int maxListSize) {
     this.random = random;
     this.maxListSize = maxListSize;
     bitSupplier = () -> SszBit.of(random.nextBoolean());
@@ -66,16 +66,16 @@ public class RandomSszDataGenerator {
     bytes32Supplier = () -> SszBytes32.of(Bytes32.random(random));
   }
 
-  public RandomSszDataGenerator withMaxListSize(int maxListSize) {
+  public RandomSszDataGenerator withMaxListSize(final int maxListSize) {
     return new RandomSszDataGenerator(random, maxListSize);
   }
 
-  public <T extends SszData> T randomData(SszSchema<T> schema) {
+  public <T extends SszData> T randomData(final SszSchema<T> schema) {
     return randomDataStream(schema).findFirst().orElseThrow();
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends SszData> Stream<T> randomDataStream(SszSchema<T> schema) {
+  public <T extends SszData> Stream<T> randomDataStream(final SszSchema<T> schema) {
     if (schema instanceof AbstractSszPrimitiveSchema) {
       if (schema.equals(SszPrimitiveSchemas.NONE_SCHEMA)) {
         return (Stream<T>) Stream.generate(() -> SszNone.INSTANCE);

@@ -141,7 +141,7 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(Eth2Network.CHIADO, (NetworkDefinition) b -> b.applyChiadoNetworkDefaults()));
   }
 
-  private List<NodeRecord> parseBootnodes(List<String> bootnodes) {
+  private List<NodeRecord> parseBootnodes(final List<String> bootnodes) {
     final NodeRecordFactory nodeRecordFactory = NodeRecordFactory.DEFAULT;
 
     return bootnodes.stream()

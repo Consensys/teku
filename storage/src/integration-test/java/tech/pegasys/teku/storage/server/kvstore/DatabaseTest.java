@@ -2612,7 +2612,7 @@ public class DatabaseTest {
   }
 
   private void assertBlobSidecarKeys(
-      final UInt64 from, final UInt64 to, SlotAndBlockRootAndBlobIndex... keys) {
+      final UInt64 from, final UInt64 to, final SlotAndBlockRootAndBlobIndex... keys) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
         database.streamBlobSidecarKeys(from, to)) {
       final List<SlotAndBlockRootAndBlobIndex> keysFromDb = blobSidecarsStream.collect(toList());
@@ -2621,7 +2621,7 @@ public class DatabaseTest {
   }
 
   private void assertNonCanonicalBlobSidecarKeys(
-      final UInt64 from, final UInt64 to, SlotAndBlockRootAndBlobIndex... keys) {
+      final UInt64 from, final UInt64 to, final SlotAndBlockRootAndBlobIndex... keys) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
         database.streamNonCanonicalBlobSidecarKeys(from, to)) {
       final List<SlotAndBlockRootAndBlobIndex> keysFromDb = blobSidecarsStream.collect(toList());

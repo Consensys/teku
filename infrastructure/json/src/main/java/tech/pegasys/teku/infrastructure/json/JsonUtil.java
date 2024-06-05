@@ -155,7 +155,7 @@ public class JsonUtil {
     while (!parser.isClosed()) {
       final JsonToken jsonToken = parser.nextToken();
       if (JsonToken.FIELD_NAME.equals(jsonToken)) {
-        final String currentFieldName = parser.getCurrentName();
+        final String currentFieldName = parser.currentName();
         if (currentFieldName.equals(fieldName)) {
           if (path.length == i + 1) {
             parser.nextToken();

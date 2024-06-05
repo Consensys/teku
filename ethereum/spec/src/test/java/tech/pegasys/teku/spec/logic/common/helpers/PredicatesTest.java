@@ -108,7 +108,7 @@ public class PredicatesTest {
       final UInt64 withdrawableEpoch,
       final UInt64 balance,
       final UInt64 epoch,
-      boolean expectedValue) {
+      final boolean expectedValue) {
 
     final Validator validator =
         DATA_STRUCTURE_UTIL
@@ -177,7 +177,7 @@ public class PredicatesTest {
       final Bytes32 withdrawalCredentials,
       final UInt64 effectiveBalance,
       final UInt64 balance,
-      boolean expectedValue) {
+      final boolean expectedValue) {
 
     final Validator validator =
         DATA_STRUCTURE_UTIL

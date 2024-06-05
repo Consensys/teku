@@ -25,7 +25,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 public abstract class BlsTestExecutor implements TestExecutor {
 
   @Override
-  public final void runTest(TestDefinition testDefinition) throws Throwable {
+  public final void runTest(final TestDefinition testDefinition) throws Throwable {
     if (BlstLoader.INSTANCE.isPresent()) {
       try {
         BLS.setBlsImplementation(BlstLoader.INSTANCE.get());

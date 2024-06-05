@@ -198,7 +198,7 @@ public class BesuNode extends Node {
     private static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
     public final int id;
 
-    public Request(String method, String... params) {
+    public Request(final String method, final String... params) {
       this.method = method;
       this.params = params;
       this.id = ID_COUNTER.incrementAndGet();

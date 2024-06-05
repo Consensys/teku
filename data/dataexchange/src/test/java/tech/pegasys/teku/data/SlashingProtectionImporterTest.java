@@ -77,7 +77,7 @@ public class SlashingProtectionImporterTest {
   }
 
   @Test
-  public void shouldImportSingleRecord(@TempDir Path tempDir)
+  public void shouldImportSingleRecord(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final File ruleFile = usingResourceFile("slashProtection.yml", tempDir);
     final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
@@ -88,7 +88,7 @@ public class SlashingProtectionImporterTest {
   }
 
   @Test
-  public void shouldExportAndImportFile(@TempDir Path tempDir)
+  public void shouldExportAndImportFile(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
 
@@ -115,7 +115,7 @@ public class SlashingProtectionImporterTest {
   }
 
   @Test
-  void shouldImportFileOverRepairedRecords(@TempDir Path tempDir) throws Exception {
+  void shouldImportFileOverRepairedRecords(@TempDir final Path tempDir) throws Exception {
     final SubCommandLogger logger = mock(SubCommandLogger.class);
     final Path initialRecords = tempDir.resolve("initial");
     final Path repairedRecords = tempDir.resolve("repaired");
@@ -165,7 +165,7 @@ public class SlashingProtectionImporterTest {
 
   @Test
   void shouldFailImportingIfValidatorExistingRecordHasDifferentGenesisValidatorsRoot(
-      @TempDir Path tempDir) throws URISyntaxException, IOException {
+      @TempDir final Path tempDir) throws URISyntaxException, IOException {
     final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
 
     final File slashProtection = getResourceFile("format2_minimal.json");

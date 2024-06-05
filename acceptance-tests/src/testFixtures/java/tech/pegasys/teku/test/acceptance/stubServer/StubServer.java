@@ -17,7 +17,7 @@ import java.net.InetSocketAddress;
 
 public class StubServer {
 
-  public static void main(String[] args) throws Throwable {
+  public static void main(final String[] args) throws Throwable {
     RemoteMetricsServiceStub remoteMetricsServiceStub =
         new RemoteMetricsServiceStub(new InetSocketAddress(8001));
     SuccessHandler handler = new SuccessHandler();

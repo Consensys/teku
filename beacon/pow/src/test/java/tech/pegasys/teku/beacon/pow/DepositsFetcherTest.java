@@ -200,7 +200,8 @@ public class DepositsFetcherTest {
     verifyNoMoreInteractions(depositEventsAccessor);
   }
 
-  private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {
+  private void mockBlockForEth1Provider(
+      final String blockHash, final long blockNumber, final long timestamp) {
     EthBlock.Block block = mock(EthBlock.Block.class);
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
@@ -210,7 +211,7 @@ public class DepositsFetcherTest {
   }
 
   private SafeFuture<List<DepositContract.DepositEventEventResponse>> mockContractEventsInRange(
-      long fromBlockNumber, long toBlockNumber) {
+      final long fromBlockNumber, final long toBlockNumber) {
     SafeFuture<List<DepositContract.DepositEventEventResponse>> safeFuture = new SafeFuture<>();
     doReturn(safeFuture)
         .when(depositEventsAccessor)
@@ -227,7 +228,7 @@ public class DepositsFetcherTest {
   }
 
   private DepositContract.DepositEventEventResponse mockDepositEventEventResponse(
-      long index, String blockHash, long blockNumber) {
+      final long index, final String blockHash, final long blockNumber) {
     Log log = mock(Log.class);
     when(log.getBlockHash()).thenReturn(blockHash);
     when(log.getBlockNumber()).thenReturn(BigInteger.valueOf(blockNumber));

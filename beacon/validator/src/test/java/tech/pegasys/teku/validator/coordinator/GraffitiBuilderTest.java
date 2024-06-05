@@ -94,7 +94,7 @@ public class GraffitiBuilderTest {
     this.graffitiBuilder =
         new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti) {
           @Override
-          protected int calculateGraffitiLength(Optional<Bytes32> graffiti) {
+          protected int calculateGraffitiLength(final Optional<Bytes32> graffiti) {
             throw new RuntimeException("");
           }
         };

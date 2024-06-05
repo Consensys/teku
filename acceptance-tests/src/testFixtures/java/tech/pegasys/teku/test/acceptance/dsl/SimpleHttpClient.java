@@ -44,13 +44,13 @@ public class SimpleHttpClient {
     return this.get(baseUrl, path, Collections.emptyMap());
   }
 
-  public String get(final URI baseUrl, final String path, Map<String, String> headers)
+  public String get(final URI baseUrl, final String path, final Map<String, String> headers)
       throws IOException {
     final ResponseBody body = getResponseBody(baseUrl, path, headers);
     return body.string();
   }
 
-  public Bytes getAsBytes(final URI baseUrl, final String path, Map<String, String> headers)
+  public Bytes getAsBytes(final URI baseUrl, final String path, final Map<String, String> headers)
       throws IOException {
     final ResponseBody body = getResponseBody(baseUrl, path, headers);
     return Bytes.wrap(body.bytes());
@@ -79,7 +79,10 @@ public class SimpleHttpClient {
   }
 
   public String post(
-      final URI baseUrl, final String path, final String jsonBody, Map<String, String> headers)
+      final URI baseUrl,
+      final String path,
+      final String jsonBody,
+      final Map<String, String> headers)
       throws IOException {
     final RequestBody requestBody = RequestBody.create(jsonBody, JSON);
     final Request.Builder builder =
@@ -98,7 +101,10 @@ public class SimpleHttpClient {
   }
 
   public String delete(
-      final URI baseUrl, final String path, final String jsonBody, Map<String, String> headers)
+      final URI baseUrl,
+      final String path,
+      final String jsonBody,
+      final Map<String, String> headers)
       throws IOException {
     final RequestBody requestBody = RequestBody.create(jsonBody, JSON);
 

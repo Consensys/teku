@@ -147,7 +147,7 @@ public class GetSyncCommitteeRewardsIntegrationTest
     assertThat(response.body().string()).isEqualTo(expectedResponse);
   }
 
-  private List<String> getPubKeysRequestBody(int... committeeIndices) {
+  private List<String> getPubKeysRequestBody(final int... committeeIndices) {
     final UInt64 slot = chainBuilder.getLatestSlot();
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final SszVector<SszPublicKey> committee =

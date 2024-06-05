@@ -67,26 +67,26 @@ public class MetricConditions {
     };
   }
 
-  public static MetricValuesCondition withValueEqualTo(double value) {
+  public static MetricValuesCondition withValueEqualTo(final double value) {
     return (actualValue) -> DoubleMath.fuzzyEquals(actualValue, value, DOUBLE_COMPARE_TOLERANCE);
   }
 
-  public static MetricValuesCondition withValueGreaterThan(double value) {
+  public static MetricValuesCondition withValueGreaterThan(final double value) {
     return (actualValue) ->
         DoubleMath.fuzzyCompare(actualValue, value, DOUBLE_COMPARE_TOLERANCE) > 0;
   }
 
-  public static MetricValuesCondition withValueGreaterThanOrEqualTo(double value) {
+  public static MetricValuesCondition withValueGreaterThanOrEqualTo(final double value) {
     return (actualValue) ->
         DoubleMath.fuzzyCompare(actualValue, value, DOUBLE_COMPARE_TOLERANCE) >= 0;
   }
 
-  public static MetricValuesCondition withValueLessThan(double value) {
+  public static MetricValuesCondition withValueLessThan(final double value) {
     return (actualValue) ->
         DoubleMath.fuzzyCompare(actualValue, value, DOUBLE_COMPARE_TOLERANCE) < 0;
   }
 
-  public static MetricValuesCondition withValueLessThanOrEqualTo(double value) {
+  public static MetricValuesCondition withValueLessThanOrEqualTo(final double value) {
     return (actualValue) ->
         DoubleMath.fuzzyCompare(actualValue, value, DOUBLE_COMPARE_TOLERANCE) <= 0;
   }

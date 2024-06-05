@@ -22,7 +22,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 
 public class Bytes4Serializer extends JsonSerializer<Bytes4> {
   @Override
-  public void serialize(Bytes4 value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final Bytes4 value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
   }
