@@ -1006,14 +1006,15 @@ class RecentChainDataTest {
     transaction.commit().join();
   }
 
-  private SignedBlockAndState addNewBestBlock(RecentChainData recentChainData) {
+  private SignedBlockAndState addNewBestBlock(final RecentChainData recentChainData) {
     final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
     updateHead(recentChainData, nextBlock);
 
     return nextBlock;
   }
 
-  private void updateHead(RecentChainData recentChainData, final SignedBlockAndState bestBlock) {
+  private void updateHead(
+      final RecentChainData recentChainData, final SignedBlockAndState bestBlock) {
     saveBlock(recentChainData, bestBlock);
 
     this.recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
@@ -1026,7 +1027,7 @@ class RecentChainDataTest {
   }
 
   private void finalizeBlock(
-      RecentChainData recentChainData,
+      final RecentChainData recentChainData,
       final UInt64 epoch,
       final SignedBlockAndState finalizedBlock) {
     saveBlock(recentChainData, finalizedBlock);

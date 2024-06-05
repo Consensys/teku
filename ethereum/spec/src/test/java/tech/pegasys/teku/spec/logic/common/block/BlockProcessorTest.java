@@ -210,12 +210,12 @@ public abstract class BlockProcessorTest {
     return createBeaconState(false, null, null);
   }
 
-  protected BeaconState createBeaconState(UInt64 amount, Validator knownValidator) {
+  protected BeaconState createBeaconState(final UInt64 amount, final Validator knownValidator) {
     return createBeaconState(true, amount, knownValidator);
   }
 
   protected BeaconState createBeaconState(
-      boolean addToList, UInt64 amount, Validator knownValidator) {
+      final boolean addToList, final UInt64 amount, final Validator knownValidator) {
     return spec.getGenesisSpec()
         .getSchemaDefinitions()
         .getBeaconStateSchema()
@@ -252,14 +252,15 @@ public abstract class BlockProcessorTest {
             });
   }
 
-  protected BeaconState processDepositHelper(BeaconState beaconState, DepositData depositData)
+  protected BeaconState processDepositHelper(
+      final BeaconState beaconState, final DepositData depositData)
       throws BlockProcessingException {
 
     // Add the deposit to a Merkle tree so that we can get the root to put into the state Eth1 data
     MerkleTree depositMerkleTree = new MerkleTree(specConfig.getDepositContractTreeDepth());
     depositMerkleTree.add(depositData.hashTreeRoot());
 
-    beaconState =
+    final BeaconState updatedBeaconState =
         beaconState.updated(
             state ->
                 state.setEth1Data(
@@ -271,10 +272,11 @@ public abstract class BlockProcessorTest {
     SszList<Deposit> deposits = schema.of(new Deposit(proof, depositData));
 
     // Attempt to process deposit with above data.
-    return beaconState.updated(state -> blockProcessor.processDeposits(state, deposits));
+    return updatedBeaconState.updated(state -> blockProcessor.processDeposits(state, deposits));
   }
 
-  protected Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {
+  protected Validator makeValidator(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials) {
     return makeValidator(
         pubkey, withdrawalCredentials, SpecConfig.FAR_FUTURE_EPOCH, SpecConfig.FAR_FUTURE_EPOCH);
   }

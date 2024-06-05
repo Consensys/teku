@@ -554,7 +554,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+    public void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       finalizedUpdater.addReconstructedFinalizedState(blockRoot, state);
     }
 

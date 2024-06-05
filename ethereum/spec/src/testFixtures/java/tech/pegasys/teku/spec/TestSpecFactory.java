@@ -281,7 +281,7 @@ public class TestSpecFactory {
   }
 
   private static SpecConfigBellatrix getBellatrixSpecConfig(
-      final Eth2Network network, final UInt64 altairForkEpoch, UInt64 bellatrixForkEpoch) {
+      final Eth2Network network, final UInt64 altairForkEpoch, final UInt64 bellatrixForkEpoch) {
     return getBellatrixSpecConfig(
         network,
         builder ->

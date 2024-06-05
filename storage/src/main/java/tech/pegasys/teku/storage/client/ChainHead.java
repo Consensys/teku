@@ -43,7 +43,7 @@ public class ChainHead implements MinimalBeaconBlockSummary {
     this.stateAndBlockSummaryFuture = stateAndBlockSummaryFuture;
   }
 
-  public static ChainHead create(ChainHead chainHead) {
+  public static ChainHead create(final ChainHead chainHead) {
     return new ChainHead(
         chainHead.blockData,
         chainHead.executionPayloadBlockHash,
@@ -51,15 +51,15 @@ public class ChainHead implements MinimalBeaconBlockSummary {
         chainHead.stateAndBlockSummaryFuture);
   }
 
-  public static ChainHead create(StateAndBlockSummary blockAndState) {
+  public static ChainHead create(final StateAndBlockSummary stateAndBlockSummary) {
     return new ChainHead(
-        blockAndState.getBlockSummary(),
-        blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+        stateAndBlockSummary.getBlockSummary(),
+        stateAndBlockSummary.getExecutionBlockHash().orElse(Bytes32.ZERO),
         false,
-        SafeFuture.completedFuture(blockAndState));
+        SafeFuture.completedFuture(stateAndBlockSummary));
   }
 
-  public static ChainHead create(SignedBlockAndState blockAndState) {
+  public static ChainHead create(final SignedBlockAndState blockAndState) {
     return new ChainHead(
         blockAndState.getBlockSummary(),
         blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),

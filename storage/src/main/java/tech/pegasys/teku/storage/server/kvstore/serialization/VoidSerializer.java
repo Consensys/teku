@@ -18,12 +18,12 @@ public class VoidSerializer implements KvStoreSerializer<Void> {
   private static final byte[] VOID_VALUE = new byte[0];
 
   @Override
-  public Void deserialize(byte[] data) {
+  public Void deserialize(final byte[] data) {
     return null;
   }
 
   @Override
-  public byte[] serialize(Void value) {
+  public byte[] serialize(final Void value) {
     return VOID_VALUE;
   }
 }

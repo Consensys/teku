@@ -135,7 +135,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setTimeMillis(UInt64 timeMillis) {
+  public void setTimeMillis(final UInt64 timeMillis) {
     final UInt64 storeTimeMillis = store.getTimeInMillis();
     checkArgument(
         timeMillis.isGreaterThanOrEqualTo(storeTimeMillis),
@@ -146,23 +146,24 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setGenesisTime(UInt64 genesisTime) {
+  public void setGenesisTime(final UInt64 genesisTime) {
     this.genesisTime = Optional.of(genesisTime);
   }
 
   @Override
-  public void setJustifiedCheckpoint(Checkpoint justifiedCheckpoint) {
+  public void setJustifiedCheckpoint(final Checkpoint justifiedCheckpoint) {
     this.justifiedCheckpoint = Optional.of(justifiedCheckpoint);
   }
 
   @Override
-  public void setFinalizedCheckpoint(Checkpoint finalizedCheckpoint, boolean fromOptimisticBlock) {
+  public void setFinalizedCheckpoint(
+      final Checkpoint finalizedCheckpoint, final boolean fromOptimisticBlock) {
     this.finalizedCheckpoint = Optional.of(finalizedCheckpoint);
     this.finalizedCheckpointOptimistic = fromOptimisticBlock;
   }
 
   @Override
-  public void setBestJustifiedCheckpoint(Checkpoint bestJustifiedCheckpoint) {
+  public void setBestJustifiedCheckpoint(final Checkpoint bestJustifiedCheckpoint) {
     this.bestJustifiedCheckpoint = Optional.of(bestJustifiedCheckpoint);
   }
 
@@ -354,7 +355,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     if (blockData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
           Optional.of(blockData.get(blockRoot)).map(SignedBlockAndState::getBlock));
@@ -363,7 +364,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot) {
+  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(final Bytes32 blockRoot) {
     if (blockData.containsKey(blockRoot)) {
       final TransactionBlockData result = blockData.get(blockRoot);
       return SafeFuture.completedFuture(Optional.of(result.toSignedBlockAndState()));
@@ -382,7 +383,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (blockData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
           Optional.of(blockData.get(blockRoot)).map(SignedBlockAndState::getState));
@@ -391,7 +392,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     SignedBlockAndState inMemoryCheckpointBlockState = blockData.get(checkpoint.getRoot());
     if (inMemoryCheckpointBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
@@ -406,7 +407,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
+  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
     SignedBlockAndState inMemoryCheckpointBlockState =
         blockData.get(slotAndBlockRoot.getBlockRoot());
     if (inMemoryCheckpointBlockState != null) {
@@ -467,7 +469,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot) {
+  public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return store.isFfgCompetitive(headRoot, parentRoot);
   }
 

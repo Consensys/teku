@@ -64,7 +64,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
   protected boolean supportsExecutionPayload;
 
-  protected void setUpBaseClass(final SpecMilestone milestone, Runnable additionalSetup) {
+  protected void setUpBaseClass(final SpecMilestone milestone, final Runnable additionalSetup) {
     spec = TestSpecFactory.createMinimal(milestone);
     supportsExecutionPayload = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     dataStructureUtil = new DataStructureUtil(spec);
@@ -147,7 +147,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     assertEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
-  private <C extends SszData> SszList<C> reversed(SszList<C> list) {
+  private <C extends SszData> SszList<C> reversed(final SszList<C> list) {
     List<C> reversedList = list.stream().collect(Collectors.toList());
     Collections.reverse(reversedList);
     return list.getSchema().createFromElements(reversedList);
@@ -240,7 +240,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
         createBeaconBlockBodyBuilder().supportsExecutionPayload(), supportsExecutionPayload);
   }
 
-  protected Consumer<BeaconBlockBodyBuilder> createContentProvider(boolean blinded) {
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider(final boolean blinded) {
     return builder ->
         builder
             .randaoReveal(randaoReveal)

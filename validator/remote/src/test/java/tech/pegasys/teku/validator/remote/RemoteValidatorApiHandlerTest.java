@@ -582,16 +582,17 @@ class RemoteValidatorApiHandlerTest {
         dataStructureUtil.signedBlock(beaconBlock, signature);
     final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
-    when(typeDefClient.sendSignedBlock(any())).thenReturn(expectedResult);
+    when(typeDefClient.sendSignedBlock(any(), any())).thenReturn(expectedResult);
 
     ArgumentCaptor<SignedBeaconBlock> argumentCaptor =
         ArgumentCaptor.forClass(SignedBeaconBlock.class);
 
     final SafeFuture<SendSignedBlockResult> result =
-        apiHandler.sendSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
+        apiHandler.sendSignedBlock(signedBeaconBlock, BroadcastValidationLevel.GOSSIP);
     asyncRunner.executeQueuedActions();
 
-    verify(typeDefClient).sendSignedBlock(argumentCaptor.capture());
+    verify(typeDefClient)
+        .sendSignedBlock(argumentCaptor.capture(), eq(BroadcastValidationLevel.GOSSIP));
     assertThat(argumentCaptor.getValue()).isEqualTo(signedBeaconBlock);
     assertThat(result).isCompletedWithValue(expectedResult);
   }
@@ -781,7 +782,8 @@ class RemoteValidatorApiHandlerTest {
   }
 
   private boolean validatorIsLive(
-      List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches, UInt64 validatorIndex) {
+      final List<ValidatorLivenessAtEpoch> validatorLivenessAtEpoches,
+      final UInt64 validatorIndex) {
     return validatorLivenessAtEpoches.stream()
         .anyMatch(
             validatorLivenessAtEpoch ->
@@ -789,7 +791,7 @@ class RemoteValidatorApiHandlerTest {
                     && validatorLivenessAtEpoch.isLive());
   }
 
-  private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {
+  private <T> Optional<T> unwrapToOptional(final SafeFuture<Optional<T>> future) {
     try {
       asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future);
@@ -799,7 +801,7 @@ class RemoteValidatorApiHandlerTest {
     }
   }
 
-  private <T> T unwrapToValue(SafeFuture<Optional<T>> future) {
+  private <T> T unwrapToValue(final SafeFuture<Optional<T>> future) {
     try {
       asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future).orElseThrow();

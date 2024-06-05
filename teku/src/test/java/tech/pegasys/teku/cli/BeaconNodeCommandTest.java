@@ -239,12 +239,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private Stream<OptionSpec> addSubCommandOptions(
-      final CommandLine commandLine, Stream<OptionSpec> stream) {
+      final CommandLine commandLine, final Stream<OptionSpec> stream) {
+    Stream<OptionSpec> mutableStream = stream;
     for (CommandLine subCommand : commandLine.getSubcommands().values()) {
-      stream = Stream.concat(stream, subCommand.getCommandSpec().options().stream());
-      stream = addSubCommandOptions(subCommand, stream);
+      mutableStream = Stream.concat(mutableStream, subCommand.getCommandSpec().options().stream());
+      mutableStream = addSubCommandOptions(subCommand, mutableStream);
     }
-    return stream;
+    return mutableStream;
   }
 
   @Test

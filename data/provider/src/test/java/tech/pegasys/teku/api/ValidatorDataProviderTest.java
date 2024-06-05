@@ -104,7 +104,7 @@ public class ValidatorDataProviderTest {
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
 
   @BeforeEach
-  public void setup(SpecContext specContext) {
+  public void setup(final SpecContext specContext) {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     schemaProvider = new SchemaObjectProvider(spec);
@@ -303,7 +303,7 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
-  void parseBlock_shouldParseMilestoneSpecificBlocks(SpecContext specContext)
+  void parseBlock_shouldParseMilestoneSpecificBlocks(final SpecContext specContext)
       throws JsonProcessingException {
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =

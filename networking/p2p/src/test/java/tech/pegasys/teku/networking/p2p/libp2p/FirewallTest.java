@@ -32,7 +32,7 @@ public class FirewallTest {
             firewall,
             new ChannelInboundHandlerAdapter() {
               @Override
-              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+              public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause)
                   throws Exception {
                 super.exceptionCaught(ctx, cause);
               }
@@ -43,7 +43,7 @@ public class FirewallTest {
     Assertions.assertThat(channel.isOpen()).isFalse();
   }
 
-  private void executeAllScheduledTasks(EmbeddedChannel channel, long maxWaitSeconds)
+  private void executeAllScheduledTasks(final EmbeddedChannel channel, final long maxWaitSeconds)
       throws TimeoutException, InterruptedException {
     long waitTime = 0;
     while (waitTime < maxWaitSeconds * 1000) {

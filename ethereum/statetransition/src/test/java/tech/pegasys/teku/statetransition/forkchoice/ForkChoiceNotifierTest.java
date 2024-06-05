@@ -191,7 +191,7 @@ class ForkChoiceNotifierTest {
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
   }
 
-  private void doMerge(Bytes32 terminalBlockHash) {
+  private void doMerge(final Bytes32 terminalBlockHash) {
     // advance chain with the terminal block
     SignedBlockAndState newBlockWithExecutionPayloadAtopTerminalBlock =
         storageSystem
@@ -1135,7 +1135,7 @@ class ForkChoiceNotifierTest {
   }
 
   private ForkChoiceUpdatedResult createForkChoiceUpdatedResult(
-      ExecutionPayloadStatus status, Optional<Bytes8> payloadId) {
+      final ExecutionPayloadStatus status, final Optional<Bytes8> payloadId) {
     return new ForkChoiceUpdatedResult(
         PayloadStatus.create(status, Optional.empty(), Optional.empty()), payloadId);
   }

@@ -415,7 +415,7 @@ class ForkChoiceTest {
   @ParameterizedTest
   @MethodSource("provideArgumentsForShouldReorg")
   void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain(
-      long advanceTimeSlotMillis, boolean shouldReorg) {
+      final long advanceTimeSlotMillis, final boolean shouldReorg) {
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(2));
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     forkChoice =
@@ -1193,7 +1193,7 @@ class ForkChoiceTest {
     importBlock(epoch2Block);
   }
 
-  private UInt64 prepFinalizeEpoch(long epoch) {
+  private UInt64 prepFinalizeEpoch(final long epoch) {
     final ChainUpdater chainUpdater = storageSystem.chainUpdater();
     final UInt64 epochPlus2StartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch).plus(2));
 
@@ -1404,7 +1404,7 @@ class ForkChoiceTest {
   }
 
   private Answer<Void> getOnForkChoiceUpdatedResultAnswer(
-      Optional<ForkChoiceUpdatedResult> result) {
+      final Optional<ForkChoiceUpdatedResult> result) {
     return invocation -> {
       result.ifPresent(
           forkChoiceUpdatedResult ->

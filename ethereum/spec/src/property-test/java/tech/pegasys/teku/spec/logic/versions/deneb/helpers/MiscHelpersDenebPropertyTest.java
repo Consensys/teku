@@ -65,7 +65,7 @@ public class MiscHelpersDenebPropertyTest {
   @AddLifecycleHook(KzgResolver.class)
   @Property(tries = 100)
   void fuzzVerifyBlobKzgProof(
-      final KZG kzg, @ForAll(supplier = BlobSidecarSupplier.class) BlobSidecar blobSidecar) {
+      final KZG kzg, @ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecar blobSidecar) {
     try {
       miscHelpers.verifyBlobKzgProof(kzg, blobSidecar);
     } catch (Exception e) {

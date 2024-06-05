@@ -45,7 +45,7 @@ class VersionProviderTest {
   }
 
   @Test
-  void getCommitHashIsEmpty_whenGitCommitIdPropertyDoesNotExist(@TempDir Path tempDir)
+  void getCommitHashIsEmpty_whenGitCommitIdPropertyDoesNotExist(@TempDir final Path tempDir)
       throws IOException {
     final Path gitPropertiesFile = tempDir.resolve("git.properties");
 

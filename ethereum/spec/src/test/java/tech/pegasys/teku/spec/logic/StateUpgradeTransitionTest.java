@@ -64,7 +64,7 @@ public class StateUpgradeTransitionTest {
   private Class<? extends BeaconState> afterBeaconStateClass;
 
   @BeforeEach
-  public void setup(SpecContext specContext) {
+  public void setup(final SpecContext specContext) {
     final Spec spec =
         switch (specContext.getSpecMilestone()) {
           case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");

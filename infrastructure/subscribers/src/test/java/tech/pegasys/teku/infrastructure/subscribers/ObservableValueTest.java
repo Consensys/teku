@@ -32,7 +32,7 @@ public class ObservableValueTest {
       int val;
 
       @Override
-      public void onValueChanged(Integer newValue) {
+      public void onValueChanged(final Integer newValue) {
         if (newValue <= val) {
           Assertions.fail("newValue <= val: " + newValue + " <= " + val);
         }

@@ -91,7 +91,7 @@ public class Web3JExecutionEngineClientTest {
   Web3JExecutionEngineClient eeClient;
 
   @BeforeEach
-  void setUp(SpecContext specContext) throws IOException {
+  void setUp(final SpecContext specContext) throws IOException {
     jsonWriter = new StringWriter();
     jsonGenerator = new JsonFactory().createGenerator(jsonWriter);
     objectMapper = new ObjectMapper();

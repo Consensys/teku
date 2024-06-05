@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -63,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -141,13 +143,16 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
 
     final SendSignedBlockResult result =
-        okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(signedBeaconBlock);
+        okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(
+            signedBeaconBlock, BroadcastValidationLevel.GOSSIP);
 
     assertThat(result.isPublished()).isTrue();
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getBody().readByteArray())
         .isEqualTo(signedBeaconBlock.sszSerialize().toArrayUnsafe());
+    assertThat(recordedRequest.getRequestUrl().queryParameter(PARAM_BROADCAST_VALIDATION))
+        .isEqualTo("gossip");
     assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
   }
@@ -159,7 +164,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
 
     final SendSignedBlockResult result =
-        okHttpValidatorTypeDefClient.sendSignedBlock(signedBeaconBlock);
+        okHttpValidatorTypeDefClient.sendSignedBlock(
+            signedBeaconBlock, BroadcastValidationLevel.GOSSIP);
 
     assertThat(result.isPublished()).isTrue();
 

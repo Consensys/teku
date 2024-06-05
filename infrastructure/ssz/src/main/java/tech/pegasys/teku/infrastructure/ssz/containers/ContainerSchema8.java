@@ -45,15 +45,15 @@ public abstract class ContainerSchema8<
           V6 extends SszData,
           V7 extends SszData>
       ContainerSchema8<C, V0, V1, V2, V3, V4, V5, V6, V7> create(
-          SszSchema<V0> fieldSchema0,
-          SszSchema<V1> fieldSchema1,
-          SszSchema<V2> fieldSchema2,
-          SszSchema<V3> fieldSchema3,
-          SszSchema<V4> fieldSchema4,
-          SszSchema<V5> fieldSchema5,
-          SszSchema<V6> fieldSchema6,
-          SszSchema<V7> fieldSchema7,
-          BiFunction<ContainerSchema8<C, V0, V1, V2, V3, V4, V5, V6, V7>, TreeNode, C>
+          final SszSchema<V0> fieldSchema0,
+          final SszSchema<V1> fieldSchema1,
+          final SszSchema<V2> fieldSchema2,
+          final SszSchema<V3> fieldSchema3,
+          final SszSchema<V4> fieldSchema4,
+          final SszSchema<V5> fieldSchema5,
+          final SszSchema<V6> fieldSchema6,
+          final SszSchema<V7> fieldSchema7,
+          final BiFunction<ContainerSchema8<C, V0, V1, V2, V3, V4, V5, V6, V7>, TreeNode, C>
               instanceCtor) {
     return new ContainerSchema8<>(
         fieldSchema0,
@@ -65,21 +65,21 @@ public abstract class ContainerSchema8<
         fieldSchema6,
         fieldSchema7) {
       @Override
-      public C createFromBackingNode(TreeNode node) {
+      public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
       }
     };
   }
 
   protected ContainerSchema8(
-      SszSchema<V0> fieldSchema0,
-      SszSchema<V1> fieldSchema1,
-      SszSchema<V2> fieldSchema2,
-      SszSchema<V3> fieldSchema3,
-      SszSchema<V4> fieldSchema4,
-      SszSchema<V5> fieldSchema5,
-      SszSchema<V6> fieldSchema6,
-      SszSchema<V7> fieldSchema7) {
+      final SszSchema<V0> fieldSchema0,
+      final SszSchema<V1> fieldSchema1,
+      final SszSchema<V2> fieldSchema2,
+      final SszSchema<V3> fieldSchema3,
+      final SszSchema<V4> fieldSchema4,
+      final SszSchema<V5> fieldSchema5,
+      final SszSchema<V6> fieldSchema6,
+      final SszSchema<V7> fieldSchema7) {
 
     super(
         List.of(
@@ -94,15 +94,15 @@ public abstract class ContainerSchema8<
   }
 
   protected ContainerSchema8(
-      String containerName,
-      NamedSchema<V0> fieldNamedSchema0,
-      NamedSchema<V1> fieldNamedSchema1,
-      NamedSchema<V2> fieldNamedSchema2,
-      NamedSchema<V3> fieldNamedSchema3,
-      NamedSchema<V4> fieldNamedSchema4,
-      NamedSchema<V5> fieldNamedSchema5,
-      NamedSchema<V6> fieldNamedSchema6,
-      NamedSchema<V7> fieldNamedSchema7) {
+      final String containerName,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V3> fieldNamedSchema3,
+      final NamedSchema<V4> fieldNamedSchema4,
+      final NamedSchema<V5> fieldNamedSchema5,
+      final NamedSchema<V6> fieldNamedSchema6,
+      final NamedSchema<V7> fieldNamedSchema7) {
 
     super(
         containerName,
