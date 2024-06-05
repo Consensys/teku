@@ -36,6 +36,7 @@ public class ValidatorNodeServiceController extends ServiceController {
             serviceConfig,
             tekuConfig.validatorClient(),
             new DoppelgangerDetectionShutDown(),
-            maybeValidatorSlashedAction));
+            maybeValidatorSlashedAction,
+            true));
   }
 }
