@@ -16,3 +16,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added rest api endpoint `/teku/v1/beacon/state/finalized/slot/before/{slot}` to return most recent stored state at or before a specified slot.
 
 ### Bug Fixes
+- Fixed performance degradation introduced in 24.4.0 regarding archive state retrieval time.
