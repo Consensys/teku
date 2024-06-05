@@ -50,7 +50,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void shouldFailWithNoValidatorKeysSourceProvided() throws Exception {
+  void shouldFailWithNoValidatorKeysSourceProvidedOnValidatorClient() throws Exception {
     final TekuBeaconNode beaconNode = createTekuBeaconNode();
 
     final TekuValidatorNode validatorClient =
@@ -155,7 +155,6 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnValidatorClient() throws Exception {
-    //////////////////
     final TekuBeaconNode beaconNode = createTekuBeaconNode();
 
     final TekuValidatorNode validatorClient =
