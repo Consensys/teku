@@ -17,13 +17,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.CONSENSUS_FAILURE;
-import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.EQUIVOCATION_FAILURE;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.GOSSIP_FAILURE;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_ALREADY_SEEN;
@@ -55,6 +57,32 @@ public class BlockBroadcastValidatorTest {
   private BlockBroadcastValidator blockBroadcastValidator;
 
   final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
+
+  @Test
+  public void shouldReturnSuccessWhenValidationIsEquivocationAndBlockIsNotEquivocating() {
+    when(blockGossipValidator.performBlockEquivocationCheck(block))
+        .thenReturn(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
+
+    prepareBlockBroadcastValidator(EQUIVOCATION);
+
+    assertThat(blockBroadcastValidator.getResult())
+        .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
+    verify(blockGossipValidator).performBlockEquivocationCheck(block);
+    verifyNoMoreInteractions(blockGossipValidator);
+  }
+
+  @Test
+  public void shouldReturnEquivocationFailureWhenValidationIsEquivocationAndBlockIsEquivocating() {
+    when(blockGossipValidator.performBlockEquivocationCheck(block))
+        .thenReturn(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
+
+    prepareBlockBroadcastValidator(EQUIVOCATION);
+
+    assertThat(blockBroadcastValidator.getResult())
+        .isCompletedWithValueMatching(result -> result.equals(EQUIVOCATION_FAILURE));
+    verify(blockGossipValidator).performBlockEquivocationCheck(block);
+    verifyNoMoreInteractions(blockGossipValidator);
+  }
 
   @Test
   public void shouldReturnSuccessWhenValidationIsGossipAndGossipValidationReturnsAccept() {
@@ -109,10 +137,19 @@ public class BlockBroadcastValidatorTest {
 
     if (broadcastValidation == NOT_REQUIRED) {
       prepareBlockBroadcastValidator(broadcastValidation);
-
       assertThat(blockBroadcastValidator.getResult())
           .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
-      verifyNoMoreInteractions(blockGossipValidator);
+      verifyNoInteractions(blockGossipValidator);
+      return;
+    }
+
+    if (broadcastValidation == EQUIVOCATION) {
+      when(blockGossipValidator.performBlockEquivocationCheck(block))
+          .thenReturn(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
+      prepareBlockBroadcastValidator(broadcastValidation);
+      assertThat(blockBroadcastValidator.getResult())
+          .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
+      verify(blockGossipValidator).performBlockEquivocationCheck(block);
       return;
     }
 
@@ -193,7 +230,7 @@ public class BlockBroadcastValidatorTest {
             result -> {
               if (equivocationCheckResult.equals(
                   EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER)) {
-                return result.equals(FINAL_EQUIVOCATION_FAILURE);
+                return result.equals(EQUIVOCATION_FAILURE);
               }
               return result.equals(SUCCESS);
             });
