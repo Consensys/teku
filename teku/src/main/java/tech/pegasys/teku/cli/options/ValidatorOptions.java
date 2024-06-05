@@ -146,20 +146,6 @@ public class ValidatorOptions {
   private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
 
   @Option(
-      names = {"--Xlocally-created-blocks-validation-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description =
-          """
-             Enable gossip validation when publishing a block which has been created locally.
-             This is only applicable when "gossip" broadcast validation level has been requested.""",
-      hidden = true,
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean locallyCreatedBlocksValidationEnabled =
-      ValidatorConfig.DEFAULT_LOCALLY_CREATED_BLOCKS_VALIDATION_ENABLED;
-
-  @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable terminating the process if no validator keys are found during startup",
@@ -208,7 +194,6 @@ public class ValidatorOptions {
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .executorThreads(executorThreads)
                 .blockV3enabled(blockV3Enabled)
-                .locallyCreatedBlocksValidationEnabled(locallyCreatedBlocksValidationEnabled)
                 .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
                 .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed));
     validatorProposerOptions.configure(builder);

@@ -33,6 +33,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
@@ -216,8 +217,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory,
-            false);
+            blockProductionPerformanceFactory);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
@@ -471,8 +471,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory,
-            false);
+            blockProductionPerformanceFactory);
     // Best state is still in Phase0
     final BeaconState state =
         dataStructureUtil.stateBuilderPhase0().slot(previousEpochStartSlot.minus(1)).build();
@@ -896,7 +895,8 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedBlock_shouldNotRequireValidationIfBlockIsLocallyCreated() {
+  public void
+      sendSignedBlock_shouldOnlyDoEquivocationValidationIfBlockIsLocallyCreatedAngGossipValidationRequested() {
     // creating a block first in order to cache the block root
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
@@ -940,8 +940,8 @@ class ValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
 
-    // for locally created blocks, the validation level should have been changed to NOT_REQUIRED
-    verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
+    // for locally created blocks, the validation level should have been changed to EQUIVOCATION
+    verify(blockImportChannel).importBlock(block, EQUIVOCATION);
   }
 
   @Test
@@ -1381,8 +1381,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory,
-            false);
+            blockProductionPerformanceFactory);
 
     // BlobSidecar builder
     doAnswer(

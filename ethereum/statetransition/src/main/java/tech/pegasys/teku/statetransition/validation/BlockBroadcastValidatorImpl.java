@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.CONSENSUS_FAILURE;
-import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.EQUIVOCATION_FAILURE;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.GOSSIP_FAILURE;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
 
@@ -59,10 +60,10 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   @Override
   public void attachToBlockImport(final SafeFuture<BlockImportResult> blockImportResult) {
     switch (broadcastValidationLevel) {
-      case NOT_REQUIRED, GOSSIP:
-        // GOSSIP validation isn't dependent on block import result,
+      case NOT_REQUIRED, EQUIVOCATION, GOSSIP:
+        // EQUIVOCATION/GOSSIP validation isn't dependent on block import result,
         // so not propagating exceptions to consensusValidationSuccessResult allow blocks\blobs
-        // to be published even in case block import fails before gossip validation completes
+        // to be published even in case block import fails before the validation completes
         return;
       case CONSENSUS, CONSENSUS_AND_EQUIVOCATION:
         // Any successful block import will be considered as a consensus validation success, but
@@ -87,7 +88,20 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
       return;
     }
 
-    // GOSSIP only validation
+    // EQUIVOCATION only validation
+    if (broadcastValidationLevel == EQUIVOCATION) {
+      final BroadcastValidationResult validationResult;
+      if (isEquivocatingBlock(block)) {
+        validationResult = EQUIVOCATION_FAILURE;
+      } else {
+        validationResult = SUCCESS;
+      }
+      broadcastValidationResult.complete(validationResult);
+      consensusValidationSuccessResult.cancel(true);
+      return;
+    }
+
+    // GOSSIP only validation (includes EQUIVOCATION validation)
     SafeFuture<BroadcastValidationResult> validationPipeline =
         blockGossipValidator
             .validate(block, true)
@@ -128,7 +142,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
       return;
     }
 
-    // GOSSIP, CONSENSUS and additional EQUIVOCATION validation
+    // GOSSIP, CONSENSUS and final EQUIVOCATION validation
     validationPipeline
         .thenApply(
             broadcastValidationResult -> {
@@ -138,14 +152,18 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
               }
 
               // perform final equivocation validation
-              if (blockGossipValidator
-                  .performBlockEquivocationCheck(block)
-                  .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER)) {
-                return FINAL_EQUIVOCATION_FAILURE;
+              if (isEquivocatingBlock(block)) {
+                return EQUIVOCATION_FAILURE;
               }
 
               return SUCCESS;
             })
         .propagateTo(broadcastValidationResult);
+  }
+
+  private boolean isEquivocatingBlock(final SignedBeaconBlock block) {
+    return blockGossipValidator
+        .performBlockEquivocationCheck(block)
+        .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
   }
 }

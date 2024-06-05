@@ -21,8 +21,8 @@ import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTEST
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
-import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
@@ -143,7 +143,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
-  private final boolean locallyCreatedBlocksValidationEnabled;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
@@ -170,8 +169,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
-          blockProductionAndPublishingPerformanceFactory,
-      final boolean locallyCreatedBlocksValidationEnabled) {
+          blockProductionAndPublishingPerformanceFactory) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -191,7 +189,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
-    this.locallyCreatedBlocksValidationEnabled = locallyCreatedBlocksValidationEnabled;
     this.blockPublisher =
         new MilestoneBasedBlockPublisher(
             spec,
@@ -652,10 +649,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
-            !locallyCreatedBlocksValidationEnabled
-                    && broadcastValidationLevel == GOSSIP
-                    && isLocallyCreatedBlock(maybeBlindedBlockContainer)
-                ? NOT_REQUIRED
+            // do only EQUIVOCATION validation when GOSSIP validation has been requested and the
+            // block has been locally created
+            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(maybeBlindedBlockContainer)
+                ? EQUIVOCATION
                 : broadcastValidationLevel,
             blockPublishingPerformance)
         .exceptionally(
