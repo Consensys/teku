@@ -84,6 +84,10 @@ public class EventChannels {
     return subscribeMultithreaded(channelInterface, subscriber, 1);
   }
 
+  public <T extends ChannelInterface> EventChannelSubscriber<T> createSubscriber(final Class<T> channelInterface) {
+    return createSubscriberMultithreaded(channelInterface, 1);
+  }
+
   /**
    * Adds a subscriber to this channel where events are handled by multiple threads concurrently.
    *
@@ -99,9 +103,16 @@ public class EventChannels {
    */
   public <T extends ChannelInterface> EventChannels subscribeMultithreaded(
       final Class<T> channelInterface, final T subscriber, final int requestedParallelism) {
-    getChannel(channelInterface).subscribeMultithreaded(subscriber, requestedParallelism);
+    createSubscriberMultithreaded(channelInterface,requestedParallelism).subscribe(subscriber);
     return this;
   }
+
+  public <T extends ChannelInterface> EventChannelSubscriber<T> createSubscriberMultithreaded(
+      final Class<T> channelInterface, final int requestedParallelism) {
+    return listener ->
+        getChannel(channelInterface).subscribeMultithreaded(listener, requestedParallelism);
+  }
+
 
   @SuppressWarnings("unchecked")
   private <T extends ChannelInterface> EventChannel<T> getChannel(final Class<T> channelInterface) {
