@@ -91,6 +91,11 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   @Override
+  public int getActiveFieldCount() {
+    return childrenActiveSchemas.size();
+  }
+
+  @Override
   public boolean isActiveField(final int index) {
     checkArgument(
         index < activeFieldsBitvectorSchema.getMaxLength(), "Wrong number of filed values");

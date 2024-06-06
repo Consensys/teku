@@ -52,7 +52,7 @@ public abstract class AbstractSszImmutableStableContainer extends SszStableConta
         schema.createTreeFromFieldValues(Arrays.asList(memberValues)),
         createCache(memberValues));
     checkArgument(
-        memberValues.length == this.getSchema().getMaxLength(),
+        memberValues.length == schema.getActiveFieldCount(),
         "Wrong number of member values: %s",
         memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {

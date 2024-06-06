@@ -20,4 +20,6 @@ public interface SszStableContainerSchema<C extends SszContainer> extends SszCon
   boolean isActiveField(int index);
 
   SszBitvector getActiveFields();
+
+  int getActiveFieldCount();
 }
