@@ -25,10 +25,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStable
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.StableBeaconState;
 
-public abstract class AbstractBeaconStateStableSchema<
+public abstract class AbstractBeaconStateStableProfileSchema<
         T extends StableBeaconState, TMutable extends MutableBeaconState>
     extends AbstractSszStableProfileSchema<T> implements BeaconStateStableSchema<T, TMutable> {
-  protected AbstractBeaconStateStableSchema(
+  protected AbstractBeaconStateStableProfileSchema(
       final String name, final List<SszField> allFields, final int maxFieldCount) {
     super(
         name,
@@ -38,7 +38,7 @@ public abstract class AbstractBeaconStateStableSchema<
     validateFields(allFields);
   }
 
-  protected AbstractBeaconStateStableSchema(
+  protected AbstractBeaconStateStableProfileSchema(
       final String name,
       final List<SszField> uniqueFields,
       final SpecConfig specConfig,
