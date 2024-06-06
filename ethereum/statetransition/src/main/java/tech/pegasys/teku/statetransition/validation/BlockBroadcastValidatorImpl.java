@@ -142,7 +142,7 @@ class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
       return;
     }
 
-    // GOSSIP, CONSENSUS and one more EQUIVOCATION validation at the end
+    // GOSSIP, CONSENSUS and final EQUIVOCATION validation at the end
     validationPipeline
         .thenApply(
             broadcastValidationResult -> {
