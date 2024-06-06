@@ -101,20 +101,16 @@ public class BlockPruner extends Service {
       LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;
     }
-    LOG.info("Initiating pruning of finalized blocks prior to slot {}.", earliestSlotToKeep);
+    LOG.debug("Initiating pruning of finalized blocks prior to slot {}.", earliestSlotToKeep);
     try {
       final UInt64 lastPrunedSlot =
           database.pruneFinalizedBlocks(earliestSlotToKeep.decrement(), pruneLimit);
-      if (lastPrunedSlot.equals(earliestEpochToKeep.decrement())) {
-        LOG.info("Successfully pruned finalized blocks prior to slot {}.", earliestSlotToKeep);
-      } else {
-        LOG.info(
-            "Pruned {} finalized blocks prior to slot {}, last pruned slot was {}.",
-            pruneLimit,
-            earliestSlotToKeep,
-            lastPrunedSlot);
-      }
-    } catch (ShuttingDownException | RejectedExecutionException ex) {
+      LOG.debug(
+          "Pruned {} finalized blocks prior to slot {}, last pruned slot was {}.",
+          pruneLimit,
+          earliestSlotToKeep,
+          lastPrunedSlot);
+    } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
   }
