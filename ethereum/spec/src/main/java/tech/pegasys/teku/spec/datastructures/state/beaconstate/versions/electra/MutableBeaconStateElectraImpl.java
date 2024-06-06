@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStableSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
@@ -41,8 +40,10 @@ public class MutableBeaconStateElectraImpl
   }
 
   @Override
-  public BeaconStateStableSchema<? extends BeaconState, ? extends MutableBeaconState> getBeaconStateSchema() {
-    return (BeaconStateStableSchema<? extends BeaconState, ? extends MutableBeaconState> )super.getBeaconStateSchema();
+  public BeaconStateStableSchema<? extends BeaconState, ? extends MutableBeaconState>
+      getBeaconStateSchema() {
+    return (BeaconStateStableSchema<? extends BeaconState, ? extends MutableBeaconState>)
+        super.getBeaconStateSchema();
   }
 
   @Override

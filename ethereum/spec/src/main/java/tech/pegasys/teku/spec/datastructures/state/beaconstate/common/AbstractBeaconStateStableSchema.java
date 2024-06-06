@@ -28,18 +28,25 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.StableBeaconState
 public abstract class AbstractBeaconStateStableSchema<
         T extends StableBeaconState, TMutable extends MutableBeaconState>
     extends AbstractSszStableContainerSchema<T> implements BeaconStateStableSchema<T, TMutable> {
-  protected AbstractBeaconStateStableSchema(final String name, final List<SszField> allFields, final int maxFieldCount) {
+  protected AbstractBeaconStateStableSchema(
+      final String name, final List<SszField> allFields, final int maxFieldCount) {
     super(
         name,
         continuousActiveNamedSchemas(
             allFields.stream().map(f -> namedSchema(f.getName(), f.getSchema().get())).toList()),
-            maxFieldCount);
+        maxFieldCount);
     validateFields(allFields);
   }
 
   protected AbstractBeaconStateStableSchema(
-      final String name, final List<SszField> uniqueFields, final SpecConfig specConfig, final int maxFieldCount) {
-    this(name, combineFields(BeaconStateFields.getCommonFields(specConfig), uniqueFields), maxFieldCount);
+      final String name,
+      final List<SszField> uniqueFields,
+      final SpecConfig specConfig,
+      final int maxFieldCount) {
+    this(
+        name,
+        combineFields(BeaconStateFields.getCommonFields(specConfig), uniqueFields),
+        maxFieldCount);
   }
 
   private static List<SszField> combineFields(

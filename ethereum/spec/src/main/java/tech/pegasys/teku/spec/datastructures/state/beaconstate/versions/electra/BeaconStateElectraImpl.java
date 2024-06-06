@@ -63,9 +63,4 @@ public class BeaconStateElectraImpl extends AbstractStableBeaconState<MutableBea
   protected void describeCustomFields(final MoreObjects.ToStringHelper stringBuilder) {
     BeaconStateElectra.describeCustomElectraFields(stringBuilder, this);
   }
-
-  @Override
-  public boolean isFieldActive(final int index) {
-    return false;
-  }
 }

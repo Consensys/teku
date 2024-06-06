@@ -15,69 +15,95 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Suppliers;
-import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
+import com.google.common.base.Preconditions;
+import java.util.Arrays;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
+import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public abstract class AbstractSszImmutableStableContainer extends AbstractSszImmutableContainer
-    implements SszStableContainer {
-  private final Supplier<Bytes32> hashTreeRootSupplier =
-      Suppliers.memoize(
-          () ->
-              Hash.getSha256Instance()
-                  .wrappedDigest(super.hashTreeRoot(), getActiveFields().hashTreeRoot()));
-
-  public AbstractSszImmutableStableContainer(
-      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> type) {
-    super(type);
+public abstract class AbstractSszImmutableStableContainer extends SszStableContainerImpl {
+  protected AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema) {
+    this(schema, schema.getDefaultTree());
   }
 
-  public AbstractSszImmutableStableContainer(
-      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> type,
+  protected AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema,
       final TreeNode backingNode) {
-    super(type, backingNode);
+    super(schema, backingNode);
   }
 
   public AbstractSszImmutableStableContainer(
-      final SszCompositeSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
+      final SszStableContainerSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
-  public AbstractSszImmutableStableContainer(
+  protected AbstractSszImmutableStableContainer(
       final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema,
       final SszData... memberValues) {
-    super(schema, memberValues);
+    super(
+        schema,
+        schema.createTreeFromFieldValues(Arrays.asList(memberValues)),
+        createCache(memberValues));
+    checkArgument(
+        memberValues.length == this.getSchema().getMaxLength(),
+        "Wrong number of member values: %s",
+        memberValues.length);
+    for (int i = 0; i < memberValues.length; i++) {
+      Preconditions.checkArgument(
+          memberValues[i].getSchema().equals(schema.getChildSchema(i)),
+          "Wrong child schema at index %s. Expected: %s, was %s",
+          i,
+          schema.getChildSchema(i),
+          memberValues[i].getSchema());
+    }
+  }
+
+  private static IntCache<SszData> createCache(final SszData... memberValues) {
+    ArrayIntCache<SszData> cache = new ArrayIntCache<>(memberValues.length);
+    for (int i = 0; i < memberValues.length; i++) {
+      cache.invalidateWithNewValue(i, memberValues[i]);
+    }
+    return cache;
   }
 
   @Override
-  public final SszData get(final int index) {
-    checkArgument(isFieldActive(index), "Field is not active");
-    return super.get(index);
+  public SszMutableContainer createWritableCopy() {
+    throw new UnsupportedOperationException(
+        "This container doesn't support mutable structure: " + getClass().getName());
   }
 
   @Override
-  public boolean isFieldActive(final int index) {
-    return getStableSchema().isActiveField(index);
+  public boolean isWritableSupported() {
+    return false;
   }
 
   @Override
-  public Bytes32 hashTreeRoot() {
-    return hashTreeRootSupplier.get();
+  public boolean equals(final Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof AbstractSszImmutableStableContainer)) {
+      return false;
+    }
+
+    AbstractSszImmutableStableContainer other = (AbstractSszImmutableStableContainer) obj;
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
-  private SszBitvector getActiveFields() {
-    return getStableSchema().getActiveFields();
-  }
-
-  private SszStableContainerSchema<?> getStableSchema() {
-    return ((SszStableContainerSchema<?>) super.getSchema());
+  @Override
+  public int hashCode() {
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 }

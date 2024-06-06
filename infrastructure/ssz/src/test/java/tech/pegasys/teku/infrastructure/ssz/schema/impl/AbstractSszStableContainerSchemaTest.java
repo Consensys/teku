@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszImmutableStableContainer;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
@@ -47,11 +47,10 @@ public class AbstractSszStableContainerSchemaTest {
           2,
           namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
 
-  static class StableContainer extends AbstractSszImmutableStableContainer {
+  static class StableContainer extends SszStableContainerImpl {
 
     public StableContainer(
-        SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> type,
-        TreeNode backingNode) {
+        SszStableContainerSchema<? extends SszStableContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
     }
   }
