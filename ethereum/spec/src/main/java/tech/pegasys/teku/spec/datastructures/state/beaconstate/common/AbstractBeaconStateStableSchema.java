@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStableSchema;
@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.StableBeaconState
 
 public abstract class AbstractBeaconStateStableSchema<
         T extends StableBeaconState, TMutable extends MutableBeaconState>
-    extends AbstractSszStableContainerSchema<T> implements BeaconStateStableSchema<T, TMutable> {
+    extends AbstractSszStableProfileSchema<T> implements BeaconStateStableSchema<T, TMutable> {
   protected AbstractBeaconStateStableSchema(
       final String name, final List<SszField> allFields, final int maxFieldCount) {
     super(
