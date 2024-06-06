@@ -207,7 +207,7 @@ public class SyncingNodeManager {
             BlockBlobSidecarsTrackersPool.NOOP,
             syncService,
             fetchBlockTaskFactory);
-    recentBlocksFetcher.subscribeBlockFetched(block -> blockManager.importBlock(block));
+    recentBlocksFetcher.subscribeBlockFetched(blockManager::importBlock);
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
 
     recentBlocksFetcher.start().join();

@@ -81,7 +81,7 @@ class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   }
 
   private void buildValidationPipeline(final SignedBeaconBlock block) {
-    // NOT_REQUIRED should never be specified but let's cover the case for safety
+    // NOT_REQUIRED should use the NOOP implementation but let's cover the case for safety
     if (broadcastValidationLevel == NOT_REQUIRED) {
       broadcastValidationResult.complete(SUCCESS);
       consensusValidationSuccessResult.cancel(true);
