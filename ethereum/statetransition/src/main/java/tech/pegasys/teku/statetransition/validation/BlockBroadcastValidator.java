@@ -58,7 +58,7 @@ public interface BlockBroadcastValidator {
     SUCCESS,
     GOSSIP_FAILURE,
     CONSENSUS_FAILURE,
-    FINAL_EQUIVOCATION_FAILURE;
+    EQUIVOCATION_FAILURE;
 
     public boolean isFailure() {
       return this != SUCCESS;

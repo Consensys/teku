@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
@@ -138,8 +139,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return postAttesterDutiesRequest.postAttesterDuties(epoch, validatorIndices);
   }
 
-  public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
-    return sendSignedBlockRequest.sendSignedBlock(blockContainer);
+  public SendSignedBlockResult sendSignedBlock(
+      final SignedBlockContainer blockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
+    return sendSignedBlockRequest.sendSignedBlock(blockContainer, broadcastValidationLevel);
   }
 
   @Deprecated
