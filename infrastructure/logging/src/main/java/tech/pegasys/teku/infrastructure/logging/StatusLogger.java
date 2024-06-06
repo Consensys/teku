@@ -241,12 +241,6 @@ public class StatusLogger {
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true. Shutting down...");
   }
 
-  public void exitWhenNoValidatorKeysSourceProvided() {
-    log.fatal(
-        "No validator keys source provided, should provide local or remote keys otherwise enable the key-manager"
-            + " api to start the validator client. Shutting down...");
-  }
-
   public void validatorSlashedAlert(final Set<String> slashedValidatorPublicKeys) {
     log.fatal(
         "Validator slashing detection is enabled and validator(s) with public key(s) {} detected as slashed. "

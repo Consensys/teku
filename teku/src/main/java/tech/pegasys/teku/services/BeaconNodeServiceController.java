@@ -88,8 +88,7 @@ public class BeaconNodeServiceController extends ServiceController {
             serviceConfig,
             tekuConfig.validatorClient(),
             new DoppelgangerDetectionShutDown(),
-            maybeValidatorSlashedAction,
-            false));
+            maybeValidatorSlashedAction));
   }
 
   private Optional<PowchainService> powchainService(

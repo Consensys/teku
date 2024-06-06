@@ -84,22 +84,31 @@ public class ValidatorClientCommandTest {
         getMockBeaconServerEndpoint(failoverMockBeaconServer);
 
     argsNetworkOptDefault =
-        new String[] {"vc", "--beacon-node-api-endpoint", mockBeaconServerEndpoint};
+        new String[] {
+          "vc", "--validator-keys=keys:pass", "--beacon-node-api-endpoint", mockBeaconServerEndpoint
+        };
     argsNetworkOptAuto =
         new String[] {
-          "vc", "--network", "auto", "--beacon-node-api-endpoint", mockBeaconServerEndpoint
+          "vc",
+          "--network",
+          "auto",
+          "--validator-keys=keys:pass",
+          "--beacon-node-api-endpoint",
+          mockBeaconServerEndpoint
         };
     argsNetworkOptAutoWithFailover =
         new String[] {
           "vc",
           "--network",
           "auto",
+          "--validator-keys=keys:pass",
           "--beacon-node-api-endpoints",
           mockBeaconServerEndpoint + "," + failoverMockBeaconServerEndpoint
         };
     argsNetworkOptAutoInConfig =
         new String[] {
           "vc",
+          "--validator-keys=keys:pass",
           "--config-file",
           networkAutoConfigFile,
           "--beacon-node-api-endpoint",

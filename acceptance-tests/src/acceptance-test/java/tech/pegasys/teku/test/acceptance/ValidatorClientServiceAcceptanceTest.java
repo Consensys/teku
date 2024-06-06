@@ -62,7 +62,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
     validatorClient.startWithFailure(
         "No validator keys source provided, should provide local or remote keys otherwise enable the key-manager"
-            + " api to start the validator client. Shutting down...");
+            + " api to start the validator client");
     beaconNode.stop();
   }
 

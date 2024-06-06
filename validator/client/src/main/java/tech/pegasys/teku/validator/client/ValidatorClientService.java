@@ -142,12 +142,9 @@ public class ValidatorClientService extends Service {
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
       final SlashingRiskAction doppelgangerDetectionAction,
-      final Optional<SlashingRiskAction> maybeValidatorSlashedAction,
-      final boolean validatorOnly) {
+      final Optional<SlashingRiskAction> maybeValidatorSlashedAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
-
-    checkValidatorKeysConfig(config, validatorOnly);
 
     final AsyncRunner asyncRunner =
         services.createAsyncRunnerWithMaxQueueSize(
@@ -309,23 +306,6 @@ public class ValidatorClientService extends Service {
         .always(() -> LOG.trace("Finished starting validator client service."));
 
     return validatorClientService;
-  }
-
-  private static void checkValidatorKeysConfig(
-      final ValidatorClientConfiguration config, final boolean validatorOnly) {
-    if (validatorOnly && !config.getInteropConfig().isInteropEnabled()) {
-      final ValidatorConfig validatorConfig = config.getValidatorConfig();
-      final boolean localValidatorKeysProvided =
-          validatorConfig.getValidatorKeys() != null
-              && !validatorConfig.getValidatorKeys().isEmpty();
-      final boolean validatorRestApiEnabled = config.getValidatorRestApiConfig().isRestApiEnabled();
-      final boolean externalSignerUrlProvided =
-          validatorConfig.getValidatorExternalSignerUrl() != null;
-      if (!localValidatorKeysProvided && !validatorRestApiEnabled && !externalSignerUrlProvided) {
-        STATUS_LOG.exitWhenNoValidatorKeysSourceProvided();
-        System.exit(FATAL_EXIT_CODE);
-      }
-    }
   }
 
   private static void checkNoKeysLoaded(
