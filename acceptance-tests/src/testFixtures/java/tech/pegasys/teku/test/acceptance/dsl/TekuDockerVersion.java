@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 public enum TekuDockerVersion {
   LOCAL_BUILD("develop"),
   LAST_RELEASE("latest"),
-  V23_9_0("23.9.0");
+  V24_2_0("24.2.0");
 
   private final String version;
 

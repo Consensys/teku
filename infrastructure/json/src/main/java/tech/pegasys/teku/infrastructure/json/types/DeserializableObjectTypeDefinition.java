@@ -66,7 +66,7 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
     }
     final Set<String> presentFields = new HashSet<>();
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
-      String fieldName = p.getCurrentName();
+      String fieldName = p.currentName();
       p.nextToken();
       final DeserializableFieldDefinition<TObject, TBuilder> fieldDefinition =
           deserializableFields.get(fieldName);

@@ -262,12 +262,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    // we are not going to use V2 to send blocks. If V1 will be deprecated we won't specify a
-    // validation level in any case
-    if (broadcastValidationLevel != BroadcastValidationLevel.NOT_REQUIRED) {
-      LOG.warn("broadcastValidationLevel has been requested but will be ignored.");
-    }
-    return sendRequest(() -> typeDefClient.sendSignedBlock(blockContainer));
+    return sendRequest(
+        () -> typeDefClient.sendSignedBlock(blockContainer, broadcastValidationLevel));
   }
 
   @Override
