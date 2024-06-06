@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,25 +93,6 @@ public class ValidatorIndexCacheTest {
     // last cached index is 31, so need to cache 32 more validators (final index - 63)
     verify(cache, times(32)).invalidateWithNewValue(any(), any());
     assertThat(index).hasValue(latestFinalizedIndex);
-
-    assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(latestFinalizedIndex);
-  }
-
-  @Test
-  public void shouldScanNonFinalizedStateButDoNotCacheIfIndexNotFoundInFinalizedState() {
-    final SszList<Validator> validators = state.getValidators();
-    final int latestFinalizedIndex = 31;
-    final ValidatorIndexCache validatorIndexCache =
-        new ValidatorIndexCache(cache, latestFinalizedIndex, latestFinalizedIndex);
-
-    when(cache.getCached(any())).thenReturn(Optional.empty());
-
-    final Optional<Integer> index =
-        validatorIndexCache.getValidatorIndex(
-            state, validators.get(NUMBER_OF_VALIDATORS - 1).getPublicKey());
-
-    verify(cache, never()).invalidateWithNewValue(any(), any());
-    assertThat(index).hasValue(NUMBER_OF_VALIDATORS - 1);
 
     assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(latestFinalizedIndex);
   }

@@ -19,3 +19,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
   endpoints. In the cases where the block has been produced in the same beacon node, only equivocation validation will be done instead of the entire gossip validation.
 
 ### Bug Fixes
+- Fixed performance degradation introduced in 24.4.0 regarding archive state retrieval time.
