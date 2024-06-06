@@ -54,11 +54,9 @@ public class BeaconStateSchemaElectra
   public static final int PENDING_PARTIAL_WITHDRAWALS_INDEX = 35;
   public static final int PENDING_CONSOLIDATIONS_INDEX = 36;
 
-  public static final int MAX_BEACON_STATE_FIELDS = 128;
-
   @VisibleForTesting
   BeaconStateSchemaElectra(final SpecConfig specConfig) {
-    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig, MAX_BEACON_STATE_FIELDS);
+    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig);
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {

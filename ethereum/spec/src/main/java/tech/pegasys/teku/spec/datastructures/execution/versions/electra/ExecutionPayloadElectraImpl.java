@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container19;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema19;
+import tech.pegasys.teku.infrastructure.ssz.containers.StableProfile19;
+import tech.pegasys.teku.infrastructure.ssz.containers.StableProfileSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadElectraImpl
-    extends Container19<
+    extends StableProfile19<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -57,7 +57,7 @@ public class ExecutionPayloadElectraImpl
     implements ExecutionPayloadElectra {
 
   public ExecutionPayloadElectraImpl(
-      final ContainerSchema19<
+      final StableProfileSchema19<
               ExecutionPayloadElectraImpl,
               SszBytes32,
               SszByteVector,

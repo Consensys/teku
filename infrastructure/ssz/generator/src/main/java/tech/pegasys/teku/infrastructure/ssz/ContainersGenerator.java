@@ -31,6 +31,7 @@ public class ContainersGenerator {
   private final String containerTypeTemplateFile = "ContainerSchemaTemplate.java";
   private final String containerViewTemplateFile = "ContainerTemplate.java";
   private final String stableProfileTypeTemplateFile = "StableProfileSchemaTemplate.java";
+  private final String stableProfileViewTemplateFile = "StableProfileTemplate.java";
 
   public ContainersGenerator(final Path templateSourcePath, final Path destinationSourcePath) {
     templateSrcPath = templateSourcePath;
@@ -74,7 +75,7 @@ public class ContainersGenerator {
           "StableProfileSchema",
           "StableProfile",
           stableProfileTypeTemplateFile,
-          containerViewTemplateFile);
+          stableProfileViewTemplateFile);
     }
   }
 

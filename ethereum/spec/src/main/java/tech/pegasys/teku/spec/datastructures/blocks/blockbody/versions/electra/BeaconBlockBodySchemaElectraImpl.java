@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 
+import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_BEACON_BLOCK_BODY_FIELDS;
+
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
+import tech.pegasys.teku.infrastructure.ssz.containers.StableProfileSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -49,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class BeaconBlockBodySchemaElectraImpl
-    extends ContainerSchema13<
+    extends StableProfileSchema13<
         BeaconBlockBodyElectraImpl,
         SszSignature,
         Eth1Data,
@@ -95,7 +97,8 @@ public class BeaconBlockBodySchemaElectraImpl
         executionPayloadSchema,
         blsToExecutionChange,
         blobKzgCommitments,
-        consolidations);
+        consolidations,
+        MAX_BEACON_BLOCK_BODY_FIELDS);
   }
 
   public static BeaconBlockBodySchemaElectraImpl create(

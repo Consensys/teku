@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_BEACON_STATE_FIELDS;
 
 import java.util.Comparator;
 import java.util.List;
@@ -29,24 +30,18 @@ public abstract class AbstractBeaconStateStableProfileSchema<
         T extends StableBeaconState, TMutable extends MutableBeaconState>
     extends AbstractSszStableProfileSchema<T> implements BeaconStateStableSchema<T, TMutable> {
   protected AbstractBeaconStateStableProfileSchema(
-      final String name, final List<SszField> allFields, final int maxFieldCount) {
+      final String name, final List<SszField> allFields) {
     super(
         name,
         continuousActiveNamedSchemas(
             allFields.stream().map(f -> namedSchema(f.getName(), f.getSchema().get())).toList()),
-        maxFieldCount);
+        MAX_BEACON_STATE_FIELDS);
     validateFields(allFields);
   }
 
   protected AbstractBeaconStateStableProfileSchema(
-      final String name,
-      final List<SszField> uniqueFields,
-      final SpecConfig specConfig,
-      final int maxFieldCount) {
-    this(
-        name,
-        combineFields(BeaconStateFields.getCommonFields(specConfig), uniqueFields),
-        maxFieldCount);
+      final String name, final List<SszField> uniqueFields, final SpecConfig specConfig) {
+    this(name, combineFields(BeaconStateFields.getCommonFields(specConfig), uniqueFields));
   }
 
   private static List<SszField> combineFields(

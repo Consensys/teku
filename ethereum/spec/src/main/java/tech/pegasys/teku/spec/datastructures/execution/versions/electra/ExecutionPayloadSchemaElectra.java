@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_EXECUTION_PAYLOAD_FIELDS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
@@ -39,7 +40,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema19;
+import tech.pegasys.teku.infrastructure.ssz.containers.StableProfileSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -58,7 +59,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaElectra
-    extends ContainerSchema19<
+    extends StableProfileSchema19<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -116,7 +117,8 @@ public class ExecutionPayloadSchemaElectra
             WITHDRAWAL_REQUESTS,
             SszListSchema.create(
                 ExecutionLayerWithdrawalRequest.SSZ_SCHEMA,
-                specConfig.getMaxWithdrawalRequestsPerPayload())));
+                specConfig.getMaxWithdrawalRequestsPerPayload())),
+        MAX_EXECUTION_PAYLOAD_FIELDS);
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
