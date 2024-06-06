@@ -95,7 +95,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
-        .queryParam(SKIP_RANDAO_VERIFICATION_PARAMETER)
+        .queryParamAllowsEmpty(SKIP_RANDAO_VERIFICATION_PARAMETER)
         .queryParam(BUILDER_BOOST_FACTOR_PARAMETER)
         .response(
             SC_OK,
