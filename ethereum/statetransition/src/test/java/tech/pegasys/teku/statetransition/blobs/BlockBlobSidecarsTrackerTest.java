@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -404,7 +403,7 @@ public class BlockBlobSidecarsTrackerTest {
     blockBlobSidecarsTracker.setBlock(block);
 
     final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
-    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
+    when(blockImportChannel.importBlock(block))
         .thenReturn(
             SafeFuture.completedFuture(new BlockImportAndBroadcastValidationResults(null, null)));
 
@@ -417,7 +416,7 @@ public class BlockBlobSidecarsTrackerTest {
 
     assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
 
-    verify(blockImportChannel, times(1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockImportChannel, times(1)).importBlock(block);
   }
 
   private BlobSidecar createBlobSidecar(final UInt64 index) {

@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 
-public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
+class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   private final BlockGossipValidator blockGossipValidator;
   private final BroadcastValidationLevel broadcastValidationLevel;
   private final SafeFuture<Boolean> consensusValidationSuccessResult;
@@ -42,7 +42,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
     this.broadcastValidationResult = new SafeFuture<>();
   }
 
-  public static BlockBroadcastValidatorImpl create(
+  static BlockBroadcastValidatorImpl create(
       final SignedBeaconBlock block,
       final BlockGossipValidator blockGossipValidator,
       final BroadcastValidationLevel broadcastValidationLevel) {
@@ -81,7 +81,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   }
 
   private void buildValidationPipeline(final SignedBeaconBlock block) {
-    // validateBroadcast should not be called at all but let's cover the case for safety
+    // NOT_REQUIRED should never be specified but let's cover the case for safety
     if (broadcastValidationLevel == NOT_REQUIRED) {
       broadcastValidationResult.complete(SUCCESS);
       consensusValidationSuccessResult.cancel(true);
@@ -142,7 +142,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
       return;
     }
 
-    // GOSSIP, CONSENSUS and final EQUIVOCATION validation
+    // GOSSIP, CONSENSUS and one more EQUIVOCATION validation at the end
     validationPipeline
         .thenApply(
             broadcastValidationResult -> {
@@ -150,8 +150,6 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
                 // forward gossip or consensus validation failure
                 return broadcastValidationResult;
               }
-
-              // perform final equivocation validation
               if (isEquivocatingBlock(block)) {
                 return EQUIVOCATION_FAILURE;
               }
