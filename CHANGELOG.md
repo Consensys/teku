@@ -2,6 +2,8 @@
 
 ## Upcoming Breaking Changes
 
+- Next release will introduce a naming breaking change to some of the metrics due to a library upgrade. Revision 12 of the `Teku - Detailed` dashboard has been released and it is backward compatible. We recommend all users to upgrade their dashboard as soon as possible. Documentation with all metrics that have been renamed will be provided.
+
 ## Current Releases
 
 For information on changes in released versions of Teku, see
