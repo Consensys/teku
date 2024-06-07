@@ -60,27 +60,27 @@ public class BlockBroadcastValidatorTest {
 
   @Test
   public void shouldReturnSuccessWhenValidationIsEquivocationAndBlockIsNotEquivocating() {
-    when(blockGossipValidator.performBlockEquivocationCheck(block))
+    when(blockGossipValidator.performBlockEquivocationCheck(true, block))
         .thenReturn(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
 
     prepareBlockBroadcastValidator(EQUIVOCATION);
 
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
-    verify(blockGossipValidator).performBlockEquivocationCheck(block);
+    verify(blockGossipValidator).performBlockEquivocationCheck(true, block);
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
   @Test
   public void shouldReturnEquivocationFailureWhenValidationIsEquivocationAndBlockIsEquivocating() {
-    when(blockGossipValidator.performBlockEquivocationCheck(block))
+    when(blockGossipValidator.performBlockEquivocationCheck(true, block))
         .thenReturn(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
 
     prepareBlockBroadcastValidator(EQUIVOCATION);
 
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(EQUIVOCATION_FAILURE));
-    verify(blockGossipValidator).performBlockEquivocationCheck(block);
+    verify(blockGossipValidator).performBlockEquivocationCheck(true, block);
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
@@ -144,16 +144,16 @@ public class BlockBroadcastValidatorTest {
     }
 
     if (broadcastValidation == EQUIVOCATION) {
-      when(blockGossipValidator.performBlockEquivocationCheck(block))
+      when(blockGossipValidator.performBlockEquivocationCheck(true, block))
           .thenReturn(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
       prepareBlockBroadcastValidator(broadcastValidation);
       assertThat(blockBroadcastValidator.getResult())
           .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
-      verify(blockGossipValidator).performBlockEquivocationCheck(block);
+      verify(blockGossipValidator).performBlockEquivocationCheck(true, block);
       return;
     }
 
-    when(blockGossipValidator.validate(eq(block), eq(true)))
+    when(blockGossipValidator.validate(block, broadcastValidation != CONSENSUS_AND_EQUIVOCATION))
         .thenReturn(SafeFuture.completedFuture(internalValidationResult));
 
     prepareBlockBroadcastValidator(broadcastValidation);
@@ -163,7 +163,7 @@ public class BlockBroadcastValidatorTest {
 
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(GOSSIP_FAILURE));
-    verify(blockGossipValidator).validate(eq(block), eq(true));
+    verify(blockGossipValidator).validate(block, broadcastValidation != CONSENSUS_AND_EQUIVOCATION);
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
@@ -174,7 +174,7 @@ public class BlockBroadcastValidatorTest {
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusValidationIsNotSuccessful(
       final BroadcastValidationLevel broadcastValidation) {
 
-    when(blockGossipValidator.validate(eq(block), eq(true)))
+    when(blockGossipValidator.validate(block, broadcastValidation != CONSENSUS_AND_EQUIVOCATION))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     prepareBlockBroadcastValidator(broadcastValidation);
@@ -184,7 +184,7 @@ public class BlockBroadcastValidatorTest {
 
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(CONSENSUS_FAILURE));
-    verify(blockGossipValidator).validate(eq(block), eq(true));
+    verify(blockGossipValidator).validate(block, broadcastValidation != CONSENSUS_AND_EQUIVOCATION);
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
@@ -194,7 +194,7 @@ public class BlockBroadcastValidatorTest {
       names = {"CONSENSUS", "CONSENSUS_AND_EQUIVOCATION"})
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusCompleteExceptionally(
       final BroadcastValidationLevel broadcastValidation) {
-    when(blockGossipValidator.validate(eq(block), eq(true)))
+    when(blockGossipValidator.validate(block, broadcastValidation != CONSENSUS_AND_EQUIVOCATION))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     prepareBlockBroadcastValidator(broadcastValidation);
@@ -202,7 +202,7 @@ public class BlockBroadcastValidatorTest {
     blockImportResult.completeExceptionally(new RuntimeException("error"));
 
     assertThat(blockBroadcastValidator.getResult()).isCompletedExceptionally();
-    verify(blockGossipValidator).validate(eq(block), eq(true));
+    verify(blockGossipValidator).validate(block, broadcastValidation != CONSENSUS_AND_EQUIVOCATION);
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
@@ -210,10 +210,10 @@ public class BlockBroadcastValidatorTest {
   @EnumSource(value = EquivocationCheckResult.class)
   public void shouldReturnFinalEquivocationFailureOnlyForEquivocatingBlocks(
       final EquivocationCheckResult equivocationCheckResult) {
-    when(blockGossipValidator.validate(eq(block), eq(true)))
+    when(blockGossipValidator.validate(eq(block), eq(false)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    when(blockGossipValidator.performBlockEquivocationCheck(eq(block)))
+    when(blockGossipValidator.performBlockEquivocationCheck(true, block))
         .thenReturn(equivocationCheckResult);
 
     prepareBlockBroadcastValidator(CONSENSUS_AND_EQUIVOCATION);
@@ -234,8 +234,8 @@ public class BlockBroadcastValidatorTest {
               }
               return result.equals(SUCCESS);
             });
-    verify(blockGossipValidator).validate(eq(block), eq(true));
-    verify(blockGossipValidator).performBlockEquivocationCheck(eq(block));
+    verify(blockGossipValidator).validate(eq(block), eq(false));
+    verify(blockGossipValidator).performBlockEquivocationCheck(true, block);
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
