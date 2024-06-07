@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Suppliers;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -65,6 +67,18 @@ public abstract class SszStableContainerImpl extends SszContainerImpl
   @Override
   public Bytes32 hashTreeRoot() {
     return hashTreeRootSupplier.get();
+  }
+
+  @Override
+  public String toString() {
+    final SszStableContainerSchema<?> schema = this.getStableSchema();
+    return schema.getContainerName()
+        + "{"
+        + IntStream.range(0, schema.getActiveFieldCount())
+            .filter(schema::isActiveField)
+            .mapToObj(idx -> schema.getFieldNames().get(idx) + "=" + get(idx))
+            .collect(Collectors.joining(", "))
+        + "}";
   }
 
   private SszBitvector getActiveFields() {
