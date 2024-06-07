@@ -15,16 +15,16 @@ package tech.pegasys.teku.services.executionlayer;
 
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerBlockProductionManagerImpl;
-import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.events.EventChannelSubscriber;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockManagerFactory {
   public static ExecutionLayerBlockProductionManager create(
-      final ExecutionLayerChannel executionLayerManager, final EventChannels eventChannels) {
+      final ExecutionLayerChannel executionLayerManager, final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
     final ExecutionLayerBlockProductionManagerImpl executionLayerBlockProductionManager =
         new ExecutionLayerBlockProductionManagerImpl(executionLayerManager);
-    eventChannels.subscribe(SlotEventsChannel.class, executionLayerBlockProductionManager);
+    slotEventsChannelSubscriber.subscribe(executionLayerBlockProductionManager);
     return executionLayerBlockProductionManager;
   }
 
