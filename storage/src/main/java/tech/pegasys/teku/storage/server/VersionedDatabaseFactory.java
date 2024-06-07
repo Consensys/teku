@@ -88,20 +88,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private StateStorageMode getStateStorageModeFromConfigOrDisk(
       final Optional<StateStorageMode> maybeConfiguredStorageMode) {
-    try {
-      final File storageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
-      if (storageModeFile.exists() && maybeConfiguredStorageMode.isPresent()) {
-        final StateStorageMode storageModeFromFile =
-            StateStorageMode.valueOf(Files.readString(storageModeFile.toPath()).trim());
-        if (!storageModeFromFile.equals(maybeConfiguredStorageMode.get())) {
-          LOG.info(
-              "Storage mode that was persisted differs from the command specified option; file: {}, CLI: {}",
-              () -> storageModeFromFile,
-              maybeConfiguredStorageMode::get);
-        }
+    final File storageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
+    final Optional<StateStorageMode> maybeStorageModeFromFile =
+        DatabaseStorageModeFileHelper.readStateStorageMode(storageModeFile.toPath());
+    if (maybeStorageModeFromFile.isPresent() && maybeConfiguredStorageMode.isPresent()) {
+      if (!maybeStorageModeFromFile.get().equals(maybeConfiguredStorageMode.get())) {
+        LOG.info(
+            "Storage mode that was persisted differs from the command specified option; file: {}, CLI: {}",
+            () -> maybeStorageModeFromFile,
+            maybeConfiguredStorageMode::get);
       }
-    } catch (IOException e) {
-      LOG.error("Failed to read storage mode file", e);
     }
 
     return maybeConfiguredStorageMode.orElse(StateStorageMode.DEFAULT_MODE);

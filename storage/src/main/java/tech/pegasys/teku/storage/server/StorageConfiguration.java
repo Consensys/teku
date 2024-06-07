@@ -18,9 +18,6 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
@@ -267,10 +264,13 @@ public class StorageConfiguration {
     private void determineDataStorageMode() {
       if (dataConfig != null) {
         final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataConfig);
+        final Path beaconDataDirectory = dataDirLayout.getBeaconDataDirectory();
+
         this.dataStorageMode =
             determineStorageDefault(
-                dataDirLayout.getBeaconDataDirectory().toFile().exists(),
-                getStorageModeFromPersistedDatabase(dataDirLayout),
+                beaconDataDirectory.toFile().exists(),
+                DatabaseStorageModeFileHelper.readStateStorageMode(
+                    beaconDataDirectory.resolve(STORAGE_MODE_PATH)),
                 dataStorageMode);
       } else {
         if (dataStorageMode.equals(NOT_SET)) {
@@ -279,27 +279,11 @@ public class StorageConfiguration {
       }
     }
 
-    private Optional<StateStorageMode> getStorageModeFromPersistedDatabase(
-        final DataDirLayout dataDirLayout) {
-      final Path dbStorageModeFile =
-          dataDirLayout.getBeaconDataDirectory().resolve(STORAGE_MODE_PATH);
-      if (!Files.exists(dbStorageModeFile)) {
-        return Optional.empty();
-      }
-      try {
-        final StateStorageMode dbStorageMode =
-            StateStorageMode.valueOf(Files.readString(dbStorageModeFile).trim());
-        LOG.debug("Read previous storage mode as {}", dbStorageMode);
-        return Optional.of(dbStorageMode);
-      } catch (final IOException ex) {
-        throw new UncheckedIOException("Failed to read storage mode from file", ex);
-      }
-    }
-
     public Builder stateRebuildTimeoutSeconds(final int stateRebuildTimeoutSeconds) {
       if (stateRebuildTimeoutSeconds < 10 || stateRebuildTimeoutSeconds > 300) {
         LOG.warn(
-            "State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below 1, will allow the value to exceed 300.",
+            "State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below "
+                + "1, will allow the value to exceed 300.",
             stateRebuildTimeoutSeconds);
       }
       this.stateRebuildTimeoutSeconds = Math.max(stateRebuildTimeoutSeconds, 1);
