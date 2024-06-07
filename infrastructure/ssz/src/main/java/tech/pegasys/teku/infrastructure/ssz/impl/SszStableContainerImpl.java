@@ -13,29 +13,17 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import com.google.common.base.Suppliers;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public abstract class SszStableContainerImpl extends SszContainerImpl
     implements SszStableContainer {
-  private final Supplier<Bytes32> hashTreeRootSupplier =
-      Suppliers.memoize(
-          () ->
-              Hash.getSha256Instance()
-                  .wrappedDigest(super.hashTreeRoot(), getActiveFields().hashTreeRoot()));
 
   public SszStableContainerImpl(
       final SszStableContainerSchema<? extends SszStableContainerImpl> type) {
@@ -54,35 +42,33 @@ public abstract class SszStableContainerImpl extends SszContainerImpl
   }
 
   @Override
-  public final SszData get(final int index) {
-    checkArgument(isFieldActive(index), "Field is not active");
-    return super.get(index);
-  }
-
-  @Override
   public boolean isFieldActive(final int index) {
     return getStableSchema().isActiveField(index);
   }
 
   @Override
-  public Bytes32 hashTreeRoot() {
-    return hashTreeRootSupplier.get();
+  protected void checkIndex(int index) {
+    if (index >= getStableSchema().getActiveFieldCount()) {
+      throw new IndexOutOfBoundsException(
+          "Invalid index "
+              + index
+              + " for stable container with active field count "
+              + getStableSchema().getActiveFieldCount());
+    }
   }
 
   @Override
   public String toString() {
     final SszStableContainerSchema<?> schema = this.getStableSchema();
     return schema.getContainerName()
-        + "{"
+        + "{activeFields="
+        + schema.getActiveFields()
+        + ", "
         + IntStream.range(0, schema.getActiveFieldCount())
             .filter(schema::isActiveField)
             .mapToObj(idx -> schema.getFieldNames().get(idx) + "=" + get(idx))
             .collect(Collectors.joining(", "))
         + "}";
-  }
-
-  private SszBitvector getActiveFields() {
-    return getStableSchema().getActiveFields();
   }
 
   private SszStableContainerSchema<?> getStableSchema() {

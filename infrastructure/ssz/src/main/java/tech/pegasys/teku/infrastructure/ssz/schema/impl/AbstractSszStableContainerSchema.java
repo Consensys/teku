@@ -33,6 +33,8 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
+import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
@@ -69,6 +71,11 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   @Override
+  public TreeNode getDefaultTree() {
+    return BranchNode.create(super.getDefaultTree(), activeFieldsBitvector.getBackingNode());
+  }
+
+  @Override
   public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
     checkArgument(
         fieldValues.size() == childrenActiveSchemas.size(), "Wrong number of filed values");
@@ -82,7 +89,8 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
               : SszNone.INSTANCE);
     }
 
-    return super.createTreeFromFieldValues(allFields);
+    return BranchNode.create(
+        super.createTreeFromFieldValues(allFields), activeFieldsBitvector.getBackingNode());
   }
 
   @Override
@@ -104,7 +112,9 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
 
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
-    int size1 = activeFieldsBitvector.sszSerialize(writer);
+    final TreeNode bitvectorSubtree = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+
+    int size1 = activeFieldsBitvectorSchema.sszSerializeTree(bitvectorSubtree, writer);
     int size2 = super.sszSerializeTree(node, writer);
     return size1 + size2;
   }
@@ -127,11 +137,18 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
               + " for the stable container of type "
               + this);
     }
-    return super.sszDeserializeTree(reader);
+    return BranchNode.create(super.sszDeserializeTree(reader), bitvector.getBackingNode());
   }
 
   public TreeNode sszDeserializeTreeAsProfile(final SszReader reader) {
-    return super.sszDeserializeTree(reader);
+    return BranchNode.create(
+        super.sszDeserializeTree(reader), activeFieldsBitvector.getBackingNode());
+  }
+
+  @Override
+  public long getChildGeneralizedIndex(final long elementIndex) {
+    return GIndexUtil.gIdxCompose(
+        GIndexUtil.LEFT_CHILD_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
   }
 
   @Override
