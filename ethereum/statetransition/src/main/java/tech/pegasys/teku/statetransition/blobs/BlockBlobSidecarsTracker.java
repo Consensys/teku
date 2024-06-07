@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 
 public class BlockBlobSidecarsTracker {
@@ -203,8 +202,7 @@ public class BlockBlobSidecarsTracker {
         .thenCompose(
             __ -> {
               LOG.debug("Tracker completed: importing block {}", slotAndBlockRoot::toLogString);
-              return blockImportChannel.importBlock(
-                  getBlock().orElseThrow(), BroadcastValidationLevel.NOT_REQUIRED);
+              return blockImportChannel.importBlock(getBlock().orElseThrow());
             })
         .finish(
             () ->

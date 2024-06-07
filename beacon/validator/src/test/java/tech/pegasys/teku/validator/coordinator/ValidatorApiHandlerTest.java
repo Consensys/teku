@@ -931,7 +931,7 @@ class ValidatorApiHandlerTest {
                 blockContainerAndMetaData.blockContainer().getBlock(),
                 dataStructureUtil.randomSignature());
 
-    when(blockImportChannel.importBlock(eq(block), any()))
+    when(blockImportChannel.importBlock(block, EQUIVOCATION))
         .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
 
     // require GOSSIP validation
