@@ -40,7 +40,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
     extends AbstractSszContainerSchema<C> implements SszStableContainerSchema<C> {
 
-  private final Map<Integer, NamedSchema<?>> childrenActiveSchemas;
   private final SszBitvectorSchema<SszBitvector> activeFieldsBitvectorSchema;
   private final SszBitvector activeFieldsBitvector;
 
@@ -65,7 +64,6 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
       final int maxFieldCount) {
     super(name, createAllSchemas(childrenSchemas, maxFieldCount));
 
-    this.childrenActiveSchemas = childrenSchemas;
     this.activeFieldsBitvectorSchema = SszBitvectorSchema.create(maxFieldCount);
     this.activeFieldsBitvector = activeFieldsBitvectorSchema.ofBits(childrenSchemas.keySet());
   }
@@ -78,15 +76,13 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   @Override
   public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
     checkArgument(
-        fieldValues.size() == childrenActiveSchemas.size(), "Wrong number of filed values");
+        fieldValues.size() == activeFieldsBitvector.getBitCount(), "Wrong number of filed values");
     final int allFieldsSize = Math.toIntExact(getMaxLength());
     final List<SszData> allFields = new ArrayList<>(allFieldsSize);
 
     for (int index = 0, fieldIndex = 0; index < allFieldsSize; index++) {
       allFields.add(
-          childrenActiveSchemas.containsKey(index)
-              ? fieldValues.get(fieldIndex++)
-              : SszNone.INSTANCE);
+          activeFieldsBitvector.getBit(index) ? fieldValues.get(fieldIndex++) : SszNone.INSTANCE);
     }
 
     return BranchNode.create(
@@ -100,14 +96,14 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
 
   @Override
   public int getActiveFieldCount() {
-    return childrenActiveSchemas.size();
+    return activeFieldsBitvector.getBitCount();
   }
 
   @Override
   public boolean isActiveField(final int index) {
     checkArgument(
         index < activeFieldsBitvectorSchema.getMaxLength(), "Wrong number of filed values");
-    return childrenActiveSchemas.containsKey(index);
+    return activeFieldsBitvector.getBit(index);
   }
 
   @Override

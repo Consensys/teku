@@ -48,12 +48,9 @@ public abstract class SszStableContainerImpl extends SszContainerImpl
 
   @Override
   protected void checkIndex(final int index) {
-    if (index >= getStableSchema().getActiveFieldCount()) {
+    if (!isFieldActive(index)) {
       throw new IndexOutOfBoundsException(
-          "Invalid index "
-              + index
-              + " for stable container with active field count "
-              + getStableSchema().getActiveFieldCount());
+          "Index " + index + " is not active in the stable container");
     }
   }
 
