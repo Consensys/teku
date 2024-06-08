@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class AttestationElectra
     extends StableProfile4<
-        AttestationElectra, SszBitlist, AttestationData, SszBitvector, SszSignature>
+        AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements Attestation {
 
   public AttestationElectra(final AttestationElectraSchema type, final TreeNode backingNode) {
@@ -42,9 +42,9 @@ public class AttestationElectra
       final AttestationElectraSchema schema,
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final SszBitvector committeeBits,
-      final BLSSignature signature) {
-    super(schema, aggregationBits, data, committeeBits, new SszSignature(signature));
+      final BLSSignature signature,
+      final SszBitvector committeeBits) {
+    super(schema, aggregationBits, data, new SszSignature(signature), committeeBits);
   }
 
   @Override
@@ -74,12 +74,12 @@ public class AttestationElectra
 
   @Override
   public Optional<SszBitvector> getCommitteeBits() {
-    return Optional.of(getField2());
+    return Optional.of(getField3());
   }
 
   @Override
   public BLSSignature getAggregateSignature() {
-    return getField3().getSignature();
+    return getField2().getSignature();
   }
 
   @Override

@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class AttestationElectraSchema
     extends StableProfileSchema4<
-        AttestationElectra, SszBitlist, AttestationData, SszBitvector, SszSignature>
+        AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements AttestationSchema<AttestationElectra> {
 
   public AttestationElectraSchema(
@@ -42,8 +42,8 @@ public class AttestationElectraSchema
         "AttestationElectra",
         namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
-        namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteePerSlot)),
         namedSchema("signature", SszSignatureSchema.INSTANCE),
+        namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteePerSlot)),
         MAX_ATTESTATION_FIELDS);
   }
 
@@ -54,7 +54,7 @@ public class AttestationElectraSchema
 
   @Override
   public Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema() {
-    return Optional.of((SszBitvectorSchema<?>) getFieldSchema2());
+    return Optional.of((SszBitvectorSchema<?>) getFieldSchema3());
   }
 
   @Override
@@ -66,19 +66,19 @@ public class AttestationElectraSchema
   public Attestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final Supplier<SszBitvector> committeeBits,
-      final BLSSignature signature) {
+      final BLSSignature signature,
+      final Supplier<SszBitvector> committeeBits) {
     final SszBitvector suppliedCommitteeBits = committeeBits.get();
     checkNotNull(suppliedCommitteeBits, "committeeBits must be provided in Electra");
-    return new AttestationElectra(this, aggregationBits, data, suppliedCommitteeBits, signature);
+    return new AttestationElectra(this, aggregationBits, data, signature, suppliedCommitteeBits);
   }
 
   public AttestationElectra create(
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final SszBitvector committeeBits,
-      final BLSSignature signature) {
-    return new AttestationElectra(this, aggregationBits, data, committeeBits, signature);
+      final BLSSignature signature,
+      final SszBitvector committeeBits) {
+    return new AttestationElectra(this, aggregationBits, data, signature, committeeBits);
   }
 
   @Override
