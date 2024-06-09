@@ -2,10 +2,9 @@
 
 ## Upcoming Breaking Changes
 
-- Next release will introduce a naming breaking change to some of the metrics due to a library upgrade. 
-Revision 12 of the `Teku - Detailed` dashboard has been released and it is backward compatible. 
-We recommend all users to upgrade their dashboard as soon as possible. 
-Documentation with all metrics that have been renamed will be provided.
+- Next release will introduce a breaking change to Teku's metrics. This is due to some metrics changing names after a library upgrade.
+We recommend all users of the `Teku - Detailed` dashboard to upgrade to version [Revision 12](https://grafana.com/api/dashboards/16737/revisions/12/download)  
+as soon as possible. Documentation with all metrics that have been renamed will be provided.
 
 ## Current Releases
 
