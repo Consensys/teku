@@ -24,7 +24,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -51,7 +53,7 @@ public class ValidatorIndexCacheTest {
 
     final BLSPublicKey publicKey = validators.get(latestFinalizedIndex).getPublicKey();
     // cache eagerly the last validator public key
-    validatorIndexCache.invalidateWithNewValue(publicKey, latestFinalizedIndex);
+    validatorIndexCache.invalidateWithNewValue(publicKey, latestFinalizedIndex, true);
 
     // state with one less validator
     final BeaconState state = dataStructureUtil.randomBeaconState(NUMBER_OF_VALIDATORS - 1);
@@ -72,8 +74,8 @@ public class ValidatorIndexCacheTest {
 
     assertThat(index).hasValue(latestFinalizedIndex);
 
-    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(NUMBER_OF_VALIDATORS);
-    assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(latestFinalizedIndex);
+    assertThat(validatorIndexCache.getFinalizedCacheSize()).isEqualTo(NUMBER_OF_VALIDATORS);
+    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(latestFinalizedIndex);
   }
 
   @Test
@@ -82,7 +84,7 @@ public class ValidatorIndexCacheTest {
     final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
     final int lastCachedIndex = 31;
     final ValidatorIndexCache validatorIndexCache =
-        new ValidatorIndexCache(cache, latestFinalizedIndex, lastCachedIndex);
+        new ValidatorIndexCache(cache, latestFinalizedIndex, lastCachedIndex, state.getSlot());
 
     when(cache.getCached(any())).thenReturn(Optional.empty());
 
@@ -106,20 +108,9 @@ public class ValidatorIndexCacheTest {
         validatorIndexCache.getValidatorIndex(state, dataStructureUtil.randomPublicKey());
 
     // all keys were cached
-    assertThat(validatorIndexCache.getValidatorIndices().size()).isEqualTo(NUMBER_OF_VALIDATORS);
+    assertThat(validatorIndexCache.getFinalizedCacheSize()).isEqualTo(NUMBER_OF_VALIDATORS);
 
     assertThat(index).isEmpty();
-  }
-
-  @Test
-  public void shouldUpdateLatestFinalizedIndex() {
-    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-
-    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(-1);
-
-    validatorIndexCache.updateLatestFinalizedIndex(state);
-
-    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(63);
   }
 
   @Test
@@ -128,21 +119,28 @@ public class ValidatorIndexCacheTest {
     validatorIndexCache.updateLatestFinalizedIndex(state);
 
     final BLSPublicKey updatedPublicKey = dataStructureUtil.randomPublicKey();
-    validatorIndexCache.invalidateWithNewValue(updatedPublicKey, 30);
+    validatorIndexCache.invalidateWithNewValue(updatedPublicKey, 30, true);
 
-    assertThat(validatorIndexCache.getValidatorIndices().size()).isOne();
+    assertThat(validatorIndexCache.getFinalizedCacheSize()).isOne();
     assertThat(validatorIndexCache.getValidatorIndex(state, updatedPublicKey)).hasValue(30);
   }
 
   @Test
-  public void shouldNotInvalidatePublicKeyIfIndexIsNotFinalized() {
-    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+  public void nonFinalizedIndicesShouldBeStoredInNonFinalStorage() {
+    final Cache<BLSPublicKey, Integer> cache = LRUCache.create(Integer.MAX_VALUE - 1);
+    // Cache with the last finalized state containing 24 validators, at slot 64.
+    final ValidatorIndexCache validatorIndexCache =
+        new ValidatorIndexCache(cache, 23, -1, UInt64.valueOf(64));
 
-    final BLSPublicKey updatedPublicKey = dataStructureUtil.randomPublicKey();
-    validatorIndexCache.invalidateWithNewValue(updatedPublicKey, 30);
-
-    // nothing has been cached because the state is not finalized
-    assertThat(validatorIndexCache.getValidatorIndices().size()).isZero();
-    assertThat(validatorIndexCache.getValidatorIndex(state, updatedPublicKey)).isEmpty();
+    // a state with 30 indices, at slot 80
+    final BeaconState state = dataStructureUtil.randomBeaconState(30, 100, UInt64.valueOf(80));
+    validatorIndexCache.getValidatorIndex(state, state.getValidators().get(29).getPublicKey());
+    // 30 indices, 24 of which are final, means 6 non-final
+    assertThat(validatorIndexCache.getHotValidatorIndexSize()).isEqualTo(6);
+    final int nonFinalIndex = 28;
+    assertThat(
+            validatorIndexCache.getValidatorIndex(
+                state, state.getValidators().get(nonFinalIndex).getPublicKey()))
+        .contains(nonFinalIndex);
   }
 }

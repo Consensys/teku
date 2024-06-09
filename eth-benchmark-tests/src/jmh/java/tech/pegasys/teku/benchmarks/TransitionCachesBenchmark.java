@@ -78,7 +78,7 @@ public class TransitionCachesBenchmark {
       fullCache
           .getValidatorsPubKeys()
           .invalidateWithNewValue(UInt64.valueOf(validatorIdx), publicKey);
-      fullCache.getValidatorIndexCache().invalidateWithNewValue(publicKey, validatorIdx);
+      fullCache.getValidatorIndexCache().invalidateWithNewValue(publicKey, validatorIdx, true);
     }
 
     fullCache.getBeaconProposerIndex().invalidateWithNewValue(UInt64.ONE, 0x777);

@@ -87,12 +87,13 @@ public abstract class BeaconStateAccessors {
             .get(
                 validatorIndex,
                 i -> {
-                  BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
+                  final BLSPublicKey pubKey =
+                      state.getValidators().get(i.intValue()).getPublicKey();
 
                   // eagerly pre-cache pubKey => validatorIndex mapping
                   BeaconStateCache.getTransitionCaches(state)
                       .getValidatorIndexCache()
-                      .invalidateWithNewValue(pubKey, i.intValue());
+                      .invalidateWithNewValue(pubKey, i.intValue(), state.getSlot());
                   return pubKey;
                 }));
   }
