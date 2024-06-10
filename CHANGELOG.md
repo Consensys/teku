@@ -24,3 +24,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Bug Fixes
 - Fixed performance degradation introduced in 24.4.0 regarding archive state retrieval time.
+- Fixed file writer when storing database mode settings to file (related to https://github.com/Consensys/teku/issues/8357).
