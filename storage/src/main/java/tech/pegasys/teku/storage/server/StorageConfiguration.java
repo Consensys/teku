@@ -266,12 +266,19 @@ public class StorageConfiguration {
         final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataConfig);
         final Path beaconDataDirectory = dataDirLayout.getBeaconDataDirectory();
 
+        Optional<StateStorageMode> storageModeFromStoredFile;
+        try {
+          storageModeFromStoredFile = DatabaseStorageModeFileHelper.readStateStorageMode(beaconDataDirectory.resolve(STORAGE_MODE_PATH));
+        } catch (final DatabaseStorageException e) {
+          if (dataStorageMode == NOT_SET) {
+            throw e;
+          } else {
+            storageModeFromStoredFile = Optional.empty();
+          }
+        }
+
         this.dataStorageMode =
-            determineStorageDefault(
-                beaconDataDirectory.toFile().exists(),
-                DatabaseStorageModeFileHelper.readStateStorageMode(
-                    beaconDataDirectory.resolve(STORAGE_MODE_PATH)),
-                dataStorageMode);
+            determineStorageDefault(beaconDataDirectory.toFile().exists(), storageModeFromStoredFile, dataStorageMode);
       } else {
         if (dataStorageMode.equals(NOT_SET)) {
           dataStorageMode = PRUNE;
