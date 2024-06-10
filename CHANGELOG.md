@@ -2,6 +2,10 @@
 
 ## Upcoming Breaking Changes
 
+- Next release will introduce a breaking change to Teku's metrics. This is due to some metrics changing names after a library upgrade.
+We recommend all users of the `Teku - Detailed` dashboard to upgrade to version [Revision 12](https://grafana.com/api/dashboards/16737/revisions/12/download)  
+as soon as possible. Documentation with all metrics that have been renamed will be provided.
+
 ## Current Releases
 
 For information on changes in released versions of Teku, see
@@ -19,3 +23,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
   endpoints. In the cases where the block has been produced in the same beacon node, only equivocation validation will be done instead of the entire gossip validation.
 
 ### Bug Fixes
+- Fixed performance degradation introduced in 24.4.0 regarding archive state retrieval time.
