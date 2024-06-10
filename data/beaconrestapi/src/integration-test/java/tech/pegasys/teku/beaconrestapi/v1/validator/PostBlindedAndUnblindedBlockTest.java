@@ -153,7 +153,11 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
               request, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
           .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
     } else {
-      when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
+      final BroadcastValidationLevel broadcastValidationLevel =
+          request.isBlinded()
+              ? BroadcastValidationLevel.NOT_REQUIRED
+              : BroadcastValidationLevel.GOSSIP;
+      when(validatorApiChannel.sendSignedBlock(request, broadcastValidationLevel))
           .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
     }
   }
@@ -164,7 +168,11 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
               request, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
           .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
     } else {
-      when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
+      final BroadcastValidationLevel broadcastValidationLevel =
+          request.isBlinded()
+              ? BroadcastValidationLevel.NOT_REQUIRED
+              : BroadcastValidationLevel.GOSSIP;
+      when(validatorApiChannel.sendSignedBlock(request, broadcastValidationLevel))
           .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
     }
   }
