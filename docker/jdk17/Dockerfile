@@ -20,6 +20,7 @@ RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin 
     rm -rf /var/cache/apt/archives/* && \
     rm -rf /var/lib/apt/lists/*
 
+# Ubuntu 23.10 and above comes with an "ubuntu" user with uid 1000. We need 1000 for teku.
 RUN userdel ubuntu 2>/dev/null || true && rm -rf /home/ubuntu  && \
     adduser --uid 1000 --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku && \
