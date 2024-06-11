@@ -20,7 +20,8 @@ RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin 
       rm -rf /var/cache/apt/archives/* /var/cache/apt/archives/partial/*  && \
       rm -rf /var/lib/apt/lists/*
 
-RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
+RUN userdel ubuntu 2>/dev/null || true && rm -rf /home/ubuntu  && \
+    adduser --uid 1000 --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku && \
     chmod 0755 /opt/teku
 
