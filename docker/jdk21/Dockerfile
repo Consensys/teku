@@ -14,7 +14,12 @@ ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
-RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 && rm -rf /var/lib/apt/lists/*
+RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 adduser && \
+    # Clean apt cache
+      apt-get clean  && \
+      rm -rf /var/cache/apt/archives/* /var/cache/apt/archives/partial/*  && \
+      rm -rf /var/lib/apt/lists/*  &&  rm -rf /var/lib/apt/lists/*
+
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku && \
     chmod 0755 /opt/teku
