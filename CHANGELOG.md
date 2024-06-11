@@ -21,6 +21,8 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added rest api endpoint `/teku/v1/beacon/state/finalized/slot/before/{slot}` to return most recent stored state at or before a specified slot.
 - The validator client will start using the `v2` variant of the beacon node block publishing
   endpoints. In the cases where the block has been produced in the same beacon node, only equivocation validation will be done instead of the entire gossip validation.
+- Docker images are now based on ubuntu 24.04 LTS (noble)
 
 ### Bug Fixes
 - Fixed performance degradation introduced in 24.4.0 regarding archive state retrieval time.
+- Fixed file writer when storing database mode settings to file (related to https://github.com/Consensys/teku/issues/8357).
