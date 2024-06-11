@@ -73,13 +73,13 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     return readinessStatus.isReady();
   }
 
-  public int getReadinessStatus(final RemoteValidatorApiChannel beaconNodeApi) {
+  public int getReadinessStatusWeight(final RemoteValidatorApiChannel beaconNodeApi) {
     return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY).weight;
   }
 
   public Iterator<? extends RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
     return failoverBeaconNodeApis.stream()
-        .sorted(Comparator.comparing(this::getReadinessStatus).reversed())
+        .sorted(Comparator.comparing(this::getReadinessStatusWeight).reversed())
         .iterator();
   }
 
