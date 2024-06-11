@@ -87,7 +87,7 @@ public class ValidatorIndexCacheTest {
 
     when(cache.getCached(any())).thenReturn(Optional.empty());
     // mock cache needs to report the size changed
-    when(cache.invalidateWithNewValue(any(), any())).thenReturn(true);
+    when(cache.size()).thenReturn(31).thenReturn(32);
 
     final Optional<Integer> index =
         validatorIndexCache.getValidatorIndex(

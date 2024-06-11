@@ -74,10 +74,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public synchronized boolean invalidateWithNewValue(final K key, final V newValue) {
+  public synchronized void invalidateWithNewValue(final K key, final V newValue) {
     invalidate(key);
     get(key, k -> newValue);
-    return true;
   }
 
   @Override

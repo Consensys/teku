@@ -89,14 +89,19 @@ public class ValidatorIndexCache {
 
   private Optional<Integer> findIndexFromState(
       final SszList<Validator> validatorList, final BLSPublicKey publicKey) {
+    final int initialCacheSize = getCacheSize();
     for (int i = Math.max(lastCachedIndex.get() + 1, 0); i < validatorList.size(); i++) {
       final BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      if (validatorIndices.invalidateWithNewValue(pubKey, i)) {
-        updateLastIndex(i);
-      }
+      validatorIndices.invalidateWithNewValue(pubKey, i);
       if (pubKey.equals(publicKey)) {
+        if (initialCacheSize < getCacheSize()) {
+          updateLastIndex(i);
+        }
         return Optional.of(i);
       }
+    }
+    if (initialCacheSize < getCacheSize()) {
+      updateLastIndex(getCacheSize() - 1);
     }
     return Optional.empty();
   }

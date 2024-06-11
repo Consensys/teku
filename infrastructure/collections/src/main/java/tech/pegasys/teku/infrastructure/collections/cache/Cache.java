@@ -46,25 +46,15 @@ public interface Cache<K, V> {
     return copy();
   }
 
-  /**
-   * @param key Key to invalidate
-   */
+  /** Removes cache entry */
   void invalidate(K key);
 
-  /**
-   * Set a new value for the given key
-   *
-   * @param key key to update
-   * @param newValue new value to use
-   * @return true if updated, false if no-op
-   */
-  boolean invalidateWithNewValue(K key, V newValue);
+  /** Replaces key value */
+  void invalidateWithNewValue(K key, V newValue);
 
-  /* Clears all cached values */
+  /** Clears all cached values */
   void clear();
 
-  /**
-   * @return the current number of items in the cache
-   */
+  /** Returns the current number of items in the cache */
   int size();
 }
