@@ -25,16 +25,16 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorIndexCache {
-  protected final Cache<BLSPublicKey, Integer> validatorIndices;
-  protected final AtomicInteger lastCachedIndex;
+  private final Cache<BLSPublicKey, Integer> validatorIndices;
+  private final AtomicInteger lastCachedIndex;
 
-  protected static final int INDEX_NONE = -1;
-  protected final AtomicInteger latestFinalizedIndex;
+  private static final int INDEX_NONE = -1;
+  private final AtomicInteger latestFinalizedIndex;
   static final ValidatorIndexCache NO_OP_INSTANCE =
       new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE, INDEX_NONE);
 
   @VisibleForTesting
-  protected ValidatorIndexCache(
+  ValidatorIndexCache(
       final Cache<BLSPublicKey, Integer> validatorIndices,
       final int latestFinalizedIndex,
       final int lastCachedIndex) {
