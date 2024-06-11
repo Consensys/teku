@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -27,17 +25,16 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatorIndexCache {
-  private static final Logger LOG = LogManager.getLogger();
-  private final Cache<BLSPublicKey, Integer> validatorIndices;
-  private final AtomicInteger lastCachedIndex;
+  protected final Cache<BLSPublicKey, Integer> validatorIndices;
+  protected final AtomicInteger lastCachedIndex;
 
-  private static final int INDEX_NONE = -1;
-  private final AtomicInteger latestFinalizedIndex;
+  protected static final int INDEX_NONE = -1;
+  protected final AtomicInteger latestFinalizedIndex;
   static final ValidatorIndexCache NO_OP_INSTANCE =
       new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE, INDEX_NONE);
 
   @VisibleForTesting
-  ValidatorIndexCache(
+  protected ValidatorIndexCache(
       final Cache<BLSPublicKey, Integer> validatorIndices,
       final int latestFinalizedIndex,
       final int lastCachedIndex) {
@@ -62,31 +59,18 @@ public class ValidatorIndexCache {
     return findIndexFromState(state.getValidators(), publicKey);
   }
 
-  private Optional<Integer> findIndexFromState(
-      final SszList<Validator> validatorList, final BLSPublicKey publicKey) {
-    for (int i = Math.max(lastCachedIndex.get() + 1, 0); i < validatorList.size(); i++) {
-      BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
-      // from electra, only finalized validator indices are stable,
-      // so we look to store only finalized indices not already stored.
-      validatorIndices.invalidateWithNewValue(pubKey, i);
-      updateLastIndex(i);
-      if (pubKey.equals(publicKey)) {
-        return Optional.of(i);
-      }
-    }
-    return Optional.empty();
-  }
-
-  private void updateLastIndex(final int i) {
-    lastCachedIndex.updateAndGet(curr -> Math.max(curr, i));
-  }
-
   public void invalidateWithNewValue(final BLSPublicKey pubKey, final int updatedIndex) {
-    if (latestFinalizedIndex.get() >= updatedIndex) {
-      validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
-    } else {
-      LOG.trace("Ignoring invalidateWithNewValue {}:{}", pubKey, updatedIndex);
-    }
+    validatorIndices.invalidateWithNewValue(pubKey, updatedIndex);
+  }
+
+  public void updateLatestFinalizedIndex(final BeaconState finalizedState) {
+    latestFinalizedIndex.updateAndGet(
+        curr -> Math.max(curr, finalizedState.getValidators().size() - 1));
+  }
+
+  @VisibleForTesting
+  public int getLatestFinalizedIndex() {
+    return latestFinalizedIndex.get();
   }
 
   @VisibleForTesting
@@ -95,17 +79,25 @@ public class ValidatorIndexCache {
   }
 
   @VisibleForTesting
-  Cache<BLSPublicKey, Integer> getValidatorIndices() {
-    return validatorIndices;
+  int getCacheSize() {
+    return validatorIndices.size();
   }
 
-  public void updateLatestFinalizedIndex(final BeaconState finalizedState) {
-    LOG.trace("Update finalized index: {}", finalizedState.getSlot());
-    latestFinalizedIndex.updateAndGet(
-        curr -> Math.max(curr, finalizedState.getValidators().size() - 1));
+  private void updateLastIndex(final int i) {
+    lastCachedIndex.updateAndGet(curr -> Math.max(curr, i));
   }
 
-  public int getLatestFinalizedIndex() {
-    return latestFinalizedIndex.get();
+  private Optional<Integer> findIndexFromState(
+      final SszList<Validator> validatorList, final BLSPublicKey publicKey) {
+    for (int i = Math.max(lastCachedIndex.get() + 1, 0); i < validatorList.size(); i++) {
+      final BLSPublicKey pubKey = validatorList.get(i).getPublicKey();
+      if (validatorIndices.invalidateWithNewValue(pubKey, i)) {
+        updateLastIndex(i);
+      }
+      if (pubKey.equals(publicKey)) {
+        return Optional.of(i);
+      }
+    }
+    return Optional.empty();
   }
 }
