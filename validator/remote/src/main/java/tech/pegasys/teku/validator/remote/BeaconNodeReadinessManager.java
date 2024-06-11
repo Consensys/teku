@@ -73,8 +73,8 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     return readinessStatus.isReady();
   }
 
-  public ReadinessStatus getReadinessStatus(final RemoteValidatorApiChannel beaconNodeApi) {
-    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
+  public int getReadinessStatus(final RemoteValidatorApiChannel beaconNodeApi) {
+    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY).weight;
   }
 
   public Iterator<? extends RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
@@ -161,7 +161,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
                 LOG.debug(
                     "{} is ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
                 return syncingStatus.getIsOptimistic().orElse(false)
-                    ? ReadinessStatus.OPTIMISTIC
+                    ? ReadinessStatus.READY_OPTIMISTIC
                     : ReadinessStatus.READY;
               }
               LOG.debug(
@@ -180,7 +180,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
         .thenAccept(
             readinessStatus -> {
               readinessStatusCache.put(beaconNodeApi, readinessStatus);
-              if (readinessStatus.weight > 0) {
+              if (readinessStatus.isReady()) {
                 processReadyResult(isPrimaryNode);
               } else {
                 processNotReadyResult(beaconNodeApi, isPrimaryNode);
@@ -212,17 +212,13 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
 
   public enum ReadinessStatus {
     NOT_READY(0),
-    OPTIMISTIC(1),
+    READY_OPTIMISTIC(1),
     READY(2);
 
     private final int weight;
 
     ReadinessStatus(final int weight) {
       this.weight = weight;
-    }
-
-    int getWeight() {
-      return this.weight;
     }
 
     boolean isReady() {
