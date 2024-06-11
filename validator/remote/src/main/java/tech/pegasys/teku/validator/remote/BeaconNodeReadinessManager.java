@@ -46,7 +46,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration SYNCING_STATUS_CALL_TIMEOUT = Duration.ofSeconds(10);
 
-  private final Map<RemoteValidatorApiChannel, Boolean> readinessStatusCache =
+  private final Map<RemoteValidatorApiChannel, ReadinessStatus> readinessStatusCache =
       Maps.newConcurrentMap();
 
   private final AtomicBoolean latestPrimaryNodeReadiness = new AtomicBoolean(true);
@@ -68,12 +68,18 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   public boolean isReady(final RemoteValidatorApiChannel beaconNodeApi) {
-    return readinessStatusCache.getOrDefault(beaconNodeApi, true);
+    final ReadinessStatus readinessStatus =
+        readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
+    return readinessStatus.isReady();
+  }
+
+  public int getReadinessStatusWeight(final RemoteValidatorApiChannel beaconNodeApi) {
+    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY).weight;
   }
 
   public Iterator<? extends RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
     return failoverBeaconNodeApis.stream()
-        .sorted(Comparator.comparing(this::isReady).reversed())
+        .sorted(Comparator.comparing(this::getReadinessStatusWeight).reversed())
         .iterator();
   }
 
@@ -154,11 +160,13 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
               if (syncingStatus.isReady()) {
                 LOG.debug(
                     "{} is ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
-                return true;
+                return syncingStatus.getIsOptimistic().orElse(false)
+                    ? ReadinessStatus.READY_OPTIMISTIC
+                    : ReadinessStatus.READY;
               }
               LOG.debug(
                   "{} is NOT ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
-              return false;
+              return ReadinessStatus.NOT_READY;
             })
         .orTimeout(SYNCING_STATUS_CALL_TIMEOUT)
         .exceptionally(
@@ -167,12 +175,12 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
                   String.format(
                       "%s is NOT ready to accept requests because the syncing status request failed: %s",
                       beaconNodeApiEndpoint, throwable));
-              return false;
+              return ReadinessStatus.NOT_READY;
             })
         .thenAccept(
-            isReady -> {
-              readinessStatusCache.put(beaconNodeApi, isReady);
-              if (isReady) {
+            readinessStatus -> {
+              readinessStatusCache.put(beaconNodeApi, readinessStatus);
+              if (readinessStatus.isReady()) {
                 processReadyResult(isPrimaryNode);
               } else {
                 processNotReadyResult(beaconNodeApi, isPrimaryNode);
@@ -199,6 +207,22 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       beaconNodeReadinessChannel.onPrimaryNodeNotReady();
     } else {
       beaconNodeReadinessChannel.onFailoverNodeNotReady(beaconNodeApi);
+    }
+  }
+
+  public enum ReadinessStatus {
+    NOT_READY(0),
+    READY_OPTIMISTIC(1),
+    READY(2);
+
+    private final int weight;
+
+    ReadinessStatus(final int weight) {
+      this.weight = weight;
+    }
+
+    boolean isReady() {
+      return this.weight > 0;
     }
   }
 }
