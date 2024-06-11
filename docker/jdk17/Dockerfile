@@ -16,9 +16,9 @@ COPY --from=jre-build /javaruntime $JAVA_HOME
 
 RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 adduser && \
     # Clean apt cache
-      apt-get clean  && \
-      rm -rf /var/cache/apt/archives/* /var/cache/apt/archives/partial/*  && \
-      rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    rm -rf /var/cache/apt/archives/* && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN userdel ubuntu 2>/dev/null || true && rm -rf /home/ubuntu  && \
     adduser --uid 1000 --disabled-password --gecos "" --home /opt/teku teku && \
