@@ -23,8 +23,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
@@ -52,7 +54,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
-
   private final File dbStorageModeFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
@@ -60,6 +61,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  private final SyncDataAccessor dbSettingFileSyncDataAccessor;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem, final Path dataPath, final StorageConfiguration config) {
@@ -79,6 +81,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
 
+    dbSettingFileSyncDataAccessor = SyncDataAccessor.create(dataDirectory.toPath());
     this.stateStorageMode =
         getStateStorageModeFromConfigOrDisk(Optional.of(config.getDataStorageMode()));
   }
@@ -383,7 +386,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private void saveStorageMode(final StateStorageMode storageMode) {
     try {
-      Files.writeString(dbStorageModeFile.toPath(), storageMode.name(), StandardCharsets.UTF_8);
+      dbSettingFileSyncDataAccessor.syncedWrite(
+          dbStorageModeFile.toPath(),
+          Bytes.of(storageMode.name().getBytes(StandardCharsets.UTF_8)));
     } catch (IOException e) {
       throw DatabaseStorageException.unrecoverable(
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),
