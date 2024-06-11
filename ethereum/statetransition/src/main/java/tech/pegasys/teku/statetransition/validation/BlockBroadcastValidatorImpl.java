@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 
-public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
+class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   private final BlockGossipValidator blockGossipValidator;
   private final BroadcastValidationLevel broadcastValidationLevel;
   private final SafeFuture<Boolean> consensusValidationSuccessResult;
@@ -42,7 +43,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
     this.broadcastValidationResult = new SafeFuture<>();
   }
 
-  public static BlockBroadcastValidatorImpl create(
+  static BlockBroadcastValidatorImpl create(
       final SignedBeaconBlock block,
       final BlockGossipValidator blockGossipValidator,
       final BroadcastValidationLevel broadcastValidationLevel) {
@@ -81,7 +82,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   }
 
   private void buildValidationPipeline(final SignedBeaconBlock block) {
-    // validateBroadcast should not be called at all but let's cover the case for safety
+    // NOT_REQUIRED should use the NOOP implementation but let's cover the case for safety
     if (broadcastValidationLevel == NOT_REQUIRED) {
       broadcastValidationResult.complete(SUCCESS);
       consensusValidationSuccessResult.cancel(true);
@@ -91,7 +92,8 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
     // EQUIVOCATION only validation
     if (broadcastValidationLevel == EQUIVOCATION) {
       final BroadcastValidationResult validationResult;
-      if (isEquivocatingBlock(block)) {
+      // marking the block as received because gossip validation won't be done
+      if (isEquivocatingBlock(block, true)) {
         validationResult = EQUIVOCATION_FAILURE;
       } else {
         validationResult = SUCCESS;
@@ -101,10 +103,15 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
       return;
     }
 
+    // We will skip marking the block as received when CONSENSUS_EQUIVOCATION level is chosen. This
+    // is because we will perform an additional equivocation check after the block import where it
+    // will be marked as received
+    final boolean markAsReceived = broadcastValidationLevel != CONSENSUS_AND_EQUIVOCATION;
+
     // GOSSIP only validation (includes EQUIVOCATION validation)
     SafeFuture<BroadcastValidationResult> validationPipeline =
         blockGossipValidator
-            .validate(block, true)
+            .validate(block, markAsReceived)
             .thenApply(
                 gossipValidationResult -> {
                   if (gossipValidationResult.isAccept()
@@ -142,7 +149,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
       return;
     }
 
-    // GOSSIP, CONSENSUS and final EQUIVOCATION validation
+    // GOSSIP, CONSENSUS and final EQUIVOCATION validation at the end
     validationPipeline
         .thenApply(
             broadcastValidationResult -> {
@@ -150,9 +157,9 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
                 // forward gossip or consensus validation failure
                 return broadcastValidationResult;
               }
-
-              // perform final equivocation validation
-              if (isEquivocatingBlock(block)) {
+              // we didn't initially mark it as received, so doing it at this final equivocation
+              // check
+              if (isEquivocatingBlock(block, true)) {
                 return EQUIVOCATION_FAILURE;
               }
 
@@ -161,9 +168,9 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
         .propagateTo(broadcastValidationResult);
   }
 
-  private boolean isEquivocatingBlock(final SignedBeaconBlock block) {
+  private boolean isEquivocatingBlock(final SignedBeaconBlock block, final boolean markAsReceived) {
     return blockGossipValidator
-        .performBlockEquivocationCheck(block)
+        .performBlockEquivocationCheck(markAsReceived, block)
         .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
   }
 }
