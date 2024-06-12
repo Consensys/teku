@@ -77,11 +77,11 @@ public class StorageConfigurationTest {
 
   @Test
   public void shouldFailIfDatabaseStorageModeFileIsInvalidAndNoExplicitOptionIsSet(
-      @TempDir Path dir) throws IOException {
+      @TempDir final Path dir) throws IOException {
     createInvalidStorageModeFile(dir);
     final DataConfig dataConfig = DataConfig.builder().beaconDataPath(dir).build();
 
-    final Builder storageConfigBuilder =
+    final StorageConfiguration.Builder storageConfigBuilder =
         StorageConfiguration.builder()
             .specProvider(spec)
             .dataConfig(dataConfig)
@@ -92,7 +92,7 @@ public class StorageConfigurationTest {
 
   @Test
   public void shouldSucceedIfDatabaseStorageModeFileIsInvalidAndExplicitOptionIsSet(
-      @TempDir Path dir) throws IOException {
+      @TempDir final Path dir) throws IOException {
     createInvalidStorageModeFile(dir);
     final DataConfig dataConfig = DataConfig.builder().beaconDataPath(dir).build();
 
