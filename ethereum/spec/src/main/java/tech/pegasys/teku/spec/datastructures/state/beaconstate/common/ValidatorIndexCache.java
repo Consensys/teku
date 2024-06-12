@@ -30,7 +30,7 @@ public class ValidatorIndexCache {
 
   private static final int INDEX_NONE = -1;
   private final AtomicInteger latestFinalizedIndex;
-  static final ValidatorIndexCache NO_OP_INSTANCE =
+  public static final ValidatorIndexCache NO_OP_INSTANCE =
       new ValidatorIndexCache(NoOpCache.getNoOpCache(), INDEX_NONE, INDEX_NONE);
 
   @VisibleForTesting
