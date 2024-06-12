@@ -6,6 +6,7 @@
 We recommend all users of the `Teku - Detailed` dashboard to upgrade to version [Revision 12](https://grafana.com/api/dashboards/16737/revisions/12/download)  
 as soon as possible. Documentation with all metrics that have been renamed will be provided.
 - Next release will require Java 21. The current release is compatible, please consider upgrading before the next release.
+- Next release will stop supporting implicit PRUNE database storage mode configuration. If you want to keep using PRUNE mode, you must update your config file or CLI options with --data-storage-mode=PRUNE.
 
 ## Current Releases
 
