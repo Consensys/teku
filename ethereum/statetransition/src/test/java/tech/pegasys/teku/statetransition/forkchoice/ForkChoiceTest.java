@@ -95,7 +95,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -129,7 +129,7 @@ class ForkChoiceTest {
       mock(BlockBroadcastValidator.class);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
-  private final P2PDebugDataDumper p2pDebugDataDumper = mock(P2PDebugDataDumper.class);
+  private final DebugDataDumper debugDataDumper = mock(DebugDataDumper.class);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 
@@ -166,7 +166,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
-            p2pDebugDataDumper,
+            debugDataDumper,
             metricsSystem);
 
     // Starting and mocks
@@ -313,8 +313,8 @@ class ForkChoiceTest {
 
     importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
 
-    verify(p2pDebugDataDumper)
-        .saveInvalidBlockToFile(
+    verify(debugDataDumper)
+        .saveInvalidBlock(
             eq(blockAndState.getBlock()),
             eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
             eq(Optional.of(blockException)));
@@ -348,8 +348,8 @@ class ForkChoiceTest {
     // resolve with a failure
     payloadStatusSafeFuture.complete(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
     assertBlockImportFailure(importResult, FailureReason.FAILED_STATE_TRANSITION);
-    verify(p2pDebugDataDumper)
-        .saveInvalidBlockToFile(any(), eq(FailureReason.FAILED_STATE_TRANSITION.toString()), any());
+    verify(debugDataDumper)
+        .saveInvalidBlock(any(), eq(FailureReason.FAILED_STATE_TRANSITION.toString()), any());
   }
 
   @Test
@@ -429,7 +429,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
-            P2PDebugDataDumper.NOOP,
+            DebugDataDumper.NOOP,
             metricsSystem);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
@@ -749,8 +749,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockAndAssertFailure(
         chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
-    verify(p2pDebugDataDumper)
-        .saveInvalidBlockToFile(
+    verify(debugDataDumper)
+        .saveInvalidBlock(
             eq(chainBuilder.getLatestBlockAndState().getBlock()),
             eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
             any());
@@ -790,8 +790,8 @@ class ForkChoiceTest {
     SignedBlockAndState invalidBlock = chainBuilder.generateNextBlock();
     importBlockAndAssertFailure(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
-    verify(p2pDebugDataDumper)
-        .saveInvalidBlockToFile(
+    verify(debugDataDumper)
+        .saveInvalidBlock(
             eq(invalidBlock.getBlock()),
             eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
             any());

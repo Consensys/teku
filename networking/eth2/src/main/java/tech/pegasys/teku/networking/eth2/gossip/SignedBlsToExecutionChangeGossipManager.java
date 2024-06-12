@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedBlsToExecutionChangeGossipManager
@@ -37,7 +37,7 @@ public class SignedBlsToExecutionChangeGossipManager
       final ForkInfo forkInfo,
       final OperationProcessor<SignedBlsToExecutionChange> processor,
       final NetworkingSpecConfig networkingConfig,
-      final P2PDebugDataDumper p2pDebugDataDumper) {
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.BLS_TO_EXECUTION_CHANGE,
@@ -51,7 +51,7 @@ public class SignedBlsToExecutionChangeGossipManager
         // of the topic they arrived on (ie disable fork checking at this level)
         message -> forkInfo.getFork().getEpoch(),
         networkingConfig,
-        p2pDebugDataDumper);
+        debugDataDumper);
   }
 
   public void publish(final SignedBlsToExecutionChange message) {
