@@ -38,22 +38,15 @@ import tech.pegasys.teku.storage.server.noop.NoOpDatabase;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 
 public class VersionedDatabaseFactory implements DatabaseFactory {
-
   private static final Logger LOG = LogManager.getLogger();
 
-  @VisibleForTesting
-  static final String DB_PATH = "db";
-  @VisibleForTesting
-  static final String ARCHIVE_PATH = "archive";
-  @VisibleForTesting
-  static final String DB_VERSION_PATH = "db.version";
+  @VisibleForTesting static final String DB_PATH = "db";
+  @VisibleForTesting static final String ARCHIVE_PATH = "archive";
+  @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
 
-  @VisibleForTesting
-  static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
-  @VisibleForTesting
-  static final String METADATA_FILENAME = "metadata.yml";
-  @VisibleForTesting
-  static final String NETWORK_FILENAME = "network.yml";
+  @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
+  @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
+  @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
 
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
@@ -99,20 +92,20 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
     Optional<StateStorageMode> maybeStorageModeFromFile = Optional.empty();
     try {
-      maybeStorageModeFromFile = DatabaseStorageModeFileHelper.readStateStorageMode(storageModeFile.toPath());
+      maybeStorageModeFromFile =
+          DatabaseStorageModeFileHelper.readStateStorageMode(storageModeFile.toPath());
     } catch (final DatabaseStorageException e) {
       if (maybeConfiguredStorageMode.isEmpty()) {
         throw e;
       }
     }
-//    Optional<StateStorageMode> maybeStorageModeFromFile = DatabaseStorageModeFileHelper.readStateStorageMode(
-//        storageModeFile.toPath());
 
     if (maybeStorageModeFromFile.isPresent() && maybeConfiguredStorageMode.isPresent()) {
       if (!maybeStorageModeFromFile.get().equals(maybeConfiguredStorageMode.get())) {
         LOG.info(
             "Storage mode that was persisted differs from the command specified option; file: {}, CLI: {}",
-            maybeStorageModeFromFile.get(), maybeConfiguredStorageMode.get());
+            maybeStorageModeFromFile.get(),
+            maybeConfiguredStorageMode.get());
       }
     }
 

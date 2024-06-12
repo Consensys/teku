@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
@@ -30,7 +31,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 
 public class StorageConfiguration {
-
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
   public static final int DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS = 120;
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
@@ -268,7 +268,9 @@ public class StorageConfiguration {
 
         Optional<StateStorageMode> storageModeFromStoredFile;
         try {
-          storageModeFromStoredFile = DatabaseStorageModeFileHelper.readStateStorageMode(beaconDataDirectory.resolve(STORAGE_MODE_PATH));
+          storageModeFromStoredFile =
+              DatabaseStorageModeFileHelper.readStateStorageMode(
+                  beaconDataDirectory.resolve(STORAGE_MODE_PATH));
         } catch (final DatabaseStorageException e) {
           if (dataStorageMode == NOT_SET) {
             throw e;
@@ -278,7 +280,8 @@ public class StorageConfiguration {
         }
 
         this.dataStorageMode =
-            determineStorageDefault(beaconDataDirectory.toFile().exists(), storageModeFromStoredFile, dataStorageMode);
+            determineStorageDefault(
+                beaconDataDirectory.toFile().exists(), storageModeFromStoredFile, dataStorageMode);
       } else {
         if (dataStorageMode.equals(NOT_SET)) {
           dataStorageMode = PRUNE;
@@ -306,6 +309,20 @@ public class StorageConfiguration {
     if (modeRequested != NOT_SET) {
       return modeRequested;
     }
-    return maybeHistoricStorageMode.orElse(isExistingStore ? PRUNE : MINIMAL);
+
+    if (maybeHistoricStorageMode.isPresent()) {
+      final StateStorageMode stateStorageMode = maybeHistoricStorageMode.get();
+      if (stateStorageMode == PRUNE) {
+        STATUS_LOG.warnUsageOfImplicitPruneDataStorageMode();
+      }
+      return stateStorageMode;
+    }
+
+    if (isExistingStore) {
+      STATUS_LOG.warnUsageOfImplicitPruneDataStorageMode();
+      return PRUNE;
+    } else {
+      return MINIMAL;
+    }
   }
 }

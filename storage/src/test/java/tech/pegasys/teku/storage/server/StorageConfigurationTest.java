@@ -41,7 +41,8 @@ import tech.pegasys.teku.storage.server.StorageConfiguration.Builder;
 public class StorageConfigurationTest {
 
   final Spec spec = TestSpecFactory.createMinimalPhase0();
-  final Eth1Address eth1Address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
+  final Eth1Address eth1Address =
+      Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 
   public static Stream<Arguments> getStateStorageDefaultScenarios() {
     ArrayList<Arguments> args = new ArrayList<>();
@@ -69,37 +70,39 @@ public class StorageConfigurationTest {
       final StateStorageMode expectedResult) {
 
     assertThat(
-        StorageConfiguration.determineStorageDefault(
-            isExistingStore, maybePreviousStorageMode, requestedMode))
+            StorageConfiguration.determineStorageDefault(
+                isExistingStore, maybePreviousStorageMode, requestedMode))
         .isEqualTo(expectedResult);
   }
 
   @Test
-  public void shouldFailIfDatabaseStorageModeFileIsInvalidAndNoExplicitOptionIsSet(@TempDir Path dir)
-      throws IOException {
+  public void shouldFailIfDatabaseStorageModeFileIsInvalidAndNoExplicitOptionIsSet(
+      @TempDir Path dir) throws IOException {
     createInvalidStorageModeFile(dir);
     final DataConfig dataConfig = DataConfig.builder().beaconDataPath(dir).build();
 
-    final Builder storageConfigBuilder = StorageConfiguration.builder()
-        .specProvider(spec)
-        .dataConfig(dataConfig)
-        .eth1DepositContract(eth1Address);
+    final Builder storageConfigBuilder =
+        StorageConfiguration.builder()
+            .specProvider(spec)
+            .dataConfig(dataConfig)
+            .eth1DepositContract(eth1Address);
 
     assertThatThrownBy(storageConfigBuilder::build).isInstanceOf(DatabaseStorageException.class);
   }
 
   @Test
-  public void shouldSucceedIfDatabaseStorageModeFileIsInvalidAndExplicitOptionIsSet(@TempDir Path dir)
-      throws IOException {
+  public void shouldSucceedIfDatabaseStorageModeFileIsInvalidAndExplicitOptionIsSet(
+      @TempDir Path dir) throws IOException {
     createInvalidStorageModeFile(dir);
     final DataConfig dataConfig = DataConfig.builder().beaconDataPath(dir).build();
 
-    final StorageConfiguration storageConfig = StorageConfiguration.builder()
-        .specProvider(spec)
-        .dataConfig(dataConfig)
-        .eth1DepositContract(eth1Address)
-        .dataStorageMode(ARCHIVE)
-        .build();
+    final StorageConfiguration storageConfig =
+        StorageConfiguration.builder()
+            .specProvider(spec)
+            .dataConfig(dataConfig)
+            .eth1DepositContract(eth1Address)
+            .dataStorageMode(ARCHIVE)
+            .build();
 
     assertThat(storageConfig.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
