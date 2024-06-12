@@ -58,13 +58,23 @@ public abstract class StableProfileSchema2<
         maxFieldCount);
   }
 
+  protected StableProfileSchema2(
+      final String containerName,
+      final NamedIndexedSchema<V0> fieldNamedIndexedSchema0,
+      final NamedIndexedSchema<V1> fieldNamedIndexedSchema1,
+      final int maxFieldCount) {
+
+    super(
+        containerName, List.of(fieldNamedIndexedSchema0, fieldNamedIndexedSchema1), maxFieldCount);
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
-    return (SszSchema<V0>) getChildSchema(0);
+    return (SszSchema<V0>) getChildSchema(getNthActiveFieldIndex(0));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
-    return (SszSchema<V1>) getChildSchema(1);
+    return (SszSchema<V1>) getChildSchema(getNthActiveFieldIndex(1));
   }
 }

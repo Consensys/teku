@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
@@ -39,33 +41,62 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
     extends AbstractSszContainerSchema<C> implements SszStableContainerSchema<C> {
-
+  private final IntList activeFieldIndicesCache;
   private final SszBitvectorSchema<SszBitvector> activeFieldsBitvectorSchema;
   private final SszBitvector activeFieldsBitvector;
 
-  public static Map<Integer, NamedSchema<?>> continuousActiveNamedSchemas(
+  public static List<? extends NamedIndexedSchema<?>> continuousActiveNamedSchemas(
       final List<? extends NamedSchema<?>> namedSchemas) {
     return IntStream.range(0, namedSchemas.size())
-        .boxed()
-        .collect(Collectors.toMap(Function.identity(), namedSchemas::get));
+        .mapToObj(index -> NamedIndexedSchema.of(index, namedSchemas.get(index)))
+        .toList();
   }
 
-  public static Map<Integer, NamedSchema<?>> continuousActiveSchemas(
+  public static List<? extends NamedIndexedSchema<?>> continuousActiveSchemas(
       final List<SszSchema<?>> schemas) {
     return IntStream.range(0, schemas.size())
-        .boxed()
-        .collect(
-            Collectors.toMap(Function.identity(), i -> namedSchema("field-" + i, schemas.get(i))));
+        .mapToObj(index -> new NamedIndexedSchema<>("field-" + index, index, schemas.get(index)))
+        .toList();
+  }
+
+  public static class NamedIndexedSchema<T extends SszData> extends NamedSchema<T> {
+    private final int index;
+
+    protected NamedIndexedSchema(final String name, final int index, final SszSchema<T> schema) {
+      super(name, schema);
+      this.index = index;
+    }
+
+    protected static <T extends SszData> NamedIndexedSchema<T> of(
+        final int index, final NamedSchema<T> schema) {
+      return new NamedIndexedSchema<>(schema.getName(), index, schema.getSchema());
+    }
+
+    public int getIndex() {
+      return index;
+    }
+  }
+
+  protected static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
+      final SszFieldName fieldName, final int index, final SszSchema<T> schema) {
+    return namedIndexedSchema(fieldName.getSszFieldName(), index, schema);
+  }
+
+  protected static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
+      final String fieldName, final int index, final SszSchema<T> schema) {
+    return new NamedIndexedSchema<>(fieldName, index, schema);
   }
 
   public AbstractSszStableContainerSchema(
       final String name,
-      final Map<Integer, NamedSchema<?>> childrenSchemas,
+      final List<? extends NamedIndexedSchema<?>> activeChildrenSchemas,
       final int maxFieldCount) {
-    super(name, createAllSchemas(childrenSchemas, maxFieldCount));
+    super(name, createAllSchemas(activeChildrenSchemas, maxFieldCount));
 
+    this.activeFieldIndicesCache =
+        IntList.of(activeChildrenSchemas.stream().mapToInt(NamedIndexedSchema::getIndex).toArray());
     this.activeFieldsBitvectorSchema = SszBitvectorSchema.create(maxFieldCount);
-    this.activeFieldsBitvector = activeFieldsBitvectorSchema.ofBits(childrenSchemas.keySet());
+    this.activeFieldsBitvector = activeFieldsBitvectorSchema.ofBits(activeFieldIndicesCache);
   }
 
   @Override
@@ -90,13 +121,18 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   @Override
-  public SszBitvector getActiveFields() {
+  public SszBitvector getActiveFieldsBitvector() {
     return activeFieldsBitvector;
   }
 
   @Override
   public int getActiveFieldCount() {
-    return activeFieldsBitvector.getBitCount();
+    return activeFieldIndicesCache.size();
+  }
+
+  @Override
+  public int getNthActiveFieldIndex(final int nthActiveField) {
+    return activeFieldIndicesCache.getInt(nthActiveField);
   }
 
   @Override
@@ -165,16 +201,22 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     return super.getSszSize(node);
   }
 
-  private static List<? extends NamedSchema<?>> createAllSchemas(
-      final Map<Integer, NamedSchema<?>> childrenSchemas, final int maxFieldCount) {
-
-    checkArgument(childrenSchemas.keySet().stream().allMatch(i -> i < maxFieldCount));
+  private static List<? extends NamedIndexedSchema<?>> createAllSchemas(
+      final List<? extends NamedIndexedSchema<?>> childrenSchemas, final int maxFieldCount) {
+    Map<Integer, NamedIndexedSchema<?>> childrenSchemasByIndex =
+        childrenSchemas.stream()
+            .collect(
+                Collectors.toUnmodifiableMap(NamedIndexedSchema::getIndex, Function.identity()));
+    checkArgument(childrenSchemasByIndex.size() == childrenSchemas.size());
+    checkArgument(childrenSchemasByIndex.keySet().stream().allMatch(i -> i < maxFieldCount));
 
     return IntStream.range(0, maxFieldCount)
         .mapToObj(
             idx ->
-                childrenSchemas.getOrDefault(
-                    idx, NamedSchema.of("__none_" + idx, SszPrimitiveSchemas.NONE_SCHEMA)))
+                childrenSchemasByIndex.getOrDefault(
+                    idx,
+                    new NamedIndexedSchema<>(
+                        "__none_" + idx, idx, SszPrimitiveSchemas.NONE_SCHEMA)))
         .toList();
   }
 }

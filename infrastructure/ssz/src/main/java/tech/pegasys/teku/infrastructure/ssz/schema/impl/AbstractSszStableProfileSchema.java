@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
-import java.util.Map;
+import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
@@ -25,7 +25,7 @@ public abstract class AbstractSszStableProfileSchema<C extends SszStableContaine
 
   public AbstractSszStableProfileSchema(
       final String name,
-      final Map<Integer, NamedSchema<?>> childrenSchemas,
+      final List<? extends NamedIndexedSchema<?>> childrenSchemas,
       final int maxFieldCount) {
     super(name, childrenSchemas, maxFieldCount);
   }

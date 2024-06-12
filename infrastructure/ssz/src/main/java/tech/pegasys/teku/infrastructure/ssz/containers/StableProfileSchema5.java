@@ -91,28 +91,48 @@ public abstract class StableProfileSchema5<
         maxFieldCount);
   }
 
+  protected StableProfileSchema5(
+      final String containerName,
+      final NamedIndexedSchema<V0> fieldNamedIndexedSchema0,
+      final NamedIndexedSchema<V1> fieldNamedIndexedSchema1,
+      final NamedIndexedSchema<V2> fieldNamedIndexedSchema2,
+      final NamedIndexedSchema<V3> fieldNamedIndexedSchema3,
+      final NamedIndexedSchema<V4> fieldNamedIndexedSchema4,
+      final int maxFieldCount) {
+
+    super(
+        containerName,
+        List.of(
+            fieldNamedIndexedSchema0,
+            fieldNamedIndexedSchema1,
+            fieldNamedIndexedSchema2,
+            fieldNamedIndexedSchema3,
+            fieldNamedIndexedSchema4),
+        maxFieldCount);
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
-    return (SszSchema<V0>) getChildSchema(0);
+    return (SszSchema<V0>) getChildSchema(getNthActiveFieldIndex(0));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
-    return (SszSchema<V1>) getChildSchema(1);
+    return (SszSchema<V1>) getChildSchema(getNthActiveFieldIndex(1));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V2> getFieldSchema2() {
-    return (SszSchema<V2>) getChildSchema(2);
+    return (SszSchema<V2>) getChildSchema(getNthActiveFieldIndex(2));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V3> getFieldSchema3() {
-    return (SszSchema<V3>) getChildSchema(3);
+    return (SszSchema<V3>) getChildSchema(getNthActiveFieldIndex(3));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V4> getFieldSchema4() {
-    return (SszSchema<V4>) getChildSchema(4);
+    return (SszSchema<V4>) getChildSchema(getNthActiveFieldIndex(4));
   }
 }

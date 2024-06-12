@@ -47,22 +47,22 @@ public class StableProfile5<
   }
 
   protected V0 getField0() {
-    return getAny(0);
+    return getAny(getStableSchema().getNthActiveFieldIndex(0));
   }
 
   protected V1 getField1() {
-    return getAny(1);
+    return getAny(getStableSchema().getNthActiveFieldIndex(1));
   }
 
   protected V2 getField2() {
-    return getAny(2);
+    return getAny(getStableSchema().getNthActiveFieldIndex(2));
   }
 
   protected V3 getField3() {
-    return getAny(3);
+    return getAny(getStableSchema().getNthActiveFieldIndex(3));
   }
 
   protected V4 getField4() {
-    return getAny(4);
+    return getAny(getStableSchema().getNthActiveFieldIndex(4));
   }
 }

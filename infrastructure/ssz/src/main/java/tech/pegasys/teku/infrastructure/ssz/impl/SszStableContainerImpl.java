@@ -55,20 +55,21 @@ public abstract class SszStableContainerImpl extends SszContainerImpl
   }
 
   @Override
+  public SszStableContainerSchema<?> getStableSchema() {
+    return ((SszStableContainerSchema<?>) super.getSchema());
+  }
+
+  @Override
   public String toString() {
     final SszStableContainerSchema<?> schema = this.getStableSchema();
     return schema.getContainerName()
         + "{activeFields="
-        + schema.getActiveFields()
+        + schema.getActiveFieldsBitvector()
         + ", "
         + IntStream.range(0, schema.getActiveFieldCount())
             .filter(schema::isActiveField)
             .mapToObj(idx -> schema.getFieldNames().get(idx) + "=" + get(idx))
             .collect(Collectors.joining(", "))
         + "}";
-  }
-
-  private SszStableContainerSchema<?> getStableSchema() {
-    return ((SszStableContainerSchema<?>) super.getSchema());
   }
 }

@@ -34,6 +34,6 @@ public class StableProfile1<C extends StableProfile1<C, V0>, V0 extends SszData>
   }
 
   protected V0 getField0() {
-    return getAny(0);
+    return getAny(getStableSchema().getNthActiveFieldIndex(0));
   }
 }

@@ -13,13 +13,45 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import java.util.List;
+import java.util.function.BiFunction;
+import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public interface SszStableContainerSchema<C extends SszContainer> extends SszContainerSchema<C> {
+public interface SszStableContainerSchema<C extends SszStableContainer>
+    extends SszContainerSchema<C> {
+
+  /**
+   * Creates a new {@link SszStableContainer} schema with specified field schemas and container
+   * instance constructor
+   */
+  static <C extends SszStableContainer> SszContainerSchema<C> create(
+      final String name,
+      final List<NamedIndexedSchema<?>> activeChildrenSchemas,
+      final int maxFieldCount,
+      final BiFunction<SszStableContainerSchema<C>, TreeNode, C> instanceCtor) {
+    return new AbstractSszStableContainerSchema<>(name, activeChildrenSchemas, maxFieldCount) {
+      @Override
+      public C createFromBackingNode(TreeNode node) {
+        return instanceCtor.apply(this, node);
+      }
+    };
+  }
+
   boolean isActiveField(int index);
 
-  SszBitvector getActiveFields();
+  SszBitvector getActiveFieldsBitvector();
 
   int getActiveFieldCount();
+
+  /**
+   * This method resolves the index of the nth active field.
+   *
+   * @param nthActiveField Nth active field
+   * @return index
+   */
+  int getNthActiveFieldIndex(int nthActiveField);
 }

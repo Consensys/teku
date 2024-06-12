@@ -68,26 +68,15 @@ public class ContainersGenerator {
 
   public void generateAll() {
     for (int i = 1; i <= maxFields; i++) {
-      generateContainerClasses(
-          i, "ContainerSchema", "Container", containerTypeTemplateFile, containerViewTemplateFile);
-      generateContainerClasses(
-          i,
-          "StableProfileSchema",
-          "StableProfile",
-          stableProfileTypeTemplateFile,
-          stableProfileViewTemplateFile);
+      generateContainerClasses(i);
+      generateStableContainerClasses(i);
     }
   }
 
-  public void generateContainerClasses(
-      final int fieldsCount,
-      final String baseTypeClassName,
-      final String baseViewClassName,
-      final String containerTypeTemplateFile,
-      final String containerViewTemplateFile) {
-    String typeClassName = baseTypeClassName + fieldsCount;
-    String viewClassName = baseViewClassName + fieldsCount;
-    Map<String, String> vars =
+  public void generateContainerClasses(final int fieldsCount) {
+    final String typeClassName = "ContainerSchema" + fieldsCount;
+    final String viewClassName = "Container" + fieldsCount;
+    final Map<String, String> vars =
         Map.ofEntries(
             Map.entry("TypeClassName", typeClassName),
             Map.entry("ViewClassName", viewClassName),
@@ -160,6 +149,97 @@ public class ContainersGenerator {
 
     generateFromTemplate(
         templateSrcPath.resolve(viewPackagePath).resolve(containerViewTemplateFile),
+        targetSrcPath.resolve(viewPackagePath).resolve(viewClassName + ".java"),
+        vars);
+  }
+
+  public void generateStableContainerClasses(final int fieldsCount) {
+    final String typeClassName = "StableProfileSchema" + fieldsCount;
+    final String viewClassName = "StableProfile" + fieldsCount;
+    final Map<String, String> vars =
+        Map.ofEntries(
+            Map.entry("TypeClassName", typeClassName),
+            Map.entry("ViewClassName", viewClassName),
+            Map.entry(
+                "ViewTypes",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "V" + i + " extends SszData")
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "ViewTypeNames",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "V" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "FieldsDeclarations",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "final SszSchema<V" + i + "> fieldSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "NamedFieldsDeclarations",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "final NamedSchema<V" + i + "> fieldNamedSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "NamedIndexedFieldsDeclarations",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(
+                        i -> "final NamedIndexedSchema<V" + i + "> fieldNamedIndexedSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "Fields",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "fieldSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "NamedFields",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "fieldNamedSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "NamedIndexedFields",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "fieldNamedIndexedSchema" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "ViewParams",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "final V" + i + " arg" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "ViewArgs",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(i -> "arg" + i)
+                    .collect(Collectors.joining(", "))),
+            Map.entry(
+                "Getters",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(
+                        i ->
+                            (""
+                                    + "protected V$ getField$() {\n"
+                                    + "    return getAny(getStableSchema().getNthActiveFieldIndex($));\n"
+                                    + "  }")
+                                .replace("$", "" + i))
+                    .collect(Collectors.joining("\n\n"))),
+            Map.entry(
+                "TypeGetters",
+                IntStream.range(0, fieldsCount)
+                    .mapToObj(
+                        i ->
+                            ("  @SuppressWarnings(\"unchecked\")\n"
+                                    + "  public SszSchema<V$> getFieldSchema$() {\n"
+                                    + "    return (SszSchema<V$>) getChildSchema(getNthActiveFieldIndex($));\n"
+                                    + "  }\n")
+                                .replace("$", "" + i))
+                    .collect(Collectors.joining("\n\n"))));
+    generateFromTemplate(
+        templateSrcPath.resolve(typePackagePath).resolve(stableProfileTypeTemplateFile),
+        targetSrcPath.resolve(typePackagePath).resolve(typeClassName + ".java"),
+        vars);
+
+    generateFromTemplate(
+        templateSrcPath.resolve(viewPackagePath).resolve(stableProfileViewTemplateFile),
         targetSrcPath.resolve(viewPackagePath).resolve(viewClassName + ".java"),
         vars);
   }

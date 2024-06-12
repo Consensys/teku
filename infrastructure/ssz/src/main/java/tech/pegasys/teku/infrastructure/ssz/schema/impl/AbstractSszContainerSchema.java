@@ -55,7 +55,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       return new NamedSchema<>(name, schema);
     }
 
-    private NamedSchema(final String name, final SszSchema<T> schema) {
+    protected NamedSchema(final String name, final SszSchema<T> schema) {
       this.name = name;
       this.schema = schema;
     }

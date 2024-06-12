@@ -37,10 +37,10 @@ public class StableProfile2<
   }
 
   protected V0 getField0() {
-    return getAny(0);
+    return getAny(getStableSchema().getNthActiveFieldIndex(0));
   }
 
   protected V1 getField1() {
-    return getAny(1);
+    return getAny(getStableSchema().getNthActiveFieldIndex(1));
   }
 }

@@ -75,15 +75,27 @@ public abstract class /*$$TypeClassName*/ StableProfileSchemaTemplate /*$$*/<
         maxFieldCount);
   }
 
+  protected /*$$TypeClassName*/ StableProfileSchemaTemplate /*$$*/(
+      final String containerName,
+      /*$$NamedIndexedFieldsDeclarations*/ final NamedIndexedSchema<V0> fieldNamedIndexedSchema0,
+      final NamedIndexedSchema<V1> fieldNamedIndexedSchema1 /*$$*/,
+      final int maxFieldCount) {
+
+    super(
+        containerName,
+        List.of(/*$$NamedIndexedFields*/ fieldNamedIndexedSchema0, fieldNamedIndexedSchema1 /*$$*/),
+        maxFieldCount);
+  }
+
   /*$$TypeGetters*/
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
-    return (SszSchema<V0>) getChildSchema(0);
+    return (SszSchema<V0>) getChildSchema(getNthActiveFieldIndex(0));
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
-    return (SszSchema<V1>) getChildSchema(1);
+    return (SszSchema<V1>) getChildSchema(getNthActiveFieldIndex(1));
   }
   /*$$*/
 }

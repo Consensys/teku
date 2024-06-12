@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra
 import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -75,4 +76,10 @@ public class MutableBeaconStateElectraImpl
   public boolean isFieldActive(final int index) {
     return getBeaconStateSchema().isActiveField(index);
   }
+
+  @Override
+  public SszStableContainerSchema<?> getStableSchema() {
+    return (SszStableContainerSchema<?>)super.getSchema();
+  }
+
 }

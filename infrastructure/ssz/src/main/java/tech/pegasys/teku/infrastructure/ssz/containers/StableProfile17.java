@@ -83,70 +83,70 @@ public class StableProfile17<
   }
 
   protected V0 getField0() {
-    return getAny(0);
+    return getAny(getStableSchema().getNthActiveFieldIndex(0));
   }
 
   protected V1 getField1() {
-    return getAny(1);
+    return getAny(getStableSchema().getNthActiveFieldIndex(1));
   }
 
   protected V2 getField2() {
-    return getAny(2);
+    return getAny(getStableSchema().getNthActiveFieldIndex(2));
   }
 
   protected V3 getField3() {
-    return getAny(3);
+    return getAny(getStableSchema().getNthActiveFieldIndex(3));
   }
 
   protected V4 getField4() {
-    return getAny(4);
+    return getAny(getStableSchema().getNthActiveFieldIndex(4));
   }
 
   protected V5 getField5() {
-    return getAny(5);
+    return getAny(getStableSchema().getNthActiveFieldIndex(5));
   }
 
   protected V6 getField6() {
-    return getAny(6);
+    return getAny(getStableSchema().getNthActiveFieldIndex(6));
   }
 
   protected V7 getField7() {
-    return getAny(7);
+    return getAny(getStableSchema().getNthActiveFieldIndex(7));
   }
 
   protected V8 getField8() {
-    return getAny(8);
+    return getAny(getStableSchema().getNthActiveFieldIndex(8));
   }
 
   protected V9 getField9() {
-    return getAny(9);
+    return getAny(getStableSchema().getNthActiveFieldIndex(9));
   }
 
   protected V10 getField10() {
-    return getAny(10);
+    return getAny(getStableSchema().getNthActiveFieldIndex(10));
   }
 
   protected V11 getField11() {
-    return getAny(11);
+    return getAny(getStableSchema().getNthActiveFieldIndex(11));
   }
 
   protected V12 getField12() {
-    return getAny(12);
+    return getAny(getStableSchema().getNthActiveFieldIndex(12));
   }
 
   protected V13 getField13() {
-    return getAny(13);
+    return getAny(getStableSchema().getNthActiveFieldIndex(13));
   }
 
   protected V14 getField14() {
-    return getAny(14);
+    return getAny(getStableSchema().getNthActiveFieldIndex(14));
   }
 
   protected V15 getField15() {
-    return getAny(15);
+    return getAny(getStableSchema().getNthActiveFieldIndex(15));
   }
 
   protected V16 getField16() {
-    return getAny(16);
+    return getAny(getStableSchema().getNthActiveFieldIndex(16));
   }
 }

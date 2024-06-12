@@ -51,8 +51,16 @@ public abstract class StableProfileSchema1<C extends SszStableContainer, V0 exte
     super(containerName, continuousActiveNamedSchemas(List.of(fieldNamedSchema0)), maxFieldCount);
   }
 
+  protected StableProfileSchema1(
+      final String containerName,
+      final NamedIndexedSchema<V0> fieldNamedIndexedSchema0,
+      final int maxFieldCount) {
+
+    super(containerName, List.of(fieldNamedIndexedSchema0), maxFieldCount);
+  }
+
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
-    return (SszSchema<V0>) getChildSchema(0);
+    return (SszSchema<V0>) getChildSchema(getNthActiveFieldIndex(0));
   }
 }
