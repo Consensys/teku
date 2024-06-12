@@ -37,4 +37,9 @@ public class SimpleDataDirLayout implements DataDirLayout {
   public Path getDebugDataDirectory() {
     return path;
   }
+
+  @Override
+  public boolean isDebugDataDumpingEnabled() {
+    return false;
+  }
 }

@@ -200,4 +200,17 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Cannot reconstruct historic states without using ARCHIVE data storage mode");
   }
+
+  @Test
+  void debugDataDumpingEnabled_shouldDefaultFalse() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
+    assertThat(tekuConfig.dataConfig().isDebugDataDumpingEnabled()).isEqualTo(false);
+  }
+
+  @Test
+  void shouldSetDebugDataDumpingEnabled() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--Xdebug-data-dumping-enabled=true");
+    assertThat(tekuConfig.dataConfig().isDebugDataDumpingEnabled()).isEqualTo(true);
+  }
 }

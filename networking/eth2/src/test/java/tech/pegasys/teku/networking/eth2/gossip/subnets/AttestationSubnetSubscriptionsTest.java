@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -69,7 +69,7 @@ public class AttestationSubnetSubscriptionsTest {
             recentChainData,
             processor,
             recentChainData.getCurrentForkInfo().orElseThrow(),
-            P2PDebugDataDumper.NOOP);
+            DebugDataDumper.NOOP);
     subnetSubscriptions.subscribe();
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
