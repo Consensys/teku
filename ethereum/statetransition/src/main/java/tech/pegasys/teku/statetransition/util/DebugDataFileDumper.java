@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
+public class DebugDataFileDumper implements DebugDataDumper {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -45,7 +45,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   private boolean enabled;
   private final Path directory;
 
-  public P2PDebugDataFileDumper(final Path directory) {
+  public DebugDataFileDumper(final Path directory) {
     this.enabled = true;
     this.directory = directory;
 
@@ -86,7 +86,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   }
 
   @Override
-  public void saveGossipRejectedMessageToFile(
+  public void saveGossipRejectedMessage(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
       final Supplier<Bytes> decodedMessage,
@@ -110,7 +110,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   }
 
   @Override
-  public void saveInvalidBlockToFile(
+  public void saveInvalidBlock(
       final SignedBeaconBlock block,
       final String failureReason,
       final Optional<Throwable> failureCause) {

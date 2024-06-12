@@ -41,7 +41,6 @@ public class P2PConfig {
       Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
-  public static final boolean DEFAULT_P2P_DUMPS_TO_FILE_ENABLED = false;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
 
   private final Spec spec;
@@ -59,7 +58,6 @@ public class P2PConfig {
   private final int batchVerifyQueueCapacity;
   private final int batchVerifyMaxBatchSize;
   private final boolean batchVerifyStrictThreadLimitEnabled;
-  private final boolean p2pDumpsToFileEnabled;
 
   private final boolean allTopicsFilterEnabled;
 
@@ -77,7 +75,6 @@ public class P2PConfig {
       final int batchVerifyQueueCapacity,
       final int batchVerifyMaxBatchSize,
       final boolean batchVerifyStrictThreadLimitEnabled,
-      final boolean p2pDumpsToFileEnabled,
       final boolean allTopicsFilterEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
@@ -93,7 +90,6 @@ public class P2PConfig {
     this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
     this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
     this.networkingSpecConfig = spec.getNetworkingConfig();
-    this.p2pDumpsToFileEnabled = p2pDumpsToFileEnabled;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
@@ -153,10 +149,6 @@ public class P2PConfig {
     return batchVerifyStrictThreadLimitEnabled;
   }
 
-  public boolean isP2pDumpsToFileEnabled() {
-    return p2pDumpsToFileEnabled;
-  }
-
   public NetworkingSpecConfig getNetworkingSpecConfig() {
     return networkingSpecConfig;
   }
@@ -182,7 +174,6 @@ public class P2PConfig {
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
     private boolean allTopicsFilterEnabled = DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
-    private boolean p2pDumpsToFileEnabled = DEFAULT_P2P_DUMPS_TO_FILE_ENABLED;
 
     private Builder() {}
 
@@ -225,7 +216,6 @@ public class P2PConfig {
           batchVerifyQueueCapacity,
           batchVerifyMaxBatchSize,
           batchVerifyStrictThreadLimitEnabled,
-          p2pDumpsToFileEnabled,
           allTopicsFilterEnabled);
     }
 
@@ -326,11 +316,6 @@ public class P2PConfig {
 
     public Builder allTopicsFilterEnabled(final boolean allTopicsFilterEnabled) {
       this.allTopicsFilterEnabled = allTopicsFilterEnabled;
-      return this;
-    }
-
-    public Builder p2pDumpsToFileEnabled(final boolean p2pDumpsToFileEnabled) {
-      this.p2pDumpsToFileEnabled = p2pDumpsToFileEnabled;
       return this;
     }
   }
