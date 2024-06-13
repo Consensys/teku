@@ -150,6 +150,11 @@ public class V4FinalizedStateTreeStorageLogic
     }
 
     @Override
+    public void deleteFinalizedState(final KvStoreTransaction transaction, final SchemaCombinedTreeState schema, final UInt64 slot) {
+        transaction.delete(schema.getColumnFinalizedStateRootsBySlot(), slot);
+    }
+
+    @Override
     public void commit() {
       if (nodeStore != null) {
         knownStoredBranchesCache.addAll(nodeStore.getStoredBranchRoots());
