@@ -561,6 +561,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             blobSidecarsAndValidationResult.getCause());
       }
+      default -> {}
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
