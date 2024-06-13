@@ -47,7 +47,7 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
   }
 
   @Override
-  public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+  public Stream<? extends Arguments> provideArguments(final ExtensionContext context) {
     final Map<String, StorageSystemSupplier> storageSystems = new HashMap<>();
     for (StateStorageMode mode : getStorageModes()) {
       for (long storageFrequency : stateStorageFrequencyOptions) {

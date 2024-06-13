@@ -57,7 +57,7 @@ public class BeaconProposerPreparerTest {
   private long slotsPerEpoch;
 
   @BeforeEach
-  void setUp(SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     final Spec spec = specContext.getSpec();
 
     final Validator validator1 =

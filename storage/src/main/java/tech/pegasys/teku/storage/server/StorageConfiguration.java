@@ -72,7 +72,7 @@ public class StorageConfiguration {
       final int blockPruningLimit,
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
-      int stateRebuildTimeoutSeconds,
+      final int stateRebuildTimeoutSeconds,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -158,24 +158,24 @@ public class StorageConfiguration {
 
     private Builder() {}
 
-    public Builder eth1DepositContract(Eth1Address eth1DepositContract) {
+    public Builder eth1DepositContract(final Eth1Address eth1DepositContract) {
       this.eth1DepositContract = eth1DepositContract;
       return this;
     }
 
-    public Builder eth1DepositContractDefault(Eth1Address eth1DepositContract) {
+    public Builder eth1DepositContractDefault(final Eth1Address eth1DepositContract) {
       if (this.eth1DepositContract == null) {
         this.eth1DepositContract = eth1DepositContract;
       }
       return this;
     }
 
-    public Builder dataStorageMode(StateStorageMode dataStorageMode) {
+    public Builder dataStorageMode(final StateStorageMode dataStorageMode) {
       this.dataStorageMode = dataStorageMode;
       return this;
     }
 
-    public Builder dataStorageFrequency(long dataStorageFrequency) {
+    public Builder dataStorageFrequency(final long dataStorageFrequency) {
       if (dataStorageFrequency < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid dataStorageFrequency: %d", dataStorageFrequency));
@@ -184,7 +184,7 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder dataStorageCreateDbVersion(DatabaseVersion dataStorageCreateDbVersion) {
+    public Builder dataStorageCreateDbVersion(final DatabaseVersion dataStorageCreateDbVersion) {
       this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
       return this;
     }
@@ -194,7 +194,7 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder specProvider(Spec spec) {
+    public Builder specProvider(final Spec spec) {
       this.spec = spec;
       return this;
     }
@@ -296,7 +296,7 @@ public class StorageConfiguration {
       }
     }
 
-    public Builder stateRebuildTimeoutSeconds(int stateRebuildTimeoutSeconds) {
+    public Builder stateRebuildTimeoutSeconds(final int stateRebuildTimeoutSeconds) {
       if (stateRebuildTimeoutSeconds < 10 || stateRebuildTimeoutSeconds > 300) {
         LOG.warn(
             "State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below 1, will allow the value to exceed 300.",

@@ -181,7 +181,7 @@ class SubnetScorerTest {
   }
 
   private Pair<SszBitvector, SszBitvector> candidateWithSubnets(
-      final List<Integer> attnets, List<Integer> syncnets) {
+      final List<Integer> attnets, final List<Integer> syncnets) {
     return Pair.of(
         schemaDefinitions.getAttnetsENRFieldSchema().ofBits(attnets),
         schemaDefinitions.getSyncnetsENRFieldSchema().ofBits(syncnets));

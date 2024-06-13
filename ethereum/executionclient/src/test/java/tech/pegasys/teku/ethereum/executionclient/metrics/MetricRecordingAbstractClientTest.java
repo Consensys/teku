@@ -83,9 +83,9 @@ public class MetricRecordingAbstractClientTest {
     private final TestClient delegate;
 
     protected TestClient(
-        TestClient delegate,
-        TimeProvider timeProvider,
-        MetricsCountersByIntervals clientRequestsCountersByIntervals) {
+        final TestClient delegate,
+        final TimeProvider timeProvider,
+        final MetricsCountersByIntervals clientRequestsCountersByIntervals) {
       super(timeProvider, clientRequestsCountersByIntervals);
       this.delegate = delegate;
     }

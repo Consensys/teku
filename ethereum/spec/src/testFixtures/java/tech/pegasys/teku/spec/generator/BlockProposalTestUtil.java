@@ -411,7 +411,7 @@ public class BlockProposalTestUtil {
     }
   }
 
-  private Eth1Data getEth1DataStub(BeaconState state, UInt64 currentEpoch) {
+  private Eth1Data getEth1DataStub(final BeaconState state, final UInt64 currentEpoch) {
     final SpecConfig specConfig = spec.atSlot(state.getSlot()).getConfig();
     final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
     UInt64 votingPeriod = currentEpoch.dividedBy(epochsPerPeriod);

@@ -26,7 +26,7 @@ public class BlockValidator {
   }
 
   public SafeFuture<InternalValidationResult> validateGossip(final SignedBeaconBlock block) {
-    return blockGossipValidator.validate(block, false);
+    return blockGossipValidator.validate(block, true);
   }
 
   public BlockBroadcastValidator initiateBroadcastValidation(

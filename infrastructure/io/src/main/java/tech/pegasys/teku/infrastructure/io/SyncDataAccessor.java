@@ -54,8 +54,7 @@ public class SyncDataAccessor {
     try {
       ensurePathExists(path);
     } catch (IOException e) {
-      throw new IllegalStateException(
-          "Could not create slashing protection path: " + e.getMessage());
+      throw new IllegalStateException("Could not create file at: " + e.getMessage());
     }
 
     try {

@@ -27,7 +27,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default <ElT, SszT extends SszPrimitive<ElT>> void getElement_shouldReturnUnboxedElement(
-      SszPrimitiveCollection<ElT, SszT> collection) {
+      final SszPrimitiveCollection<ElT, SszT> collection) {
     for (int i = 0; i < collection.size(); i++) {
       assertThat(collection.getElement(i)).isEqualTo(collection.get(i).get());
     }
@@ -35,7 +35,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void getElement_shouldThrowIndexOfBounds(SszPrimitiveCollection<?, ?> collection) {
+  default void getElement_shouldThrowIndexOfBounds(final SszPrimitiveCollection<?, ?> collection) {
     assertThatThrownBy(() -> collection.getElement(-1))
         .isInstanceOf(IndexOutOfBoundsException.class);
     assertThatThrownBy(() -> collection.getElement(collection.size()))
@@ -50,7 +50,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default <ElT, SszT extends SszPrimitive<ElT>> void asListUnboxed_shouldReturnAllElements(
-      SszPrimitiveCollection<ElT, SszT> collection) {
+      final SszPrimitiveCollection<ElT, SszT> collection) {
     List<ElT> listUnboxed = collection.asListUnboxed();
     assertThat(listUnboxed.size()).isEqualTo(collection.size());
     for (int i = 0; i < collection.size(); i++) {
@@ -61,7 +61,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default <ElT, SszT extends SszPrimitive<ElT>> void asListUnboxed_isUnmodifiable(
-      SszPrimitiveCollection<ElT, SszT> collection) {
+      final SszPrimitiveCollection<ElT, SszT> collection) {
     List<ElT> list = collection.asListUnboxed();
     ElT newElement = collection.getSchema().getElementSchema().getDefault().get();
     assertThatThrownBy(() -> list.set(0, newElement))
@@ -71,7 +71,7 @@ public interface SszPrimitiveCollectionTestBase extends SszCollectionTestBase {
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default <ElT, SszT extends SszPrimitive<ElT>> void streamUnboxed_shouldReturnAllElements(
-      SszPrimitiveCollection<ElT, SszT> collection) {
+      final SszPrimitiveCollection<ElT, SszT> collection) {
     assertThat(collection.streamUnboxed()).containsExactlyElementsOf(collection.asListUnboxed());
   }
 }

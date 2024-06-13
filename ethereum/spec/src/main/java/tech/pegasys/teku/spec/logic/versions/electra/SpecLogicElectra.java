@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.electra;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -92,7 +93,9 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   }
 
   public static SpecLogicElectra create(
-      final SpecConfigElectra config, final SchemaDefinitionsElectra schemaDefinitions) {
+      final SpecConfigElectra config,
+      final SchemaDefinitionsElectra schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final PredicatesElectra predicates = new PredicatesElectra(config);
     final MiscHelpersElectra miscHelpers =
@@ -143,7 +146,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);

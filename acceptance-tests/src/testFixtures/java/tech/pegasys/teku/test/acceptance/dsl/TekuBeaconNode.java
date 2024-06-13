@@ -220,7 +220,7 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void checkValidatorLiveness(
-      final int epoch, final int totalValidatorCount, ValidatorLivenessExpectation... args)
+      final int epoch, final int totalValidatorCount, final ValidatorLivenessExpectation... args)
       throws IOException {
     final List<UInt64> validators = new ArrayList<>();
     for (UInt64 i = UInt64.ZERO; i.isLessThan(totalValidatorCount); i = i.increment()) {
@@ -234,7 +234,7 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   private Object2BooleanMap<UInt64> getValidatorLivenessAtEpoch(
-      final UInt64 epoch, List<UInt64> validators) throws IOException {
+      final UInt64 epoch, final List<UInt64> validators) throws IOException {
 
     final String response =
         httpClient.post(
@@ -352,7 +352,7 @@ public class TekuBeaconNode extends TekuNode {
     httpClient.post(getRestApiUrl(), "/eth/v1/beacon/pool/bls_to_execution_changes", body);
   }
 
-  public void waitForBlsToExecutionChangeEventForValidator(int validatorIndex) {
+  public void waitForBlsToExecutionChangeEventForValidator(final int validatorIndex) {
     if (maybeEventStreamListener.isEmpty()) {
       fail(
           "Must start listening to events before waiting for them... Try calling TekuNode.startEventListener(..)!");
@@ -658,7 +658,7 @@ public class TekuBeaconNode extends TekuNode {
     }
   }
 
-  public void waitForValidators(int numberOfValidators) {
+  public void waitForValidators(final int numberOfValidators) {
     waitFor(
         () -> {
           Optional<BeaconState> maybeState = fetchHeadState();
@@ -683,7 +683,7 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void waitForAttestationBeingGossiped(
-      int validatorSeparationIndex, int totalValidatorCount) {
+      final int validatorSeparationIndex, final int totalValidatorCount) {
     List<UInt64> node1Validators =
         IntStream.range(0, validatorSeparationIndex).mapToObj(UInt64::valueOf).toList();
     List<UInt64> node2Validators =

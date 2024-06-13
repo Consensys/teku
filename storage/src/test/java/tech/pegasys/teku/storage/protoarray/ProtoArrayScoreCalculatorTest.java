@@ -581,7 +581,7 @@ public class ProtoArrayScoreCalculatorTest {
     }
   }
 
-  private void votesShouldBeUpdated(VoteUpdater store) {
+  private void votesShouldBeUpdated(final VoteUpdater store) {
     UInt64.rangeClosed(ZERO, store.getHighestVotedValidatorIndex())
         .forEach(
             i -> {

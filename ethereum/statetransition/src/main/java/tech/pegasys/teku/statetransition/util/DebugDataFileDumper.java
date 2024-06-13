@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,12 +29,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
+public class DebugDataFileDumper implements DebugDataDumper {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -44,7 +45,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   private boolean enabled;
   private final Path directory;
 
-  public P2PDebugDataFileDumper(final Path directory) {
+  public DebugDataFileDumper(final Path directory) {
     this.enabled = true;
     this.directory = directory;
 
@@ -85,7 +86,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   }
 
   @Override
-  public void saveGossipRejectedMessageToFile(
+  public void saveGossipRejectedMessage(
       final String topic,
       final Optional<UInt64> arrivalTimestamp,
       final Supplier<Bytes> decodedMessage,
@@ -109,7 +110,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   }
 
   @Override
-  public void saveInvalidBlockToFile(
+  public void saveInvalidBlock(
       final SignedBeaconBlock block,
       final String failureReason,
       final Optional<Throwable> failureCause) {
@@ -190,7 +191,7 @@ public class P2PDebugDataFileDumper implements P2PDebugDataDumper {
   }
 
   private String formatOptionalTimestamp(final Optional<UInt64> maybeTimestamp) {
-    return formatOptionalTimestamp(maybeTimestamp, new SystemTimeProvider());
+    return formatOptionalTimestamp(maybeTimestamp, SYSTEM_TIME_PROVIDER);
   }
 
   @VisibleForTesting

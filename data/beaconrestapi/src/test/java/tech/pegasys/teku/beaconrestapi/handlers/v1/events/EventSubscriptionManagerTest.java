@@ -519,7 +519,7 @@ public class EventSubscriptionManagerTest {
     asyncRunner.executeQueuedActions();
   }
 
-  private <T, E extends Event<T>> void checkEvent(String eventType, E event)
+  private <T, E extends Event<T>> void checkEvent(final String eventType, final E event)
       throws JsonProcessingException {
     final String eventString = outputStream.getString();
     assertThat(eventString).contains(String.format("event: %s\n", eventType));

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.phase0;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -78,7 +79,9 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   public static SpecLogicPhase0 create(
-      final SpecConfig config, final SchemaDefinitions schemaDefinitions) {
+      final SpecConfig config,
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpers miscHelpers = new MiscHelpers(config);
@@ -122,7 +125,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final BlockProcessorPhase0 blockProcessor =
         new BlockProcessorPhase0(
             config,

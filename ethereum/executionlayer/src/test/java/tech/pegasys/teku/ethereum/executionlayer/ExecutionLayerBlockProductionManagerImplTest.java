@@ -526,7 +526,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
         true);
   }
 
-  private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse, UInt64 slot) {
+  private void updateBuilderStatus(
+      final SafeFuture<Response<Void>> builderClientResponse, final UInt64 slot) {
     when(builderClient.status()).thenReturn(builderClientResponse);
     // trigger update of the builder status
     executionLayerManager.onSlot(slot);

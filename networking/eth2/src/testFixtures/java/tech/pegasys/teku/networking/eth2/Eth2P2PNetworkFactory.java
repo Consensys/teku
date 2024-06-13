@@ -98,7 +98,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -157,7 +157,7 @@ public class Eth2P2PNetworkFactory {
     protected Duration eth2StatusUpdateInterval;
     protected Spec spec = TestSpecFactory.createMinimalPhase0();
     private int earliestAvailableBlockSlotFrequency = 0;
-    protected P2PDebugDataDumper p2pDebugDataDumper;
+    protected DebugDataDumper debugDataDumper;
 
     public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
@@ -358,7 +358,7 @@ public class Eth2P2PNetworkFactory {
             attesterSlashingProcessor,
             proposerSlashingProcessor,
             voluntaryExitProcessor,
-            p2pDebugDataDumper);
+            debugDataDumper);
         case ALTAIR -> new GossipForkSubscriptionsAltair(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -375,7 +375,7 @@ public class Eth2P2PNetworkFactory {
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
-            p2pDebugDataDumper);
+            debugDataDumper);
         case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -392,7 +392,7 @@ public class Eth2P2PNetworkFactory {
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
-            p2pDebugDataDumper);
+            debugDataDumper);
         case CAPELLA -> new GossipForkSubscriptionsCapella(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -410,7 +410,7 @@ public class Eth2P2PNetworkFactory {
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
             signedBlsToExecutionChangeProcessor,
-            p2pDebugDataDumper);
+            debugDataDumper);
         case DENEB -> new GossipForkSubscriptionsDeneb(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -429,7 +429,7 @@ public class Eth2P2PNetworkFactory {
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
             signedBlsToExecutionChangeProcessor,
-            p2pDebugDataDumper);
+            debugDataDumper);
         case ELECTRA -> new GossipForkSubscriptionsElectra(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -448,7 +448,7 @@ public class Eth2P2PNetworkFactory {
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
             signedBlsToExecutionChangeProcessor,
-            p2pDebugDataDumper);
+            debugDataDumper);
       };
     }
 
@@ -687,7 +687,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder rpcMethodsModifier(
-        Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier) {
+        final Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier) {
       checkNotNull(rpcMethodsModifier);
       this.rpcMethodsModifier = rpcMethodsModifier;
       return this;
@@ -699,34 +699,34 @@ public class Eth2P2PNetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+    public Eth2P2PNetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
       checkNotNull(asyncRunner);
       this.asyncRunner = asyncRunner;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
+    public Eth2P2PNetworkBuilder eth2RpcPingInterval(final Duration eth2RpcPingInterval) {
       checkNotNull(eth2RpcPingInterval);
       this.eth2RpcPingInterval = eth2RpcPingInterval;
       return this;
     }
 
     public Eth2P2PNetworkBuilder eth2RpcOutstandingPingThreshold(
-        int eth2RpcOutstandingPingThreshold) {
+        final int eth2RpcOutstandingPingThreshold) {
       checkArgument(eth2RpcOutstandingPingThreshold > 0);
       this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(Duration eth2StatusUpdateInterval) {
+    public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(final Duration eth2StatusUpdateInterval) {
       checkNotNull(eth2StatusUpdateInterval);
       this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder p2pDebugDataDumper(final P2PDebugDataDumper p2pDebugDataDumper) {
-      checkNotNull(p2pDebugDataDumper);
-      this.p2pDebugDataDumper = p2pDebugDataDumper;
+    public Eth2P2PNetworkBuilder p2pDebugDataDumper(final DebugDataDumper debugDataDumper) {
+      checkNotNull(debugDataDumper);
+      this.debugDataDumper = debugDataDumper;
       return this;
     }
   }

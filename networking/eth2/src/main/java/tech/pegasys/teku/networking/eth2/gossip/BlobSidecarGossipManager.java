@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -56,7 +56,7 @@ public class BlobSidecarGossipManager implements GossipManager {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<BlobSidecar> processor,
-      final P2PDebugDataDumper p2pDebugDataDumper) {
+      final DebugDataDumper debugDataDumper) {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final BlobSidecarSchema gossipType =
         SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
@@ -77,7 +77,7 @@ public class BlobSidecarGossipManager implements GossipManager {
                       gossipEncoding,
                       forkInfo,
                       gossipType,
-                      p2pDebugDataDumper);
+                      debugDataDumper);
               subnetIdToTopicHandler.put(subnetId, topicHandler);
             });
     return new BlobSidecarGossipManager(
@@ -139,7 +139,7 @@ public class BlobSidecarGossipManager implements GossipManager {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final BlobSidecarSchema gossipType,
-      final P2PDebugDataDumper p2pDebugDataDumper) {
+      final DebugDataDumper debugDataDumper) {
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
@@ -153,7 +153,7 @@ public class BlobSidecarGossipManager implements GossipManager {
             blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getSlot())),
         gossipType,
         spec.getNetworkingConfig(),
-        p2pDebugDataDumper);
+        debugDataDumper);
   }
 
   private record TopicSubnetIdAwareOperationProcessor(

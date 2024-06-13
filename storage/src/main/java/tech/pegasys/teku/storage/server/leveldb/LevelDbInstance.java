@@ -75,7 +75,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   private final Counter closedIteratorsCounter;
 
   public LevelDbInstance(
-      final DB db, final MetricsSystem metricsSystem, MetricCategory metricCategory) {
+      final DB db, final MetricsSystem metricsSystem, final MetricCategory metricCategory) {
     this.db = db;
     openedTransactionsCounter =
         metricsSystem.createCounter(
@@ -268,7 +268,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   @Override
   @MustBeClosed
   public <K extends Comparable<K>, V> Stream<K> streamKeys(
-      KvStoreColumn<K, V> column, K from, K to) {
+      final KvStoreColumn<K, V> column, final K from, final K to) {
     final byte[] fromBytes = getColumnKey(column, from);
     final byte[] toBytes = getColumnKey(column, to);
     return streamKeys(column, fromBytes, toBytes);

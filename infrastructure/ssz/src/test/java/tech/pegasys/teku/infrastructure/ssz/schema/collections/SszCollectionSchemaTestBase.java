@@ -55,7 +55,7 @@ public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTest
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
   <T extends SszData> void createFromElements_shouldCreateCorrectListOfTheSameClass(
-      SszCollectionSchema<T, ? extends SszCollection<T>> schema) {
+      final SszCollectionSchema<T, ? extends SszCollection<T>> schema) {
     List<T> elements = sszDataGenerator.randomData(schema).asList();
     SszCollection<T> collection = schema.createFromElements(elements);
     assertThat(collection).containsExactlyElementsOf(elements);

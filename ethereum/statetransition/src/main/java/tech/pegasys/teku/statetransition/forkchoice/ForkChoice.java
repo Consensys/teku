@@ -74,7 +74,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilit
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -109,7 +109,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
 
-  private final P2PDebugDataDumper p2pDebugDataDumper;
+  private final DebugDataDumper debugDataDumper;
 
   public ForkChoice(
       final Spec spec,
@@ -121,7 +121,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceLateBlockReorgEnabled,
-      final P2PDebugDataDumper p2pDebugDataDumper,
+      final DebugDataDumper debugDataDumper,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -136,7 +136,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.lastProcessHeadSlot.set(UInt64.ZERO);
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
-    this.p2pDebugDataDumper = p2pDebugDataDumper;
+    this.debugDataDumper = debugDataDumper;
     getProposerHeadSelectedCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -166,7 +166,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         false,
-        P2PDebugDataDumper.NOOP,
+        DebugDataDumper.NOOP,
         metricsSystem);
   }
 
@@ -759,7 +759,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
       return;
     }
-    p2pDebugDataDumper.saveInvalidBlockToFile(
+    debugDataDumper.saveInvalidBlock(
         block, result.getFailureReason().name(), result.getFailureCause());
     P2P_LOG.onInvalidBlock(
         block.getSlot(),
