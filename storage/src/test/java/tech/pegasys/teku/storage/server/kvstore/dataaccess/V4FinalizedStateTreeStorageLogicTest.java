@@ -93,7 +93,7 @@ class V4FinalizedStateTreeStorageLogicTest {
       transaction.commit();
     }
 
-    try(final KvStoreTransaction transaction = db.startTransaction()) {
+    try (final KvStoreTransaction transaction = db.startTransaction()) {
       final FinalizedStateUpdater<SchemaCombinedTreeState> updater = logic.updater();
       updater.deleteFinalizedState(transaction, schema, state1.getSlot());
       updater.deleteFinalizedState(transaction, schema, state2.getSlot());
@@ -108,7 +108,7 @@ class V4FinalizedStateTreeStorageLogicTest {
 
   private void assertStateIsDeleted(final UInt64 slot) {
     final Optional<BeaconState> loadedState =
-            logic.getLatestAvailableFinalizedState(db, schema, slot);
+        logic.getLatestAvailableFinalizedState(db, schema, slot);
     assertThat(loadedState).isEmpty();
   }
 
