@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RandomSszDataGenerator {
@@ -46,6 +48,7 @@ public class RandomSszDataGenerator {
   private final Supplier<SszBytes4> bytes4Supplier;
   private final Supplier<SszUInt64> uintSupplier;
   private final Supplier<SszUInt256> uint256Supplier;
+  private final Supplier<SszByte> uint8Supplier;
   private final Supplier<SszBytes32> bytes32Supplier;
 
   private final Random random;
@@ -63,6 +66,7 @@ public class RandomSszDataGenerator {
     bytes4Supplier = () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
     uintSupplier = () -> SszUInt64.of(UInt64.fromLongBits(random.nextLong()));
     uint256Supplier = () -> SszUInt256.of(UInt256.fromBytes(Bytes32.random(random)));
+    uint8Supplier = () -> SszByte.of(random.nextInt());
     bytes32Supplier = () -> SszBytes32.of(Bytes32.random(random));
   }
 
@@ -85,6 +89,8 @@ public class RandomSszDataGenerator {
         return (Stream<T>) Stream.generate(byteSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
         return (Stream<T>) Stream.generate(uintSupplier);
+      } else if (schema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
+        return (Stream<T>) Stream.generate(uint256Supplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT256_SCHEMA)) {
         return (Stream<T>) Stream.generate(uint256Supplier);
       } else if (schema.equals(SszPrimitiveSchemas.BYTES4_SCHEMA)) {
@@ -94,6 +100,21 @@ public class RandomSszDataGenerator {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
+    } else if (schema instanceof AbstractSszStableContainerSchema) {
+      AbstractSszStableContainerSchema<SszStableContainer> containerSchema =
+          (AbstractSszStableContainerSchema<SszStableContainer>) schema;
+      return Stream.generate(
+          () -> {
+            List<SszData> children =
+                IntStream.range(0, containerSchema.getActiveFieldCount())
+                    .mapToObj(
+                        activeField ->
+                            containerSchema.getChildSchema(
+                                containerSchema.getNthActiveFieldIndex(activeField)))
+                    .map(this::randomData)
+                    .collect(Collectors.toList());
+            return (T) containerSchema.createFromFieldValues(children);
+          });
     } else if (schema instanceof AbstractSszContainerSchema) {
       AbstractSszContainerSchema<SszContainer> containerSchema =
           (AbstractSszContainerSchema<SszContainer>) schema;

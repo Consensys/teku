@@ -28,7 +28,7 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
    * Creates a new {@link SszStableContainer} schema with specified field schemas and container
    * instance constructor
    */
-  static <C extends SszStableContainer> SszContainerSchema<C> create(
+  static <C extends SszStableContainer> SszStableContainerSchema<C> create(
       final String name,
       final List<NamedIndexedSchema<?>> activeChildrenSchemas,
       final int maxFieldCount,

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -38,6 +40,10 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
     extends AbstractSszContainerSchema<C> implements SszStableContainerSchema<C> {
@@ -77,12 +83,12 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     }
   }
 
-  protected static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
+  public static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
       final SszFieldName fieldName, final int index, final SszSchema<T> schema) {
     return namedIndexedSchema(fieldName.getSszFieldName(), index, schema);
   }
 
-  protected static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
+  public static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
       final String fieldName, final int index, final SszSchema<T> schema) {
     return new NamedIndexedSchema<>(fieldName, index, schema);
   }
@@ -201,9 +207,75 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     return super.getSszSize(node);
   }
 
+  @Override
+  public void storeBackingNodes(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    final TreeNode containerSubtree = node.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    super.storeBackingNodes(
+        nodeStore, maxBranchLevelsSkipped, GIndexUtil.gIdxLeftGIndex(rootGIndex), containerSubtree);
+    final TreeNode bitvectorSubtree = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+    activeFieldsBitvectorSchema.storeBackingNodes(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        GIndexUtil.gIdxRightGIndex(rootGIndex),
+        bitvectorSubtree);
+
+    nodeStore.storeBranchNode(
+        node.hashTreeRoot(),
+        rootGIndex,
+        1,
+        new Bytes32[] {containerSubtree.hashTreeRoot(), bitvectorSubtree.hashTreeRoot()});
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
+      return getDefaultTree();
+    }
+    final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
+    checkState(
+        branchData.getChildren().length == 2,
+        "Stable container root node must have exactly two children");
+    checkState(branchData.getDepth() == 1, "Stable container root node must have depth of 1");
+    final Bytes32 containerHash = branchData.getChildren()[0];
+    final Bytes32 bitvectorHash = branchData.getChildren()[1];
+
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
+    final TreeNode containerTreeNode =
+        LoadingUtil.loadNodesToDepth(
+            nodeSource,
+            containerHash,
+            GIndexUtil.gIdxLeftGIndex(rootGIndex),
+            treeDepth(),
+            super.getDefaultTree(),
+            lastUsefulGIndex,
+            this::loadChildNode);
+
+    final TreeNode bitvectorTreeNode =
+        activeFieldsBitvectorSchema.loadBackingNodes(
+            nodeSource, bitvectorHash, GIndexUtil.gIdxRightGIndex(rootGIndex));
+
+    checkState(
+        bitvectorTreeNode.hashTreeRoot().equals(activeFieldsBitvector.hashTreeRoot()),
+        "Stable container active field vector mismatch");
+
+    return BranchNode.create(containerTreeNode, bitvectorTreeNode);
+  }
+
+  private TreeNode loadChildNode(
+      final TreeNodeSource nodeSource, final Bytes32 childHash, final long childGIndex) {
+    final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth());
+    return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
+  }
+
   private static List<? extends NamedIndexedSchema<?>> createAllSchemas(
       final List<? extends NamedIndexedSchema<?>> childrenSchemas, final int maxFieldCount) {
-    Map<Integer, NamedIndexedSchema<?>> childrenSchemasByIndex =
+    final Map<Integer, NamedIndexedSchema<?>> childrenSchemasByIndex =
         childrenSchemas.stream()
             .collect(
                 Collectors.toUnmodifiableMap(NamedIndexedSchema::getIndex, Function.identity()));

@@ -79,7 +79,6 @@ public class MutableBeaconStateElectraImpl
 
   @Override
   public SszStableContainerSchema<?> getStableSchema() {
-    return (SszStableContainerSchema<?>)super.getSchema();
+    return (SszStableContainerSchema<?>) super.getSchema();
   }
-
 }

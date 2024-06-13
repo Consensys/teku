@@ -25,13 +25,12 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public abstract class SszStableContainerImpl extends SszContainerImpl
     implements SszStableContainer {
 
-  public SszStableContainerImpl(
-      final SszStableContainerSchema<? extends SszStableContainerImpl> type) {
+  public SszStableContainerImpl(final SszStableContainerSchema<? extends SszStableContainer> type) {
     super(type);
   }
 
   public SszStableContainerImpl(
-      final SszStableContainerSchema<? extends SszStableContainerImpl> type,
+      final SszStableContainerSchema<? extends SszStableContainer> type,
       final TreeNode backingNode) {
     super(type, backingNode);
   }
