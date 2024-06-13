@@ -93,6 +93,9 @@ class V4FinalizedStateTreeStorageLogicTest {
       transaction.commit();
     }
 
+    assertStateReloads(state1);
+    assertStateReloads(state2);
+
     try (final KvStoreTransaction transaction = db.startTransaction()) {
       final FinalizedStateUpdater<SchemaCombinedTreeState> updater = logic.updater();
       updater.deleteFinalizedState(transaction, schema, state1.getSlot());
