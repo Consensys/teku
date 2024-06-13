@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -33,12 +34,13 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class DebugDataFileDumperTest {
   final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 
   @Test
@@ -89,6 +91,27 @@ class DebugDataFileDumperTest {
         String.format("%s_%s.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
     final Path expectedFile = tempDir.resolve("invalid_blocks").resolve(fileName);
     checkBytesSavedToFile(expectedFile, block.sszSerialize());
+  }
+
+  @Test
+  void saveFailedDataAvailabilityBlobSidecars_shouldSaveToFiles(@TempDir final Path tempDir) {
+    final DebugDataFileDumper dumper = new DebugDataFileDumper(tempDir);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
+    dumper.saveFailedDataAvailabilityBlobSidecars(
+        blobSidecars, "reason", Optional.of(new Throwable()));
+
+    blobSidecars.forEach(
+        blobSidecar -> {
+          final String fileName =
+              String.format(
+                  "%s_%s_%s.ssz",
+                  blobSidecar.getSlot(),
+                  blobSidecar.getBlockRoot().toUnprefixedHexString(),
+                  blobSidecar.getIndex());
+          final Path expectedFile =
+              tempDir.resolve("failed_data_availability_blob_sidecars").resolve(fileName);
+          checkBytesSavedToFile(expectedFile, blobSidecar.sszSerialize());
+        });
   }
 
   @Test

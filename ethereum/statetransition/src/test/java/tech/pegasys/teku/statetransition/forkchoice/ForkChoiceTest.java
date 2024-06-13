@@ -91,6 +91,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
@@ -245,6 +246,9 @@ class ForkChoiceTest {
     verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(debugDataDumper)
+        .saveFailedDataAvailabilityBlobSidecars(
+            any(), eq(BlobSidecarsValidationResult.NOT_AVAILABLE.toString()), eq(Optional.empty()));
   }
 
   @Test
@@ -264,6 +268,9 @@ class ForkChoiceTest {
     verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(debugDataDumper)
+        .saveFailedDataAvailabilityBlobSidecars(
+            any(), eq(BlobSidecarsValidationResult.NOT_AVAILABLE.toString()), eq(Optional.empty()));
   }
 
   @Test
