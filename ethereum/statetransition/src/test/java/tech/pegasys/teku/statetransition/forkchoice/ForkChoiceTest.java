@@ -91,7 +91,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
@@ -246,9 +245,31 @@ class ForkChoiceTest {
     verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
-    verify(debugDataDumper)
-        .saveFailedDataAvailabilityBlobSidecars(
-            any(), eq(BlobSidecarsValidationResult.NOT_AVAILABLE.toString()), eq(Optional.empty()));
+  }
+
+  @Test
+  void onBlock_shouldFailIfBlobsAreInvalid() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
+    final List<BlobSidecar> blobSidecars =
+        storageSystem
+            .chainStorage()
+            .getBlobSidecarsBySlotAndBlockRoot(blockAndState.getSlotAndBlockRoot())
+            .join();
+
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlobSidecarsAndValidationResult.invalidResult(blobSidecars)));
+
+    importBlockAndAssertFailure(
+        blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
+
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+    verify(debugDataDumper).saveInvalidBlobSidecars(blobSidecars, blockAndState.getBlock());
   }
 
   @Test
@@ -268,9 +289,6 @@ class ForkChoiceTest {
     verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
-    verify(debugDataDumper)
-        .saveFailedDataAvailabilityBlobSidecars(
-            any(), eq(BlobSidecarsValidationResult.NOT_AVAILABLE.toString()), eq(Optional.empty()));
   }
 
   @Test

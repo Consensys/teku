@@ -46,10 +46,8 @@ public interface DebugDataDumper {
             final Optional<Throwable> failureCause) {}
 
         @Override
-        public void saveFailedDataAvailabilityBlobSidecars(
-            final List<BlobSidecar> blobSidecars,
-            final String failureReason,
-            final Optional<Throwable> failureCause) {}
+        public void saveInvalidBlobSidecars(
+            final List<BlobSidecar> blobSidecars, final SignedBeaconBlock block) {}
       };
 
   void saveGossipMessageDecodingError(
@@ -67,6 +65,5 @@ public interface DebugDataDumper {
   void saveInvalidBlock(
       SignedBeaconBlock block, String failureReason, Optional<Throwable> failureCause);
 
-  void saveFailedDataAvailabilityBlobSidecars(
-      List<BlobSidecar> blobSidecars, String failureReason, Optional<Throwable> failureCause);
+  void saveInvalidBlobSidecars(List<BlobSidecar> blobSidecars, SignedBeaconBlock block);
 }

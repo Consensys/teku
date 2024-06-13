@@ -94,11 +94,20 @@ class DebugDataFileDumperTest {
   }
 
   @Test
-  void saveFailedDataAvailabilityBlobSidecars_shouldSaveToFiles(@TempDir final Path tempDir) {
+  void saveInvalidBlobSidecars_shouldSaveToFiles(@TempDir final Path tempDir) {
     final DebugDataFileDumper dumper = new DebugDataFileDumper(tempDir);
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
-    dumper.saveFailedDataAvailabilityBlobSidecars(
-        blobSidecars, "reason", Optional.of(new Throwable()));
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    dumper.saveInvalidBlobSidecars(blobSidecars, block);
+
+    final String kzgCommitmentsFileName =
+        String.format(
+            "%s_%s_kzg_commitments.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
+    final Path expectedKzgCommitmentsFileName =
+        tempDir.resolve("invalid_blob_sidecars").resolve(kzgCommitmentsFileName);
+    checkBytesSavedToFile(
+        expectedKzgCommitmentsFileName,
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow().sszSerialize());
 
     blobSidecars.forEach(
         blobSidecar -> {
@@ -108,8 +117,7 @@ class DebugDataFileDumperTest {
                   blobSidecar.getSlot(),
                   blobSidecar.getBlockRoot().toUnprefixedHexString(),
                   blobSidecar.getIndex());
-          final Path expectedFile =
-              tempDir.resolve("failed_data_availability_blob_sidecars").resolve(fileName);
+          final Path expectedFile = tempDir.resolve("invalid_blob_sidecars").resolve(fileName);
           checkBytesSavedToFile(expectedFile, blobSidecar.sszSerialize());
         });
   }

@@ -43,8 +43,7 @@ public class DebugDataFileDumper implements DebugDataDumper {
   private static final String DECODING_ERROR_SUB_DIR = "decoding_error";
   private static final String REJECTED_SUB_DIR = "rejected";
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
-  private static final String FAILED_DATA_AVAILABILITY_BLOB_SIDECARS_DIR =
-      "failed_data_availability_blob_sidecars";
+  private static final String INVALID_BLOB_SIDECARS_DIR = "invalid_blob_sidecars";
 
   private boolean enabled;
   private final Path directory;
@@ -138,13 +137,18 @@ public class DebugDataFileDumper implements DebugDataDumper {
   }
 
   @Override
-  public void saveFailedDataAvailabilityBlobSidecars(
-      final List<BlobSidecar> blobSidecars,
-      final String failureReason,
-      final Optional<Throwable> failureCause) {
+  public void saveInvalidBlobSidecars(
+      final List<BlobSidecar> blobSidecars, final SignedBeaconBlock block) {
     if (!enabled) {
       return;
     }
+    final String kzgCommitmentsFileName =
+        String.format(
+            "%s_%s_kzg_commitments.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
+    saveBytesToFile(
+        "kzg commitments",
+        Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(kzgCommitmentsFileName),
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow().sszSerialize());
     blobSidecars.forEach(
         blobSidecar -> {
           final UInt64 slot = blobSidecar.getSlot();
@@ -152,19 +156,10 @@ public class DebugDataFileDumper implements DebugDataDumper {
           final UInt64 index = blobSidecar.getIndex();
           final String fileName =
               String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), index);
-          final boolean success =
-              saveBytesToFile(
-                  "failed data availability blob sidecar",
-                  Path.of(FAILED_DATA_AVAILABILITY_BLOB_SIDECARS_DIR).resolve(fileName),
-                  blobSidecar.sszSerialize());
-          if (success) {
-            LOG.warn(
-                "Blob sidecar at slot {} with block root {} has failed the data availability check, reason: {}, cause: {}",
-                slot,
-                blockRoot,
-                failureReason,
-                failureCause.orElse(null));
-          }
+          saveBytesToFile(
+              "blob sidecar",
+              Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(fileName),
+              blobSidecar.sszSerialize());
         });
   }
 
