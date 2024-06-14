@@ -56,6 +56,16 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private long dataStorageFrequency = StorageConfiguration.DEFAULT_STORAGE_FREQUENCY;
 
   @CommandLine.Option(
+      names = {"--Xdata-storage-archive-retained-epochs"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Sets the number of retained finalized states in disk, in epochs. "
+              + "This option is ignored if --data-storage-mode is set to PRUNE or MINIMAL",
+      arity = "1",
+      hidden = true)
+  private long dataStorageRetainedEpochs = StorageConfiguration.DEFAULT_STORAGE_RETAINED_EPOCHS;
+
+  @CommandLine.Option(
       names = {"--Xdata-storage-create-db-version"},
       paramLabel = "<VERSION>",
       description = "Database version to create",
@@ -180,7 +190,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .blockPruningLimit(blockPruningLimit)
                 .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
-                .blobsPruningLimit(blobsPruningLimit));
+                .blobsPruningLimit(blobsPruningLimit)
+                .retainedEpochs(dataStorageRetainedEpochs));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())

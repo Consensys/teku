@@ -37,6 +37,7 @@ public class StorageConfiguration {
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
   public static final int DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS = 120;
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
+  public static final long DEFAULT_STORAGE_RETAINED_EPOCHS = 1024L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
@@ -58,6 +59,7 @@ public class StorageConfiguration {
   private final int blockPruningLimit;
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
+  private final long retainedEpochs;
 
   private final int stateRebuildTimeoutSeconds;
 
@@ -73,6 +75,7 @@ public class StorageConfiguration {
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
       final int stateRebuildTimeoutSeconds,
+      final long retainedEpochs,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -85,6 +88,7 @@ public class StorageConfiguration {
     this.blobsPruningInterval = blobsPruningInterval;
     this.blobsPruningLimit = blobsPruningLimit;
     this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
+    this.retainedEpochs = retainedEpochs;
     this.spec = spec;
   }
 
@@ -136,6 +140,10 @@ public class StorageConfiguration {
     return blobsPruningLimit;
   }
 
+  public long getRetainedEpochs() {
+    return retainedEpochs;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -155,6 +163,7 @@ public class StorageConfiguration {
     private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
     private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
+    private long retainedEpochs = DEFAULT_STORAGE_RETAINED_EPOCHS;
 
     private Builder() {}
 
@@ -247,6 +256,14 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder retainedEpochs(final long retainedEpochs) {
+      if (retainedEpochs < 0) {
+        throw new InvalidConfigurationException("Invalid number of states to be retained");
+      }
+      this.retainedEpochs = retainedEpochs;
+      return this;
+    }
+
     public StorageConfiguration build() {
       determineDataStorageMode();
       return new StorageConfiguration(
@@ -261,6 +278,7 @@ public class StorageConfiguration {
           blobsPruningInterval,
           blobsPruningLimit,
           stateRebuildTimeoutSeconds,
+          retainedEpochs,
           spec);
     }
 
