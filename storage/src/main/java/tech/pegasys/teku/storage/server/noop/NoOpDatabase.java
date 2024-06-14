@@ -230,6 +230,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public UInt64 pruneFinalizedStates(final UInt64 lastSlotToPruneStateFor, final long pruneLimit) {
+    return lastSlotToPruneStateFor;
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
   @Override

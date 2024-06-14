@@ -25,6 +25,8 @@ public interface V4FinalizedStateStorageLogic<S> {
   Optional<BeaconState> getLatestAvailableFinalizedState(
       KvStoreAccessor db, S schema, UInt64 maxSlot);
 
+  Optional<UInt64> getEarliestAvailableFinalizedStateSlot(KvStoreAccessor db, S schema);
+
   FinalizedStateUpdater<S> updater();
 
   @MustBeClosed

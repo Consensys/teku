@@ -80,6 +80,12 @@ public class V4FinalizedStateTreeStorageLogic
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableFinalizedStateSlot(
+      final KvStoreAccessor db, final SchemaCombinedTreeState dbSchema) {
+    return db.getFirstEntry(dbSchema.getColumnFinalizedStateRootsBySlot()).map(ColumnEntry::getKey);
+  }
+
+  @Override
   public FinalizedStateUpdater<SchemaCombinedTreeState> updater() {
     return new StateTreeUpdater(
         knownStoredBranchesCache,

@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -427,6 +428,76 @@ public class KvStoreDatabase implements Database {
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         blocksToPrune.forEach(
             pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
+        updater.commit();
+      }
+    }
+  }
+
+  @Override
+  public UInt64 pruneFinalizedStates(final UInt64 lastSlotToPrune, final long pruneLimit) {
+    final Optional<UInt64> earliestFinalizedStateSlot = dao.getEarliestFinalizedStateSlot();
+    LOG.debug(
+        "Earliest finalized state stored is for slot {}",
+        () ->
+            earliestFinalizedStateSlot.isEmpty()
+                ? "EMPTY"
+                : earliestFinalizedStateSlot.get().toString());
+    if (earliestFinalizedStateSlot.isEmpty()) {
+      return lastSlotToPrune;
+    }
+    return pruneFinalizedStateForSlots(
+        earliestFinalizedStateSlot.get(), lastSlotToPrune, pruneLimit);
+  }
+
+  private UInt64 pruneFinalizedStateForSlots(
+      final UInt64 earliestFinalizedStateSlot,
+      final UInt64 lastSlotToPrune,
+      final long pruneLimit) {
+    final List<Triple<UInt64, Bytes32, Bytes32>> slotsToPruneStateFor;
+    LOG.debug("Pruning finalized states to slot {} (included)", lastSlotToPrune);
+    try (final Stream<SignedBeaconBlock> stream =
+        dao.streamFinalizedBlocks(earliestFinalizedStateSlot, lastSlotToPrune)) {
+      slotsToPruneStateFor =
+          // fetch slot for log purposes, stateroot and blockroot (keys used to store state)
+          stream
+              .limit(pruneLimit)
+              .map(block -> Triple.of(block.getSlot(), block.getRoot(), block.getStateRoot()))
+              .toList();
+    }
+    if (slotsToPruneStateFor.isEmpty()) {
+      LOG.debug("No finalized state to prune up to {} slot", lastSlotToPrune);
+      return lastSlotToPrune;
+    }
+
+    final UInt64 lastPrunedBlockSlot =
+        slotsToPruneStateFor.get(slotsToPruneStateFor.size() - 1).getLeft();
+    LOG.debug(
+        "Pruning {} finalized state, last block slot is {}",
+        slotsToPruneStateFor.size(),
+        lastPrunedBlockSlot);
+    deleteFinalizedStatesForSlot(slotsToPruneStateFor);
+
+    return slotsToPruneStateFor.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
+  }
+
+  private void deleteFinalizedStatesForSlot(
+      final List<Triple<UInt64, Bytes32, Bytes32>> slotsToPruneStateFor) {
+    if (!slotsToPruneStateFor.isEmpty()) {
+      if (slotsToPruneStateFor.size() < 20) {
+        LOG.debug(
+            "Received blocks ({}) to delete",
+            () -> slotsToPruneStateFor.stream().map(Triple::getLeft).toList());
+      } else {
+        LOG.debug("Received {} finalized blocks to delete", slotsToPruneStateFor.size());
+      }
+
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        slotsToPruneStateFor.forEach(
+            triple -> {
+              updater.deleteFinalizedState(triple.getLeft());
+              updater.deleteFinalizedStateRoot(triple.getRight());
+            });
+
         updater.commit();
       }
     }
