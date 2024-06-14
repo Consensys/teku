@@ -40,6 +40,7 @@ import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
+import tech.pegasys.teku.storage.server.pruner.StatePruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
   private final StorageConfiguration config;
@@ -49,6 +50,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private volatile Optional<BlobSidecarPruner> blobsPruner = Optional.empty();
+  private volatile Optional<StatePruner> statePruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
 
@@ -111,6 +113,20 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningTimingsLabelledGauge,
                             pruningActiveLabelledGauge));
               }
+              if (config.getDataStorageMode().storesFinalizedStates()
+                  && config.getRetainedEpochs() > -1) {
+                statePruner =
+                    Optional.of(
+                        new StatePruner(
+                            config.getSpec(),
+                            database,
+                            storagePrunerAsyncRunner,
+                            config.getBlockPruningInterval(),
+                            config.getRetainedEpochs(),
+                            "state",
+                            pruningTimingsLabelledGauge,
+                            pruningActiveLabelledGauge));
+              }
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
                     Optional.of(
@@ -170,6 +186,11 @@ public class StorageService extends Service implements StorageServiceFacade {
             __ ->
                 blobsPruner
                     .map(BlobSidecarPruner::start)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .thenCompose(
+            __ ->
+                statePruner
+                    .map(StatePruner::start)
                     .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 
