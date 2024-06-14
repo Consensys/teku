@@ -84,6 +84,11 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
     return Optional.of(this);
   }
 
+  @Override
+  default boolean isVersionElectra() {
+    return true;
+  }
+
   default UInt64 getDepositReceiptsStartIndex() {
     final int index = getSchema().getFieldIndex(DEPOSIT_RECEIPTS_START_INDEX);
     return ((SszUInt64) get(index)).get();

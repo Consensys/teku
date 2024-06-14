@@ -244,7 +244,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     // Update the ValidatorIndexCache latest finalized index to the anchor state
     BeaconStateCache.getTransitionCaches(anchorState)
         .getValidatorIndexCache()
-        .updateLatestFinalizedIndex(anchorState);
+        .updateLatestFinalizedState(anchorState);
 
     storeInitializedFuture.complete(null);
     return true;
