@@ -47,6 +47,9 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
     extends AbstractSszContainerSchema<C> implements SszStableContainerSchema<C> {
+  private static final long CONTAINER_G_INDEX = GIndexUtil.LEFT_CHILD_G_INDEX;
+  private static final long BITVECTOR_G_INDEX = GIndexUtil.RIGHT_CHILD_G_INDEX;
+
   private final IntList activeFieldIndicesCache;
   private final SszBitvectorSchema<SszBitvector> activeFieldsBitvectorSchema;
   private final SszBitvector activeFieldsBitvector;
@@ -150,7 +153,7 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
 
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
-    final TreeNode bitvectorSubtree = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+    final TreeNode bitvectorSubtree = node.get(BITVECTOR_G_INDEX);
 
     int size1 = activeFieldsBitvectorSchema.sszSerializeTree(bitvectorSubtree, writer);
     int size2 = super.sszSerializeTree(node, writer);
@@ -185,8 +188,7 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
 
   @Override
   public long getChildGeneralizedIndex(final long elementIndex) {
-    return GIndexUtil.gIdxCompose(
-        GIndexUtil.LEFT_CHILD_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
+    return GIndexUtil.gIdxCompose(CONTAINER_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
   }
 
   @Override
@@ -213,21 +215,12 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
-    final TreeNode containerSubtree = node.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    final TreeNode containerSubtree = node.get(CONTAINER_G_INDEX);
     super.storeBackingNodes(
         nodeStore, maxBranchLevelsSkipped, GIndexUtil.gIdxLeftGIndex(rootGIndex), containerSubtree);
-    final TreeNode bitvectorSubtree = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
-    activeFieldsBitvectorSchema.storeBackingNodes(
-        nodeStore,
-        maxBranchLevelsSkipped,
-        GIndexUtil.gIdxRightGIndex(rootGIndex),
-        bitvectorSubtree);
 
     nodeStore.storeBranchNode(
-        node.hashTreeRoot(),
-        rootGIndex,
-        1,
-        new Bytes32[] {containerSubtree.hashTreeRoot(), bitvectorSubtree.hashTreeRoot()});
+        node.hashTreeRoot(), rootGIndex, 1, new Bytes32[] {containerSubtree.hashTreeRoot()});
   }
 
   @Override
@@ -238,11 +231,10 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     }
     final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
     checkState(
-        branchData.getChildren().length == 2,
-        "Stable container root node must have exactly two children");
+        branchData.getChildren().length == 1,
+        "Stable container root node must have exactly 1 children");
     checkState(branchData.getDepth() == 1, "Stable container root node must have depth of 1");
     final Bytes32 containerHash = branchData.getChildren()[0];
-    final Bytes32 bitvectorHash = branchData.getChildren()[1];
 
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
@@ -256,15 +248,7 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
             lastUsefulGIndex,
             this::loadChildNode);
 
-    final TreeNode bitvectorTreeNode =
-        activeFieldsBitvectorSchema.loadBackingNodes(
-            nodeSource, bitvectorHash, GIndexUtil.gIdxRightGIndex(rootGIndex));
-
-    checkState(
-        bitvectorTreeNode.hashTreeRoot().equals(activeFieldsBitvector.hashTreeRoot()),
-        "Stable container active field vector mismatch");
-
-    return BranchNode.create(containerTreeNode, bitvectorTreeNode);
+    return BranchNode.create(containerTreeNode, activeFieldsBitvector.getBackingNode());
   }
 
   private TreeNode loadChildNode(

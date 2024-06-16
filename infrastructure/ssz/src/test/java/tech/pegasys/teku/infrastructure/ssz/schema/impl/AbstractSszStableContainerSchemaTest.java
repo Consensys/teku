@@ -31,13 +31,13 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AbstractSszStableContainerSchemaTest {
-  static final int maxFieldCount = 4;
-  static final List<NamedIndexedSchema<?>> squareSchemas =
+  static final int MAX_FIELD_COUNT = 4;
+  static final List<NamedIndexedSchema<?>> SQUARE_SCHEMAS =
       List.of(
           namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
           namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA));
 
-  static final List<NamedIndexedSchema<?>> circleSchemas =
+  static final List<NamedIndexedSchema<?>> CIRCLE_SCHEMAS =
       List.of(
           namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
           namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
@@ -45,7 +45,8 @@ public class AbstractSszStableContainerSchemaTest {
   static class StableContainer extends SszStableContainerImpl {
 
     public StableContainer(
-        SszStableContainerSchema<? extends SszStableContainerImpl> type, TreeNode backingNode) {
+        final SszStableContainerSchema<? extends SszStableContainerImpl> type,
+        final TreeNode backingNode) {
       super(type, backingNode);
     }
   }
@@ -53,12 +54,14 @@ public class AbstractSszStableContainerSchemaTest {
   static class StableContainerSchema extends AbstractSszStableContainerSchema<StableContainer> {
 
     public StableContainerSchema(
-        String name, List<NamedIndexedSchema<?>> childrenSchemas, int maxFieldCount) {
+        final String name,
+        final List<NamedIndexedSchema<?>> childrenSchemas,
+        final int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
     }
 
     @Override
-    public StableContainer createFromBackingNode(TreeNode node) {
+    public StableContainer createFromBackingNode(final TreeNode node) {
       return new StableContainer(this, node);
     }
   }
@@ -66,12 +69,14 @@ public class AbstractSszStableContainerSchemaTest {
   static class ProfileSchema extends AbstractSszStableProfileSchema<StableContainer> {
 
     public ProfileSchema(
-        String name, List<NamedIndexedSchema<?>> childrenSchemas, int maxFieldCount) {
+        final String name,
+        final List<NamedIndexedSchema<?>> childrenSchemas,
+        final int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
     }
 
     @Override
-    public StableContainer createFromBackingNode(TreeNode node) {
+    public StableContainer createFromBackingNode(final TreeNode node) {
       return new StableContainer(this, node);
     }
   }
@@ -79,10 +84,10 @@ public class AbstractSszStableContainerSchemaTest {
   @Test
   void stableContainerSanityTest() throws JsonProcessingException {
     StableContainerSchema squareStableContainerSchema =
-        new StableContainerSchema("Square", squareSchemas, maxFieldCount);
+        new StableContainerSchema("Square", SQUARE_SCHEMAS, MAX_FIELD_COUNT);
 
     StableContainerSchema circleStableContainerSchema =
-        new StableContainerSchema("Circle", circleSchemas, maxFieldCount);
+        new StableContainerSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
 
     StableContainer square =
         squareStableContainerSchema.createFromFieldValues(
@@ -131,9 +136,11 @@ public class AbstractSszStableContainerSchemaTest {
 
   @Test
   void profileSanityTest() throws JsonProcessingException {
-    ProfileSchema squareProfileSchema = new ProfileSchema("Square", squareSchemas, maxFieldCount);
+    ProfileSchema squareProfileSchema =
+        new ProfileSchema("Square", SQUARE_SCHEMAS, MAX_FIELD_COUNT);
 
-    ProfileSchema circleProfileSchema = new ProfileSchema("Circle", circleSchemas, maxFieldCount);
+    ProfileSchema circleProfileSchema =
+        new ProfileSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
 
     StableContainer circle =
         circleProfileSchema.createFromFieldValues(

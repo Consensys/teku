@@ -48,7 +48,6 @@ public class RandomSszDataGenerator {
   private final Supplier<SszBytes4> bytes4Supplier;
   private final Supplier<SszUInt64> uintSupplier;
   private final Supplier<SszUInt256> uint256Supplier;
-  private final Supplier<SszByte> uint8Supplier;
   private final Supplier<SszBytes32> bytes32Supplier;
 
   private final Random random;
@@ -66,7 +65,6 @@ public class RandomSszDataGenerator {
     bytes4Supplier = () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
     uintSupplier = () -> SszUInt64.of(UInt64.fromLongBits(random.nextLong()));
     uint256Supplier = () -> SszUInt256.of(UInt256.fromBytes(Bytes32.random(random)));
-    uint8Supplier = () -> SszByte.of(random.nextInt());
     bytes32Supplier = () -> SszBytes32.of(Bytes32.random(random));
   }
 
@@ -90,7 +88,7 @@ public class RandomSszDataGenerator {
       } else if (schema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
         return (Stream<T>) Stream.generate(uintSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
-        return (Stream<T>) Stream.generate(uint256Supplier);
+        return (Stream<T>) Stream.generate(byteSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT256_SCHEMA)) {
         return (Stream<T>) Stream.generate(uint256Supplier);
       } else if (schema.equals(SszPrimitiveSchemas.BYTES4_SCHEMA)) {

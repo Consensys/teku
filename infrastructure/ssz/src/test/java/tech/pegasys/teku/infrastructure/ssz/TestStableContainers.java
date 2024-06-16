@@ -26,18 +26,19 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class TestStableContainers {
 
-  private static final int shapeMaxFieldCount = 4;
-  private static final NamedIndexedSchema<?> sideSchema =
+  private static final int SHAPE_MAX_FIELD_COUNT = 4;
+  private static final NamedIndexedSchema<?> SIDE_SCHEMA =
       namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA);
-  private static final NamedIndexedSchema<?> colorSchema =
+  private static final NamedIndexedSchema<?> COLOR_SCHEMA =
       namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA);
-  private static final NamedIndexedSchema<?> radiusSchema =
+  private static final NamedIndexedSchema<?> RADIUS_SCHEMA =
       namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA);
 
   static class StableContainer extends SszStableContainerImpl {
 
     StableContainer(
-        SszStableContainerSchema<? extends SszStableContainerImpl> type, TreeNode backingNode) {
+        final SszStableContainerSchema<? extends SszStableContainerImpl> type,
+        final TreeNode backingNode) {
       super(type, backingNode);
     }
   }
@@ -45,12 +46,14 @@ public class TestStableContainers {
   static class StableContainerSchema extends AbstractSszStableContainerSchema<StableContainer> {
 
     public StableContainerSchema(
-        String name, List<NamedIndexedSchema<?>> childrenSchemas, int maxFieldCount) {
+        final String name,
+        final List<NamedIndexedSchema<?>> childrenSchemas,
+        final int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
     }
 
     @Override
-    public StableContainer createFromBackingNode(TreeNode node) {
+    public StableContainer createFromBackingNode(final TreeNode node) {
       return new StableContainer(this, node);
     }
   }
@@ -58,30 +61,33 @@ public class TestStableContainers {
   static class ProfileSchema extends AbstractSszStableProfileSchema<StableContainer> {
 
     public ProfileSchema(
-        String name, List<NamedIndexedSchema<?>> childrenSchemas, int maxFieldCount) {
+        final String name,
+        final List<NamedIndexedSchema<?>> childrenSchemas,
+        final int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
     }
 
     @Override
-    public StableContainer createFromBackingNode(TreeNode node) {
+    public StableContainer createFromBackingNode(final TreeNode node) {
       return new StableContainer(this, node);
     }
   }
 
-  private static final List<NamedIndexedSchema<?>> squareSchemas = List.of(sideSchema, colorSchema);
+  private static final List<NamedIndexedSchema<?>> SQUARE_SCHEMAS =
+      List.of(SIDE_SCHEMA, COLOR_SCHEMA);
 
-  private static final List<NamedIndexedSchema<?>> circleSchemas =
-      List.of(colorSchema, radiusSchema);
+  private static final List<NamedIndexedSchema<?>> CIRCLE_SCHEMAS =
+      List.of(COLOR_SCHEMA, RADIUS_SCHEMA);
 
   public static final StableContainerSchema SQUARE_STABLE_CONTAINER_SCHEMA =
-      new StableContainerSchema("Square", squareSchemas, shapeMaxFieldCount);
+      new StableContainerSchema("Square", SQUARE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
 
   public static final StableContainerSchema CIRCLE_STABLE_CONTAINER_SCHEMA =
-      new StableContainerSchema("Circle", circleSchemas, shapeMaxFieldCount);
+      new StableContainerSchema("Circle", CIRCLE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
 
   public static final ProfileSchema SQUARE_PROFILE_SCHEMA =
-      new ProfileSchema("Square", squareSchemas, shapeMaxFieldCount);
+      new ProfileSchema("Square", SQUARE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
 
   public static final ProfileSchema CIRCLE_PROFILE_SCHEMA =
-      new ProfileSchema("Circle", circleSchemas, shapeMaxFieldCount);
+      new ProfileSchema("Circle", CIRCLE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
 }
