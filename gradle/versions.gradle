@@ -38,7 +38,7 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.0.0'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
