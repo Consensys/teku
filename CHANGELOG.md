@@ -24,6 +24,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Docker images are now based on ubuntu 24.04 LTS (noble)
 - The `teku vc` subcommand fails when no validator key source is provided. In order to run a validator client, one of the following options must be set:
   `--validator-keys`, `--validators-external-signer-url` or `--validator-api-enabled`
+- updated dependencies.
 
 ### Bug Fixes
 - Fixed performance degradation introduced in 24.4.0 regarding archive state retrieval time.
