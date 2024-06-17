@@ -30,7 +30,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttes
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SingleAttestationTopicHandlerTest
@@ -50,7 +50,7 @@ public class SingleAttestationTopicHandlerTest
         GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
         spec.getGenesisSchemaDefinitions().getAttestationSchema(),
         SUBNET_ID,
-        P2PDebugDataDumper.NOOP);
+        DebugDataDumper.NOOP);
   }
 
   @Test

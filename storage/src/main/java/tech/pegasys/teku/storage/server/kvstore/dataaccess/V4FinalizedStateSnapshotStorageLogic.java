@@ -112,6 +112,12 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
     }
 
     @Override
+    public void deleteFinalizedState(
+        final KvStoreTransaction transaction, final S schema, final UInt64 slot) {
+      transaction.delete(schema.getColumnFinalizedStatesBySlot(), slot);
+    }
+
+    @Override
     public void commit() {}
 
     private void addFinalizedState(
