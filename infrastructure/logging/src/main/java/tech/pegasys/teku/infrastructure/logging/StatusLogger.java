@@ -537,7 +537,7 @@ public class StatusLogger {
         print(
             "Prune mode being used as default without a explicit --data-storage-mode option. This will NOT be "
                 + "supported in future Teku versions. Please add --data-storage-mode=prune to your CLI arguments"
-                + " or config file.",
+                + " or config file if you want to keep using PRUNE.",
             Color.YELLOW));
   }
 
