@@ -17,6 +17,8 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Breaking Changes
 
+- Renamed `--Xp2p-dumps-to-file-enabled` hidden CLI option to `--Xdebug-data-dumping-enabled`
+
 ### Additions and Improvements
 
 - Added metadata fields to `/eth/v1/beacon/blob_sidecars/{block_id}` Beacon API response as per https://github.com/ethereum/beacon-APIs/pull/441
