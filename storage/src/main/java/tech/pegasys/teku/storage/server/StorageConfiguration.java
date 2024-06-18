@@ -40,6 +40,7 @@ public class StorageConfiguration {
   public static final long DEFAULT_STORAGE_RETAINED_EPOCHS = 1024L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
+  public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(1);
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
 
@@ -57,6 +58,7 @@ public class StorageConfiguration {
   private final int maxKnownNodeCacheSize;
   private final Duration blockPruningInterval;
   private final int blockPruningLimit;
+  private final Duration statePruningInterval;
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
   private final long retainedEpochs;
@@ -76,6 +78,7 @@ public class StorageConfiguration {
       final int blobsPruningLimit,
       final int stateRebuildTimeoutSeconds,
       final long retainedEpochs,
+      final Duration statePruningInterval,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -89,6 +92,7 @@ public class StorageConfiguration {
     this.blobsPruningLimit = blobsPruningLimit;
     this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
     this.retainedEpochs = retainedEpochs;
+    this.statePruningInterval = statePruningInterval;
     this.spec = spec;
   }
 
@@ -128,6 +132,10 @@ public class StorageConfiguration {
     return blockPruningInterval;
   }
 
+  public Duration getStatePruningInterval() {
+    return statePruningInterval;
+  }
+
   public int getBlockPruningLimit() {
     return blockPruningLimit;
   }
@@ -163,6 +171,7 @@ public class StorageConfiguration {
     private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
     private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
+    private Duration statePruningInterval = DEFAULT_STATE_PRUNING_INTERVAL;
     private long retainedEpochs = DEFAULT_STORAGE_RETAINED_EPOCHS;
 
     private Builder() {}
@@ -230,6 +239,14 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder statePruningInterval(final Duration statePruningInterval) {
+      if (statePruningInterval.isNegative() || statePruningInterval.isZero()) {
+        throw new InvalidConfigurationException("Block pruning interval must be positive");
+      }
+      this.statePruningInterval = statePruningInterval;
+      return this;
+    }
+
     public Builder blockPruningLimit(final int blockPruningLimit) {
       if (blockPruningLimit < 0) {
         throw new InvalidConfigurationException(
@@ -279,6 +296,7 @@ public class StorageConfiguration {
           blobsPruningLimit,
           stateRebuildTimeoutSeconds,
           retainedEpochs,
+          statePruningInterval,
           spec);
     }
 

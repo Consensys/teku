@@ -60,6 +60,7 @@ public class StatePruner extends Service {
     this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
     this.pruneLimit = pruneLimit;
+    LOG.info("Creating Pruner with prune interval of {} and limit of {}", pruneInterval, pruneLimit);
   }
 
   @Override
@@ -90,7 +91,7 @@ public class StatePruner extends Service {
   private void pruneStates() {
     final Optional<Checkpoint> finalizedCheckpoint = database.getFinalizedCheckpoint();
     if (finalizedCheckpoint.isEmpty()) {
-      LOG.debug("Not pruning as no finalized checkpoint is available.");
+      LOG.info("Not pruning as no finalized checkpoint is available.");
       return;
     }
     final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
@@ -98,14 +99,14 @@ public class StatePruner extends Service {
         finalizedEpoch.minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
-      LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
+      LOG.info("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;
     }
-    LOG.debug("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
+    LOG.info("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
     try {
       final UInt64 lastPrunedSlot =
           database.pruneFinalizedStates(earliestSlotToKeep.decrement(), pruneLimit);
-      LOG.debug(
+      LOG.info(
           "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
           pruneLimit,
           earliestSlotToKeep,

@@ -17,6 +17,9 @@ import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
 import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -53,6 +56,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Optional<StatePruner> statePruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
+  private static final Logger LOG = LogManager.getLogger();
 
   public StorageService(
       final ServiceConfig serviceConfig,
@@ -63,6 +67,7 @@ public class StorageService extends Service implements StorageServiceFacade {
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
+    LOG.info("Storage service created");
   }
 
   @Override
@@ -113,6 +118,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningTimingsLabelledGauge,
                             pruningActiveLabelledGauge));
               }
+              LOG.info("Data storage mode: {}, Retained epochs {}", config.getDataStorageMode(), config.getRetainedEpochs());
               if (config.getDataStorageMode().storesFinalizedStates()
                   && config.getRetainedEpochs() > -1) {
                 statePruner =
@@ -121,7 +127,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             config.getSpec(),
                             database,
                             storagePrunerAsyncRunner,
-                            config.getBlockPruningInterval(),
+                            config.getStatePruningInterval(),
                             config.getRetainedEpochs(),
                             "state",
                             pruningTimingsLabelledGauge,

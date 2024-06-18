@@ -66,6 +66,17 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private long dataStorageRetainedEpochs = StorageConfiguration.DEFAULT_STORAGE_RETAINED_EPOCHS;
 
   @CommandLine.Option(
+          names = {"--Xdata-storage-state-pruning-interval"},
+          hidden = true,
+          paramLabel = "<INTEGER>",
+          description = "Interval in seconds between finalized state pruning",
+          fallbackValue = "true",
+          showDefaultValue = Visibility.ALWAYS,
+          arity = "0..1")
+  private long statePruningIntervalSeconds =
+          StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL.toSeconds();
+
+  @CommandLine.Option(
       names = {"--Xdata-storage-create-db-version"},
       paramLabel = "<VERSION>",
       description = "Database version to create",
@@ -191,7 +202,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
                 .blobsPruningLimit(blobsPruningLimit)
-                .retainedEpochs(dataStorageRetainedEpochs));
+                .retainedEpochs(dataStorageRetainedEpochs)
+                .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds)));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())
