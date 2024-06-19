@@ -30,20 +30,14 @@ public abstract class StableProfileSchema3<
         C extends SszProfile, V0 extends SszData, V1 extends SszData, V2 extends SszData>
     extends AbstractSszStableProfileSchema<C> {
 
-  public static <
-          C extends SszProfile, V0 extends SszData, V1 extends SszData, V2 extends SszData>
-      StableProfileSchema3<C, V0, V1, V2>
-          create(
-              final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1, final SszSchema<V2> fieldSchema2,
-              final int maxFieldCount,
-              final BiFunction<
-                      StableProfileSchema3<
-                          C, V0, V1, V2>,
-                      TreeNode,
-                      C>
-                  instanceCtor) {
-    return new StableProfileSchema3<>(
-        fieldSchema0, fieldSchema1, fieldSchema2, maxFieldCount) {
+  public static <C extends SszProfile, V0 extends SszData, V1 extends SszData, V2 extends SszData>
+      StableProfileSchema3<C, V0, V1, V2> create(
+          final SszSchema<V0> fieldSchema0,
+          final SszSchema<V1> fieldSchema1,
+          final SszSchema<V2> fieldSchema2,
+          final int maxFieldCount,
+          final BiFunction<StableProfileSchema3<C, V0, V1, V2>, TreeNode, C> instanceCtor) {
+    return new StableProfileSchema3<>(fieldSchema0, fieldSchema1, fieldSchema2, maxFieldCount) {
       @Override
       public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -52,7 +46,9 @@ public abstract class StableProfileSchema3<
   }
 
   protected StableProfileSchema3(
-      final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1, final SszSchema<V2> fieldSchema2,
+      final SszSchema<V0> fieldSchema0,
+      final SszSchema<V1> fieldSchema1,
+      final SszSchema<V2> fieldSchema2,
       final int maxFieldCount) {
 
     super(
@@ -63,7 +59,9 @@ public abstract class StableProfileSchema3<
 
   protected StableProfileSchema3(
       final String containerName,
-      final NamedSchema<V0> fieldNamedSchema0, final NamedSchema<V1> fieldNamedSchema1, final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
       final int maxFieldCount) {
 
     super(
@@ -75,7 +73,9 @@ public abstract class StableProfileSchema3<
 
   protected StableProfileSchema3(
       final String containerName,
-      final NamedIndexedSchema<V0> fieldNamedIndexedSchema0, final NamedIndexedSchema<V1> fieldNamedIndexedSchema1, final NamedIndexedSchema<V2> fieldNamedIndexedSchema2,
+      final NamedIndexedSchema<V0> fieldNamedIndexedSchema0,
+      final NamedIndexedSchema<V1> fieldNamedIndexedSchema1,
+      final NamedIndexedSchema<V2> fieldNamedIndexedSchema2,
       final int maxFieldCount) {
 
     super(
@@ -84,21 +84,18 @@ public abstract class StableProfileSchema3<
         maxFieldCount);
   }
 
-    @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getChildSchema(getNthActiveFieldIndex(0));
   }
-
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
     return (SszSchema<V1>) getChildSchema(getNthActiveFieldIndex(1));
   }
 
-
   @SuppressWarnings("unchecked")
   public SszSchema<V2> getFieldSchema2() {
     return (SszSchema<V2>) getChildSchema(getNthActiveFieldIndex(2));
   }
-
 }

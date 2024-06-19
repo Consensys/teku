@@ -13,18 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.json;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
-
-import java.util.List;
-import java.util.Optional;
 
 public class SszStableContainerTypeDefinition {
 
@@ -46,7 +42,8 @@ public class SszStableContainerTypeDefinition {
   private static <DataT extends SszStableContainer, SchemaT extends SszStableContainerSchema<DataT>>
       void addField(
           final SchemaT schema,
-          final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>> builder,
+          final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>>
+              builder,
           final String childName,
           final int fieldIndex) {
     final SszSchema<?> childSchema = schema.getChildSchema(fieldIndex);

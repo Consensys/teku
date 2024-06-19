@@ -20,7 +20,6 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -124,8 +123,7 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     this.activeFieldsSchema = SszBitvectorSchema.create(maxFieldCount);
     this.defaultActiveFields = activeFieldsSchema.ofBits();
     this.defaultTreeNode =
-        BranchNode.create(
-            createDefaultContainerTreeNode(), defaultActiveFields.getBackingNode());
+        BranchNode.create(createDefaultContainerTreeNode(), defaultActiveFields.getBackingNode());
     this.jsonTypeDefinition = SszStableContainerTypeDefinition.createFor(this);
   }
 
@@ -222,42 +220,43 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   public int getSszVariablePartSize(final TreeNode node) {
     final SszBitvector activeFields = getActiveFieldsBitvectorFromBackingNode(node);
     return activeFields
-        .streamAllSetBits()
-        .map(
-            activeFieldIndex ->
-                getChildSchema(activeFieldIndex)
-                    .getSszSize(node.get(getChildGeneralizedIndex(activeFieldIndex))))
-        .sum() + activeFieldsSchema.getSszSize(activeFields.getBackingNode());
+            .streamAllSetBits()
+            .map(
+                activeFieldIndex ->
+                    getChildSchema(activeFieldIndex)
+                        .getSszSize(node.get(getChildGeneralizedIndex(activeFieldIndex))))
+            .sum()
+        + activeFieldsSchema.getSszSize(activeFields.getBackingNode());
   }
 
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     final SszBitvector activeFieldsBitvector = getActiveFieldsBitvectorFromBackingNode(node);
     final int activeFieldsWroteBytes =
-        activeFieldsSchema.sszSerializeTree(
-            activeFieldsBitvector.getBackingNode(), writer);
+        activeFieldsSchema.sszSerializeTree(activeFieldsBitvector.getBackingNode(), writer);
 
     final TreeNode containerTree = node.get(CONTAINER_G_INDEX);
 
     int variableChildOffset = calcSszFixedPartSize(activeFieldsBitvector);
 
     final int[] variableSizes = new int[activeFieldsBitvector.size()];
-    for(final OfInt activeIndicesIterator = activeFieldsBitvector.streamAllSetBits().iterator(); activeIndicesIterator.hasNext(); ) {
+    for (final OfInt activeIndicesIterator = activeFieldsBitvector.streamAllSetBits().iterator();
+        activeIndicesIterator.hasNext(); ) {
       final int activeFieldIndex = activeIndicesIterator.next();
 
-              final TreeNode childSubtree =
-                  containerTree.get(getContainerChildGeneralizedIndex(activeFieldIndex));
-              final SszSchema<?> childType = getChildSchema(activeFieldIndex);
-              if (childType.isFixedSize()) {
-                int size = childType.sszSerializeTree(childSubtree, writer);
-                assert size == childType.getSszFixedPartSize();
-              } else {
-                writer.write(SszType.sszLengthToBytes(variableChildOffset));
-                int childSize = childType.getSszSize(childSubtree);
-                variableSizes[activeFieldIndex] = childSize;
-                variableChildOffset += childSize;
-              }
-            }
+      final TreeNode childSubtree =
+          containerTree.get(getContainerChildGeneralizedIndex(activeFieldIndex));
+      final SszSchema<?> childType = getChildSchema(activeFieldIndex);
+      if (childType.isFixedSize()) {
+        int size = childType.sszSerializeTree(childSubtree, writer);
+        assert size == childType.getSszFixedPartSize();
+      } else {
+        writer.write(SszType.sszLengthToBytes(variableChildOffset));
+        int childSize = childType.getSszSize(childSubtree);
+        variableSizes[activeFieldIndex] = childSize;
+        variableChildOffset += childSize;
+      }
+    }
 
     activeFieldsBitvector
         .streamAllSetBits()
@@ -287,20 +286,20 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
 
   @Override
   public TreeNode sszDeserializeTree(final SszReader reader) {
-    final SszReader activeFieldsReader =
-        reader.slice(activeFieldsSchema.getSszFixedPartSize());
+    final SszReader activeFieldsReader = reader.slice(activeFieldsSchema.getSszFixedPartSize());
     final SszBitvector activeFields = activeFieldsSchema.sszDeserialize(activeFieldsReader);
 
-    return BranchNode.create(deserializeContainer(reader, activeFields), activeFields.getBackingNode());
+    return BranchNode.create(
+        deserializeContainer(reader, activeFields), activeFields.getBackingNode());
   }
-  private TreeNode deserializeContainer(
-          final SszReader reader, final SszBitvector activeFields) {
+
+  private TreeNode deserializeContainer(final SszReader reader, final SszBitvector activeFields) {
     int endOffset = reader.getAvailableBytes();
     int childCount = getFieldsCount();
     Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);
     IntList variableChildrenOffsets = new IntArrayList(childCount);
     for (int i = 0; i < childCount; i++) {
-      if(!activeFields.getBit(i)) {
+      if (!activeFields.getBit(i)) {
         fixedChildrenSubtrees.add(SszNone.INSTANCE.getBackingNode());
         continue;
       }
@@ -323,17 +322,17 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     } else {
       if (variableChildrenOffsets.getInt(0) != endOffset - reader.getAvailableBytes()) {
         throw new SszDeserializeException(
-                "First variable element offset doesn't match the end of fixed part");
+            "First variable element offset doesn't match the end of fixed part");
       }
     }
 
     variableChildrenOffsets.add(endOffset);
 
     ArrayDeque<Integer> variableChildrenSizes =
-            new ArrayDeque<>(variableChildrenOffsets.size() - 1);
+        new ArrayDeque<>(variableChildrenOffsets.size() - 1);
     for (int i = 0; i < variableChildrenOffsets.size() - 1; i++) {
       variableChildrenSizes.add(
-              variableChildrenOffsets.getInt(i + 1) - variableChildrenOffsets.getInt(i));
+          variableChildrenOffsets.getInt(i + 1) - variableChildrenOffsets.getInt(i));
     }
 
     if (variableChildrenSizes.stream().anyMatch(s -> s < 0)) {

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 
 public interface BeaconStateStableSchema<
         T extends StableBeaconState, TMutable extends MutableBeaconState>

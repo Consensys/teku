@@ -16,8 +16,6 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.Optional;
-
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
@@ -61,8 +59,7 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
   protected void checkIndex(final int index) {
     super.checkIndex(index);
     if (!isFieldActive(index)) {
-      throw new NoSuchElementException(
-              "Index " + index + " is not active in the stable container");
+      throw new NoSuchElementException("Index " + index + " is not active in the stable container");
     }
   }
 

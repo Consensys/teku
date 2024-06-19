@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 
 public interface SszStableContainer extends SszContainer {
   boolean isFieldActive(int index);
@@ -37,6 +36,4 @@ public interface SszStableContainer extends SszContainer {
   default <C extends SszData> Optional<C> getAnyOptional(final int index) {
     return (Optional<C>) getOptional(index);
   }
-
-
 }

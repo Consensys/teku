@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import com.google.common.base.Suppliers;
-
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -134,7 +133,8 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
    * Checks the child index
    *
    * @throws IndexOutOfBoundsException if index is invalid
-   * @throws NoSuchElementException if field is not present (for data structures permitting optional values)
+   * @throws NoSuchElementException if field is not present (for data structures permitting optional
+   *     values)
    */
   protected abstract void checkIndex(int index);
 
