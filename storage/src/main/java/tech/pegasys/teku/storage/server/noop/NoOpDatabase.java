@@ -230,7 +230,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public UInt64 pruneFinalizedStates(final UInt64 lastSlotToPruneStateFor, final long pruneLimit) {
+  public UInt64 pruneFinalizedStates(final Optional<UInt64> lastPrunedSlot, final UInt64 lastSlotToPruneStateFor, final long pruneLimit) {
     return lastSlotToPruneStateFor;
   }
 

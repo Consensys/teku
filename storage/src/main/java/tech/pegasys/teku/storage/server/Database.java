@@ -237,5 +237,5 @@ public interface Database extends AutoCloseable {
    */
   UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit);
 
-  UInt64 pruneFinalizedStates(UInt64 lastSlotToPruneStateFor, long pruneLimit);
+  UInt64 pruneFinalizedStates(Optional<UInt64> lastPrunedSlot, UInt64 lastSlotToPruneStateFor, long pruneLimit);
 }

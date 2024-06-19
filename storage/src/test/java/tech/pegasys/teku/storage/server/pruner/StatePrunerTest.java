@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.storage.server.pruner.BlobSidecarPrunerTest.PRUNE_LIMIT;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public class StatePrunerTest {
 
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(26);
   private static final long PRUNE_SLOTS = 10;
+  private static final int PRUNE_LIMIT = 10;
   public int epochsToKeep;
   public static final int SLOTS_PER_EPOCH = 10;
   private final Spec spec =
@@ -59,6 +61,7 @@ public class StatePrunerTest {
           asyncRunner,
           PRUNE_INTERVAL,
           PRUNE_SLOTS,
+          PRUNE_LIMIT,
           "test",
           mock(SettableLabelledGauge.class),
           pruningActiveLabelledGauge);
@@ -67,7 +70,7 @@ public class StatePrunerTest {
   void setUp() {
     epochsToKeep = spec.getNetworkingConfig().getMinEpochsForBlockRequests();
     assertThat(pruner.start()).isCompleted();
-    when(database.pruneFinalizedStates(any(), anyInt())).thenReturn(UInt64.ZERO);
+    when(database.pruneFinalizedStates(any(),any(), anyInt())).thenReturn(UInt64.ZERO);
   }
 
   @Test
@@ -75,7 +78,7 @@ public class StatePrunerTest {
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(50))));
     asyncRunner.executeDueActions();
-    verify(database).pruneFinalizedStates(any(), eq(PRUNE_SLOTS));
+    verify(database).pruneFinalizedStates(any(),any(), eq(PRUNE_SLOTS));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
@@ -83,12 +86,12 @@ public class StatePrunerTest {
   void shouldPruneAfterInterval() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     asyncRunner.executeDueActions();
-    verify(database, never()).pruneFinalizedStates(any(), eq(PRUNE_SLOTS));
+    verify(database, never()).pruneFinalizedStates(any(),any(), eq(PRUNE_SLOTS));
 
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(52))));
     triggerNextPruning();
-    verify(database).pruneFinalizedStates(any(), eq(PRUNE_SLOTS));
+    verify(database).pruneFinalizedStates(any(), any(), eq(PRUNE_SLOTS));
     verify(pruningActiveLabelledGauge, times(2)).set(eq(0.), any());
   }
 
@@ -96,7 +99,7 @@ public class StatePrunerTest {
   void shouldNotPruneWhenFinalizedCheckpointNotSet() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedStates(any(), eq(PRUNE_SLOTS));
+    verify(database, never()).pruneFinalizedStates(any(), any(), eq(PRUNE_SLOTS));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
@@ -105,7 +108,7 @@ public class StatePrunerTest {
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(epochsToKeep)));
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedStates(any(), eq(PRUNE_SLOTS));
+    verify(database, never()).pruneFinalizedStates(any(), any(), eq(PRUNE_SLOTS));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
@@ -118,7 +121,7 @@ public class StatePrunerTest {
     // SlotToKeep = FinalizedEpoch (50) * SlotsPerEpoch(10) - EpochsToKeep(5) * SlotsPerEpoch(10)
     // = 500 - 50 = 450, last slot to prune = 450 - 1 = 449.
     final UInt64 lastSlotToPrune = UInt64.valueOf(449);
-    verify(database).pruneFinalizedStates(lastSlotToPrune, PRUNE_SLOTS);
+    verify(database).pruneFinalizedStates(any(),lastSlotToPrune, PRUNE_SLOTS);
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
@@ -130,7 +133,7 @@ public class StatePrunerTest {
     triggerNextPruning();
     // Should prune all blocks in the first epoch (ie blocks 0 - 9)
     final UInt64 lastSlotToPrune = UInt64.valueOf(SLOTS_PER_EPOCH - 1);
-    verify(database).pruneFinalizedStates(lastSlotToPrune, PRUNE_SLOTS);
+    verify(database).pruneFinalizedStates(any(),lastSlotToPrune, PRUNE_SLOTS);
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 

@@ -36,10 +36,13 @@ public class StatePruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
-  private final long pruneLimit;
+  private final int pruneLimit;
+  private final long epochsToRetain;
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
   private final SettableLabelledGauge pruningActiveLabelledGauge;
   private final String pruningMetricsType;
+  //caching last pruned slot to avoid hitting the db multiple times
+  private Optional<UInt64> lastPrunedSlot = Optional.empty();
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
 
@@ -48,7 +51,8 @@ public class StatePruner extends Service {
       final Database database,
       final AsyncRunner asyncRunner,
       final Duration pruneInterval,
-      final long pruneLimit,
+      final long epochsToRetain,
+      final int pruneLimit,
       final String pruningMetricsType,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
@@ -59,8 +63,8 @@ public class StatePruner extends Service {
     this.pruningMetricsType = pruningMetricsType;
     this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
+    this.epochsToRetain = epochsToRetain;
     this.pruneLimit = pruneLimit;
-    LOG.info("Creating Pruner with prune interval of {} and limit of {}", pruneInterval, pruneLimit);
   }
 
   @Override
@@ -91,26 +95,27 @@ public class StatePruner extends Service {
   private void pruneStates() {
     final Optional<Checkpoint> finalizedCheckpoint = database.getFinalizedCheckpoint();
     if (finalizedCheckpoint.isEmpty()) {
-      LOG.info("Not pruning as no finalized checkpoint is available.");
+      LOG.debug("Not pruning as no finalized checkpoint is available.");
       return;
     }
     final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
+    LOG.debug("Finalized epoch is {}", finalizedEpoch);
     final UInt64 earliestEpochToKeep =
-        finalizedEpoch.minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
+        finalizedEpoch.minusMinZero(epochsToRetain);
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
-      LOG.info("Pruning is not performed as the epochs to retain include the genesis epoch.");
+      LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;
     }
     LOG.info("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
     try {
-      final UInt64 lastPrunedSlot =
-          database.pruneFinalizedStates(earliestSlotToKeep.decrement(), pruneLimit);
+      lastPrunedSlot =
+          Optional.of(database.pruneFinalizedStates(lastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit));
       LOG.info(
           "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
           pruneLimit,
           earliestSlotToKeep,
-          lastPrunedSlot);
+          lastPrunedSlot.get());
     } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }

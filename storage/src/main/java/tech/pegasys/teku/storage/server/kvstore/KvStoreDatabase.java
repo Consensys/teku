@@ -434,8 +434,16 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public UInt64 pruneFinalizedStates(final UInt64 lastSlotToPrune, final long pruneLimit) {
-    final Optional<UInt64> earliestFinalizedStateSlot = dao.getEarliestFinalizedStateSlot();
+  public UInt64 pruneFinalizedStates(final Optional<UInt64> lastPrunedSlot,  final UInt64 lastSlotToPrune, final long pruneLimit) {
+    final Optional<UInt64> earliestFinalizedStateSlot;
+
+    if(lastPrunedSlot.isEmpty()) {
+      earliestFinalizedStateSlot = dao.getEarliestFinalizedStateSlot();
+    }
+    else{
+      earliestFinalizedStateSlot = lastPrunedSlot;
+    }
+
     LOG.debug(
         "Earliest finalized state stored is for slot {}",
         () ->
@@ -454,7 +462,7 @@ public class KvStoreDatabase implements Database {
       final UInt64 lastSlotToPrune,
       final long pruneLimit) {
     final List<Triple<UInt64, Bytes32, Bytes32>> slotsToPruneStateFor;
-    LOG.debug("Pruning finalized states to slot {} (included)", lastSlotToPrune);
+
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(earliestFinalizedStateSlot, lastSlotToPrune)) {
       slotsToPruneStateFor =
@@ -485,7 +493,7 @@ public class KvStoreDatabase implements Database {
     if (!slotsToPruneStateFor.isEmpty()) {
       if (slotsToPruneStateFor.size() < 20) {
         LOG.debug(
-            "Received blocks ({}) to delete",
+            "Received slots ({}) to delete finalized state for",
             () -> slotsToPruneStateFor.stream().map(Triple::getLeft).toList());
       } else {
         LOG.debug("Received {} finalized blocks to delete", slotsToPruneStateFor.size());
@@ -499,6 +507,9 @@ public class KvStoreDatabase implements Database {
             });
 
         updater.commit();
+      }
+      catch (Exception e) {
+        LOG.error("Failed to prune finalized states", e);
       }
     }
   }

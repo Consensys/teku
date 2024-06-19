@@ -37,12 +37,13 @@ public class StorageConfiguration {
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
   public static final int DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS = 120;
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
-  public static final long DEFAULT_STORAGE_RETAINED_EPOCHS = 1024L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
-  public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(1);
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
+  public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(10);
+  public static final long DEFAULT_STORAGE_RETAINED_EPOCHS = -1;
+  public static final int DEFAULT_STATE_PRUNING_LIMIT = 3;
 
   // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
   // target. Let's configure 48 pruning per minute, so we have some room for catching up.
@@ -62,6 +63,7 @@ public class StorageConfiguration {
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
   private final long retainedEpochs;
+  private final int statePruningLimit;
 
   private final int stateRebuildTimeoutSeconds;
 
@@ -79,6 +81,7 @@ public class StorageConfiguration {
       final int stateRebuildTimeoutSeconds,
       final long retainedEpochs,
       final Duration statePruningInterval,
+      final int statePruningLimit,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -93,6 +96,7 @@ public class StorageConfiguration {
     this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
     this.retainedEpochs = retainedEpochs;
     this.statePruningInterval = statePruningInterval;
+    this.statePruningLimit = statePruningLimit;
     this.spec = spec;
   }
 
@@ -132,10 +136,6 @@ public class StorageConfiguration {
     return blockPruningInterval;
   }
 
-  public Duration getStatePruningInterval() {
-    return statePruningInterval;
-  }
-
   public int getBlockPruningLimit() {
     return blockPruningLimit;
   }
@@ -150,6 +150,12 @@ public class StorageConfiguration {
 
   public long getRetainedEpochs() {
     return retainedEpochs;
+  }
+  public Duration getStatePruningInterval() {
+    return statePruningInterval;
+  }
+  public int getStatePruningLimit() {
+    return statePruningLimit;
   }
 
   public Spec getSpec() {
@@ -173,6 +179,7 @@ public class StorageConfiguration {
     private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
     private Duration statePruningInterval = DEFAULT_STATE_PRUNING_INTERVAL;
     private long retainedEpochs = DEFAULT_STORAGE_RETAINED_EPOCHS;
+    private int statePruningLimit = DEFAULT_STATE_PRUNING_LIMIT;
 
     private Builder() {}
 
@@ -239,14 +246,6 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder statePruningInterval(final Duration statePruningInterval) {
-      if (statePruningInterval.isNegative() || statePruningInterval.isZero()) {
-        throw new InvalidConfigurationException("Block pruning interval must be positive");
-      }
-      this.statePruningInterval = statePruningInterval;
-      return this;
-    }
-
     public Builder blockPruningLimit(final int blockPruningLimit) {
       if (blockPruningLimit < 0) {
         throw new InvalidConfigurationException(
@@ -281,6 +280,23 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder statePruningInterval(final Duration statePruningInterval) {
+      if (statePruningInterval.isNegative() || statePruningInterval.isZero()) {
+        throw new InvalidConfigurationException("Block pruning interval must be positive");
+      }
+      this.statePruningInterval = statePruningInterval;
+      return this;
+    }
+
+    public Builder statePruningLimit(final int statePruningLimit) {
+      if (statePruningLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid statePruningLimit: %d", statePruningLimit));
+      }
+      this.statePruningLimit = statePruningLimit;
+      return this;
+    }
+
     public StorageConfiguration build() {
       determineDataStorageMode();
       return new StorageConfiguration(
@@ -297,6 +313,7 @@ public class StorageConfiguration {
           stateRebuildTimeoutSeconds,
           retainedEpochs,
           statePruningInterval,
+          statePruningLimit,
           spec);
     }
 

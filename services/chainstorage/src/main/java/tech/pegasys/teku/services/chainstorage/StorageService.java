@@ -129,6 +129,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             storagePrunerAsyncRunner,
                             config.getStatePruningInterval(),
                             config.getRetainedEpochs(),
+                            config.getStatePruningLimit(),
                             "state",
                             pruningTimingsLabelledGauge,
                             pruningActiveLabelledGauge));
