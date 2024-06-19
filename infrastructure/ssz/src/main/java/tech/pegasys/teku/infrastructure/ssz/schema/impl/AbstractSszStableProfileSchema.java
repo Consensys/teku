@@ -60,15 +60,20 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
     this.activeFields = getActiveFieldsSchema().ofBits(activeFieldIndices);
   }
 
-  static private List<? extends NamedSchema<?>> prepareSchemas(final SszStableContainerSchema<? extends SszStableContainer> stableContainer, final List<Integer> activeFieldIndices) {
-    return stableContainer.getDefinedChildrenSchemas().stream().map(namedIndexedSchema -> {
-      final int index = namedIndexedSchema.getIndex();
-      if(activeFieldIndices.contains(index)) {
-        return namedIndexedSchema;
-      }
-      return new NamedIndexedSchema<>(
-              "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
-    }).toList();
+  private static List<? extends NamedSchema<?>> prepareSchemas(
+      final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
+      final List<Integer> activeFieldIndices) {
+    return stableContainer.getDefinedChildrenSchemas().stream()
+        .map(
+            namedIndexedSchema -> {
+              final int index = namedIndexedSchema.getIndex();
+              if (activeFieldIndices.contains(index)) {
+                return namedIndexedSchema;
+              }
+              return new NamedIndexedSchema<>(
+                  "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
+            })
+        .toList();
   }
 
   public AbstractSszStableProfileSchema(
@@ -114,8 +119,7 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
     }
 
     return BranchNode.create(
-        super.createTreeFromFieldValues(allFields),
-        getDefaultActiveFields().getBackingNode());
+        super.createTreeFromFieldValues(allFields), getDefaultActiveFields().getBackingNode());
   }
 
   @Override
@@ -166,7 +170,6 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
 
   @Override
   public long getChildGeneralizedIndex(final long elementIndex) {
-    return GIndexUtil.gIdxCompose(
-            CONTAINER_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
+    return GIndexUtil.gIdxCompose(CONTAINER_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
   }
 }

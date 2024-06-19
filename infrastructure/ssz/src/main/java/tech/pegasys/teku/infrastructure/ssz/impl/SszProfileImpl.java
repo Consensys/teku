@@ -17,7 +17,6 @@ import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
-
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
@@ -86,13 +85,13 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
   @Override
   public String toString() {
     return getSchema().getContainerName()
-            + "{activeFields="
-            + getActiveFields()
-            + ", "
-            + getActiveFields()
+        + "{activeFields="
+        + getActiveFields()
+        + ", "
+        + getActiveFields()
             .streamAllSetBits()
             .mapToObj(idx -> getSchema().getFieldNames().get(idx) + "=" + get(idx))
             .collect(Collectors.joining(", "))
-            + "}";
+        + "}";
   }
 }

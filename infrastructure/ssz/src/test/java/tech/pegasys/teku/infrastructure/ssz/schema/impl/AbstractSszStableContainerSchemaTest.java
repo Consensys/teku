@@ -84,8 +84,8 @@ public class AbstractSszStableContainerSchemaTest {
     }
   }
 
-  private final static StableContainerSchema SHAPE_STABLE_CONTAINER_SCHEMA =
-          new StableContainerSchema("Shape", SHAPE_SCHEMAS, MAX_FIELD_COUNT);
+  private static final StableContainerSchema SHAPE_STABLE_CONTAINER_SCHEMA =
+      new StableContainerSchema("Shape", SHAPE_SCHEMAS, MAX_FIELD_COUNT);
 
   static class ProfileSchema extends AbstractSszStableProfileSchema<Profile> {
 
@@ -96,7 +96,10 @@ public class AbstractSszStableContainerSchemaTest {
       super(name, childrenSchemas, maxFieldCount);
     }
 
-    public ProfileSchema(final String name, final SszStableContainerSchema<? extends SszStableContainer> stableContainer, final List<Integer> activeFieldIndices) {
+    public ProfileSchema(
+        final String name,
+        final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
+        final List<Integer> activeFieldIndices) {
       super(name, stableContainer, activeFieldIndices);
     }
 
@@ -160,12 +163,12 @@ public class AbstractSszStableContainerSchemaTest {
   @Test
   void profileSanityTest() throws JsonProcessingException {
     ProfileSchema squareProfileSchema =
-        new ProfileSchema("Square", SHAPE_STABLE_CONTAINER_SCHEMA, List.of(0,1));
+        new ProfileSchema("Square", SHAPE_STABLE_CONTAINER_SCHEMA, List.of(0, 1));
 
-//    ProfileSchema circleProfileSchema =
-//        new ProfileSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
+    //    ProfileSchema circleProfileSchema =
+    //        new ProfileSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
     ProfileSchema circleProfileSchema =
-        new ProfileSchema("Circle", SHAPE_STABLE_CONTAINER_SCHEMA, List.of(1,2));
+        new ProfileSchema("Circle", SHAPE_STABLE_CONTAINER_SCHEMA, List.of(1, 2));
     Profile circle =
         circleProfileSchema.createFromFieldValues(
             List.of(
