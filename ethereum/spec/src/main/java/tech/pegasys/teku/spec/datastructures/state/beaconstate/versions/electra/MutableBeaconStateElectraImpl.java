@@ -28,6 +28,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
 public class MutableBeaconStateElectraImpl
     extends AbstractMutableBeaconState<BeaconStateElectraImpl>
     implements MutableBeaconStateElectra, BeaconStateCache, ValidatorStatsAltair {

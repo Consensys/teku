@@ -107,15 +107,17 @@ public class AbstractSszStableContainerSchemaTest {
     StableContainer square =
             shapeStableContainerSchema.createFromOptionalFieldValues(
             List.of(
-                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
-                Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
+                    Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
+                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))
+                ));
 
     StableContainer circle =
             shapeStableContainerSchema.createFromOptionalFieldValues(
             List.of(
                     Optional.empty(),
-                Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
-                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))));
+                    Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
+                Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))
+                ));
 
     System.out.println("square sc serialization: " + square.sszSerialize());
     System.out.println("circle sc serialization: " + circle.sszSerialize());
@@ -130,6 +132,8 @@ public class AbstractSszStableContainerSchemaTest {
 
     System.out.println("square sc root: " + square.hashTreeRoot());
     System.out.println("circle sc root: " + circle.hashTreeRoot());
+
+    System.out.println("circle sc toString: " + circle);
 
     StableContainer deserializedCircle =
             shapeStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));

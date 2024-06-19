@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
@@ -65,8 +67,9 @@ public class SszStableContainerImpl extends SszContainerImpl implements SszStabl
 
   @Override
   protected void checkIndex(final int index) {
+    super.checkIndex(index);
     if (!isFieldActive(index)) {
-      throw new IndexOutOfBoundsException(
+      throw new NoSuchElementException(
           "Index " + index + " is not active in the stable container");
     }
   }
