@@ -19,14 +19,18 @@ import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFA
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class DiscoveryConfig {
-
+  private static final Logger LOG = LogManager.getLogger();
   public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
   public static final int DEFAULT_P2P_PEERS_LOWER_BOUND = 64;
   public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 100;
+  public static final int DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS = 60;
+  public static final int DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS = 80;
   public static final boolean DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED = false;
 
   private final boolean isDiscoveryEnabled;
@@ -58,6 +62,8 @@ public class DiscoveryConfig {
     this.maxPeers = maxPeers;
     this.minRandomlySelectedPeers = minRandomlySelectedPeers;
     this.siteLocalAddressesEnabled = siteLocalAddressesEnabled;
+
+    LOG.debug("Peer limits - Minimum {}, Maximum {}", minPeers, maxPeers);
   }
 
   public static Builder builder() {
@@ -213,12 +219,26 @@ public class DiscoveryConfig {
       return this;
     }
 
+    public Builder minPeersIfDefault(final Integer minPeers) {
+      if (this.minPeers == DEFAULT_P2P_PEERS_LOWER_BOUND) {
+        return minPeers(minPeers);
+      }
+      return this;
+    }
+
     public Builder minPeers(final Integer minPeers) {
       checkNotNull(minPeers);
       if (minPeers < 0) {
         throw new InvalidConfigurationException(String.format("Invalid minPeers: %d", minPeers));
       }
       this.minPeers = minPeers;
+      return this;
+    }
+
+    public Builder maxPeersIfDefault(final Integer maxPeers) {
+      if (this.maxPeers == DEFAULT_P2P_PEERS_UPPER_BOUND) {
+        return maxPeers(maxPeers);
+      }
       return this;
     }
 

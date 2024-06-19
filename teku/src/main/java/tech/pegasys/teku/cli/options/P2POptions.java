@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -425,6 +429,20 @@ public class P2POptions {
                     .forwardSyncMaxBlocksPerMinute(forwardSyncRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
+
+    if (subscribeAllSubnetsEnabled) {
+      builder
+          .validator(
+              v -> v.executorMaxQueueSizeIfDefault(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS))
+          .eth2NetworkConfig(
+              eth ->
+                  eth.asyncP2pMaxQueueIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS)
+                      .asyncBeaconChainMaxQueueIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS))
+          .discovery(
+              d ->
+                  d.maxPeersIfDefault(DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS)
+                      .minPeersIfDefault(DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS));
+    }
     natOptions.configure(builder);
   }
 }
