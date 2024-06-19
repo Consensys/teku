@@ -532,6 +532,15 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
+  public void warnUsageOfImplicitPruneDataStorageMode() {
+    log.warn(
+        print(
+            "Prune mode being used as default without a explicit --data-storage-mode option. This will NOT be "
+                + "supported in future Teku versions. Please add --data-storage-mode=prune to your CLI arguments"
+                + " or config file if you want to keep using PRUNE.",
+            Color.YELLOW));
+  }
+
   private void logWithColorIfLevelGreaterThanInfo(
       final Level level, final String msg, final ColorConsolePrinter.Color color) {
     final boolean useColor = level.compareTo(Level.INFO) < 0;

@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -82,29 +81,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
 
     dbSettingFileSyncDataAccessor = SyncDataAccessor.create(dataDirectory.toPath());
-    this.stateStorageMode =
-        getStateStorageModeFromConfigOrDisk(Optional.of(config.getDataStorageMode()));
-  }
-
-  private StateStorageMode getStateStorageModeFromConfigOrDisk(
-      final Optional<StateStorageMode> maybeConfiguredStorageMode) {
-    try {
-      final File storageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
-      if (storageModeFile.exists() && maybeConfiguredStorageMode.isPresent()) {
-        final StateStorageMode storageModeFromFile =
-            StateStorageMode.valueOf(Files.readString(storageModeFile.toPath()).trim());
-        if (!storageModeFromFile.equals(maybeConfiguredStorageMode.get())) {
-          LOG.info(
-              "Storage mode that was persisted differs from the command specified option; file: {}, CLI: {}",
-              () -> storageModeFromFile,
-              maybeConfiguredStorageMode::get);
-        }
-      }
-    } catch (IOException e) {
-      LOG.error("Failed to read storage mode file", e);
-    }
-
-    return maybeConfiguredStorageMode.orElse(StateStorageMode.DEFAULT_MODE);
+    this.stateStorageMode = config.getDataStorageMode();
   }
 
   @Override
