@@ -334,6 +334,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "type");
   }
 
+  // TODO
   @Override
   protected SafeFuture<?> doStart() {
     LOG.debug("Starting {}", this.getClass().getSimpleName());
@@ -344,6 +345,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 beaconRestAPI.map(BeaconRestApi::start).orElse(SafeFuture.completedFuture(null)));
   }
 
+  // TODO
   protected void startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
@@ -385,6 +387,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             });
   }
 
+  // TODO
   @Override
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
@@ -401,11 +404,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected SafeFuture<?> initialize() {
+
+    timerService = new TimerService(this::onTick); // TODO
+
     final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
-    timerService = new TimerService(this::onTick);
 
     final CombinedStorageChannel combinedStorageChannel =
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
@@ -458,10 +463,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .thenRun(this::initAll)
         .thenRun(
             () -> {
+              // TODO
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               recentChainData.subscribeBestBlockInitialized(this::startServices);
             })
-        .thenCompose(__ -> timerService.start());
+        .thenCompose(__ ->
+            timerService.start() // TODO
+        );
   }
 
   private boolean isUsingCustomInitialState() {
@@ -1411,7 +1419,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
-  // TODO
   private Optional<AnchorPoint> tryLoadingAnchorPointFromInitialState(
       final Eth2NetworkConfiguration networkConfiguration) {
     Optional<AnchorPoint> initialAnchor = Optional.empty();
@@ -1433,12 +1440,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     return initialAnchor;
   }
 
-  // TODO
   protected Optional<AnchorPoint> attemptToLoadAnchorPoint(final Optional<String> initialState) {
     return wsInitializer.loadInitialAnchorPoint(spec, initialState);
   }
 
-  // TODO
   protected void setupInteropState() {
     final InteropConfig config = beaconConfig.interopConfig();
     STATUS_LOG.generatingMockStartGenesis(

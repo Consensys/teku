@@ -11,6 +11,7 @@ import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -88,10 +90,13 @@ public interface SyncModule {
       DepositProvider depositProvider,
       Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
       Eth2P2PNetwork p2pNetwork,
-      CoalescingChainHeadChannel coalescingChainHeadChannel) {
+      ChainHeadChannel chainHeadChannelPublisher,
+      EventLogger eventLogger) {
     SyncService syncService = syncServiceFactory.create(eventChannels);
 
     // chainHeadChannel subscription
+    CoalescingChainHeadChannel coalescingChainHeadChannel =
+        new CoalescingChainHeadChannel(chainHeadChannelPublisher, eventLogger);
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
 
     // forkChoiceNotifier subscription

@@ -10,6 +10,7 @@ import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 @Module
 public interface BeaconConfigModule {
@@ -47,5 +48,10 @@ public interface BeaconConfigModule {
   @Provides
   static Spec spec(BeaconChainConfiguration config){
     return config.getSpec();
+  }
+
+  @Provides
+  static WeakSubjectivityConfig weakSubjectivityConfig(BeaconChainConfiguration config) {
+    return config.weakSubjectivity();
   }
 }

@@ -9,6 +9,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.BeaconAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
@@ -25,7 +26,7 @@ public interface CryptoModule {
       P2PConfig p2PConfig,
       MetricsSystem metricsSystem,
       AsyncRunnerFactory asyncRunnerFactory,
-      @AsyncRunnerModule.BeaconAsyncRunner AsyncRunner beaconAsyncRunner) {
+      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner) {
     return new AggregatingSignatureVerificationService(
         metricsSystem,
         asyncRunnerFactory,

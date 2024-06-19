@@ -24,9 +24,9 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 @Module
 public interface ChannelsModule {
@@ -75,8 +75,7 @@ public interface ChannelsModule {
   }
 
   @Provides
-  static ExecutionClientVersionChannel executionClientVersionChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+  static ExecutionClientVersionChannel executionClientVersionChannel(EventChannels eventChannels) {
     return eventChannels.getPublisher(ExecutionClientVersionChannel.class);
   }
 
@@ -100,13 +99,25 @@ public interface ChannelsModule {
   }
 
   @Provides
-  static CoalescingChainHeadChannel coalescingChainHeadChannel(EventChannels eventChannels, EventLogger eventLogger) {
-    return
-        new CoalescingChainHeadChannel(
-            eventChannels.getPublisher(ChainHeadChannel.class), eventLogger);
-
+  static ChainHeadChannel chainHeadChannel(EventChannels eventChannels) {
+    return eventChannels.getPublisher(ChainHeadChannel.class);
   }
 
+  @Provides
+  static VoteUpdateChannel voteUpdateChannel(EventChannels eventChannels) {
+    return eventChannels.getPublisher(VoteUpdateChannel.class);
+  }
+
+  @Provides
+  static FinalizedCheckpointChannel finalizedCheckpointChannel(
+      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+    return eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner);
+  }
+
+  @Provides
+  static ValidatorTimingChannel validatorTimingChannel(EventChannels eventChannels) {
+    return eventChannels.getPublisher(ValidatorTimingChannel.class);
+  }
 
   // Subscribers
 

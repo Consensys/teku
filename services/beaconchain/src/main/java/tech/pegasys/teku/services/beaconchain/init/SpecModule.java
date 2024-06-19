@@ -4,6 +4,7 @@ import dagger.Module;
 import dagger.Provides;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -14,6 +15,11 @@ import java.util.function.Function;
 
 @Module
 public interface SpecModule {
+
+  @FunctionalInterface
+  interface CurrentSlotProvider {
+    UInt64 getCurrentSlot(UInt64 genesisTime);
+  }
 
   @FunctionalInterface
   interface SchemaSupplier<T extends SszSchema<?>> extends Function<UInt64, T> {
@@ -36,5 +42,11 @@ public interface SpecModule {
   @Singleton
   static RewardCalculator provideRewardCalculator(Spec spec) {
     return new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
+  }
+
+  @Provides
+  @Singleton
+  static CurrentSlotProvider currentSlotProvider(Spec spec, TimeProvider timeProvider) {
+    return genesisTime -> spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
   }
 }

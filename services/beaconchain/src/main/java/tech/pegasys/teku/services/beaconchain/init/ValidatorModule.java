@@ -17,6 +17,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
+import tech.pegasys.teku.services.beaconchain.ValidatorIsConnectedProviderImpl;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerifica
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -248,5 +250,11 @@ public interface ValidatorModule {
     receivedBlockEventsChannelSubscriber.subscribe(attestationManager);
 
     return attestationManager;
+  }
+
+  @Provides
+  @Singleton
+  static ValidatorIsConnectedProvider validatorIsConnectedProvider(ForkChoiceNotifier forkChoiceNotifier) {
+    return new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier);
   }
 }
