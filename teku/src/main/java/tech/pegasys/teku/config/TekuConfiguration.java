@@ -271,6 +271,13 @@ public class TekuConfiguration {
         }
       }
 
+      if(syncConfig.isReconstructHistoricStatesEnabled()){
+        if(storageConfiguration.getRetainedEpochs() > 0){
+          throw new InvalidConfigurationException(
+              "Cannot reconstruct historic states with state pruning enabled");
+        }
+      }
+
       return new TekuConfiguration(
           eth2NetworkConfiguration,
           spec,
