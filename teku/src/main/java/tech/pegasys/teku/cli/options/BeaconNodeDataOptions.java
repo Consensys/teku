@@ -66,15 +66,15 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private long dataStorageRetainedEpochs = StorageConfiguration.DEFAULT_STORAGE_RETAINED_EPOCHS;
 
   @CommandLine.Option(
-          names = {"--Xdata-storage-state-pruning-interval"},
-          hidden = true,
-          paramLabel = "<INTEGER>",
-          description = "Interval in seconds between finalized state pruning",
-          fallbackValue = "true",
-          showDefaultValue = Visibility.ALWAYS,
-          arity = "0..1")
+      names = {"--Xdata-storage-state-pruning-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Interval in seconds between finalized state pruning",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
   private long statePruningIntervalSeconds =
-          StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL.toSeconds();
+      StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL.toSeconds();
 
   @CommandLine.Option(
       names = {"--Xdata-storage-create-db-version"},

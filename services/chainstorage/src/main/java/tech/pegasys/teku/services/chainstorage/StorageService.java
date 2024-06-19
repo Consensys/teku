@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
 import java.util.Optional;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
@@ -118,7 +117,10 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningTimingsLabelledGauge,
                             pruningActiveLabelledGauge));
               }
-              LOG.info("Data storage mode: {}, Retained epochs {}", config.getDataStorageMode(), config.getRetainedEpochs());
+              LOG.info(
+                  "Data storage mode: {}, Retained epochs {}",
+                  config.getDataStorageMode(),
+                  config.getRetainedEpochs());
               if (config.getDataStorageMode().storesFinalizedStates()
                   && config.getRetainedEpochs() > -1) {
                 statePruner =

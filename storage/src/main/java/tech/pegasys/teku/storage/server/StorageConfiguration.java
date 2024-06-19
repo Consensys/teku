@@ -151,9 +151,11 @@ public class StorageConfiguration {
   public long getRetainedEpochs() {
     return retainedEpochs;
   }
+
   public Duration getStatePruningInterval() {
     return statePruningInterval;
   }
+
   public int getStatePruningLimit() {
     return statePruningLimit;
   }

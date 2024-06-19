@@ -41,7 +41,7 @@ public class StatePruner extends Service {
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
   private final SettableLabelledGauge pruningActiveLabelledGauge;
   private final String pruningMetricsType;
-  //caching last pruned slot to avoid hitting the db multiple times
+  // caching last pruned slot to avoid hitting the db multiple times
   private Optional<UInt64> lastPrunedSlot = Optional.empty();
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
@@ -100,8 +100,7 @@ public class StatePruner extends Service {
     }
     final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
     LOG.debug("Finalized epoch is {}", finalizedEpoch);
-    final UInt64 earliestEpochToKeep =
-        finalizedEpoch.minusMinZero(epochsToRetain);
+    final UInt64 earliestEpochToKeep = finalizedEpoch.minusMinZero(epochsToRetain);
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
       LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
@@ -110,7 +109,9 @@ public class StatePruner extends Service {
     LOG.info("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
     try {
       lastPrunedSlot =
-          Optional.of(database.pruneFinalizedStates(lastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit));
+          Optional.of(
+              database.pruneFinalizedStates(
+                  lastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit));
       LOG.info(
           "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
           pruneLimit,

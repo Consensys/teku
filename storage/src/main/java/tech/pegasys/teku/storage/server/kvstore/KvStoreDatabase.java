@@ -434,13 +434,13 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public UInt64 pruneFinalizedStates(final Optional<UInt64> lastPrunedSlot,  final UInt64 lastSlotToPrune, final long pruneLimit) {
+  public UInt64 pruneFinalizedStates(
+      final Optional<UInt64> lastPrunedSlot, final UInt64 lastSlotToPrune, final long pruneLimit) {
     final Optional<UInt64> earliestFinalizedStateSlot;
 
-    if(lastPrunedSlot.isEmpty()) {
+    if (lastPrunedSlot.isEmpty()) {
       earliestFinalizedStateSlot = dao.getEarliestFinalizedStateSlot();
-    }
-    else{
+    } else {
       earliestFinalizedStateSlot = lastPrunedSlot;
     }
 
@@ -507,8 +507,7 @@ public class KvStoreDatabase implements Database {
             });
 
         updater.commit();
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
         LOG.error("Failed to prune finalized states", e);
       }
     }
