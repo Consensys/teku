@@ -125,13 +125,13 @@ public class ExecutionPayloadSchemaCapella
 
   @Override
   public SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
-  getDepositRequestsSchemaRequired() {
-    throw new IllegalStateException("Attempted to get a deposit receipts schema from capella");
+      getDepositRequestsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit requests schema from capella");
   }
 
   @Override
   public DepositRequestSchema getDepositRequestSchemaRequired() {
-    throw new IllegalStateException("Attempted to get a deposit receipt schema from capella");
+    throw new IllegalStateException("Attempted to get a deposit request schema from capella");
   }
 
   @Override

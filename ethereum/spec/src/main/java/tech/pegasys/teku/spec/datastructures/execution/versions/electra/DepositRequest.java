@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class DepositRequest
     extends Container5<
-    DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
+        DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
 
   DepositRequest(
       final DepositRequestSchema schema,

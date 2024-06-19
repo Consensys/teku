@@ -133,7 +133,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                   .orElseThrow(
                       () ->
                           new BlockProcessingException(
-                              "Deposit receipts were not found during block processing.")));
+                              "Deposit requests were not found during block processing.")));
           processConsolidations(state, BeaconBlockBodyElectra.required(body).getConsolidations());
         });
   }

@@ -118,13 +118,13 @@ public class ExecutionPayloadSchemaBellatrix
 
   @Override
   public SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
-  getDepositRequestsSchemaRequired() {
-    throw new IllegalStateException("Attempted to get a deposit receipts schema from bellatrix");
+      getDepositRequestsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit requests schema from bellatrix");
   }
 
   @Override
   public DepositRequestSchema getDepositRequestSchemaRequired() {
-    throw new IllegalStateException("Attempted to get a deposit receipt schema from bellatrix");
+    throw new IllegalStateException("Attempted to get a deposit request schema from bellatrix");
   }
 
   @Override

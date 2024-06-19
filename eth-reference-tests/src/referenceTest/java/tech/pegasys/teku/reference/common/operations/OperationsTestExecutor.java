@@ -316,12 +316,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
       case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
-      case EXECUTION_LAYER_WITHDRAWAL_REQUEST ->
-          processExecutionLayerWithdrawalRequest(testDefinition, state, processor);
+      case EXECUTION_LAYER_WITHDRAWAL_REQUEST -> processExecutionLayerWithdrawalRequest(
+          testDefinition, state, processor);
       case CONSOLIDATION -> processConsolidation(testDefinition, state, processor);
-      default ->
-          throw new UnsupportedOperationException(
-              "Operation " + operation + " not implemented in OperationTestExecutor");
+      default -> throw new UnsupportedOperationException(
+          "Operation " + operation + " not implemented in OperationTestExecutor");
     }
   }
 
