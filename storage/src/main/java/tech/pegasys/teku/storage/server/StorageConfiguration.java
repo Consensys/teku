@@ -275,7 +275,7 @@ public class StorageConfiguration {
     }
 
     public Builder retainedEpochs(final long retainedEpochs) {
-      if (retainedEpochs < 0) {
+      if (retainedEpochs < -1) {
         throw new InvalidConfigurationException("Invalid number of states to be retained");
       }
       this.retainedEpochs = retainedEpochs;
