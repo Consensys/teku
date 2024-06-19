@@ -24,7 +24,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
@@ -45,7 +44,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   public static final String SYNC_COMMITTEE_SUBNET_ENR_FIELD = "syncnets";
-  public static final String DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD = "custody_subnet_count";
+  public static final String DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD = "csc";
   public static final String ETH2_ENR_FIELD = "eth2";
 
   private final Spec spec;
@@ -141,7 +140,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   public void setDASTotalCustodySubnetCount(int count) {
     discoveryService.updateCustomENRField(
-        DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, SszUInt64.of(UInt64.valueOf(count)).sszSerialize());
+        DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, Bytes.wrap(BigInteger.valueOf(count).toByteArray()));
   }
 
   public void setPreGenesisForkInfo() {

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CU
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.function.Function;
@@ -30,7 +31,6 @@ import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -77,10 +77,9 @@ public class NodeRecordConverter {
             .orElse(syncnetsSchema.getDefault());
     final Optional<Integer> dasTotalCustodySubnetCount =
         parseField(
-                nodeRecord,
-                DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD,
-                SszPrimitiveSchemas.UINT64_SCHEMA::sszDeserialize)
-            .map(i -> i.get().intValue());
+            nodeRecord,
+            DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD,
+            bytes -> new BigInteger(bytes.toArray()).intValue());
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
