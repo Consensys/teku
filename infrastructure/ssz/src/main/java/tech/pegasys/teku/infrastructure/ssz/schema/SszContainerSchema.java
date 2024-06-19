@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
@@ -139,4 +140,12 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
 
   /** Return this container field schemas */
   List<? extends SszSchema<?>> getFieldSchemas();
+
+  default Optional<SszStableContainerSchema<?>> toStableContainerSchema() {
+    return Optional.empty();
+  }
+
+  default Optional<SszProfileSchema<?>> toProfileSchema() {
+    return Optional.empty();
+  }
 }

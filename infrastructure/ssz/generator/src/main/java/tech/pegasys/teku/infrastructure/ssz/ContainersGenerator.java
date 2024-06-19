@@ -218,7 +218,7 @@ public class ContainersGenerator {
                         i ->
                             (""
                                     + "protected V$ getField$() {\n"
-                                    + "    return getAny(getStableSchema().getNthActiveFieldIndex($));\n"
+                                    + "    return getAny(getSchema().toProfileSchema().orElseThrow().getNthActiveFieldIndex($));\n"
                                     + "  }")
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))),

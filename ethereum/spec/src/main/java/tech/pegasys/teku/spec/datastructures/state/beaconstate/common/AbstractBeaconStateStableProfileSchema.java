@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveNamedSchemas;
 import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_BEACON_STATE_FIELDS;
 
 import java.util.Comparator;

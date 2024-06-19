@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RandomSszDataGenerator {
@@ -98,17 +98,17 @@ public class RandomSszDataGenerator {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
-    } else if (schema instanceof AbstractSszStableContainerSchema) {
-      AbstractSszStableContainerSchema<SszStableContainer> containerSchema =
-          (AbstractSszStableContainerSchema<SszStableContainer>) schema;
+    } else if (schema instanceof AbstractSszStableContainerSchema<?> containerSchema) {
+
+      final List<? extends NamedIndexedSchema<?>> definedFieldSchemas =
+          containerSchema.toStableContainerSchema().orElseThrow().getDefinedChildrenSchemas();
       return Stream.generate(
           () -> {
             List<SszData> children =
-                IntStream.range(0, containerSchema.getActiveFieldCount())
-                    .mapToObj(
-                        activeField ->
-                            containerSchema.getChildSchema(
-                                containerSchema.getNthActiveFieldIndex(activeField)))
+                definedFieldSchemas.stream()
+                    .map(
+                        definedFieldSchema ->
+                            containerSchema.getChildSchema(definedFieldSchema.getIndex()))
                     .map(this::randomData)
                     .collect(Collectors.toList());
             return (T) containerSchema.createFromFieldValues(children);

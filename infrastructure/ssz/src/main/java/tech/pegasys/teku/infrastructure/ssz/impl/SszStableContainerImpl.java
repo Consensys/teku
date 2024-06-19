@@ -14,35 +14,53 @@
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public abstract class SszStableContainerImpl extends SszContainerImpl
-    implements SszStableContainer {
+public class SszStableContainerImpl extends SszContainerImpl implements SszStableContainer {
+
+  private final SszBitvector activeFields;
 
   public SszStableContainerImpl(final SszStableContainerSchema<? extends SszStableContainer> type) {
     super(type);
+    this.activeFields =
+        getSchema().toStableContainerSchema().orElseThrow().getDefaultActiveFieldsBitvector();
   }
 
   public SszStableContainerImpl(
       final SszStableContainerSchema<? extends SszStableContainer> type,
       final TreeNode backingNode) {
     super(type, backingNode);
+    this.activeFields =
+        getSchema()
+            .toStableContainerSchema()
+            .orElseThrow()
+            .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
   public SszStableContainerImpl(
       final SszCompositeSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
     super(type, backingNode, cache);
+    this.activeFields =
+        getSchema()
+            .toStableContainerSchema()
+            .orElseThrow()
+            .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
   @Override
   public boolean isFieldActive(final int index) {
-    return getStableSchema().isActiveField(index);
+    return activeFields.getBit(index);
+  }
+
+  @Override
+  public SszBitvector getActiveFields() {
+    return activeFields;
   }
 
   @Override
@@ -54,20 +72,14 @@ public abstract class SszStableContainerImpl extends SszContainerImpl
   }
 
   @Override
-  public SszStableContainerSchema<?> getStableSchema() {
-    return ((SszStableContainerSchema<?>) super.getSchema());
-  }
-
-  @Override
   public String toString() {
-    final SszStableContainerSchema<?> schema = this.getStableSchema();
-    return schema.getContainerName()
+    return getSchema().getContainerName()
         + "{activeFields="
-        + schema.getActiveFieldsBitvector()
+        + activeFields
         + ", "
-        + IntStream.range(0, schema.getActiveFieldCount())
-            .filter(schema::isActiveField)
-            .mapToObj(idx -> schema.getFieldNames().get(idx) + "=" + get(idx))
+        + activeFields
+            .streamAllSetBits()
+            .mapToObj(idx -> getSchema().getFieldNames().get(idx) + "=" + get(idx))
             .collect(Collectors.joining(", "))
         + "}";
   }

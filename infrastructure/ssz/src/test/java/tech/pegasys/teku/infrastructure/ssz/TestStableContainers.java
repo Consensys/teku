@@ -16,8 +16,10 @@ package tech.pegasys.teku.infrastructure.ssz;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.namedIndexedSchema;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
@@ -43,6 +45,13 @@ public class TestStableContainers {
     }
   }
 
+  static class Profile extends SszProfileImpl {
+
+    Profile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+      super(type, backingNode);
+    }
+  }
+
   static class StableContainerSchema extends AbstractSszStableContainerSchema<StableContainer> {
 
     public StableContainerSchema(
@@ -58,7 +67,7 @@ public class TestStableContainers {
     }
   }
 
-  static class ProfileSchema extends AbstractSszStableProfileSchema<StableContainer> {
+  static class ProfileSchema extends AbstractSszStableProfileSchema<Profile> {
 
     public ProfileSchema(
         final String name,
@@ -68,8 +77,8 @@ public class TestStableContainers {
     }
 
     @Override
-    public StableContainer createFromBackingNode(final TreeNode node) {
-      return new StableContainer(this, node);
+    public Profile createFromBackingNode(final TreeNode node) {
+      return new Profile(this, node);
     }
   }
 

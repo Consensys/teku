@@ -19,12 +19,15 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStable
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -32,6 +35,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AbstractSszStableContainerSchemaTest {
   static final int MAX_FIELD_COUNT = 4;
+
+  static final List<NamedIndexedSchema<?>> SHAPE_SCHEMAS = List.of(
+          namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
+          namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA)
+          );
+
+
   static final List<NamedIndexedSchema<?>> SQUARE_SCHEMAS =
       List.of(
           namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -44,9 +55,16 @@ public class AbstractSszStableContainerSchemaTest {
 
   static class StableContainer extends SszStableContainerImpl {
 
-    public StableContainer(
+    StableContainer(
         final SszStableContainerSchema<? extends SszStableContainerImpl> type,
         final TreeNode backingNode) {
+      super(type, backingNode);
+    }
+  }
+
+  static class Profile extends SszProfileImpl {
+
+    Profile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
       super(type, backingNode);
     }
   }
@@ -66,7 +84,7 @@ public class AbstractSszStableContainerSchemaTest {
     }
   }
 
-  static class ProfileSchema extends AbstractSszStableProfileSchema<StableContainer> {
+  static class ProfileSchema extends AbstractSszStableProfileSchema<Profile> {
 
     public ProfileSchema(
         final String name,
@@ -76,47 +94,45 @@ public class AbstractSszStableContainerSchemaTest {
     }
 
     @Override
-    public StableContainer createFromBackingNode(final TreeNode node) {
-      return new StableContainer(this, node);
+    public Profile createFromBackingNode(final TreeNode node) {
+      return new Profile(this, node);
     }
   }
 
   @Test
   void stableContainerSanityTest() throws JsonProcessingException {
-    StableContainerSchema squareStableContainerSchema =
-        new StableContainerSchema("Square", SQUARE_SCHEMAS, MAX_FIELD_COUNT);
+    StableContainerSchema shapeStableContainerSchema = new StableContainerSchema("Shape", SHAPE_SCHEMAS, MAX_FIELD_COUNT);
 
-    StableContainerSchema circleStableContainerSchema =
-        new StableContainerSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
 
     StableContainer square =
-        squareStableContainerSchema.createFromFieldValues(
+            shapeStableContainerSchema.createFromOptionalFieldValues(
             List.of(
-                SszUInt64.of(UInt64.valueOf(0x42)),
-                SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
+                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
+                Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
 
     StableContainer circle =
-        circleStableContainerSchema.createFromFieldValues(
+            shapeStableContainerSchema.createFromOptionalFieldValues(
             List.of(
-                SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
-                SszUInt64.of(UInt64.valueOf(0x42))));
+                    Optional.empty(),
+                Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
+                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))));
 
     System.out.println("square sc serialization: " + square.sszSerialize());
     System.out.println("circle sc serialization: " + circle.sszSerialize());
 
     String squareJson =
-        JsonUtil.serialize(square, squareStableContainerSchema.getJsonTypeDefinition());
+        JsonUtil.serialize(square, shapeStableContainerSchema.getJsonTypeDefinition());
     System.out.println("square sc json: " + squareJson);
 
     String circleJson =
-        JsonUtil.serialize(circle, circleStableContainerSchema.getJsonTypeDefinition());
+        JsonUtil.serialize(circle, shapeStableContainerSchema.getJsonTypeDefinition());
     System.out.println("circle sc json: " + circleJson);
 
     System.out.println("square sc root: " + square.hashTreeRoot());
     System.out.println("circle sc root: " + circle.hashTreeRoot());
 
     StableContainer deserializedCircle =
-        circleStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
+            shapeStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
 
     assertThat(deserializedCircle).isEqualTo(circle);
     assertThat(deserializedCircle.get(1))
@@ -125,7 +141,7 @@ public class AbstractSszStableContainerSchemaTest {
     assertThatThrownBy(() -> deserializedCircle.get(0));
 
     StableContainer deserializedSquare =
-        squareStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
+            shapeStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
 
     assertThat(deserializedSquare).isEqualTo(square);
     assertThat(deserializedSquare.get(1))
@@ -142,17 +158,18 @@ public class AbstractSszStableContainerSchemaTest {
     ProfileSchema circleProfileSchema =
         new ProfileSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
 
-    StableContainer circle =
-        circleProfileSchema.createFromFieldValues(
+    Profile circle =
+        circleProfileSchema.createFromOptionalFieldValues(
             List.of(
-                SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
-                SszUInt64.of(UInt64.valueOf(0x42))));
+                Optional.empty(),
+                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
+                Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
 
-    StableContainer square =
-        squareProfileSchema.createFromFieldValues(
+    Profile square =
+        squareProfileSchema.createFromOptionalFieldValues(
             List.of(
-                SszUInt64.of(UInt64.valueOf(0x42)),
-                SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
+                Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
+                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))));
 
     System.out.println("square profile serialization: " + square.sszSerialize());
     System.out.println("circle profile serialization: " + circle.sszSerialize());
@@ -166,7 +183,7 @@ public class AbstractSszStableContainerSchemaTest {
     System.out.println("square profile root: " + square.hashTreeRoot());
     System.out.println("circle profile root: " + circle.hashTreeRoot());
 
-    StableContainer deserializedCircle =
+    Profile deserializedCircle =
         circleProfileSchema.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
 
     assertThat(deserializedCircle).isEqualTo(circle);
@@ -175,7 +192,7 @@ public class AbstractSszStableContainerSchemaTest {
     assertThat(deserializedCircle.get(2)).isEqualTo(SszUInt64.of(UInt64.valueOf(0x42)));
     assertThatThrownBy(() -> deserializedCircle.get(0));
 
-    StableContainer deserializedSquare =
+    Profile deserializedSquare =
         squareProfileSchema.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));
 
     assertThat(deserializedSquare).isEqualTo(square);

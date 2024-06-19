@@ -14,9 +14,12 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -41,17 +44,25 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
     };
   }
 
-  boolean isActiveField(int index);
+  List<? extends NamedIndexedSchema<?>> getDefinedChildrenSchemas();
 
-  SszBitvector getActiveFieldsBitvector();
+  int getMaxFieldCount();
 
-  int getActiveFieldCount();
+  SszBitvectorSchema<SszBitvector> getActiveFieldsSchema();
 
-  /**
-   * This method resolves the index of the nth active field.
-   *
-   * @param nthActiveField Nth active field
-   * @return index
-   */
-  int getNthActiveFieldIndex(int nthActiveField);
+  TreeNode createTreeFromOptionalFieldValues(List<Optional<? extends SszData>> fieldValues);
+
+  default C createFromOptionalFieldValues(final List<Optional<? extends SszData>> fieldValues) {
+    return createFromBackingNode(createTreeFromOptionalFieldValues(fieldValues));
+  }
+
+  SszBitvector getDefaultActiveFieldsBitvector();
+
+  SszBitvector getActiveFieldsBitvectorFromBackingNode(TreeNode node);
+
+  @Override
+  @SuppressWarnings("unchecked")
+  default Optional<SszStableContainerSchema<?>> toStableContainerSchema() {
+    return Optional.of(this);
+  }
 }

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.Objects;
@@ -25,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
+// TODO can be deleted?
 public abstract class AbstractSszImmutableStableContainer extends SszStableContainerImpl {
   protected AbstractSszImmutableStableContainer(
       final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema) {
@@ -51,10 +50,10 @@ public abstract class AbstractSszImmutableStableContainer extends SszStableConta
         schema,
         schema.createTreeFromFieldValues(Arrays.asList(memberValues)),
         createCache(memberValues));
-    checkArgument(
-        memberValues.length == schema.getActiveFieldCount(),
-        "Wrong number of member values: %s",
-        memberValues.length);
+    //    checkArgument(
+    //        memberValues.length == schema.getActiveFieldCount(),
+    //        "Wrong number of member values: %s",
+    //        memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       Preconditions.checkArgument(
           memberValues[i].getSchema().equals(schema.getChildSchema(i)),

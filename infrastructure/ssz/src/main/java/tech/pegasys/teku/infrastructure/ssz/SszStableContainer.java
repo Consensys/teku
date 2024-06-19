@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 
 public interface SszStableContainer extends SszContainer {
   boolean isFieldActive(int index);
 
-  SszStableContainerSchema<?> getStableSchema();
+  SszBitvector getActiveFields();
 }
