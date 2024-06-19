@@ -16,62 +16,42 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class DepositReceipt
-    extends Container5<
-        DepositReceipt, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
+public class DepositRequestSchema
+    extends ContainerSchema5<
+        DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
 
-  DepositReceipt(
-      final DepositReceiptSchema schema,
+  public DepositRequestSchema() {
+    super(
+        "DepositRequest",
+        namedSchema("pubkey", SszPublicKeySchema.INSTANCE),
+        namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema("signature", SszSignatureSchema.INSTANCE),
+        namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA));
+  }
+
+  public DepositRequest create(
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,
       final BLSSignature signature,
       final UInt64 index) {
-    super(
-        schema,
-        new SszPublicKey(pubkey),
-        SszBytes32.of(withdrawalCredentials),
-        SszUInt64.of(amount),
-        new SszSignature(signature),
-        SszUInt64.of(index));
-  }
-
-  public static final DepositReceiptSchema SSZ_SCHEMA = new DepositReceiptSchema();
-
-  DepositReceipt(final DepositReceiptSchema type, final TreeNode backingNode) {
-    super(type, backingNode);
-  }
-
-  public BLSPublicKey getPubkey() {
-    return getField0().getBLSPublicKey();
-  }
-
-  public Bytes32 getWithdrawalCredentials() {
-    return getField1().get();
-  }
-
-  public UInt64 getAmount() {
-    return getField2().get();
-  }
-
-  public BLSSignature getSignature() {
-    return getField3().getSignature();
-  }
-
-  public UInt64 getIndex() {
-    return getField4().get();
+    return new DepositRequest(this, pubkey, withdrawalCredentials, amount, signature, index);
   }
 
   @Override
-  public DepositReceiptSchema getSchema() {
-    return (DepositReceiptSchema) super.getSchema();
+  public DepositRequest createFromBackingNode(final TreeNode node) {
+    return new DepositRequest(this, node);
   }
 }

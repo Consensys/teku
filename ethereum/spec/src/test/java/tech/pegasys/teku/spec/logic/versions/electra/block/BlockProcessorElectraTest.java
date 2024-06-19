@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -71,9 +71,9 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                           dataStructureUtil.randomBytes32()));
                   final UInt64 eth1DepositIndex = UInt64.valueOf(13);
                   mutableState.setEth1DepositIndex(eth1DepositIndex);
-                  final UInt64 depositReceiptsStartIndex = UInt64.valueOf(20);
+                  final UInt64 depositRequestsStartIndex = UInt64.valueOf(20);
                   MutableBeaconStateElectra.required(mutableState)
-                      .setDepositReceiptsStartIndex(depositReceiptsStartIndex);
+                      .setDepositRequestsStartIndex(depositRequestsStartIndex);
                 });
 
     final BeaconBlockBody body =
@@ -99,9 +99,9 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                           dataStructureUtil.randomBytes32()));
                   final UInt64 eth1DepositIndex = UInt64.valueOf(20);
                   mutableState.setEth1DepositIndex(eth1DepositIndex);
-                  final UInt64 depositReceiptsStartIndex = UInt64.valueOf(20);
+                  final UInt64 depositRequestsStartIndex = UInt64.valueOf(20);
                   MutableBeaconStateElectra.required(mutableState)
-                      .setDepositReceiptsStartIndex(depositReceiptsStartIndex);
+                      .setDepositRequestsStartIndex(depositRequestsStartIndex);
                 });
 
     final BeaconBlockBody body =
@@ -113,28 +113,28 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void processesDepositReceipts() throws BlockProcessingException {
+  public void processesDepositRequests() throws BlockProcessingException {
     final BeaconStateElectra preState =
         BeaconStateElectra.required(
             createBeaconState()
                 .updated(
                     mutableState ->
                         MutableBeaconStateElectra.required(mutableState)
-                            .setDepositReceiptsStartIndex(
-                                SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX)));
-    final int firstElectraDepositReceiptIndex = preState.getValidators().size();
+                            .setDepositRequestsStartIndex(
+                                SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)));
+    final int firstElectraDepositRequestIndex = preState.getValidators().size();
 
-    final SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>> depositReceiptsSchema =
+    final SszListSchema<DepositRequest, ? extends SszList<DepositRequest>> depositRequestsSchema =
         SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
             .getExecutionPayloadSchema()
-            .getDepositReceiptsSchemaRequired();
-    final int depositReceiptsCount = 3;
-    final List<DepositReceipt> depositReceipts =
-        IntStream.range(0, depositReceiptsCount)
+            .getDepositRequestsSchemaRequired();
+    final int depositRequestsCount = 3;
+    final List<DepositRequest> depositRequests =
+        IntStream.range(0, depositRequestsCount)
             .mapToObj(
                 i ->
-                    dataStructureUtil.randomDepositReceiptWithValidSignature(
-                        UInt64.valueOf(firstElectraDepositReceiptIndex + i)))
+                    dataStructureUtil.randomDepositRequestWithValidSignature(
+                        UInt64.valueOf(firstElectraDepositRequestIndex + i)))
             .toList();
 
     final BeaconStateElectra state =
@@ -142,16 +142,16 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processDepositReceipts(
+                        .processDepositRequests(
                             MutableBeaconStateElectra.required(mutableState),
-                            depositReceiptsSchema.createFromElements(depositReceipts))));
+                            depositRequestsSchema.createFromElements(depositRequests))));
 
-    // verify deposit_receipts_start_index has been set
-    assertThat(state.getDepositReceiptsStartIndex())
-        .isEqualTo(UInt64.valueOf(firstElectraDepositReceiptIndex));
+    // verify deposit_requests_start_index has been set
+    assertThat(state.getDepositRequestsStartIndex())
+        .isEqualTo(UInt64.valueOf(firstElectraDepositRequestIndex));
     // verify validators have been added to the state
     assertThat(state.getValidators().size())
-        .isEqualTo(firstElectraDepositReceiptIndex + depositReceiptsCount);
+        .isEqualTo(firstElectraDepositRequestIndex + depositRequestsCount);
   }
 
   @Test

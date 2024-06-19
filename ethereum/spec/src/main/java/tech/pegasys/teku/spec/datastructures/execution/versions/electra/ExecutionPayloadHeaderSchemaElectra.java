@@ -17,7 +17,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_RECEIPTS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_REQUESTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
@@ -99,7 +99,7 @@ public class ExecutionPayloadHeaderSchemaElectra
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(DEPOSIT_RECEIPTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(DEPOSIT_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWAL_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
     final ExecutionPayloadElectraImpl defaultExecutionPayload =
@@ -120,7 +120,7 @@ public class ExecutionPayloadHeaderSchemaElectra
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)),
-        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS_ROOT)),
+        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_REQUESTS_ROOT)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS_ROOT)));
   }
 
@@ -171,7 +171,7 @@ public class ExecutionPayloadHeaderSchemaElectra
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
         SszUInt64.of(executionPayload.getBlobGasUsed()),
         SszUInt64.of(executionPayload.getExcessBlobGas()),
-        SszBytes32.of(executionPayload.getDepositReceipts().hashTreeRoot()),
+        SszBytes32.of(executionPayload.getDepositRequests().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawalRequests().hashTreeRoot()));
   }
 }

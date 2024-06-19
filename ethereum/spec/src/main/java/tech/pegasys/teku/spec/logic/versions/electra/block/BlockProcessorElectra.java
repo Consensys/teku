@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -125,11 +125,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
     safelyProcess(
         () -> {
-          processDepositReceipts(
+          processDepositRequests(
               state,
               body.getOptionalExecutionPayload()
                   .flatMap(ExecutionPayload::toVersionElectra)
-                  .map(ExecutionPayloadElectra::getDepositReceipts)
+                  .map(ExecutionPayloadElectra::getDepositRequests)
                   .orElseThrow(
                       () ->
                           new BlockProcessingException(
@@ -145,7 +145,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         state
             .getEth1Data()
             .getDepositCount()
-            .min(BeaconStateElectra.required(state).getDepositReceiptsStartIndex());
+            .min(BeaconStateElectra.required(state).getDepositRequestsStartIndex());
 
     if (state.getEth1DepositIndex().isLessThan(eth1DepositIndexLimit)) {
       final int expectedDepositCount =
@@ -361,26 +361,26 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /*
-   Implements process_deposit_receipt from consensus-specs (EIP-6110)
+   Implements process_deposit_request from consensus-specs (EIP-6110)
   */
   @Override
-  public void processDepositReceipts(
-      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+  public void processDepositRequests(
+      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
       throws BlockProcessingException {
     final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
-    for (DepositReceipt depositReceipt : depositReceipts) {
-      // process_deposit_receipt
+    for (DepositRequest depositRequest : depositRequests) {
+      // process_deposit_request
       if (electraState
-          .getDepositReceiptsStartIndex()
-          .equals(SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX)) {
-        electraState.setDepositReceiptsStartIndex(depositReceipt.getIndex());
+          .getDepositRequestsStartIndex()
+          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
+        electraState.setDepositRequestsStartIndex(depositRequest.getIndex());
       }
       applyDeposit(
           state,
-          depositReceipt.getPubkey(),
-          depositReceipt.getWithdrawalCredentials(),
-          depositReceipt.getAmount(),
-          depositReceipt.getSignature(),
+          depositRequest.getPubkey(),
+          depositRequest.getWithdrawalCredentials(),
+          depositRequest.getAmount(),
+          depositRequest.getSignature(),
           Optional.empty(),
           false);
     }

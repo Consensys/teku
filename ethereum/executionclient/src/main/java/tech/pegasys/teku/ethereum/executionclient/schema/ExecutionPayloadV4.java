@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
@@ -89,12 +89,12 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final ExecutionPayloadBuilder builder) {
     return super.applyToBuilder(executionPayloadSchema, builder)
-        .depositReceipts(
+        .depositRequests(
             () ->
                 depositRequests.stream()
                     .map(
                         depositRequestV1 ->
-                            createInternalDepositReceipt(depositRequestV1, executionPayloadSchema))
+                            createInternalDepositRequest(depositRequestV1, executionPayloadSchema))
                     .toList())
         .withdrawalRequests(
             () ->
@@ -106,11 +106,11 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
                     .toList());
   }
 
-  private DepositReceipt createInternalDepositReceipt(
+  private DepositRequest createInternalDepositRequest(
       final DepositRequestV1 depositRequestV1,
       final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
-        .getDepositReceiptSchemaRequired()
+        .getDepositRequestSchemaRequired()
         .create(
             BLSPublicKey.fromBytesCompressed(depositRequestV1.pubkey),
             depositRequestV1.withdrawalCredentials,
@@ -150,22 +150,22 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         getWithdrawals(ExecutionPayloadCapella.required(executionPayload).getWithdrawals()),
         ExecutionPayloadDeneb.required(executionPayload).getBlobGasUsed(),
         ExecutionPayloadDeneb.required(executionPayload).getExcessBlobGas(),
-        getDepositRequests(ExecutionPayloadElectra.required(executionPayload).getDepositReceipts()),
+        getDepositRequests(ExecutionPayloadElectra.required(executionPayload).getDepositRequests()),
         getWithdrawalRequests(
             ExecutionPayloadElectra.required(executionPayload).getWithdrawalRequests()));
   }
 
   public static List<DepositRequestV1> getDepositRequests(
-      final SszList<DepositReceipt> depositReceipts) {
-    return depositReceipts.stream()
+      final SszList<DepositRequest> depositRequests) {
+    return depositRequests.stream()
         .map(
-            depositReceipt ->
+            depositRequest ->
                 new DepositRequestV1(
-                    depositReceipt.getPubkey().toBytesCompressed(),
-                    depositReceipt.getWithdrawalCredentials(),
-                    depositReceipt.getAmount(),
-                    depositReceipt.getSignature().toBytesCompressed(),
-                    depositReceipt.getIndex()))
+                    depositRequest.getPubkey().toBytesCompressed(),
+                    depositRequest.getWithdrawalCredentials(),
+                    depositRequest.getAmount(),
+                    depositRequest.getSignature().toBytesCompressed(),
+                    depositRequest.getIndex()))
         .toList();
   }
 

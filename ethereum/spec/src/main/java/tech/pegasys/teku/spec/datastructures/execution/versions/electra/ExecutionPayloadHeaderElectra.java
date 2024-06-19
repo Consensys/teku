@@ -19,7 +19,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 
 public interface ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
 
-  Bytes32 getDepositReceiptsRoot();
+  Bytes32 getDepositRequestsRoot();
 
   Bytes32 getWithdrawalRequestsRoot();
 

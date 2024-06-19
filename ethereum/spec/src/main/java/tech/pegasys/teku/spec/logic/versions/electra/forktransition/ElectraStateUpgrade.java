@@ -105,7 +105,7 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                                   .withdrawalsRoot(denebHeader::getWithdrawalsRoot)
                                   .blobGasUsed(denebHeader::getBlobGasUsed)
                                   .excessBlobGas(denebHeader::getExcessBlobGas)
-                                  .depositReceiptsRoot(() -> Bytes32.ZERO)
+                                  .depositRequestsRoot(() -> Bytes32.ZERO)
                                   .withdrawalRequestsRoot(() -> Bytes32.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
@@ -114,8 +114,8 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                   preStateDeneb.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateDeneb.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateDeneb.getHistoricalSummaries());
-              state.setDepositReceiptsStartIndex(
-                  SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX);
+              state.setDepositRequestsStartIndex(
+                  SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
               state.setDepositBalanceToConsume(UInt64.ZERO);
               state.setExitBalanceToConsume(
                   beaconStateAccessors.getActivationExitChurnLimit(state));

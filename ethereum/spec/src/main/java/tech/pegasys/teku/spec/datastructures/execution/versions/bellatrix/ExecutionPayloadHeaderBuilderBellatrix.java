@@ -153,8 +153,8 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder depositReceiptsRoot(
-      final Supplier<Bytes32> depositReceiptsRootSupplier) {
+  public ExecutionPayloadHeaderBuilder depositRequestsRoot(
+      final Supplier<Bytes32> depositRequestsRootSupplier) {
     return this;
   }
 

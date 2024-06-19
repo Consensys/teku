@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeaderBuilderDeneb {
   private ExecutionPayloadHeaderSchemaElectra schema;
 
-  protected Bytes32 depositReceiptsRoot;
+  protected Bytes32 depositRequestsRoot;
   protected Bytes32 withdrawalRequestsRoot;
 
   public ExecutionPayloadHeaderBuilderElectra schema(
@@ -38,9 +38,9 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder depositReceiptsRoot(
-      final Supplier<Bytes32> depositReceiptsRootSupplier) {
-    this.depositReceiptsRoot = depositReceiptsRootSupplier.get();
+  public ExecutionPayloadHeaderBuilder depositRequestsRoot(
+      final Supplier<Bytes32> depositRequestsRootSupplier) {
+    this.depositRequestsRoot = depositRequestsRootSupplier.get();
     return this;
   }
 
@@ -59,7 +59,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(depositReceiptsRoot, "depositReceiptsRoot must be specified");
+    checkNotNull(depositRequestsRoot, "depositRequestsRoot must be specified");
     checkNotNull(withdrawalRequestsRoot, "withdrawalRequestsRoot must be specified");
   }
 
@@ -85,7 +85,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
         SszBytes32.of(withdrawalsRoot),
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas),
-        SszBytes32.of(depositReceiptsRoot),
+        SszBytes32.of(depositRequestsRoot),
         SszBytes32.of(withdrawalRequestsRoot));
   }
 }

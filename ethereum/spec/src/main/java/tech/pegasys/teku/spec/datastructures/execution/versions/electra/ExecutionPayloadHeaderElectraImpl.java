@@ -97,7 +97,7 @@ public class ExecutionPayloadHeaderElectraImpl
       final SszBytes32 withdrawalsRoot,
       final SszUInt64 blobGasUsed,
       final SszUInt64 excessBlobGas,
-      final SszBytes32 depositReceiptsRoot,
+      final SszBytes32 depositRequestsRoot,
       final SszBytes32 withdrawalRequestsRoot) {
     super(
         schema,
@@ -118,7 +118,7 @@ public class ExecutionPayloadHeaderElectraImpl
         withdrawalsRoot,
         blobGasUsed,
         excessBlobGas,
-        depositReceiptsRoot,
+        depositRequestsRoot,
         withdrawalRequestsRoot);
   }
 
@@ -228,7 +228,7 @@ public class ExecutionPayloadHeaderElectraImpl
   }
 
   @Override
-  public Bytes32 getDepositReceiptsRoot() {
+  public Bytes32 getDepositRequestsRoot() {
     return getField17().get();
   }
 
