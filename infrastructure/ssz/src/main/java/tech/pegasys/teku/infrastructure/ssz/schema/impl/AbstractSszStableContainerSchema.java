@@ -55,8 +55,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
     extends AbstractSszContainerSchema<C> implements SszStableContainerSchema<C> {
-  private static final long CONTAINER_G_INDEX = GIndexUtil.LEFT_CHILD_G_INDEX;
-  private static final long BITVECTOR_G_INDEX = GIndexUtil.RIGHT_CHILD_G_INDEX;
+  public static final long CONTAINER_G_INDEX = GIndexUtil.LEFT_CHILD_G_INDEX;
+  public static final long BITVECTOR_G_INDEX = GIndexUtil.RIGHT_CHILD_G_INDEX;
 
   private final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas;
   private final SszBitvectorSchema<SszBitvector> activeFieldsSchema;
@@ -202,7 +202,7 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   @Override
-  public SszBitvector getDefaultActiveFieldsBitvector() {
+  public SszBitvector getDefaultActiveFields() {
     return defaultActiveFields;
   }
 

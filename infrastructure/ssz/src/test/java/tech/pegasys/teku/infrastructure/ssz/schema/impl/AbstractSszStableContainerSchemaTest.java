@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -83,6 +84,9 @@ public class AbstractSszStableContainerSchemaTest {
     }
   }
 
+  private final static StableContainerSchema SHAPE_STABLE_CONTAINER_SCHEMA =
+          new StableContainerSchema("Shape", SHAPE_SCHEMAS, MAX_FIELD_COUNT);
+
   static class ProfileSchema extends AbstractSszStableProfileSchema<Profile> {
 
     public ProfileSchema(
@@ -90,6 +94,10 @@ public class AbstractSszStableContainerSchemaTest {
         final List<NamedIndexedSchema<?>> childrenSchemas,
         final int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
+    }
+
+    public ProfileSchema(final String name, final SszStableContainerSchema<? extends SszStableContainer> stableContainer, final List<Integer> activeFieldIndices) {
+      super(name, stableContainer, activeFieldIndices);
     }
 
     @Override
@@ -100,17 +108,15 @@ public class AbstractSszStableContainerSchemaTest {
 
   @Test
   void stableContainerSanityTest() throws JsonProcessingException {
-    StableContainerSchema shapeStableContainerSchema =
-        new StableContainerSchema("Shape", SHAPE_SCHEMAS, MAX_FIELD_COUNT);
 
     StableContainer square =
-        shapeStableContainerSchema.createFromOptionalFieldValues(
+        SHAPE_STABLE_CONTAINER_SCHEMA.createFromOptionalFieldValues(
             List.of(
                 Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
                 Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))));
 
     StableContainer circle =
-        shapeStableContainerSchema.createFromOptionalFieldValues(
+        SHAPE_STABLE_CONTAINER_SCHEMA.createFromOptionalFieldValues(
             List.of(
                 Optional.empty(),
                 Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
@@ -120,11 +126,11 @@ public class AbstractSszStableContainerSchemaTest {
     System.out.println("circle sc serialization: " + circle.sszSerialize());
 
     String squareJson =
-        JsonUtil.serialize(square, shapeStableContainerSchema.getJsonTypeDefinition());
+        JsonUtil.serialize(square, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
     System.out.println("square sc json: " + squareJson);
 
     String circleJson =
-        JsonUtil.serialize(circle, shapeStableContainerSchema.getJsonTypeDefinition());
+        JsonUtil.serialize(circle, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
     System.out.println("circle sc json: " + circleJson);
 
     System.out.println("square sc root: " + square.hashTreeRoot());
@@ -133,7 +139,7 @@ public class AbstractSszStableContainerSchemaTest {
     System.out.println("circle sc toString: " + circle);
 
     StableContainer deserializedCircle =
-        shapeStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
+        SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
 
     assertThat(deserializedCircle).isEqualTo(circle);
     assertThat(deserializedCircle.get(1))
@@ -142,7 +148,7 @@ public class AbstractSszStableContainerSchemaTest {
     assertThatThrownBy(() -> deserializedCircle.get(0));
 
     StableContainer deserializedSquare =
-        shapeStableContainerSchema.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
+        SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
 
     assertThat(deserializedSquare).isEqualTo(square);
     assertThat(deserializedSquare.get(1))
@@ -154,26 +160,28 @@ public class AbstractSszStableContainerSchemaTest {
   @Test
   void profileSanityTest() throws JsonProcessingException {
     ProfileSchema squareProfileSchema =
-        new ProfileSchema("Square", SQUARE_SCHEMAS, MAX_FIELD_COUNT);
+        new ProfileSchema("Square", SHAPE_STABLE_CONTAINER_SCHEMA, List.of(0,1));
 
+//    ProfileSchema circleProfileSchema =
+//        new ProfileSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
     ProfileSchema circleProfileSchema =
-        new ProfileSchema("Circle", CIRCLE_SCHEMAS, MAX_FIELD_COUNT);
-
+        new ProfileSchema("Circle", SHAPE_STABLE_CONTAINER_SCHEMA, List.of(1,2));
     Profile circle =
-        circleProfileSchema.createFromOptionalFieldValues(
+        circleProfileSchema.createFromFieldValues(
             List.of(
-                Optional.empty(),
-                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
-                Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
+                SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
+                SszUInt64.of(UInt64.valueOf(0x42))));
 
     Profile square =
-        squareProfileSchema.createFromOptionalFieldValues(
+        squareProfileSchema.createFromFieldValues(
             List.of(
-                Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
-                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))));
+                SszUInt64.of(UInt64.valueOf(0x42)),
+                SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
 
     System.out.println("square profile serialization: " + square.sszSerialize());
     System.out.println("circle profile serialization: " + circle.sszSerialize());
+
+    System.out.println("circle sc toString: " + circle);
 
     String squareJson = JsonUtil.serialize(square, squareProfileSchema.getJsonTypeDefinition());
     System.out.println("square profile json: " + squareJson);

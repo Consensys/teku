@@ -30,7 +30,7 @@ public class SszStableContainerImpl extends SszContainerImpl implements SszStabl
   public SszStableContainerImpl(final SszStableContainerSchema<? extends SszStableContainer> type) {
     super(type);
     this.activeFields =
-        getSchema().toStableContainerSchema().orElseThrow().getDefaultActiveFieldsBitvector();
+        getSchema().toStableContainerSchema().orElseThrow().getDefaultActiveFields();
   }
 
   public SszStableContainerImpl(

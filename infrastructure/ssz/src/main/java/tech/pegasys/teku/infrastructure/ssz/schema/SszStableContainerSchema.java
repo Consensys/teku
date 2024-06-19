@@ -56,7 +56,7 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
     return createFromBackingNode(createTreeFromOptionalFieldValues(fieldValues));
   }
 
-  SszBitvector getDefaultActiveFieldsBitvector();
+  SszBitvector getDefaultActiveFields();
 
   SszBitvector getActiveFieldsBitvectorFromBackingNode(TreeNode node);
 

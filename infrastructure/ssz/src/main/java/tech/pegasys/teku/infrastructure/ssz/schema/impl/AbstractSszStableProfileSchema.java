@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.CONTAINER_G_INDEX;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveNamedSchemas;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -25,25 +26,27 @@ import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
     extends AbstractSszContainerSchema<C> implements SszProfileSchema<C> {
 
   private final IntList activeFieldIndicesCache;
-  private final SszBitvector activeFieldsBitvector;
+  private final SszBitvector activeFields;
   private final SszStableContainerSchema<? extends SszStableContainer> stableContainer;
 
   public AbstractSszStableProfileSchema(
       final String name,
       final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
       final List<Integer> activeFieldIndices) {
-    super(name, stableContainer.getDefinedChildrenSchemas());
+    super(name, prepareSchemas(stableContainer, activeFieldIndices));
 
     this.stableContainer = stableContainer;
     // TODO validate activeFieldIndices
@@ -54,7 +57,18 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
                 .mapToInt(
                     index -> stableContainer.getDefinedChildrenSchemas().get(index).getIndex())
                 .toArray());
-    this.activeFieldsBitvector = getActiveFieldsSchema().ofBits(activeFieldIndices);
+    this.activeFields = getActiveFieldsSchema().ofBits(activeFieldIndices);
+  }
+
+  static private List<? extends NamedSchema<?>> prepareSchemas(final SszStableContainerSchema<? extends SszStableContainer> stableContainer, final List<Integer> activeFieldIndices) {
+    return stableContainer.getDefinedChildrenSchemas().stream().map(namedIndexedSchema -> {
+      final int index = namedIndexedSchema.getIndex();
+      if(activeFieldIndices.contains(index)) {
+        return namedIndexedSchema;
+      }
+      return new NamedIndexedSchema<>(
+              "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
+    }).toList();
   }
 
   public AbstractSszStableProfileSchema(
@@ -87,21 +101,26 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
   @Override
   public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
     checkArgument(
-        fieldValues.size() == getDefaultActiveFieldsBitvector().getBitCount(),
+        fieldValues.size() == getDefaultActiveFields().getBitCount(),
         "Wrong number of filed values");
     final int allFieldsSize = Math.toIntExact(getMaxLength());
     final List<SszData> allFields = new ArrayList<>(allFieldsSize);
 
     for (int index = 0, fieldIndex = 0; index < allFieldsSize; index++) {
       allFields.add(
-          getDefaultActiveFieldsBitvector().getBit(index)
+          getDefaultActiveFields().getBit(index)
               ? fieldValues.get(fieldIndex++)
               : SszNone.INSTANCE);
     }
 
     return BranchNode.create(
         super.createTreeFromFieldValues(allFields),
-        getDefaultActiveFieldsBitvector().getBackingNode());
+        getDefaultActiveFields().getBackingNode());
+  }
+
+  @Override
+  public TreeNode getDefaultTree() {
+    return BranchNode.create(super.getDefaultTree(), activeFields.getBackingNode());
   }
 
   @Override
@@ -110,8 +129,8 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
   }
 
   @Override
-  public SszBitvector getDefaultActiveFieldsBitvector() {
-    return activeFieldsBitvector;
+  public SszBitvector getDefaultActiveFields() {
+    return activeFields;
   }
 
   @Override
@@ -137,11 +156,17 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
   @Override
   public boolean isActiveField(final int index) {
     checkArgument(index < getActiveFieldsSchema().getMaxLength(), "Wrong number of filed values");
-    return activeFieldsBitvector.getBit(index);
+    return activeFields.getBit(index);
   }
 
   @Override
   public SszBitvector getActiveFields() {
-    return activeFieldsBitvector;
+    return activeFields;
+  }
+
+  @Override
+  public long getChildGeneralizedIndex(final long elementIndex) {
+    return GIndexUtil.gIdxCompose(
+            CONTAINER_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
   }
 }
