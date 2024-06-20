@@ -2,6 +2,9 @@ package tech.pegasys.teku.services.beaconchain.init;
 
 import dagger.Module;
 import dagger.Provides;
+import java.time.Duration;
+import java.util.Optional;
+import javax.inject.Singleton;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -18,7 +21,6 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.BeaconAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -40,10 +42,6 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
-
-import javax.inject.Singleton;
-import java.time.Duration;
-import java.util.Optional;
 
 @Module
 public interface SyncModule {
@@ -152,7 +150,7 @@ public interface SyncModule {
 
   @Provides
   @Singleton
-  static RecentBlobSidecarsFetcher recentBlocksFetcher(
+  static RecentBlobSidecarsFetcher recentBlobSidecarsFetcher(
       SyncService syncService,
       BlobSidecarManager blobSidecarManager) {
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =

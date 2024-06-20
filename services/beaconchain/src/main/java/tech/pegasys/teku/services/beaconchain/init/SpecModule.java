@@ -52,7 +52,7 @@ public interface SpecModule {
     return new CurrentSlotProvider() {
       @Override
       public UInt64 getCurrentSlot(UInt64 genesisTime) {
-        return getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+        return getCurrentSlot(genesisTime, timeProvider.getTimeInSeconds());
       }
 
       @Override
