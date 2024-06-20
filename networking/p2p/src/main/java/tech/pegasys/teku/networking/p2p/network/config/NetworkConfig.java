@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -153,12 +152,19 @@ public class NetworkConfig {
         return ipAddress;
       }
     } catch (final UnknownHostException ex) {
-      throw new UncheckedIOException(ex);
+      LOG.error(
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", ex);
+      return ipAddress;
     }
   }
 
   private String getLocalAddress(final IPVersion ipVersion) throws UnknownHostException {
     try {
+      final InetAddress localHostAddress = InetAddress.getLocalHost();
+      if (localHostAddress.isAnyLocalAddress()
+          && IPVersionResolver.resolve(localHostAddress) == ipVersion) {
+        return localHostAddress.getHostAddress();
+      }
       final Enumeration<NetworkInterface> networkInterfaces =
           NetworkInterface.getNetworkInterfaces();
       while (networkInterfaces.hasMoreElements()) {
