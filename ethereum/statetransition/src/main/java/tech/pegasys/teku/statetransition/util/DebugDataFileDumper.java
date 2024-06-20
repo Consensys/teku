@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class DebugDataFileDumper implements DebugDataDumper {
@@ -41,6 +43,7 @@ public class DebugDataFileDumper implements DebugDataDumper {
   private static final String DECODING_ERROR_SUB_DIR = "decoding_error";
   private static final String REJECTED_SUB_DIR = "rejected";
   private static final String INVALID_BLOCK_DIR = "invalid_blocks";
+  private static final String INVALID_BLOB_SIDECARS_DIR = "invalid_blob_sidecars";
 
   private boolean enabled;
   private final Path directory;
@@ -125,12 +128,39 @@ public class DebugDataFileDumper implements DebugDataDumper {
             "invalid block", Path.of(INVALID_BLOCK_DIR).resolve(fileName), block.sszSerialize());
     if (success) {
       LOG.warn(
-          "Rejecting invalid block at slot {} with root {} because {}",
+          "Rejecting invalid block at slot {} with root {}, reason: {}, cause: {}",
           slot,
           blockRoot,
           failureReason,
           failureCause.orElse(null));
     }
+  }
+
+  @Override
+  public void saveInvalidBlobSidecars(
+      final List<BlobSidecar> blobSidecars, final SignedBeaconBlock block) {
+    if (!enabled) {
+      return;
+    }
+    final String kzgCommitmentsFileName =
+        String.format(
+            "%s_%s_kzg_commitments.ssz", block.getSlot(), block.getRoot().toUnprefixedHexString());
+    saveBytesToFile(
+        "kzg commitments",
+        Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(kzgCommitmentsFileName),
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow().sszSerialize());
+    blobSidecars.forEach(
+        blobSidecar -> {
+          final UInt64 slot = blobSidecar.getSlot();
+          final Bytes32 blockRoot = blobSidecar.getBlockRoot();
+          final UInt64 index = blobSidecar.getIndex();
+          final String fileName =
+              String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), index);
+          saveBytesToFile(
+              "blob sidecar",
+              Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(fileName),
+              blobSidecar.sszSerialize());
+        });
   }
 
   @VisibleForTesting
