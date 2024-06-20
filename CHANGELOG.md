@@ -21,4 +21,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Bug Fixes
 
-- Fixed an issue introduced in 24.6.0 where Teku was failing to start with an error message: `Teku failed to start: java.io.UncheckedIOException: java.net.UnknownHostException: Unable to determine local IPvx Address`
+- Fixed an issue from version 24.6.0 where Teku failed to start on machines with directly assigned public IP addresses (not running under NAT), displaying the error message: `Teku failed to start: java.io.UncheckedIOException: java.net.UnknownHostException: Unable to determine local IPvx Address`
