@@ -42,7 +42,7 @@ public class StatePruner extends Service {
   private final SettableLabelledGauge pruningActiveLabelledGauge;
   private final String pruningMetricsType;
   // caching last pruned slot to avoid hitting the db multiple times
-  private Optional<UInt64> lastPrunedSlot = Optional.empty();
+  private Optional<UInt64> maybeLastPrunedSlot = Optional.empty();
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
 
@@ -108,15 +108,15 @@ public class StatePruner extends Service {
     }
     LOG.info("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
     try {
-      lastPrunedSlot =
-          Optional.of(
+      maybeLastPrunedSlot =
               database.pruneFinalizedStates(
-                  lastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit));
-      LOG.info(
-          "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
-          pruneLimit,
-          earliestSlotToKeep,
-          lastPrunedSlot.get());
+                      maybeLastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit);
+      maybeLastPrunedSlot.ifPresent(lastPrunedSlot -> LOG.info(
+              "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
+              pruneLimit,
+              earliestSlotToKeep,
+              lastPrunedSlot));
+
     } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }

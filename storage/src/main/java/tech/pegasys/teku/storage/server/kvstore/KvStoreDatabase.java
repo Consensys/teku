@@ -434,7 +434,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public UInt64 pruneFinalizedStates(
+  public Optional<UInt64> pruneFinalizedStates(
       final Optional<UInt64> lastPrunedSlot, final UInt64 lastSlotToPrune, final long pruneLimit) {
     final Optional<UInt64> earliestFinalizedStateSlot;
 
@@ -450,11 +450,8 @@ public class KvStoreDatabase implements Database {
             earliestFinalizedStateSlot.isEmpty()
                 ? "EMPTY"
                 : earliestFinalizedStateSlot.get().toString());
-    if (earliestFinalizedStateSlot.isEmpty()) {
-      return lastSlotToPrune;
-    }
-    return pruneFinalizedStateForSlots(
-        earliestFinalizedStateSlot.get(), lastSlotToPrune, pruneLimit);
+      return earliestFinalizedStateSlot.map(uInt64 -> pruneFinalizedStateForSlots(
+              uInt64, lastSlotToPrune, pruneLimit)).or(() -> Optional.of(lastSlotToPrune));
   }
 
   private UInt64 pruneFinalizedStateForSlots(
