@@ -152,7 +152,7 @@ public class NetworkConfig {
         return ipAddress;
       }
     } catch (final UnknownHostException ex) {
-      LOG.error("Failed attempt at obtaining host address for {}: {}", ipAddress, ex.getMessage());
+      LOG.error("Failed resolving local address: {}. Trying to use {}", ex.getMessage(), ipAddress);
       return ipAddress;
     }
   }
