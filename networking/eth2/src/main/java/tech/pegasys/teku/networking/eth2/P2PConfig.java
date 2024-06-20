@@ -290,6 +290,13 @@ public class P2PConfig {
       return this;
     }
 
+    public Builder batchVerifyQueueCapacityIfDefault(final int batchVerifyQueueCapacity) {
+      if (this.batchVerifyQueueCapacity == DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY) {
+        return this.batchVerifyQueueCapacity(batchVerifyQueueCapacity);
+      }
+      return this;
+    }
+
     public Builder batchVerifyQueueCapacity(final int batchVerifyQueueCapacity) {
       if (batchVerifyQueueCapacity < 0) {
         throw new InvalidConfigurationException(

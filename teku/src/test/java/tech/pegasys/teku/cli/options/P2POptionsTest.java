@@ -278,6 +278,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
     assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
         .isEqualTo(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity())
+        .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
   }
 
   @Test
@@ -306,7 +308,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xnetwork-async-beaconchain-max-queue",
             "15020",
             "--Xvalidator-executor-max-queue-size",
-            "15120");
+            "15120",
+            "--Xp2p-batch-verify-signatures-queue-capacity",
+            "15220");
 
     assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncP2pMaxQueue())
         .isEqualTo(15_000);
@@ -314,5 +318,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(15_020);
     assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
         .isEqualTo(15_120);
+    assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);
   }
 }

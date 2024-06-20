@@ -441,7 +441,8 @@ public class P2POptions {
           .discovery(
               d ->
                   d.maxPeersIfDefault(DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS)
-                      .minPeersIfDefault(DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS));
+                      .minPeersIfDefault(DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS))
+          .p2p(p2p -> p2p.batchVerifyQueueCapacityIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS));
     }
     natOptions.configure(builder);
   }
