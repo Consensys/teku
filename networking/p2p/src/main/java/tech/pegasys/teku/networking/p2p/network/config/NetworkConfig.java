@@ -152,8 +152,7 @@ public class NetworkConfig {
         return ipAddress;
       }
     } catch (final UnknownHostException ex) {
-      LOG.error(
-          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", ex);
+      LOG.error("Failed attempt at obtaining host address for {}: {}", ipAddress, ex.getMessage());
       return ipAddress;
     }
   }
