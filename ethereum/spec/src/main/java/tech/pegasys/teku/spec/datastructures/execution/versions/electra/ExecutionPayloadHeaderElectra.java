@@ -23,6 +23,8 @@ public interface ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDen
 
   Bytes32 getWithdrawalRequestsRoot();
 
+  Bytes32 getConsolidationRequestsRoot();
+
   @Override
   default Optional<ExecutionPayloadHeaderElectra> toVersionElectra() {
     return Optional.of(this);

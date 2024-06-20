@@ -60,5 +60,8 @@ public interface ExecutionPayloadHeaderBuilder {
   ExecutionPayloadHeaderBuilder withdrawalRequestsRoot(
       Supplier<Bytes32> withdrawalRequestsRootSupplier);
 
+  ExecutionPayloadHeaderBuilder consolidationRequestsRoot(
+      Supplier<Bytes32> consolidationRequestsRootSupplier);
+
   ExecutionPayloadHeader build();
 }

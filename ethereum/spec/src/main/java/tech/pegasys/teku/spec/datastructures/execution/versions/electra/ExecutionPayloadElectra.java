@@ -35,6 +35,8 @@ public interface ExecutionPayloadElectra extends ExecutionPayload, ExecutionPayl
 
   SszList<ExecutionLayerWithdrawalRequest> getWithdrawalRequests();
 
+  SszList<ConsolidationRequest> getConsolidationRequests();
+
   @Override
   default Optional<ExecutionPayloadElectra> toVersionElectra() {
     return Optional.of(this);
