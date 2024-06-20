@@ -42,6 +42,8 @@ import tech.pegasys.teku.spec.datastructures.consolidations.Consolidation;
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -89,6 +91,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final DepositReceiptSchema depositReceiptSchema;
 
   private final ExecutionLayerWithdrawalRequestSchema executionLayerWithdrawalRequestSchema;
+  private final ConsolidationRequestSchema consolidationRequestSchema;
 
   private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
 
@@ -157,6 +160,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
     this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
     this.executionLayerWithdrawalRequestSchema = ExecutionLayerWithdrawalRequest.SSZ_SCHEMA;
+    this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
     this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
     this.pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
@@ -333,6 +337,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
     return pendingConsolidationSchema;
+  }
+
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return consolidationRequestSchema;
   }
 
   public Consolidation.ConsolidationSchema getConsolidationSchema() {

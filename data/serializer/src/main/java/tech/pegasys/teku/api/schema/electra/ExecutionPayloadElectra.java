@@ -36,6 +36,9 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
   @JsonProperty("withdrawal_requests")
   public final List<ExecutionLayerWithdrawalRequest> withdrawalRequests;
 
+  @JsonProperty("consolidation_requests")
+  public final List<ConsolidationRequest> consolidationRequests;
+
   @JsonCreator
   public ExecutionPayloadElectra(
       @JsonProperty("parent_hash") final Bytes32 parentHash,
@@ -57,7 +60,9 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_receipts") final List<DepositReceipt> depositReceipts,
       @JsonProperty("withdrawal_requests")
-          final List<ExecutionLayerWithdrawalRequest> withdrawalRequests) {
+          final List<ExecutionLayerWithdrawalRequest> withdrawalRequests,
+      @JsonProperty("consolidation_requests")
+          final List<ConsolidationRequest> consolidationRequests) {
     super(
         parentHash,
         feeRecipient,
@@ -78,6 +83,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         excessBlobGas);
     this.depositReceipts = depositReceipts;
     this.withdrawalRequests = withdrawalRequests;
+    this.consolidationRequests = consolidationRequests;
   }
 
   public ExecutionPayloadElectra(
@@ -90,6 +96,10 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
     this.withdrawalRequests =
         executionPayload.toVersionElectra().orElseThrow().getWithdrawalRequests().stream()
             .map(ExecutionLayerWithdrawalRequest::new)
+            .toList();
+    this.consolidationRequests =
+        executionPayload.toVersionElectra().orElseThrow().getConsolidationRequests().stream()
+            .map(ConsolidationRequest::new)
             .toList();
   }
 
@@ -114,6 +124,14 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
                             exit.asInternalExecutionLayerWithdrawalRequest(
                                 executionPayloadSchema
                                     .getExecutionLayerWithdrawalRequestSchemaRequired()))
+                    .toList())
+        .consolidationRequests(
+            () ->
+                consolidationRequests.stream()
+                    .map(
+                        exit ->
+                            exit.asInternalConsolidationRequest(
+                                executionPayloadSchema.getConsolidationSchemaRequired()))
                     .toList());
   }
 

@@ -215,7 +215,8 @@
         "blob_gas_used": "14779654655076927372",
         "excess_blob_gas": "14778002167565275948",
         "deposit_receipts_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969",
-        "withdrawal_requests_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969"
+        "withdrawal_requests_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969",
+        "consolidation_requests_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969"
       },
       "bls_to_execution_changes": [
         {

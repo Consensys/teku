@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -154,6 +155,11 @@ public class ExecutionPayloadSchemaDeneb
   public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired() {
     throw new IllegalStateException(
         "Attempted to get a execution layer withdrawal request schema from deneb");
+  }
+
+  @Override
+  public ConsolidationRequestSchema getConsolidationSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a consolidation request schema from deneb");
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

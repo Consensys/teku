@@ -170,6 +170,11 @@ public class ExecutionPayloadSchemaElectra
     return getExecutionLayerWithdrawalRequestSchema();
   }
 
+  @Override
+  public ConsolidationRequestSchema getConsolidationSchemaRequired() {
+    return getConsolidationRequestSchema();
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }
@@ -181,6 +186,10 @@ public class ExecutionPayloadSchemaElectra
   public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
     return (ExecutionLayerWithdrawalRequestSchema)
         getExecutionLayerWithdrawalRequestsSchema().getElementSchema();
+  }
+
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return (ConsolidationRequestSchema) getConsolidationRequestsSchema().getElementSchema();
   }
 
   @Override

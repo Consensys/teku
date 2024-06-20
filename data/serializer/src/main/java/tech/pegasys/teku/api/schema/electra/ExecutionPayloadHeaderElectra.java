@@ -33,6 +33,9 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
   @JsonProperty("withdrawal_requests_root")
   public final Bytes32 withdrawalRequestsRoot;
 
+  @JsonProperty("consolidation_requests_root")
+  public final Bytes32 consolidationRequestsRoot;
+
   @JsonCreator
   public ExecutionPayloadHeaderElectra(
       @JsonProperty("parent_hash") final Bytes32 parentHash,
@@ -53,7 +56,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_receipts_root") final Bytes32 depositReceiptsRoot,
-      @JsonProperty("withdrawal_requests_root") final Bytes32 withdrawalRequestsRoot) {
+      @JsonProperty("withdrawal_requests_root") final Bytes32 withdrawalRequestsRoot,
+      @JsonProperty("consolidation_requests_root") final Bytes32 consolidationRequestsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -74,6 +78,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         excessBlobGas);
     this.depositReceiptsRoot = depositReceiptsRoot;
     this.withdrawalRequestsRoot = withdrawalRequestsRoot;
+    this.consolidationRequestsRoot = consolidationRequestsRoot;
   }
 
   public ExecutionPayloadHeaderElectra(final ExecutionPayloadHeader executionPayloadHeader) {
@@ -99,6 +104,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         executionPayloadHeader.toVersionElectra().orElseThrow().getDepositReceiptsRoot();
     this.withdrawalRequestsRoot =
         executionPayloadHeader.toVersionElectra().orElseThrow().getWithdrawalRequestsRoot();
+    this.consolidationRequestsRoot =
+        executionPayloadHeader.toVersionElectra().orElseThrow().getConsolidationRequestsRoot();
   }
 
   @Override
@@ -125,7 +132,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
                 .blobGasUsed(() -> blobGasUsed)
                 .excessBlobGas(() -> excessBlobGas)
                 .depositReceiptsRoot(() -> depositReceiptsRoot)
-                .withdrawalRequestsRoot(() -> withdrawalRequestsRoot));
+                .withdrawalRequestsRoot(() -> withdrawalRequestsRoot)
+                .consolidationRequestsRoot(() -> consolidationRequestsRoot));
   }
 
   @Override
