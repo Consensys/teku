@@ -204,7 +204,7 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
   private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
-  private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 2;
+  private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
 
   private final Spec spec;
 
