@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult.INVALID;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -540,21 +541,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
+    LOG.debug("blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+
     switch (blobSidecarsAndValidationResult.getValidationResult()) {
-      case VALID, NOT_REQUIRED -> LOG.debug(
-          "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
       case NOT_AVAILABLE -> {
-        LOG.debug(
-            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             blobSidecarsAndValidationResult.getCause());
       }
       case INVALID -> {
-        LOG.error(
-            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+        debugDataDumper.saveInvalidBlobSidecars(
+            blobSidecarsAndValidationResult.getBlobSidecars(), block);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             blobSidecarsAndValidationResult.getCause());
       }
+      default -> {}
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
