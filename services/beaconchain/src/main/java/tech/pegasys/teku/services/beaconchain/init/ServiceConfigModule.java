@@ -20,34 +20,34 @@ public interface ServiceConfigModule {
   @interface RejectedExecutionCountSupplier {}
 
   @Provides
-  static DataDirLayout provideDataDirLayout(ServiceConfig config){
+  static DataDirLayout dataDirLayout(ServiceConfig config){
     return config.getDataDirLayout();
   }
 
   @Provides
-  static AsyncRunnerFactory provideAsyncRunnerFactory(ServiceConfig config){
+  static AsyncRunnerFactory asyncRunnerFactory(ServiceConfig config){
     return config.getAsyncRunnerFactory();
   }
 
   @Provides
-  static TimeProvider provideTimeProvider(ServiceConfig config){
+  static TimeProvider timeProvider(ServiceConfig config){
     return config.getTimeProvider();
   }
 
   @Provides
-  static EventChannels provideEventChannels(ServiceConfig config){
+  static EventChannels eventChannels(ServiceConfig config){
     return config.getEventChannels();
   }
 
   @Provides
-  static MetricsSystem provideMetricsSystem(ServiceConfig config){
+  static MetricsSystem metricsSystem(ServiceConfig config){
     return config.getMetricsSystem();
   }
 
   @Provides
   @Singleton
   @RejectedExecutionCountSupplier
-  static IntSupplier provideRejectedExecutionCountSupplier(ServiceConfig config) {
+  static IntSupplier rejectedExecutionCountSupplier(ServiceConfig config) {
     return config.getRejectedExecutionsSupplier();
   }
 

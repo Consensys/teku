@@ -16,9 +16,11 @@ import java.util.function.Function;
 @Module
 public interface SpecModule {
 
-  @FunctionalInterface
   interface CurrentSlotProvider {
+
     UInt64 getCurrentSlot(UInt64 genesisTime);
+
+    UInt64 getCurrentSlot(UInt64 genesisTime, UInt64 currentTime);
   }
 
   @FunctionalInterface
@@ -34,19 +36,29 @@ public interface SpecModule {
 
   @Provides
   @Singleton
-  static SchemaSupplier<BeaconBlockBodySchema<?>> provideBeaconBlockBodySchemaSupplier(Spec spec) {
+  static SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockBodySchemaSupplier(Spec spec) {
     return slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
   @Provides
   @Singleton
-  static RewardCalculator provideRewardCalculator(Spec spec) {
+  static RewardCalculator rewardCalculator(Spec spec) {
     return new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
   }
 
   @Provides
   @Singleton
   static CurrentSlotProvider currentSlotProvider(Spec spec, TimeProvider timeProvider) {
-    return genesisTime -> spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+    return new CurrentSlotProvider() {
+      @Override
+      public UInt64 getCurrentSlot(UInt64 genesisTime) {
+        return getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+      }
+
+      @Override
+      public UInt64 getCurrentSlot(UInt64 genesisTime, UInt64 currentTime) {
+        return spec.getCurrentSlot(genesisTime, currentTime);
+      }
+    };
   }
 }

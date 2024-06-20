@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
+import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -43,7 +44,7 @@ public interface PowModule {
 
   @Provides
   @Singleton
-  static Optional<TerminalPowBlockMonitor> provideTerminalPowBlockMonitor(
+  static Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor(
       Spec spec,
       @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
       TimeProvider timeProvider,
@@ -68,13 +69,13 @@ public interface PowModule {
 
   @Provides
   @Singleton
-  static Eth1DataCache provideEth1DataCache(Spec spec, MetricsSystem metricsSystem) {
+  static Eth1DataCache eth1DataCache(Spec spec, MetricsSystem metricsSystem) {
     return new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec));
   }
 
   @Provides
   @Singleton
-  static DepositProvider provideDepositProvider(
+  static DepositProvider depositProvider(
       Spec spec,
       PowchainConfiguration powchainConfig,
       MetricsSystem metricsSystem,
@@ -127,4 +128,16 @@ public interface PowModule {
     return defaultFeeRecipient;
   }
 
+  @Provides
+  @Singleton
+  static GenesisHandler genesisHandler(
+      TimeProvider timeProvider,
+      Spec spec,
+      RecentChainData recentChainData,
+      EventChannelSubscriber<Eth1EventsChannel> eth1EventsChannelSubscriber
+  ) {
+    GenesisHandler genesisHandler = new GenesisHandler(recentChainData, timeProvider, spec);
+    eth1EventsChannelSubscriber.subscribe(genesisHandler);
+    return genesisHandler;
+  }
 }

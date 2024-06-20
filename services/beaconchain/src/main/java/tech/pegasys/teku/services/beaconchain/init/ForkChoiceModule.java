@@ -44,6 +44,7 @@ public interface ForkChoiceModule {
       ForkChoiceNotifier forkChoiceNotifier,
       ForkChoiceStateProvider forkChoiceStateProvider,
       P2PDebugDataDumper p2pDebugDataDumper,
+      TickProcessor tickProcessor,
       MergeTransitionBlockValidator mergeTransitionBlockValidator) {
     return new ForkChoice(
         spec,
@@ -52,8 +53,7 @@ public interface ForkChoiceModule {
         blobSidecarManager,
         forkChoiceNotifier,
         forkChoiceStateProvider,
-        // TODO to revise
-        new TickProcessor(spec, recentChainData),
+        tickProcessor,
         mergeTransitionBlockValidator,
         eth2NetworkConfig.isForkChoiceLateBlockReorgEnabled(),
         p2pDebugDataDumper,
@@ -84,8 +84,6 @@ public interface ForkChoiceModule {
       ExecutionLayerChannel executionLayer,
       RecentChainData recentChainData,
       ForkChoiceStateProvider forkChoiceStateProvider) {
-
-    forkChoiceNotifierExecutor.start(); // TODO why ?
 
     return
         new ForkChoiceNotifierImpl(

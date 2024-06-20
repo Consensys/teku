@@ -3,6 +3,8 @@ package tech.pegasys.teku.services.beaconchain.init;
 import dagger.Module;
 import dagger.Provides;
 import javax.inject.Singleton;
+
+import dagger.multibindings.IntoSet;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
@@ -46,6 +48,7 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
@@ -59,6 +62,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.validator.coordinator.ValidatorIndexCacheTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 @Module
@@ -66,7 +70,7 @@ public interface ValidatorModule {
 
   @Provides
   @Singleton
-  static ActiveValidatorTracker provideActiveValidatorTracker(
+  static ActiveValidatorTracker activeValidatorTracker(
       Spec spec, EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
     ActiveValidatorTracker activeValidatorTracker = new ActiveValidatorTracker(spec);
     slotEventsChannelSubscriber.subscribe(activeValidatorTracker);
@@ -75,7 +79,7 @@ public interface ValidatorModule {
 
   @Provides
   @Singleton
-  static ExecutionLayerBlockProductionManager provideExecutionLayerBlockProductionManager(
+  static ExecutionLayerBlockProductionManager executionLayerBlockProductionManager(
       ExecutionLayerChannel executionLayer,
       EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
 
@@ -84,7 +88,7 @@ public interface ValidatorModule {
 
   @Provides
   @Singleton
-  static GraffitiBuilder provideGraffitiBuilder(
+  static GraffitiBuilder graffitiBuilder(
       ValidatorConfig validatorConfig,
       EventChannelSubscriber<ExecutionClientVersionChannel>
           executionClientVersionChannelSubscriber) {
@@ -98,7 +102,7 @@ public interface ValidatorModule {
 
   @Provides
   @Singleton
-  static GraffitiBuilder provideGraffitiBuilder(
+  static ExecutionClientVersionProvider executionClientVersionProvider(
       GraffitiBuilder graffitiBuilder,
       ExecutionLayerChannel executionLayer,
       ExecutionClientVersionChannel executionClientVersionChannelPublisher,
@@ -110,12 +114,12 @@ public interface ValidatorModule {
             executionClientVersionChannelPublisher,
             graffitiBuilder.getConsensusClientVersion());
     executionClientEventsChannelSubscriber.subscribe(executionClientVersionProvider);
-    return graffitiBuilder;
+    return executionClientVersionProvider;
   }
 
   @Provides
   @Singleton
-  static BlockOperationSelectorFactory provideBlockOperationSelectorFactory(
+  static BlockOperationSelectorFactory blockOperationSelectorFactory(
       Spec spec,
       AggregatingAttestationPool attestationPool,
       OperationPool<AttesterSlashing> attesterSlashingPool,
@@ -254,7 +258,19 @@ public interface ValidatorModule {
 
   @Provides
   @Singleton
-  static ValidatorIsConnectedProvider validatorIsConnectedProvider(ForkChoiceNotifier forkChoiceNotifier) {
+  static ValidatorIsConnectedProvider validatorIsConnectedProvider(
+      ForkChoiceNotifier forkChoiceNotifier) {
     return new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier);
+  }
+
+  @Provides
+  @Singleton
+  static ValidatorIndexCacheTracker validatorIndexCacheTracker(
+      RecentChainData recentChainData,
+      EventChannelSubscriber<FinalizedCheckpointChannel> finalizedCheckpointChannelSubscriber) {
+    final ValidatorIndexCacheTracker validatorIndexCacheTracker =
+        new ValidatorIndexCacheTracker(recentChainData);
+    finalizedCheckpointChannelSubscriber.subscribe(validatorIndexCacheTracker);
+    return validatorIndexCacheTracker;
   }
 }

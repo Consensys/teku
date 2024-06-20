@@ -334,7 +334,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "type");
   }
 
-  // TODO
   @Override
   protected SafeFuture<?> doStart() {
     LOG.debug("Starting {}", this.getClass().getSimpleName());
@@ -345,7 +344,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 beaconRestAPI.map(BeaconRestApi::start).orElse(SafeFuture.completedFuture(null)));
   }
 
-  // TODO
   protected void startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
@@ -387,7 +385,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             });
   }
 
-  // TODO
   @Override
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
@@ -405,7 +402,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected SafeFuture<?> initialize() {
 
-    timerService = new TimerService(this::onTick); // TODO
+    timerService = new TimerService(this::onTick);
 
     final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
@@ -463,12 +460,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .thenRun(this::initAll)
         .thenRun(
             () -> {
-              // TODO
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               recentChainData.subscribeBestBlockInitialized(this::startServices);
             })
         .thenCompose(__ ->
-            timerService.start() // TODO
+            timerService.start()
         );
   }
 
@@ -690,7 +686,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
-  // TODO
   protected void initSlashingEventsSubscriptions() {
     if (beaconConfig.validatorConfig().isShutdownWhenValidatorSlashedEnabled()) {
       final ValidatorTimingChannel validatorTimingChannel =
@@ -785,7 +780,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData, storageQueryChannel, spec, earliestAvailableBlockSlot);
   }
 
-  // TODO
   protected SafeFuture<Void> initWeakSubjectivity(
       final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
     return wsInitializer
@@ -996,7 +990,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
-  // TODO
   protected void initGenesisHandler() {
     if (!recentChainData.isPreGenesis()) {
       // We already have a genesis block - no need for a genesis handler
@@ -1302,7 +1295,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         state -> p2pNetwork.onSyncStateChanged(state.isInSync(), state.isOptimistic()));
   }
 
-  //TODO
   protected void initOperationsReOrgManager() {
     LOG.debug("BeaconChainController.initOperationsReOrgManager()");
     OperationsReOrgManager operationsReOrgManager =
@@ -1317,7 +1309,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
-  // TODO
   protected void initValidatorIndexCacheTracker() {
     LOG.debug("BeaconChainController.initValidatorIndexCacheTracker()");
     final ValidatorIndexCacheTracker validatorIndexCacheTracker =
@@ -1371,7 +1362,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     return defaultFeeRecipient;
   }
 
-  // TODO
   protected void setupInitialState(final RecentChainData client) {
     final Eth2NetworkConfiguration networkConfiguration = beaconConfig.eth2NetworkConfig();
 
@@ -1481,7 +1471,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         genesisState.getGenesisTime());
   }
 
-  // TODO
   protected void onStoreInitialized() {
     UInt64 genesisTime = recentChainData.getGenesisTime();
     UInt64 currentTime = timeProvider.getTimeInSeconds();
@@ -1506,7 +1495,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     return spec.getCurrentSlot(currentTime, genesisTime);
   }
 
-  // TODO
   protected void validateChain(final UInt64 currentSlot) {
     weakSubjectivityValidator
         .validateChainIsConsistentWithWSCheckpoint(combinedChainDataClient)
@@ -1528,7 +1516,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             });
   }
 
-  // TODO
   private void onTick() {
     if (recentChainData.isPreGenesis()) {
       return;

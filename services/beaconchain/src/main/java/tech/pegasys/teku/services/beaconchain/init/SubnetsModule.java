@@ -22,7 +22,7 @@ public interface SubnetsModule {
 
   @Provides
   @Singleton
-  static AttestationTopicSubscriber provideAttestationTopicSubscriber(
+  static AttestationTopicSubscriber attestationTopicSubscriber(
       @MetricsModule.SubnetSubscriptionsMetric SettableLabelledGauge subnetSubscriptionsMetric,
       Spec spec,
       P2PConfig p2pConfig,
@@ -34,21 +34,6 @@ public interface SubnetsModule {
       slotEventsChannelSubscriber.subscribe(attestationTopicSubscriber);
     }
     return attestationTopicSubscriber;
-  }
-
-  @Provides
-  @Singleton
-  static SyncCommitteeSubscriptionManager provideSyncCommitteeSubscriptionManager(
-      Spec spec,
-      P2PConfig p2pConfig,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      Eth2P2PNetwork p2pNetwork) {
-    SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
-        p2pConfig.isSubscribeAllSubnetsEnabled()
-            ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
-            : new SyncCommitteeSubscriptionManager(p2pNetwork);
-    slotEventsChannelSubscriber.subscribe(syncCommitteeSubscriptionManager);
-    return syncCommitteeSubscriptionManager;
   }
 
   @Provides
@@ -84,7 +69,8 @@ public interface SubnetsModule {
   @Provides
   @Singleton
   static SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager(
-      Spec spec, P2PConfig p2pConfig,
+      Spec spec,
+      P2PConfig p2pConfig,
       EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
       Eth2P2PNetwork p2pNetwork) {
 

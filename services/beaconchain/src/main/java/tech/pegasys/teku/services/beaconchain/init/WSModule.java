@@ -12,6 +12,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -19,11 +20,17 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 import javax.inject.Singleton;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+
 @Module
 public interface WSModule {
 
   interface WeakSubjectivityPeriodValidator {
     void validate(RecentChainData recentChainData);
+  }
+
+  interface WeakSubjectivityStoreChainValidator {
+    void validate(UInt64 currentSlot);
   }
 
   @Provides
@@ -76,6 +83,34 @@ public interface WSModule {
           WeakSubjectivityCalculator.create(weakSubjectivityConfig);
       weakSubjectivityInitializer.validateAnchorIsWithinWeakSubjectivityPeriod(
           latestFinalizedAnchor, currentSlot, spec, wsCalculator);
+    };
+  }
+
+  @Provides
+  @Singleton
+  static WeakSubjectivityStoreChainValidator weakSubjectivityStoreChainValidator(
+      WeakSubjectivityValidator weakSubjectivityValidator,
+      CombinedChainDataClient combinedChainDataClient,
+      RecentChainData recentChainData) {
+    return currentSlot -> {
+      weakSubjectivityValidator
+          .validateChainIsConsistentWithWSCheckpoint(combinedChainDataClient)
+          .thenCompose(
+              __ ->
+                  SafeFuture.of(
+                      () -> recentChainData.getStore().retrieveFinalizedCheckpointAndState()))
+          .thenAccept(
+              finalizedCheckpointState -> {
+                final UInt64 slot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
+                weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
+                    finalizedCheckpointState, slot);
+              })
+          .finish(
+              err -> {
+                weakSubjectivityValidator.handleValidationFailure(
+                    "Encountered an error while trying to validate latest finalized checkpoint", err);
+                throw new RuntimeException(err);
+              });
     };
   }
 }

@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -49,6 +50,11 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 @Module
 public interface MetricsModule {
 
+  @FunctionalInterface
+  interface TickProcessingPerformanceRecordFactory {
+    Optional<TickProcessingPerformance> create();
+  }
+
   @Qualifier
   @interface FutureItemsMetric {}
 
@@ -73,7 +79,7 @@ public interface MetricsModule {
   @Provides
   @Singleton
   @SubnetSubscriptionsMetric
-  static SettableLabelledGauge provideSubnetSubscriptionsMetric(MetricsSystem metricsSystem) {
+  static SettableLabelledGauge subnetSubscriptionsMetric(MetricsSystem metricsSystem) {
     return SettableLabelledGauge.create(
         metricsSystem,
         TekuMetricCategory.NETWORK,
@@ -85,7 +91,7 @@ public interface MetricsModule {
   @Provides
   @Singleton
   @PerformanceTrackerTimings
-  static SettableGauge providePerformanceTrackerTimings(MetricsSystem metricsSystem) {
+  static SettableGauge performanceTrackerTimings(MetricsSystem metricsSystem) {
     return SettableGauge.create(
         metricsSystem,
         BEACON,
@@ -95,21 +101,21 @@ public interface MetricsModule {
 
   @Provides
   @Singleton
-  static FutureItems<BlobSidecar> provideFutureBlobSidecars(
+  static FutureItems<BlobSidecar> futureBlobSidecars(
       @FutureItemsMetric SettableLabelledGauge futureItemsMetric) {
     return FutureItems.create(BlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
   }
 
   @Provides
   @Singleton
-  static ValidatorPerformanceMetrics provideValidatorPerformanceMetrics(
+  static ValidatorPerformanceMetrics validatorPerformanceMetrics(
       MetricsSystem metricsSystem) {
     return new ValidatorPerformanceMetrics(metricsSystem);
   }
 
   @Provides
   @Singleton
-  static PerformanceTracker providePerformanceTracker(
+  static PerformanceTracker performanceTracker(
       Spec spec,
       ValidatorConfig validatorConfig,
       CombinedChainDataClient combinedChainDataClient,
@@ -140,7 +146,7 @@ public interface MetricsModule {
   // TODO not used
   @Provides
   @Singleton
-  static SyncCommitteeMetrics provideSyncCommitteeMetrics(
+  static SyncCommitteeMetrics syncCommitteeMetrics(
       Spec spec,
       RecentChainData recentChainData,
       MetricsSystem metricsSystem,
@@ -156,7 +162,7 @@ public interface MetricsModule {
   // TODO not used
   @Provides
   @Singleton
-  static BeaconChainMetrics provideBeaconChainMetrics(
+  static BeaconChainMetrics beaconChainMetrics(
       Spec spec,
       MetricsSystem metricsSystem,
       RecentChainData recentChainData,
@@ -227,5 +233,16 @@ public interface MetricsModule {
     return metricsConfig.isBlockPerformanceEnabled()
         ? Optional.of(BlockImportMetrics.create(metricsSystem))
         : Optional.empty();
+  }
+
+  @Provides
+  @Singleton
+  static TickProcessingPerformanceRecordFactory tickProcessingPerformanceRecordFactory(
+      TimeProvider timeProvider, MetricsConfig metricsConfig) {
+    return () ->
+        metricsConfig.isTickPerformanceEnabled()
+            ? Optional.of(
+                new TickProcessingPerformance(timeProvider, timeProvider.getTimeInMillis()))
+            : Optional.empty();
   }
 }

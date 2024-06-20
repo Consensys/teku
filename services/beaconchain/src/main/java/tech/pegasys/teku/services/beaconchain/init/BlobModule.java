@@ -31,7 +31,7 @@ public interface BlobModule {
 
   @Provides
   @Singleton
-  static BlobSidecarGossipValidator provideBlobSidecarGossipValidator(
+  static BlobSidecarGossipValidator blobSidecarGossipValidator(
       Spec spec,
       KZG kzg,
       @InvalidBlockRoots Map<Bytes32, BlockImportResult> invalidBlockRoots,
@@ -46,7 +46,7 @@ public interface BlobModule {
   
   @Provides
   @Singleton
-  static BlobSidecarManager provideBlobSidecarManager(
+  static BlobSidecarManager blobSidecarManager(
       Spec spec,
       KZG kzg,
       @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,

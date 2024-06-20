@@ -31,6 +31,8 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -257,5 +259,10 @@ public interface PoolAndCachesModule {
     return attestationPool;
   }
 
-
+  @Provides
+  @Singleton
+  static FailedExecutionPool failedExecutionPool(
+      BlockManager blockManager, @BeaconAsyncRunner AsyncRunner beaconAsyncRunner) {
+    return new FailedExecutionPool(blockManager, beaconAsyncRunner);
+  }
 }

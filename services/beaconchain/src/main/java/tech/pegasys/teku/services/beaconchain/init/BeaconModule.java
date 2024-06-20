@@ -11,18 +11,32 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannelSubscriber;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.beaconchain.SlotProcessor;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.BeaconAsyncRunner;
+import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceNotifierExecutor;
+import tech.pegasys.teku.services.beaconchain.init.MetricsModule.TickProcessingPerformanceRecordFactory;
 import tech.pegasys.teku.services.beaconchain.init.PoolAndCachesModule.InvalidBlockRoots;
+import tech.pegasys.teku.services.beaconchain.init.PowModule.ProposerDefaultFeeRecipient;
+import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
+import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.OperationsReOrgManager;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
@@ -32,14 +46,13 @@ import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -47,10 +60,21 @@ import javax.inject.Singleton;
 import java.util.Map;
 import java.util.Optional;
 
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
 @Module
 public interface BeaconModule {
+
+  @FunctionalInterface
+  interface TickHandler {
+    void onTick();
+  }
+
+  @FunctionalInterface
+  interface GenesisTimeTracker {
+    void update();
+  }
 
   @Provides
   @Singleton
@@ -106,7 +130,6 @@ public interface BeaconModule {
   static BlockManager blockManager(
       Spec spec,
       EventLogger eventLogger,
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
       TimeProvider timeProvider,
       RecentChainData recentChainData,
       BlockValidator blockValidator,
@@ -116,10 +139,10 @@ public interface BeaconModule {
       @InvalidBlockRoots Map<Bytes32, BlockImportResult> invalidBlockRoots,
       Optional<BlockImportMetrics> blockImportMetrics,
       FutureItems<SignedBeaconBlock> futureBlocks,
-      EventChannelSubscriber<SlotEventsChannel>slotEventsChannelSubscriber,
+      FailedExecutionPool failedExecutionPool,
+      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
       EventChannelSubscriber<BlockImportChannel> blockImportChannelSubscriber,
-      EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber
-  ) {
+      EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber) {
 
     BlockManager blockManager =
         new BlockManager(
@@ -134,10 +157,7 @@ public interface BeaconModule {
             eventLogger,
             blockImportMetrics);
 
-    // TODO void dependency
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      final FailedExecutionPool failedExecutionPool =
-          new FailedExecutionPool(blockManager, beaconAsyncRunner);
       blockManager.subscribeFailedPayloadExecution(failedExecutionPool::addFailedBlock);
     }
     slotEventsChannelSubscriber.subscribe(blockManager);
@@ -153,11 +173,11 @@ public interface BeaconModule {
       Eth2NetworkConfiguration eth2NetworkConfig,
       Spec spec,
       MetricsSystem metricsSystem,
-      @AsyncRunnerModule.ForkChoiceNotifierExecutor AsyncRunnerEventThread forkChoiceNotifierExecutor,
+      @ForkChoiceNotifierExecutor AsyncRunnerEventThread forkChoiceNotifierExecutor,
       ExecutionLayerChannel executionLayer,
       RecentChainData recentChainData,
       EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      @PowModule.ProposerDefaultFeeRecipient Optional<Eth1Address> proposerDefaultFeeRecipient) {
+      @ProposerDefaultFeeRecipient Optional<Eth1Address> proposerDefaultFeeRecipient) {
 
     ProposersDataManager proposersDataManager =
         new ProposersDataManager(
@@ -172,4 +192,88 @@ public interface BeaconModule {
     return proposersDataManager;
   }
 
+  @Provides
+  @Singleton
+  static OperationsReOrgManager operationsReOrgManager(
+      OperationPool<AttesterSlashing> attesterSlashingPool,
+      OperationPool<ProposerSlashing> proposerSlashingPool,
+      OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      AggregatingAttestationPool attestationPool,
+      AttestationManager attestationManager,
+      OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
+      RecentChainData recentChainData,
+      EventChannelSubscriber<ChainHeadChannel> chainHeadChannelSubscriber) {
+
+    OperationsReOrgManager operationsReOrgManager =
+        new OperationsReOrgManager(
+            proposerSlashingPool,
+            attesterSlashingPool,
+            voluntaryExitPool,
+            attestationPool,
+            attestationManager,
+            blsToExecutionChangePool,
+            recentChainData);
+    chainHeadChannelSubscriber.subscribe(operationsReOrgManager);
+    return operationsReOrgManager;
+  }
+
+  @Provides
+  @Singleton
+  static TickHandler tickHandler(
+      TimeProvider timeProvider,
+      RecentChainData recentChainData,
+      ForkChoice forkChoice,
+      SlotProcessor slotProcessor,
+      TickProcessingPerformanceRecordFactory tickProcessingPerformanceRecordFactory,
+      GenesisTimeTracker genesisTimeTracker) {
+    return () -> {
+      if (recentChainData.isPreGenesis()) {
+        return;
+      }
+
+      final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+      final Optional<TickProcessingPerformance> performanceRecord =
+          tickProcessingPerformanceRecordFactory.create();
+
+      forkChoice.onTick(currentTimeMillis, performanceRecord);
+
+      genesisTimeTracker.update();
+
+      slotProcessor.onTick(currentTimeMillis, performanceRecord);
+      performanceRecord.ifPresent(TickProcessingPerformance::complete);
+    };
+  }
+
+  @Provides
+  @Singleton
+  static TimerService timerService(TickHandler tickHandler) {
+    return new TimerService(tickHandler::onTick);
+  }
+
+  @Provides
+  @Singleton
+  static GenesisTimeTracker genesisTimeTracker(
+      TimeProvider timeProvider,
+      RecentChainData recentChainData,
+      Eth2P2PNetwork p2pNetwork,
+      StatusLogger statusLogger) {
+    return new GenesisTimeTracker() {
+      private UInt64 lastUpdateTime = UInt64.ZERO;
+
+      @Override
+      public void update() {
+        final UInt64 genesisTime = recentChainData.getGenesisTime();
+        final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+        final UInt64 currentTimeSeconds = millisToSeconds(currentTimeMillis);
+        if (genesisTime.isGreaterThan(currentTimeSeconds)) {
+          // notify every 10 minutes
+          if (lastUpdateTime.plus(600L).isLessThanOrEqualTo(currentTimeSeconds)) {
+            lastUpdateTime = currentTimeSeconds;
+            statusLogger.timeUntilGenesis(
+                genesisTime.minus(currentTimeSeconds).longValue(), p2pNetwork.getPeerCount());
+          }
+        }
+      }
+    };
+  }
 }

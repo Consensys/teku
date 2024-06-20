@@ -39,7 +39,7 @@ public interface CryptoModule {
 
   @Provides
   @Singleton
-  static KZG provideKzg(Eth2NetworkConfiguration eth2NetworkConfig, Spec spec) {
+  static KZG kzg(Eth2NetworkConfiguration eth2NetworkConfig, Spec spec) {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       KZG kzg = KZG.getInstance();
       final String trustedSetupFile =

@@ -29,35 +29,35 @@ import javax.inject.Singleton;
 public interface VerifyModule {
   @Provides
   @Singleton
-  static GossipValidationHelper provideGossipValidationHelper(
+  static GossipValidationHelper gossipValidationHelper(
       Spec spec, RecentChainData recentChainData) {
     return new GossipValidationHelper(spec, recentChainData);
   }
 
   @Provides
   @Singleton
-  static AttesterSlashingValidator provideAttesterSlashingValidator(
+  static AttesterSlashingValidator attesterSlashingValidator(
       Spec spec, RecentChainData recentChainData) {
     return new AttesterSlashingValidator(recentChainData, spec);
   }
 
   @Provides
   @Singleton
-  static ProposerSlashingValidator provideProposerSlashingValidator(
+  static ProposerSlashingValidator proposerSlashingValidator(
       Spec spec, RecentChainData recentChainData) {
     return new ProposerSlashingValidator(spec, recentChainData);
   }
 
   @Provides
   @Singleton
-  static VoluntaryExitValidator provideVoluntaryExitValidator(
+  static VoluntaryExitValidator voluntaryExitValidator(
       Spec spec, RecentChainData recentChainData) {
     return new VoluntaryExitValidator(spec, recentChainData);
   }
 
   @Provides
   @Singleton
-  static SignedBlsToExecutionChangeValidator provideSignedBlsToExecutionChangeValidator(
+  static SignedBlsToExecutionChangeValidator signedBlsToExecutionChangeValidator(
       Spec spec,
       TimeProvider timeProvider,
       RecentChainData recentChainData,
@@ -68,7 +68,7 @@ public interface VerifyModule {
 
   @Provides
   @Singleton
-  static MergeTransitionBlockValidator provideMergeTransitionBlockValidator(
+  static MergeTransitionBlockValidator mergeTransitionBlockValidator(
       Spec spec, RecentChainData recentChainData, ExecutionLayerChannel executionLayer) {
     return new MergeTransitionBlockValidator(spec, recentChainData, executionLayer);
   }

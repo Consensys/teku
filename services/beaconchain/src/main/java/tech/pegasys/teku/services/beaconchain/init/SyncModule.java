@@ -8,8 +8,11 @@ import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannelSubscriber;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -19,9 +22,14 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.BeaconAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
@@ -121,5 +129,40 @@ public interface SyncModule {
         state -> p2pNetwork.onSyncStateChanged(state.isInSync(), state.isOptimistic()));
 
     return syncService;
+  }
+
+  @Provides
+  @Singleton
+  static RecentBlocksFetcher recentBlocksFetcher(
+      SyncService syncService,
+      BlockManager blockManager,
+      EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber,
+      LoggingModule.InitLogger initLogger) {
+    final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
+    recentBlocksFetcher.subscribeBlockFetched(
+        (block) ->
+            blockManager
+                .importBlock(
+                    block, BroadcastValidationLevel.NOT_REQUIRED, Optional.of(BlobSidecarManager.RemoteOrigin.RPC))
+                .thenCompose(BlockImportChannel.BlockImportAndBroadcastValidationResults::blockImportResult)
+                .finish(err -> initLogger.logger().error("Failed to process recently fetched block.", err)));
+    receivedBlockEventsChannelSubscriber.subscribe(recentBlocksFetcher);
+    return recentBlocksFetcher;
+  }
+
+  @Provides
+  @Singleton
+  static RecentBlobSidecarsFetcher recentBlocksFetcher(
+      SyncService syncService,
+      BlobSidecarManager blobSidecarManager) {
+    final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
+        syncService.getRecentBlobSidecarsFetcher();
+    recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(
+        (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar, BlobSidecarManager.RemoteOrigin.RPC));
+    blobSidecarManager.subscribeToReceivedBlobSidecar(
+        blobSidecar ->
+            recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
+                new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
+    return recentBlobSidecarsFetcher;
   }
 }

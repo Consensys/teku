@@ -48,9 +48,7 @@ public interface AsyncRunnerModule {
   static AsyncRunner networkAsyncRunner(
       AsyncRunnerFactory asyncRunnerFactory, Eth2NetworkConfiguration eth2NetworkConfig) {
     return asyncRunnerFactory.create(
-        "p2p",
-        eth2NetworkConfig.getAsyncP2pMaxThreads(),
-        eth2NetworkConfig.getAsyncP2pMaxQueue());
+        "p2p", eth2NetworkConfig.getAsyncP2pMaxThreads(), eth2NetworkConfig.getAsyncP2pMaxQueue());
   }
 
   @Provides
@@ -71,15 +69,17 @@ public interface AsyncRunnerModule {
   @Singleton
   @ForkChoiceExecutor
   static AsyncRunnerEventThread forkChoiceExecutor(AsyncRunnerFactory asyncRunnerFactory) {
-    return new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
+    AsyncRunnerEventThread forkChoiceExecutor =
+        new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
+    return forkChoiceExecutor;
   }
 
   @Provides
   @Singleton
   @ForkChoiceNotifierExecutor
   static AsyncRunnerEventThread forkChoiceNotifierExecutor(AsyncRunnerFactory asyncRunnerFactory) {
-    return new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
+    AsyncRunnerEventThread forkChoiceNotifierExecutor =
+        new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
+    return forkChoiceNotifierExecutor;
   }
-
-
 }
