@@ -69,7 +69,8 @@ public class StatePrunerTest {
   void setUp() {
     epochsToKeep = spec.getNetworkingConfig().getMinEpochsForBlockRequests();
     assertThat(pruner.start()).isCompleted();
-    when(database.pruneFinalizedStates(any(), any(), anyInt())).thenReturn(Optional.of(UInt64.ZERO));
+    when(database.pruneFinalizedStates(any(), any(), anyInt()))
+        .thenReturn(Optional.of(UInt64.ZERO));
   }
 
   @Test
@@ -128,7 +129,7 @@ public class StatePrunerTest {
   void shouldPruneStatesWhenFirstEpochIsPrunable() {
 
     when(database.getFinalizedCheckpoint())
-        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(EPOCHS_RETAINED+1)));
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(EPOCHS_RETAINED + 1)));
     triggerNextPruning();
     // Should prune all blocks in the first epoch (ie blocks 0 - 9)
     final UInt64 lastSlotToPrune = UInt64.valueOf(SLOTS_PER_EPOCH - 1);

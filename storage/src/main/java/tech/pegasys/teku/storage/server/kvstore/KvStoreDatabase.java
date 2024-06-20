@@ -450,8 +450,9 @@ public class KvStoreDatabase implements Database {
             earliestFinalizedStateSlot.isEmpty()
                 ? "EMPTY"
                 : earliestFinalizedStateSlot.get().toString());
-      return earliestFinalizedStateSlot.map(uInt64 -> pruneFinalizedStateForSlots(
-              uInt64, lastSlotToPrune, pruneLimit)).or(() -> Optional.of(lastSlotToPrune));
+    return earliestFinalizedStateSlot
+        .map(uInt64 -> pruneFinalizedStateForSlots(uInt64, lastSlotToPrune, pruneLimit))
+        .or(() -> Optional.of(lastSlotToPrune));
   }
 
   private UInt64 pruneFinalizedStateForSlots(

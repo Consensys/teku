@@ -109,13 +109,15 @@ public class StatePruner extends Service {
     LOG.info("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
     try {
       maybeLastPrunedSlot =
-              database.pruneFinalizedStates(
-                      maybeLastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit);
-      maybeLastPrunedSlot.ifPresent(lastPrunedSlot -> LOG.info(
-              "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
-              pruneLimit,
-              earliestSlotToKeep,
-              lastPrunedSlot));
+          database.pruneFinalizedStates(
+              maybeLastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit);
+      maybeLastPrunedSlot.ifPresent(
+          lastPrunedSlot ->
+              LOG.info(
+                  "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
+                  pruneLimit,
+                  earliestSlotToKeep,
+                  lastPrunedSlot));
 
     } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
