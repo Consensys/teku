@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public interface DebugDataDumper {
@@ -42,6 +44,10 @@ public interface DebugDataDumper {
             final SignedBeaconBlock block,
             final String failureReason,
             final Optional<Throwable> failureCause) {}
+
+        @Override
+        public void saveInvalidBlobSidecars(
+            final List<BlobSidecar> blobSidecars, final SignedBeaconBlock block) {}
       };
 
   void saveGossipMessageDecodingError(
@@ -58,4 +64,6 @@ public interface DebugDataDumper {
 
   void saveInvalidBlock(
       SignedBeaconBlock block, String failureReason, Optional<Throwable> failureCause);
+
+  void saveInvalidBlobSidecars(List<BlobSidecar> blobSidecars, SignedBeaconBlock block);
 }
