@@ -14,6 +14,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.NetworkAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.P2PDebugDataFileDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -123,5 +125,16 @@ public interface NetworkModule {
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
 
     return p2pNetwork;
+  }
+
+  @Provides
+  @Singleton
+  static P2PDebugDataDumper p2pDebugDataDumper(
+      P2PConfig p2pConfig,
+      DataDirLayout dataDirLayout
+  ) {
+    return p2pConfig.isP2pDumpsToFileEnabled()
+        ? new P2PDebugDataFileDumper(dataDirLayout.getDebugDataDirectory())
+        : P2PDebugDataDumper.NOOP;
   }
 }

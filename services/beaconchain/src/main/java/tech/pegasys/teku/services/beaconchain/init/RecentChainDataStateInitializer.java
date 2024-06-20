@@ -35,6 +35,10 @@ public class RecentChainDataStateInitializer {
   @Inject EventLogger eventLogger;
   @Inject StatusLogger statusLogger;
 
+  @Inject
+  public RecentChainDataStateInitializer() {
+  }
+
   public void setupInitialState(RecentChainData recentChainData) {
 
     final Optional<AnchorPoint> initialAnchor =

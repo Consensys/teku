@@ -2,7 +2,9 @@ package tech.pegasys.teku.services.beaconchain.init;
 
 import dagger.Module;
 import dagger.Provides;
+import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
+import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
@@ -14,6 +16,11 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 @Module
 public interface BeaconConfigModule {
+
+  @Provides
+  static Spec spec(BeaconChainConfiguration config){
+    return config.getSpec();
+  }
 
   @Provides
   static Eth2NetworkConfiguration eth2NetworkConfig(BeaconChainConfiguration config){
@@ -41,17 +48,22 @@ public interface BeaconConfigModule {
   }
 
   @Provides
+  static SyncConfig syncConfig(BeaconChainConfiguration config){
+    return config.syncConfig();
+  }
+
+  @Provides
   static BeaconRestApiConfig beaconRestApiConfig(BeaconChainConfiguration config){
     return config.beaconRestApiConfig();
   }
 
   @Provides
-  static Spec spec(BeaconChainConfiguration config){
-    return config.getSpec();
+  static WeakSubjectivityConfig weakSubjectivityConfig(BeaconChainConfiguration config) {
+    return config.weakSubjectivity();
   }
 
   @Provides
-  static WeakSubjectivityConfig weakSubjectivityConfig(BeaconChainConfiguration config) {
-    return config.weakSubjectivity();
+  static MetricsConfig metricsConfig(BeaconChainConfiguration config) {
+    return config.getMetricsConfig();
   }
 }

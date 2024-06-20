@@ -151,7 +151,7 @@ public interface MainModule {
 
   @Provides
   @Singleton
-  static ServiceStarter serviceStopper(
+  static ServiceStopper serviceStopper(
       Optional<BeaconRestApi> beaconRestApi,
       SyncService syncService,
       BlockManager blockManager,

@@ -25,6 +25,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 @Module
 public interface WSModule {
 
+  record WeakSubjectivityFinalizedConfig(WeakSubjectivityConfig config) {}
+
   interface WeakSubjectivityPeriodValidator {
     void validate(RecentChainData recentChainData);
   }
@@ -41,31 +43,29 @@ public interface WSModule {
 
   @Provides
   @Singleton
-  static SafeFuture<WeakSubjectivityConfig> weakSubjectivityConfigFuture(
+  static SafeFuture<WeakSubjectivityFinalizedConfig> weakSubjectivityFinalizedConfigFuture(
       WeakSubjectivityInitializer weakSubjectivityInitializer,
       WeakSubjectivityConfig weakSubjectivityConfig,
       StorageQueryChannel storageQueryChannel,
-      StorageUpdateChannel storageUpdateChannel
-  ) {
-    return weakSubjectivityInitializer.finalizeAndStoreConfig(
+      StorageUpdateChannel storageUpdateChannel) {
+    SafeFuture<WeakSubjectivityConfig> finalizedConfig = weakSubjectivityInitializer.finalizeAndStoreConfig(
         weakSubjectivityConfig, storageQueryChannel, storageUpdateChannel);
+    return finalizedConfig.thenApply(WeakSubjectivityFinalizedConfig::new);
   }
 
   @Provides
   @Singleton
   // TODO producer ?
-  static WeakSubjectivityConfig weakSubjectivityConfig(
-      SafeFuture<WeakSubjectivityConfig> weakSubjectivityConfigFuture
-  ) {
+  static WeakSubjectivityFinalizedConfig weakSubjectivityConfig(
+      SafeFuture<WeakSubjectivityFinalizedConfig> weakSubjectivityConfigFuture) {
     return weakSubjectivityConfigFuture.join();
   }
 
   @Provides
   @Singleton
   static WeakSubjectivityValidator weakSubjectivityValidator(
-      WeakSubjectivityConfig weakSubjectivityConfig
-  ) {
-    return WeakSubjectivityValidator.moderate(weakSubjectivityConfig);
+      WeakSubjectivityFinalizedConfig weakSubjectivityConfig) {
+    return WeakSubjectivityValidator.moderate(weakSubjectivityConfig.config());
   }
 
   @Provides
@@ -77,8 +77,7 @@ public interface WSModule {
       WeakSubjectivityInitializer weakSubjectivityInitializer) {
     return client -> {
       final AnchorPoint latestFinalizedAnchor = client.getStore().getLatestFinalized();
-      final UInt64 currentSlot =
-          currentSlotProvider.getCurrentSlot(client.getGenesisTime());
+      final UInt64 currentSlot = currentSlotProvider.getCurrentSlot(client.getGenesisTime());
       final WeakSubjectivityCalculator wsCalculator =
           WeakSubjectivityCalculator.create(weakSubjectivityConfig);
       weakSubjectivityInitializer.validateAnchorIsWithinWeakSubjectivityPeriod(
@@ -108,7 +107,8 @@ public interface WSModule {
           .finish(
               err -> {
                 weakSubjectivityValidator.handleValidationFailure(
-                    "Encountered an error while trying to validate latest finalized checkpoint", err);
+                    "Encountered an error while trying to validate latest finalized checkpoint",
+                    err);
                 throw new RuntimeException(err);
               });
     };

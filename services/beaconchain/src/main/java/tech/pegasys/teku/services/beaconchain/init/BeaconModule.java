@@ -49,6 +49,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
+import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -275,5 +276,11 @@ public interface BeaconModule {
         }
       }
     };
+  }
+
+  @Provides
+  @Singleton
+  static TickProcessor tickProcessor(Spec spec, RecentChainData recentChainData) {
+    return new TickProcessor(spec, recentChainData);
   }
 }
