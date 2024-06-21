@@ -278,17 +278,17 @@ public class TekuConfiguration {
         }
       }
 
-      if(storageConfiguration.getRetainedEpochs() > 0){
-        if(!storageConfiguration.getDataStorageMode().storesFinalizedStates()){
+      if (storageConfiguration.getRetainedEpochs() > 0) {
+        if (!storageConfiguration.getDataStorageMode().storesFinalizedStates()) {
           throw new InvalidConfigurationException(
-                  "Cannot enable state pruning without using ARCHIVE data storage mode");
+              "Cannot enable state pruning without using ARCHIVE data storage mode");
         }
       }
 
-      if(syncConfig.isReconstructHistoricStatesEnabled()){
-        if(storageConfiguration.getRetainedEpochs() > 0){
+      if (syncConfig.isReconstructHistoricStatesEnabled()) {
+        if (storageConfiguration.getRetainedEpochs() > 0) {
           throw new InvalidConfigurationException(
-                  "Cannot reconstruct historic states with state pruning enabled");
+              "Cannot reconstruct historic states with state pruning enabled");
         }
       }
 

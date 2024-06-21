@@ -37,7 +37,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -468,7 +467,11 @@ public class KvStoreDatabase implements Database {
           // to query from rather than hit the db
           stream
               .limit(pruneLimit)
-              .map(slot -> Pair.of(slot, dao.getFinalizedBlockAtSlot(slot).map(SignedBeaconBlock::getStateRoot)))
+              .map(
+                  slot ->
+                      Pair.of(
+                          slot,
+                          dao.getFinalizedBlockAtSlot(slot).map(SignedBeaconBlock::getStateRoot)))
               .toList();
     }
     if (slotsToPruneStateFor.isEmpty()) {
