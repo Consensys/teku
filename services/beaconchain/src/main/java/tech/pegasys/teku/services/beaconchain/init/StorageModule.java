@@ -166,7 +166,7 @@ public interface StorageModule {
     return () -> {
       UInt64 genesisTime = recentChainData.getGenesisTime();
       UInt64 currentTime = timeProvider.getTimeInSeconds();
-      final UInt64 currentSlot = currentSlotProvider.getCurrentSlot(genesisTime, currentTime);
+      final UInt64 currentSlot = currentSlotProvider.getCurrentSlot(currentTime, genesisTime);
       if (currentTime.compareTo(genesisTime) >= 0) {
         // Validate that we're running within the weak subjectivity period
         weakSubjectivityStoreChainValidator.get().validate(currentSlot);
