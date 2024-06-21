@@ -14,6 +14,8 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.beaconchain.init.DaggerBeaconChainControllerComponent;
+import tech.pegasys.teku.services.beaconchain.init.ExternalDependenciesModule;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
@@ -21,7 +23,13 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
  */
 public interface BeaconChainControllerFactory {
 
-  BeaconChainControllerFactory DEFAULT = BeaconChainController::new;
+  BeaconChainControllerFactory DEFAULT =
+      (serviceConfig, beaconConfig) ->
+          DaggerBeaconChainControllerComponent.builder()
+              .externalDependenciesModule(
+                  new ExternalDependenciesModule(serviceConfig, beaconConfig))
+              .build()
+              .beaconChainController();
 
   BeaconChainController create(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig);

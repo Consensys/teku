@@ -10,10 +10,13 @@ import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.services.beaconchain.BeaconChainController;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceExecutor;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceNotifierExecutor;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
@@ -27,8 +30,11 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -36,6 +42,7 @@ import tech.pegasys.teku.validator.coordinator.ValidatorIndexCacheTracker;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 @Module
 public interface MainModule {
@@ -49,6 +56,37 @@ public interface MainModule {
 
   interface ServiceStopper {
     SafeFuture<Void> stop();
+  }
+
+  @Provides
+  @Singleton
+  static BeaconChainController beaconChainController(
+      Spec spec,
+      TimeProvider timeProvider,
+      AsyncRunnerFactory asyncRunnerFactory,
+      ForkChoice forkChoice,
+      RecentChainData recentChainData,
+      Eth2P2PNetwork p2pNetwork,
+      Optional<BeaconRestApi> beaconRestAPI,
+      SyncService syncService,
+      SignatureVerificationService signatureVerificationService,
+      CombinedChainDataClient combinedChainDataClient,
+      ServiceStarter starter,
+      ServiceStopper stopper) {
+
+    return new BeaconChainController(
+        spec,
+        timeProvider,
+        asyncRunnerFactory,
+        forkChoice,
+        recentChainData,
+        p2pNetwork,
+        beaconRestAPI,
+        syncService,
+        signatureVerificationService,
+        combinedChainDataClient,
+        starter::start,
+        stopper::stop);
   }
 
   @Provides
