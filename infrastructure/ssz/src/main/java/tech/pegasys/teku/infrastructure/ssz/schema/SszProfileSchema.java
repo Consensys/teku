@@ -44,6 +44,10 @@ public interface SszProfileSchema<C extends SszProfile> extends SszStableContain
    */
   int getNthActiveFieldIndex(int nthActiveField);
 
+  default SszSchema<?> getNthActiveFieldSchema(final int nthActiveField) {
+    return getChildSchema(getNthActiveFieldIndex(nthActiveField));
+  }
+
   @Override
   default Optional<SszStableContainerSchema<?>> toStableContainerSchema() {
     return Optional.of(getStableContainerSchema());

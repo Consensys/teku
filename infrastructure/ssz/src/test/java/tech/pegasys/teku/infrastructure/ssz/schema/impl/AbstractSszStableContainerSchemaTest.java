@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -43,14 +42,14 @@ public class AbstractSszStableContainerSchemaTest {
   static final int MAX_SHAPE_FIELD_COUNT = 4;
 
   static final List<NamedIndexedSchema<?>> SHAPE_SCHEMAS =
-          List.of(
-                  namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
-                  namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
-                  namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
+      List.of(
+          namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
+          namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
 
-  final static int SIDE_INDEX = 0;
-  final static int COLOR_INDEX = 1;
-  final static int RADIUS_INDEX = 2;
+  static final int SIDE_INDEX = 0;
+  static final int COLOR_INDEX = 1;
+  static final int RADIUS_INDEX = 2;
 
   static final Set<Integer> SQUARE_SCHEMA_INDICES = Set.of(SIDE_INDEX, COLOR_INDEX);
 
@@ -59,8 +58,8 @@ public class AbstractSszStableContainerSchemaTest {
   static class ShapeStableContainer extends SszStableContainerImpl {
 
     ShapeStableContainer(
-            final SszStableContainerSchema<? extends SszStableContainerImpl> type,
-            final TreeNode backingNode) {
+        final SszStableContainerSchema<? extends SszStableContainerImpl> type,
+        final TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -81,7 +80,8 @@ public class AbstractSszStableContainerSchemaTest {
   }
 
   static class CircleProfile extends SszProfileImpl {
-    CircleProfile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+    CircleProfile(
+        final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -97,7 +97,8 @@ public class AbstractSszStableContainerSchemaTest {
   }
 
   static class SquareProfile extends SszProfileImpl {
-    SquareProfile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+    SquareProfile(
+        final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -112,7 +113,8 @@ public class AbstractSszStableContainerSchemaTest {
     }
   }
 
-  private static final SszStableContainerSchema<ShapeStableContainer> SHAPE_STABLE_CONTAINER_SCHEMA =
+  private static final SszStableContainerSchema<ShapeStableContainer>
+      SHAPE_STABLE_CONTAINER_SCHEMA =
           new AbstractSszStableContainerSchema<>("Shape", SHAPE_SCHEMAS, MAX_SHAPE_FIELD_COUNT) {
             @Override
             public ShapeStableContainer createFromBackingNode(final TreeNode node) {
@@ -121,20 +123,22 @@ public class AbstractSszStableContainerSchemaTest {
           };
 
   private static final SszStableContainerSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
-          new AbstractSszProfileSchema<>("Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
-    @Override
-    public CircleProfile createFromBackingNode(final TreeNode node) {
-      return new CircleProfile(this, node);
-    }
-  };
+      new AbstractSszProfileSchema<>(
+          "Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
+        @Override
+        public CircleProfile createFromBackingNode(final TreeNode node) {
+          return new CircleProfile(this, node);
+        }
+      };
 
   private static final SszStableContainerSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
-          new AbstractSszProfileSchema<>("Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
-            @Override
-            public SquareProfile createFromBackingNode(final TreeNode node) {
-              return new SquareProfile(this, node);
-            }
-          };
+      new AbstractSszProfileSchema<>(
+          "Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
+        @Override
+        public SquareProfile createFromBackingNode(final TreeNode node) {
+          return new SquareProfile(this, node);
+        }
+      };
 
   @Test
   void stableContainerSanityTest() throws JsonProcessingException {
@@ -146,7 +150,11 @@ public class AbstractSszStableContainerSchemaTest {
                 Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))));
 
     assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
-    assertThat(square.hashTreeRoot()).isEqualTo(Bytes32.fromHexString("0xbfdb6fda9d02805e640c0f5767b8d1bb9ff4211498a5e2d7c0f36e1b88ce57ff"));
+    assertThat(square.hashTreeRoot())
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0xbfdb6fda9d02805e640c0f5767b8d1bb9ff4211498a5e2d7c0f36e1b88ce57ff"));
+    assertThat(square.sszSerialize()).isEqualTo(Bytes.fromHexString("0x03420000000000000001"));
 
     final ShapeStableContainer circle =
         SHAPE_STABLE_CONTAINER_SCHEMA.createFromOptionalFieldValues(
@@ -155,56 +163,61 @@ public class AbstractSszStableContainerSchemaTest {
                 Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
                 Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
 
-    assertCircle(circle, (byte)1, UInt64.valueOf(0x42));
-    assertThat(circle.hashTreeRoot()).isEqualTo(Bytes32.fromHexString("0xf66d2c38c8d2afbd409e86c529dff728e9a4208215ca20ee44e49c3d11e145d8"));
+    assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
+    assertThat(circle.hashTreeRoot())
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0xf66d2c38c8d2afbd409e86c529dff728e9a4208215ca20ee44e49c3d11e145d8"));
+    assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x06014200000000000000"));
 
-
+    // json square round trip
     final String squareJson =
         JsonUtil.serialize(square, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
 
-    final ShapeStableContainer squareFromJson = JsonUtil.parse(squareJson, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
+    final ShapeStableContainer squareFromJson =
+        JsonUtil.parse(squareJson, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
     assertThat(squareFromJson).isEqualTo(square);
 
-    String circleJson =
+    // json circle round trip
+    final String circleJson =
         JsonUtil.serialize(circle, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
-    System.out.println("circle sc json: " + circleJson);
 
-    System.out.println("square sc root: " + square.hashTreeRoot());
-    System.out.println("circle sc root: " + circle.hashTreeRoot());
+    final ShapeStableContainer circleFromJson =
+            JsonUtil.parse(circleJson, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
+    assertThat(circleFromJson).isEqualTo(circle);
 
-    System.out.println("circle sc toString: " + circle);
+    //ssz circle deserialization
 
     ShapeStableContainer deserializedCircle =
         SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
 
+    assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedCircle).isEqualTo(circle);
-    assertThat(deserializedCircle.get(COLOR_INDEX))
-        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1));
-    assertThat(deserializedCircle.get(RADIUS_INDEX)).isEqualTo(SszUInt64.of(UInt64.valueOf(0x42)));
 
-    assertThatThrownBy(() -> deserializedCircle.get(SIDE_INDEX));
-    assertThat(deserializedCircle.getOptional(SIDE_INDEX)).isEmpty();
 
+    //ssz square deserialization
     ShapeStableContainer deserializedSquare =
         SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
 
+    assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedSquare).isEqualTo(square);
-    assertThat(deserializedSquare.get(COLOR_INDEX))
-        .isEqualTo(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1));
-    assertThat(deserializedSquare.get(SIDE_INDEX)).isEqualTo(SszUInt64.of(UInt64.valueOf(0x42)));
-
-    assertThatThrownBy(() -> deserializedSquare.get(RADIUS_INDEX));
-    assertThat(deserializedSquare.getOptional(RADIUS_INDEX)).isEmpty();
   }
 
   @Test
   void profileSanityTest() throws JsonProcessingException {
 
     CircleProfile circle =
-            CIRCLE_PROFILE_SCHEMA.createFromFieldValues(
-                    List.of(
-                            SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
-                            SszUInt64.of(UInt64.valueOf(0x42))));
+        CIRCLE_PROFILE_SCHEMA.createFromFieldValues(
+            List.of(
+                SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
+                SszUInt64.of(UInt64.valueOf(0x42))));
+
+    assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
+    assertThat(circle.hashTreeRoot())
+            .isEqualTo(
+                    Bytes32.fromHexString(
+                            "0xf66d2c38c8d2afbd409e86c529dff728e9a4208215ca20ee44e49c3d11e145d8"));
+    assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x014200000000000000"));
 
     SquareProfile square =
         SQUARE_PROFILE_SCHEMA.createFromFieldValues(
@@ -212,55 +225,73 @@ public class AbstractSszStableContainerSchemaTest {
                 SszUInt64.of(UInt64.valueOf(0x42)),
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
 
-    System.out.println("square profile serialization: " + square.sszSerialize());
-    System.out.println("circle profile serialization: " + circle.sszSerialize());
+    assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
+    assertThat(square.hashTreeRoot())
+            .isEqualTo(
+                    Bytes32.fromHexString(
+                            "0xbfdb6fda9d02805e640c0f5767b8d1bb9ff4211498a5e2d7c0f36e1b88ce57ff"));
+    assertThat(square.sszSerialize()).isEqualTo(Bytes.fromHexString("0x420000000000000001"));
 
-    System.out.println("circle sc toString: " + circle);
 
-    String squareJson = JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    System.out.println("square profile json: " + squareJson);
 
-    String circleJson = JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    System.out.println("circle profile json: " + circleJson);
+    // json square round trip
+    final String squareJson =
+            JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
 
-    System.out.println("square profile root: " + square.hashTreeRoot());
-    System.out.println("circle profile root: " + circle.hashTreeRoot());
+    System.out.println("squareJson: " + squareJson);
+
+    final SquareProfile squareFromJson =
+            JsonUtil.parse(squareJson, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
+    assertThat(squareFromJson).isEqualTo(square);
+
+    // json circle round trip
+    final String circleJson =
+            JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
+
+    System.out.println("circleJson: " + circleJson);
+
+    final CircleProfile circleFromJson =
+            JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
+    assertThat(circleFromJson).isEqualTo(circle);
+
 
     CircleProfile deserializedCircle =
-            CIRCLE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
+        CIRCLE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
 
+    assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedCircle).isEqualTo(circle);
 
 
-    assertFieldValue(deserializedCircle, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
-    assertFieldValue(deserializedCircle, SIDE_INDEX, Optional.empty());
-    assertFieldValue(deserializedCircle, RADIUS_INDEX, Optional.of(SszUInt64.of(UInt64.valueOf(0x42))));
-
     SquareProfile deserializedSquare =
-            SQUARE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));
+        SQUARE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));
 
+    assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedSquare).isEqualTo(square);
-    assertFieldValue(deserializedSquare, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
-    assertFieldValue(deserializedSquare, SIDE_INDEX, Optional.of(SszUInt64.of(UInt64.valueOf(0x42))));
-    assertFieldValue(deserializedSquare, RADIUS_INDEX, Optional.empty());
   }
 
-
-  private void assertSquare(final SszStableContainer container, final byte color, final UInt64 side) {
-    assertFieldValue(container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
+  private void assertSquare(
+      final SszStableContainer container, final byte color, final UInt64 side) {
+    assertFieldValue(
+        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
     assertFieldValue(container, SIDE_INDEX, Optional.of(SszUInt64.of(side)));
     assertFieldValue(container, RADIUS_INDEX, Optional.empty());
   }
 
-  private void assertCircle(final SszStableContainer container, final byte color, final UInt64 radius) {
-    assertFieldValue(container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
+  private void assertCircle(
+      final SszStableContainer container, final byte color, final UInt64 radius) {
+    assertFieldValue(
+        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
     assertFieldValue(container, RADIUS_INDEX, Optional.of(SszUInt64.of(radius)));
     assertFieldValue(container, SIDE_INDEX, Optional.empty());
   }
 
-  private void assertFieldValue(final SszStableContainer container, final int fieldIndex, final Optional<? extends SszData> value) {
-    value.ifPresentOrElse(sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
-            () -> assertThatThrownBy(() -> container.get(fieldIndex)));
+  private void assertFieldValue(
+      final SszStableContainer container,
+      final int fieldIndex,
+      final Optional<? extends SszData> value) {
+    value.ifPresentOrElse(
+        sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
+        () -> assertThatThrownBy(() -> container.get(fieldIndex)));
 
     assertThat(container.getOptional(fieldIndex)).isEqualTo(value);
   }

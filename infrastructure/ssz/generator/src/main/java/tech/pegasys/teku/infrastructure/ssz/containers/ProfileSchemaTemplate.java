@@ -30,19 +30,17 @@ public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
 
   public static <
           C extends SszProfile, /*$$ViewTypes*/ V0 extends SszData, V1 extends SszData /*$$*/>
-      /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>
-          create(
+      /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/> create(
           final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema,
           final Set<Integer> activeFieldIndices,
-              final BiFunction<
-                      /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
-                                                C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>,
-                      TreeNode,
-                      C>
-                  instanceCtor) {
+          final BiFunction<
+                  /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
+                      C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>,
+                  TreeNode,
+                  C>
+              instanceCtor) {
     return new /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<>(
-            "",
-            stableContainerSchema, activeFieldIndices) {
+        "", stableContainerSchema, activeFieldIndices) {
       @Override
       public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -50,16 +48,12 @@ public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
     };
   }
 
-
   protected /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/(
       final String containerName,
       final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema,
       final Set<Integer> activeFieldIndices) {
 
-    super(
-        containerName,
-            stableContainerSchema,
-            activeFieldIndices);
+    super(containerName, stableContainerSchema, activeFieldIndices);
 
     assert activeFieldIndices.size() == /*$$NumberOfFields*/ 2 /*$$*/;
   }
@@ -67,12 +61,12 @@ public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
   /*$$TypeGetters*/
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
-    return (SszSchema<V0>) getChildSchema(getNthActiveFieldIndex(0));
+    return (SszSchema<V0>) getNthActiveFieldSchema(0);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
-    return (SszSchema<V1>) getChildSchema(getNthActiveFieldIndex(1));
+    return (SszSchema<V1>) getNthActiveFieldSchema(1);
   }
   /*$$*/
 }

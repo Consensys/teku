@@ -15,15 +15,14 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.CONTAINER_G_INDEX;
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveNamedSchemas;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.IntStream;
 
-import it.unimi.dsi.fastutil.ints.IntSet;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
@@ -34,6 +33,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszProfileTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszStableContainerTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
@@ -45,6 +46,7 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
   private final IntList activeFieldIndicesCache;
   private final SszBitvector activeFields;
   private final SszStableContainerSchema<? extends SszStableContainer> stableContainer;
+  private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   public AbstractSszProfileSchema(
       final String name,
@@ -57,11 +59,13 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
 
     this.activeFieldIndicesCache =
         IntList.of(
-            activeFieldIndices.stream()
+            activeFieldIndices.stream().sorted(Comparator.naturalOrder())
                 .mapToInt(
-                    index -> stableContainerSchema.getDefinedChildrenSchemas().get(index).getIndex())
+                    index ->
+                        stableContainerSchema.getDefinedChildrenSchemas().get(index).getIndex())
                 .toArray());
     this.activeFields = getActiveFieldsSchema().ofBits(activeFieldIndices);
+    this.jsonTypeDefinition = SszProfileTypeDefinition.createFor(this);
   }
 
   private static List<? extends NamedSchema<?>> prepareSchemas(
@@ -78,6 +82,11 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
                   "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
             })
         .toList();
+  }
+
+  @Override
+  public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
+    return jsonTypeDefinition;
   }
 
   @Override
@@ -131,7 +140,8 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
 
   @Override
   public SszBitvector getActiveFieldsBitvectorFromBackingNode(final TreeNode node) {
-    checkArgument(stableContainer.getActiveFieldsBitvectorFromBackingNode(node).equals(activeFields));
+    checkArgument(
+        stableContainer.getActiveFieldsBitvectorFromBackingNode(node).equals(activeFields), "activeFields bitvector from backing node not matching the activeFields of the profile");
     return activeFields;
   }
 

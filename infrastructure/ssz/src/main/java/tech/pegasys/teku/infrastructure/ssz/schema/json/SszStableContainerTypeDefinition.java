@@ -16,10 +16,6 @@ package tech.pegasys.teku.infrastructure.ssz.schema.json;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -27,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 
 public class SszStableContainerTypeDefinition {
 
@@ -38,9 +35,9 @@ public class SszStableContainerTypeDefinition {
         .name(schema.getContainerName())
         .initializer(() -> new StableContainerBuilder<>(schema))
         .finisher(StableContainerBuilder::build);
-    final List<String> fieldNames = schema.getFieldNames();
-    for (int fieldIndex = 0; fieldIndex < fieldNames.size(); fieldIndex++) {
-      addField(schema, builder, fieldNames.get(fieldIndex), fieldIndex);
+    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas = schema.getDefinedChildrenSchemas();
+    for (NamedIndexedSchema<?> schemaChild : definedChildrenSchemas) {
+      addField(schema, builder, schemaChild.getName(), schemaChild.getIndex());
     }
     return builder.build();
   }
@@ -66,23 +63,19 @@ public class SszStableContainerTypeDefinition {
   private static class StableContainerBuilder<DataT extends SszStableContainer> {
     private final SszStableContainerSchema<DataT> schema;
     private final Optional<? extends SszData>[] values;
-    private int maxIndex;
 
     @SuppressWarnings("unchecked")
     public StableContainerBuilder(final SszStableContainerSchema<DataT> schema) {
       this.schema = schema;
-      this.values = (Optional<? extends SszData>[]) new Optional<?>[schema.getFieldsCount()];
-      this.maxIndex = 0;
+      this.values = (Optional<? extends SszData>[]) new Optional<?>[schema.getDefinedChildrenSchemas().size()];
     }
 
     public void setValue(final int childIndex, final Optional<? extends SszData> value) {
       values[childIndex] = value;
-      maxIndex = Math.max(maxIndex, childIndex);
     }
 
     public DataT build() {
-      List<Optional<? extends SszData>> asd = IntStream.range(0, maxIndex).<Optional<? extends SszData>>mapToObj(index -> values[index] == null ? Optional.empty() : values[index]).toList();
-      return schema.createFromOptionalFieldValues(asd);
+      return schema.createFromOptionalFieldValues(List.of(values));
     }
   }
 }

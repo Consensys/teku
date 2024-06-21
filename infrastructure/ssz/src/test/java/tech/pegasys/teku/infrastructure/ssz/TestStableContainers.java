@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStable
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -26,9 +25,9 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -37,18 +36,18 @@ public class TestStableContainers {
   static final int MAX_SHAPE_FIELD_COUNT = 4;
 
   static final List<NamedIndexedSchema<?>> SHAPE_SCHEMAS =
-          List.of(
-                  namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
-                  namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
-                  namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
+      List.of(
+          namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
+          namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
 
-  final static int SIDE_INDEX = 0;
-  final static int COLOR_INDEX = 1;
-  final static int RADIUS_INDEX = 2;
+  static final int SIDE_INDEX = 0;
+  static final int COLOR_INDEX = 1;
+  static final int RADIUS_INDEX = 2;
 
   static final Set<Integer> SQUARE_SCHEMA_INDICES = Set.of(SIDE_INDEX, COLOR_INDEX);
 
-  static final Set<Integer> CIRCLE_SCHEMA_INDICES =Set.of(RADIUS_INDEX, COLOR_INDEX);
+  static final Set<Integer> CIRCLE_SCHEMA_INDICES = Set.of(RADIUS_INDEX, COLOR_INDEX);
 
   public static class ShapeStableContainer extends SszStableContainerImpl {
 
@@ -74,8 +73,9 @@ public class TestStableContainers {
     }
   }
 
- public  static class CircleProfile extends SszProfileImpl {
-    CircleProfile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+  public static class CircleProfile extends SszProfileImpl {
+    CircleProfile(
+        final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -91,7 +91,8 @@ public class TestStableContainers {
   }
 
   public static class SquareProfile extends SszProfileImpl {
-    SquareProfile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+    SquareProfile(
+        final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -106,7 +107,8 @@ public class TestStableContainers {
     }
   }
 
-  static class StableContainerSchema extends AbstractSszStableContainerSchema<ShapeStableContainer> {
+  static class StableContainerSchema
+      extends AbstractSszStableContainerSchema<ShapeStableContainer> {
 
     public StableContainerSchema(
         final String name,
@@ -121,29 +123,29 @@ public class TestStableContainers {
     }
   }
 
-
   public static final SszStableContainerSchema<ShapeStableContainer> SHAPE_STABLE_CONTAINER_SCHEMA =
-          new AbstractSszStableContainerSchema<>("Shape", SHAPE_SCHEMAS, MAX_SHAPE_FIELD_COUNT) {
-            @Override
-            public ShapeStableContainer createFromBackingNode(final TreeNode node) {
-              return new ShapeStableContainer(this, node);
-            }
-          };
+      new AbstractSszStableContainerSchema<>("Shape", SHAPE_SCHEMAS, MAX_SHAPE_FIELD_COUNT) {
+        @Override
+        public ShapeStableContainer createFromBackingNode(final TreeNode node) {
+          return new ShapeStableContainer(this, node);
+        }
+      };
 
   public static final SszStableContainerSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
-          new AbstractSszProfileSchema<>("Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
-    @Override
-    public CircleProfile createFromBackingNode(final TreeNode node) {
-      return new CircleProfile(this, node);
-    }
-  };
+      new AbstractSszProfileSchema<>(
+          "Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
+        @Override
+        public CircleProfile createFromBackingNode(final TreeNode node) {
+          return new CircleProfile(this, node);
+        }
+      };
 
   public static final SszStableContainerSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
-          new AbstractSszProfileSchema<>("Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
-            @Override
-            public SquareProfile createFromBackingNode(final TreeNode node) {
-              return new SquareProfile(this, node);
-            }
-          };
-
+      new AbstractSszProfileSchema<>(
+          "Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
+        @Override
+        public SquareProfile createFromBackingNode(final TreeNode node) {
+          return new SquareProfile(this, node);
+        }
+      };
 }

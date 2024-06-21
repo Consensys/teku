@@ -45,15 +45,16 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
   }
 
   /**
-   * Creates a new {@link SszStableContainer} schema with specified field schemas. It is designed to be used in profile schema creation only. There will be actual ssz type for it.
+   * Creates a new {@link SszStableContainer} schema with specified field schemas. It is designed to
+   * be used in profile schema creation only. There will be actual ssz type for it.
    */
   static <C extends SszStableContainer> SszStableContainerSchema<C> createForProfileOnly(
-          final List<NamedIndexedSchema<?>> activeChildrenSchemas,
-          final int maxFieldCount) {
+      final List<NamedIndexedSchema<?>> activeChildrenSchemas, final int maxFieldCount) {
     return new AbstractSszStableContainerSchema<>("", activeChildrenSchemas, maxFieldCount) {
       @Override
       public C createFromBackingNode(final TreeNode node) {
-        throw new UnsupportedOperationException("This stable container schema is meant to be used for creating a profile schema");
+        throw new UnsupportedOperationException(
+            "This stable container schema is meant to be used for creating a profile schema");
       }
     };
   }
