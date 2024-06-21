@@ -56,7 +56,7 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxAttestationsElectra();
 
-  int getMaxConsolidations();
+  int getMaxConsolidationRequestsPerPayload();
 
   int getMaxDepositReceiptsPerPayload();
 

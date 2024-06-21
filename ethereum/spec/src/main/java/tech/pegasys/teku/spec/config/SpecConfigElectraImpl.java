@@ -34,7 +34,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int whistleblowerRewardQuotientElectra;
   private final int maxAttesterSlashingsElectra;
   private final int maxAttestationsElectra;
-  private final int maxConsolidations;
+  private final int maxConsolidationRequestsPerPayload;
   private final int maxDepositReceiptsPerPayload;
   private final int maxWithdrawalRequestsPerPayload;
   private final int maxPendingPartialsPerWithdrawalsSweep;
@@ -53,7 +53,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int whistleblowerRewardQuotientElectra,
       final int maxAttesterSlashingsElectra,
       final int maxAttestationsElectra,
-      final int maxConsolidations,
+      final int maxConsolidationRequestsPerPayload,
       final int maxDepositReceiptsPerPayload,
       final int maxWithdrawalRequestsPerPayload,
       final int maxPendingPartialsPerWithdrawalsSweep) {
@@ -70,7 +70,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.whistleblowerRewardQuotientElectra = whistleblowerRewardQuotientElectra;
     this.maxAttesterSlashingsElectra = maxAttesterSlashingsElectra;
     this.maxAttestationsElectra = maxAttestationsElectra;
-    this.maxConsolidations = maxConsolidations;
+    this.maxConsolidationRequestsPerPayload = maxConsolidationRequestsPerPayload;
     this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
     this.maxWithdrawalRequestsPerPayload = maxWithdrawalRequestsPerPayload;
     this.maxPendingPartialsPerWithdrawalsSweep = maxPendingPartialsPerWithdrawalsSweep;
@@ -137,8 +137,8 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public int getMaxConsolidations() {
-    return maxConsolidations;
+  public int getMaxConsolidationRequestsPerPayload() {
+    return maxConsolidationRequestsPerPayload;
   }
 
   @Override
@@ -183,7 +183,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         && whistleblowerRewardQuotientElectra == that.whistleblowerRewardQuotientElectra
         && maxAttesterSlashingsElectra == that.maxAttesterSlashingsElectra
         && maxAttestationsElectra == that.maxAttestationsElectra
-        && maxConsolidations == that.maxConsolidations
+        && maxConsolidationRequestsPerPayload == that.maxConsolidationRequestsPerPayload
         && maxDepositReceiptsPerPayload == that.maxDepositReceiptsPerPayload
         && maxWithdrawalRequestsPerPayload == that.maxWithdrawalRequestsPerPayload
         && maxPendingPartialsPerWithdrawalsSweep == that.maxPendingPartialsPerWithdrawalsSweep;
@@ -205,7 +205,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         whistleblowerRewardQuotientElectra,
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
-        maxConsolidations,
+        maxConsolidationRequestsPerPayload,
         maxDepositReceiptsPerPayload,
         maxWithdrawalRequestsPerPayload,
         maxPendingPartialsPerWithdrawalsSweep);
