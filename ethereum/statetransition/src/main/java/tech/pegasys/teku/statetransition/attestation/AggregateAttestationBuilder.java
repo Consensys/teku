@@ -71,12 +71,12 @@ class AggregateAttestationBuilder {
             .create(
                 currentAggregateBits.getAggregationBits(),
                 attestationData,
-                currentAggregateBits::getCommitteeBits,
                 BLS.aggregate(
                     includedAttestations.stream()
                         .map(ValidatableAttestation::getAttestation)
                         .map(Attestation::getAggregateSignature)
-                        .toList())));
+                        .toList()),
+                currentAggregateBits::getCommitteeBits));
   }
 
   public Collection<ValidatableAttestation> getIncludedAttestations() {

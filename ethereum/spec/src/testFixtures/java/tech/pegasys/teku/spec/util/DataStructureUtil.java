@@ -800,8 +800,8 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(),
-            this::randomCommitteeBitvector,
-            randomSignature());
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final long slot) {
@@ -814,15 +814,15 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(slot),
-            this::randomCommitteeBitvector,
-            randomSignature());
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
         .create(
-            randomBitlist(), attestationData, this::randomCommitteeBitvector, randomSignature());
+            randomBitlist(), attestationData, randomSignature(), this::randomCommitteeBitvector);
   }
 
   public AggregateAndProof randomAggregateAndProof() {
