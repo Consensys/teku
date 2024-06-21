@@ -1,5 +1,6 @@
 package tech.pegasys.teku.services.beaconchain.init;
 
+import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import javax.inject.Singleton;
@@ -259,8 +260,8 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static ValidatorIsConnectedProvider validatorIsConnectedProvider(
-      ForkChoiceNotifier forkChoiceNotifier) {
-    return new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier);
+      Lazy<ForkChoiceNotifier> forkChoiceNotifier) {
+    return new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier.get());
   }
 
   @Provides

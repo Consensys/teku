@@ -140,7 +140,6 @@ public interface BeaconModule {
       @InvalidBlockRoots Map<Bytes32, BlockImportResult> invalidBlockRoots,
       Optional<BlockImportMetrics> blockImportMetrics,
       FutureItems<SignedBeaconBlock> futureBlocks,
-      FailedExecutionPool failedExecutionPool,
       EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
       EventChannelSubscriber<BlockImportChannel> blockImportChannelSubscriber,
       EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber) {
@@ -158,9 +157,6 @@ public interface BeaconModule {
             eventLogger,
             blockImportMetrics);
 
-    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      blockManager.subscribeFailedPayloadExecution(failedExecutionPool::addFailedBlock);
-    }
     slotEventsChannelSubscriber.subscribe(blockManager);
     blockImportChannelSubscriber.subscribe(blockManager);
     receivedBlockEventsChannelSubscriber.subscribe(blockManager);

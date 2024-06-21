@@ -94,7 +94,7 @@ public interface StorageModule {
       StoreConfig storeConfig,
       StorageQueryChannel storageQueryChannel,
       StorageUpdateChannel storageUpdateChannel,
-      BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      Lazy<BlockBlobSidecarsTrackersPool> blockBlobSidecarsTrackersPool,
       VoteUpdateChannel voteUpdateChannel,
       FinalizedCheckpointChannel finalizedCheckpointChannel,
       ChainHeadChannel chainHeadChannel,
@@ -105,8 +105,8 @@ public interface StorageModule {
         storeConfig,
         beaconAsyncRunner,
         timeProvider,
-        blockBlobSidecarsTrackersPool::getBlock,
-        blockBlobSidecarsTrackersPool::getBlobSidecar,
+        blockRoot -> blockBlobSidecarsTrackersPool.get().getBlock(blockRoot),
+        (blockRoot, index) -> blockBlobSidecarsTrackersPool.get().getBlobSidecar(blockRoot, index),
         storageQueryChannel,
         storageUpdateChannel,
         voteUpdateChannel,
@@ -124,8 +124,7 @@ public interface StorageModule {
       SafeFuture<RecentChainData> recentChainDataFuture,
       StatusLogger statusLogger,
       Lazy<WeakSubjectivityPeriodValidator> weakSubjectivityPeriodValidator,
-      Lazy<RecentChainDataStateInitializer> recentChainDataStateInitializer,
-      OnStoreInitializedHandler onStoreInitializedHandler) {
+      Lazy<RecentChainDataStateInitializer> recentChainDataStateInitializer) {
 
     RecentChainData recentChainData = recentChainDataFuture.join();
 
@@ -149,8 +148,6 @@ public interface StorageModule {
         weakSubjectivityPeriodValidator.get().validate(recentChainData);
       }
     }
-
-    recentChainData.subscribeStoreInitialized(onStoreInitializedHandler::handle);
 
     return recentChainData;
   }

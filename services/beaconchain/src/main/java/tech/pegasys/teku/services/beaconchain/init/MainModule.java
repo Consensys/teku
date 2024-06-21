@@ -18,12 +18,15 @@ import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceE
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceNotifierExecutor;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.services.timer.TimerService;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -107,7 +110,26 @@ public interface MainModule {
   @Provides
   @IntoSet
   static VoidInitializer initRecentBlobSidecarsFetcher(
-      RecentBlobSidecarsFetcher recentBlocksFetcher) {
+      RecentBlobSidecarsFetcher recentBlobSidecarsFetcher) {
+    return new VoidInitializer();
+  }
+
+  @Provides
+  @IntoSet
+  static VoidInitializer subscribeFailedPayloadExecution(
+      Spec spec, BlockManager blockManager, FailedExecutionPool failedExecutionPool) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      blockManager.subscribeFailedPayloadExecution(failedExecutionPool::addFailedBlock);
+    }
+    return new VoidInitializer();
+  }
+
+  @Provides
+  @IntoSet
+  static VoidInitializer subscribeOnStoreInitialized(
+      RecentChainData recentChainData, StorageModule.OnStoreInitializedHandler onStoreInitializedHandler) {
+
+    recentChainData.subscribeStoreInitialized(onStoreInitializedHandler::handle);
     return new VoidInitializer();
   }
 
