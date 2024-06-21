@@ -42,7 +42,6 @@ public enum ExecutionPayloadFields implements SszFieldName {
   WITHDRAWAL_REQUESTS_ROOT,
   CONSOLIDATION_REQUESTS,
   CONSOLIDATION_REQUESTS_ROOT;
-  ;
 
   private final String sszFieldName;
 

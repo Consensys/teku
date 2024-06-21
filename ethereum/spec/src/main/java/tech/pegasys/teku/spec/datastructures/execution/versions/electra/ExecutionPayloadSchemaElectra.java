@@ -198,7 +198,8 @@ public class ExecutionPayloadSchemaElectra
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
         getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)),
+        getChildGeneralizedIndex(getFieldIndex(CONSOLIDATION_REQUESTS)));
   }
 
   @Override
