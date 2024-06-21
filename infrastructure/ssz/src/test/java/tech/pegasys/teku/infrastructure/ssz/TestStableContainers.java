@@ -16,43 +16,97 @@ package tech.pegasys.teku.infrastructure.ssz;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.namedIndexedSchema;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableProfileSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TestStableContainers {
 
-  private static final int SHAPE_MAX_FIELD_COUNT = 4;
-  private static final NamedIndexedSchema<?> SIDE_SCHEMA =
-      namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA);
-  private static final NamedIndexedSchema<?> COLOR_SCHEMA =
-      namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA);
-  private static final NamedIndexedSchema<?> RADIUS_SCHEMA =
-      namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA);
+  static final int MAX_SHAPE_FIELD_COUNT = 4;
 
-  static class StableContainer extends SszStableContainerImpl {
+  static final List<NamedIndexedSchema<?>> SHAPE_SCHEMAS =
+          List.of(
+                  namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
+                  namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
+                  namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
 
-    StableContainer(
+  final static int SIDE_INDEX = 0;
+  final static int COLOR_INDEX = 1;
+  final static int RADIUS_INDEX = 2;
+
+  static final Set<Integer> SQUARE_SCHEMA_INDICES = Set.of(SIDE_INDEX, COLOR_INDEX);
+
+  static final Set<Integer> CIRCLE_SCHEMA_INDICES =Set.of(RADIUS_INDEX, COLOR_INDEX);
+
+  public static class ShapeStableContainer extends SszStableContainerImpl {
+
+    ShapeStableContainer(
         final SszStableContainerSchema<? extends SszStableContainerImpl> type,
         final TreeNode backingNode) {
       super(type, backingNode);
     }
-  }
 
-  static class Profile extends SszProfileImpl {
+    Optional<UInt64> getSide() {
+      final Optional<SszUInt64> side = getAnyOptional(SIDE_INDEX);
+      return side.map(SszUInt64::get);
+    }
 
-    Profile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
-      super(type, backingNode);
+    Optional<Byte> getColor() {
+      final Optional<SszByte> color = getAnyOptional(COLOR_INDEX);
+      return color.map(SszByte::get);
+    }
+
+    Optional<UInt64> getRadius() {
+      final Optional<SszUInt64> radius = getAnyOptional(RADIUS_INDEX);
+      return radius.map(SszUInt64::get);
     }
   }
 
-  static class StableContainerSchema extends AbstractSszStableContainerSchema<StableContainer> {
+ public  static class CircleProfile extends SszProfileImpl {
+    CircleProfile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+      super(type, backingNode);
+    }
+
+    Byte getColor() {
+      final SszByte color = getAny(COLOR_INDEX);
+      return color.get();
+    }
+
+    UInt64 getRadius() {
+      final SszUInt64 radius = getAny(RADIUS_INDEX);
+      return radius.get();
+    }
+  }
+
+  public static class SquareProfile extends SszProfileImpl {
+    SquareProfile(final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+      super(type, backingNode);
+    }
+
+    Byte getColor() {
+      final SszByte color = getAny(COLOR_INDEX);
+      return color.get();
+    }
+
+    UInt64 getSide() {
+      final SszUInt64 side = getAny(SIDE_INDEX);
+      return side.get();
+    }
+  }
+
+  static class StableContainerSchema extends AbstractSszStableContainerSchema<ShapeStableContainer> {
 
     public StableContainerSchema(
         final String name,
@@ -62,41 +116,34 @@ public class TestStableContainers {
     }
 
     @Override
-    public StableContainer createFromBackingNode(final TreeNode node) {
-      return new StableContainer(this, node);
+    public ShapeStableContainer createFromBackingNode(final TreeNode node) {
+      return new ShapeStableContainer(this, node);
     }
   }
 
-  static class ProfileSchema extends AbstractSszStableProfileSchema<Profile> {
 
-    public ProfileSchema(
-        final String name,
-        final List<NamedIndexedSchema<?>> childrenSchemas,
-        final int maxFieldCount) {
-      super(name, childrenSchemas, maxFieldCount);
-    }
+  public static final SszStableContainerSchema<ShapeStableContainer> SHAPE_STABLE_CONTAINER_SCHEMA =
+          new AbstractSszStableContainerSchema<>("Shape", SHAPE_SCHEMAS, MAX_SHAPE_FIELD_COUNT) {
+            @Override
+            public ShapeStableContainer createFromBackingNode(final TreeNode node) {
+              return new ShapeStableContainer(this, node);
+            }
+          };
 
+  public static final SszStableContainerSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
+          new AbstractSszProfileSchema<>("Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
     @Override
-    public Profile createFromBackingNode(final TreeNode node) {
-      return new Profile(this, node);
+    public CircleProfile createFromBackingNode(final TreeNode node) {
+      return new CircleProfile(this, node);
     }
-  }
+  };
 
-  private static final List<NamedIndexedSchema<?>> SQUARE_SCHEMAS =
-      List.of(SIDE_SCHEMA, COLOR_SCHEMA);
+  public static final SszStableContainerSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
+          new AbstractSszProfileSchema<>("Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
+            @Override
+            public SquareProfile createFromBackingNode(final TreeNode node) {
+              return new SquareProfile(this, node);
+            }
+          };
 
-  private static final List<NamedIndexedSchema<?>> CIRCLE_SCHEMAS =
-      List.of(COLOR_SCHEMA, RADIUS_SCHEMA);
-
-  public static final StableContainerSchema SQUARE_STABLE_CONTAINER_SCHEMA =
-      new StableContainerSchema("Square", SQUARE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
-
-  public static final StableContainerSchema CIRCLE_STABLE_CONTAINER_SCHEMA =
-      new StableContainerSchema("Circle", CIRCLE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
-
-  public static final ProfileSchema SQUARE_PROFILE_SCHEMA =
-      new ProfileSchema("Square", SQUARE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
-
-  public static final ProfileSchema CIRCLE_PROFILE_SCHEMA =
-      new ProfileSchema("Circle", CIRCLE_SCHEMAS, SHAPE_MAX_FIELD_COUNT);
 }

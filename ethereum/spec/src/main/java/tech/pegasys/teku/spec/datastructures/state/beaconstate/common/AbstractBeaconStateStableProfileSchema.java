@@ -20,7 +20,7 @@ import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MA
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableProfileSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStableSchema;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.StableBeaconState
 
 public abstract class AbstractBeaconStateStableProfileSchema<
         T extends StableBeaconState, TMutable extends MutableBeaconState>
-    extends AbstractSszStableProfileSchema<T> implements BeaconStateStableSchema<T, TMutable> {
+    extends AbstractSszProfileSchema<T> implements BeaconStateStableSchema<T, TMutable> {
   protected AbstractBeaconStateStableProfileSchema(
       final String name, final List<SszField> allFields) {
     super(

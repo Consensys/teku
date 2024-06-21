@@ -17,6 +17,9 @@ import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
@@ -43,7 +46,7 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
   public SszProfileImpl(final SszProfileSchema<?> type, final SszData... memberValues) {
     super(
         type,
-        type.createTreeFromFieldValues(Arrays.asList(memberValues)),
+            type.createTreeFromFieldValues(Arrays.asList(memberValues)),
         createCache(memberValues));
 
     for (int i = 0; i < memberValues.length; i++) {

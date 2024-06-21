@@ -20,7 +20,10 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStable
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
+
+import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
@@ -31,38 +34,39 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
+public abstract class AbstractSszProfileSchema<C extends SszProfile>
     extends AbstractSszContainerSchema<C> implements SszProfileSchema<C> {
 
   private final IntList activeFieldIndicesCache;
   private final SszBitvector activeFields;
   private final SszStableContainerSchema<? extends SszStableContainer> stableContainer;
 
-  public AbstractSszStableProfileSchema(
+  public AbstractSszProfileSchema(
       final String name,
-      final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
-      final List<Integer> activeFieldIndices) {
-    super(name, prepareSchemas(stableContainer, activeFieldIndices));
+      final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema,
+      final Set<Integer> activeFieldIndices) {
+    super(name, prepareSchemas(stableContainerSchema, activeFieldIndices));
 
-    this.stableContainer = stableContainer;
+    this.stableContainer = stableContainerSchema;
     // TODO validate activeFieldIndices
 
     this.activeFieldIndicesCache =
         IntList.of(
             activeFieldIndices.stream()
                 .mapToInt(
-                    index -> stableContainer.getDefinedChildrenSchemas().get(index).getIndex())
+                    index -> stableContainerSchema.getDefinedChildrenSchemas().get(index).getIndex())
                 .toArray());
     this.activeFields = getActiveFieldsSchema().ofBits(activeFieldIndices);
   }
 
   private static List<? extends NamedSchema<?>> prepareSchemas(
       final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
-      final List<Integer> activeFieldIndices) {
+      final Set<Integer> activeFieldIndices) {
     return stableContainer.getDefinedChildrenSchemas().stream()
         .map(
             namedIndexedSchema -> {
@@ -74,23 +78,6 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
                   "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
             })
         .toList();
-  }
-
-  public AbstractSszStableProfileSchema(
-      final String name,
-      final List<? extends NamedSchema<?>> childrenSchemas,
-      final int maxFieldCount) {
-    this(
-        name,
-        new AbstractSszStableContainerSchema<C>(
-            "", continuousActiveNamedSchemas(childrenSchemas), maxFieldCount) {
-
-          @Override
-          public C createFromBackingNode(final TreeNode node) {
-            return null;
-          }
-        },
-        IntList.of(IntStream.range(0, childrenSchemas.size()).toArray()));
   }
 
   @Override
@@ -123,6 +110,11 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
   }
 
   @Override
+  public TreeNode sszDeserializeTree(final SszReader reader) {
+    return BranchNode.create(super.sszDeserializeTree(reader), activeFields.getBackingNode());
+  }
+
+  @Override
   public TreeNode getDefaultTree() {
     return BranchNode.create(super.getDefaultTree(), activeFields.getBackingNode());
   }
@@ -139,7 +131,8 @@ public abstract class AbstractSszStableProfileSchema<C extends SszProfile>
 
   @Override
   public SszBitvector getActiveFieldsBitvectorFromBackingNode(final TreeNode node) {
-    throw new UnsupportedOperationException("Should not be called on profile schema");
+    checkArgument(stableContainer.getActiveFieldsBitvectorFromBackingNode(node).equals(activeFields));
+    return activeFields;
   }
 
   @Override

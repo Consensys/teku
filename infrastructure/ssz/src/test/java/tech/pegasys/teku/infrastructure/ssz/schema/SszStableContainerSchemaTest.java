@@ -14,9 +14,10 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.CIRCLE_PROFILE_SCHEMA;
-import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.CIRCLE_STABLE_CONTAINER_SCHEMA;
+
+import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.SHAPE_STABLE_CONTAINER_SCHEMA;
 import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.SQUARE_PROFILE_SCHEMA;
-import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.SQUARE_STABLE_CONTAINER_SCHEMA;
+
 
 import java.util.stream.Stream;
 
@@ -24,8 +25,7 @@ public class SszStableContainerSchemaTest extends SszCompositeSchemaTestBase {
 
   public static Stream<SszContainerSchema<?>> testContainerSchemas() {
     return Stream.of(
-        SQUARE_STABLE_CONTAINER_SCHEMA,
-        CIRCLE_STABLE_CONTAINER_SCHEMA,
+        SHAPE_STABLE_CONTAINER_SCHEMA,
         SQUARE_PROFILE_SCHEMA,
         CIRCLE_PROFILE_SCHEMA);
   }

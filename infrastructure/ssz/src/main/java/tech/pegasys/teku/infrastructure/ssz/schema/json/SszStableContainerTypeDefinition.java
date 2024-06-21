@@ -14,6 +14,12 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.json;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -54,24 +60,29 @@ public class SszStableContainerTypeDefinition {
         childName,
         childSchema.getJsonTypeDefinition(),
         value -> value.getAnyOptional(fieldIndex),
-        (b, value) -> b.setValue(fieldIndex, value.orElseThrow()));
+        (b, value) -> b.setValue(fieldIndex, value));
   }
 
   private static class StableContainerBuilder<DataT extends SszStableContainer> {
     private final SszStableContainerSchema<DataT> schema;
-    private final SszData[] values;
+    private final Optional<? extends SszData>[] values;
+    private int maxIndex;
 
+    @SuppressWarnings("unchecked")
     public StableContainerBuilder(final SszStableContainerSchema<DataT> schema) {
       this.schema = schema;
-      this.values = new SszData[schema.getFieldsCount()];
+      this.values = (Optional<? extends SszData>[]) new Optional<?>[schema.getFieldsCount()];
+      this.maxIndex = 0;
     }
 
-    public void setValue(final int childIndex, final SszData value) {
+    public void setValue(final int childIndex, final Optional<? extends SszData> value) {
       values[childIndex] = value;
+      maxIndex = Math.max(maxIndex, childIndex);
     }
 
     public DataT build() {
-      return schema.createFromFieldValues(List.of(values));
+      List<Optional<? extends SszData>> asd = IntStream.range(0, maxIndex).<Optional<? extends SszData>>mapToObj(index -> values[index] == null ? Optional.empty() : values[index]).toList();
+      return schema.createFromOptionalFieldValues(asd);
     }
   }
 }
