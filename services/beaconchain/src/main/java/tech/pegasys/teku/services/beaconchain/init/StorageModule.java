@@ -4,7 +4,6 @@ import dagger.Binds;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
-
 import javax.inject.Singleton;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -19,6 +18,7 @@ import tech.pegasys.teku.services.beaconchain.SlotProcessor;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.BeaconAsyncRunner;
 import tech.pegasys.teku.services.beaconchain.init.BeaconModule.GenesisTimeTracker;
 import tech.pegasys.teku.services.beaconchain.init.SpecModule.CurrentSlotProvider;
+import tech.pegasys.teku.services.beaconchain.init.WSModule.WeakSubjectivityFinalizedConfig;
 import tech.pegasys.teku.services.beaconchain.init.WSModule.WeakSubjectivityPeriodValidator;
 import tech.pegasys.teku.services.beaconchain.init.WSModule.WeakSubjectivityStoreChainValidator;
 import tech.pegasys.teku.spec.Spec;
@@ -38,8 +38,7 @@ import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
-
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 @Module
 public interface StorageModule {
@@ -98,7 +97,9 @@ public interface StorageModule {
       VoteUpdateChannel voteUpdateChannel,
       FinalizedCheckpointChannel finalizedCheckpointChannel,
       ChainHeadChannel chainHeadChannel,
-      ValidatorIsConnectedProvider validatorIsConnectedProvider) {
+      ValidatorIsConnectedProvider validatorIsConnectedProvider,
+      // TODO is there a better option for this dependency ?
+      WeakSubjectivityFinalizedConfig __) {
 
     return StorageBackedRecentChainData.create(
         metricsSystem,
