@@ -24,13 +24,9 @@ import tech.pegasys.teku.services.beaconchain.init.ExternalDependenciesModule;
 public interface BeaconChainControllerFactory {
 
   BeaconChainControllerFactory DEFAULT =
-      (serviceConfig, beaconConfig) ->
-          DaggerBeaconChainControllerComponent.builder()
-              .externalDependenciesModule(
-                  new ExternalDependenciesModule(serviceConfig, beaconConfig))
-              .build()
-              .beaconChainController();
+//      BeaconChainControllerOld::new;
+      BeaconChainController::new;
 
-  BeaconChainController create(
+  AbstractBeaconChainController create(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig);
 }

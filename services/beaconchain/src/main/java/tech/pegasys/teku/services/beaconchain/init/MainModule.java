@@ -59,37 +59,6 @@ public interface MainModule {
   }
 
   @Provides
-  @Singleton
-  static BeaconChainController beaconChainController(
-      Spec spec,
-      TimeProvider timeProvider,
-      AsyncRunnerFactory asyncRunnerFactory,
-      ForkChoice forkChoice,
-      RecentChainData recentChainData,
-      Eth2P2PNetwork p2pNetwork,
-      Optional<BeaconRestApi> beaconRestAPI,
-      SyncService syncService,
-      SignatureVerificationService signatureVerificationService,
-      CombinedChainDataClient combinedChainDataClient,
-      ServiceStarter starter,
-      ServiceStopper stopper) {
-
-    return new BeaconChainController(
-        spec,
-        timeProvider,
-        asyncRunnerFactory,
-        forkChoice,
-        recentChainData,
-        p2pNetwork,
-        beaconRestAPI,
-        syncService,
-        signatureVerificationService,
-        combinedChainDataClient,
-        starter::start,
-        stopper::stop);
-  }
-
-  @Provides
   @IntoSet
   static VoidInitializer initSlashingEventsSubscriptions(
       ValidatorConfig validatorConfig,

@@ -25,6 +25,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.beaconchain.init.BeaconChainControllerComponent;
+import tech.pegasys.teku.services.beaconchain.init.DaggerBeaconChainControllerComponent;
+import tech.pegasys.teku.services.beaconchain.init.ExternalDependenciesModule;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -42,55 +46,57 @@ public class BeaconChainController extends AbstractBeaconChainController {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
-  private final TimeProvider timeProvider;
-  private final AsyncRunnerFactory asyncRunnerFactory;
-  private final ForkChoice forkChoice;
-  private final RecentChainData recentChainData;
-  private final Eth2P2PNetwork p2pNetwork;
-  private final Optional<BeaconRestApi> beaconRestAPI;
-  private final SyncService syncService;
-  private final SignatureVerificationService signatureVerificationService;
-  private final CombinedChainDataClient combinedChainDataClient;
+  private final ServiceConfig serviceConfig;
+  private final BeaconChainConfiguration beaconConfig;
 
-  private final Supplier<SafeFuture<?>> starter;
-  private final Supplier<SafeFuture<?>> stopper;
+  private Spec spec;
+  private TimeProvider timeProvider;
+  private AsyncRunnerFactory asyncRunnerFactory;
+  private ForkChoice forkChoice;
+  private RecentChainData recentChainData;
+  private Eth2P2PNetwork p2pNetwork;
+  private Optional<BeaconRestApi> beaconRestAPI;
+  private SyncService syncService;
+  private SignatureVerificationService signatureVerificationService;
+  private CombinedChainDataClient combinedChainDataClient;
 
-  public BeaconChainController(
-      Spec spec,
-      TimeProvider timeProvider,
-      AsyncRunnerFactory asyncRunnerFactory,
-      ForkChoice forkChoice,
-      RecentChainData recentChainData,
-      Eth2P2PNetwork p2pNetwork,
-      Optional<BeaconRestApi> beaconRestAPI,
-      SyncService syncService,
-      SignatureVerificationService signatureVerificationService,
-      CombinedChainDataClient combinedChainDataClient,
-      Supplier<SafeFuture<?>> starter,
-      Supplier<SafeFuture<?>> stopper) {
-    this.spec = spec;
-    this.timeProvider = timeProvider;
-    this.asyncRunnerFactory = asyncRunnerFactory;
-    this.forkChoice = forkChoice;
-    this.recentChainData = recentChainData;
-    this.p2pNetwork = p2pNetwork;
-    this.beaconRestAPI = beaconRestAPI;
-    this.syncService = syncService;
-    this.signatureVerificationService = signatureVerificationService;
-    this.combinedChainDataClient = combinedChainDataClient;
-    this.starter = starter;
-    this.stopper = stopper;
+  private Supplier<SafeFuture<?>> starter;
+  private Supplier<SafeFuture<?>> stopper;
+
+  public BeaconChainController(ServiceConfig serviceConfig, BeaconChainConfiguration beaconConfig) {
+    this.serviceConfig = serviceConfig;
+    this.beaconConfig = beaconConfig;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    return starter.get();
+    LOG.info("Starting BeaconChainController...");
+    BeaconChainControllerComponent component = DaggerBeaconChainControllerComponent.builder()
+        .externalDependenciesModule(new ExternalDependenciesModule(serviceConfig, beaconConfig))
+        .build();
+
+    this.spec = component.getSpec();
+    this.timeProvider = component.getTimeProvider();
+    this.asyncRunnerFactory = component.getAsyncRunnerFactory();
+    this.forkChoice = component.getForkChoice();
+    this.recentChainData = component.getRecentChainData();
+    this.p2pNetwork = component.getP2pNetwork();
+    this.beaconRestAPI = component.getBeaconRestAPI();
+    this.syncService = component.getSyncService();
+    this.signatureVerificationService = component.getSignatureVerificationService();
+    this.combinedChainDataClient = component.getCombinedChainDataClient();
+    this.starter = () -> component.starter().start();
+    this.stopper = () -> component.stopper().stop();
+
+    SafeFuture<?> startFuture = this.starter.get();
+    LOG.info("BeaconChainController start complete");
+
+    return startFuture;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return stopper.get();
+    return this.stopper.get();
   }
 
   @Override
