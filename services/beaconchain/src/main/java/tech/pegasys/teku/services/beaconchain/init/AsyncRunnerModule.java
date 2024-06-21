@@ -71,6 +71,7 @@ public interface AsyncRunnerModule {
   static AsyncRunnerEventThread forkChoiceExecutor(AsyncRunnerFactory asyncRunnerFactory) {
     AsyncRunnerEventThread forkChoiceExecutor =
         new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
+    forkChoiceExecutor.start();
     return forkChoiceExecutor;
   }
 
@@ -80,6 +81,7 @@ public interface AsyncRunnerModule {
   static AsyncRunnerEventThread forkChoiceNotifierExecutor(AsyncRunnerFactory asyncRunnerFactory) {
     AsyncRunnerEventThread forkChoiceNotifierExecutor =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
+    forkChoiceNotifierExecutor.start();
     return forkChoiceNotifierExecutor;
   }
 }

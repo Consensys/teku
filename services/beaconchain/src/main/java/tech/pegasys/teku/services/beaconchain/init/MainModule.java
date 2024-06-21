@@ -19,6 +19,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.services.beaconchain.BeaconChainController;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceExecutor;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceNotifierExecutor;
+import tech.pegasys.teku.services.beaconchain.init.LoggingModule.InitLogger;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
@@ -151,14 +152,10 @@ public interface MainModule {
       Eth2P2PNetwork p2pNetwork,
       TimerService timerService,
       Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
-      @ForkChoiceExecutor AsyncRunnerEventThread forkChoiceExecutor,
-      @ForkChoiceNotifierExecutor AsyncRunnerEventThread forkChoiceNotifierExecutor) {
+      InitLogger initLogger) {
     return () ->
         SafeFuture.fromRunnable(
-                () -> {
-                  forkChoiceExecutor.start();
-                  forkChoiceNotifierExecutor.start();
-                })
+                () -> initLogger.logger().info("Starting BeaconChain services"))
             .thenCompose(
                 __ ->
                     SafeFuture.allOf(
@@ -175,7 +172,10 @@ public interface MainModule {
                     beaconRestApi
                         .map(BeaconRestApi::start)
                         .orElse(SafeFuture.completedFuture(null))
-                        .thenApply(___ -> null));
+                        .thenApply(___ -> null))
+            .thenRun(
+                () -> initLogger.logger().info("BeaconChain services started")
+            );
   }
 
   @Provides
