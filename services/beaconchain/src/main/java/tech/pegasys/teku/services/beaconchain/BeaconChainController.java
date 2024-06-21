@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainController extends Service implements BeaconChainControllerFacade {
+public class BeaconChainController extends AbstractBeaconChainController {
 
   private static final Logger LOG = LogManager.getLogger();
 

@@ -215,7 +215,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainControllerOld extends Service implements BeaconChainControllerFacade {
+public class BeaconChainControllerOld extends AbstractBeaconChainController {
 
   private static final Logger LOG = LogManager.getLogger();
 
