@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.ssz.schema.json;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -35,7 +34,8 @@ public class SszStableContainerTypeDefinition {
         .name(schema.getContainerName())
         .initializer(() -> new StableContainerBuilder<>(schema))
         .finisher(StableContainerBuilder::build);
-    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas = schema.getDefinedChildrenSchemas();
+    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas =
+        schema.getDefinedChildrenSchemas();
     for (NamedIndexedSchema<?> schemaChild : definedChildrenSchemas) {
       addField(schema, builder, schemaChild.getName(), schemaChild.getIndex());
     }
@@ -67,7 +67,9 @@ public class SszStableContainerTypeDefinition {
     @SuppressWarnings("unchecked")
     public StableContainerBuilder(final SszStableContainerSchema<DataT> schema) {
       this.schema = schema;
-      this.values = (Optional<? extends SszData>[]) new Optional<?>[schema.getDefinedChildrenSchemas().size()];
+      this.values =
+          (Optional<? extends SszData>[])
+              new Optional<?>[schema.getDefinedChildrenSchemas().size()];
     }
 
     public void setValue(final int childIndex, final Optional<? extends SszData> value) {

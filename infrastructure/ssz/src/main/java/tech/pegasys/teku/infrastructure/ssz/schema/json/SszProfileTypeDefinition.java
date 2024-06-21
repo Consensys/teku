@@ -13,23 +13,15 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.json;
 
+import java.util.List;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
-import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
-
-import java.util.IntSummaryStatistics;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class SszProfileTypeDefinition {
 
@@ -42,31 +34,30 @@ public class SszProfileTypeDefinition {
         .initializer(() -> new ProfileBuilder<>(schema))
         .finisher(ProfileBuilder::build);
 
+    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas =
+        schema.getDefinedChildrenSchemas();
 
-    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas = schema.getDefinedChildrenSchemas();
-
-
-    IntStream.range(0, schema.getActiveFieldCount()).forEachOrdered( activeFieldIndex -> {
-      final int index = schema.getNthActiveFieldIndex(activeFieldIndex);
-      final NamedIndexedSchema<?> namedSchema = definedChildrenSchemas.get(index);
-              addField(builder, namedSchema.getSchema(), namedSchema.getName(), index, activeFieldIndex);
-            }
-    );
+    IntStream.range(0, schema.getActiveFieldCount())
+        .forEach(
+            activeFieldIndex -> {
+              final int index = schema.getNthActiveFieldIndex(activeFieldIndex);
+              final NamedIndexedSchema<?> namedSchema = definedChildrenSchemas.get(index);
+              addField(
+                  builder, namedSchema.getSchema(), namedSchema.getName(), index, activeFieldIndex);
+            });
     return builder.build();
   }
 
-  private static <DataT extends SszProfile>
-      void addField(
-          final DeserializableObjectTypeDefinitionBuilder<DataT, ProfileBuilder<DataT>>
-              builder,
-          final SszSchema<?> childSchema,
-          final String childName,
-          final int index,
-          final int activeFieldIndex) {
+  private static <DataT extends SszProfile> void addField(
+      final DeserializableObjectTypeDefinitionBuilder<DataT, ProfileBuilder<DataT>> builder,
+      final SszSchema<?> childSchema,
+      final String childName,
+      final int index,
+      final int activeFieldIndex) {
 
     builder.withField(
-            childName,
-            childSchema.getJsonTypeDefinition(),
+        childName,
+        childSchema.getJsonTypeDefinition(),
         value -> value.getAny(index),
         (b, value) -> b.setValue(activeFieldIndex, value));
   }
@@ -77,7 +68,7 @@ public class SszProfileTypeDefinition {
 
     public ProfileBuilder(final SszProfileSchema<DataT> schema) {
       this.schema = schema;
-      this.values =  new SszData[schema.getActiveFieldCount()];
+      this.values = new SszData[schema.getActiveFieldCount()];
     }
 
     public void setValue(final int childIndex, final SszData value) {

@@ -183,10 +183,10 @@ public class AbstractSszStableContainerSchemaTest {
         JsonUtil.serialize(circle, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
 
     final ShapeStableContainer circleFromJson =
-            JsonUtil.parse(circleJson, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
+        JsonUtil.parse(circleJson, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
     assertThat(circleFromJson).isEqualTo(circle);
 
-    //ssz circle deserialization
+    // ssz circle deserialization
 
     ShapeStableContainer deserializedCircle =
         SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
@@ -194,8 +194,7 @@ public class AbstractSszStableContainerSchemaTest {
     assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedCircle).isEqualTo(circle);
 
-
-    //ssz square deserialization
+    // ssz square deserialization
     ShapeStableContainer deserializedSquare =
         SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
 
@@ -214,9 +213,9 @@ public class AbstractSszStableContainerSchemaTest {
 
     assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(circle.hashTreeRoot())
-            .isEqualTo(
-                    Bytes32.fromHexString(
-                            "0xf66d2c38c8d2afbd409e86c529dff728e9a4208215ca20ee44e49c3d11e145d8"));
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0xf66d2c38c8d2afbd409e86c529dff728e9a4208215ca20ee44e49c3d11e145d8"));
     assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x014200000000000000"));
 
     SquareProfile square =
@@ -227,40 +226,36 @@ public class AbstractSszStableContainerSchemaTest {
 
     assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
     assertThat(square.hashTreeRoot())
-            .isEqualTo(
-                    Bytes32.fromHexString(
-                            "0xbfdb6fda9d02805e640c0f5767b8d1bb9ff4211498a5e2d7c0f36e1b88ce57ff"));
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0xbfdb6fda9d02805e640c0f5767b8d1bb9ff4211498a5e2d7c0f36e1b88ce57ff"));
     assertThat(square.sszSerialize()).isEqualTo(Bytes.fromHexString("0x420000000000000001"));
-
-
 
     // json square round trip
     final String squareJson =
-            JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
+        JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
 
     System.out.println("squareJson: " + squareJson);
 
     final SquareProfile squareFromJson =
-            JsonUtil.parse(squareJson, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
+        JsonUtil.parse(squareJson, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
     assertThat(squareFromJson).isEqualTo(square);
 
     // json circle round trip
     final String circleJson =
-            JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
+        JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
 
     System.out.println("circleJson: " + circleJson);
 
     final CircleProfile circleFromJson =
-            JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
+        JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
     assertThat(circleFromJson).isEqualTo(circle);
-
 
     CircleProfile deserializedCircle =
         CIRCLE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
 
     assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedCircle).isEqualTo(circle);
-
 
     SquareProfile deserializedSquare =
         SQUARE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));

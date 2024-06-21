@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszProfileTypeDefinition;
-import tech.pegasys.teku.infrastructure.ssz.schema.json.SszStableContainerTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
@@ -59,7 +57,8 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
 
     this.activeFieldIndicesCache =
         IntList.of(
-            activeFieldIndices.stream().sorted(Comparator.naturalOrder())
+            activeFieldIndices.stream()
+                .sorted(Comparator.naturalOrder())
                 .mapToInt(
                     index ->
                         stableContainerSchema.getDefinedChildrenSchemas().get(index).getIndex())
@@ -141,7 +140,8 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
   @Override
   public SszBitvector getActiveFieldsBitvectorFromBackingNode(final TreeNode node) {
     checkArgument(
-        stableContainer.getActiveFieldsBitvectorFromBackingNode(node).equals(activeFields), "activeFields bitvector from backing node not matching the activeFields of the profile");
+        stableContainer.getActiveFieldsBitvectorFromBackingNode(node).equals(activeFields),
+        "activeFields bitvector from backing node not matching the activeFields of the profile");
     return activeFields;
   }
 
