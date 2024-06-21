@@ -119,6 +119,12 @@
       "items" : {
         "$ref" : "#/components/schemas/ExecutionLayerWithdrawalRequest"
       }
+    },
+    "consolidation_requests" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/ConsolidationRequest"
+      }
     }
   }
 }
