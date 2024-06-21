@@ -459,15 +459,16 @@ public class KvStoreDatabase implements Database {
       final UInt64 earliestFinalizedStateSlot,
       final UInt64 lastSlotToPrune,
       final long pruneLimit) {
-    final List<Triple<UInt64, Bytes32, Bytes32>> slotsToPruneStateFor;
+    final List<Pair<UInt64, Optional<Bytes32>>> slotsToPruneStateFor;
 
-    try (final Stream<SignedBeaconBlock> stream =
-        dao.streamFinalizedBlocks(earliestFinalizedStateSlot, lastSlotToPrune)) {
+    try (final Stream<UInt64> stream =
+        dao.streamFinalizedStateSlots(earliestFinalizedStateSlot, lastSlotToPrune)) {
       slotsToPruneStateFor =
-          // fetch slot for log purposes, stateroot and blockroot (keys used to store state)
+          // should probably create a cache (populated when adding finalized states)
+          // to query from rather than hit the db
           stream
               .limit(pruneLimit)
-              .map(block -> Triple.of(block.getSlot(), block.getRoot(), block.getStateRoot()))
+              .map(slot -> Pair.of(slot, dao.getFinalizedBlockAtSlot(slot).map(SignedBeaconBlock::getStateRoot)))
               .toList();
     }
     if (slotsToPruneStateFor.isEmpty()) {
@@ -477,31 +478,28 @@ public class KvStoreDatabase implements Database {
 
     final UInt64 lastPrunedBlockSlot =
         slotsToPruneStateFor.get(slotsToPruneStateFor.size() - 1).getLeft();
-    LOG.debug(
-        "Pruning {} finalized state, last block slot is {}",
-        slotsToPruneStateFor.size(),
-        lastPrunedBlockSlot);
+
     deleteFinalizedStatesForSlot(slotsToPruneStateFor);
 
     return slotsToPruneStateFor.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
   }
 
   private void deleteFinalizedStatesForSlot(
-      final List<Triple<UInt64, Bytes32, Bytes32>> slotsToPruneStateFor) {
+      final List<Pair<UInt64, Optional<Bytes32>>> slotsToPruneStateFor) {
     if (!slotsToPruneStateFor.isEmpty()) {
       if (slotsToPruneStateFor.size() < 20) {
         LOG.debug(
             "Received slots ({}) to delete finalized state for",
-            () -> slotsToPruneStateFor.stream().map(Triple::getLeft).toList());
+            () -> slotsToPruneStateFor.stream().map(Pair::getLeft).toList());
       } else {
         LOG.debug("Received {} finalized blocks to delete", slotsToPruneStateFor.size());
       }
 
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         slotsToPruneStateFor.forEach(
-            triple -> {
-              updater.deleteFinalizedState(triple.getLeft());
-              updater.deleteFinalizedStateRoot(triple.getRight());
+            pair -> {
+              updater.deleteFinalizedState(pair.getLeft());
+              pair.getRight().ifPresent(updater::deleteFinalizedStateRoot);
             });
 
         updater.commit();
