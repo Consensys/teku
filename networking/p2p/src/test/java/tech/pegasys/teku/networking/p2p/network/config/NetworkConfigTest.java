@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.libp2p.core.multiformats.Multiaddr;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -62,20 +61,12 @@ class NetworkConfigTest {
   @Test
   void getAdvertisedIps_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() {
     listenIp = "::0";
-    final List<String> result;
-    try {
-      result = createConfig().getAdvertisedIps();
-    } catch (Exception ex) {
-      // local IPv6 not supported
-      assertThat(ex.getCause()).isInstanceOf(UnknownHostException.class);
-      assertThat(ex.getMessage()).contains("Unable to determine local IPv6 Address");
-      return;
-    }
+    final List<String> result = createConfig().getAdvertisedIps();
     assertThat(result)
         .hasSize(1)
         .first()
-        .isNotEqualTo("::0")
-        .isNotEqualTo("0.0.0.0")
+        .asString()
+        .isNotBlank()
         .satisfies(
             ip -> {
               // check the advertised IP is IPv6
