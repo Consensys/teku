@@ -99,26 +99,17 @@ public class StatePruner extends Service {
       return;
     }
     final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
-    LOG.debug("Finalized epoch is {}", finalizedEpoch);
     final UInt64 earliestEpochToKeep = finalizedEpoch.minusMinZero(epochsToRetain);
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
       LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;
     }
-    LOG.info("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
+    LOG.debug("Initiating pruning of finalized states prior to slot {}.", earliestSlotToKeep);
     try {
       maybeLastPrunedSlot =
           database.pruneFinalizedStates(
               maybeLastPrunedSlot, earliestSlotToKeep.decrement(), pruneLimit);
-      maybeLastPrunedSlot.ifPresent(
-          lastPrunedSlot ->
-              LOG.info(
-                  "Pruned {} finalized states prior to slot {}, last pruned slot was {}.",
-                  pruneLimit,
-                  earliestSlotToKeep,
-                  lastPrunedSlot));
-
     } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
