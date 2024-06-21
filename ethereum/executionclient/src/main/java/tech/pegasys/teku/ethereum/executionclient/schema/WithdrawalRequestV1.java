@@ -37,7 +37,7 @@ public class WithdrawalRequestV1 {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes48Deserializer.class)
-  public final Bytes48 validatorPublicKey;
+  public final Bytes48 validatorPubkey;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
@@ -45,13 +45,13 @@ public class WithdrawalRequestV1 {
 
   public WithdrawalRequestV1(
       @JsonProperty("sourceAddress") final Bytes20 sourceAddress,
-      @JsonProperty("validatorPublicKey") final Bytes48 validatorPublicKey,
+      @JsonProperty("validatorPubkey") final Bytes48 validatorPubkey,
       @JsonProperty("amount") final UInt64 amount) {
     checkNotNull(sourceAddress, "sourceAddress");
-    checkNotNull(validatorPublicKey, "validatorPublicKey");
+    checkNotNull(validatorPubkey, "validatorPubkey");
     checkNotNull(amount, "amount");
     this.sourceAddress = sourceAddress;
-    this.validatorPublicKey = validatorPublicKey;
+    this.validatorPubkey = validatorPubkey;
     this.amount = amount;
   }
 
@@ -65,20 +65,20 @@ public class WithdrawalRequestV1 {
     }
     final WithdrawalRequestV1 that = (WithdrawalRequestV1) o;
     return Objects.equals(sourceAddress, that.sourceAddress)
-        && Objects.equals(validatorPublicKey, that.validatorPublicKey)
+        && Objects.equals(validatorPubkey, that.validatorPubkey)
         && Objects.equals(amount, that.amount);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(sourceAddress, validatorPublicKey, amount);
+    return Objects.hash(sourceAddress, validatorPubkey, amount);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("sourceAddress", sourceAddress)
-        .add("validatorPublicKey", validatorPublicKey)
+        .add("validatorPubkey", validatorPubkey)
         .add("amount", amount)
         .toString();
   }

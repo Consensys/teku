@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.service.serviceutils.layout.DataConfig.DEFAULT_DATA_PATH;
+
 import java.nio.file.Path;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -25,7 +27,7 @@ public abstract class DataOptions {
       paramLabel = "<FILENAME>",
       description = "Path to the base directory for storage",
       arity = "1")
-  private Path dataBasePath = DataConfig.defaultDataPath();
+  private Path dataBasePath = DEFAULT_DATA_PATH;
 
   public DataConfig getDataConfig() {
     return configureDataConfig(DataConfig.builder()).build();

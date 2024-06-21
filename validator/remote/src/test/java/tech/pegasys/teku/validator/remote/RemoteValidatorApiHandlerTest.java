@@ -582,16 +582,17 @@ class RemoteValidatorApiHandlerTest {
         dataStructureUtil.signedBlock(beaconBlock, signature);
     final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
-    when(typeDefClient.sendSignedBlock(any())).thenReturn(expectedResult);
+    when(typeDefClient.sendSignedBlock(any(), any())).thenReturn(expectedResult);
 
     ArgumentCaptor<SignedBeaconBlock> argumentCaptor =
         ArgumentCaptor.forClass(SignedBeaconBlock.class);
 
     final SafeFuture<SendSignedBlockResult> result =
-        apiHandler.sendSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
+        apiHandler.sendSignedBlock(signedBeaconBlock, BroadcastValidationLevel.GOSSIP);
     asyncRunner.executeQueuedActions();
 
-    verify(typeDefClient).sendSignedBlock(argumentCaptor.capture());
+    verify(typeDefClient)
+        .sendSignedBlock(argumentCaptor.capture(), eq(BroadcastValidationLevel.GOSSIP));
     assertThat(argumentCaptor.getValue()).isEqualTo(signedBeaconBlock);
     assertThat(result).isCompletedWithValue(expectedResult);
   }

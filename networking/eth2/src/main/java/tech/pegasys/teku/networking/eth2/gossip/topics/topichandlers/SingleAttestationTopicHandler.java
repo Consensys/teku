@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SingleAttestationTopicHandler {
@@ -36,7 +36,7 @@ public class SingleAttestationTopicHandler {
       final String topicName,
       final AttestationSchema<? extends Attestation> attestationSchema,
       final int subnetId,
-      final P2PDebugDataDumper p2pDebugDataDumper) {
+      final DebugDataDumper debugDataDumper) {
 
     final Spec spec = recentChainData.getSpec();
     OperationProcessor<Attestation> convertingProcessor =
@@ -57,6 +57,6 @@ public class SingleAttestationTopicHandler {
             message -> spec.computeEpochAtSlot(message.getData().getSlot())),
         attestationSchema.castTypeToAttestationSchema(),
         spec.getNetworkingConfig(),
-        p2pDebugDataDumper);
+        debugDataDumper);
   }
 }

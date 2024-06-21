@@ -13,16 +13,18 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public interface P2PDebugDataDumper {
+public interface DebugDataDumper {
 
-  P2PDebugDataDumper NOOP =
-      new P2PDebugDataDumper() {
+  DebugDataDumper NOOP =
+      new DebugDataDumper() {
         @Override
         public void saveGossipMessageDecodingError(
             final String topic,
@@ -31,17 +33,21 @@ public interface P2PDebugDataDumper {
             final Throwable error) {}
 
         @Override
-        public void saveGossipRejectedMessageToFile(
+        public void saveGossipRejectedMessage(
             final String topic,
             final Optional<UInt64> arrivalTimestamp,
             final Supplier<Bytes> decodedMessage,
             final Optional<String> reason) {}
 
         @Override
-        public void saveInvalidBlockToFile(
+        public void saveInvalidBlock(
             final SignedBeaconBlock block,
             final String failureReason,
             final Optional<Throwable> failureCause) {}
+
+        @Override
+        public void saveInvalidBlobSidecars(
+            final List<BlobSidecar> blobSidecars, final SignedBeaconBlock block) {}
       };
 
   void saveGossipMessageDecodingError(
@@ -50,12 +56,14 @@ public interface P2PDebugDataDumper {
       Supplier<Bytes> originalMessage,
       Throwable error);
 
-  void saveGossipRejectedMessageToFile(
+  void saveGossipRejectedMessage(
       String topic,
       Optional<UInt64> arrivalTimestamp,
       Supplier<Bytes> decodedMessage,
       Optional<String> reason);
 
-  void saveInvalidBlockToFile(
+  void saveInvalidBlock(
       SignedBeaconBlock block, String failureReason, Optional<Throwable> failureCause);
+
+  void saveInvalidBlobSidecars(List<BlobSidecar> blobSidecars, SignedBeaconBlock block);
 }
