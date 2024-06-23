@@ -174,11 +174,11 @@ public class EventLogger {
     log.info("Execution Client version: {} {}", name, version);
   }
 
-  public void logDefaultGraffiti(final String graffiti) {
+  public void logGraffitiWatermark(final String graffitiWatermark) {
     log.info(
-        "Default graffiti to use when building block without external VC: \"{}\". "
-            + "To change check validator graffiti options.",
-        graffiti);
+        "Using graffiti watermark: \"{}\". This will be appended to any user-defined graffiti or used if none is defined. "
+            + "Refer to validator graffiti options to customize.",
+        graffitiWatermark);
   }
 
   public void builderIsNotAvailable(final String errorMessage) {
