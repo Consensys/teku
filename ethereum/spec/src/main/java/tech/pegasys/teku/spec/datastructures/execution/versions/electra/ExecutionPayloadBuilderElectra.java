@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb {
   private ExecutionPayloadSchemaElectra schema;
 
-  protected List<DepositReceipt> depositReceipts;
+  protected List<DepositRequest> depositRequests;
   protected List<ExecutionLayerWithdrawalRequest> withdrawalRequests;
   protected List<ConsolidationRequest> consolidationRequests;
 
@@ -38,9 +38,9 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   }
 
   @Override
-  public ExecutionPayloadBuilder depositReceipts(
-      final Supplier<List<DepositReceipt>> depositReceiptsSupplier) {
-    this.depositReceipts = depositReceiptsSupplier.get();
+  public ExecutionPayloadBuilder depositRequests(
+      final Supplier<List<DepositRequest>> depositRequestsSupplier) {
+    this.depositRequests = depositRequestsSupplier.get();
     return this;
   }
 
@@ -66,7 +66,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(depositReceipts, "depositReceipts must be specified");
+    checkNotNull(depositRequests, "depositRequests must be specified");
     checkNotNull(withdrawalRequests, "withdrawalRequests must be specified");
     checkNotNull(consolidationRequests, "consolidationRequests must be specified");
   }
@@ -95,7 +95,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas),
-        schema.getDepositReceiptsSchema().createFromElements(depositReceipts),
+        schema.getDepositRequestsSchema().createFromElements(depositRequests),
         schema.getExecutionLayerWithdrawalRequestsSchema().createFromElements(withdrawalRequests),
         schema.getConsolidationRequestsSchema().createFromElements(consolidationRequests));
   }

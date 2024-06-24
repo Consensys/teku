@@ -28,7 +28,7 @@
           "amount": "32000000000"
         }
       ],
-      "deposit_receipts": [
+      "deposit_requests": [
         {
           "pubkey": "0x94e2d4cf94fb757578c496885af2075c26e2483eeffa6e894ac791f7c1945b0fbf9a6f7860736db93e03d511c4b08516",
           "withdrawal_credentials": "0x010000000000000000000000a2a06043d17ac951519956f43432e6811a0a4c5e",

@@ -31,7 +31,7 @@ public interface ExecutionPayloadElectra extends ExecutionPayload, ExecutionPayl
                         + payload.getClass().getSimpleName()));
   }
 
-  SszList<DepositReceipt> getDepositReceipts();
+  SszList<DepositRequest> getDepositRequests();
 
   SszList<ExecutionLayerWithdrawalRequest> getWithdrawalRequests();
 

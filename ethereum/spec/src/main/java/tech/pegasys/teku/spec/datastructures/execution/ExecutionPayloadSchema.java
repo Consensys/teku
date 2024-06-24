@@ -23,8 +23,8 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 
@@ -40,10 +40,10 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
 
   WithdrawalSchema getWithdrawalSchemaRequired();
 
-  SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>>
-      getDepositReceiptsSchemaRequired();
+  SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
+      getDepositRequestsSchemaRequired();
 
-  DepositReceiptSchema getDepositReceiptSchemaRequired();
+  DepositRequestSchema getDepositRequestSchemaRequired();
 
   SszListSchema<ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
       getExecutionLayerWithdrawalRequestsSchemaRequired();

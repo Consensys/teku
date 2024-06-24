@@ -28,12 +28,12 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
   Attestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final Supplier<SszBitvector> committeeBits,
-      final BLSSignature signature);
+      final BLSSignature signature,
+      final Supplier<SszBitvector> committeeBits);
 
   default Attestation create(
       final SszBitlist aggregationBits, final AttestationData data, final BLSSignature signature) {
-    return create(aggregationBits, data, () -> null, signature);
+    return create(aggregationBits, data, signature, () -> null);
   }
 
   default SszBitlist createEmptyAggregationBits() {

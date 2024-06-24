@@ -129,7 +129,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -202,7 +202,7 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
-  private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
+  private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
   private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
   private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
 
@@ -600,7 +600,7 @@ public final class DataStructureUtil {
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64)
-                    .depositReceiptsRoot(this::randomBytes32)
+                    .depositRequestsRoot(this::randomBytes32)
                     .withdrawalRequestsRoot(this::randomBytes32)
                     .consolidationRequestsRoot(this::randomBytes32));
   }
@@ -697,7 +697,7 @@ public final class DataStructureUtil {
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
-                      .depositReceipts(this::randomExecutionPayloadDepositReceipts)
+                      .depositRequests(this::randomExecutionPayloadDepositRequests)
                       .withdrawalRequests(this::randomExecutionLayerWithdrawalRequests)
                       .consolidationRequests(this::randomConsolidationRequests);
               builderModifier.accept(executionPayloadBuilder);
@@ -724,9 +724,9 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<DepositReceipt> randomExecutionPayloadDepositReceipts() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_RECEIPTS))
-        .mapToObj(__ -> randomDepositReceipt())
+  public List<DepositRequest> randomExecutionPayloadDepositRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
+        .mapToObj(__ -> randomDepositRequest())
         .collect(toList());
   }
 
@@ -810,8 +810,8 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(),
-            this::randomCommitteeBitvector,
-            randomSignature());
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final long slot) {
@@ -824,15 +824,15 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(slot),
-            this::randomCommitteeBitvector,
-            randomSignature());
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
         .create(
-            randomBitlist(), attestationData, this::randomCommitteeBitvector, randomSignature());
+            randomBitlist(), attestationData, randomSignature(), this::randomCommitteeBitvector);
   }
 
   public AggregateAndProof randomAggregateAndProof() {
@@ -2087,7 +2087,7 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
-  public DepositReceipt randomDepositReceiptWithValidSignature(final UInt64 index) {
+  public DepositRequest randomDepositRequestWithValidSignature(final UInt64 index) {
     final BLSKeyPair keyPair = randomKeyPair();
     final DepositMessage depositMessage =
         new DepositMessage(keyPair.getPublicKey(), randomBytes32(), randomUInt64());
@@ -2095,7 +2095,7 @@ public final class DataStructureUtil {
     final Bytes signingRoot = getSigningRoot(depositMessage, domain);
     final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
     return getElectraSchemaDefinitions(randomSlot())
-        .getDepositReceiptSchema()
+        .getDepositRequestSchema()
         .create(
             depositMessage.getPubkey(),
             depositMessage.getWithdrawalCredentials(),
@@ -2104,9 +2104,9 @@ public final class DataStructureUtil {
             index);
   }
 
-  public DepositReceipt randomDepositReceipt() {
+  public DepositRequest randomDepositRequest() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getDepositReceiptSchema()
+        .getDepositRequestSchema()
         .create(
             randomPublicKey(),
             randomEth1WithdrawalCredentials(),

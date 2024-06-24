@@ -273,7 +273,7 @@ public class BlockProposalTestUtil {
                 .withdrawals(List::of)
                 .blobGasUsed(() -> UInt64.ZERO)
                 .excessBlobGas(() -> UInt64.ZERO)
-                .depositReceipts(List::of)
+                .depositRequests(List::of)
                 .withdrawalRequests(List::of)
                 .consolidationRequests(List::of));
   }

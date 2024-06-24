@@ -35,7 +35,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxAttesterSlashingsElectra;
   private final int maxAttestationsElectra;
   private final int maxConsolidationRequestsPerPayload;
-  private final int maxDepositReceiptsPerPayload;
+  private final int maxDepositRequestsPerPayload;
   private final int maxWithdrawalRequestsPerPayload;
   private final int maxPendingPartialsPerWithdrawalsSweep;
 
@@ -54,7 +54,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int maxAttesterSlashingsElectra,
       final int maxAttestationsElectra,
       final int maxConsolidationRequestsPerPayload,
-      final int maxDepositReceiptsPerPayload,
+      final int maxDepositRequestsPerPayload,
       final int maxWithdrawalRequestsPerPayload,
       final int maxPendingPartialsPerWithdrawalsSweep) {
     super(specConfig);
@@ -71,7 +71,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.maxAttesterSlashingsElectra = maxAttesterSlashingsElectra;
     this.maxAttestationsElectra = maxAttestationsElectra;
     this.maxConsolidationRequestsPerPayload = maxConsolidationRequestsPerPayload;
-    this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
+    this.maxDepositRequestsPerPayload = maxDepositRequestsPerPayload;
     this.maxWithdrawalRequestsPerPayload = maxWithdrawalRequestsPerPayload;
     this.maxPendingPartialsPerWithdrawalsSweep = maxPendingPartialsPerWithdrawalsSweep;
   }
@@ -142,8 +142,8 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public int getMaxDepositReceiptsPerPayload() {
-    return maxDepositReceiptsPerPayload;
+  public int getMaxDepositRequestsPerPayload() {
+    return maxDepositRequestsPerPayload;
   }
 
   @Override
@@ -184,7 +184,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         && maxAttesterSlashingsElectra == that.maxAttesterSlashingsElectra
         && maxAttestationsElectra == that.maxAttestationsElectra
         && maxConsolidationRequestsPerPayload == that.maxConsolidationRequestsPerPayload
-        && maxDepositReceiptsPerPayload == that.maxDepositReceiptsPerPayload
+        && maxDepositRequestsPerPayload == that.maxDepositRequestsPerPayload
         && maxWithdrawalRequestsPerPayload == that.maxWithdrawalRequestsPerPayload
         && maxPendingPartialsPerWithdrawalsSweep == that.maxPendingPartialsPerWithdrawalsSweep;
   }
@@ -206,7 +206,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
         maxConsolidationRequestsPerPayload,
-        maxDepositReceiptsPerPayload,
+        maxDepositRequestsPerPayload,
         maxWithdrawalRequestsPerPayload,
         maxPendingPartialsPerWithdrawalsSweep);
   }

@@ -27,8 +27,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 
 public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
 
-  @JsonProperty("deposit_receipts_root")
-  public final Bytes32 depositReceiptsRoot;
+  @JsonProperty("deposit_requests_root")
+  public final Bytes32 depositRequestsRoot;
 
   @JsonProperty("withdrawal_requests_root")
   public final Bytes32 withdrawalRequestsRoot;
@@ -55,7 +55,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
       @JsonProperty("withdrawals_root") final Bytes32 withdrawalsRoot,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
-      @JsonProperty("deposit_receipts_root") final Bytes32 depositReceiptsRoot,
+      @JsonProperty("deposit_requests_root") final Bytes32 depositRequestsRoot,
       @JsonProperty("withdrawal_requests_root") final Bytes32 withdrawalRequestsRoot,
       @JsonProperty("consolidation_requests_root") final Bytes32 consolidationRequestsRoot) {
     super(
@@ -76,7 +76,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         withdrawalsRoot,
         blobGasUsed,
         excessBlobGas);
-    this.depositReceiptsRoot = depositReceiptsRoot;
+    this.depositRequestsRoot = depositRequestsRoot;
     this.withdrawalRequestsRoot = withdrawalRequestsRoot;
     this.consolidationRequestsRoot = consolidationRequestsRoot;
   }
@@ -100,8 +100,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow(),
         executionPayloadHeader.toVersionDeneb().orElseThrow().getBlobGasUsed(),
         executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessBlobGas());
-    this.depositReceiptsRoot =
-        executionPayloadHeader.toVersionElectra().orElseThrow().getDepositReceiptsRoot();
+    this.depositRequestsRoot =
+        executionPayloadHeader.toVersionElectra().orElseThrow().getDepositRequestsRoot();
     this.withdrawalRequestsRoot =
         executionPayloadHeader.toVersionElectra().orElseThrow().getWithdrawalRequestsRoot();
     this.consolidationRequestsRoot =
@@ -131,7 +131,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
                 .withdrawalsRoot(() -> withdrawalsRoot)
                 .blobGasUsed(() -> blobGasUsed)
                 .excessBlobGas(() -> excessBlobGas)
-                .depositReceiptsRoot(() -> depositReceiptsRoot)
+                .depositRequestsRoot(() -> depositRequestsRoot)
                 .withdrawalRequestsRoot(() -> withdrawalRequestsRoot)
                 .consolidationRequestsRoot(() -> consolidationRequestsRoot));
   }

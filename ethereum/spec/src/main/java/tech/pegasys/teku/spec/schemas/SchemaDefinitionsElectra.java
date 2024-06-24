@@ -44,8 +44,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
@@ -88,7 +88,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
-  private final DepositReceiptSchema depositReceiptSchema;
+  private final DepositRequestSchema depositRequestSchema;
 
   private final ExecutionLayerWithdrawalRequestSchema executionLayerWithdrawalRequestSchema;
   private final ConsolidationRequestSchema consolidationRequestSchema;
@@ -158,7 +158,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
 
-    this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
+    this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
     this.executionLayerWithdrawalRequestSchema = ExecutionLayerWithdrawalRequest.SSZ_SCHEMA;
     this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
     this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
@@ -301,8 +301,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return executionPayloadAndBlobsBundleSchema;
   }
 
-  public DepositReceiptSchema getDepositReceiptSchema() {
-    return depositReceiptSchema;
+  public DepositRequestSchema getDepositRequestSchema() {
+    return depositRequestSchema;
   }
 
   public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
