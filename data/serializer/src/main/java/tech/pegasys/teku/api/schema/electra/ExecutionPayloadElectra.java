@@ -34,7 +34,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
   public final List<DepositRequest> depositRequests;
 
   @JsonProperty("withdrawal_requests")
-  public final List<ExecutionLayerWithdrawalRequest> withdrawalRequests;
+  public final List<WithdrawalRequest> withdrawalRequests;
 
   @JsonProperty("consolidation_requests")
   public final List<ConsolidationRequest> consolidationRequests;
@@ -59,8 +59,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
       @JsonProperty("deposit_requests") final List<DepositRequest> depositRequests,
-      @JsonProperty("withdrawal_requests")
-          final List<ExecutionLayerWithdrawalRequest> withdrawalRequests,
+      @JsonProperty("withdrawal_requests") final List<WithdrawalRequest> withdrawalRequests,
       @JsonProperty("consolidation_requests")
           final List<ConsolidationRequest> consolidationRequests) {
     super(
@@ -95,7 +94,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
             .toList();
     this.withdrawalRequests =
         executionPayload.toVersionElectra().orElseThrow().getWithdrawalRequests().stream()
-            .map(ExecutionLayerWithdrawalRequest::new)
+            .map(WithdrawalRequest::new)
             .toList();
     this.consolidationRequests =
         executionPayload.toVersionElectra().orElseThrow().getConsolidationRequests().stream()
@@ -121,9 +120,8 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
                 withdrawalRequests.stream()
                     .map(
                         exit ->
-                            exit.asInternalExecutionLayerWithdrawalRequest(
-                                executionPayloadSchema
-                                    .getExecutionLayerWithdrawalRequestSchemaRequired()))
+                            exit.asInternalWithdrawalRequest(
+                                executionPayloadSchema.getWithdrawalRequestSchemaRequired()))
                     .toList())
         .consolidationRequests(
             () ->

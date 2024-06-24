@@ -53,7 +53,7 @@ public class ExecutionPayloadElectraImpl
         SszUInt64,
         SszUInt64,
         SszList<DepositRequest>,
-        SszList<ExecutionLayerWithdrawalRequest>,
+        SszList<WithdrawalRequest>,
         SszList<ConsolidationRequest>>
     implements ExecutionPayloadElectra {
 
@@ -78,7 +78,7 @@ public class ExecutionPayloadElectraImpl
               SszUInt64,
               SszUInt64,
               SszList<DepositRequest>,
-              SszList<ExecutionLayerWithdrawalRequest>,
+              SszList<WithdrawalRequest>,
               SszList<ConsolidationRequest>>
           schema,
       final TreeNode backingNode) {
@@ -105,7 +105,7 @@ public class ExecutionPayloadElectraImpl
       final SszUInt64 blobGasUsed,
       final SszUInt64 excessBlobGas,
       final SszList<DepositRequest> depositRequests,
-      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
+      final SszList<WithdrawalRequest> withdrawalRequests,
       final SszList<ConsolidationRequest> consolidationRequests) {
     super(
         schema,
@@ -242,7 +242,7 @@ public class ExecutionPayloadElectraImpl
   }
 
   @Override
-  public SszList<ExecutionLayerWithdrawalRequest> getWithdrawalRequests() {
+  public SszList<WithdrawalRequest> getWithdrawalRequests() {
     return getField18();
   }
 

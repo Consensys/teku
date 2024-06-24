@@ -25,25 +25,24 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
-public class ExecutionLayerWithdrawalRequestSchema
-    extends ContainerSchema3<
-        ExecutionLayerWithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
+public class WithdrawalRequestSchema
+    extends ContainerSchema3<WithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 
-  public ExecutionLayerWithdrawalRequestSchema() {
+  public WithdrawalRequestSchema() {
     super(
-        "ExecutionLayerWithdrawalRequest",
+        "WithdrawalRequest",
         namedSchema("source_address", SszByteVectorSchema.create(Bytes20.SIZE)),
         namedSchema("validator_pubkey", SszPublicKeySchema.INSTANCE),
         namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
-  public ExecutionLayerWithdrawalRequest create(
+  public WithdrawalRequest create(
       final Bytes20 sourceAddress, final BLSPublicKey validatorPublicKey, final UInt64 amount) {
-    return new ExecutionLayerWithdrawalRequest(this, sourceAddress, validatorPublicKey, amount);
+    return new WithdrawalRequest(this, sourceAddress, validatorPublicKey, amount);
   }
 
   @Override
-  public ExecutionLayerWithdrawalRequest createFromBackingNode(final TreeNode node) {
-    return new ExecutionLayerWithdrawalRequest(this, node);
+  public WithdrawalRequest createFromBackingNode(final TreeNode node) {
+    return new WithdrawalRequest(this, node);
   }
 }

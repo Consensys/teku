@@ -33,7 +33,7 @@ public interface ExecutionPayloadElectra extends ExecutionPayload, ExecutionPayl
 
   SszList<DepositRequest> getDepositRequests();
 
-  SszList<ExecutionLayerWithdrawalRequest> getWithdrawalRequests();
+  SszList<WithdrawalRequest> getWithdrawalRequests();
 
   SszList<ConsolidationRequest> getConsolidationRequests();
 

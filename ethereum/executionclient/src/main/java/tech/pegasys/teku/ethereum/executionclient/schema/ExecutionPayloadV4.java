@@ -34,8 +34,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 
 public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   public final List<DepositRequestV1> depositRequests;
@@ -133,11 +133,11 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
             depositRequestV1.index);
   }
 
-  private ExecutionLayerWithdrawalRequest createInternalWithdrawalRequest(
+  private WithdrawalRequest createInternalWithdrawalRequest(
       final WithdrawalRequestV1 withdrawalRequestV1,
       final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
-        .getExecutionLayerWithdrawalRequestSchemaRequired()
+        .getWithdrawalRequestSchemaRequired()
         .create(
             withdrawalRequestV1.sourceAddress,
             BLSPublicKey.fromBytesCompressed(withdrawalRequestV1.validatorPubkey),
@@ -197,7 +197,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
   }
 
   public static List<WithdrawalRequestV1> getWithdrawalRequests(
-      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests) {
+      final SszList<WithdrawalRequest> withdrawalRequests) {
     return withdrawalRequests.stream()
         .map(
             withdrawalRequest ->

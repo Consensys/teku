@@ -17,9 +17,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 
-public class ExecutionLayerWithdrawalRequest {
+public class WithdrawalRequest {
 
   @JsonProperty("source_address")
   private final Eth1Address sourceAddress;
@@ -30,7 +30,7 @@ public class ExecutionLayerWithdrawalRequest {
   @JsonProperty("amount")
   private final UInt64 amount;
 
-  public ExecutionLayerWithdrawalRequest(
+  public WithdrawalRequest(
       @JsonProperty("source_address") final Eth1Address sourceAddress,
       @JsonProperty("validator_pubkey") final BLSPublicKey validatorPublicKey,
       @JsonProperty("amount") final UInt64 amount) {
@@ -39,20 +39,17 @@ public class ExecutionLayerWithdrawalRequest {
     this.amount = amount;
   }
 
-  public ExecutionLayerWithdrawalRequest(
-      final tech.pegasys.teku.spec.datastructures.execution.versions.electra
-              .ExecutionLayerWithdrawalRequest
-          executionLayerWithdrawalRequest) {
+  public WithdrawalRequest(
+      final tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest
+          withdrawalRequest) {
     this.sourceAddress =
-        Eth1Address.fromBytes(executionLayerWithdrawalRequest.getSourceAddress().getWrappedBytes());
-    this.validatorPublicKey = executionLayerWithdrawalRequest.getValidatorPublicKey();
-    this.amount = executionLayerWithdrawalRequest.getAmount();
+        Eth1Address.fromBytes(withdrawalRequest.getSourceAddress().getWrappedBytes());
+    this.validatorPublicKey = withdrawalRequest.getValidatorPublicKey();
+    this.amount = withdrawalRequest.getAmount();
   }
 
-  public final tech.pegasys.teku.spec.datastructures.execution.versions.electra
-          .ExecutionLayerWithdrawalRequest
-      asInternalExecutionLayerWithdrawalRequest(
-          final ExecutionLayerWithdrawalRequestSchema schema) {
+  public final tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest
+      asInternalWithdrawalRequest(final WithdrawalRequestSchema schema) {
     return schema.create(sourceAddress, validatorPublicKey, amount);
   }
 }

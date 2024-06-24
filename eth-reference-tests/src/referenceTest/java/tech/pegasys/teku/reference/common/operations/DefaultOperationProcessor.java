@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -155,22 +155,20 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processExecutionLayerWithdrawalRequest(
-      final MutableBeaconState state,
-      final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest)
+  public void processWithdrawalRequest(
+      final MutableBeaconState state, final WithdrawalRequest withdrawalRequest)
       throws BlockProcessingException {
-    final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests =
+    final SszList<WithdrawalRequest> withdrawalRequests =
         BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
             .getExecutionPayloadSchema()
-            .getExecutionLayerWithdrawalRequestsSchemaRequired()
-            .of(executionLayerWithdrawalRequest);
+            .getWithdrawalRequestsSchemaRequired()
+            .of(withdrawalRequest);
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         spec.atSlot(state.getSlot())
             .beaconStateMutators()
             .createValidatorExitContextSupplier(state);
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionLayerWithdrawalRequests(
-            state, withdrawalRequests, validatorExitContextSupplier);
+        .processWithdrawalRequests(state, withdrawalRequests, validatorExitContextSupplier);
   }
 
   @Override

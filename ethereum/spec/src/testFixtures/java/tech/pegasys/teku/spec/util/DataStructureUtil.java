@@ -130,7 +130,7 @@ import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -698,7 +698,7 @@ public final class DataStructureUtil {
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
                       .depositRequests(this::randomExecutionPayloadDepositRequests)
-                      .withdrawalRequests(this::randomExecutionLayerWithdrawalRequests)
+                      .withdrawalRequests(this::randomWithdrawalRequests)
                       .consolidationRequests(this::randomConsolidationRequests);
               builderModifier.accept(executionPayloadBuilder);
             });
@@ -730,9 +730,9 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<ExecutionLayerWithdrawalRequest> randomExecutionLayerWithdrawalRequests() {
+  public List<WithdrawalRequest> randomWithdrawalRequests() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
-        .mapToObj(__ -> randomExecutionLayerWithdrawalRequest())
+        .mapToObj(__ -> randomWithdrawalRequest())
         .collect(toList());
   }
 
@@ -2500,32 +2500,30 @@ public final class DataStructureUtil {
     return getBlobKzgCommitmentsSchema().of();
   }
 
-  public ExecutionLayerWithdrawalRequest randomExecutionLayerWithdrawalRequest() {
+  public WithdrawalRequest randomWithdrawalRequest() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(randomEth1Address(), randomPublicKey(), randomUInt64());
   }
 
-  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
+  public WithdrawalRequest withdrawalRequest(
       final Bytes20 sourceAddress, final BLSPublicKey validatorPubKey, final UInt64 amount) {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(sourceAddress, validatorPubKey, amount);
   }
 
-  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
-      final Validator validator) {
+  public WithdrawalRequest withdrawalRequest(final Validator validator) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(executionAddress, validator.getPublicKey(), randomUInt64());
   }
 
-  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
-      final Validator validator, final UInt64 amount) {
+  public WithdrawalRequest withdrawalRequest(final Validator validator, final UInt64 amount) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(executionAddress, validator.getPublicKey(), amount);
   }
 
