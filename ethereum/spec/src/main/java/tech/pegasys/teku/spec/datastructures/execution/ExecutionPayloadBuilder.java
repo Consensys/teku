@@ -21,6 +21,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 
@@ -63,6 +64,9 @@ public interface ExecutionPayloadBuilder {
 
   ExecutionPayloadBuilder withdrawalRequests(
       Supplier<List<ExecutionLayerWithdrawalRequest>> withdrawalRequestsSupplier);
+
+  ExecutionPayloadBuilder consolidationRequests(
+      Supplier<List<ConsolidationRequest>> consolidationRequestsSupplier);
 
   ExecutionPayload build();
 }

@@ -30,6 +30,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
 
   protected List<DepositRequest> depositRequests;
   protected List<ExecutionLayerWithdrawalRequest> withdrawalRequests;
+  protected List<ConsolidationRequest> consolidationRequests;
 
   public ExecutionPayloadBuilderElectra schema(final ExecutionPayloadSchemaElectra schema) {
     this.schema = schema;
@@ -51,6 +52,13 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   }
 
   @Override
+  public ExecutionPayloadBuilder consolidationRequests(
+      final Supplier<List<ConsolidationRequest>> consolidationRequestsSupplier) {
+    this.consolidationRequests = consolidationRequestsSupplier.get();
+    return this;
+  }
+
+  @Override
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }
@@ -60,6 +68,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
     super.validate();
     checkNotNull(depositRequests, "depositRequests must be specified");
     checkNotNull(withdrawalRequests, "withdrawalRequests must be specified");
+    checkNotNull(consolidationRequests, "consolidationRequests must be specified");
   }
 
   @Override
@@ -87,6 +96,7 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas),
         schema.getDepositRequestsSchema().createFromElements(depositRequests),
-        schema.getExecutionLayerWithdrawalRequestsSchema().createFromElements(withdrawalRequests));
+        schema.getExecutionLayerWithdrawalRequestsSchema().createFromElements(withdrawalRequests),
+        schema.getConsolidationRequestsSchema().createFromElements(consolidationRequests));
   }
 }

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.CONSOLIDATION_REQUESTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_REQUESTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
@@ -39,7 +40,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema19;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema20;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -58,7 +59,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaElectra
-    extends ContainerSchema19<
+    extends ContainerSchema20<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -78,7 +79,8 @@ public class ExecutionPayloadSchemaElectra
         SszUInt64,
         SszUInt64,
         SszList<DepositRequest>,
-        SszList<ExecutionLayerWithdrawalRequest>>
+        SszList<ExecutionLayerWithdrawalRequest>,
+        SszList<ConsolidationRequest>>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
   private final ExecutionPayloadElectraImpl defaultExecutionPayload;
@@ -116,7 +118,12 @@ public class ExecutionPayloadSchemaElectra
             WITHDRAWAL_REQUESTS,
             SszListSchema.create(
                 ExecutionLayerWithdrawalRequest.SSZ_SCHEMA,
-                specConfig.getMaxWithdrawalRequestsPerPayload())));
+                specConfig.getMaxWithdrawalRequestsPerPayload())),
+        namedSchema(
+            CONSOLIDATION_REQUESTS,
+            SszListSchema.create(
+                ConsolidationRequest.SSZ_SCHEMA,
+                specConfig.getMaxConsolidationRequestsPerPayload())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -163,6 +170,11 @@ public class ExecutionPayloadSchemaElectra
     return getExecutionLayerWithdrawalRequestSchema();
   }
 
+  @Override
+  public ConsolidationRequestSchema getConsolidationSchemaRequired() {
+    return getConsolidationRequestSchema();
+  }
+
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }
@@ -176,13 +188,18 @@ public class ExecutionPayloadSchemaElectra
         getExecutionLayerWithdrawalRequestsSchema().getElementSchema();
   }
 
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return (ConsolidationRequestSchema) getConsolidationRequestsSchema().getElementSchema();
+  }
+
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
         getChildGeneralizedIndex(getFieldIndex(DEPOSIT_REQUESTS)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)),
+        getChildGeneralizedIndex(getFieldIndex(CONSOLIDATION_REQUESTS)));
   }
 
   @Override
@@ -223,5 +240,11 @@ public class ExecutionPayloadSchemaElectra
       getExecutionLayerWithdrawalRequestsSchema() {
     return (SszListSchema<ExecutionLayerWithdrawalRequest, ?>)
         getChildSchema(getFieldIndex(WITHDRAWAL_REQUESTS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<ConsolidationRequest, ?> getConsolidationRequestsSchema() {
+    return (SszListSchema<ConsolidationRequest, ?>)
+        getChildSchema(getFieldIndex(CONSOLIDATION_REQUESTS));
   }
 }

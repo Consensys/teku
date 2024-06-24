@@ -128,6 +128,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -203,6 +204,7 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
   private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
   private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
+  private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
 
   private final Spec spec;
 
@@ -599,7 +601,8 @@ public final class DataStructureUtil {
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64)
                     .depositRequestsRoot(this::randomBytes32)
-                    .withdrawalRequestsRoot(this::randomBytes32));
+                    .withdrawalRequestsRoot(this::randomBytes32)
+                    .consolidationRequestsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -695,7 +698,8 @@ public final class DataStructureUtil {
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
                       .depositRequests(this::randomExecutionPayloadDepositRequests)
-                      .withdrawalRequests(this::randomExecutionLayerWithdrawalRequests);
+                      .withdrawalRequests(this::randomExecutionLayerWithdrawalRequests)
+                      .consolidationRequests(this::randomConsolidationRequests);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -729,6 +733,12 @@ public final class DataStructureUtil {
   public List<ExecutionLayerWithdrawalRequest> randomExecutionLayerWithdrawalRequests() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
         .mapToObj(__ -> randomExecutionLayerWithdrawalRequest())
+        .collect(toList());
+  }
+
+  public List<ConsolidationRequest> randomConsolidationRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_CONSOLIDATION_REQUESTS))
+        .mapToObj(__ -> randomConsolidationRequest())
         .collect(toList());
   }
 
@@ -2523,6 +2533,12 @@ public final class DataStructureUtil {
     return getElectraSchemaDefinitions(randomSlot())
         .getPendingBalanceDepositSchema()
         .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+  }
+
+  public ConsolidationRequest randomConsolidationRequest() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getConsolidationRequestSchema()
+        .create(randomEth1Address(), randomPublicKey(), randomPublicKey());
   }
 
   public PendingConsolidation randomPendingConsolidation() {

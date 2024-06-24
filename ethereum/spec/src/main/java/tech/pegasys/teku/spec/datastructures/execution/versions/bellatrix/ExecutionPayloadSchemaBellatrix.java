@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
@@ -139,6 +140,12 @@ public class ExecutionPayloadSchemaBellatrix
   public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired() {
     throw new IllegalStateException(
         "Attempted to get a execution layer withdrawal request schema from bellatrix");
+  }
+
+  @Override
+  public ConsolidationRequestSchema getConsolidationSchemaRequired() {
+    throw new IllegalStateException(
+        "Attempted to get a consolidation request schema from bellatrix");
   }
 
   @Override

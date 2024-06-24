@@ -339,7 +339,7 @@ public class Web3JExecutionEngineClientTest {
     final Map<String, Object> executionPayloadV4Parameter =
         (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
     // 19 fields in ExecutionPayloadV4
-    assertThat(executionPayloadV4Parameter).hasSize(19);
+    assertThat(executionPayloadV4Parameter).hasSize(20);
     // sanity check
     assertThat(executionPayloadV4Parameter.get("parentHash"))
         .isEqualTo(executionPayloadV4.parentHash.toHexString());
