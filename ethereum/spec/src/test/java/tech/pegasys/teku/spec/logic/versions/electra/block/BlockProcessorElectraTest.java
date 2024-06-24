@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -155,7 +155,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void processExecutionLayerWithdrawalRequests_WithEmptyWithdrawalRequestsList_DoesNothing()
+  public void processWithdrawalRequests_WithEmptyWithdrawalRequestsList_DoesNothing()
       throws BlockProcessingException {
     final BeaconStateElectra preState = BeaconStateElectra.required(createBeaconState());
 
@@ -167,7 +167,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithWithdrawalRequests,
                             validatorExitContextSupplier(preState))));
@@ -176,23 +176,20 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void processExecutionLayerWithdrawalRequests_ExitForAbsentValidator_DoesNothing()
+  public void processWithdrawalRequests_ExitForAbsentValidator_DoesNothing()
       throws BlockProcessingException {
     final BeaconStateElectra preState = BeaconStateElectra.required(createBeaconState());
-    final ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest =
-        dataStructureUtil.randomExecutionLayerWithdrawalRequest();
+    final WithdrawalRequest withdrawalRequest = dataStructureUtil.randomWithdrawalRequest();
     final Optional<ExecutionPayload> executionPayloadWithWithdrawalRequests =
         createExecutionPayloadWithWithdrawalRequests(
-            preState.getSlot(), List.of(executionLayerWithdrawalRequest));
+            preState.getSlot(), List.of(withdrawalRequest));
 
     // Assert the request does not correspond to an existing validator
     assertThat(
             preState.getValidators().stream()
                 .filter(
                     validator ->
-                        validator
-                            .getPublicKey()
-                            .equals(executionLayerWithdrawalRequest.getValidatorPublicKey())))
+                        validator.getPublicKey().equals(withdrawalRequest.getValidatorPublicKey())))
         .isEmpty();
 
     final BeaconStateElectra postState =
@@ -200,7 +197,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithWithdrawalRequests,
                             validatorExitContextSupplier(preState))));
@@ -210,7 +207,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
   @Test
   public void
-      processExecutionLayerWithdrawalRequests_WithdrawalRequestForValidatorWithoutEth1Credentials_DoesNothing()
+      processWithdrawalRequests_WithdrawalRequestForValidatorWithoutEth1Credentials_DoesNothing()
           throws BlockProcessingException {
     final Validator validator =
         dataStructureUtil.validatorBuilder().withRandomBlsWithdrawalCredentials().build();
@@ -227,15 +224,14 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
     final Optional<ExecutionPayload> executionPayloadWithExits =
         createExecutionPayloadWithWithdrawalRequests(
-            preState.getSlot(),
-            List.of(dataStructureUtil.executionLayerWithdrawalRequest(validator)));
+            preState.getSlot(), List.of(dataStructureUtil.withdrawalRequest(validator)));
 
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithExits,
                             validatorExitContextSupplier(preState))));
@@ -244,9 +240,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void
-      processExecutionLayerWithdrawalRequests_WithdrawalRequestWithWrongSourceAddress_DoesNothing()
-          throws BlockProcessingException {
+  public void processWithdrawalRequests_WithdrawalRequestWithWrongSourceAddress_DoesNothing()
+      throws BlockProcessingException {
     final Validator validator =
         dataStructureUtil.validatorBuilder().withRandomEth1WithdrawalCredentials().build();
 
@@ -260,8 +255,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
                       mutableState.setValidators(validators);
                     }));
 
-    final ExecutionLayerWithdrawalRequest withdrawalRequestWithInvalidSourceAddress =
-        dataStructureUtil.executionLayerWithdrawalRequest(
+    final WithdrawalRequest withdrawalRequestWithInvalidSourceAddress =
+        dataStructureUtil.withdrawalRequest(
             dataStructureUtil.randomEth1Address(), validator.getPublicKey(), UInt64.ZERO);
     final Optional<ExecutionPayload> executionPayloadWithWithdrawalRequests =
         createExecutionPayloadWithWithdrawalRequests(
@@ -272,7 +267,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithWithdrawalRequests,
                             validatorExitContextSupplier(preState))));
@@ -281,9 +276,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void
-      processExecutionLayerWithdrawalRequests_WithdrawalRequestForInactiveValidator_DoesNothing()
-          throws BlockProcessingException {
+  public void processWithdrawalRequests_WithdrawalRequestForInactiveValidator_DoesNothing()
+      throws BlockProcessingException {
     final Validator validator =
         dataStructureUtil
             .validatorBuilder()
@@ -303,14 +297,13 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
     final Optional<ExecutionPayload> executionPayloadWithExits =
         createExecutionPayloadWithWithdrawalRequests(
-            preState.getSlot(),
-            List.of(dataStructureUtil.executionLayerWithdrawalRequest(validator)));
+            preState.getSlot(), List.of(dataStructureUtil.withdrawalRequest(validator)));
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithExits,
                             validatorExitContextSupplier(preState))));
@@ -319,9 +312,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void
-      processExecutionLayerWithdrawalRequests_WithdrawalRequestForValidatorAlreadyExiting_DoesNothing()
-          throws BlockProcessingException {
+  public void processWithdrawalRequests_WithdrawalRequestForValidatorAlreadyExiting_DoesNothing()
+      throws BlockProcessingException {
     final UInt64 currentEpoch = UInt64.valueOf(1_000);
     final Validator validator =
         dataStructureUtil
@@ -344,14 +336,13 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
     final Optional<ExecutionPayload> executionPayloadWithExits =
         createExecutionPayloadWithWithdrawalRequests(
-            preState.getSlot(),
-            List.of(dataStructureUtil.executionLayerWithdrawalRequest(validator)));
+            preState.getSlot(), List.of(dataStructureUtil.withdrawalRequest(validator)));
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithExits,
                             validatorExitContextSupplier(preState))));
@@ -360,9 +351,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void
-      processExecutionLayerWithdrawalRequests_ExitForValidatorNotActiveLongEnough_DoesNothing()
-          throws BlockProcessingException {
+  public void processWithdrawalRequests_ExitForValidatorNotActiveLongEnough_DoesNothing()
+      throws BlockProcessingException {
     final UInt64 currentEpoch = UInt64.valueOf(1_000);
     final Validator validator =
         dataStructureUtil
@@ -385,15 +375,14 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
     final Optional<ExecutionPayload> executionPayloadWithExits =
         createExecutionPayloadWithWithdrawalRequests(
-            preState.getSlot(),
-            List.of(dataStructureUtil.executionLayerWithdrawalRequest(validator)));
+            preState.getSlot(), List.of(dataStructureUtil.withdrawalRequest(validator)));
 
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithExits,
                             validatorExitContextSupplier(preState))));
@@ -402,8 +391,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void processExecutionLayerWithdrawalRequests_ExitForEligibleValidator()
-      throws BlockProcessingException {
+  public void processWithdrawalRequests_ExitForEligibleValidator() throws BlockProcessingException {
     final UInt64 currentEpoch = UInt64.valueOf(1_000);
     final Validator validator =
         dataStructureUtil
@@ -436,16 +424,14 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
     final Optional<ExecutionPayload> executionPayloadWithExits =
         createExecutionPayloadWithWithdrawalRequests(
             preState.getSlot(),
-            List.of(
-                dataStructureUtil.executionLayerWithdrawalRequest(
-                    validator, FULL_EXIT_REQUEST_AMOUNT)));
+            List.of(dataStructureUtil.withdrawalRequest(validator, FULL_EXIT_REQUEST_AMOUNT)));
 
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
                             executionPayloadWithExits,
                             validatorExitContextSupplier(preState))));
@@ -496,7 +482,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   @Test
-  public void processExecutionLayerWithdrawalRequests_PartialWithdrawalRequestForEligibleValidator()
+  public void processWithdrawalRequests_PartialWithdrawalRequestForEligibleValidator()
       throws BlockProcessingException {
     final UInt64 currentEpoch = UInt64.valueOf(1_000);
     final Validator validator =
@@ -550,19 +536,18 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             .minus(specConfigElectra.getMinActivationBalance());
     assertThat(amount).isEqualTo(UInt64.valueOf(123_456_789));
 
-    final Optional<ExecutionPayload> processExecutionLayerWithdrawalRequests =
+    final Optional<ExecutionPayload> processWithdrawalRequests =
         createExecutionPayloadWithWithdrawalRequests(
-            preState.getSlot(),
-            List.of(dataStructureUtil.executionLayerWithdrawalRequest(validator, amount)));
+            preState.getSlot(), List.of(dataStructureUtil.withdrawalRequest(validator, amount)));
 
     final BeaconStateElectra postState =
         BeaconStateElectra.required(
             preState.updated(
                 mutableState ->
                     getBlockProcessor(preState)
-                        .processExecutionLayerWithdrawalRequests(
+                        .processWithdrawalRequests(
                             mutableState,
-                            processExecutionLayerWithdrawalRequests,
+                            processWithdrawalRequests,
                             validatorExitContextSupplier(preState))));
 
     // After processing the request, the validator hasn't updated these
@@ -596,7 +581,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   }
 
   private Optional<ExecutionPayload> createExecutionPayloadWithWithdrawalRequests(
-      final UInt64 slot, final List<ExecutionLayerWithdrawalRequest> withdrawalRequests) {
+      final UInt64 slot, final List<WithdrawalRequest> withdrawalRequests) {
     return Optional.of(
         dataStructureUtil.randomExecutionPayload(
             slot, builder -> builder.withdrawalRequests(() -> withdrawalRequests)));

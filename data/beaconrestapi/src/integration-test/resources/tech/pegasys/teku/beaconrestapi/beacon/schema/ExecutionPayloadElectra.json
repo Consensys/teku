@@ -117,7 +117,7 @@
     "withdrawal_requests" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/ExecutionLayerWithdrawalRequest"
+        "$ref" : "#/components/schemas/WithdrawalRequest"
       }
     },
     "consolidation_requests" : {

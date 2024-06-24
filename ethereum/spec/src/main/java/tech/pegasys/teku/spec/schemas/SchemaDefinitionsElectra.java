@@ -46,10 +46,10 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
@@ -90,7 +90,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   private final DepositRequestSchema depositRequestSchema;
 
-  private final ExecutionLayerWithdrawalRequestSchema executionLayerWithdrawalRequestSchema;
+  private final WithdrawalRequestSchema withdrawalRequestSchema;
   private final ConsolidationRequestSchema consolidationRequestSchema;
 
   private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
@@ -159,7 +159,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
 
     this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
-    this.executionLayerWithdrawalRequestSchema = ExecutionLayerWithdrawalRequest.SSZ_SCHEMA;
+    this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
     this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
     this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
     this.pendingPartialWithdrawalSchema =
@@ -305,8 +305,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return depositRequestSchema;
   }
 
-  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
-    return executionLayerWithdrawalRequestSchema;
+  public WithdrawalRequestSchema getWithdrawalRequestSchema() {
+    return withdrawalRequestSchema;
   }
 
   public PendingBalanceDeposit.PendingBalanceDepositSchema getPendingBalanceDepositSchema() {

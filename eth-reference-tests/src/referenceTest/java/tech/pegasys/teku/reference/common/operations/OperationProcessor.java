@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -66,11 +66,10 @@ public interface OperationProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositRequest(final MutableBeaconState state, final DepositRequest depositRequest)
+  void processDepositRequest(MutableBeaconState state, DepositRequest depositRequest)
       throws BlockProcessingException;
 
-  void processExecutionLayerWithdrawalRequest(
-      MutableBeaconState state, ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest)
+  void processWithdrawalRequest(MutableBeaconState state, WithdrawalRequest withdrawalRequest)
       throws BlockProcessingException;
 
   void processConsolidation(MutableBeaconState state, SignedConsolidation consolidation)

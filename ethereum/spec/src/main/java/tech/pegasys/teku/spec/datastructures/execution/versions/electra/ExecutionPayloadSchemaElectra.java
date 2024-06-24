@@ -79,7 +79,7 @@ public class ExecutionPayloadSchemaElectra
         SszUInt64,
         SszUInt64,
         SszList<DepositRequest>,
-        SszList<ExecutionLayerWithdrawalRequest>,
+        SszList<WithdrawalRequest>,
         SszList<ConsolidationRequest>>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
@@ -117,8 +117,7 @@ public class ExecutionPayloadSchemaElectra
         namedSchema(
             WITHDRAWAL_REQUESTS,
             SszListSchema.create(
-                ExecutionLayerWithdrawalRequest.SSZ_SCHEMA,
-                specConfig.getMaxWithdrawalRequestsPerPayload())),
+                WithdrawalRequest.SSZ_SCHEMA, specConfig.getMaxWithdrawalRequestsPerPayload())),
         namedSchema(
             CONSOLIDATION_REQUESTS,
             SszListSchema.create(
@@ -159,15 +158,14 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @Override
-  public SszListSchema<
-          ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
-      getExecutionLayerWithdrawalRequestsSchemaRequired() {
-    return getExecutionLayerWithdrawalRequestsSchema();
+  public SszListSchema<WithdrawalRequest, ? extends SszList<WithdrawalRequest>>
+      getWithdrawalRequestsSchemaRequired() {
+    return getWithdrawalRequestsSchema();
   }
 
   @Override
-  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired() {
-    return getExecutionLayerWithdrawalRequestSchema();
+  public WithdrawalRequestSchema getWithdrawalRequestSchemaRequired() {
+    return getWithdrawalRequestSchema();
   }
 
   @Override
@@ -183,9 +181,8 @@ public class ExecutionPayloadSchemaElectra
     return (DepositRequestSchema) getDepositRequestsSchema().getElementSchema();
   }
 
-  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
-    return (ExecutionLayerWithdrawalRequestSchema)
-        getExecutionLayerWithdrawalRequestsSchema().getElementSchema();
+  public WithdrawalRequestSchema getWithdrawalRequestSchema() {
+    return (WithdrawalRequestSchema) getWithdrawalRequestsSchema().getElementSchema();
   }
 
   public ConsolidationRequestSchema getConsolidationRequestSchema() {
@@ -236,10 +233,8 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<ExecutionLayerWithdrawalRequest, ?>
-      getExecutionLayerWithdrawalRequestsSchema() {
-    return (SszListSchema<ExecutionLayerWithdrawalRequest, ?>)
-        getChildSchema(getFieldIndex(WITHDRAWAL_REQUESTS));
+  public SszListSchema<WithdrawalRequest, ?> getWithdrawalRequestsSchema() {
+    return (SszListSchema<WithdrawalRequest, ?>) getChildSchema(getFieldIndex(WITHDRAWAL_REQUESTS));
   }
 
   @SuppressWarnings("unchecked")
