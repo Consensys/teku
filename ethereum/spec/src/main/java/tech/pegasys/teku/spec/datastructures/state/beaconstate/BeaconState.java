@@ -192,4 +192,8 @@ public interface BeaconState extends SszContainer, ValidatorStats {
   default Optional<BeaconStateElectra> toVersionElectra() {
     return Optional.empty();
   }
+
+  default boolean isVersionElectra() {
+    return false;
+  }
 }

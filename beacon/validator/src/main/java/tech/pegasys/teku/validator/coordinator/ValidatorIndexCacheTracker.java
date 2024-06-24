@@ -33,6 +33,6 @@ public class ValidatorIndexCacheTracker implements FinalizedCheckpointChannel {
     final BeaconState finalizedState = recentChainData.getStore().getLatestFinalized().getState();
     BeaconStateCache.getTransitionCaches(finalizedState)
         .getValidatorIndexCache()
-        .updateLatestFinalizedIndex(finalizedState);
+        .updateLatestFinalizedState(finalizedState);
   }
 }

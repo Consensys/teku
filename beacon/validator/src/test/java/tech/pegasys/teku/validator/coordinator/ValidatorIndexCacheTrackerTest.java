@@ -34,7 +34,7 @@ class ValidatorIndexCacheTrackerTest {
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
-  private final Spec spec = TestSpecFactory.createDefault();
+  private final Spec spec = TestSpecFactory.createMinimalElectra();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

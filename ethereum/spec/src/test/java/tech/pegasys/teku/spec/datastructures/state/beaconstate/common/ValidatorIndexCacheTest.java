@@ -21,11 +21,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -36,9 +36,9 @@ public class ValidatorIndexCacheTest {
 
   private static final int NUMBER_OF_VALIDATORS = 64;
 
-  private final Spec spec = TestSpecFactory.createDefault();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BeaconState state = dataStructureUtil.randomBeaconState(NUMBER_OF_VALIDATORS);
+  private Spec spec = TestSpecFactory.createDefault();
+  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private BeaconState state = dataStructureUtil.randomBeaconState(NUMBER_OF_VALIDATORS);
 
   @SuppressWarnings("unchecked")
   final Cache<BLSPublicKey, Integer> cache = mock(Cache.class);
@@ -48,7 +48,7 @@ public class ValidatorIndexCacheTest {
     final SszList<Validator> validators = state.getValidators();
     final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    validatorIndexCache.updateLatestFinalizedIndex(state);
+    validatorIndexCache.updateLatestFinalizedState(state);
 
     final BLSPublicKey publicKey = validators.get(latestFinalizedIndex).getPublicKey();
     // cache eagerly the last validator public key
@@ -62,10 +62,12 @@ public class ValidatorIndexCacheTest {
 
   @Test
   public void shouldScanFinalizedStateAndCache() {
+    withSpec(TestSpecFactory.createMinimalElectra());
     final SszList<Validator> validators = state.getValidators();
     final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    validatorIndexCache.updateLatestFinalizedIndex(state);
+    validatorIndexCache.updateLatestFinalizedState(state);
+    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(latestFinalizedIndex);
 
     final Optional<Integer> index =
         validatorIndexCache.getValidatorIndex(
@@ -78,12 +80,20 @@ public class ValidatorIndexCacheTest {
   }
 
   @Test
+  public void shouldIgnoreFinalizedStateUpdateBeforeElectra() {
+    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+    validatorIndexCache.updateLatestFinalizedState(state);
+    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(-1);
+    assertThat(validatorIndexCache.getLatestFinalizedSlot()).isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
   public void shouldStartScanningFinalizedStateFromLastCachedIndex() {
     final SszList<Validator> validators = state.getValidators();
     final int latestFinalizedIndex = NUMBER_OF_VALIDATORS - 1;
     final int lastCachedIndex = 31;
     final ValidatorIndexCache validatorIndexCache =
-        new ValidatorIndexCache(cache, latestFinalizedIndex, lastCachedIndex);
+        new ValidatorIndexCache(cache, latestFinalizedIndex, lastCachedIndex, state.getSlot());
 
     when(cache.getCached(any())).thenReturn(Optional.empty());
     // mock cache needs to report the size changed
@@ -103,7 +113,7 @@ public class ValidatorIndexCacheTest {
   @Test
   public void shouldReturnEmptyIfPubkeyNotFoundInState() {
     final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    validatorIndexCache.updateLatestFinalizedIndex(state);
+    validatorIndexCache.updateLatestFinalizedState(state);
 
     final Optional<Integer> index =
         validatorIndexCache.getValidatorIndex(state, dataStructureUtil.randomPublicKey());
@@ -112,42 +122,6 @@ public class ValidatorIndexCacheTest {
     assertThat(validatorIndexCache.getCacheSize()).isEqualTo(NUMBER_OF_VALIDATORS);
 
     assertThat(index).isEmpty();
-  }
-
-  @Test
-  public void shouldUpdateLatestFinalizedIndex() {
-    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-
-    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(-1);
-
-    validatorIndexCache.updateLatestFinalizedIndex(state);
-
-    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(63);
-  }
-
-  @Test
-  public void shouldInvalidatePublicKeyIfFinalized() {
-    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-    validatorIndexCache.updateLatestFinalizedIndex(state);
-
-    final BLSPublicKey updatedPublicKey = dataStructureUtil.randomPublicKey();
-    validatorIndexCache.invalidateWithNewValue(updatedPublicKey, 30);
-
-    assertThat(validatorIndexCache.getCacheSize()).isOne();
-    assertThat(validatorIndexCache.getValidatorIndex(state, updatedPublicKey)).hasValue(30);
-  }
-
-  @Test
-  @Disabled
-  public void shouldNotInvalidatePublicKeyIfIndexIsNotFinalized() {
-    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
-
-    final BLSPublicKey updatedPublicKey = dataStructureUtil.randomPublicKey();
-    validatorIndexCache.invalidateWithNewValue(updatedPublicKey, 30);
-
-    // nothing has been cached because the state is not finalized
-    assertThat(validatorIndexCache.getCacheSize()).isZero();
-    assertThat(validatorIndexCache.getValidatorIndex(state, updatedPublicKey)).isEmpty();
   }
 
   @Test
@@ -163,5 +137,39 @@ public class ValidatorIndexCacheTest {
             ValidatorIndexCache.NO_OP_INSTANCE.getValidatorIndex(
                 state, state.getValidators().get(validatorIndex).getPublicKey()))
         .contains(validatorIndex);
+  }
+
+  @Test
+  public void electraStateShouldUseStableSearchIfFinalized() {
+    final int validatorIndex = 2;
+    withSpec(TestSpecFactory.createMinimalElectra());
+    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+    validatorIndexCache.updateLatestFinalizedState(state);
+    assertThat(
+            validatorIndexCache.getValidatorIndex(
+                state, state.getValidators().get(validatorIndex).getPublicKey()))
+        .contains(validatorIndex);
+    final int lastIndex = state.getValidators().size() - 1;
+    assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(lastIndex);
+    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(lastIndex);
+  }
+
+  @Test
+  public void electraStateShouldUseUnstableSearchIfNotFinalized() {
+    final int validatorIndex = 2;
+    withSpec(TestSpecFactory.createMinimalElectra());
+    final ValidatorIndexCache validatorIndexCache = new ValidatorIndexCache();
+    assertThat(
+            validatorIndexCache.getValidatorIndex(
+                state, state.getValidators().get(validatorIndex).getPublicKey()))
+        .contains(validatorIndex);
+    assertThat(validatorIndexCache.getLastCachedIndex()).isEqualTo(2);
+    assertThat(validatorIndexCache.getLatestFinalizedIndex()).isEqualTo(-1);
+  }
+
+  private void withSpec(final Spec spec) {
+    this.spec = spec;
+    dataStructureUtil = new DataStructureUtil(spec);
+    state = dataStructureUtil.randomBeaconState(NUMBER_OF_VALIDATORS);
   }
 }
