@@ -26,19 +26,13 @@ public abstract class ContainerSchema3<
         C extends SszContainer, V0 extends SszData, V1 extends SszData, V2 extends SszData>
     extends AbstractSszContainerSchema<C> {
 
-  public static <
-          C extends SszContainer, V0 extends SszData, V1 extends SszData, V2 extends SszData>
-      ContainerSchema3<C, V0, V1, V2>
-          create(
-              final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1, final SszSchema<V2> fieldSchema2,
-              final BiFunction<
-                      ContainerSchema3<
-                          C, V0, V1, V2>,
-                      TreeNode,
-                      C>
-                  instanceCtor) {
-    return new ContainerSchema3<>(
-        fieldSchema0, fieldSchema1, fieldSchema2) {
+  public static <C extends SszContainer, V0 extends SszData, V1 extends SszData, V2 extends SszData>
+      ContainerSchema3<C, V0, V1, V2> create(
+          final SszSchema<V0> fieldSchema0,
+          final SszSchema<V1> fieldSchema1,
+          final SszSchema<V2> fieldSchema2,
+          final BiFunction<ContainerSchema3<C, V0, V1, V2>, TreeNode, C> instanceCtor) {
+    return new ContainerSchema3<>(fieldSchema0, fieldSchema1, fieldSchema2) {
       @Override
       public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -47,33 +41,34 @@ public abstract class ContainerSchema3<
   }
 
   protected ContainerSchema3(
-      final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1, final SszSchema<V2> fieldSchema2) {
+      final SszSchema<V0> fieldSchema0,
+      final SszSchema<V1> fieldSchema1,
+      final SszSchema<V2> fieldSchema2) {
 
     super(List.of(fieldSchema0, fieldSchema1, fieldSchema2));
   }
 
   protected ContainerSchema3(
       final String containerName,
-      final NamedSchema<V0> fieldNamedSchema0, final NamedSchema<V1> fieldNamedSchema1, final NamedSchema<V2> fieldNamedSchema2) {
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2) {
 
     super(containerName, List.of(fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2));
   }
 
-    @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getChildSchema(0);
   }
-
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
     return (SszSchema<V1>) getChildSchema(1);
   }
 
-
   @SuppressWarnings("unchecked")
   public SszSchema<V2> getFieldSchema2() {
     return (SszSchema<V2>) getChildSchema(2);
   }
-
 }

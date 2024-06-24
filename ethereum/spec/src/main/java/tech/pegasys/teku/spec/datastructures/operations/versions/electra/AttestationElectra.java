@@ -30,8 +30,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class AttestationElectra
-    extends Profile4<
-            AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
+    extends Profile4<AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements Attestation {
 
   public AttestationElectra(final AttestationElectraSchema type, final TreeNode backingNode) {

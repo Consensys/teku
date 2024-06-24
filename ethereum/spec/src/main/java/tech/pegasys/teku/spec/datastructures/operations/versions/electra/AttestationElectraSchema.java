@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-
 import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema4;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -34,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class AttestationElectraSchema
     extends ProfileSchema4<
-            AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
+        AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements AttestationSchema<AttestationElectra> {
 
   public AttestationElectraSchema(

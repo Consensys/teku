@@ -34,19 +34,12 @@ public abstract class ProfileSchema3<
         C extends SszProfile, V0 extends SszData, V1 extends SszData, V2 extends SszData>
     extends AbstractSszProfileSchema<C> {
 
-  public static <
-          C extends SszProfile, V0 extends SszData, V1 extends SszData, V2 extends SszData>
+  public static <C extends SszProfile, V0 extends SszData, V1 extends SszData, V2 extends SszData>
       ProfileSchema3<C, V0, V1, V2> create(
           final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema,
           final Set<Integer> activeFieldIndices,
-          final BiFunction<
-                  ProfileSchema3<
-                      C, V0, V1, V2>,
-                  TreeNode,
-                  C>
-              instanceCtor) {
-    return new ProfileSchema3<>(
-        "", stableContainerSchema, activeFieldIndices) {
+          final BiFunction<ProfileSchema3<C, V0, V1, V2>, TreeNode, C> instanceCtor) {
+    return new ProfileSchema3<>("", stableContainerSchema, activeFieldIndices) {
       @Override
       public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -56,20 +49,22 @@ public abstract class ProfileSchema3<
 
   protected ProfileSchema3(
       final String containerName,
-      final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1, final SszSchema<V2> fieldSchema2,
+      final SszSchema<V0> fieldSchema0,
+      final SszSchema<V1> fieldSchema1,
+      final SszSchema<V2> fieldSchema2,
       final int maxFieldCount) {
     this(
         containerName,
         SszStableContainerSchema.createForProfileOnly(
             maxFieldCount, continuousActiveSchemas(fieldSchema0, fieldSchema1, fieldSchema2)),
-        IntStream.range(0, 3)
-            .boxed()
-            .collect(Collectors.toUnmodifiableSet()));
+        IntStream.range(0, 3).boxed().collect(Collectors.toUnmodifiableSet()));
   }
 
   protected ProfileSchema3(
       final String containerName,
-      final NamedSchema<V0> fieldNamedSchema0, final NamedSchema<V1> fieldNamedSchema1, final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
       final int maxFieldCount) {
     this(
         containerName,
@@ -77,9 +72,7 @@ public abstract class ProfileSchema3<
             maxFieldCount,
             continuousActiveNamedSchemas(
                 List.of(fieldNamedSchema0, fieldNamedSchema1, fieldNamedSchema2))),
-        IntStream.range(0, 3)
-            .boxed()
-            .collect(Collectors.toUnmodifiableSet()));
+        IntStream.range(0, 3).boxed().collect(Collectors.toUnmodifiableSet()));
   }
 
   protected ProfileSchema3(
@@ -92,21 +85,18 @@ public abstract class ProfileSchema3<
     assert activeFieldIndices.size() == 3;
   }
 
-    @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getNthActiveFieldSchema(0);
   }
-
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
     return (SszSchema<V1>) getNthActiveFieldSchema(1);
   }
 
-
   @SuppressWarnings("unchecked")
   public SszSchema<V2> getFieldSchema2() {
     return (SszSchema<V2>) getNthActiveFieldSchema(2);
   }
-
 }

@@ -55,26 +55,26 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 
 public class ExecutionPayloadHeaderSchemaElectra
     extends ProfileSchema19<
-            ExecutionPayloadHeaderElectraImpl,
-            SszBytes32,
-            SszByteVector,
-            SszBytes32,
-            SszBytes32,
-            SszByteVector,
-            SszBytes32,
-            SszUInt64,
-            SszUInt64,
-            SszUInt64,
-            SszUInt64,
-            SszByteList,
-            SszUInt256,
-            SszBytes32,
-            SszBytes32,
-            SszBytes32,
-            SszUInt64,
-            SszUInt64,
-            SszBytes32,
-            SszBytes32>
+        ExecutionPayloadHeaderElectraImpl,
+        SszBytes32,
+        SszByteVector,
+        SszBytes32,
+        SszBytes32,
+        SszByteVector,
+        SszBytes32,
+        SszUInt64,
+        SszUInt64,
+        SszUInt64,
+        SszUInt64,
+        SszByteList,
+        SszUInt256,
+        SszBytes32,
+        SszBytes32,
+        SszBytes32,
+        SszUInt64,
+        SszUInt64,
+        SszBytes32,
+        SszBytes32>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderElectraImpl> {
 
   private final ExecutionPayloadHeaderElectraImpl defaultExecutionPayloadHeader;

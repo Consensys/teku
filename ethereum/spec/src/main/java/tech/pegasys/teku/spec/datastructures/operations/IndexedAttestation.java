@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.namedIndexedSchema;
 import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_INDEXED_ATTESTATION_FIELDS;
 
 import tech.pegasys.teku.bls.BLSSignature;

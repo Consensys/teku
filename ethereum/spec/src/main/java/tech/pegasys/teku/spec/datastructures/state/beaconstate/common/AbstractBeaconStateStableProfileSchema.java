@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
@@ -39,10 +38,12 @@ public abstract class AbstractBeaconStateStableProfileSchema<
     super(
         name,
         SszStableContainerSchema.createForProfileOnly(
-                MAX_BEACON_STATE_FIELDS,
-        continuousActiveNamedSchemas(
-            allFields.stream().map(f -> namedSchema(f.getName(), f.getSchema().get())).toList())
-        ), IntStream.range(0,allFields.size()).boxed().collect(Collectors.toUnmodifiableSet()));
+            MAX_BEACON_STATE_FIELDS,
+            continuousActiveNamedSchemas(
+                allFields.stream()
+                    .map(f -> namedSchema(f.getName(), f.getSchema().get()))
+                    .toList())),
+        IntStream.range(0, allFields.size()).boxed().collect(Collectors.toUnmodifiableSet()));
     validateFields(allFields);
   }
 
