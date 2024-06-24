@@ -53,6 +53,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -190,8 +191,9 @@ public interface ValidatorModule {
       SyncCommitteeMessagePool syncCommitteeMessagePool,
       SyncCommitteeContributionPool syncCommitteeContributionPool,
       SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-      BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory) {
-    return new ValidatorApiHandler(
+      BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory,
+      EventChannelSubscriber<ValidatorApiChannel> validatorApiChannelSubscriber) {
+    ValidatorApiHandler validatorApiHandler = new ValidatorApiHandler(
         chainDataProvider,
         dataProvider.getNodeDataProvider(),
         combinedChainDataClient,
@@ -214,6 +216,10 @@ public interface ValidatorModule {
         syncCommitteeContributionPool,
         syncCommitteeSubscriptionManager,
         blockProductionPerformanceFactory);
+
+    validatorApiChannelSubscriber.subscribe(validatorApiHandler);
+
+    return validatorApiHandler;
   }
 
   @Provides

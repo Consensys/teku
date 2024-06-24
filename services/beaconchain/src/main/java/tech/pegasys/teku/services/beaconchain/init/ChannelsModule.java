@@ -3,6 +3,7 @@ package tech.pegasys.teku.services.beaconchain.init;
 import dagger.Module;
 import dagger.Provides;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
@@ -167,5 +168,12 @@ public interface ChannelsModule {
   static EventChannelSubscriber<BlockImportChannel> blockImportChannelSubscriber(
       EventChannels eventChannels) {
     return eventChannels.createSubscriber(BlockImportChannel.class);
+  }
+
+  @Provides
+  static EventChannelSubscriber<ValidatorApiChannel> validatorApiChannelSubscriber(
+      EventChannels eventChannels, BeaconRestApiConfig beaconRestApiConfig) {
+    return eventChannels.createSubscriberMultithreaded(
+        ValidatorApiChannel.class, beaconRestApiConfig.getValidatorThreads());
   }
 }
