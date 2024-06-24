@@ -18,7 +18,8 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_RECEIPTS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.CONSOLIDATION_REQUESTS_ROOT;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_REQUESTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
@@ -39,7 +40,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema19;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema20;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -54,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderSchemaElectra
-    extends ProfileSchema19<
+    extends ProfileSchema20<
         ExecutionPayloadHeaderElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -73,6 +74,7 @@ public class ExecutionPayloadHeaderSchemaElectra
         SszBytes32,
         SszUInt64,
         SszUInt64,
+        SszBytes32,
         SszBytes32,
         SszBytes32>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderElectraImpl> {
@@ -100,9 +102,10 @@ public class ExecutionPayloadHeaderSchemaElectra
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(DEPOSIT_RECEIPTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(DEPOSIT_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWAL_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        MAX_EXECUTION_PAYLOAD_FIELDS);
+        namedSchema(CONSOLIDATION_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+            MAX_EXECUTION_PAYLOAD_FIELDS);
 
     final ExecutionPayloadElectraImpl defaultExecutionPayload =
         new ExecutionPayloadSchemaElectra(specConfig).getDefault();
@@ -122,8 +125,9 @@ public class ExecutionPayloadHeaderSchemaElectra
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)),
-        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS_ROOT)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS_ROOT)));
+        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_REQUESTS_ROOT)),
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS_ROOT)),
+        getChildGeneralizedIndex(getFieldIndex(CONSOLIDATION_REQUESTS_ROOT)));
   }
 
   @Override
@@ -173,7 +177,8 @@ public class ExecutionPayloadHeaderSchemaElectra
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
         SszUInt64.of(executionPayload.getBlobGasUsed()),
         SszUInt64.of(executionPayload.getExcessBlobGas()),
-        SszBytes32.of(executionPayload.getDepositReceipts().hashTreeRoot()),
-        SszBytes32.of(executionPayload.getWithdrawalRequests().hashTreeRoot()));
+        SszBytes32.of(executionPayload.getDepositRequests().hashTreeRoot()),
+        SszBytes32.of(executionPayload.getWithdrawalRequests().hashTreeRoot()),
+        SszBytes32.of(executionPayload.getConsolidationRequests().hashTreeRoot()));
   }
 }

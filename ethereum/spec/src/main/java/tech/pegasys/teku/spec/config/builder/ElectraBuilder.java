@@ -42,7 +42,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer maxAttesterSlashingsElectra;
   private Integer maxAttestationsElectra;
   private Integer maxConsolidationRequestsPerPayload;
-  private Integer maxDepositReceiptsPerPayload;
+  private Integer maxDepositRequestsPerPayload;
   private Integer maxWithdrawalRequestsPerPayload;
   private Integer maxPendingPartialsPerWithdrawalsSweep;
 
@@ -65,7 +65,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
         maxConsolidationRequestsPerPayload,
-        maxDepositReceiptsPerPayload,
+        maxDepositRequestsPerPayload,
         maxWithdrawalRequestsPerPayload,
         maxPendingPartialsPerWithdrawalsSweep);
   }
@@ -152,9 +152,9 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
-  public ElectraBuilder maxDepositReceiptsPerPayload(final Integer maxDepositReceiptsPerPayload) {
-    checkNotNull(maxDepositReceiptsPerPayload);
-    this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
+  public ElectraBuilder maxDepositRequestsPerPayload(final Integer maxDepositRequestsPerPayload) {
+    checkNotNull(maxDepositRequestsPerPayload);
+    this.maxDepositRequestsPerPayload = maxDepositRequestsPerPayload;
     return this;
   }
 
@@ -204,7 +204,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("maxAttesterSlashingsElectra", maxAttesterSlashingsElectra);
     constants.put("maxAttestationsElectra", maxAttestationsElectra);
     constants.put("maxConsolidationRequestsPerPayload", maxConsolidationRequestsPerPayload);
-    constants.put("maxDepositReceiptsPerPayload", maxDepositReceiptsPerPayload);
+    constants.put("maxDepositRequestsPerPayload", maxDepositRequestsPerPayload);
     constants.put("maxWithdrawalRequestsPerPayload", maxWithdrawalRequestsPerPayload);
     constants.put("maxPendingPartialsPerWithdrawalsSweep", maxPendingPartialsPerWithdrawalsSweep);
 

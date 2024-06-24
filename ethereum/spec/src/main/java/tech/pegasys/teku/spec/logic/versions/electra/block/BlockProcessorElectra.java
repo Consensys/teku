@@ -44,9 +44,9 @@ import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -125,15 +125,15 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
     safelyProcess(
         () -> {
-          processDepositReceipts(
+          processDepositRequests(
               state,
               body.getOptionalExecutionPayload()
                   .flatMap(ExecutionPayload::toVersionElectra)
-                  .map(ExecutionPayloadElectra::getDepositReceipts)
+                  .map(ExecutionPayloadElectra::getDepositRequests)
                   .orElseThrow(
                       () ->
                           new BlockProcessingException(
-                              "Deposit receipts were not found during block processing.")));
+                              "Deposit requests were not found during block processing.")));
           processConsolidations(state, BeaconBlockBodyElectra.required(body).getConsolidations());
         });
   }
@@ -145,7 +145,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         state
             .getEth1Data()
             .getDepositCount()
-            .min(BeaconStateElectra.required(state).getDepositReceiptsStartIndex());
+            .min(BeaconStateElectra.required(state).getDepositRequestsStartIndex());
 
     if (state.getEth1DepositIndex().isLessThan(eth1DepositIndexLimit)) {
       final int expectedDepositCount =
@@ -164,15 +164,13 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   @Override
-  protected void processExecutionLayerWithdrawalRequests(
+  protected void processWithdrawalRequests(
       final MutableBeaconState state,
       final Optional<ExecutionPayload> executionPayload,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    this.processExecutionLayerWithdrawalRequests(
-        state,
-        getExecutionLayerWithdrawalRequestsFromBlock(executionPayload),
-        validatorExitContextSupplier);
+    this.processWithdrawalRequests(
+        state, getWithdrawalRequestsFromBlock(executionPayload), validatorExitContextSupplier);
   }
 
   // process_withdrawals
@@ -189,29 +187,24 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         specConfigElectra);
   }
 
-  /**
-   * Implements process_execution_layer_withdrawal_request from consensus-specs (EIP-7002 &
-   * EIP-7251).
-   */
+  /** Implements process_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251). */
   @Override
-  public void processExecutionLayerWithdrawalRequests(
+  public void processWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
+      final SszList<WithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     final UInt64 slot = state.getSlot();
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
 
     LOG.debug(
-        "process_execution_layer_withdrawal_request: {} execution layer withdrawal request to process from block at "
-            + "slot {}",
+        "process_withdrawal_request: {} withdrawal request to process from block at " + "slot {}",
         withdrawalRequests.size(),
         slot);
 
     withdrawalRequests.forEach(
         withdrawalRequest -> {
           LOG.debug(
-              "process_execution_layer_withdrawal_request: processing execution layer withdrawal request {}",
-              withdrawalRequest);
+              "process_withdrawal_request: processing withdrawal request {}", withdrawalRequest);
 
           // If partial withdrawal queue is full, only full exits are processed
           final boolean isFullExitRequest =
@@ -220,8 +213,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
                   >= specConfigElectra.getPendingPartialWithdrawalsLimit();
           if (partialWithdrawalsQueueFull && !isFullExitRequest) {
-            LOG.debug(
-                "process_execution_layer_withdrawal_request: partial withdrawal queue is full");
+            LOG.debug("process_withdrawal_request: partial withdrawal queue is full");
             return;
           }
 
@@ -229,7 +221,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPublicKey());
           if (maybeValidatorIndex.isEmpty()) {
             LOG.debug(
-                "process_execution_layer_withdrawal_request: no matching validator for public key {}",
+                "process_withdrawal_request: no matching validator for public key {}",
                 withdrawalRequest.getValidatorPublicKey());
             return;
           }
@@ -242,8 +234,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               predicatesElectra.hasExecutionWithdrawalCredential(validator);
           if (!hasExecutionAddress) {
             LOG.debug(
-                "process_execution_layer_withdrawal_request: validator index {} does not have execution withdrawal "
-                    + "credentials set",
+                "process_withdrawal_request: validator index {} does not have withdrawal credentials set",
                 validatorIndex);
             return;
           }
@@ -256,7 +247,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               validatorExecutionAddress.equals(withdrawalRequestSourceAddress);
           if (!isCorrectSourceAddress) {
             LOG.debug(
-                "process_execution_layer_withdrawal_request: WithdrawalRequest source_address {} does not match "
+                "process_withdrawal_request: WithdrawalRequest source_address {} does not match "
                     + "validator {} withdrawal credentials {}",
                 withdrawalRequestSourceAddress,
                 validatorIndex,
@@ -267,9 +258,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           // Check if validator is active
           final boolean isValidatorActive = predicates.isActiveValidator(validator, currentEpoch);
           if (!isValidatorActive) {
-            LOG.debug(
-                "process_execution_layer_withdrawal_request: Validator {} is not active",
-                validatorIndex);
+            LOG.debug("process_withdrawal_request: Validator {} is not active", validatorIndex);
             return;
           }
 
@@ -277,7 +266,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final boolean hasInitiatedExit = !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
           if (hasInitiatedExit) {
             LOG.debug(
-                "process_execution_layer_withdrawal_request: Validator {} has already initiated exit",
+                "process_withdrawal_request: Validator {} has already initiated exit",
                 validatorIndex);
             return;
           }
@@ -288,7 +277,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                   validator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()));
           if (!validatorActiveLongEnough) {
             LOG.debug(
-                "process_execution_layer_withdrawal_request: Validator {} is not active long enough",
+                "process_withdrawal_request: Validator {} is not active long enough",
                 validatorIndex);
             return;
           }
@@ -299,8 +288,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             // Only exit validator if it has no pending withdrawals in the queue
             if (pendingBalanceToWithdraw.isZero()) {
               LOG.debug(
-                  "process_execution_layer_withdrawal_request: Initiating exit for validator {}",
-                  validatorIndex);
+                  "process_withdrawal_request: Initiating exit for validator {}", validatorIndex);
 
               beaconStateMutators.initiateValidatorExit(
                   state, validatorIndex, validatorExitContextSupplier);
@@ -333,7 +321,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                 exitQueueEpoch.plus(specConfigElectra.getMinValidatorWithdrawabilityDelay());
 
             LOG.debug(
-                "process_execution_layer_withdrawal_request: Creating pending partial withdrawal for validator {}",
+                "process_withdrawal_request: Creating pending partial withdrawal for validator {}",
                 validatorIndex);
 
             electraState
@@ -349,7 +337,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         });
   }
 
-  private SszList<ExecutionLayerWithdrawalRequest> getExecutionLayerWithdrawalRequestsFromBlock(
+  private SszList<WithdrawalRequest> getWithdrawalRequestsFromBlock(
       final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
     return maybeExecutionPayload
         .flatMap(ExecutionPayload::toVersionElectra)
@@ -357,30 +345,30 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         .orElseThrow(
             () ->
                 new BlockProcessingException(
-                    "Execution layer withdrawal requests were not found during block processing."));
+                    "Withdrawal requests were not found during block processing."));
   }
 
   /*
-   Implements process_deposit_receipt from consensus-specs (EIP-6110)
+   Implements process_deposit_request from consensus-specs (EIP-6110)
   */
   @Override
-  public void processDepositReceipts(
-      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+  public void processDepositRequests(
+      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
       throws BlockProcessingException {
     final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
-    for (DepositReceipt depositReceipt : depositReceipts) {
-      // process_deposit_receipt
+    for (DepositRequest depositRequest : depositRequests) {
+      // process_deposit_request
       if (electraState
-          .getDepositReceiptsStartIndex()
-          .equals(SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX)) {
-        electraState.setDepositReceiptsStartIndex(depositReceipt.getIndex());
+          .getDepositRequestsStartIndex()
+          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
+        electraState.setDepositRequestsStartIndex(depositRequest.getIndex());
       }
       applyDeposit(
           state,
-          depositReceipt.getPubkey(),
-          depositReceipt.getWithdrawalCredentials(),
-          depositReceipt.getAmount(),
-          depositReceipt.getSignature(),
+          depositRequest.getPubkey(),
+          depositRequest.getWithdrawalCredentials(),
+          depositRequest.getAmount(),
+          depositRequest.getSignature(),
           Optional.empty(),
           false);
     }

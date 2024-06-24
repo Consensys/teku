@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -168,12 +168,12 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositReceipts(MutableBeaconState state, SszList<DepositReceipt> depositReceipts)
+  void processDepositRequests(MutableBeaconState state, SszList<DepositRequest> depositRequests)
       throws BlockProcessingException;
 
-  void processExecutionLayerWithdrawalRequests(
+  void processWithdrawalRequests(
       MutableBeaconState state,
-      SszList<ExecutionLayerWithdrawalRequest> exits,
+      SszList<WithdrawalRequest> exits,
       Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException;
 

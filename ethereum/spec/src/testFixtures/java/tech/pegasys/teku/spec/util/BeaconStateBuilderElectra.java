@@ -46,7 +46,7 @@ public class BeaconStateBuilderElectra
   private SyncCommittee nextSyncCommittee;
   private ExecutionPayloadHeader latestExecutionPayloadHeader;
 
-  private UInt64 depositReceiptsStartIndex;
+  private UInt64 depositRequestsStartIndex;
   private UInt64 depositBalanceToConsume;
   private UInt64 exitBalanceToConsume;
   private UInt64 earliestExitEpoch;
@@ -82,7 +82,7 @@ public class BeaconStateBuilderElectra
     state.setLatestExecutionPayloadHeader(latestExecutionPayloadHeader);
     state.setNextWithdrawalIndex(nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(nextWithdrawalValidatorIndex);
-    state.setDepositReceiptsStartIndex(depositReceiptsStartIndex);
+    state.setDepositRequestsStartIndex(depositRequestsStartIndex);
     state.setDepositBalanceToConsume(depositBalanceToConsume);
     state.setExitBalanceToConsume(exitBalanceToConsume);
     state.setEarliestExitEpoch(earliestExitEpoch);
@@ -118,10 +118,10 @@ public class BeaconStateBuilderElectra
     return this;
   }
 
-  public BeaconStateBuilderElectra depositReceiptsStartIndex(
-      final UInt64 depositReceiptsStartIndex) {
-    checkNotNull(depositReceiptsStartIndex);
-    this.depositReceiptsStartIndex = depositReceiptsStartIndex;
+  public BeaconStateBuilderElectra depositRequestsStartIndex(
+      final UInt64 depositRequestsStartIndex) {
+    checkNotNull(depositRequestsStartIndex);
+    this.depositRequestsStartIndex = depositRequestsStartIndex;
     return this;
   }
 
@@ -166,7 +166,7 @@ public class BeaconStateBuilderElectra
             ? dataStructureUtil.randomUInt64(defaultValidatorCount)
             : UInt64.ZERO;
 
-    this.depositReceiptsStartIndex = SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX;
+    this.depositRequestsStartIndex = SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX;
     this.depositBalanceToConsume = UInt64.ZERO;
     this.exitBalanceToConsume = UInt64.ZERO;
     this.earliestExitEpoch = UInt64.ZERO;

@@ -235,7 +235,7 @@ class MiscHelpersTest {
   }
 
   @Test
-  public void isFormerDepositReceiptMechanismDisabled_returnsFalseForAllForksPriorToElectra() {
+  public void isFormerDepositMechanismDisabled_returnsFalseForAllForksPriorToElectra() {
     SpecMilestone.getAllPriorMilestones(SpecMilestone.ELECTRA)
         .forEach(
             milestone -> {

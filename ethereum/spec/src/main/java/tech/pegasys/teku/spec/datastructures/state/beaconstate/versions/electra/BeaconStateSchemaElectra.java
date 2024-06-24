@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 
 public class BeaconStateSchemaElectra
     extends AbstractBeaconStateStableProfileSchema<BeaconStateElectra, MutableBeaconStateElectra> {
-  public static final int DEPOSIT_RECEIPTS_START_INDEX = 28;
+  public static final int DEPOSIT_REQUESTS_START_INDEX = 28;
   public static final int DEPOSIT_BALANCE_TO_CONSUME_INDEX = 29;
   public static final int EXIT_BALANCE_TO_CONSUME_INDEX = 30;
   public static final int EARLIEST_EXIT_EPOCH_INDEX = 31;
@@ -92,10 +92,10 @@ public class BeaconStateSchemaElectra
             () ->
                 SszListSchema.create(
                     historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
-    final SszField depositReceiptsStartIndexField =
+    final SszField depositRequestsStartIndexField =
         new SszField(
-            DEPOSIT_RECEIPTS_START_INDEX,
-            BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX,
+            DEPOSIT_REQUESTS_START_INDEX,
+            BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
     final SszField depositBalanceToConsumeField =
         new SszField(
@@ -152,7 +152,7 @@ public class BeaconStateSchemaElectra
                 nextWithdrawalIndexField,
                 nextWithdrawalValidatorIndexField,
                 historicalSummariesField,
-                depositReceiptsStartIndexField,
+                depositRequestsStartIndexField,
                 depositBalanceToConsumeField,
                 exitBalanceToConsumeField,
                 earliestExitEpochField,
