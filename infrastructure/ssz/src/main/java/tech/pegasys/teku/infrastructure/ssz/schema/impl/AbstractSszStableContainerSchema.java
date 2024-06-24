@@ -80,9 +80,9 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   public static List<? extends NamedIndexedSchema<?>> continuousActiveSchemas(
-      final List<SszSchema<?>> schemas) {
-    return IntStream.range(0, schemas.size())
-        .mapToObj(index -> new NamedIndexedSchema<>("field-" + index, index, schemas.get(index)))
+      final SszSchema<?>... schemas) {
+    return IntStream.range(0, schemas.length)
+        .mapToObj(index -> new NamedIndexedSchema<>("field-" + index, index, schemas[index]))
         .toList();
   }
 

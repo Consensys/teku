@@ -13,8 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.ssz.containers;
 
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveNamedSchemas;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveSchemas;
+
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
@@ -46,6 +52,38 @@ public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
         return instanceCtor.apply(this, node);
       }
     };
+  }
+
+  protected /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/(
+      final String containerName,
+      /*$$FieldsDeclarations*/
+      final SszSchema<V0> fieldSchema1,
+      final SszSchema<V1> fieldSchema2 /*$$*/,
+      final int maxFieldCount) {
+    this(
+        containerName,
+        SszStableContainerSchema.createForProfileOnly(
+            maxFieldCount, continuousActiveSchemas(/*$$Fields*/ fieldSchema1, fieldSchema2 /*$$*/)),
+        IntStream.range(0, /*$$NumberOfFields*/ 2 /*$$*/)
+            .boxed()
+            .collect(Collectors.toUnmodifiableSet()));
+  }
+
+  protected /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/(
+      final String containerName,
+      /*$$NamedFieldsDeclarations*/
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1 /*$$*/,
+      final int maxFieldCount) {
+    this(
+        containerName,
+        SszStableContainerSchema.createForProfileOnly(
+            maxFieldCount,
+            continuousActiveNamedSchemas(
+                List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/))),
+        IntStream.range(0, /*$$NumberOfFields*/ 2 /*$$*/)
+            .boxed()
+            .collect(Collectors.toUnmodifiableSet()));
   }
 
   protected /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/(

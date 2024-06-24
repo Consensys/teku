@@ -30,8 +30,8 @@ public class ContainersGenerator {
   private final String viewPackagePath = "tech/pegasys/teku/infrastructure/ssz/containers/";
   private final String containerTypeTemplateFile = "ContainerSchemaTemplate.java";
   private final String containerViewTemplateFile = "ContainerTemplate.java";
-  private final String stableProfileTypeTemplateFile = "StableProfileSchemaTemplate.java";
-  private final String stableProfileViewTemplateFile = "StableProfileTemplate.java";
+  private final String profileTypeTemplateFile = "ProfileSchemaTemplate.java";
+  private final String profileViewTemplateFile = "ProfileTemplate.java";
 
   public ContainersGenerator(final Path templateSourcePath, final Path destinationSourcePath) {
     templateSrcPath = templateSourcePath;
@@ -154,12 +154,13 @@ public class ContainersGenerator {
   }
 
   public void generateStableContainerClasses(final int fieldsCount) {
-    final String typeClassName = "StableProfileSchema" + fieldsCount;
-    final String viewClassName = "StableProfile" + fieldsCount;
+    final String typeClassName = "ProfileSchema" + fieldsCount;
+    final String viewClassName = "Profile" + fieldsCount;
     final Map<String, String> vars =
         Map.ofEntries(
             Map.entry("TypeClassName", typeClassName),
             Map.entry("ViewClassName", viewClassName),
+            Map.entry("NumberOfFields", String.valueOf(fieldsCount)),
             Map.entry(
                 "ViewTypes",
                 IntStream.range(0, fieldsCount)
@@ -229,17 +230,17 @@ public class ContainersGenerator {
                         i ->
                             ("  @SuppressWarnings(\"unchecked\")\n"
                                     + "  public SszSchema<V$> getFieldSchema$() {\n"
-                                    + "    return (SszSchema<V$>) getChildSchema(getNthActiveFieldIndex($));\n"
+                                    + "    return (SszSchema<V$>) getNthActiveFieldSchema($);\n"
                                     + "  }\n")
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));
     generateFromTemplate(
-        templateSrcPath.resolve(typePackagePath).resolve(stableProfileTypeTemplateFile),
+        templateSrcPath.resolve(typePackagePath).resolve(profileTypeTemplateFile),
         targetSrcPath.resolve(typePackagePath).resolve(typeClassName + ".java"),
         vars);
 
     generateFromTemplate(
-        templateSrcPath.resolve(viewPackagePath).resolve(stableProfileViewTemplateFile),
+        templateSrcPath.resolve(viewPackagePath).resolve(profileViewTemplateFile),
         targetSrcPath.resolve(viewPackagePath).resolve(viewClassName + ".java"),
         vars);
   }

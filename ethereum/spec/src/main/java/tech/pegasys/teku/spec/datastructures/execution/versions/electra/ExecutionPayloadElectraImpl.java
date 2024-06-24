@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.StableProfile19;
-import tech.pegasys.teku.infrastructure.ssz.containers.StableProfileSchema19;
+import tech.pegasys.teku.infrastructure.ssz.containers.Profile19;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -33,51 +33,51 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadElectraImpl
-    extends StableProfile19<
-        ExecutionPayloadElectraImpl,
-        SszBytes32,
-        SszByteVector,
-        SszBytes32,
-        SszBytes32,
-        SszByteVector,
-        SszBytes32,
-        SszUInt64,
-        SszUInt64,
-        SszUInt64,
-        SszUInt64,
-        SszByteList,
-        SszUInt256,
-        SszBytes32,
-        SszList<Transaction>,
-        SszList<Withdrawal>,
-        SszUInt64,
-        SszUInt64,
-        SszList<DepositReceipt>,
-        SszList<ExecutionLayerWithdrawalRequest>>
+    extends Profile19<
+            ExecutionPayloadElectraImpl,
+            SszBytes32,
+            SszByteVector,
+            SszBytes32,
+            SszBytes32,
+            SszByteVector,
+            SszBytes32,
+            SszUInt64,
+            SszUInt64,
+            SszUInt64,
+            SszUInt64,
+            SszByteList,
+            SszUInt256,
+            SszBytes32,
+            SszList<Transaction>,
+            SszList<Withdrawal>,
+            SszUInt64,
+            SszUInt64,
+            SszList<DepositReceipt>,
+            SszList<ExecutionLayerWithdrawalRequest>>
     implements ExecutionPayloadElectra {
 
   public ExecutionPayloadElectraImpl(
-      final StableProfileSchema19<
-              ExecutionPayloadElectraImpl,
-              SszBytes32,
-              SszByteVector,
-              SszBytes32,
-              SszBytes32,
-              SszByteVector,
-              SszBytes32,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszByteList,
-              SszUInt256,
-              SszBytes32,
-              SszList<Transaction>,
-              SszList<Withdrawal>,
-              SszUInt64,
-              SszUInt64,
-              SszList<DepositReceipt>,
-              SszList<ExecutionLayerWithdrawalRequest>>
+      final ProfileSchema19<
+                    ExecutionPayloadElectraImpl,
+                    SszBytes32,
+                    SszByteVector,
+                    SszBytes32,
+                    SszBytes32,
+                    SszByteVector,
+                    SszBytes32,
+                    SszUInt64,
+                    SszUInt64,
+                    SszUInt64,
+                    SszUInt64,
+                    SszByteList,
+                    SszUInt256,
+                    SszBytes32,
+                    SszList<Transaction>,
+                    SszList<Withdrawal>,
+                    SszUInt64,
+                    SszUInt64,
+                    SszList<DepositReceipt>,
+                    SszList<ExecutionLayerWithdrawalRequest>>
           schema,
       final TreeNode backingNode) {
     super(schema, backingNode);

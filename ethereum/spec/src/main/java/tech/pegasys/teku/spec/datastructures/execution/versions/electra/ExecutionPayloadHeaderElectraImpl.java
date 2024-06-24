@@ -19,8 +19,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.StableProfile19;
-import tech.pegasys.teku.infrastructure.ssz.containers.StableProfileSchema19;
+import tech.pegasys.teku.infrastructure.ssz.containers.Profile19;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -28,51 +28,51 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionPayloadHeaderElectraImpl
-    extends StableProfile19<
-        ExecutionPayloadHeaderElectraImpl,
-        SszBytes32,
-        SszByteVector,
-        SszBytes32,
-        SszBytes32,
-        SszByteVector,
-        SszBytes32,
-        SszUInt64,
-        SszUInt64,
-        SszUInt64,
-        SszUInt64,
-        SszByteList,
-        SszUInt256,
-        SszBytes32,
-        SszBytes32,
-        SszBytes32,
-        SszUInt64,
-        SszUInt64,
-        SszBytes32,
-        SszBytes32>
+    extends Profile19<
+            ExecutionPayloadHeaderElectraImpl,
+            SszBytes32,
+            SszByteVector,
+            SszBytes32,
+            SszBytes32,
+            SszByteVector,
+            SszBytes32,
+            SszUInt64,
+            SszUInt64,
+            SszUInt64,
+            SszUInt64,
+            SszByteList,
+            SszUInt256,
+            SszBytes32,
+            SszBytes32,
+            SszBytes32,
+            SszUInt64,
+            SszUInt64,
+            SszBytes32,
+            SszBytes32>
     implements ExecutionPayloadHeaderElectra {
 
   protected ExecutionPayloadHeaderElectraImpl(
-      final StableProfileSchema19<
-              ExecutionPayloadHeaderElectraImpl,
-              SszBytes32,
-              SszByteVector,
-              SszBytes32,
-              SszBytes32,
-              SszByteVector,
-              SszBytes32,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszByteList,
-              SszUInt256,
-              SszBytes32,
-              SszBytes32,
-              SszBytes32,
-              SszUInt64,
-              SszUInt64,
-              SszBytes32,
-              SszBytes32>
+      final ProfileSchema19<
+                    ExecutionPayloadHeaderElectraImpl,
+                    SszBytes32,
+                    SszByteVector,
+                    SszBytes32,
+                    SszBytes32,
+                    SszByteVector,
+                    SszBytes32,
+                    SszUInt64,
+                    SszUInt64,
+                    SszUInt64,
+                    SszUInt64,
+                    SszByteList,
+                    SszUInt256,
+                    SszBytes32,
+                    SszBytes32,
+                    SszBytes32,
+                    SszUInt64,
+                    SszUInt64,
+                    SszBytes32,
+                    SszBytes32>
           schema,
       final TreeNode backingTree) {
     super(schema, backingTree);

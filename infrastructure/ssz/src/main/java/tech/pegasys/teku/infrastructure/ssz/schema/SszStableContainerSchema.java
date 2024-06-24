@@ -49,7 +49,7 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
    * be used in profile schema creation only. There will be actual ssz type for it.
    */
   static <C extends SszStableContainer> SszStableContainerSchema<C> createForProfileOnly(
-      final List<NamedIndexedSchema<?>> activeChildrenSchemas, final int maxFieldCount) {
+      final int maxFieldCount, final List<? extends NamedIndexedSchema<?>> activeChildrenSchemas) {
     return new AbstractSszStableContainerSchema<>("", activeChildrenSchemas, maxFieldCount) {
       @Override
       public C createFromBackingNode(final TreeNode node) {

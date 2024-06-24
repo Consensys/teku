@@ -26,12 +26,19 @@ public abstract class ContainerSchema2<
         C extends SszContainer, V0 extends SszData, V1 extends SszData>
     extends AbstractSszContainerSchema<C> {
 
-  public static <C extends SszContainer, V0 extends SszData, V1 extends SszData>
-      ContainerSchema2<C, V0, V1> create(
-          final SszSchema<V0> fieldSchema0,
-          final SszSchema<V1> fieldSchema1,
-          final BiFunction<ContainerSchema2<C, V0, V1>, TreeNode, C> instanceCtor) {
-    return new ContainerSchema2<>(fieldSchema0, fieldSchema1) {
+  public static <
+          C extends SszContainer, V0 extends SszData, V1 extends SszData>
+      ContainerSchema2<C, V0, V1>
+          create(
+              final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1,
+              final BiFunction<
+                      ContainerSchema2<
+                          C, V0, V1>,
+                      TreeNode,
+                      C>
+                  instanceCtor) {
+    return new ContainerSchema2<>(
+        fieldSchema0, fieldSchema1) {
       @Override
       public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
@@ -39,26 +46,28 @@ public abstract class ContainerSchema2<
     };
   }
 
-  protected ContainerSchema2(final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1) {
+  protected ContainerSchema2(
+      final SszSchema<V0> fieldSchema0, final SszSchema<V1> fieldSchema1) {
 
     super(List.of(fieldSchema0, fieldSchema1));
   }
 
   protected ContainerSchema2(
       final String containerName,
-      final NamedSchema<V0> fieldNamedSchema0,
-      final NamedSchema<V1> fieldNamedSchema1) {
+      final NamedSchema<V0> fieldNamedSchema0, final NamedSchema<V1> fieldNamedSchema1) {
 
     super(containerName, List.of(fieldNamedSchema0, fieldNamedSchema1));
   }
 
-  @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
     return (SszSchema<V0>) getChildSchema(0);
   }
+
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
     return (SszSchema<V1>) getChildSchema(1);
   }
+
 }

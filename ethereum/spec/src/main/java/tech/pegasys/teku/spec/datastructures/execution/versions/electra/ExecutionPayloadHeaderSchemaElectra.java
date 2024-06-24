@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.StableProfileSchema19;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema19;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -54,27 +54,27 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderSchemaElectra
-    extends StableProfileSchema19<
-        ExecutionPayloadHeaderElectraImpl,
-        SszBytes32,
-        SszByteVector,
-        SszBytes32,
-        SszBytes32,
-        SszByteVector,
-        SszBytes32,
-        SszUInt64,
-        SszUInt64,
-        SszUInt64,
-        SszUInt64,
-        SszByteList,
-        SszUInt256,
-        SszBytes32,
-        SszBytes32,
-        SszBytes32,
-        SszUInt64,
-        SszUInt64,
-        SszBytes32,
-        SszBytes32>
+    extends ProfileSchema19<
+            ExecutionPayloadHeaderElectraImpl,
+            SszBytes32,
+            SszByteVector,
+            SszBytes32,
+            SszBytes32,
+            SszByteVector,
+            SszBytes32,
+            SszUInt64,
+            SszUInt64,
+            SszUInt64,
+            SszUInt64,
+            SszByteList,
+            SszUInt256,
+            SszBytes32,
+            SszBytes32,
+            SszBytes32,
+            SszUInt64,
+            SszUInt64,
+            SszBytes32,
+            SszBytes32>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderElectraImpl> {
 
   private final ExecutionPayloadHeaderElectraImpl defaultExecutionPayloadHeader;
