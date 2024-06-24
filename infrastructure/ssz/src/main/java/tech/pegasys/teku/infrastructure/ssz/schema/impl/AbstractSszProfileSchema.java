@@ -53,18 +53,24 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
     super(name, prepareSchemas(stableContainerSchema, activeFieldIndices));
 
     this.stableContainer = stableContainerSchema;
-    // TODO validate activeFieldIndices
-
     this.activeFieldIndicesCache =
         IntList.of(
             activeFieldIndices.stream()
                 .sorted(Comparator.naturalOrder())
-                .mapToInt(
-                    index ->
-                        stableContainerSchema.getDefinedChildrenSchemas().get(index).getIndex())
+                .mapToInt(index -> getEffectiveChildIndex(index, stableContainerSchema))
                 .toArray());
     this.activeFields = getActiveFieldsSchema().ofBits(activeFieldIndices);
     this.jsonTypeDefinition = SszProfileTypeDefinition.createFor(this);
+  }
+
+  private static int getEffectiveChildIndex(
+      final int index,
+      final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema) {
+    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas =
+        stableContainerSchema.getDefinedChildrenSchemas();
+    checkArgument(index >= 0 && index < definedChildrenSchemas.size(), "Index out of bounds");
+
+    return definedChildrenSchemas.get(index).getIndex();
   }
 
   private static List<? extends NamedSchema<?>> prepareSchemas(
