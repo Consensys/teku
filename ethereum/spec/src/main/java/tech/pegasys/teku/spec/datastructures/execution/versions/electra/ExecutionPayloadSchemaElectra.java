@@ -124,7 +124,7 @@ public class ExecutionPayloadSchemaElectra
             SszListSchema.create(
                 ConsolidationRequest.SSZ_SCHEMA,
                 specConfig.getMaxConsolidationRequestsPerPayload())),
-            MAX_EXECUTION_PAYLOAD_FIELDS);
+        MAX_EXECUTION_PAYLOAD_FIELDS);
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 

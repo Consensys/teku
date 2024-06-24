@@ -105,7 +105,7 @@ public class ExecutionPayloadHeaderSchemaElectra
         namedSchema(DEPOSIT_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWAL_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(CONSOLIDATION_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-            MAX_EXECUTION_PAYLOAD_FIELDS);
+        MAX_EXECUTION_PAYLOAD_FIELDS);
 
     final ExecutionPayloadElectraImpl defaultExecutionPayload =
         new ExecutionPayloadSchemaElectra(specConfig).getDefault();
