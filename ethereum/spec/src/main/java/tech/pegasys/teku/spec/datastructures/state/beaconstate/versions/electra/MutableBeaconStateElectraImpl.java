@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -54,7 +55,11 @@ public class MutableBeaconStateElectraImpl
       final TransitionCaches transitionCaches,
       final SlotCaches slotCaches) {
     return new BeaconStateElectraImpl(
-        getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
+        (AbstractSszProfileSchema<?>) getSchema(),
+        backingNode,
+        viewCache,
+        transitionCaches,
+        slotCaches);
   }
 
   @Override

@@ -18,10 +18,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.SoftRefIntCache;
-import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -30,20 +29,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.StableBeaconState;
 
 public abstract class AbstractStableBeaconState<TMutable extends MutableBeaconState>
-    extends SszStableContainerImpl implements StableBeaconState, BeaconStateCache {
+    extends SszProfileImpl implements StableBeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
   private final SlotCaches slotCaches;
 
-  @SuppressWarnings("unchecked")
   protected AbstractStableBeaconState(final BeaconStateStableSchema<?, ?> schema) {
-    super((SszStableContainerSchema<? extends SszStableContainerImpl>) schema);
+    super(schema);
     this.transitionCaches = TransitionCaches.createNewEmpty();
     this.slotCaches = SlotCaches.createNewEmpty();
   }
 
   protected AbstractStableBeaconState(
-      final SszCompositeSchema<?> type,
+      final SszProfileSchema<?> type,
       final TreeNode backingNode,
       final IntCache<SszData> cache,
       final TransitionCaches transitionCaches,
@@ -53,10 +51,9 @@ public abstract class AbstractStableBeaconState<TMutable extends MutableBeaconSt
     this.slotCaches = slotCaches;
   }
 
-  @SuppressWarnings("unchecked")
   protected AbstractStableBeaconState(
-      final AbstractSszContainerSchema<? extends SszContainer> type, final TreeNode backingNode) {
-    super((SszStableContainerSchema<? extends SszStableContainerImpl>) type, backingNode);
+      final AbstractSszProfileSchema<? extends SszContainer> type, final TreeNode backingNode) {
+    super(type, backingNode);
     this.transitionCaches = TransitionCaches.createNewEmpty();
     this.slotCaches = SlotCaches.createNewEmpty();
   }
