@@ -225,7 +225,7 @@
       "bls_to_execution_changes": [
         {
           "message": {
-            "validator_index": "189139",\
+            "validator_index": "189139",
             "from_bls_pubkey": "0xa9ddce0cab5b51d3d2c710396b85e3fd7a87f1738fb5cfd5a7b25dbb483c167a80e785cb4ca7250c14a60cc282b1d9b8",
             "to_execution_address": "0x9946783e88b272e45092a83c1c9310f154917869"
           },
