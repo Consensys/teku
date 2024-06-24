@@ -77,7 +77,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     WITHDRAWAL,
     DEPOSIT_REQUEST,
     WITHDRAWAL_REQUEST,
-    CONSOLIDATION
+    CONSOLIDATION_REQUEST
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -126,8 +126,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               new OperationsTestExecutor<>(
                   "withdrawal_request.ssz_snappy", Operation.WITHDRAWAL_REQUEST))
           .put(
-              "operations/consolidation",
-              new OperationsTestExecutor<>("consolidation.ssz_snappy", Operation.CONSOLIDATION))
+              "operations/consolidation_request",
+              new OperationsTestExecutor<>(
+                  "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
           .build();
 
   private final String dataFileName;
@@ -316,7 +317,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
       case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
       case WITHDRAWAL_REQUEST -> processWithdrawalRequest(testDefinition, state, processor);
-      case CONSOLIDATION -> processConsolidation(testDefinition, state, processor);
+      case CONSOLIDATION_REQUEST -> processConsolidation(testDefinition, state, processor);
       default -> throw new UnsupportedOperationException(
           "Operation " + operation + " not implemented in OperationTestExecutor");
     }
@@ -439,7 +440,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           WITHDRAWAL,
           DEPOSIT_REQUEST,
           WITHDRAWAL_REQUEST,
-          CONSOLIDATION -> {}
+          CONSOLIDATION_REQUEST -> {}
     }
   }
 
