@@ -191,9 +191,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               new SszTestExecutor<>(
                   schemas -> SchemaDefinitionsElectra.required(schemas).getConsolidationSchema()))
           .put(
-              "ssz_static/DepositReceipt",
+              "ssz_static/DepositRequest",
               new SszTestExecutor<>(
-                  schemas -> SchemaDefinitionsElectra.required(schemas).getDepositReceiptSchema()))
+                  schemas -> SchemaDefinitionsElectra.required(schemas).getDepositRequestSchema()))
           .put(
               "ssz_static/ExecutionLayerWithdrawalRequest",
               new SszTestExecutor<>(

@@ -17,7 +17,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_RECEIPTS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_REQUESTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
@@ -77,7 +77,7 @@ public class ExecutionPayloadSchemaElectra
         SszList<Withdrawal>,
         SszUInt64,
         SszUInt64,
-        SszList<DepositReceipt>,
+        SszList<DepositRequest>,
         SszList<ExecutionLayerWithdrawalRequest>>
     implements ExecutionPayloadSchema<ExecutionPayloadElectraImpl> {
 
@@ -109,9 +109,9 @@ public class ExecutionPayloadSchemaElectra
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(
-            DEPOSIT_RECEIPTS,
+            DEPOSIT_REQUESTS,
             SszListSchema.create(
-                DepositReceipt.SSZ_SCHEMA, specConfig.getMaxDepositReceiptsPerPayload())),
+                DepositRequest.SSZ_SCHEMA, specConfig.getMaxDepositRequestsPerPayload())),
         namedSchema(
             WITHDRAWAL_REQUESTS,
             SszListSchema.create(
@@ -141,14 +141,14 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @Override
-  public SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>>
-      getDepositReceiptsSchemaRequired() {
-    return getDepositReceiptsSchema();
+  public SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
+      getDepositRequestsSchemaRequired() {
+    return getDepositRequestsSchema();
   }
 
   @Override
-  public DepositReceiptSchema getDepositReceiptSchemaRequired() {
-    return getDepositReceiptSchema();
+  public DepositRequestSchema getDepositRequestSchemaRequired() {
+    return getDepositRequestSchema();
   }
 
   @Override
@@ -167,8 +167,8 @@ public class ExecutionPayloadSchemaElectra
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
   }
 
-  public DepositReceiptSchema getDepositReceiptSchema() {
-    return (DepositReceiptSchema) getDepositReceiptsSchema().getElementSchema();
+  public DepositRequestSchema getDepositRequestSchema() {
+    return (DepositRequestSchema) getDepositRequestsSchema().getElementSchema();
   }
 
   public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
@@ -181,7 +181,7 @@ public class ExecutionPayloadSchemaElectra
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
-        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_RECEIPTS)),
+        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_REQUESTS)),
         getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)));
   }
 
@@ -214,8 +214,8 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<DepositReceipt, ?> getDepositReceiptsSchema() {
-    return (SszListSchema<DepositReceipt, ?>) getChildSchema(getFieldIndex(DEPOSIT_RECEIPTS));
+  public SszListSchema<DepositRequest, ?> getDepositRequestsSchema() {
+    return (SszListSchema<DepositRequest, ?>) getChildSchema(getFieldIndex(DEPOSIT_REQUESTS));
   }
 
   @SuppressWarnings("unchecked")

@@ -52,7 +52,7 @@ public class ExecutionPayloadElectraImpl
         SszList<Withdrawal>,
         SszUInt64,
         SszUInt64,
-        SszList<DepositReceipt>,
+        SszList<DepositRequest>,
         SszList<ExecutionLayerWithdrawalRequest>>
     implements ExecutionPayloadElectra {
 
@@ -76,7 +76,7 @@ public class ExecutionPayloadElectraImpl
               SszList<Withdrawal>,
               SszUInt64,
               SszUInt64,
-              SszList<DepositReceipt>,
+              SszList<DepositRequest>,
               SszList<ExecutionLayerWithdrawalRequest>>
           schema,
       final TreeNode backingNode) {
@@ -102,7 +102,7 @@ public class ExecutionPayloadElectraImpl
       final SszList<Withdrawal> withdrawals,
       final SszUInt64 blobGasUsed,
       final SszUInt64 excessBlobGas,
-      final SszList<DepositReceipt> depositReceipts,
+      final SszList<DepositRequest> depositRequests,
       final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests) {
     super(
         schema,
@@ -123,7 +123,7 @@ public class ExecutionPayloadElectraImpl
         withdrawals,
         blobGasUsed,
         excessBlobGas,
-        depositReceipts,
+        depositRequests,
         withdrawalRequests);
   }
 
@@ -233,7 +233,7 @@ public class ExecutionPayloadElectraImpl
   }
 
   @Override
-  public SszList<DepositReceipt> getDepositReceipts() {
+  public SszList<DepositRequest> getDepositRequests() {
     return getField17();
   }
 
@@ -247,7 +247,7 @@ public class ExecutionPayloadElectraImpl
     return List.of(
         getTransactions().getBackingNode(),
         getWithdrawals().getBackingNode(),
-        getDepositReceipts().getBackingNode(),
+        getDepositRequests().getBackingNode(),
         getWithdrawalRequests().getBackingNode());
   }
 }

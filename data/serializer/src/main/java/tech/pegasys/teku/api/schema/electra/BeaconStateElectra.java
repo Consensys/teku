@@ -54,8 +54,8 @@ public class BeaconStateElectra extends BeaconStateAltair {
   @JsonProperty("historical_summaries")
   public final List<HistoricalSummary> historicalSummaries;
 
-  @JsonProperty("deposit_receipts_start_index")
-  public final UInt64 depositReceiptsStartIndex;
+  @JsonProperty("deposit_requests_start_index")
+  public final UInt64 depositRequestsStartIndex;
 
   @JsonProperty("deposit_balance_to_consume")
   public final UInt64 depositBalanceToConsume;
@@ -111,7 +111,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
       @JsonProperty("next_withdrawal_index") final UInt64 nextWithdrawalIndex,
       @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex,
       @JsonProperty("historical_summaries") final List<HistoricalSummary> historicalSummaries,
-      @JsonProperty("deposit_receipts_start_index") final UInt64 depositReceiptsStartIndex,
+      @JsonProperty("deposit_requests_start_index") final UInt64 depositRequestsStartIndex,
       @JsonProperty("deposit_balance_to_consume") final UInt64 depositBalanceToConsume,
       @JsonProperty("exit_balance_to_consume") final UInt64 exitBalanceToConsume,
       @JsonProperty("earliest_exit_epoch") final UInt64 earliestExitEpoch,
@@ -152,7 +152,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
     this.nextWithdrawalIndex = nextWithdrawalIndex;
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
     this.historicalSummaries = historicalSummaries;
-    this.depositReceiptsStartIndex = depositReceiptsStartIndex;
+    this.depositRequestsStartIndex = depositRequestsStartIndex;
     this.depositBalanceToConsume = depositBalanceToConsume;
     this.exitBalanceToConsume = exitBalanceToConsume;
     this.earliestExitEpoch = earliestExitEpoch;
@@ -174,7 +174,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
     this.nextWithdrawalValidatorIndex = electra.getNextWithdrawalValidatorIndex();
     this.historicalSummaries =
         electra.getHistoricalSummaries().stream().map(HistoricalSummary::new).toList();
-    this.depositReceiptsStartIndex = electra.getDepositReceiptsStartIndex();
+    this.depositRequestsStartIndex = electra.getDepositRequestsStartIndex();
     this.depositBalanceToConsume = electra.getDepositBalanceToConsume();
     this.exitBalanceToConsume = electra.getExitBalanceToConsume();
     this.earliestExitEpoch = electra.getEarliestExitEpoch();
@@ -253,7 +253,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
                 .map(
                     historicalSummary -> historicalSummary.asInternalHistoricalSummary(specVersion))
                 .toList()));
-    state.setDepositReceiptsStartIndex(instance.depositReceiptsStartIndex);
+    state.setDepositRequestsStartIndex(instance.depositRequestsStartIndex);
     state.setDepositBalanceToConsume(instance.depositBalanceToConsume);
     state.setExitBalanceToConsume(instance.exitBalanceToConsume);
     state.setEarliestExitEpoch(instance.earliestExitEpoch);

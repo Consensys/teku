@@ -51,8 +51,8 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 
@@ -117,14 +117,14 @@ public class ExecutionPayloadSchemaBellatrix
   }
 
   @Override
-  public SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>>
-      getDepositReceiptsSchemaRequired() {
-    throw new IllegalStateException("Attempted to get a deposit receipts schema from bellatrix");
+  public SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
+      getDepositRequestsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit requests schema from bellatrix");
   }
 
   @Override
-  public DepositReceiptSchema getDepositReceiptSchemaRequired() {
-    throw new IllegalStateException("Attempted to get a deposit receipt schema from bellatrix");
+  public DepositRequestSchema getDepositRequestSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit request schema from bellatrix");
   }
 
   @Override

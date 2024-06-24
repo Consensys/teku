@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -142,16 +142,16 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processDepositReceipt(
-      final MutableBeaconState state, final DepositReceipt depositReceipt)
+  public void processDepositRequest(
+      final MutableBeaconState state, final DepositRequest depositRequest)
       throws BlockProcessingException {
-    final SszList<DepositReceipt> depositReceiptList =
+    final SszList<DepositRequest> depositRequestList =
         BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
             .getExecutionPayloadSchema()
-            .getDepositReceiptsSchemaRequired()
-            .of(depositReceipt);
+            .getDepositRequestsSchemaRequired()
+            .of(depositRequest);
 
-    spec.getBlockProcessor(state.getSlot()).processDepositReceipts(state, depositReceiptList);
+    spec.getBlockProcessor(state.getSlot()).processDepositRequests(state, depositRequestList);
   }
 
   @Override

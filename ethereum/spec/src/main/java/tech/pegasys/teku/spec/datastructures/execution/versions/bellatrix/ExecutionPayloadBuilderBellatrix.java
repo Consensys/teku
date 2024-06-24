@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 
 public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder {
@@ -155,8 +155,8 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
   }
 
   @Override
-  public ExecutionPayloadBuilder depositReceipts(
-      final Supplier<List<DepositReceipt>> depositReceiptsSupplier) {
+  public ExecutionPayloadBuilder depositRequests(
+      final Supplier<List<DepositRequest>> depositRequestsSupplier) {
     return this;
   }
 
