@@ -20,12 +20,12 @@ import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStableSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractStableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateProfile;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 
-public class BeaconStateElectraImpl extends AbstractStableBeaconState<MutableBeaconStateElectra>
+public class BeaconStateElectraImpl extends AbstractBeaconStateProfile<MutableBeaconStateElectra>
     implements BeaconStateElectra, BeaconStateCache, ValidatorStatsAltair {
 
   BeaconStateElectraImpl(

@@ -24,23 +24,23 @@ import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateProfile;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStableSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.StableBeaconState;
 
-public abstract class AbstractStableBeaconState<TMutable extends MutableBeaconState>
-    extends SszProfileImpl implements StableBeaconState, BeaconStateCache {
+public abstract class AbstractBeaconStateProfile<TMutable extends MutableBeaconState>
+    extends SszProfileImpl implements BeaconStateProfile, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
   private final SlotCaches slotCaches;
 
-  protected AbstractStableBeaconState(final BeaconStateStableSchema<?, ?> schema) {
+  protected AbstractBeaconStateProfile(final BeaconStateStableSchema<?, ?> schema) {
     super(schema);
     this.transitionCaches = TransitionCaches.createNewEmpty();
     this.slotCaches = SlotCaches.createNewEmpty();
   }
 
-  protected AbstractStableBeaconState(
+  protected AbstractBeaconStateProfile(
       final SszProfileSchema<?> type,
       final TreeNode backingNode,
       final IntCache<SszData> cache,
@@ -51,7 +51,7 @@ public abstract class AbstractStableBeaconState<TMutable extends MutableBeaconSt
     this.slotCaches = slotCaches;
   }
 
-  protected AbstractStableBeaconState(
+  protected AbstractBeaconStateProfile(
       final AbstractSszProfileSchema<? extends SszContainer> type, final TreeNode backingNode) {
     super(type, backingNode);
     this.transitionCaches = TransitionCaches.createNewEmpty();

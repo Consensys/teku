@@ -26,15 +26,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateProfile;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateStableSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.StableBeaconState;
 
-public abstract class AbstractBeaconStateStableProfileSchema<
-        T extends StableBeaconState, TMutable extends MutableBeaconState>
+public abstract class AbstractBeaconStateProfileSchema<
+        T extends BeaconStateProfile, TMutable extends MutableBeaconState>
     extends AbstractSszProfileSchema<T> implements BeaconStateStableSchema<T, TMutable> {
-  protected AbstractBeaconStateStableProfileSchema(
-      final String name, final List<SszField> allFields) {
+  protected AbstractBeaconStateProfileSchema(final String name, final List<SszField> allFields) {
     super(
         name,
         SszStableContainerSchema.createForProfileOnly(
@@ -47,7 +46,7 @@ public abstract class AbstractBeaconStateStableProfileSchema<
     validateFields(allFields);
   }
 
-  protected AbstractBeaconStateStableProfileSchema(
+  protected AbstractBeaconStateProfileSchema(
       final String name, final List<SszField> uniqueFields, final SpecConfig specConfig) {
     this(name, combineFields(BeaconStateFields.getCommonFields(specConfig), uniqueFields));
   }

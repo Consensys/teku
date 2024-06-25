@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 
-public interface StableBeaconState extends BeaconState, SszProfile {
+public interface BeaconStateProfile extends BeaconState, SszProfile {
 
   @Override
   BeaconStateStableSchema<? extends BeaconState, ? extends MutableBeaconState>

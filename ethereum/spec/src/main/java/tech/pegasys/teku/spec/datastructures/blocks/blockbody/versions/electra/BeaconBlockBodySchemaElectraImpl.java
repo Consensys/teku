@@ -94,7 +94,7 @@ public class BeaconBlockBodySchemaElectraImpl
         executionPayloadSchema,
         blsToExecutionChange,
         blobKzgCommitments,
-            MAX_BEACON_BLOCK_BODY_FIELDS);
+        MAX_BEACON_BLOCK_BODY_FIELDS);
   }
 
   public static BeaconBlockBodySchemaElectraImpl create(
