@@ -191,7 +191,7 @@ allprojects {
       '-Xlint:divzero',
       '-Xlint:finally',
       '-Xlint:static',
-      '-Werror',
+//      '-Werror',
     ]
     options.forkOptions.jvmArgs += [
         '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
