@@ -522,7 +522,17 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials);
     LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
     state.getValidators().append(validator);
-    final int validatorIndex = validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow();
+    int validatorIndex = -1;
+    for (int i = state.getValidators().size() - 1; i >= 0; i--) {
+      if (state.getValidators().get(i).getPublicKey().equals(pubkey)) {
+        validatorIndex = i;
+        break;
+      }
+    }
+    if (validatorIndex < 0) {
+      throw new IllegalStateException(
+          "Could not locate validator " + pubkey + " after adding to state.");
+    }
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
 
     stateElectra.getBalances().appendElement(UInt64.ZERO);

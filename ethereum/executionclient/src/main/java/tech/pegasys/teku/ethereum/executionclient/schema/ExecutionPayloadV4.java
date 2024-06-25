@@ -126,7 +126,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         .getExecutionLayerWithdrawalRequestSchemaRequired()
         .create(
             withdrawalRequestV1.sourceAddress,
-            BLSPublicKey.fromBytesCompressed(withdrawalRequestV1.validatorPublicKey),
+            BLSPublicKey.fromBytesCompressed(withdrawalRequestV1.validatorPubkey),
             withdrawalRequestV1.amount);
   }
 

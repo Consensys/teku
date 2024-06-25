@@ -21,6 +21,8 @@ import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTEST
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
@@ -32,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -57,6 +60,7 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublish
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
@@ -115,6 +119,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
    * empty slots that may need to be processed when calculating duties.
    */
   private static final int DUTY_EPOCH_TOLERANCE = 1;
+
+  private final Map<UInt64, Bytes32> createdBlockRootsBySlotCache =
+      LimitedMap.createSynchronizedLRU(2);
 
   private final BlockProductionAndPublishingPerformanceFactory
       blockProductionAndPublishingPerformanceFactory;
@@ -376,7 +383,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             requestedBlinded,
             requestedBuilderBoostFactor,
             blockProductionPerformance)
-        .thenApply(Optional::of);
+        .thenApply(
+            block -> {
+              final Bytes32 blockRoot = block.blockContainer().getBlock().getRoot();
+              createdBlockRootsBySlotCache.put(slot, blockRoot);
+              return Optional.of(block);
+            });
   }
 
   @Override
@@ -636,7 +648,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             maybeBlindedBlockContainer.getSlot());
     return blockPublisher
         .sendSignedBlock(
-            maybeBlindedBlockContainer, broadcastValidationLevel, blockPublishingPerformance)
+            maybeBlindedBlockContainer,
+            // do only EQUIVOCATION validation when GOSSIP validation has been requested and the
+            // block has been locally created
+            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(maybeBlindedBlockContainer)
+                ? EQUIVOCATION
+                : broadcastValidationLevel,
+            blockPublishingPerformance)
         .exceptionally(
             ex -> {
               final String reason = getRootCauseMessage(ex);
@@ -840,6 +858,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       proposerSlots.add(new ProposerDuty(publicKey, proposerIndex, slot));
     }
     return proposerSlots;
+  }
+
+  private boolean isLocallyCreatedBlock(final SignedBlockContainer blockContainer) {
+    final Bytes32 blockRoot = blockContainer.getSignedBlock().getMessage().getRoot();
+    final Bytes32 locallyCreatedBlockRoot =
+        createdBlockRootsBySlotCache.get(blockContainer.getSlot());
+    return Objects.equals(blockRoot, locallyCreatedBlockRoot);
   }
 
   @Override
