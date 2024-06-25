@@ -47,7 +47,7 @@ In general a commit serves a single purpose and diffs should be easily comprehen
 
 ### Architectural Best Practices
 
-Questions on architectural best practices will be guided by the principles set forth in [Effective Java](http://index-of.es/Java/Effective%20Java.pdf) by Joshua Bloch
+Questions on architectural best practices will be guided by the principles set forth in [Effective Java](https://kea.nu/files/textbooks/new/Effective%20Java%20%282017%2C%20Addison-Wesley%29.pdf) by Joshua Bloch
 
 ### Automated Test coverage
 All code submissions must be accompanied by appropriate automated tests.  The goal is to provide confidence in the code’s robustness, while avoiding redundant tests.
