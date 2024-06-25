@@ -38,8 +38,6 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.consolidations.Consolidation;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
@@ -277,10 +275,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return new BeaconBlockBodyBuilderElectra(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
-  public SszListSchema<SignedConsolidation, ?> getConsolidationsSchema() {
-    return beaconBlockBodySchema.getConsolidationsSchema();
-  }
-
   @Override
   public BlockContentsSchema getBlockContentsSchema() {
     return blockContentsSchema;
@@ -341,14 +335,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public ConsolidationRequestSchema getConsolidationRequestSchema() {
     return consolidationRequestSchema;
-  }
-
-  public Consolidation.ConsolidationSchema getConsolidationSchema() {
-    return Consolidation.SSZ_SCHEMA;
-  }
-
-  public SignedConsolidation.SignedConsolidationSchema getSignedConsolidationSchema() {
-    return SignedConsolidation.SSZ_SCHEMA;
   }
 
   @Override

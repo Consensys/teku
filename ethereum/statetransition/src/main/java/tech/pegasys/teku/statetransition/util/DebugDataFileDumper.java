@@ -61,6 +61,10 @@ public class DebugDataFileDumper implements DebugDataDumper {
     createDirectory(
         gossipMessagesPath.resolve(REJECTED_SUB_DIR), REJECTED_SUB_DIR, "rejected gossip messages");
     createDirectory(directory.resolve(INVALID_BLOCK_DIR), INVALID_BLOCK_DIR, "invalid blocks");
+    createDirectory(
+        directory.resolve(INVALID_BLOB_SIDECARS_DIR),
+        INVALID_BLOB_SIDECARS_DIR,
+        "invalid blob sidecars");
   }
 
   @Override
