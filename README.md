@@ -61,7 +61,7 @@ Building on a more recent version of Java is supported, but the resulting build 
 
 ### Build and Dist
 
-To create a ready to run distribution:
+To create a ready-to-run distribution:
 
 ```shell script
 git clone https://github.com/Consensys/teku.git
