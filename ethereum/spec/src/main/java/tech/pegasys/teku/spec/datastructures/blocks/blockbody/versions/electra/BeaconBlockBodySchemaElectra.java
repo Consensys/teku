@@ -16,10 +16,8 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 
 public interface BeaconBlockBodySchemaElectra<T extends BeaconBlockBodyElectra>
     extends BeaconBlockBodySchemaDeneb<T> {
@@ -31,8 +29,6 @@ public interface BeaconBlockBodySchemaElectra<T extends BeaconBlockBodyElectra>
         schema.getClass());
     return (BeaconBlockBodySchemaElectra<?>) schema;
   }
-
-  SszListSchema<SignedConsolidation, ?> getConsolidationsSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaElectra<?>> toVersionElectra() {

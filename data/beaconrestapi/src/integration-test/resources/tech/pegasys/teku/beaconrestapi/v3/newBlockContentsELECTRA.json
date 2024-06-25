@@ -399,8 +399,7 @@
           "0xa250734616e5e744f48c493c6d932629d574d0f2b953d406c14b88999cbfbe0227821f9f2e60836eaef3cf363a0cfffd",
           "0xb5716d46b630c789e9cfb067411c3bf6db77cf84701cfdc0efcccb617720768dbea1e5fd28c1635cf50b13e301d462e4",
           "0x7c0e7f46d64d29bb09077be5c681fd8ec96ed2ce4dc2829266490109e8fd4fedf74293e1399ec2921fc349deac7c3731"
-        ],
-        "consolidations": []
+        ]
       }
     },
     "kzg_proofs": [
