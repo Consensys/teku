@@ -13,20 +13,35 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 public class StorageConfigurationTest {
+
+  final Spec spec = TestSpecFactory.createMinimalPhase0();
+  final Eth1Address eth1Address =
+      Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 
   public static Stream<Arguments> getStateStorageDefaultScenarios() {
     ArrayList<Arguments> args = new ArrayList<>();
@@ -57,5 +72,42 @@ public class StorageConfigurationTest {
             StorageConfiguration.determineStorageDefault(
                 isExistingStore, maybePreviousStorageMode, requestedMode))
         .isEqualTo(expectedResult);
+  }
+
+  @Test
+  public void shouldFailIfDatabaseStorageModeFileIsInvalidAndNoExplicitOptionIsSet(
+      @TempDir final Path dir) throws IOException {
+    createInvalidStorageModeFile(dir);
+    final DataConfig dataConfig = DataConfig.builder().beaconDataPath(dir).build();
+
+    final StorageConfiguration.Builder storageConfigBuilder =
+        StorageConfiguration.builder()
+            .specProvider(spec)
+            .dataConfig(dataConfig)
+            .eth1DepositContract(eth1Address);
+
+    assertThatThrownBy(storageConfigBuilder::build).isInstanceOf(DatabaseStorageException.class);
+  }
+
+  @Test
+  public void shouldSucceedIfDatabaseStorageModeFileIsInvalidAndExplicitOptionIsSet(
+      @TempDir final Path dir) throws IOException {
+    createInvalidStorageModeFile(dir);
+    final DataConfig dataConfig = DataConfig.builder().beaconDataPath(dir).build();
+
+    final StorageConfiguration storageConfig =
+        StorageConfiguration.builder()
+            .specProvider(spec)
+            .dataConfig(dataConfig)
+            .eth1DepositContract(eth1Address)
+            .dataStorageMode(ARCHIVE)
+            .build();
+
+    assertThat(storageConfig.getDataStorageMode()).isEqualTo(ARCHIVE);
+  }
+
+  private static void createInvalidStorageModeFile(final Path dir) throws IOException {
+    // An empty storage mode path is invalid
+    Files.createFile(dir.resolve(STORAGE_MODE_PATH));
   }
 }

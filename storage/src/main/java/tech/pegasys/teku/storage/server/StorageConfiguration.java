@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
@@ -33,7 +31,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 
 public class StorageConfiguration {
-
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
   public static final int DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS = 120;
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
@@ -267,11 +264,24 @@ public class StorageConfiguration {
     private void determineDataStorageMode() {
       if (dataConfig != null) {
         final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataConfig);
+        final Path beaconDataDirectory = dataDirLayout.getBeaconDataDirectory();
+
+        Optional<StateStorageMode> storageModeFromStoredFile;
+        try {
+          storageModeFromStoredFile =
+              DatabaseStorageModeFileHelper.readStateStorageMode(
+                  beaconDataDirectory.resolve(STORAGE_MODE_PATH));
+        } catch (final DatabaseStorageException e) {
+          if (dataStorageMode == NOT_SET) {
+            throw e;
+          } else {
+            storageModeFromStoredFile = Optional.empty();
+          }
+        }
+
         this.dataStorageMode =
             determineStorageDefault(
-                dataDirLayout.getBeaconDataDirectory().toFile().exists(),
-                getStorageModeFromPersistedDatabase(dataDirLayout),
-                dataStorageMode);
+                beaconDataDirectory.toFile().exists(), storageModeFromStoredFile, dataStorageMode);
       } else {
         if (dataStorageMode.equals(NOT_SET)) {
           dataStorageMode = PRUNE;
@@ -279,27 +289,11 @@ public class StorageConfiguration {
       }
     }
 
-    private Optional<StateStorageMode> getStorageModeFromPersistedDatabase(
-        final DataDirLayout dataDirLayout) {
-      final Path dbStorageModeFile =
-          dataDirLayout.getBeaconDataDirectory().resolve(STORAGE_MODE_PATH);
-      if (!Files.exists(dbStorageModeFile)) {
-        return Optional.empty();
-      }
-      try {
-        final StateStorageMode dbStorageMode =
-            StateStorageMode.valueOf(Files.readString(dbStorageModeFile).trim());
-        LOG.debug("Read previous storage mode as {}", dbStorageMode);
-        return Optional.of(dbStorageMode);
-      } catch (final IOException ex) {
-        throw new UncheckedIOException("Failed to read storage mode from file", ex);
-      }
-    }
-
     public Builder stateRebuildTimeoutSeconds(final int stateRebuildTimeoutSeconds) {
       if (stateRebuildTimeoutSeconds < 10 || stateRebuildTimeoutSeconds > 300) {
         LOG.warn(
-            "State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below 1, will allow the value to exceed 300.",
+            "State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below "
+                + "1, will allow the value to exceed 300.",
             stateRebuildTimeoutSeconds);
       }
       this.stateRebuildTimeoutSeconds = Math.max(stateRebuildTimeoutSeconds, 1);
@@ -315,6 +309,20 @@ public class StorageConfiguration {
     if (modeRequested != NOT_SET) {
       return modeRequested;
     }
-    return maybeHistoricStorageMode.orElse(isExistingStore ? PRUNE : MINIMAL);
+
+    if (maybeHistoricStorageMode.isPresent()) {
+      final StateStorageMode stateStorageMode = maybeHistoricStorageMode.get();
+      if (stateStorageMode == PRUNE) {
+        STATUS_LOG.warnUsageOfImplicitPruneDataStorageMode();
+      }
+      return stateStorageMode;
+    }
+
+    if (isExistingStore) {
+      STATUS_LOG.warnUsageOfImplicitPruneDataStorageMode();
+      return PRUNE;
+    } else {
+      return MINIMAL;
+    }
   }
 }

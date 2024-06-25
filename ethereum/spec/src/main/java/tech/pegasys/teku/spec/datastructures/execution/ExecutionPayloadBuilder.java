@@ -21,8 +21,9 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 
 public interface ExecutionPayloadBuilder {
   ExecutionPayloadBuilder parentHash(Bytes32 parentHash);
@@ -59,10 +60,13 @@ public interface ExecutionPayloadBuilder {
 
   ExecutionPayloadBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
-  ExecutionPayloadBuilder depositReceipts(Supplier<List<DepositReceipt>> depositReceiptsSupplier);
+  ExecutionPayloadBuilder depositRequests(Supplier<List<DepositRequest>> depositRequestsSupplier);
 
   ExecutionPayloadBuilder withdrawalRequests(
-      Supplier<List<ExecutionLayerWithdrawalRequest>> withdrawalRequestsSupplier);
+      Supplier<List<WithdrawalRequest>> withdrawalRequestsSupplier);
+
+  ExecutionPayloadBuilder consolidationRequests(
+      Supplier<List<ConsolidationRequest>> consolidationRequestsSupplier);
 
   ExecutionPayload build();
 }

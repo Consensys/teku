@@ -23,15 +23,18 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
   private final Path beaconNodeDataDir;
   private final Path validatorDataDir;
   private final Path debugDataDir;
+  private final boolean debugDataDumpingEnabled;
 
   public SeparateServiceDataDirLayout(
       final Path baseDir,
       final Optional<Path> beaconDataDirectory,
-      final Optional<Path> validatorDataDirectory) {
+      final Optional<Path> validatorDataDirectory,
+      final boolean debugDataDumpingEnabled) {
     beaconNodeDataDir = beaconDataDirectory.orElseGet(() -> baseDir.resolve(BEACON_DATA_DIR_NAME));
     validatorDataDir =
         validatorDataDirectory.orElseGet(() -> baseDir.resolve(VALIDATOR_DATA_DIR_NAME));
     debugDataDir = baseDir.resolve(DEBUG_DIR_NAME);
+    this.debugDataDumpingEnabled = debugDataDumpingEnabled;
   }
 
   @Override
@@ -47,5 +50,10 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
   @Override
   public Path getDebugDataDirectory() {
     return debugDataDir;
+  }
+
+  @Override
+  public boolean isDebugDataDumpingEnabled() {
+    return debugDataDumpingEnabled;
   }
 }

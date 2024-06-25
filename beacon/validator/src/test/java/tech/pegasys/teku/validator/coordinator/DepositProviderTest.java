@@ -181,7 +181,7 @@ public class DepositProviderTest {
   void noDepositsIncludedIfFormerDepositMechanismHasBeenDisabled() {
     setup(16, SpecMilestone.ELECTRA);
     updateStateEth1DepositIndex(5);
-    updateStateDepositReceiptsStartIndex(5);
+    updateStateDepositRequestsStartIndex(5);
 
     final SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
 
@@ -194,7 +194,7 @@ public class DepositProviderTest {
     updateStateEth1DepositIndex(5);
     updateStateEth1DataDepositCount(20);
     // 16th deposit is using the new mechanism
-    updateStateDepositReceiptsStartIndex(16);
+    updateStateDepositRequestsStartIndex(16);
 
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
@@ -202,7 +202,7 @@ public class DepositProviderTest {
     final List<DepositWithIndex> deposits =
         depositProvider.getDepositsWithIndex(state, randomEth1Data);
 
-    // the pending Eth1 deposits (deposit_receipt_start_index - eth1_deposit_index)
+    // the pending Eth1 deposits (deposit_requests_start_index - eth1_deposit_index)
     // we need to process eth1_deposit_index deposit (5) up to 16 (exclusive) so 11 is the
     // expected size
     assertThat(deposits).hasSize(11);
@@ -321,7 +321,7 @@ public class DepositProviderTest {
     setup(1, SpecMilestone.ELECTRA);
     mockDepositsFromEth1Block(0, 8);
     updateStateEth1DepositIndex(5);
-    updateStateDepositReceiptsStartIndex(5);
+    updateStateDepositRequestsStartIndex(5);
     updateStateEth1DataDepositCount(10);
     when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
 
@@ -546,11 +546,11 @@ public class DepositProviderTest {
     state = state.updated(mutableState -> mutableState.setEth1DepositIndex(UInt64.valueOf(n)));
   }
 
-  private void updateStateDepositReceiptsStartIndex(final int n) {
+  private void updateStateDepositRequestsStartIndex(final int n) {
     state =
         state.updated(
             mutableState ->
                 MutableBeaconStateElectra.required(mutableState)
-                    .setDepositReceiptsStartIndex(UInt64.valueOf(n)));
+                    .setDepositRequestsStartIndex(UInt64.valueOf(n)));
   }
 }

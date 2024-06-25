@@ -47,10 +47,10 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     return Optional.of(this);
   }
 
-  default void setDepositReceiptsStartIndex(final UInt64 depositReceiptsStartIndex) {
+  default void setDepositRequestsStartIndex(final UInt64 depositRequestsStartIndex) {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX);
-    set(fieldIndex, SszUInt64.of(depositReceiptsStartIndex));
+        getSchema().getFieldIndex(BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX);
+    set(fieldIndex, SszUInt64.of(depositRequestsStartIndex));
   }
 
   default void setDepositBalanceToConsume(final UInt64 depositBalanceToConsume) {

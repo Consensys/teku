@@ -76,13 +76,13 @@ public class Attestation {
     return attestationSchema.create(
         attestationSchema.getAggregationBitsSchema().sszDeserialize(aggregation_bits),
         data.asInternalAttestationData(),
+        signature.asInternalBLSSignature(),
         attestationSchema
             .getCommitteeBitsSchema()
             .map(
                 committeeBits ->
                     (Supplier<SszBitvector>) () -> committeeBits.sszDeserialize(committee_bits))
-            .orElse(() -> null),
-        signature.asInternalBLSSignature());
+            .orElse(() -> null));
   }
 
   @Override

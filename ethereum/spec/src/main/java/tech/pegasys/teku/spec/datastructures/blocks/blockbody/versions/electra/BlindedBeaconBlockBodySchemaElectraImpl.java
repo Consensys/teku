@@ -145,7 +145,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.CONSOLIDATIONS,
             SszListSchema.create(
-                SignedConsolidation.SSZ_SCHEMA, specConfig.getMaxConsolidations())));
+                SignedConsolidation.SSZ_SCHEMA,
+                specConfig.getMaxConsolidationRequestsPerPayload())));
   }
 
   @Override

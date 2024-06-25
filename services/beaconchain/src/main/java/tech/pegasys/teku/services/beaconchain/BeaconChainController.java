@@ -90,6 +90,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
@@ -108,7 +109,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -150,9 +150,9 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataFileDumper;
 import tech.pegasys.teku.statetransition.util.FutureItems;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataFileDumper;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -290,16 +290,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected PoolFactory poolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
-  protected P2PDebugDataDumper p2pDebugDataDumper;
+  protected DebugDataDumper debugDataDumper;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     final Eth2NetworkConfiguration eth2NetworkConfig = beaconConfig.eth2NetworkConfig();
+    final DataDirLayout dataDirLayout = serviceConfig.getDataDirLayout();
     this.beaconConfig = beaconConfig;
     this.spec = beaconConfig.getSpec();
     this.beaconBlockSchemaSupplier =
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
-    this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
+    this.beaconDataDirectory = dataDirLayout.getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.beaconAsyncRunner =
         serviceConfig.createAsyncRunner(
@@ -322,10 +323,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
-    this.p2pDebugDataDumper =
-        beaconConfig.p2pConfig().isP2pDumpsToFileEnabled()
-            ? new P2PDebugDataFileDumper(serviceConfig.getDataDirLayout().getDebugDataDirectory())
-            : P2PDebugDataDumper.NOOP;
+    this.debugDataDumper =
+        dataDirLayout.isDebugDataDumpingEnabled()
+            ? new DebugDataFileDumper(dataDirLayout.getDebugDataDirectory())
+            : DebugDataDumper.NOOP;
     this.futureItemsMetric =
         SettableLabelledGauge.create(
             metricsSystem,
@@ -350,8 +351,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
             blockManager
-                .importBlock(
-                    block, BroadcastValidationLevel.NOT_REQUIRED, Optional.of(RemoteOrigin.RPC))
+                .importBlock(block, RemoteOrigin.RPC)
                 .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
@@ -803,7 +803,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
-            p2pDebugDataDumper,
+            debugDataDumper,
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
@@ -900,9 +900,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final GraffitiBuilder graffitiBuilder =
-        new GraffitiBuilder(
-            beaconConfig.validatorConfig().getClientGraffitiAppendFormat(),
-            beaconConfig.validatorConfig().getGraffitiProvider().get());
+        new GraffitiBuilder(beaconConfig.validatorConfig().getClientGraffitiAppendFormat());
     eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
@@ -1121,7 +1119,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .specProvider(spec)
             .kzg(kzg)
             .recordMessageArrival(true)
-            .p2pDebugDataDumper(p2pDebugDataDumper)
+            .p2pDebugDataDumper(debugDataDumper)
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

@@ -128,8 +128,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -201,8 +202,9 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
-  private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
+  private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
   private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
+  private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
 
   private final Spec spec;
 
@@ -598,8 +600,9 @@ public final class DataStructureUtil {
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64)
-                    .depositReceiptsRoot(this::randomBytes32)
-                    .withdrawalRequestsRoot(this::randomBytes32));
+                    .depositRequestsRoot(this::randomBytes32)
+                    .withdrawalRequestsRoot(this::randomBytes32)
+                    .consolidationRequestsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -694,8 +697,9 @@ public final class DataStructureUtil {
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
-                      .depositReceipts(this::randomExecutionPayloadDepositReceipts)
-                      .withdrawalRequests(this::randomExecutionLayerWithdrawalRequests);
+                      .depositRequests(this::randomExecutionPayloadDepositRequests)
+                      .withdrawalRequests(this::randomWithdrawalRequests)
+                      .consolidationRequests(this::randomConsolidationRequests);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -720,15 +724,21 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<DepositReceipt> randomExecutionPayloadDepositReceipts() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_RECEIPTS))
-        .mapToObj(__ -> randomDepositReceipt())
+  public List<DepositRequest> randomExecutionPayloadDepositRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
+        .mapToObj(__ -> randomDepositRequest())
         .collect(toList());
   }
 
-  public List<ExecutionLayerWithdrawalRequest> randomExecutionLayerWithdrawalRequests() {
+  public List<WithdrawalRequest> randomWithdrawalRequests() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
-        .mapToObj(__ -> randomExecutionLayerWithdrawalRequest())
+        .mapToObj(__ -> randomWithdrawalRequest())
+        .collect(toList());
+  }
+
+  public List<ConsolidationRequest> randomConsolidationRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_CONSOLIDATION_REQUESTS))
+        .mapToObj(__ -> randomConsolidationRequest())
         .collect(toList());
   }
 
@@ -800,8 +810,8 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(),
-            this::randomCommitteeBitvector,
-            randomSignature());
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final long slot) {
@@ -814,15 +824,15 @@ public final class DataStructureUtil {
         .create(
             randomBitlist(),
             randomAttestationData(slot),
-            this::randomCommitteeBitvector,
-            randomSignature());
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
         .create(
-            randomBitlist(), attestationData, this::randomCommitteeBitvector, randomSignature());
+            randomBitlist(), attestationData, randomSignature(), this::randomCommitteeBitvector);
   }
 
   public AggregateAndProof randomAggregateAndProof() {
@@ -2077,7 +2087,7 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
-  public DepositReceipt randomDepositReceiptWithValidSignature(final UInt64 index) {
+  public DepositRequest randomDepositRequestWithValidSignature(final UInt64 index) {
     final BLSKeyPair keyPair = randomKeyPair();
     final DepositMessage depositMessage =
         new DepositMessage(keyPair.getPublicKey(), randomBytes32(), randomUInt64());
@@ -2085,7 +2095,7 @@ public final class DataStructureUtil {
     final Bytes signingRoot = getSigningRoot(depositMessage, domain);
     final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
     return getElectraSchemaDefinitions(randomSlot())
-        .getDepositReceiptSchema()
+        .getDepositRequestSchema()
         .create(
             depositMessage.getPubkey(),
             depositMessage.getWithdrawalCredentials(),
@@ -2094,9 +2104,9 @@ public final class DataStructureUtil {
             index);
   }
 
-  public DepositReceipt randomDepositReceipt() {
+  public DepositRequest randomDepositRequest() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getDepositReceiptSchema()
+        .getDepositRequestSchema()
         .create(
             randomPublicKey(),
             randomEth1WithdrawalCredentials(),
@@ -2490,32 +2500,30 @@ public final class DataStructureUtil {
     return getBlobKzgCommitmentsSchema().of();
   }
 
-  public ExecutionLayerWithdrawalRequest randomExecutionLayerWithdrawalRequest() {
+  public WithdrawalRequest randomWithdrawalRequest() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(randomEth1Address(), randomPublicKey(), randomUInt64());
   }
 
-  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
+  public WithdrawalRequest withdrawalRequest(
       final Bytes20 sourceAddress, final BLSPublicKey validatorPubKey, final UInt64 amount) {
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(sourceAddress, validatorPubKey, amount);
   }
 
-  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
-      final Validator validator) {
+  public WithdrawalRequest withdrawalRequest(final Validator validator) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(executionAddress, validator.getPublicKey(), randomUInt64());
   }
 
-  public ExecutionLayerWithdrawalRequest executionLayerWithdrawalRequest(
-      final Validator validator, final UInt64 amount) {
+  public WithdrawalRequest withdrawalRequest(final Validator validator, final UInt64 amount) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerWithdrawalRequestSchema()
+        .getWithdrawalRequestSchema()
         .create(executionAddress, validator.getPublicKey(), amount);
   }
 
@@ -2523,6 +2531,12 @@ public final class DataStructureUtil {
     return getElectraSchemaDefinitions(randomSlot())
         .getPendingBalanceDepositSchema()
         .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+  }
+
+  public ConsolidationRequest randomConsolidationRequest() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getConsolidationRequestSchema()
+        .create(randomEth1Address(), randomPublicKey(), randomPublicKey());
   }
 
   public PendingConsolidation randomPendingConsolidation() {

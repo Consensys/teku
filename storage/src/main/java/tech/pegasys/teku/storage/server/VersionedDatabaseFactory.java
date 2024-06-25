@@ -20,11 +20,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
@@ -52,7 +53,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
-
   private final File dbStorageModeFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
@@ -60,6 +60,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  private final SyncDataAccessor dbSettingFileSyncDataAccessor;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem, final Path dataPath, final StorageConfiguration config) {
@@ -79,29 +80,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
 
-    this.stateStorageMode =
-        getStateStorageModeFromConfigOrDisk(Optional.of(config.getDataStorageMode()));
-  }
-
-  private StateStorageMode getStateStorageModeFromConfigOrDisk(
-      final Optional<StateStorageMode> maybeConfiguredStorageMode) {
-    try {
-      final File storageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
-      if (storageModeFile.exists() && maybeConfiguredStorageMode.isPresent()) {
-        final StateStorageMode storageModeFromFile =
-            StateStorageMode.valueOf(Files.readString(storageModeFile.toPath()).trim());
-        if (!storageModeFromFile.equals(maybeConfiguredStorageMode.get())) {
-          LOG.info(
-              "Storage mode that was persisted differs from the command specified option; file: {}, CLI: {}",
-              () -> storageModeFromFile,
-              maybeConfiguredStorageMode::get);
-        }
-      }
-    } catch (IOException e) {
-      LOG.error("Failed to read storage mode file", e);
-    }
-
-    return maybeConfiguredStorageMode.orElse(StateStorageMode.DEFAULT_MODE);
+    dbSettingFileSyncDataAccessor = SyncDataAccessor.create(dataDirectory.toPath());
+    this.stateStorageMode = config.getDataStorageMode();
   }
 
   @Override
@@ -383,7 +363,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private void saveStorageMode(final StateStorageMode storageMode) {
     try {
-      Files.writeString(dbStorageModeFile.toPath(), storageMode.name(), StandardCharsets.UTF_8);
+      dbSettingFileSyncDataAccessor.syncedWrite(
+          dbStorageModeFile.toPath(),
+          Bytes.of(storageMode.name().getBytes(StandardCharsets.UTF_8)));
     } catch (IOException e) {
       throw DatabaseStorageException.unrecoverable(
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),

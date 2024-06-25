@@ -19,21 +19,21 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra.DepositReceiptSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra.DepositRequestSupplier;
 
-public class DepositReceiptPropertyTest {
+public class DepositRequestPropertyTest {
 
   @Property
   void roundTrip(
-      @ForAll(supplier = DepositReceiptSupplier.class) final DepositReceipt depositReceipt)
+      @ForAll(supplier = DepositRequestSupplier.class) final DepositRequest depositRequest)
       throws JsonProcessingException {
-    assertRoundTrip(depositReceipt);
+    assertRoundTrip(depositRequest);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = DepositReceiptSupplier.class) final DepositReceipt depositReceipt,
+      @ForAll(supplier = DepositRequestSupplier.class) final DepositRequest depositRequest,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(depositReceipt, seed);
+    assertDeserializeMutatedThrowsExpected(depositRequest, seed);
   }
 }

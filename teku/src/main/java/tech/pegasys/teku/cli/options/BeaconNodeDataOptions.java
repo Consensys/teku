@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.service.serviceutils.layout.DataConfig.DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
 import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
 
 import java.nio.file.Path;
@@ -147,9 +148,22 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "1")
   private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
 
+  @Option(
+      names = {"--Xdebug-data-dumping-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enable saving objects to files that cause problems when processing, for example rejected blocks or invalid gossip.\n Default: <data-base-path>/debug",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean debugDataDumpingEnabled = DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
+
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
-    return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
+    return super.configureDataConfig(config)
+        .beaconDataPath(dataBeaconPath)
+        .debugDataDumpingEnabled(debugDataDumpingEnabled);
   }
 
   @Override

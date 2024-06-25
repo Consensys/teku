@@ -41,8 +41,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer whistleblowerRewardQuotientElectra;
   private Integer maxAttesterSlashingsElectra;
   private Integer maxAttestationsElectra;
-  private Integer maxConsolidations;
-  private Integer maxDepositReceiptsPerPayload;
+  private Integer maxConsolidationRequestsPerPayload;
+  private Integer maxDepositRequestsPerPayload;
   private Integer maxWithdrawalRequestsPerPayload;
   private Integer maxPendingPartialsPerWithdrawalsSweep;
 
@@ -64,8 +64,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         whistleblowerRewardQuotientElectra,
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
-        maxConsolidations,
-        maxDepositReceiptsPerPayload,
+        maxConsolidationRequestsPerPayload,
+        maxDepositRequestsPerPayload,
         maxWithdrawalRequestsPerPayload,
         maxPendingPartialsPerWithdrawalsSweep);
   }
@@ -145,15 +145,16 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
-  public ElectraBuilder maxConsolidations(final Integer maxConsolidations) {
-    checkNotNull(maxConsolidations);
-    this.maxConsolidations = maxConsolidations;
+  public ElectraBuilder maxConsolidationRequestsPerPayload(
+      final Integer maxConsolidationsRequestPerPayload) {
+    checkNotNull(maxConsolidationsRequestPerPayload);
+    this.maxConsolidationRequestsPerPayload = maxConsolidationsRequestPerPayload;
     return this;
   }
 
-  public ElectraBuilder maxDepositReceiptsPerPayload(final Integer maxDepositReceiptsPerPayload) {
-    checkNotNull(maxDepositReceiptsPerPayload);
-    this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
+  public ElectraBuilder maxDepositRequestsPerPayload(final Integer maxDepositRequestsPerPayload) {
+    checkNotNull(maxDepositRequestsPerPayload);
+    this.maxDepositRequestsPerPayload = maxDepositRequestsPerPayload;
     return this;
   }
 
@@ -202,8 +203,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("whistleblowerRewardQuotientElectra", whistleblowerRewardQuotientElectra);
     constants.put("maxAttesterSlashingsElectra", maxAttesterSlashingsElectra);
     constants.put("maxAttestationsElectra", maxAttestationsElectra);
-    constants.put("maxConsolidations", maxConsolidations);
-    constants.put("maxDepositReceiptsPerPayload", maxDepositReceiptsPerPayload);
+    constants.put("maxConsolidationRequestsPerPayload", maxConsolidationRequestsPerPayload);
+    constants.put("maxDepositRequestsPerPayload", maxDepositRequestsPerPayload);
     constants.put("maxWithdrawalRequestsPerPayload", maxWithdrawalRequestsPerPayload);
     constants.put("maxPendingPartialsPerWithdrawalsSweep", maxPendingPartialsPerWithdrawalsSweep);
 
