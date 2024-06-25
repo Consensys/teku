@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -128,7 +129,8 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
 
     verify(validatorLogger).primaryBeaconNodeIsBackAndReady();
-    verify(beaconNodeReadinessChannel).onPrimaryNodeBackReady();
+    // call it every time we check, channel will filter itself
+    verify(beaconNodeReadinessChannel, times(2)).onPrimaryNodeBackReady();
   }
 
   @Test
