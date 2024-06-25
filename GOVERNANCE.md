@@ -17,7 +17,7 @@ See [code of conduct]
 See [community membership]
 
 # Decision Making
-Decision making will be handled by the Approvers (see [community membership]).  If consensus cannot be reached, the Benevolent Dictator will provide the final word on the decision.
+Decision-making will be handled by the Approvers (see [community membership]).  If consensus cannot be reached, the Benevolent Dictator will provide the final word on the decision.
 
 # CLA
 
