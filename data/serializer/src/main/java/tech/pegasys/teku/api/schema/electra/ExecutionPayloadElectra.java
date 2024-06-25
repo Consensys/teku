@@ -129,7 +129,7 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
                     .map(
                         exit ->
                             exit.asInternalConsolidationRequest(
-                                executionPayloadSchema.getConsolidationSchemaRequired()))
+                                executionPayloadSchema.getConsolidationRequestSchemaRequired()))
                     .toList());
   }
 

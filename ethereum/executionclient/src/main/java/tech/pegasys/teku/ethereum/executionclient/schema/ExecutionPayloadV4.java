@@ -148,7 +148,7 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
       final ConsolidationRequestV1 consolidationRequestV1,
       final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema
-        .getConsolidationSchemaRequired()
+        .getConsolidationRequestSchemaRequired()
         .create(
             consolidationRequestV1.sourceAddress,
             BLSPublicKey.fromBytesCompressed(consolidationRequestV1.sourcePubkey),
