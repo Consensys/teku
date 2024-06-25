@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -34,7 +33,6 @@ class BeaconBlockBodyElectraTest extends AbstractBeaconBlockBodyTest<BeaconBlock
   protected ExecutionPayloadHeader executionPayloadHeader;
   protected SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
   protected SszList<SszKZGCommitment> blobKzgCommitments;
-  protected SszList<SignedConsolidation> consolidations;
 
   @BeforeEach
   void setup() {
@@ -46,7 +44,6 @@ class BeaconBlockBodyElectraTest extends AbstractBeaconBlockBodyTest<BeaconBlock
           executionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
           blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
           blobKzgCommitments = dataStructureUtil.randomBlobKzgCommitments();
-          consolidations = dataStructureUtil.randomSignedConsolidations();
         });
   }
 
@@ -74,8 +71,7 @@ class BeaconBlockBodyElectraTest extends AbstractBeaconBlockBodyTest<BeaconBlock
               builder
                   .syncAggregate(syncAggregate)
                   .blsToExecutionChanges(blsToExecutionChanges)
-                  .blobKzgCommitments(blobKzgCommitments)
-                  .consolidations(consolidations);
+                  .blobKzgCommitments(blobKzgCommitments);
               if (blinded) {
                 builder.executionPayloadHeader(executionPayloadHeader);
               } else {
