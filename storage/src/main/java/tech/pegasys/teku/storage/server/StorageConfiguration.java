@@ -38,9 +38,9 @@ public class StorageConfiguration {
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
-  public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(10);
+  public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(5);
   public static final long DEFAULT_STORAGE_RETAINED_EPOCHS = -1;
-  public static final int DEFAULT_STATE_PRUNING_LIMIT = 3;
+  public static final int DEFAULT_STATE_PRUNING_LIMIT = 1;
 
   // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
   // target. Let's configure 48 pruning per minute, so we have some room for catching up.
