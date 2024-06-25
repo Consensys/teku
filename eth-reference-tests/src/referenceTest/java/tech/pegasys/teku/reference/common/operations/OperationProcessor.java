@@ -17,8 +17,8 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -72,6 +72,7 @@ public interface OperationProcessor {
   void processWithdrawalRequest(MutableBeaconState state, WithdrawalRequest withdrawalRequest)
       throws BlockProcessingException;
 
-  void processConsolidation(MutableBeaconState state, SignedConsolidation consolidation)
+  void processConsolidationRequest(
+      MutableBeaconState state, ConsolidationRequest consolidationRequest)
       throws BlockProcessingException;
 }

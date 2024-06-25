@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
@@ -50,7 +51,10 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
 
   WithdrawalRequestSchema getWithdrawalRequestSchemaRequired();
 
-  ConsolidationRequestSchema getConsolidationSchemaRequired();
+  ConsolidationRequestSchema getConsolidationRequestSchemaRequired();
+
+  SszListSchema<ConsolidationRequest, ? extends SszList<ConsolidationRequest>>
+      getConsolidationRequestsSchemaRequired();
 
   LongList getBlindedNodeGeneralizedIndices();
 

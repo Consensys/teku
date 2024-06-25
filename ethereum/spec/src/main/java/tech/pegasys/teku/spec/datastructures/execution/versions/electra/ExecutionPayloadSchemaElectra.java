@@ -171,8 +171,14 @@ public class ExecutionPayloadSchemaElectra
   }
 
   @Override
-  public ConsolidationRequestSchema getConsolidationSchemaRequired() {
+  public ConsolidationRequestSchema getConsolidationRequestSchemaRequired() {
     return getConsolidationRequestSchema();
+  }
+
+  @Override
+  public SszListSchema<ConsolidationRequest, ? extends SszList<ConsolidationRequest>>
+      getConsolidationRequestsSchemaRequired() {
+    return getConsolidationRequestsSchema();
   }
 
   public WithdrawalSchema getWithdrawalSchema() {
