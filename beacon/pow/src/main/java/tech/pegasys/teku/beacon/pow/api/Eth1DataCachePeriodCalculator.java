@@ -40,7 +40,7 @@ public class Eth1DataCachePeriodCalculator {
   }
 
   public static UInt64 calculateEth1DataCacheDurationPriorToCurrentTime(final SpecConfig config) {
-    // Add in the difference between current time and a block ETH1_FOLLOW_DISTANCE behind.
+    // Add in the difference between the current time and a block ETH1_FOLLOW_DISTANCE behind.
     return calculateEth1DataCacheDurationPriorToFollowDistance(config)
         .plus(config.getEth1FollowDistance().times(config.getSecondsPerEth1Block()));
   }
