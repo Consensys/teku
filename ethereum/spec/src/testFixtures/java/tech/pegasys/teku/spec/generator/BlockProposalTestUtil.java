@@ -128,9 +128,6 @@ public class BlockProposalTestUtil {
                 builder.blobKzgCommitments(
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
-              if (builder.supportsConsolidations()) {
-                builder.consolidations(dataStructureUtil.emptyConsolidations());
-              }
               return SafeFuture.COMPLETE;
             },
             BlockProductionPerformance.NOOP)
@@ -203,9 +200,6 @@ public class BlockProposalTestUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
-              }
-              if (builder.supportsConsolidations()) {
-                builder.consolidations(dataStructureUtil.emptyConsolidations());
               }
               return SafeFuture.COMPLETE;
             })

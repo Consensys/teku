@@ -63,7 +63,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -176,15 +175,6 @@ public class BlockOperationSelectorFactory {
 
       final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
-
-      // Post-Electra: Consolidations
-      if (bodyBuilder.supportsConsolidations()) {
-        // devnet-0 blocks are empty of consolidations, so just default their list.
-        bodyBuilder.consolidations(
-            SchemaDefinitionsElectra.required(schemaDefinitions)
-                .getConsolidationsSchema()
-                .createFromElements(List.of()));
-      }
 
       final SafeFuture<Void> blockProductionComplete;
 
