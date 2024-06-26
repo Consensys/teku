@@ -15,10 +15,8 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 
 public interface BlindedBeaconBlockBodySchemaElectra<T extends BlindedBeaconBlockBodyElectra>
     extends BlindedBeaconBlockBodySchemaDeneb<T> {
@@ -30,6 +28,4 @@ public interface BlindedBeaconBlockBodySchemaElectra<T extends BlindedBeaconBloc
         schema.getClass());
     return (BlindedBeaconBlockBodySchemaElectra<?>) schema;
   }
-
-  SszListSchema<SignedConsolidation, ?> getConsolidationsSchema();
 }

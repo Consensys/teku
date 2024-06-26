@@ -40,8 +40,8 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
             .create(
                 attestation.getAggregationBits(),
                 attestation.getData(),
-                () -> attestation.getSchema().getCommitteeBitsSchema().orElseThrow().ofBits(1, 3),
-                attestation.getAggregateSignature());
+                attestation.getAggregateSignature(),
+                () -> attestation.getSchema().getCommitteeBitsSchema().orElseThrow().ofBits(1, 3));
 
     // Sanity check
     assertThat(wrongAttestation.getCommitteeBitsRequired().getBitCount()).isGreaterThan(1);
@@ -73,8 +73,8 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
             .create(
                 attestation.getAggregationBits(),
                 nonZeroIndexData,
-                attestation::getCommitteeBitsRequired,
-                attestation.getAggregateSignature());
+                attestation.getAggregateSignature(),
+                attestation::getCommitteeBitsRequired);
 
     // Sanity check
     assertThat(wrongAttestation.getData().getIndex()).isNotEqualTo(UInt64.ZERO);

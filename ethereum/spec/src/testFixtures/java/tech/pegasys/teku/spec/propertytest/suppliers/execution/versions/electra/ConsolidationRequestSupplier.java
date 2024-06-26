@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.electra;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class DepositReceiptSupplier extends DataStructureUtilSupplier<DepositReceipt> {
+public class ConsolidationRequestSupplier extends DataStructureUtilSupplier<ConsolidationRequest> {
 
-  public DepositReceiptSupplier() {
-    super(DataStructureUtil::randomDepositReceipt, SpecMilestone.ELECTRA);
+  public ConsolidationRequestSupplier() {
+    super(DataStructureUtil::randomConsolidationRequest, SpecMilestone.ELECTRA);
   }
 }

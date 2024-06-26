@@ -37,12 +37,10 @@ import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
 public class GraffitiBuilderTest {
   private ClientGraffitiAppendFormat clientGraffitiAppendFormat = AUTO;
-  private Optional<Bytes32> userGraffiti = Optional.empty();
-  private GraffitiBuilder graffitiBuilder =
-      new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
+  private GraffitiBuilder graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat);
 
   private static final ClientVersion TEKU_CLIENT_VERSION =
-      new GraffitiBuilder(DISABLED, Optional.empty()).getConsensusClientVersion();
+      new GraffitiBuilder(DISABLED).getConsensusClientVersion();
   private static final ClientVersion BESU_CLIENT_VERSION =
       new ClientVersion("BU", "Besu", "23.4.1", Bytes4.fromHexString("abcdef12"));
 
@@ -58,41 +56,37 @@ public class GraffitiBuilderTest {
   @BeforeEach
   public void setup() {
     this.clientGraffitiAppendFormat = AUTO;
-    this.userGraffiti = Optional.empty();
-    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
+    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat);
   }
 
   @Test
-  public void onExecutionClientVersion_shouldLogDefaultGraffiti() {
+  public void onExecutionClientVersion_shouldLogGraffitiWatermark() {
+    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat);
     try (final LogCaptor logCaptor = LogCaptor.forClass(EventLogger.class)) {
       graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
       logCaptor.assertInfoLog(
-          "Default graffiti to use when building block without external VC: \"TK"
+          "Using graffiti watermark: \"TK"
               + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()
               + "BUabcdef12\". "
-              + "To change check validator graffiti options.");
+              + "This will be appended to any user-defined graffiti or used if none is defined. Refer to validator graffiti options to customize.");
     }
   }
 
   @Test
-  public void onExecutionClientVersion_shouldLogDefaultMergedGraffiti() {
-    this.graffitiBuilder =
-        new GraffitiBuilder(
-            clientGraffitiAppendFormat, Optional.of(Bytes32Parser.toBytes32(ASCII_GRAFFITI_20)));
+  public void onExecutionClientVersionNotAvailable_shouldLogGraffitiWatermark() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(EventLogger.class)) {
-      graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
+      graffitiBuilder.onExecutionClientVersionNotAvailable();
       logCaptor.assertInfoLog(
-          "Default graffiti to use when building block without external VC: \"I've proposed ablock TK"
-              + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString().substring(0, 2)
-              + "BUab\". "
-              + "To change check validator graffiti options.");
+          "Using graffiti watermark: \"TK"
+              + TEKU_CLIENT_VERSION.commit().toUnprefixedHexString()
+              + "\". This will be appended to any user-defined graffiti or used if none is defined. Refer to validator graffiti options to customize.");
     }
   }
 
   @Test
   public void buildGraffiti_shouldNotFail() {
     this.graffitiBuilder =
-        new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti) {
+        new GraffitiBuilder(clientGraffitiAppendFormat) {
           @Override
           protected int calculateGraffitiLength(final Optional<Bytes32> graffiti) {
             throw new RuntimeException("");
@@ -105,10 +99,9 @@ public class GraffitiBuilderTest {
 
   @Test
   public void buildGraffiti_shouldPreferCallInput() {
-    final Bytes32 defaultGraffiti = Bytes32Parser.toBytes32(asciiGraffiti32);
     final Bytes32 userGraffiti = Bytes32Parser.toBytes32(ASCII_GRAFFITI_20);
     final Bytes32 expectedGraffiti = Bytes32Parser.toBytes32(ASCII_GRAFFITI_20 + " TK");
-    this.graffitiBuilder = new GraffitiBuilder(CLIENT_CODES, Optional.of(defaultGraffiti));
+    this.graffitiBuilder = new GraffitiBuilder(CLIENT_CODES);
     assertThat(graffitiBuilder.buildGraffiti(Optional.of(userGraffiti)))
         .isEqualTo(expectedGraffiti);
   }
@@ -119,7 +112,7 @@ public class GraffitiBuilderTest {
       final ClientGraffitiAppendFormat clientGraffitiAppendFormat,
       final Optional<String> maybeUserGraffiti,
       final String expectedGraffiti) {
-    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
+    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat);
     graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);
     final Bytes32 expectedGraffitiBytes = Bytes32Parser.toBytes32(expectedGraffiti);
     assertThat(
@@ -140,7 +133,7 @@ public class GraffitiBuilderTest {
       final ClientGraffitiAppendFormat clientGraffitiAppendFormat,
       final Optional<String> maybeUserGraffiti,
       final String expectedGraffiti) {
-    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat, userGraffiti);
+    this.graffitiBuilder = new GraffitiBuilder(clientGraffitiAppendFormat);
     final Bytes32 expectedGraffitiBytes = Bytes32Parser.toBytes32(expectedGraffiti);
     assertThat(
             new String(

@@ -46,10 +46,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -449,7 +449,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
-          processExecutionLayerWithdrawalRequests(
+          processWithdrawalRequests(
               state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
         });
   }
@@ -900,33 +900,33 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  protected void processExecutionLayerWithdrawalRequests(
+  protected void processWithdrawalRequests(
       final MutableBeaconState state,
       final Optional<ExecutionPayload> executionPayload,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    // No ExecutionLayerWithdrawalRequests until Electra
+    // No WithdrawalRequests until Electra
   }
 
   @Override
-  public void processDepositReceipts(
-      final MutableBeaconState state, final SszList<DepositReceipt> depositReceipts)
+  public void processDepositRequests(
+      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
       throws BlockProcessingException {
-    // No DepositReceipts until Electra
+    // No DepositRequests until Electra
   }
 
   @Override
-  public void processExecutionLayerWithdrawalRequests(
+  public void processWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<ExecutionLayerWithdrawalRequest> withdrawalRequests,
+      final SszList<WithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    // No ExecutionLayerWithdrawalRequests until Electra
+    // No WithdrawalRequests until Electra
   }
 
   @Override
-  public void processConsolidations(
-      final MutableBeaconState state, final SszList<SignedConsolidation> consolidations)
+  public void processConsolidationRequests(
+      final MutableBeaconState state, final SszList<ConsolidationRequest> consolidationRequests)
       throws BlockProcessingException {
     // No Consolidations until Electra
   }

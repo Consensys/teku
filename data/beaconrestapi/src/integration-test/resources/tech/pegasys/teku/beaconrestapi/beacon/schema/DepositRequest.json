@@ -1,5 +1,5 @@
 {
-  "title" : "DepositReceipt",
+  "title" : "DepositRequest",
   "type" : "object",
   "required" : [ "pubkey", "withdrawal_credentials", "amount", "signature", "index" ],
   "properties" : {

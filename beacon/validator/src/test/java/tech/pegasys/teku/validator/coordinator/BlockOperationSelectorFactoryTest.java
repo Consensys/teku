@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -102,7 +101,6 @@ import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 class BlockOperationSelectorFactoryTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final Spec specBellatrix = TestSpecFactory.createMinimalBellatrix();
-  final Spec specElectra = TestSpecFactory.createMinimalElectra();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
@@ -183,25 +181,11 @@ class BlockOperationSelectorFactoryTest {
           .getHeaderOfDefaultPayload();
 
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
-      new CapturingBeaconBlockBodyBuilder(false, false);
+      new CapturingBeaconBlockBodyBuilder(false);
 
   private final GraffitiBuilder graffitiBuilder =
-      new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED, Optional.empty());
+      new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED);
 
-  private final BlockOperationSelectorFactory factoryElectra =
-      new BlockOperationSelectorFactory(
-          specElectra,
-          attestationPool,
-          attesterSlashingPool,
-          proposerSlashingPool,
-          voluntaryExitPool,
-          blsToExecutionChangePool,
-          contributionPool,
-          depositProvider,
-          eth1DataCache,
-          graffitiBuilder,
-          forkChoiceNotifier,
-          executionLayer);
   private final BlockOperationSelectorFactory factory =
       new BlockOperationSelectorFactory(
           spec,
@@ -637,8 +621,7 @@ class BlockOperationSelectorFactoryTest {
 
     final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder =
-        new CapturingBeaconBlockBodyBuilder(true, false);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
@@ -712,8 +695,7 @@ class BlockOperationSelectorFactoryTest {
         blobsBundle,
         blockExecutionValue);
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder =
-        new CapturingBeaconBlockBodyBuilder(true, false);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
     safeJoin(
         factory
@@ -736,37 +718,6 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldIncludeConsolidationsInBlock() {
-    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
-    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
-    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
-
-    prepareBlockAndBlobsProduction(
-        randomExecutionPayload,
-        executionPayloadContext,
-        blockSlotState,
-        blobsBundle,
-        blockExecutionValue);
-
-    final CapturingBeaconBlockBodyBuilder bodyBuilder =
-        new CapturingBeaconBlockBodyBuilder(true, true);
-    safeJoin(
-        factoryElectra
-            .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.of(false),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
-            .apply(bodyBuilder));
-
-    assertThat(bodyBuilder.consolidations).isEmpty();
-  }
-
-  @Test
   void shouldIncludeKzgCommitmentsInBlindedBlock() {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
 
@@ -785,8 +736,7 @@ class BlockOperationSelectorFactoryTest {
         blobKzgCommitments,
         blockExecutionValue);
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder =
-        new CapturingBeaconBlockBodyBuilder(true, false);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
     safeJoin(
         factory
@@ -1229,7 +1179,6 @@ class BlockOperationSelectorFactoryTest {
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
 
     private final boolean supportsKzgCommitments;
-    private final boolean supportsConsolidations;
 
     protected BLSSignature randaoReveal;
     protected Bytes32 graffiti;
@@ -1242,13 +1191,8 @@ class BlockOperationSelectorFactoryTest {
     protected ExecutionPayloadHeader executionPayloadHeader;
     protected SszList<SszKZGCommitment> blobKzgCommitments;
 
-    @SuppressWarnings("unused")
-    protected SszList<SignedConsolidation> consolidations;
-
-    public CapturingBeaconBlockBodyBuilder(
-        final boolean supportsKzgCommitments, final boolean supportsConsolidations) {
+    public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
       this.supportsKzgCommitments = supportsKzgCommitments;
-      this.supportsConsolidations = supportsConsolidations;
     }
 
     @Override
@@ -1346,21 +1290,9 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public Boolean supportsConsolidations() {
-      return supportsConsolidations;
-    }
-
-    @Override
     public BeaconBlockBodyBuilder blobKzgCommitments(
         final SszList<SszKZGCommitment> blobKzgCommitments) {
       this.blobKzgCommitments = blobKzgCommitments;
-      return this;
-    }
-
-    @Override
-    public BeaconBlockBodyBuilder consolidations(
-        final SszList<SignedConsolidation> consolidations) {
-      this.consolidations = consolidations;
       return this;
     }
 

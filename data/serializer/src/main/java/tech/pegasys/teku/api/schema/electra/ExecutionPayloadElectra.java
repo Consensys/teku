@@ -30,11 +30,14 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements ExecutionPayload {
 
-  @JsonProperty("deposit_receipts")
-  public final List<DepositReceipt> depositReceipts;
+  @JsonProperty("deposit_requests")
+  public final List<DepositRequest> depositRequests;
 
   @JsonProperty("withdrawal_requests")
-  public final List<ExecutionLayerWithdrawalRequest> withdrawalRequests;
+  public final List<WithdrawalRequest> withdrawalRequests;
+
+  @JsonProperty("consolidation_requests")
+  public final List<ConsolidationRequest> consolidationRequests;
 
   @JsonCreator
   public ExecutionPayloadElectra(
@@ -55,9 +58,10 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
-      @JsonProperty("deposit_receipts") final List<DepositReceipt> depositReceipts,
-      @JsonProperty("withdrawal_requests")
-          final List<ExecutionLayerWithdrawalRequest> withdrawalRequests) {
+      @JsonProperty("deposit_requests") final List<DepositRequest> depositRequests,
+      @JsonProperty("withdrawal_requests") final List<WithdrawalRequest> withdrawalRequests,
+      @JsonProperty("consolidation_requests")
+          final List<ConsolidationRequest> consolidationRequests) {
     super(
         parentHash,
         feeRecipient,
@@ -76,20 +80,25 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
         withdrawals,
         blobGasUsed,
         excessBlobGas);
-    this.depositReceipts = depositReceipts;
+    this.depositRequests = depositRequests;
     this.withdrawalRequests = withdrawalRequests;
+    this.consolidationRequests = consolidationRequests;
   }
 
   public ExecutionPayloadElectra(
       final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
-    this.depositReceipts =
-        executionPayload.toVersionElectra().orElseThrow().getDepositReceipts().stream()
-            .map(DepositReceipt::new)
+    this.depositRequests =
+        executionPayload.toVersionElectra().orElseThrow().getDepositRequests().stream()
+            .map(DepositRequest::new)
             .toList();
     this.withdrawalRequests =
         executionPayload.toVersionElectra().orElseThrow().getWithdrawalRequests().stream()
-            .map(ExecutionLayerWithdrawalRequest::new)
+            .map(WithdrawalRequest::new)
+            .toList();
+    this.consolidationRequests =
+        executionPayload.toVersionElectra().orElseThrow().getConsolidationRequests().stream()
+            .map(ConsolidationRequest::new)
             .toList();
   }
 
@@ -98,22 +107,29 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final ExecutionPayloadBuilder builder) {
     return super.applyToBuilder(executionPayloadSchema, builder)
-        .depositReceipts(
+        .depositRequests(
             () ->
-                depositReceipts.stream()
+                depositRequests.stream()
                     .map(
-                        depositReceipt ->
-                            depositReceipt.asInternalDepositReceipt(
-                                executionPayloadSchema.getDepositReceiptSchemaRequired()))
+                        depositRequest ->
+                            depositRequest.asInternalDepositRequest(
+                                executionPayloadSchema.getDepositRequestSchemaRequired()))
                     .toList())
         .withdrawalRequests(
             () ->
                 withdrawalRequests.stream()
                     .map(
                         exit ->
-                            exit.asInternalExecutionLayerWithdrawalRequest(
-                                executionPayloadSchema
-                                    .getExecutionLayerWithdrawalRequestSchemaRequired()))
+                            exit.asInternalWithdrawalRequest(
+                                executionPayloadSchema.getWithdrawalRequestSchemaRequired()))
+                    .toList())
+        .consolidationRequests(
+            () ->
+                consolidationRequests.stream()
+                    .map(
+                        exit ->
+                            exit.asInternalConsolidationRequest(
+                                executionPayloadSchema.getConsolidationRequestSchemaRequired()))
                     .toList());
   }
 

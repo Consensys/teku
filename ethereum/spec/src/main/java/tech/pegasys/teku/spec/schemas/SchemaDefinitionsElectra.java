@@ -38,16 +38,16 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.consolidations.Consolidation;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
@@ -86,9 +86,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
-  private final DepositReceiptSchema depositReceiptSchema;
+  private final DepositRequestSchema depositRequestSchema;
 
-  private final ExecutionLayerWithdrawalRequestSchema executionLayerWithdrawalRequestSchema;
+  private final WithdrawalRequestSchema withdrawalRequestSchema;
+  private final ConsolidationRequestSchema consolidationRequestSchema;
 
   private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
 
@@ -155,8 +156,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
 
-    this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
-    this.executionLayerWithdrawalRequestSchema = ExecutionLayerWithdrawalRequest.SSZ_SCHEMA;
+    this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
+    this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
+    this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
     this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
     this.pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
@@ -273,10 +275,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return new BeaconBlockBodyBuilderElectra(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
-  public SszListSchema<SignedConsolidation, ?> getConsolidationsSchema() {
-    return beaconBlockBodySchema.getConsolidationsSchema();
-  }
-
   @Override
   public BlockContentsSchema getBlockContentsSchema() {
     return blockContentsSchema;
@@ -297,12 +295,12 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return executionPayloadAndBlobsBundleSchema;
   }
 
-  public DepositReceiptSchema getDepositReceiptSchema() {
-    return depositReceiptSchema;
+  public DepositRequestSchema getDepositRequestSchema() {
+    return depositRequestSchema;
   }
 
-  public ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchema() {
-    return executionLayerWithdrawalRequestSchema;
+  public WithdrawalRequestSchema getWithdrawalRequestSchema() {
+    return withdrawalRequestSchema;
   }
 
   public PendingBalanceDeposit.PendingBalanceDepositSchema getPendingBalanceDepositSchema() {
@@ -335,12 +333,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return pendingConsolidationSchema;
   }
 
-  public Consolidation.ConsolidationSchema getConsolidationSchema() {
-    return Consolidation.SSZ_SCHEMA;
-  }
-
-  public SignedConsolidation.SignedConsolidationSchema getSignedConsolidationSchema() {
-    return SignedConsolidation.SSZ_SCHEMA;
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return consolidationRequestSchema;
   }
 
   @Override

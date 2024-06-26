@@ -17,31 +17,27 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-public class ExecutionLayerWithdrawalRequest
-    extends Container3<ExecutionLayerWithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
+public class ConsolidationRequest
+    extends Container3<ConsolidationRequest, SszByteVector, SszPublicKey, SszPublicKey> {
 
-  public static final ExecutionLayerWithdrawalRequestSchema SSZ_SCHEMA =
-      new ExecutionLayerWithdrawalRequestSchema();
+  public static final ConsolidationRequestSchema SSZ_SCHEMA = new ConsolidationRequestSchema();
 
-  protected ExecutionLayerWithdrawalRequest(
-      final ExecutionLayerWithdrawalRequestSchema schema,
+  protected ConsolidationRequest(
+      final ConsolidationRequestSchema schema,
       final Bytes20 sourceAddress,
-      final BLSPublicKey validatorPublicKey,
-      final UInt64 amount) {
+      final BLSPublicKey sourcePubkey,
+      final BLSPublicKey targetPubkey) {
     super(
         schema,
         SszByteVector.fromBytes(sourceAddress.getWrappedBytes()),
-        new SszPublicKey(validatorPublicKey),
-        SszUInt64.of(amount));
+        new SszPublicKey(sourcePubkey),
+        new SszPublicKey(targetPubkey));
   }
 
-  ExecutionLayerWithdrawalRequest(
-      final ExecutionLayerWithdrawalRequestSchema type, final TreeNode backingNode) {
+  ConsolidationRequest(final ConsolidationRequestSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -49,16 +45,16 @@ public class ExecutionLayerWithdrawalRequest
     return new Bytes20(getField0().getBytes());
   }
 
-  public BLSPublicKey getValidatorPublicKey() {
+  public BLSPublicKey getSourcePubkey() {
     return getField1().getBLSPublicKey();
   }
 
-  public UInt64 getAmount() {
-    return getField2().get();
+  public BLSPublicKey getTargetPubkey() {
+    return getField2().getBLSPublicKey();
   }
 
   @Override
-  public ExecutionLayerWithdrawalRequestSchema getSchema() {
-    return (ExecutionLayerWithdrawalRequestSchema) super.getSchema();
+  public ConsolidationRequestSchema getSchema() {
+    return (ConsolidationRequestSchema) super.getSchema();
   }
 }

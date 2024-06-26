@@ -218,6 +218,6 @@ public class AttestationProductionDuty implements Duty {
                 committeeBitsSchema -> () -> committeeBitsSchema.ofBits(validator.committeeIndex()))
             .orElse(() -> null);
     return attestationSchema.create(
-        aggregationBits, attestationData, committeeBitsSupplier, signature);
+        aggregationBits, attestationData, signature, committeeBitsSupplier);
   }
 }

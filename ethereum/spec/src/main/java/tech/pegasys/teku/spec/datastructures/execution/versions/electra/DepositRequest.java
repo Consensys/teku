@@ -24,12 +24,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class DepositReceipt
+public class DepositRequest
     extends Container5<
-        DepositReceipt, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
+        DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
 
-  DepositReceipt(
-      final DepositReceiptSchema schema,
+  DepositRequest(
+      final DepositRequestSchema schema,
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,
@@ -44,9 +44,9 @@ public class DepositReceipt
         SszUInt64.of(index));
   }
 
-  public static final DepositReceiptSchema SSZ_SCHEMA = new DepositReceiptSchema();
+  public static final DepositRequestSchema SSZ_SCHEMA = new DepositRequestSchema();
 
-  DepositReceipt(final DepositReceiptSchema type, final TreeNode backingNode) {
+  DepositRequest(final DepositRequestSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -71,7 +71,7 @@ public class DepositReceipt
   }
 
   @Override
-  public DepositReceiptSchema getSchema() {
-    return (DepositReceiptSchema) super.getSchema();
+  public DepositRequestSchema getSchema() {
+    return (DepositRequestSchema) super.getSchema();
   }
 }
