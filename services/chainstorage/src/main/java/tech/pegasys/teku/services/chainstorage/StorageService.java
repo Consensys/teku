@@ -117,12 +117,13 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningTimingsLabelledGauge,
                             pruningActiveLabelledGauge));
               }
-              LOG.info(
-                  "Data storage mode: {}, Retained epochs {}",
-                  config.getDataStorageMode(),
-                  config.getRetainedEpochs());
               if (config.getDataStorageMode().storesFinalizedStates()
-                  && config.getRetainedEpochs() > -1) {
+                  && config.getRetainedSlots() > -1) {
+                  LOG.info(
+                          "State pruner will run every: {} minute(s), retaining states for the last {} finalized slots. Limited to {} state prune per execution. ",
+                          config.getStatePruningInterval().toMinutes(),
+                          config.getRetainedSlots(),
+                          config.getStatePruningLimit());
                 statePruner =
                     Optional.of(
                         new StatePruner(
@@ -130,7 +131,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             database,
                             storagePrunerAsyncRunner,
                             config.getStatePruningInterval(),
-                            config.getRetainedEpochs(),
+                            config.getRetainedSlots(),
                             config.getStatePruningLimit(),
                             "state",
                             pruningTimingsLabelledGauge,
