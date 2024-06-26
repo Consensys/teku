@@ -38,6 +38,7 @@ public class NodeRecordConverter {
       final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
     return nodeRecord
         .getTcpAddress()
+        .or(nodeRecord::getTcp6Address)
         .map(address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
   }
 
