@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.io;
 import java.io.UncheckedIOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 public class IPVersionResolver {
@@ -39,12 +40,16 @@ public class IPVersionResolver {
     try {
       final InetAddress inetAddress = InetAddress.getByName(address);
       return resolve(inetAddress);
-    } catch (UnknownHostException ex) {
+    } catch (final UnknownHostException ex) {
       throw new UncheckedIOException(ex);
     }
   }
 
   public static IPVersion resolve(final InetAddress inetAddress) {
     return inetAddress instanceof Inet6Address ? IPVersion.IP_V6 : IPVersion.IP_V4;
+  }
+
+  public static IPVersion resolve(final InetSocketAddress inetSocketAddress) {
+    return resolve(inetSocketAddress.getAddress());
   }
 }
