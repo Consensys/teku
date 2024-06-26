@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.services.beaconchain.BeaconChainController;
 
 @Module
 public interface LoggingModule {
@@ -43,6 +42,6 @@ public interface LoggingModule {
   @Provides
   @Singleton
   static InitLogger initLogger() {
-    return new InitLogger(LogManager.getLogger(BeaconChainController.class));
+    return new InitLogger(LogManager.getLogger("BeaconChainController"));
   }
 }

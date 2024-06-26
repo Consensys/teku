@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.beaconchain.init;
 
+import dagger.Binds;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFacade;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceExecutor;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceNotifierExecutor;
 import tech.pegasys.teku.services.beaconchain.init.LoggingModule.InitLogger;
@@ -62,6 +64,10 @@ public interface MainModule {
   interface ServiceStopper {
     SafeFuture<Void> stop();
   }
+
+  @Binds
+  @Singleton
+  BeaconChainControllerFacade beaconChainController(SimpleBeaconChainController impl);
 
   @Provides
   @IntoSet

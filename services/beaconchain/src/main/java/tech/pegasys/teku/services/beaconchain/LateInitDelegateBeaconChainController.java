@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.SyncService;
@@ -25,70 +24,44 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.beaconchain.init.BeaconChainControllerComponent;
-import tech.pegasys.teku.services.beaconchain.init.DaggerBeaconChainControllerComponent;
-import tech.pegasys.teku.services.beaconchain.init.ExternalDependenciesModule;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-/**
- * The central class which assembles together and initializes Beacon Chain components
- *
- * <p>CAUTION: This class can be overridden by custom implementation to tweak creation and
- * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
- * in a backward incompatible manner and either break compilation or runtime behavior
- */
-public class BeaconChainController extends Service implements BeaconChainControllerFacade {
+public class LateInitDelegateBeaconChainController extends Service
+    implements BeaconChainControllerFacade {
+
+  public static BeaconChainControllerFactory createLateInitFactory(
+      BeaconChainControllerFactory delegateFactory) {
+    return (serviceConfig, beaconConfig) ->
+        new LateInitDelegateBeaconChainController(serviceConfig, beaconConfig, delegateFactory);
+  }
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final ServiceConfig serviceConfig;
   private final BeaconChainConfiguration beaconConfig;
+  private final BeaconChainControllerFactory delegateFactory;
 
-  private Spec spec;
-  private TimeProvider timeProvider;
-  private AsyncRunnerFactory asyncRunnerFactory;
-  private ForkChoice forkChoice;
-  private RecentChainData recentChainData;
-  private Eth2P2PNetwork p2pNetwork;
-  private Optional<BeaconRestApi> beaconRestAPI;
-  private SyncService syncService;
-  private SignatureVerificationService signatureVerificationService;
-  private CombinedChainDataClient combinedChainDataClient;
+  private volatile BeaconChainControllerFacade delegate;
 
-  private Supplier<SafeFuture<?>> starter;
-  private Supplier<SafeFuture<?>> stopper;
-
-  public BeaconChainController(ServiceConfig serviceConfig, BeaconChainConfiguration beaconConfig) {
+  public LateInitDelegateBeaconChainController(
+      ServiceConfig serviceConfig,
+      BeaconChainConfiguration beaconConfig,
+      BeaconChainControllerFactory delegateFactory) {
     this.serviceConfig = serviceConfig;
     this.beaconConfig = beaconConfig;
+    this.delegateFactory = delegateFactory;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
     LOG.info("Starting BeaconChainController...");
-    BeaconChainControllerComponent component =
-        DaggerBeaconChainControllerComponent.builder()
-            .externalDependenciesModule(new ExternalDependenciesModule(serviceConfig, beaconConfig))
-            .build();
+    this.delegate = delegateFactory.create(serviceConfig, beaconConfig);
 
-    this.spec = component.getSpec();
-    this.timeProvider = component.getTimeProvider();
-    this.asyncRunnerFactory = component.getAsyncRunnerFactory();
-    this.forkChoice = component.getForkChoice();
-    this.recentChainData = component.getRecentChainData();
-    this.p2pNetwork = component.getP2pNetwork();
-    this.beaconRestAPI = component.getBeaconRestAPI();
-    this.syncService = component.getSyncService();
-    this.signatureVerificationService = component.getSignatureVerificationService();
-    this.combinedChainDataClient = component.getCombinedChainDataClient();
-    this.starter = () -> component.starter().start();
-    this.stopper = () -> component.stopper().stop();
-
-    SafeFuture<?> startFuture = this.starter.get();
+    SafeFuture<?> startFuture = this.delegate.start();
     LOG.info("BeaconChainController start complete");
 
     return startFuture;
@@ -96,56 +69,56 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   @Override
   protected SafeFuture<?> doStop() {
-    return this.stopper.get();
+    return this.delegate.stop();
   }
 
   @Override
   public Spec getSpec() {
-    return spec;
+    return delegate.getSpec();
   }
 
   @Override
   public TimeProvider getTimeProvider() {
-    return timeProvider;
+    return delegate.getTimeProvider();
   }
 
   @Override
   public AsyncRunnerFactory getAsyncRunnerFactory() {
-    return asyncRunnerFactory;
+    return delegate.getAsyncRunnerFactory();
   }
 
   @Override
   public SignatureVerificationService getSignatureVerificationService() {
-    return signatureVerificationService;
+    return delegate.getSignatureVerificationService();
   }
 
   @Override
   public RecentChainData getRecentChainData() {
-    return recentChainData;
+    return delegate.getRecentChainData();
   }
 
   @Override
   public CombinedChainDataClient getCombinedChainDataClient() {
-    return combinedChainDataClient;
+    return delegate.getCombinedChainDataClient();
   }
 
   @Override
   public Eth2P2PNetwork getP2pNetwork() {
-    return p2pNetwork;
+    return delegate.getP2pNetwork();
   }
 
   @Override
   public Optional<BeaconRestApi> getBeaconRestAPI() {
-    return beaconRestAPI;
+    return delegate.getBeaconRestAPI();
   }
 
   @Override
   public SyncService getSyncService() {
-    return syncService;
+    return delegate.getSyncService();
   }
 
   @Override
   public ForkChoice getForkChoice() {
-    return forkChoice;
+    return delegate.getForkChoice();
   }
 }
