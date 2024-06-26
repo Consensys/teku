@@ -31,7 +31,7 @@ You'll find us on [Discord] and that's the fastest way to get an answer.
 ### Your first code contribution
 Start by looking through the 'good first issue' and 'help wanted' issues:
 * [Good First Issue][search-label-good-first-issue] - issues which should only require a few lines of code, and a test or two.
-* [Help wanted issues][search-label-help-wanted] - issues which are a bit more involved than `good first issue` issues.
+* [Help wanted issues][search-label-help-wanted] - issues that are a bit more involved than `good first issue` issues.
 
 ### Local Development
 The codebase is maintained using the "*contributor workflow*" where everyone without exception contributes patch proposals using "*pull-requests*". This facilitates social contribution, easy testing and peer review.
