@@ -99,7 +99,8 @@ public class StatePruner extends Service {
       return;
     }
     final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
-    final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(finalizedEpoch).minusMinZero(slotsToRetain);
+    final UInt64 earliestSlotToKeep =
+        spec.computeStartSlotAtEpoch(finalizedEpoch).minusMinZero(slotsToRetain);
     if (earliestSlotToKeep.isZero()) {
       LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;

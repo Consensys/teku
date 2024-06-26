@@ -273,7 +273,8 @@ public class StorageConfiguration {
 
     public Builder retainedSlots(final long retainedSlots) {
       if (retainedSlots < -1) {
-        throw new InvalidConfigurationException("Invalid number of slots to retain finalized states for");
+        throw new InvalidConfigurationException(
+            "Invalid number of slots to retain finalized states for");
       }
       this.retainedSlots = retainedSlots;
       return this;
@@ -310,7 +311,7 @@ public class StorageConfiguration {
           blobsPruningInterval,
           blobsPruningLimit,
           stateRebuildTimeoutSeconds,
-              retainedSlots,
+          retainedSlots,
           statePruningInterval,
           statePruningLimit,
           spec);
