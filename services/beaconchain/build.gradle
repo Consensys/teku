@@ -47,3 +47,11 @@ dependencies {
 
   implementation 'io.libp2p:jvm-libp2p'
 }
+
+tasks.withType(JavaCompile) {
+  options.compilerArgs += [
+          '-Adagger.formatGeneratedSource=enabled',
+          '-Adagger.fullBindingGraphValidation=ERROR',
+          '-Adagger.ignoreProvisionKeyWildcards=ENABLED'
+  ]
+}
