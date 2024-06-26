@@ -131,7 +131,7 @@ public class TestStableContainers {
         }
       };
 
-  public static final SszStableContainerSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
+  public static final SszProfileSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
           "CircleProfile", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
         @Override
@@ -140,7 +140,7 @@ public class TestStableContainers {
         }
       };
 
-  public static final SszStableContainerSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
+  public static final SszProfileSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
           "SquareProfile", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
         @Override

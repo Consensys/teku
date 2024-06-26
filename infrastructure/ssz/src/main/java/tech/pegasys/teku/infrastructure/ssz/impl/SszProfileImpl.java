@@ -64,12 +64,10 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
     }
   }
 
-  @Override
   public boolean isFieldActive(final int index) {
     return getActiveFields().getBit(index);
   }
 
-  @Override
   public SszBitvector getActiveFields() {
     return getSchema().toProfileSchema().orElseThrow().getActiveFields();
   }
@@ -85,9 +83,7 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
   @Override
   public String toString() {
     return getSchema().getContainerName()
-        + "{activeFields="
-        + getActiveFields()
-        + ", "
+        + "{"
         + getActiveFields()
             .streamAllSetBits()
             .mapToObj(idx -> getSchema().getFieldNames().get(idx) + "=" + get(idx))

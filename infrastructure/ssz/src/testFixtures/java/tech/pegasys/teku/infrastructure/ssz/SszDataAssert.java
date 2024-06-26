@@ -131,7 +131,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
             "Expected SszList size doesn't match actual: " + c2.size() + " != " + c1.size());
       }
       for (int i = 0; i < c1.size(); i++) {
-        if (skipStableContainerInactiveField(c1, i)) {
+        if (skipInactiveField(c1, i)) {
           continue;
         }
         List<String> res = compareByGetters(c1.get(i), c2.get(i));
@@ -157,10 +157,12 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
     }
   }
 
-  private static boolean skipStableContainerInactiveField(
-      final SszComposite<?> actual, final int index) {
+  private static boolean skipInactiveField(final SszComposite<?> actual, final int index) {
     if (actual instanceof SszStableContainer c1sb) {
       return !c1sb.isFieldActive(index);
+    }
+    if (actual instanceof SszProfile c1p) {
+      return !c1p.getSchema().toProfileSchema().orElseThrow().isFieldActive(index);
     }
     return false;
   }

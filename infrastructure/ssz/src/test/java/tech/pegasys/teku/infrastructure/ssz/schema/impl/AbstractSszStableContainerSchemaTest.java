@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
@@ -122,7 +123,7 @@ public class AbstractSszStableContainerSchemaTest {
             }
           };
 
-  private static final SszStableContainerSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
+  private static final SszProfileSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
           "Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
         @Override
@@ -131,7 +132,7 @@ public class AbstractSszStableContainerSchemaTest {
         }
       };
 
-  private static final SszStableContainerSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
+  private static final SszProfileSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
           "Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
         @Override
@@ -211,7 +212,7 @@ public class AbstractSszStableContainerSchemaTest {
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
                 SszUInt64.of(UInt64.valueOf(0x42))));
 
-    assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
+    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(circle.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
@@ -224,7 +225,7 @@ public class AbstractSszStableContainerSchemaTest {
                 SszUInt64.of(UInt64.valueOf(0x42)),
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
 
-    assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
+    assertSquareProfile(square, (byte) 1, UInt64.valueOf(0x42));
     assertThat(square.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
@@ -254,13 +255,13 @@ public class AbstractSszStableContainerSchemaTest {
     CircleProfile deserializedCircle =
         CIRCLE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
 
-    assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
+    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedCircle).isEqualTo(circle);
 
     SquareProfile deserializedSquare =
         SQUARE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));
 
-    assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
+    assertSquareProfile(square, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedSquare).isEqualTo(square);
   }
 
@@ -280,6 +281,22 @@ public class AbstractSszStableContainerSchemaTest {
     assertFieldValue(container, SIDE_INDEX, Optional.empty());
   }
 
+  private void assertSquareProfile(
+      final SszProfile container, final byte color, final UInt64 side) {
+    assertProfileFieldValue(
+        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
+    assertProfileFieldValue(container, SIDE_INDEX, Optional.of(SszUInt64.of(side)));
+    assertProfileFieldValue(container, RADIUS_INDEX, Optional.empty());
+  }
+
+  private void assertCircleProfile(
+      final SszProfile container, final byte color, final UInt64 radius) {
+    assertProfileFieldValue(
+        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
+    assertProfileFieldValue(container, RADIUS_INDEX, Optional.of(SszUInt64.of(radius)));
+    assertProfileFieldValue(container, SIDE_INDEX, Optional.empty());
+  }
+
   private void assertFieldValue(
       final SszStableContainer container,
       final int fieldIndex,
@@ -289,5 +306,12 @@ public class AbstractSszStableContainerSchemaTest {
         () -> assertThatThrownBy(() -> container.get(fieldIndex)));
 
     assertThat(container.getOptional(fieldIndex)).isEqualTo(value);
+  }
+
+  private void assertProfileFieldValue(
+      final SszProfile container, final int fieldIndex, final Optional<? extends SszData> value) {
+    value.ifPresentOrElse(
+        sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
+        () -> assertThatThrownBy(() -> container.get(fieldIndex)));
   }
 }

@@ -35,7 +35,7 @@ public class SszProfileTypeDefinition {
         .finisher(ProfileBuilder::build);
 
     final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas =
-        schema.getDefinedChildrenSchemas();
+        schema.getStableContainerSchema().getDefinedChildrenSchemas();
 
     IntStream.range(0, schema.getActiveFieldCount())
         .forEach(

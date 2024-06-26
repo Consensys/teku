@@ -15,22 +15,17 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 
-public interface SszProfileSchema<C extends SszProfile> extends SszStableContainerSchema<C> {
-  @Override
-  default TreeNode createTreeFromOptionalFieldValues(
-      final List<Optional<? extends SszData>> fieldValues) {
-    throw new UnsupportedOperationException();
-  }
-
+public interface SszProfileSchema<C extends SszProfile> extends SszContainerSchema<C> {
   SszStableContainerSchema<? extends SszStableContainer> getStableContainerSchema();
 
-  boolean isActiveField(int index);
+  default SszBitvectorSchema<SszBitvector> getActiveFieldsSchema() {
+    return getStableContainerSchema().getActiveFieldsSchema();
+  }
 
   int getActiveFieldCount();
 
@@ -38,6 +33,10 @@ public interface SszProfileSchema<C extends SszProfile> extends SszStableContain
 
   default List<? extends SszSchema<?>> getActiveChildrenSchemas() {
     return getActiveFields().streamAllSetBits().mapToObj(this::getChildSchema).toList();
+  }
+
+  default boolean isFieldActive(final int index) {
+    return getActiveFields().getBit(index);
   }
 
   /**
