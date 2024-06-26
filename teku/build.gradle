@@ -71,4 +71,9 @@ dependencies {
 
   testImplementation project(':data:provider')
   testImplementation 'org.awaitility:awaitility'
+
+  testImplementation 'com.google.dagger:dagger:2.51.1'
+  testAnnotationProcessor 'com.google.dagger:dagger-compiler:2.51.1'
+
+  testImplementation project(':ethereum:performance-trackers')
 }
