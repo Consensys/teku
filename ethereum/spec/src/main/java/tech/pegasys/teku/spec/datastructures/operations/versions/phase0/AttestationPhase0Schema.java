@@ -59,8 +59,8 @@ public class AttestationPhase0Schema
   public Attestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
-      final Supplier<SszBitvector> committeeBits,
-      final BLSSignature signature) {
+      final BLSSignature signature,
+      final Supplier<SszBitvector> committeeBits) {
     return new AttestationPhase0(this, aggregationBits, data, signature);
   }
 

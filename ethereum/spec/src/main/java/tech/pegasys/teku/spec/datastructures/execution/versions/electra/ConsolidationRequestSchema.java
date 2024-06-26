@@ -17,33 +17,31 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
-public class ExecutionLayerWithdrawalRequestSchema
-    extends ContainerSchema3<
-        ExecutionLayerWithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
+public class ConsolidationRequestSchema
+    extends ContainerSchema3<ConsolidationRequest, SszByteVector, SszPublicKey, SszPublicKey> {
 
-  public ExecutionLayerWithdrawalRequestSchema() {
+  public ConsolidationRequestSchema() {
     super(
-        "ExecutionLayerWithdrawalRequest",
+        "ConsolidationRequest",
         namedSchema("source_address", SszByteVectorSchema.create(Bytes20.SIZE)),
-        namedSchema("validator_pubkey", SszPublicKeySchema.INSTANCE),
-        namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema("source_pubkey", SszPublicKeySchema.INSTANCE),
+        namedSchema("target_pubkey", SszPublicKeySchema.INSTANCE));
   }
 
-  public ExecutionLayerWithdrawalRequest create(
-      final Bytes20 sourceAddress, final BLSPublicKey validatorPublicKey, final UInt64 amount) {
-    return new ExecutionLayerWithdrawalRequest(this, sourceAddress, validatorPublicKey, amount);
+  public ConsolidationRequest create(
+      final Bytes20 sourceAddress,
+      final BLSPublicKey sourcePubkey,
+      final BLSPublicKey targetPubkey) {
+    return new ConsolidationRequest(this, sourceAddress, sourcePubkey, targetPubkey);
   }
 
   @Override
-  public ExecutionLayerWithdrawalRequest createFromBackingNode(final TreeNode node) {
-    return new ExecutionLayerWithdrawalRequest(this, node);
+  public ConsolidationRequest createFromBackingNode(final TreeNode node) {
+    return new ConsolidationRequest(this, node);
   }
 }

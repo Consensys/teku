@@ -547,7 +547,7 @@ class AttestationProductionDutyTest {
     }
 
     return attestationSchema.create(
-        expectedAggregationBits, attestationData, committeeBits, signature);
+        expectedAggregationBits, attestationData, signature, committeeBits);
   }
 
   private void performAndReportDuty() {

@@ -448,9 +448,9 @@ class AggregateAttestationValidatorTest {
             .create(
                 sszAggregationBits,
                 attestationData,
+                BLSSignature.empty(),
                 getCommitteeBitsSupplier(
-                    aggregateAndProofSchema.getAttestationSchema(), committeeIndex),
-                BLSSignature.empty());
+                    aggregateAndProofSchema.getAttestationSchema(), committeeIndex));
     final SignedAggregateAndProof signedAggregate =
         signedAggregateAndProofSchema.create(
             aggregateAndProofSchema.create(validatorIndex, attestation, BLSSignature.empty()),
