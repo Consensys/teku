@@ -37,7 +37,7 @@ public class StatePruner extends Service {
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
   private final int pruneLimit;
-  private final long epochsToRetain;
+  private final long slotsToRetain;
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
   private final SettableLabelledGauge pruningActiveLabelledGauge;
   private final String pruningMetricsType;
@@ -51,7 +51,7 @@ public class StatePruner extends Service {
       final Database database,
       final AsyncRunner asyncRunner,
       final Duration pruneInterval,
-      final long epochsToRetain,
+      final long slotsToRetain,
       final int pruneLimit,
       final String pruningMetricsType,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
@@ -63,7 +63,7 @@ public class StatePruner extends Service {
     this.pruningMetricsType = pruningMetricsType;
     this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
-    this.epochsToRetain = epochsToRetain;
+    this.slotsToRetain = slotsToRetain;
     this.pruneLimit = pruneLimit;
   }
 
@@ -99,8 +99,7 @@ public class StatePruner extends Service {
       return;
     }
     final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
-    final UInt64 earliestEpochToKeep = finalizedEpoch.minusMinZero(epochsToRetain);
-    final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
+    final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(finalizedEpoch).minusMinZero(slotsToRetain);
     if (earliestSlotToKeep.isZero()) {
       LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;

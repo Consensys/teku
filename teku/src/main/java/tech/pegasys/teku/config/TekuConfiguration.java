@@ -272,13 +272,13 @@ public class TekuConfiguration {
       }
 
       if (syncConfig.isReconstructHistoricStatesEnabled()) {
-        if (storageConfiguration.getRetainedEpochs() > 0) {
+        if (storageConfiguration.getRetainedSlots() > 0) {
           throw new InvalidConfigurationException(
               "Cannot reconstruct historic states with state pruning enabled");
         }
       }
 
-      if (storageConfiguration.getRetainedEpochs() > 0) {
+      if (storageConfiguration.getRetainedSlots() > 0) {
         if (!storageConfiguration.getDataStorageMode().storesFinalizedStates()) {
           throw new InvalidConfigurationException(
               "Cannot enable state pruning without using ARCHIVE data storage mode");
@@ -286,7 +286,7 @@ public class TekuConfiguration {
       }
 
       if (syncConfig.isReconstructHistoricStatesEnabled()) {
-        if (storageConfiguration.getRetainedEpochs() > 0) {
+        if (storageConfiguration.getRetainedSlots() > 0) {
           throw new InvalidConfigurationException(
               "Cannot reconstruct historic states with state pruning enabled");
         }

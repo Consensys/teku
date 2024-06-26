@@ -39,7 +39,7 @@ public class StorageConfiguration {
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
   public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(5);
-  public static final long DEFAULT_STORAGE_RETAINED_EPOCHS = -1;
+  public static final long DEFAULT_STORAGE_RETAINED_SLOTS = -1;
   public static final int DEFAULT_STATE_PRUNING_LIMIT = 1;
 
   // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
@@ -59,7 +59,7 @@ public class StorageConfiguration {
   private final Duration statePruningInterval;
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
-  private final long retainedEpochs;
+  private final long retainedSlots;
   private final int statePruningLimit;
 
   private final int stateRebuildTimeoutSeconds;
@@ -76,7 +76,7 @@ public class StorageConfiguration {
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
       final int stateRebuildTimeoutSeconds,
-      final long retainedEpochs,
+      final long retainedSlots,
       final Duration statePruningInterval,
       final int statePruningLimit,
       final Spec spec) {
@@ -91,7 +91,7 @@ public class StorageConfiguration {
     this.blobsPruningInterval = blobsPruningInterval;
     this.blobsPruningLimit = blobsPruningLimit;
     this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
-    this.retainedEpochs = retainedEpochs;
+    this.retainedSlots = retainedSlots;
     this.statePruningInterval = statePruningInterval;
     this.statePruningLimit = statePruningLimit;
     this.spec = spec;
@@ -145,8 +145,8 @@ public class StorageConfiguration {
     return blobsPruningLimit;
   }
 
-  public long getRetainedEpochs() {
-    return retainedEpochs;
+  public long getRetainedSlots() {
+    return retainedSlots;
   }
 
   public Duration getStatePruningInterval() {
@@ -177,7 +177,7 @@ public class StorageConfiguration {
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
     private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
     private Duration statePruningInterval = DEFAULT_STATE_PRUNING_INTERVAL;
-    private long retainedEpochs = DEFAULT_STORAGE_RETAINED_EPOCHS;
+    private long retainedSlots = DEFAULT_STORAGE_RETAINED_SLOTS;
     private int statePruningLimit = DEFAULT_STATE_PRUNING_LIMIT;
 
     private Builder() {}
@@ -271,11 +271,11 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder retainedEpochs(final long retainedEpochs) {
-      if (retainedEpochs < -1) {
-        throw new InvalidConfigurationException("Invalid number of states to be retained");
+    public Builder retainedSlots(final long retainedSlots) {
+      if (retainedSlots < -1) {
+        throw new InvalidConfigurationException("Invalid number of slots to retain finalized states for");
       }
-      this.retainedEpochs = retainedEpochs;
+      this.retainedSlots = retainedSlots;
       return this;
     }
 
@@ -310,7 +310,7 @@ public class StorageConfiguration {
           blobsPruningInterval,
           blobsPruningLimit,
           stateRebuildTimeoutSeconds,
-          retainedEpochs,
+              retainedSlots,
           statePruningInterval,
           statePruningLimit,
           spec);
