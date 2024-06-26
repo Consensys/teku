@@ -129,7 +129,6 @@ public interface BeaconModule {
   @Provides
   @Singleton
   static BlockManager blockManager(
-      Spec spec,
       EventLogger eventLogger,
       TimeProvider timeProvider,
       RecentChainData recentChainData,

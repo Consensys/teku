@@ -98,12 +98,14 @@ public interface MainModule {
 
   @Provides
   @IntoSet
+  @SuppressWarnings("UnusedVariable")
   static VoidInitializer initOperationsReOrgManager(OperationsReOrgManager operationsReOrgManager) {
     return new VoidInitializer();
   }
 
   @Provides
   @IntoSet
+  @SuppressWarnings("UnusedVariable")
   static VoidInitializer initValidatorIndexCacheTracker(
       ValidatorIndexCacheTracker validatorIndexCacheTracker) {
     return new VoidInitializer();
@@ -111,12 +113,14 @@ public interface MainModule {
 
   @Provides
   @IntoSet
+  @SuppressWarnings("UnusedVariable")
   static VoidInitializer initRecentBlocksFetcher(RecentBlocksFetcher recentBlocksFetcher) {
     return new VoidInitializer();
   }
 
   @Provides
   @IntoSet
+  @SuppressWarnings("UnusedVariable")
   static VoidInitializer initRecentBlobSidecarsFetcher(
       RecentBlobSidecarsFetcher recentBlobSidecarsFetcher) {
     return new VoidInitializer();
@@ -143,6 +147,7 @@ public interface MainModule {
 
   @Provides
   @Singleton
+  @SuppressWarnings("UnusedVariable")
   static ServiceStarter serviceStarter(
       Set<VoidInitializer> allInitializers,
       Optional<BeaconRestApi> beaconRestApi,

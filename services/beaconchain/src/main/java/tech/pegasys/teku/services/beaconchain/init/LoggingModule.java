@@ -13,6 +13,7 @@ import javax.inject.Singleton;
 @Module
 public interface LoggingModule {
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   record InitLogger(Logger logger) {}
 
   @Provides

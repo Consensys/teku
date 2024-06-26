@@ -107,7 +107,6 @@ public interface DataProviderModule {
   @Singleton
   static DataProvider dataProvider(
       Spec spec,
-      BeaconChainConfiguration beaconConfig,
       RecentChainData recentChainData,
       CombinedChainDataClient combinedChainDataClient,
       RewardCalculator rewardCalculator,

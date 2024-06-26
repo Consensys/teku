@@ -20,7 +20,7 @@ public interface SpecModule {
 
     UInt64 getCurrentSlot(UInt64 genesisTime);
 
-    UInt64 getCurrentSlot(UInt64 genesisTime, UInt64 currentTime);
+    UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime);
   }
 
   @FunctionalInterface

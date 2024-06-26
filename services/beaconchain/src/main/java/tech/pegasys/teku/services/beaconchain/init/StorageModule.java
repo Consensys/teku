@@ -85,6 +85,7 @@ public interface StorageModule {
 
   @Provides
   @Singleton
+  @SuppressWarnings("UnusedVariable")
   static SafeFuture<RecentChainData> recentChainDataFuture(
       @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
       TimeProvider timeProvider,
