@@ -492,10 +492,10 @@ public class KvStoreDatabase implements Database {
     if (!slotsToPruneStateFor.isEmpty()) {
       if (slotsToPruneStateFor.size() < 20) {
         LOG.debug(
-            "Received slots ({}) to delete finalized state for",
+            "Received finalized slots ({}) to delete state",
             () -> slotsToPruneStateFor.stream().map(Pair::getLeft).toList());
       } else {
-        LOG.debug("Received {} finalized blocks to delete", slotsToPruneStateFor.size());
+        LOG.debug("Received {} finalized slots to delete state", slotsToPruneStateFor.size());
       }
 
       try (final FinalizedUpdater updater = finalizedUpdater()) {

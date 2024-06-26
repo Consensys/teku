@@ -119,11 +119,11 @@ public class StorageService extends Service implements StorageServiceFacade {
               }
               if (config.getDataStorageMode().storesFinalizedStates()
                   && config.getRetainedSlots() > -1) {
-                  LOG.info(
-                          "State pruner will run every: {} minute(s), retaining states for the last {} finalized slots. Limited to {} state prune per execution. ",
-                          config.getStatePruningInterval().toMinutes(),
-                          config.getRetainedSlots(),
-                          config.getStatePruningLimit());
+                LOG.info(
+                    "State pruner will run every: {} minute(s), retaining states for the last {} finalized slots. Limited to {} state prune per execution. ",
+                    config.getStatePruningInterval().toMinutes(),
+                    config.getRetainedSlots(),
+                    config.getStatePruningLimit());
                 statePruner =
                     Optional.of(
                         new StatePruner(
