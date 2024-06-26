@@ -36,6 +36,7 @@ public class NodeRecordConverter {
 
   public Optional<DiscoveryPeer> convertToDiscoveryPeer(
       final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
+    //TODO: https://github.com/Consensys/teku/issues/8069
     return nodeRecord
         .getTcpAddress()
         .or(nodeRecord::getTcp6Address)

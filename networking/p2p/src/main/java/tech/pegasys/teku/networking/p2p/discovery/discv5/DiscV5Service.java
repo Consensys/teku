@@ -261,6 +261,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   @Override
   public Optional<String> getDiscoveryAddress() {
+    // TODO: https://github.com/Consensys/teku/issues/8069
     final NodeRecord nodeRecord = discoverySystem.getLocalNodeRecord();
     if (nodeRecord.getUdpAddress().isEmpty()) {
       return Optional.empty();
