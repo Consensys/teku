@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.init.BeaconChainControllerComponent;
 import tech.pegasys.teku.services.beaconchain.init.DaggerBeaconChainControllerComponent;
@@ -40,7 +41,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainController extends AbstractBeaconChainController {
+public class BeaconChainController extends Service implements BeaconChainControllerFacade {
 
   private static final Logger LOG = LogManager.getLogger();
 

@@ -22,9 +22,9 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 public interface BeaconChainControllerFactory {
 
   BeaconChainControllerFactory DEFAULT =
-      //      BeaconChainControllerOld::new;
+//            BeaconChainControllerOld::new;
       BeaconChainController::new;
 
-  AbstractBeaconChainController create(
+  BeaconChainControllerFacade create(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig);
 }

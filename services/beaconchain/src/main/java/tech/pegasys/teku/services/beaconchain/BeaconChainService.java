@@ -19,7 +19,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
 public class BeaconChainService extends Service implements BeaconChainServiceFacade {
 
-  private final AbstractBeaconChainController controller;
+  private final BeaconChainControllerFacade controller;
 
   public BeaconChainService(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {

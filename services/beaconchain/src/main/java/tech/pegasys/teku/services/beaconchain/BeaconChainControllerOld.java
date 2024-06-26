@@ -87,6 +87,7 @@ import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
+import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.services.timer.TimerService;
@@ -214,7 +215,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainControllerOld extends AbstractBeaconChainController {
+public class BeaconChainControllerOld extends Service implements BeaconChainControllerFacade {
 
   private static final Logger LOG = LogManager.getLogger();
 
