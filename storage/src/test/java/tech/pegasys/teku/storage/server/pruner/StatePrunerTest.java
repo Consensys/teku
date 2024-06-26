@@ -39,9 +39,8 @@ import tech.pegasys.teku.storage.server.Database;
 public class StatePrunerTest {
 
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(26);
-  private static final long EPOCHS_RETAINED = 10;
-  private static final int PRUNE_LIMIT = 10;
-  public int epochsToKeep;
+  private static final long SLOTS_RETAINED = 10;
+  private static final long PRUNE_LIMIT = 10;
   public static final int SLOTS_PER_EPOCH = 10;
   private final Spec spec =
       TestSpecFactory.createDefault(
@@ -59,7 +58,7 @@ public class StatePrunerTest {
           database,
           asyncRunner,
           PRUNE_INTERVAL,
-          EPOCHS_RETAINED,
+          SLOTS_RETAINED,
           PRUNE_LIMIT,
           "test",
           mock(SettableLabelledGauge.class),
@@ -67,7 +66,6 @@ public class StatePrunerTest {
 
   @BeforeEach
   void setUp() {
-    epochsToKeep = spec.getNetworkingConfig().getMinEpochsForBlockRequests();
     assertThat(pruner.start()).isCompleted();
     when(database.pruneFinalizedStates(any(), any(), anyInt()))
         .thenReturn(Optional.of(UInt64.ZERO));
@@ -78,7 +76,7 @@ public class StatePrunerTest {
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(50))));
     asyncRunner.executeDueActions();
-    verify(database).pruneFinalizedStates(any(), any(), eq(EPOCHS_RETAINED));
+    verify(database).pruneFinalizedStates(any(), any(), eq(PRUNE_LIMIT));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
@@ -86,12 +84,12 @@ public class StatePrunerTest {
   void shouldPruneAfterInterval() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     asyncRunner.executeDueActions();
-    verify(database, never()).pruneFinalizedStates(any(), any(), eq(EPOCHS_RETAINED));
+    verify(database, never()).pruneFinalizedStates(any(), any(), eq(PRUNE_LIMIT));
 
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(52))));
     triggerNextPruning();
-    verify(database).pruneFinalizedStates(any(), any(), eq(EPOCHS_RETAINED));
+    verify(database).pruneFinalizedStates(any(), any(), eq(PRUNE_LIMIT));
     verify(pruningActiveLabelledGauge, times(2)).set(eq(0.), any());
   }
 
@@ -99,16 +97,16 @@ public class StatePrunerTest {
   void shouldNotPruneWhenFinalizedCheckpointNotSet() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedStates(any(), any(), eq(EPOCHS_RETAINED));
+    verify(database, never()).pruneFinalizedStates(any(), any(), eq(PRUNE_LIMIT));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
   @Test
   void shouldNotPruneWhenFinalizedCheckpointBelowEpochsToKeep() {
     when(database.getFinalizedCheckpoint())
-        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(epochsToKeep)));
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(1)));
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedStates(any(), any(), eq(EPOCHS_RETAINED));
+    verify(database, never()).pruneFinalizedStates(any(), any(), eq(PRUNE_LIMIT));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
@@ -118,10 +116,10 @@ public class StatePrunerTest {
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(finalizedEpoch)));
     triggerNextPruning();
-    // SlotToKeep = FinalizedEpoch (50) * SlotsPerEpoch(10) - EpochsToKeep(10) * SlotsPerEpoch(10)
-    // = 500 - 100 = 400, last slot to prune = 400 - 1 = 399.
-    final UInt64 lastSlotToPrune = UInt64.valueOf(399);
-    verify(database).pruneFinalizedStates(any(), eq(lastSlotToPrune), eq(EPOCHS_RETAINED));
+    // SlotToKeep = FinalizedEpoch (50) * SlotsPerEpoch(10) - SlotsToKeep(10)
+    // = 500 - 100 = 490, last slot to prune = 490 - 1 = 489.
+    final UInt64 lastSlotToPrune = UInt64.valueOf(489);
+    verify(database).pruneFinalizedStates(any(), eq(lastSlotToPrune), eq(PRUNE_LIMIT));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
@@ -129,11 +127,11 @@ public class StatePrunerTest {
   void shouldPruneStatesWhenFirstEpochIsPrunable() {
 
     when(database.getFinalizedCheckpoint())
-        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(EPOCHS_RETAINED + 1)));
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(SLOTS_RETAINED + 1)));
     triggerNextPruning();
-    // Should prune all blocks in the first epoch (ie blocks 0 - 9)
-    final UInt64 lastSlotToPrune = UInt64.valueOf(SLOTS_PER_EPOCH - 1);
-    verify(database).pruneFinalizedStates(any(), eq(lastSlotToPrune), eq(EPOCHS_RETAINED));
+    // Should prune all states from slots that are past the last 10 finalized slots
+    final UInt64 lastSlotToPrune = UInt64.valueOf(SLOTS_PER_EPOCH * SLOTS_RETAINED - 1);
+    verify(database).pruneFinalizedStates(any(), eq(lastSlotToPrune), eq(PRUNE_LIMIT));
     verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 

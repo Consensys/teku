@@ -36,7 +36,7 @@ public class StatePruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
-  private final int pruneLimit;
+  private final long pruneLimit;
   private final long slotsToRetain;
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
   private final SettableLabelledGauge pruningActiveLabelledGauge;
@@ -52,7 +52,7 @@ public class StatePruner extends Service {
       final AsyncRunner asyncRunner,
       final Duration pruneInterval,
       final long slotsToRetain,
-      final int pruneLimit,
+      final long pruneLimit,
       final String pruningMetricsType,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
