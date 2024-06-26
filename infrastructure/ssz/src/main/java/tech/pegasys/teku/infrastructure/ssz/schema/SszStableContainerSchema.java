@@ -76,7 +76,6 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
   SszBitvector getActiveFieldsBitvectorFromBackingNode(TreeNode node);
 
   @Override
-  @SuppressWarnings("unchecked")
   default Optional<SszStableContainerSchema<?>> toStableContainerSchema() {
     return Optional.of(this);
   }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.CONTAINER_G_INDEX;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
@@ -37,6 +39,10 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszProfileSchema<C extends SszProfile>
     extends AbstractSszContainerSchema<C> implements SszProfileSchema<C> {
@@ -170,6 +176,59 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
   public boolean isActiveField(final int index) {
     checkArgument(index < getActiveFieldsSchema().getMaxLength(), "Wrong number of filed values");
     return activeFields.getBit(index);
+  }
+
+  @Override
+  public void storeBackingNodes(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    final TreeNode containerSubtree = node.get(CONTAINER_G_INDEX);
+    super.storeBackingNodes(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        GIndexUtil.gIdxLeftGIndex(rootGIndex),
+        node.get(CONTAINER_G_INDEX));
+
+    nodeStore.storeBranchNode(
+        node.hashTreeRoot(), rootGIndex, 1, new Bytes32[] {containerSubtree.hashTreeRoot()});
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
+      return getDefaultTree();
+    }
+
+    final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
+    checkState(
+        branchData.getChildren().length == 1, "Profile root node must have exactly 1 children");
+    checkState(branchData.getDepth() == 1, "Profile root node must have depth of 1");
+    final Bytes32 containerHash = branchData.getChildren()[0];
+
+    long containerRootGIndex = GIndexUtil.gIdxLeftGIndex(rootGIndex);
+
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(containerRootGIndex, maxChunks() - 1, treeDepth());
+    TreeNode containerTree =
+        LoadingUtil.loadNodesToDepth(
+            nodeSource,
+            containerHash,
+            containerRootGIndex,
+            treeDepth(),
+            super.getDefaultTree(),
+            lastUsefulGIndex,
+            this::loadChildNode);
+
+    return BranchNode.create(containerTree, activeFields.getBackingNode());
+  }
+
+  private TreeNode loadChildNode(
+      final TreeNodeSource nodeSource, final Bytes32 childHash, final long childGIndex) {
+    final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth());
+    return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
   }
 
   @Override

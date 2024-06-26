@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -76,6 +77,13 @@ public class RandomSszDataGenerator {
     return randomDataStream(schema).findFirst().orElseThrow();
   }
 
+  public <T extends SszData> Optional<T> randomOptionalData(final SszSchema<T> schema) {
+    if (random.nextBoolean()) {
+      return Optional.of(randomDataStream(schema).findFirst().orElseThrow());
+    }
+    return Optional.empty();
+  }
+
   @SuppressWarnings("unchecked")
   public <T extends SszData> Stream<T> randomDataStream(final SszSchema<T> schema) {
     if (schema instanceof AbstractSszPrimitiveSchema) {
@@ -104,11 +112,22 @@ public class RandomSszDataGenerator {
           containerSchema.toStableContainerSchema().orElseThrow().getDefinedChildrenSchemas();
       return Stream.generate(
           () -> {
-            List<SszData> children =
+            List<Optional<? extends SszData>> children =
                 definedFieldSchemas.stream()
                     .map(
                         definedFieldSchema ->
                             containerSchema.getChildSchema(definedFieldSchema.getIndex()))
+                    .map(this::randomOptionalData)
+                    .collect(Collectors.toList());
+            return (T) containerSchema.createFromOptionalFieldValues(children);
+          });
+    } else if (schema instanceof AbstractSszProfileSchema<?>) {
+      AbstractSszProfileSchema<SszProfile> containerSchema =
+          (AbstractSszProfileSchema<SszProfile>) schema;
+      return Stream.generate(
+          () -> {
+            List<SszData> children =
+                containerSchema.getActiveChildrenSchemas().stream()
                     .map(this::randomData)
                     .collect(Collectors.toList());
             return (T) containerSchema.createFromFieldValues(children);

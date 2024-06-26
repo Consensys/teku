@@ -128,9 +128,9 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   protected TreeNode createDefaultContainerTreeNode() {
-    final List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
+    final List<TreeNode> defaultChildren = new ArrayList<>(getFieldsCount());
     for (int i = 0; i < getFieldsCount(); i++) {
-      defaultChildren.add(getChildSchema(i).getDefault().getBackingNode());
+      defaultChildren.add(SszNone.INSTANCE.getBackingNode());
     }
     return TreeUtil.createTree(defaultChildren);
   }
@@ -375,14 +375,6 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     return super.getSszLengthBounds().add(activeFieldsSchema.getSszLengthBounds());
   }
 
-  public SszLengthBounds getSszLengthBoundsAsProfile() {
-    return super.getSszLengthBounds();
-  }
-
-  public int getSszSizeAsProfile(final TreeNode node) {
-    return super.getSszSize(node);
-  }
-
   @Override
   public void storeBackingNodes(
       final TreeNodeStore nodeStore,
@@ -392,8 +384,12 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     final TreeNode containerSubtree = node.get(CONTAINER_G_INDEX);
     final TreeNode activeFieldsBitvectorSubtree = node.get(BITVECTOR_G_INDEX);
 
-    super.storeBackingNodes(
-        nodeStore, maxBranchLevelsSkipped, getContainerGIndex(rootGIndex), containerSubtree);
+    storeContainerBackingNodes(
+        activeFieldsSchema.createFromBackingNode(activeFieldsBitvectorSubtree),
+        nodeStore,
+        maxBranchLevelsSkipped,
+        getContainerGIndex(rootGIndex),
+        containerSubtree);
 
     activeFieldsSchema.storeBackingNodes(
         nodeStore,
@@ -404,10 +400,56 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     nodeStore.storeBranchNode(
         node.hashTreeRoot(),
         rootGIndex,
-        2,
+        1,
         new Bytes32[] {
           containerSubtree.hashTreeRoot(), activeFieldsBitvectorSubtree.hashTreeRoot()
         });
+  }
+
+  private void storeContainerBackingNodes(
+      final SszBitvector activeFields,
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+
+    final int childDepth = treeDepth();
+    if (childDepth == 0) {
+      // Only one child so wrapper is omitted
+      storeChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+      return;
+    }
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, childDepth);
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        node,
+        rootGIndex,
+        childDepth,
+        lastUsefulGIndex,
+        (targetDepthNode, targetDepthGIndex) ->
+            storeChildNode(
+                nodeStore,
+                maxBranchLevelsSkipped,
+                targetDepthGIndex,
+                targetDepthNode,
+                activeFields));
+  }
+
+  public void storeChildNode(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long gIndex,
+      final TreeNode node,
+      final SszBitvector activeFields) {
+    final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(gIndex, treeDepth());
+    if (activeFields.getBit(childIndex)) {
+      final SszSchema<?> childSchema = getChildSchema(childIndex);
+      childSchema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
+    }
+    SszPrimitiveSchemas.NONE_SCHEMA.storeBackingNodes(
+        nodeStore, maxBranchLevelsSkipped, gIndex, node);
   }
 
   @Override
@@ -424,6 +466,13 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     final Bytes32 containerHash = branchData.getChildren()[0];
     final Bytes32 activeFieldsBitvectorHash = branchData.getChildren()[1];
 
+    final TreeNode activeFieldsTreeNode =
+        activeFieldsSchema.loadBackingNodes(
+            nodeSource, activeFieldsBitvectorHash, getBitvectorGIndex(rootGIndex));
+
+    final SszBitvector activeFields =
+        activeFieldsSchema.createFromBackingNode(activeFieldsTreeNode);
+
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
     final TreeNode containerTreeNode =
@@ -434,18 +483,22 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
             treeDepth(),
             defaultTreeNode.get(CONTAINER_G_INDEX),
             lastUsefulGIndex,
-            this::loadChildNode);
+            (tns, childHash, childGIndex) ->
+                loadChildNode(activeFields, tns, childHash, childGIndex));
 
-    return BranchNode.create(
-        containerTreeNode,
-        activeFieldsSchema.loadBackingNodes(
-            nodeSource, activeFieldsBitvectorHash, getBitvectorGIndex(rootGIndex)));
+    return BranchNode.create(containerTreeNode, activeFieldsTreeNode);
   }
 
   private TreeNode loadChildNode(
-      final TreeNodeSource nodeSource, final Bytes32 childHash, final long childGIndex) {
+      final SszBitvector activeFields,
+      final TreeNodeSource nodeSource,
+      final Bytes32 childHash,
+      final long childGIndex) {
     final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth());
-    return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
+    if (activeFields.getBit(childIndex)) {
+      return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
+    }
+    return SszPrimitiveSchemas.NONE_SCHEMA.loadBackingNodes(nodeSource, childHash, childGIndex);
   }
 
   private static List<? extends NamedIndexedSchema<?>> createAllSchemas(

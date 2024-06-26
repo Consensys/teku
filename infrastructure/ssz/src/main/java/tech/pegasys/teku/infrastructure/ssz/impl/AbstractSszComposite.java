@@ -96,7 +96,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   }
 
   @Override
-  public SszChildT get(final int index) {
+  public final SszChildT get(final int index) {
     return childrenViewCache.getInt(index, this::getImplWithIndexCheck);
   }
 

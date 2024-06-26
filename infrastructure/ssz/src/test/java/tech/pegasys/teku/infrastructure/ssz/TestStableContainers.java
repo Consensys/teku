@@ -133,7 +133,7 @@ public class TestStableContainers {
 
   public static final SszStableContainerSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
-          "Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
+          "CircleProfile", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
         @Override
         public CircleProfile createFromBackingNode(final TreeNode node) {
           return new CircleProfile(this, node);
@@ -142,7 +142,7 @@ public class TestStableContainers {
 
   public static final SszStableContainerSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
-          "Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
+          "SquareProfile", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
         @Override
         public SquareProfile createFromBackingNode(final TreeNode node) {
           return new SquareProfile(this, node);

@@ -36,6 +36,10 @@ public interface SszProfileSchema<C extends SszProfile> extends SszStableContain
 
   SszBitvector getActiveFields();
 
+  default List<? extends SszSchema<?>> getActiveChildrenSchemas() {
+    return getActiveFields().streamAllSetBits().mapToObj(this::getChildSchema).toList();
+  }
+
   /**
    * This method resolves the index of the nth active field.
    *
