@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigElectra extends SpecConfigDeneb {
 
-  UInt64 UNSET_DEPOSIT_RECEIPTS_START_INDEX = UInt64.MAX_VALUE;
+  UInt64 UNSET_DEPOSIT_REQUESTS_START_INDEX = UInt64.MAX_VALUE;
   UInt64 FULL_EXIT_REQUEST_AMOUNT = UInt64.ZERO;
 
   static SpecConfigElectra required(final SpecConfig specConfig) {
@@ -56,9 +56,9 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   int getMaxAttestationsElectra();
 
-  int getMaxConsolidations();
+  int getMaxConsolidationRequestsPerPayload();
 
-  int getMaxDepositReceiptsPerPayload();
+  int getMaxDepositRequestsPerPayload();
 
   int getMaxWithdrawalRequestsPerPayload();
 

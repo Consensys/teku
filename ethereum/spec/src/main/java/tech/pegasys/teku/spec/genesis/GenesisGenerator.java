@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.genesis;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
-import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX;
+import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -93,7 +93,7 @@ public class GenesisGenerator {
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
     if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       MutableBeaconStateElectra.required(state)
-          .setDepositReceiptsStartIndex(UNSET_DEPOSIT_RECEIPTS_START_INDEX);
+          .setDepositRequestsStartIndex(UNSET_DEPOSIT_REQUESTS_START_INDEX);
     }
 
     // Process deposits
@@ -117,7 +117,7 @@ public class GenesisGenerator {
       // because block processing was made, all deposits will be pending, so at this point
       // we need to consume all the pending deposits
       MutableBeaconStateElectra.required(state)
-          .setDepositReceiptsStartIndex(UNSET_DEPOSIT_RECEIPTS_START_INDEX);
+          .setDepositRequestsStartIndex(UNSET_DEPOSIT_REQUESTS_START_INDEX);
       final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
       final List<Integer> uniqueValidatorIndices =
           stateElectra.getPendingBalanceDeposits().stream().toList().stream()

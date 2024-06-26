@@ -27,13 +27,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -168,16 +168,17 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositReceipts(MutableBeaconState state, SszList<DepositReceipt> depositReceipts)
+  void processDepositRequests(MutableBeaconState state, SszList<DepositRequest> depositRequests)
       throws BlockProcessingException;
 
-  void processExecutionLayerWithdrawalRequests(
+  void processWithdrawalRequests(
       MutableBeaconState state,
-      SszList<ExecutionLayerWithdrawalRequest> exits,
+      SszList<WithdrawalRequest> exits,
       Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException;
 
-  void processConsolidations(MutableBeaconState state, SszList<SignedConsolidation> consolidations)
+  void processConsolidationRequests(
+      MutableBeaconState state, SszList<ConsolidationRequest> consolidationRequests)
       throws BlockProcessingException;
 
   ExpectedWithdrawals getExpectedWithdrawals(BeaconState preState);
