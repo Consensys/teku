@@ -97,6 +97,14 @@ public class MiscHelpers {
 
   public int computeProposerIndex(
       final BeaconState state, final IntList indices, final Bytes32 seed) {
+    return computeProposerIndex(state, indices, seed, specConfig.getMaxEffectiveBalance());
+  }
+
+  protected int computeProposerIndex(
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final UInt64 maxEffectiveBalance) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
 
     final Sha256 sha256 = getSha256Instance();
@@ -110,10 +118,11 @@ public class MiscHelpers {
         hash = sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
       int randomByte = UnsignedBytes.toInt(hash[i % 32]);
-      UInt64 effectiveBalance = state.getValidators().get(candidateIndex).getEffectiveBalance();
-      if (effectiveBalance
+      UInt64 validatorEffectiveBalance =
+          state.getValidators().get(candidateIndex).getEffectiveBalance();
+      if (validatorEffectiveBalance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(randomByte))) {
+          .isGreaterThanOrEqualTo(maxEffectiveBalance.times(randomByte))) {
         return candidateIndex;
       }
       i++;
