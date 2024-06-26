@@ -1,3 +1,16 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.services.beaconchain.init;
 
 import dagger.Binds;
@@ -38,7 +51,6 @@ import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
-import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 @Module
 public interface StorageModule {
@@ -65,9 +77,7 @@ public interface StorageModule {
   @Provides
   @Singleton
   static EarliestAvailableBlockSlot earliestAvailableBlockSlot(
-      StoreConfig storeConfig,
-      TimeProvider timeProvider,
-      StorageQueryChannel storageQueryChannel) {
+      StoreConfig storeConfig, TimeProvider timeProvider, StorageQueryChannel storageQueryChannel) {
     return new EarliestAvailableBlockSlot(
         storageQueryChannel, timeProvider, storeConfig.getEarliestAvailableBlockSlotFrequency());
   }
@@ -163,8 +173,7 @@ public interface StorageModule {
       Lazy<WeakSubjectivityStoreChainValidator> weakSubjectivityStoreChainValidator,
       Lazy<GenesisTimeTracker> genesisTimeTracker,
       SlotProcessor slotProcessor,
-      PerformanceTracker performanceTracker
-  ) {
+      PerformanceTracker performanceTracker) {
     return () -> {
       UInt64 genesisTime = recentChainData.getGenesisTime();
       UInt64 currentTime = timeProvider.getTimeInSeconds();

@@ -13,14 +13,10 @@
 
 package tech.pegasys.teku.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.BeaconNodeFacade;
-import tech.pegasys.teku.TekuFacade;
 import tech.pegasys.teku.cli.TempDirUtils;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -30,8 +26,6 @@ import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
-import tech.pegasys.teku.services.beaconchain.BeaconChainController;
-import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 
 public class TekuConfigurationTest {
 
@@ -93,28 +87,28 @@ public class TekuConfigurationTest {
           }
         };
 
-//    BeaconChainControllerFactory customControllerFactory =
-//        (serviceConfig, beaconConfig) ->
-//            new BeaconChainController(serviceConfig, beaconConfig) {
-//              @Override
-//              protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
-//                return customEth2P2PNetworkBuilder;
-//              }
-//            };
-//
-//    TekuConfiguration tekuConfiguration =
-//        TekuConfiguration.builder()
-//            .data(b -> b.dataBasePath(tempDir))
-//            .executionLayer(b -> b.engineEndpoint("unsafe-test-stub"))
-//            .eth2NetworkConfig(b -> b.ignoreWeakSubjectivityPeriodEnabled(true))
-//            .beaconChainControllerFactory(customControllerFactory)
-//            .build();
-//
-//    try (BeaconNodeFacade beaconNode = TekuFacade.startBeaconNode(tekuConfiguration)) {
-//      assertThat(beaconNode).isNotNull();
-//      assertThat(customDiscoveryBuilderMethodCalled).isTrue();
-//      assertThat(customLibP2PBuilderMethodCalled).isTrue();
-//      assertThat(customGossipNetworkBuilderCalled).isTrue();
-//    }
+    //    BeaconChainControllerFactory customControllerFactory =
+    //        (serviceConfig, beaconConfig) ->
+    //            new BeaconChainController(serviceConfig, beaconConfig) {
+    //              @Override
+    //              protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
+    //                return customEth2P2PNetworkBuilder;
+    //              }
+    //            };
+    //
+    //    TekuConfiguration tekuConfiguration =
+    //        TekuConfiguration.builder()
+    //            .data(b -> b.dataBasePath(tempDir))
+    //            .executionLayer(b -> b.engineEndpoint("unsafe-test-stub"))
+    //            .eth2NetworkConfig(b -> b.ignoreWeakSubjectivityPeriodEnabled(true))
+    //            .beaconChainControllerFactory(customControllerFactory)
+    //            .build();
+    //
+    //    try (BeaconNodeFacade beaconNode = TekuFacade.startBeaconNode(tekuConfiguration)) {
+    //      assertThat(beaconNode).isNotNull();
+    //      assertThat(customDiscoveryBuilderMethodCalled).isTrue();
+    //      assertThat(customLibP2PBuilderMethodCalled).isTrue();
+    //      assertThat(customGossipNetworkBuilderCalled).isTrue();
+    //    }
   }
 }

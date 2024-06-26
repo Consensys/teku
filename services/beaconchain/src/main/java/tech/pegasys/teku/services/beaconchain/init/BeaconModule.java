@@ -1,7 +1,25 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.services.beaconchain.init;
+
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
 import dagger.Module;
 import dagger.Provides;
+import java.util.Map;
+import java.util.Optional;
+import javax.inject.Singleton;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.SyncService;
@@ -24,7 +42,6 @@ import tech.pegasys.teku.services.beaconchain.init.PoolAndCachesModule.InvalidBl
 import tech.pegasys.teku.services.beaconchain.init.PowModule.ProposerDefaultFeeRecipient;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -42,7 +59,6 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -56,13 +72,6 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
-
-import javax.inject.Singleton;
-import java.util.Map;
-import java.util.Optional;
-
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
 @Module
 public interface BeaconModule {

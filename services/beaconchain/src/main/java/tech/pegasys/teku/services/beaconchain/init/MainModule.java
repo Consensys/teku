@@ -1,22 +1,33 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.services.beaconchain.init;
 
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
-import javax.inject.Singleton;
-
 import dagger.multibindings.IntoSet;
+import java.util.Optional;
+import java.util.Set;
+import javax.inject.Singleton;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
-import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.services.beaconchain.BeaconChainController;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceExecutor;
 import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.ForkChoiceNotifierExecutor;
 import tech.pegasys.teku.services.beaconchain.init.LoggingModule.InitLogger;
@@ -31,19 +42,12 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
-import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.coordinator.ValidatorIndexCacheTracker;
-
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Supplier;
 
 @Module
 public interface MainModule {
@@ -139,7 +143,8 @@ public interface MainModule {
   @Provides
   @IntoSet
   static VoidInitializer subscribeOnStoreInitialized(
-      RecentChainData recentChainData, StorageModule.OnStoreInitializedHandler onStoreInitializedHandler) {
+      RecentChainData recentChainData,
+      StorageModule.OnStoreInitializedHandler onStoreInitializedHandler) {
 
     recentChainData.subscribeStoreInitialized(onStoreInitializedHandler::handle);
     return new VoidInitializer();
@@ -159,8 +164,7 @@ public interface MainModule {
       Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
       InitLogger initLogger) {
     return () ->
-        SafeFuture.fromRunnable(
-                () -> initLogger.logger().info("Starting BeaconChain services"))
+        SafeFuture.fromRunnable(() -> initLogger.logger().info("Starting BeaconChain services"))
             .thenCompose(
                 __ ->
                     SafeFuture.allOf(
@@ -178,9 +182,7 @@ public interface MainModule {
                         .map(BeaconRestApi::start)
                         .orElse(SafeFuture.completedFuture(null))
                         .thenApply(___ -> null))
-            .thenRun(
-                () -> initLogger.logger().info("BeaconChain services started")
-            );
+            .thenRun(() -> initLogger.logger().info("BeaconChain services started"));
   }
 
   @Provides

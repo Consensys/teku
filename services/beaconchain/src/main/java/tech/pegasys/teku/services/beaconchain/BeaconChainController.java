@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +23,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.init.BeaconChainControllerComponent;
 import tech.pegasys.teku.services.beaconchain.init.DaggerBeaconChainControllerComponent;
@@ -71,9 +69,10 @@ public class BeaconChainController extends AbstractBeaconChainController {
   @Override
   protected SafeFuture<?> doStart() {
     LOG.info("Starting BeaconChainController...");
-    BeaconChainControllerComponent component = DaggerBeaconChainControllerComponent.builder()
-        .externalDependenciesModule(new ExternalDependenciesModule(serviceConfig, beaconConfig))
-        .build();
+    BeaconChainControllerComponent component =
+        DaggerBeaconChainControllerComponent.builder()
+            .externalDependenciesModule(new ExternalDependenciesModule(serviceConfig, beaconConfig))
+            .build();
 
     this.spec = component.getSpec();
     this.timeProvider = component.getTimeProvider();

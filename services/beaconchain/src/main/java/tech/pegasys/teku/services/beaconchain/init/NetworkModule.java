@@ -1,7 +1,22 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.services.beaconchain.init;
 
 import dagger.Module;
 import dagger.Provides;
+import java.util.Optional;
+import javax.inject.Singleton;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -34,9 +49,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
-import javax.inject.Singleton;
-import java.util.Optional;
-
 @Module
 public interface NetworkModule {
 
@@ -68,8 +80,7 @@ public interface NetworkModule {
       OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       KZG kzg,
       WeakSubjectivityValidator weakSubjectivityValidator,
-      P2PDebugDataDumper p2pDebugDataDumper
-  ) {
+      P2PDebugDataDumper p2pDebugDataDumper) {
     if (!p2pConfig.getNetworkConfig().isEnabled()) {
       return new NoOpEth2P2PNetwork(spec);
     }
@@ -84,32 +95,33 @@ public interface NetworkModule {
         p2pConfig.getNetworkConfig().getListenPort(), maybeUdpPort);
 
     // TODO adopt Dagger instead of eth2P2PNetworkBuilder()
-    Eth2P2PNetwork p2pNetwork = eth2P2PNetworkBuilder
-        .config(p2pConfig)
-        .eventChannels(eventChannels)
-        .combinedChainDataClient(combinedChainDataClient)
-        .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-        .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
-        .gossipedAttestationProcessor(attestationManager::addAttestation)
-        .gossipedAggregateProcessor(attestationManager::addAggregate)
-        .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
-        .gossipedProposerSlashingProcessor(proposerSlashingPool::addRemote)
-        .gossipedVoluntaryExitProcessor(voluntaryExitPool::addRemote)
-        .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
-        .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
-        .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
-        .processedAttestationSubscriptionProvider(
-            attestationManager::subscribeToAttestationsToSend)
-        .metricsSystem(metricsSystem)
-        .timeProvider(timeProvider)
-        .asyncRunner(networkAsyncRunner)
-        .keyValueStore(keyValueStore)
-        .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
-        .specProvider(spec)
-        .kzg(kzg)
-        .recordMessageArrival(true)
-        .p2pDebugDataDumper(p2pDebugDataDumper)
-        .build();
+    Eth2P2PNetwork p2pNetwork =
+        eth2P2PNetworkBuilder
+            .config(p2pConfig)
+            .eventChannels(eventChannels)
+            .combinedChainDataClient(combinedChainDataClient)
+            .gossipedBlockProcessor(blockManager::validateAndImportBlock)
+            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
+            .gossipedAttestationProcessor(attestationManager::addAttestation)
+            .gossipedAggregateProcessor(attestationManager::addAggregate)
+            .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
+            .gossipedProposerSlashingProcessor(proposerSlashingPool::addRemote)
+            .gossipedVoluntaryExitProcessor(voluntaryExitPool::addRemote)
+            .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
+            .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
+            .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
+            .processedAttestationSubscriptionProvider(
+                attestationManager::subscribeToAttestationsToSend)
+            .metricsSystem(metricsSystem)
+            .timeProvider(timeProvider)
+            .asyncRunner(networkAsyncRunner)
+            .keyValueStore(keyValueStore)
+            .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
+            .specProvider(spec)
+            .kzg(kzg)
+            .recordMessageArrival(true)
+            .p2pDebugDataDumper(p2pDebugDataDumper)
+            .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeMessage));
@@ -129,10 +141,7 @@ public interface NetworkModule {
 
   @Provides
   @Singleton
-  static P2PDebugDataDumper p2pDebugDataDumper(
-      P2PConfig p2pConfig,
-      DataDirLayout dataDirLayout
-  ) {
+  static P2PDebugDataDumper p2pDebugDataDumper(P2PConfig p2pConfig, DataDirLayout dataDirLayout) {
     return p2pConfig.isP2pDumpsToFileEnabled()
         ? new P2PDebugDataFileDumper(dataDirLayout.getDebugDataDirectory())
         : P2PDebugDataDumper.NOOP;

@@ -87,7 +87,6 @@ import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
-import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.services.timer.TimerService;
@@ -463,9 +462,7 @@ public class BeaconChainControllerOld extends AbstractBeaconChainController {
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               recentChainData.subscribeBestBlockInitialized(this::startServices);
             })
-        .thenCompose(__ ->
-            timerService.start()
-        );
+        .thenCompose(__ -> timerService.start());
   }
 
   private boolean isUsingCustomInitialState() {

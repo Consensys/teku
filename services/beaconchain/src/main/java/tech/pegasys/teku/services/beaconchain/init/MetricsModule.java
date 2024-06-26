@@ -1,7 +1,26 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.services.beaconchain.init;
+
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import dagger.Module;
 import dagger.Provides;
+import java.util.Optional;
+import javax.inject.Qualifier;
+import javax.inject.Singleton;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
@@ -37,15 +56,6 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
-
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
-
-import java.util.Optional;
-
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 @Module
 public interface MetricsModule {
@@ -108,8 +118,7 @@ public interface MetricsModule {
 
   @Provides
   @Singleton
-  static ValidatorPerformanceMetrics validatorPerformanceMetrics(
-      MetricsSystem metricsSystem) {
+  static ValidatorPerformanceMetrics validatorPerformanceMetrics(MetricsSystem metricsSystem) {
     return new ValidatorPerformanceMetrics(metricsSystem);
   }
 

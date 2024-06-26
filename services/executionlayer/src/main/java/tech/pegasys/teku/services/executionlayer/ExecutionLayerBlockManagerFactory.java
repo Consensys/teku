@@ -21,7 +21,8 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockManagerFactory {
   public static ExecutionLayerBlockProductionManager create(
-      final ExecutionLayerChannel executionLayerManager, final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
+      final ExecutionLayerChannel executionLayerManager,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
     final ExecutionLayerBlockProductionManagerImpl executionLayerBlockProductionManager =
         new ExecutionLayerBlockProductionManagerImpl(executionLayerManager);
     slotEventsChannelSubscriber.subscribe(executionLayerBlockProductionManager);

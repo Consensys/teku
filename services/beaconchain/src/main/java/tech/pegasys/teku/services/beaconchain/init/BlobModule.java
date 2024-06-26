@@ -1,3 +1,16 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.services.beaconchain.init;
 
 import dagger.Module;
@@ -35,15 +48,13 @@ public interface BlobModule {
       Spec spec,
       KZG kzg,
       @InvalidBlockRoots Map<Bytes32, BlockImportResult> invalidBlockRoots,
-      GossipValidationHelper gossipValidationHelper
-  ) {
+      GossipValidationHelper gossipValidationHelper) {
     final MiscHelpersDeneb miscHelpers =
         MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
     return BlobSidecarGossipValidator.create(
         spec, invalidBlockRoots, gossipValidationHelper, miscHelpers, kzg);
   }
-  
-  
+
   @Provides
   @Singleton
   static BlobSidecarManager blobSidecarManager(
@@ -55,8 +66,7 @@ public interface BlobModule {
       BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       BlobSidecarGossipValidator blobSidecarGossipValidator,
       @InvalidBlobSidecarRoots Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
-      FutureItems<BlobSidecar> futureBlobSidecars
-  ) {
+      FutureItems<BlobSidecar> futureBlobSidecars) {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
