@@ -130,7 +130,7 @@ public class BeaconNodeReadinessManagerTest {
 
     verify(validatorLogger).primaryBeaconNodeIsBackAndReady();
     // call it every time we check, channel will filter it
-    verify(beaconNodeReadinessChannel, times(2)).onPrimaryNodeBackReady();
+    verify(beaconNodeReadinessChannel, times(2)).onPrimaryNodeReady();
   }
 
   @Test

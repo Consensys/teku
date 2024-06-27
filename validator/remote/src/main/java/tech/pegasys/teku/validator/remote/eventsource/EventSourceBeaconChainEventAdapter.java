@@ -135,7 +135,7 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   @Override
-  public void onPrimaryNodeBackReady() {
+  public void onPrimaryNodeReady() {
     if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
       switchBackToPrimaryEventStream();
     }

@@ -199,7 +199,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       return;
     }
     // Filtering of duplicates if needed happens on receiver's side
-    beaconNodeReadinessChannel.onPrimaryNodeBackReady();
+    beaconNodeReadinessChannel.onPrimaryNodeReady();
     if (latestPrimaryNodeReadiness.compareAndSet(false, true)) {
       validatorLogger.primaryBeaconNodeIsBackAndReady();
     }
