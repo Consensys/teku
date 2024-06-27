@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
-import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.NESTED_STABLE_CONTAINER_SCHEMA;
-import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.SHAPE_STABLE_CONTAINER_SCHEMA;
+import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.CIRCLE_PROFILE_SCHEMA;
+import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.SQUARE_PROFILE_SCHEMA;
 
 import java.util.stream.Stream;
 
-public class SszStableContainerSchemaTest extends SszCompositeSchemaTestBase {
+public class SszProfileSchemaTest extends SszCompositeSchemaTestBase {
 
   public static Stream<SszContainerSchema<?>> testContainerSchemas() {
-    return Stream.of(SHAPE_STABLE_CONTAINER_SCHEMA, NESTED_STABLE_CONTAINER_SCHEMA);
+    return Stream.of(SQUARE_PROFILE_SCHEMA, CIRCLE_PROFILE_SCHEMA);
   }
 
   @Override

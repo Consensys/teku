@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -131,10 +133,25 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
             "Expected SszList size doesn't match actual: " + c2.size() + " != " + c1.size());
       }
       for (int i = 0; i < c1.size(); i++) {
-        if (skipInactiveField(c1, i)) {
-          continue;
+        List<String> res = List.of();
+
+        final Optional<SszData> c1i = getOptionally(c1, i);
+        final Optional<SszData> c2i = getOptionally(c2, i);
+
+        if (c2i.isPresent() != c1i.isPresent()) {
+          res =
+              List.of(
+                  "Expected field active: "
+                      + c2i.isPresent()
+                      + " Actual field active: "
+                      + c1i.isPresent());
+        } else {
+          if (c1i.isPresent()) {
+            // fields are both present, we can compare
+            res = compareByGetters(c1i.get(), c2i.get());
+          }
         }
-        List<String> res = compareByGetters(c1.get(i), c2.get(i));
+
         if (!res.isEmpty()) {
           String traceDetails;
           if (actual instanceof SszContainer) {
@@ -157,14 +174,12 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
     }
   }
 
-  private static boolean skipInactiveField(final SszComposite<?> actual, final int index) {
-    if (actual instanceof SszStableContainer c1sb) {
-      return !c1sb.isFieldActive(index);
+  private static Optional<SszData> getOptionally(final SszComposite<?> composite, final int index) {
+    try {
+      return Optional.of(composite.get(index));
+    } catch (NoSuchElementException __) {
+      return Optional.empty();
     }
-    if (actual instanceof SszProfile c1p) {
-      return !c1p.getSchema().toProfileSchema().orElseThrow().isFieldActive(index);
-    }
-    return false;
   }
 
   @SuppressWarnings("unchecked")

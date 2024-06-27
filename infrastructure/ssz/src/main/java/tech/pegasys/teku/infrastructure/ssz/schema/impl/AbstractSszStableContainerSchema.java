@@ -219,14 +219,20 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
     final SszBitvector activeFields = getActiveFieldsBitvectorFromBackingNode(node);
-    return activeFields
+
+    final int containerSize =
+        activeFields
             .streamAllSetBits()
             .map(
-                activeFieldIndex ->
-                    getChildSchema(activeFieldIndex)
-                        .getSszSize(node.get(getChildGeneralizedIndex(activeFieldIndex))))
-            .sum()
-        + activeFieldsSchema.getSszSize(activeFields.getBackingNode());
+                activeFieldIndex -> {
+                  final SszSchema<?> schema = getChildSchema(activeFieldIndex);
+                  final int childSize =
+                      schema.getSszSize(node.get(getChildGeneralizedIndex(activeFieldIndex)));
+                  return schema.isFixedSize() ? childSize : childSize + SSZ_LENGTH_SIZE;
+                })
+            .sum();
+    final int activeFieldsSize = activeFieldsSchema.getSszSize(activeFields.getBackingNode());
+    return containerSize + activeFieldsSize;
   }
 
   @Override

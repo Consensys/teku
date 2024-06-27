@@ -14,33 +14,21 @@
 package tech.pegasys.teku.infrastructure.ssz;
 
 import java.util.stream.Stream;
-import tech.pegasys.teku.infrastructure.ssz.RandomSszDataGenerator.StableContainerMode;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchemaTest;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchemaTest;
 
-public class SszStableContainerTest
-    implements SszCompositeTestBase, SszMutableRefCompositeTestBase {
+public class SszProfileTest implements SszCompositeTestBase, SszMutableRefCompositeTestBase {
 
   @Override
   public Stream<SszContainer> sszData() {
     RandomSszDataGenerator smallListsRandomSCGen = new RandomSszDataGenerator().withMaxListSize(1);
     RandomSszDataGenerator largeListsRandomSCGen =
         new RandomSszDataGenerator().withMaxListSize(1024);
-    RandomSszDataGenerator emptySCGen =
-        new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.EMPTY);
-    RandomSszDataGenerator fullSCGen =
-        new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.FULL);
-    RandomSszDataGenerator anotherRound = new RandomSszDataGenerator();
-    return SszStableContainerSchemaTest.testContainerSchemas()
+    return SszProfileSchemaTest.testContainerSchemas()
         .flatMap(
             schema ->
                 Stream.of(
                     schema.getDefault(),
                     smallListsRandomSCGen.randomData(schema),
-                    largeListsRandomSCGen.randomData(schema),
-                    emptySCGen.randomData(schema),
-                    fullSCGen.randomData(schema),
-                    // more combinations of active fields
-                    anotherRound.randomData(schema),
-                    anotherRound.randomData(schema)));
+                    largeListsRandomSCGen.randomData(schema)));
   }
 }

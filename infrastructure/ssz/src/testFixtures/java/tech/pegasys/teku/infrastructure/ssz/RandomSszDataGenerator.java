@@ -53,14 +53,17 @@ public class RandomSszDataGenerator {
 
   private final Random random;
   private final int maxListSize;
+  private final StableContainerMode stableContainerMode;
 
   public RandomSszDataGenerator() {
-    this(new Random(1), 16 * 1024);
+    this(new Random(1), 16 * 1024, StableContainerMode.RANDOM);
   }
 
-  public RandomSszDataGenerator(final Random random, final int maxListSize) {
+  public RandomSszDataGenerator(
+      final Random random, final int maxListSize, final StableContainerMode stableContainerMode) {
     this.random = random;
     this.maxListSize = maxListSize;
+    this.stableContainerMode = stableContainerMode;
     bitSupplier = () -> SszBit.of(random.nextBoolean());
     byteSupplier = () -> SszByte.of(random.nextInt());
     bytes4Supplier = () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
@@ -70,18 +73,23 @@ public class RandomSszDataGenerator {
   }
 
   public RandomSszDataGenerator withMaxListSize(final int maxListSize) {
-    return new RandomSszDataGenerator(random, maxListSize);
+    return new RandomSszDataGenerator(random, maxListSize, stableContainerMode);
+  }
+
+  public RandomSszDataGenerator withStableContainerMode(final StableContainerMode mode) {
+    return new RandomSszDataGenerator(random, maxListSize, mode);
   }
 
   public <T extends SszData> T randomData(final SszSchema<T> schema) {
     return randomDataStream(schema).findFirst().orElseThrow();
   }
 
-  public <T extends SszData> Optional<T> randomOptionalData(final SszSchema<T> schema) {
-    if (random.nextBoolean()) {
-      return Optional.of(randomDataStream(schema).findFirst().orElseThrow());
-    }
-    return Optional.empty();
+  private <T extends SszData> Optional<T> randomStableContainerData(final SszSchema<T> schema) {
+    return switch (stableContainerMode) {
+      case EMPTY -> Optional.empty();
+      case FULL -> Optional.of(randomData(schema));
+      case RANDOM -> random.nextBoolean() ? Optional.of(randomData(schema)) : Optional.empty();
+    };
   }
 
   @SuppressWarnings("unchecked")
@@ -117,7 +125,7 @@ public class RandomSszDataGenerator {
                     .map(
                         definedFieldSchema ->
                             containerSchema.getChildSchema(definedFieldSchema.getIndex()))
-                    .map(this::randomOptionalData)
+                    .map(this::randomStableContainerData)
                     .collect(Collectors.toList());
             return (T) containerSchema.createFromOptionalFieldValues(children);
           });
@@ -187,5 +195,11 @@ public class RandomSszDataGenerator {
     } else {
       throw new IllegalArgumentException("Unknown schema: " + schema);
     }
+  }
+
+  public enum StableContainerMode {
+    EMPTY,
+    FULL,
+    RANDOM
   }
 }
