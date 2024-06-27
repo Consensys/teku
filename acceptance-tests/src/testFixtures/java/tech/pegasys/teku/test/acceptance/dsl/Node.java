@@ -251,7 +251,7 @@ public abstract class Node {
   }
 
   /** Copies contents of the given directory into node's working directory. */
-  public void copyContentsToWorkingDirectory(File tarFile) {
+  public void copyContentsToWorkingDirectory(final File tarFile) {
     container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
   }
 

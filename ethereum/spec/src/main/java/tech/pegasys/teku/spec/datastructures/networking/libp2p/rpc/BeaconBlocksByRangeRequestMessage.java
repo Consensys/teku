@@ -67,7 +67,7 @@ public final class BeaconBlocksByRangeRequestMessage
   }
 
   public UInt64 getMaxSlot() {
-    return getStartSlot().plus(getCount().minus(1).times(getStep()));
+    return getStartSlot().plus(getCount().minusMinZero(1).times(getStep()));
   }
 
   @Override

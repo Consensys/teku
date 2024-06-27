@@ -33,6 +33,8 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 
@@ -893,6 +895,56 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void
+      sendSignedBlock_shouldOnlyDoEquivocationValidationIfBlockIsLocallyCreatedAngGossipValidationRequested() {
+    // creating a block first in order to cache the block root
+    final UInt64 newSlot = UInt64.valueOf(25);
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
+
+    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
+    when(blockFactory.createUnsignedBlock(
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            Optional.of(false),
+            Optional.of(ONE),
+            BlockProductionPerformance.NOOP))
+        .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
+
+    assertThat(
+            validatorApiHandler.createUnsignedBlock(
+                newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE)))
+        .isCompleted();
+
+    final SignedBeaconBlock block =
+        dataStructureUtil
+            .getSpec()
+            .atSlot(newSlot)
+            .getSchemaDefinitions()
+            .getSignedBeaconBlockSchema()
+            .create(
+                blockContainerAndMetaData.blockContainer().getBlock(),
+                dataStructureUtil.randomSignature());
+
+    when(blockImportChannel.importBlock(block, EQUIVOCATION))
+        .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
+
+    // require GOSSIP validation
+    final SafeFuture<SendSignedBlockResult> result =
+        validatorApiHandler.sendSignedBlock(block, GOSSIP);
+
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
+
+    // for locally created blocks, the validation level should have been changed to EQUIVOCATION
+    verify(blockImportChannel).importBlock(block, EQUIVOCATION);
+  }
+
+  @Test
   public void sendSignedBlock_shouldConvertBlockContentsSuccessfulResult() {
     setupDeneb();
     final SignedBlockContents blockContents =
@@ -1225,7 +1277,7 @@ class ValidatorApiHandlerTest {
   }
 
   private boolean validatorIsLive(
-      List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs, UInt64 validatorIndex) {
+      final List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs, final UInt64 validatorIndex) {
     return validatorLivenessAtEpochs.stream()
         .anyMatch(
             validatorLivenessAtEpoch ->

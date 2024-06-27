@@ -46,14 +46,10 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
 
   private final ClientGraffitiAppendFormat clientGraffitiAppendFormat;
   private final ClientVersion consensusClientVersion;
-  private final Optional<Bytes32> defaultUserGraffiti;
 
-  public GraffitiBuilder(
-      final ClientGraffitiAppendFormat clientGraffitiAppendFormat,
-      final Optional<Bytes32> defaultUserGraffiti) {
+  public GraffitiBuilder(final ClientGraffitiAppendFormat clientGraffitiAppendFormat) {
     this.clientGraffitiAppendFormat = clientGraffitiAppendFormat;
     this.consensusClientVersion = createTekuClientVersion();
-    this.defaultUserGraffiti = defaultUserGraffiti;
   }
 
   private ClientVersion createTekuClientVersion() {
@@ -73,18 +69,18 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   @Override
   public void onExecutionClientVersion(final ClientVersion executionClientVersion) {
     this.executionClientVersion = Optional.of(executionClientVersion);
-    logDefaultGraffiti();
+    logGraffitiWatermark();
   }
 
   @Override
   public void onExecutionClientVersionNotAvailable() {
-    logDefaultGraffiti();
+    logGraffitiWatermark();
   }
 
-  private void logDefaultGraffiti() {
-    final Optional<Bytes32> defaultGraffiti = Optional.of(buildGraffiti(defaultUserGraffiti));
-    EVENT_LOG.logDefaultGraffiti(
-        extractGraffiti(defaultGraffiti, calculateGraffitiLength(defaultGraffiti)));
+  private void logGraffitiWatermark() {
+    final Optional<Bytes32> graffitiWatermark = Optional.of(buildGraffiti(Optional.empty()));
+    EVENT_LOG.logGraffitiWatermark(
+        extractGraffiti(graffitiWatermark, calculateGraffitiLength(graffitiWatermark)));
   }
 
   public Bytes32 buildGraffiti(final Optional<Bytes32> userGraffiti) {

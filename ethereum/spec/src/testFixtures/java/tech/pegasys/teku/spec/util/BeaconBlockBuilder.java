@@ -51,7 +51,7 @@ public class BeaconBlockBuilder {
   }
 
   public BeaconBlockBuilder blsToExecutionChanges(
-      SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     this.blsToExecutionChanges = blsToExecutionChanges;
     return this;
   }
@@ -61,17 +61,17 @@ public class BeaconBlockBuilder {
     return this;
   }
 
-  public BeaconBlockBuilder proposerSlashings(SszList<ProposerSlashing> proposerSlashings) {
+  public BeaconBlockBuilder proposerSlashings(final SszList<ProposerSlashing> proposerSlashings) {
     this.proposerSlashings = proposerSlashings;
     return this;
   }
 
-  public BeaconBlockBuilder attesterSlashings(SszList<AttesterSlashing> attesterSlashings) {
+  public BeaconBlockBuilder attesterSlashings(final SszList<AttesterSlashing> attesterSlashings) {
     this.attesterSlashings = attesterSlashings;
     return this;
   }
 
-  public BeaconBlockBuilder attestations(SszList<Attestation> attestations) {
+  public BeaconBlockBuilder attestations(final SszList<Attestation> attestations) {
     this.attestations = attestations;
     return this;
   }

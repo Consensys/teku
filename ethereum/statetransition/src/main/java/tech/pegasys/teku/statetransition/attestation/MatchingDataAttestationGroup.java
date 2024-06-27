@@ -82,7 +82,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     this.spec = spec;
     this.attestationData = attestationData;
     this.committeesSize = committeesSize;
-    includedValidators = createEmptyAttestationBits();
+    this.includedValidators = createEmptyAttestationBits();
   }
 
   private AttestationBitsAggregator createEmptyAttestationBits() {

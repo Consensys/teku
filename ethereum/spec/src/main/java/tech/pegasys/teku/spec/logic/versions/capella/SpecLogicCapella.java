@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.capella;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -92,7 +93,9 @@ public class SpecLogicCapella extends AbstractSpecLogic {
   }
 
   public static SpecLogicCapella create(
-      final SpecConfigCapella config, final SchemaDefinitionsCapella schemaDefinitions) {
+      final SpecConfigCapella config,
+      final SchemaDefinitionsCapella schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersCapella miscHelpers = new MiscHelpersCapella(config);
@@ -141,7 +144,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);

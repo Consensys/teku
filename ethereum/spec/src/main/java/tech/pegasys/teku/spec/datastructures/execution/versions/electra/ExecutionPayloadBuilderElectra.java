@@ -28,8 +28,9 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb {
   private ExecutionPayloadSchemaElectra schema;
 
-  protected List<DepositReceipt> depositReceipts;
-  protected List<ExecutionLayerWithdrawalRequest> withdrawalRequests;
+  protected List<DepositRequest> depositRequests;
+  protected List<WithdrawalRequest> withdrawalRequests;
+  protected List<ConsolidationRequest> consolidationRequests;
 
   public ExecutionPayloadBuilderElectra schema(final ExecutionPayloadSchemaElectra schema) {
     this.schema = schema;
@@ -37,16 +38,23 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   }
 
   @Override
-  public ExecutionPayloadBuilder depositReceipts(
-      final Supplier<List<DepositReceipt>> depositReceiptsSupplier) {
-    this.depositReceipts = depositReceiptsSupplier.get();
+  public ExecutionPayloadBuilder depositRequests(
+      final Supplier<List<DepositRequest>> depositRequestsSupplier) {
+    this.depositRequests = depositRequestsSupplier.get();
     return this;
   }
 
   @Override
   public ExecutionPayloadBuilder withdrawalRequests(
-      final Supplier<List<ExecutionLayerWithdrawalRequest>> withdrawalRequestsSupplier) {
+      final Supplier<List<WithdrawalRequest>> withdrawalRequestsSupplier) {
     this.withdrawalRequests = withdrawalRequestsSupplier.get();
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadBuilder consolidationRequests(
+      final Supplier<List<ConsolidationRequest>> consolidationRequestsSupplier) {
+    this.consolidationRequests = consolidationRequestsSupplier.get();
     return this;
   }
 
@@ -58,8 +66,9 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(depositReceipts, "depositReceipts must be specified");
+    checkNotNull(depositRequests, "depositRequests must be specified");
     checkNotNull(withdrawalRequests, "withdrawalRequests must be specified");
+    checkNotNull(consolidationRequests, "consolidationRequests must be specified");
   }
 
   @Override
@@ -86,7 +95,8 @@ public class ExecutionPayloadBuilderElectra extends ExecutionPayloadBuilderDeneb
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas),
-        schema.getDepositReceiptsSchema().createFromElements(depositReceipts),
-        schema.getExecutionLayerWithdrawalRequestsSchema().createFromElements(withdrawalRequests));
+        schema.getDepositRequestsSchema().createFromElements(depositRequests),
+        schema.getWithdrawalRequestsSchema().createFromElements(withdrawalRequests),
+        schema.getConsolidationRequestsSchema().createFromElements(consolidationRequests));
   }
 }

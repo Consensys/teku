@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.executionlayer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -64,11 +64,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
-import tech.pegasys.teku.spec.datastructures.util.DepositReceiptsUtil;
+import tech.pegasys.teku.spec.datastructures.util.DepositRequestsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -78,7 +78,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final ClientVersion STUB_CLIENT_VERSION =
       new ClientVersion("SB", ExecutionLayerChannel.STUB_ENDPOINT_PREFIX, "0.0.0", Bytes4.ZERO);
 
-  private static final boolean GENERATE_DEPOSIT_RECEIPTS = false;
+  private static final boolean GENERATE_DEPOSIT_REQUESTS = false;
 
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
@@ -88,7 +88,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
   private final BlobsUtil blobsUtil;
-  private final DepositReceiptsUtil depositReceiptsUtil;
+  private final DepositRequestsUtil depositRequestsUtil;
   private final Random random = new Random();
 
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
@@ -132,14 +132,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       kzg = KZG.NOOP;
     }
     this.blobsUtil = new BlobsUtil(spec, kzg);
-    this.depositReceiptsUtil = new DepositReceiptsUtil(spec);
+    this.depositRequestsUtil = new DepositRequestsUtil(spec);
   }
 
   public ExecutionLayerChannelStub(
       final Spec spec,
       final boolean enableTransitionEmulation,
       final Optional<Bytes32> terminalBlockHashInTTDMode) {
-    this(spec, new SystemTimeProvider(), enableTransitionEmulation, terminalBlockHashInTTDMode);
+    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation, terminalBlockHashInTTDMode);
   }
 
   public void addPowBlock(final PowBlock block) {
@@ -289,8 +289,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
                         .excessBlobGas(() -> UInt64.ZERO)
-                        .depositReceipts(() -> generateDepositReceipts(state))
-                        .withdrawalRequests(List::of));
+                        .depositRequests(() -> generateDepositRequests(state))
+                        .withdrawalRequests(List::of)
+                        .consolidationRequests(List::of));
 
     // we assume all blocks are produced locally
     lastValidBlock =
@@ -602,16 +603,16 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
   }
 
-  private List<DepositReceipt> generateDepositReceipts(final BeaconState state) {
+  private List<DepositRequest> generateDepositRequests(final BeaconState state) {
     return spec.atSlot(state.getSlot())
         .getConfig()
         .toVersionElectra()
         .map(
             __ -> {
-              if (GENERATE_DEPOSIT_RECEIPTS) {
-                return depositReceiptsUtil.generateDepositReceipts(state);
+              if (GENERATE_DEPOSIT_REQUESTS) {
+                return depositRequestsUtil.generateDepositRequests(state);
               }
-              return List.<DepositReceipt>of();
+              return List.<DepositRequest>of();
             })
         .orElse(List.of());
   }

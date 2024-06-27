@@ -222,7 +222,7 @@ public class PeerSubnetSubscriptions {
       this.subscriptionsByPeer = subscriptionsByPeer;
     }
 
-    public static Builder builder(SszBitvectorSchema<?> subscriptionSchema) {
+    public static Builder builder(final SszBitvectorSchema<?> subscriptionSchema) {
       return new Builder(subscriptionSchema);
     }
 

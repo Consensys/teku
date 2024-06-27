@@ -91,7 +91,7 @@ public class Web3JExecutionEngineClientTest {
   Web3JExecutionEngineClient eeClient;
 
   @BeforeEach
-  void setUp(SpecContext specContext) throws IOException {
+  void setUp(final SpecContext specContext) throws IOException {
     jsonWriter = new StringWriter();
     jsonGenerator = new JsonFactory().createGenerator(jsonWriter);
     objectMapper = new ObjectMapper();
@@ -339,7 +339,7 @@ public class Web3JExecutionEngineClientTest {
     final Map<String, Object> executionPayloadV4Parameter =
         (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
     // 19 fields in ExecutionPayloadV4
-    assertThat(executionPayloadV4Parameter).hasSize(19);
+    assertThat(executionPayloadV4Parameter).hasSize(20);
     // sanity check
     assertThat(executionPayloadV4Parameter.get("parentHash"))
         .isEqualTo(executionPayloadV4.parentHash.toHexString());

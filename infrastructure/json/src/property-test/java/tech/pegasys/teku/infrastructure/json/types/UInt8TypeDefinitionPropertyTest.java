@@ -24,12 +24,12 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class UInt8TypeDefinitionPropertyTest {
   @Property
-  void roundTrip(@ForAll Byte value) throws JsonProcessingException {
+  void roundTrip(@ForAll final Byte value) throws JsonProcessingException {
     assertRoundTrip(value, CoreTypes.UINT8_TYPE);
   }
 
   @Property
-  void shouldRejectInvalidRange(@ForAll int value) throws JsonProcessingException {
+  void shouldRejectInvalidRange(@ForAll final int value) throws JsonProcessingException {
     final String serialized = "\"" + value + "\"";
     if (value >= 0 && value <= 255) {
       assertThat(JsonUtil.parse(serialized, CoreTypes.UINT8_TYPE)).isEqualTo((byte) value);

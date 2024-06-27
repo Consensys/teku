@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra
 
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.CONSOLIDATION_BALANCE_TO_CONSUME;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_BALANCE_TO_CONSUME;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_EXIT_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXIT_BALANCE_TO_CONSUME;
@@ -46,7 +46,9 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
   }
 
   private static <T extends SszData> void addItems(
-      MoreObjects.ToStringHelper stringBuilder, String keyPrefix, SszList<T> items) {
+      final MoreObjects.ToStringHelper stringBuilder,
+      final String keyPrefix,
+      final SszList<T> items) {
     for (int i = 0; i < items.size(); i++) {
       stringBuilder.add(keyPrefix + "[" + i + "]", items.get(i));
     }
@@ -55,7 +57,7 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
   static void describeCustomElectraFields(
       final MoreObjects.ToStringHelper stringBuilder, final BeaconStateElectra state) {
     BeaconStateDeneb.describeCustomDenebFields(stringBuilder, state);
-    stringBuilder.add("deposit_receipts_start_index", state.getDepositReceiptsStartIndex());
+    stringBuilder.add("deposit_requests_start_index", state.getDepositRequestsStartIndex());
     stringBuilder.add("deposit_balance_to_consume", state.getDepositBalanceToConsume());
     stringBuilder.add("exit_balance_to_consume", state.getExitBalanceToConsume());
     stringBuilder.add("earliest_exit_epoch", state.getEarliestExitEpoch());
@@ -82,8 +84,8 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
     return Optional.of(this);
   }
 
-  default UInt64 getDepositReceiptsStartIndex() {
-    final int index = getSchema().getFieldIndex(DEPOSIT_RECEIPTS_START_INDEX);
+  default UInt64 getDepositRequestsStartIndex() {
+    final int index = getSchema().getFieldIndex(DEPOSIT_REQUESTS_START_INDEX);
     return ((SszUInt64) get(index)).get();
   }
 

@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 public class BeaconStateTest {
 
   @TestTemplate
-  public void shouldConvertToInternalObject(SpecContext ctx) {
+  public void shouldConvertToInternalObject(final SpecContext ctx) {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconStateInternal =
         ctx.getDataStructureUtil().randomBeaconState();
     final Spec spec = ctx.getSpec();

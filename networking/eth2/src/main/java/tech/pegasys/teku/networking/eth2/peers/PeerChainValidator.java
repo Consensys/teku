@@ -253,7 +253,7 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(
-      AnchorPoint finalizedCheckpoint, final PeerStatus status) {
+      final AnchorPoint finalizedCheckpoint, final PeerStatus status) {
     final boolean chainsAreConsistent =
         Objects.equals(finalizedCheckpoint.getRoot(), status.getFinalizedRoot());
     return SafeFuture.completedFuture(chainsAreConsistent);
@@ -285,7 +285,7 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
-      final Eth2Peer peer, AnchorPoint finalized) {
+      final Eth2Peer peer, final AnchorPoint finalized) {
     final UInt64 finalizedEpochSlot = finalized.getEpochStartSlot();
     if (finalizedEpochSlot.equals(SpecConfig.GENESIS_SLOT)) {
       // Assume that our genesis blocks match because we've already verified the fork

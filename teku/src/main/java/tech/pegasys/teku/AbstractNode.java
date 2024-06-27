@@ -14,6 +14,7 @@
 package tech.pegasys.teku;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.MAX_EPOCHS_STORE_BLOBS;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -37,7 +38,6 @@ import tech.pegasys.teku.infrastructure.async.OccurrenceCounter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.logging.StartupLogConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -110,7 +110,7 @@ public abstract class AbstractNode implements Node {
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
-            new SystemTimeProvider(),
+            SYSTEM_TIME_PROVIDER,
             eventChannels,
             metricsSystem,
             dataDirLayout,

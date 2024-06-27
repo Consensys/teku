@@ -244,7 +244,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> registerValidators(
-      SszList<SignedValidatorRegistration> validatorRegistrations) {
+      final SszList<SignedValidatorRegistration> validatorRegistrations) {
     return countDataRequest(
         delegate.registerValidators(validatorRegistrations),
         BeaconNodeRequestLabels.REGISTER_VALIDATORS_METHOD);
@@ -252,7 +252,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
-      List<UInt64> validatorIndices, UInt64 epoch) {
+      final List<UInt64> validatorIndices, final UInt64 epoch) {
     return countOptionalDataRequest(
         delegate.getValidatorsLiveness(validatorIndices, epoch),
         BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS);

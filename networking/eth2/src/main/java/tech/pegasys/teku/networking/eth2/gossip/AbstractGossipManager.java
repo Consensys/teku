@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractGossipManager<T extends SszData> implements GossipManager {
@@ -52,7 +52,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final SszSchema<T> gossipType,
       final Function<T, UInt64> getEpochForMessage,
       final NetworkingSpecConfig networkingConfig,
-      final P2PDebugDataDumper p2pDebugDataDumper) {
+      final DebugDataDumper debugDataDumper) {
     this.gossipNetwork = gossipNetwork;
     this.topicHandler =
         new Eth2TopicHandler<>(
@@ -66,7 +66,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
                 recentChainData.getSpec(), forkInfo.getFork(), getEpochForMessage),
             gossipType,
             networkingConfig,
-            p2pDebugDataDumper);
+            debugDataDumper);
     this.gossipEncoding = gossipEncoding;
   }
 
@@ -75,7 +75,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
     return topicHandler;
   }
 
-  protected void publishMessage(T message) {
+  protected void publishMessage(final T message) {
     channel.ifPresent(c -> c.gossip(gossipEncoding.encode(message)));
   }
 

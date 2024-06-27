@@ -128,9 +128,6 @@ public class BlockProposalTestUtil {
                 builder.blobKzgCommitments(
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
-              if (builder.supportsConsolidations()) {
-                builder.consolidations(dataStructureUtil.emptyConsolidations());
-              }
               return SafeFuture.COMPLETE;
             },
             BlockProductionPerformance.NOOP)
@@ -204,9 +201,6 @@ public class BlockProposalTestUtil {
                 builder.blobKzgCommitments(
                     kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
-              if (builder.supportsConsolidations()) {
-                builder.consolidations(dataStructureUtil.emptyConsolidations());
-              }
               return SafeFuture.COMPLETE;
             })
         .thenApply(
@@ -273,8 +267,9 @@ public class BlockProposalTestUtil {
                 .withdrawals(List::of)
                 .blobGasUsed(() -> UInt64.ZERO)
                 .excessBlobGas(() -> UInt64.ZERO)
-                .depositReceipts(List::of)
-                .withdrawalRequests(List::of));
+                .depositRequests(List::of)
+                .withdrawalRequests(List::of)
+                .consolidationRequests(List::of));
   }
 
   private Boolean isMergeTransitionComplete(final BeaconState state) {
@@ -411,7 +406,7 @@ public class BlockProposalTestUtil {
     }
   }
 
-  private Eth1Data getEth1DataStub(BeaconState state, UInt64 currentEpoch) {
+  private Eth1Data getEth1DataStub(final BeaconState state, final UInt64 currentEpoch) {
     final SpecConfig specConfig = spec.atSlot(state.getSlot()).getConfig();
     final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
     UInt64 votingPeriod = currentEpoch.dividedBy(epochsPerPeriod);

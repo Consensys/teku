@@ -391,7 +391,7 @@ public class DefaultPerformanceTrackerTest {
    * @param slot the slot of the block being attested
    * @return the created attestation
    */
-  private Attestation createAttestationForParentBlockOnSlot(int slot) {
+  private Attestation createAttestationForParentBlockOnSlot(final int slot) {
     Attestation attestationForBlock1 = createAttestation(slot + 1, slot);
     ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
     block2Options.addAttestation(attestationForBlock1);
@@ -402,7 +402,9 @@ public class DefaultPerformanceTrackerTest {
   }
 
   private Attestation createAttestation(
-      ChainBuilder chainBuilder, int validForBlockAtSlot, int vouchingForBlockAtSlot) {
+      final ChainBuilder chainBuilder,
+      final int validForBlockAtSlot,
+      final int vouchingForBlockAtSlot) {
     return chainBuilder
         .streamValidAttestationsForBlockAtSlot(validForBlockAtSlot)
         .filter(
@@ -414,7 +416,8 @@ public class DefaultPerformanceTrackerTest {
         .orElseThrow();
   }
 
-  private Attestation createAttestation(int validForBlockAtSlot, int vouchingForBlockAtSlot) {
+  private Attestation createAttestation(
+      final int validForBlockAtSlot, final int vouchingForBlockAtSlot) {
     return createAttestation(chainBuilder, validForBlockAtSlot, vouchingForBlockAtSlot);
   }
 }

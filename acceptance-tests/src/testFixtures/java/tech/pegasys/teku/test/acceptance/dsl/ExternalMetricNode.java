@@ -42,7 +42,7 @@ public class ExternalMetricNode extends Node {
 
   private boolean started = false;
 
-  private ExternalMetricNode(Network network, ImageFromDockerfile image) {
+  private ExternalMetricNode(final Network network, final ImageFromDockerfile image) {
     super(network, image, LOG);
     container.withWorkingDirectory(WORKING_DIRECTORY).withExposedPorts(STUB_PORT);
   }

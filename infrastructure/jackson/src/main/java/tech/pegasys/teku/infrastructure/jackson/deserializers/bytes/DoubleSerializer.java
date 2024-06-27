@@ -26,12 +26,13 @@ public class DoubleSerializer extends JsonSerializer<Double> {
   private static final DecimalFormatSymbols US_SYMBOLS = new DecimalFormatSymbols(Locale.US);
 
   @Override
-  public void serialize(Double value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final Double value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(formatValue(value));
   }
 
-  private String formatValue(Double value) {
+  private String formatValue(final Double value) {
     DecimalFormat df = new DecimalFormat("#.####", US_SYMBOLS);
     df.setRoundingMode(RoundingMode.HALF_UP);
     return df.format(value);

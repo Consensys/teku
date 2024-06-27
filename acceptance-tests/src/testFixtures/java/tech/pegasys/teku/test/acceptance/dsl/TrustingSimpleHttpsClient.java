@@ -32,10 +32,10 @@ public class TrustingSimpleHttpsClient extends SimpleHttpClient {
       new TrustManager[] {
         new X509TrustManager() {
           @Override
-          public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+          public void checkClientTrusted(final X509Certificate[] chain, final String authType) {}
 
           @Override
-          public void checkServerTrusted(X509Certificate[] chain, String authType)
+          public void checkServerTrusted(final X509Certificate[] chain, final String authType)
               throws CertificateException {
 
             for (X509Certificate certificate : chain) {
@@ -62,10 +62,10 @@ public class TrustingSimpleHttpsClient extends SimpleHttpClient {
   private static final X509TrustManager TRUST_MANAGER =
       new X509TrustManager() {
         @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+        public void checkClientTrusted(final X509Certificate[] chain, final String authType) {}
 
         @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+        public void checkServerTrusted(final X509Certificate[] chain, final String authType) {}
 
         @Override
         public X509Certificate[] getAcceptedIssuers() {

@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 class SignedBeaconBlockTest {
 
   @TestTemplate
-  public void shouldConvertSchemaToInternalCorrectly(SpecContext ctx) {
+  public void shouldConvertSchemaToInternalCorrectly(final SpecContext ctx) {
 
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock =
         ctx.getDataStructureUtil().randomSignedBeaconBlock(1);

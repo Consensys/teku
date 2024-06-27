@@ -25,7 +25,7 @@ public class ExecutionPayloadHeaderPropertyTest {
   @Property
   void roundTrip(
       @ForAll(supplier = ExecutionPayloadHeaderSupplier.class)
-          ExecutionPayloadHeader executionPayloadHeader)
+          final ExecutionPayloadHeader executionPayloadHeader)
       throws JsonProcessingException {
     assertRoundTrip(executionPayloadHeader);
   }
@@ -33,7 +33,7 @@ public class ExecutionPayloadHeaderPropertyTest {
   @Property
   void deserializeMutated(
       @ForAll(supplier = ExecutionPayloadHeaderSupplier.class)
-          ExecutionPayloadHeader executionPayloadHeader,
+          final ExecutionPayloadHeader executionPayloadHeader,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(executionPayloadHeader, seed);
   }

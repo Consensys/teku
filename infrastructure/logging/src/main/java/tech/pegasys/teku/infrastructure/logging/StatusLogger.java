@@ -142,8 +142,8 @@ public class StatusLogger {
     log.error("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
   }
 
-  public void listeningForLibP2P(final String address) {
-    log.info("Listening for connections on: {}", address);
+  public void listeningForLibP2P(final List<String> addresses) {
+    log.info("Listening for connections on: {}", String.join(",", addresses));
   }
 
   public void listeningForDiscv5PreGenesis(final String enr) {
@@ -529,6 +529,15 @@ public class StatusLogger {
         print(
             "Ignoring weak subjectivity period check (--ignore-weak-subjectivity-period-enabled). Syncing "
                 + "from outside of the weak subjectivity period is considered UNSAFE.",
+            Color.YELLOW));
+  }
+
+  public void warnUsageOfImplicitPruneDataStorageMode() {
+    log.warn(
+        print(
+            "Prune mode being used as default without a explicit --data-storage-mode option. This will NOT be "
+                + "supported in future Teku versions. Please add --data-storage-mode=prune to your CLI arguments"
+                + " or config file if you want to keep using PRUNE.",
             Color.YELLOW));
   }
 

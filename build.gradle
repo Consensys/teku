@@ -22,9 +22,9 @@ buildscript {
 plugins {
   id 'com.diffplug.spotless' version '6.25.0'
   id 'com.github.ben-manes.versions' version '0.51.0'
-  id 'com.github.jk1.dependency-license-report' version '2.7'
-  id 'io.spring.dependency-management' version '1.1.4'
-  id 'net.ltgt.errorprone' version '3.1.0' apply false
+  id 'com.github.jk1.dependency-license-report' version '2.8'
+  id 'io.spring.dependency-management' version '1.1.5'
+  id 'net.ltgt.errorprone' version '4.0.0' apply false
   id 'de.undercouch.download' version '5.6.0'
   id 'org.ajoberstar.grgit' version '5.2.2'
 }
@@ -111,6 +111,19 @@ dependencyRules {
           ":storage"
       ]
     }
+  }
+}
+
+def isNonStable = { String version ->
+  def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { keyword -> version.toUpperCase().contains(keyword) }
+  def regex = /^[0-9,.v-]+(-r)?$/
+  return !stableKeyword && !(version ==~ regex)
+}
+
+// reject all non stable versions
+tasks.named("dependencyUpdates").configure {
+  rejectVersionIf {
+    isNonStable(it.candidate.version)
   }
 }
 
@@ -226,7 +239,6 @@ allprojects {
       check('ReferenceComparison', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
       // These checks are imported from errorprone-checks dependency but not required in Teku
-      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
@@ -242,12 +254,14 @@ allprojects {
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
     }
     options.encoding = 'UTF-8'
 
   }
+
   /*
    * Pass some system properties provided on the gradle command line to test executions for
    * convenience.
@@ -298,7 +312,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.5.0-alpha.2'
+def refTestVersion = 'v1.5.0-alpha.3'
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-spec-tests/releases/download'

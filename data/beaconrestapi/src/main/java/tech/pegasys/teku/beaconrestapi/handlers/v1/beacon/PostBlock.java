@@ -70,7 +70,7 @@ public class PostBlock extends AbstractPostBlock {
 
     request.respondAsync(
         validatorDataProvider
-            .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
+            .submitSignedBlock(requestBody, BroadcastValidationLevel.GOSSIP)
             .thenApply(this::processSendSignedBlockResult));
   }
 
@@ -80,9 +80,15 @@ public class PostBlock extends AbstractPostBlock {
         .operationId("publishBlock")
         .summary("Publish a signed block")
         .description(
-            "Submit a signed beacon block to the beacon node to be broadcast and imported."
-                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given blobs."
-                + " The beacon node performs the required validation.")
+            """
+            Instructs the beacon node to broadcast a newly signed beacon block to the beacon network, \
+            to be included in the beacon chain. A success response (20x) indicates that the block \
+            passed gossip validation and was successfully broadcast onto the network. \
+            The beacon node is also expected to integrate the block into the state, but may broadcast it \
+            before doing so, so as to aid timely delivery of the block. Should the block fail full \
+            validation, a separate success response code (202) is used to indicate that the block was \
+            successfully broadcast but failed integration. After Deneb, this additionally instructs \
+            the beacon node to broadcast all given signed blobs.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(

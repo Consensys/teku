@@ -32,7 +32,7 @@ class RestClientProviderTest {
   private static final TimeProvider STUB_TIME_PROVIDER = StubTimeProvider.withTimeInSeconds(10);
 
   @Test
-  void createsStubProvider(@TempDir Path tempDir) {
+  void createsStubProvider(@TempDir final Path tempDir) {
     RestClientProvider restClientProvider =
         RestClientProvider.create(
             ExecutionLayerChannel.STUB_ENDPOINT_PREFIX,
@@ -50,7 +50,7 @@ class RestClientProviderTest {
   }
 
   @Test
-  void createsOkHttpRestClientProvider(@TempDir Path tempDir) {
+  void createsOkHttpRestClientProvider(@TempDir final Path tempDir) {
     RestClientProvider restClientProvider =
         RestClientProvider.create(
             "http://127.0.0.1:28545",

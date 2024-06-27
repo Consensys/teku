@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -27,7 +29,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 public class MiscHelpersElectra extends MiscHelpersDeneb {
 
   public MiscHelpersElectra(
-      final SpecConfig specConfig,
+      final SpecConfigElectra specConfig,
       final Predicates predicates,
       final SchemaDefinitions schemaDefinitions) {
     super(
@@ -47,6 +49,16 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   }
 
   @Override
+  public int computeProposerIndex(
+      final BeaconState state, final IntList indices, final Bytes32 seed) {
+    return computeProposerIndex(
+        state,
+        indices,
+        seed,
+        SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra());
+  }
+
+  @Override
   public Optional<MiscHelpersElectra> toVersionElectra() {
     return Optional.of(this);
   }
@@ -55,9 +67,9 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     // if the next deposit to be processed by Eth1Data poll has the index of the first deposit
     // processed with the new deposit flow, i.e. `eth1_deposit_index ==
-    // deposit_receipts_start_index`, we should stop Eth1Data deposits processing
+    // deposit_requests_start_index`, we should stop Eth1Data deposits processing
     return state
         .getEth1DepositIndex()
-        .equals(BeaconStateElectra.required(state).getDepositReceiptsStartIndex());
+        .equals(BeaconStateElectra.required(state).getDepositRequestsStartIndex());
   }
 }

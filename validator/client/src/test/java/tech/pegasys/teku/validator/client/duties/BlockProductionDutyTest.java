@@ -150,12 +150,12 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.GOSSIP))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.GOSSIP);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -563,7 +563,7 @@ class BlockProductionDutyTest {
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(
             blockContainerAndMetaData.blockContainer().getBlock(), blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.GOSSIP))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
@@ -571,7 +571,7 @@ class BlockProductionDutyTest {
         .createUnsignedBlock(
             CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.empty());
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.GOSSIP);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -636,7 +636,7 @@ class BlockProductionDutyTest {
 
     verify(validatorApiChannel)
         .sendSignedBlock(
-            signedBlockContentsArgumentCaptor.capture(), eq(BroadcastValidationLevel.NOT_REQUIRED));
+            signedBlockContentsArgumentCaptor.capture(), eq(BroadcastValidationLevel.GOSSIP));
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),

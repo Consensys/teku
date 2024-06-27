@@ -586,6 +586,6 @@ class AggregatingAttestationPoolTest {
       committeeBits = () -> null;
     }
     return attestationSchema.create(
-        bitlist, data, committeeBits, dataStructureUtil.randomSignature());
+        bitlist, data, dataStructureUtil.randomSignature(), committeeBits);
   }
 }

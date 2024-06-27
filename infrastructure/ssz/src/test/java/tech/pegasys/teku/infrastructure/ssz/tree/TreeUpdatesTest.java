@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUpdates.Update;
 
 public class TreeUpdatesTest {
 
-  public static TreeNode newTestLeaf(long l) {
+  public static TreeNode newTestLeaf(final long l) {
     return LeafNode.create(Bytes32.leftPad(Bytes.ofUnsignedLong(l, ByteOrder.BIG_ENDIAN)));
   }
 

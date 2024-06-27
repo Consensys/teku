@@ -21,7 +21,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock> {
@@ -34,7 +34,7 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedBeaconBlock> processor,
-      final P2PDebugDataDumper p2pDebugDataDumper) {
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.BEACON_BLOCK,
@@ -48,7 +48,7 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
             .getSignedBeaconBlockSchema(),
         block -> spec.computeEpochAtSlot(block.getSlot()),
         spec.getNetworkingConfig(),
-        p2pDebugDataDumper);
+        debugDataDumper);
   }
 
   public void publishBlock(final SignedBeaconBlock message) {

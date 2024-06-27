@@ -29,7 +29,8 @@ public class Eth1ProviderMonitor {
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
-  public Eth1ProviderMonitor(Eth1ProviderSelector eth1ProviderSelector, AsyncRunner asyncRunner) {
+  public Eth1ProviderMonitor(
+      final Eth1ProviderSelector eth1ProviderSelector, final AsyncRunner asyncRunner) {
     this.eth1ProviderSelector = eth1ProviderSelector;
     this.asyncRunner = asyncRunner;
   }

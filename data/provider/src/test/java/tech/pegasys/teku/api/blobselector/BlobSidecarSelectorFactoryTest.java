@@ -220,7 +220,7 @@ public class BlobSidecarSelectorFactoryTest {
 
   @TestTemplate
   public void shouldLookForBlobSidecarsOnlyAfterDeneb(
-      TestSpecInvocationContextProvider.SpecContext ctx)
+      final TestSpecInvocationContextProvider.SpecContext ctx)
       throws ExecutionException, InterruptedException {
     final SignedBeaconBlock block = new DataStructureUtil(ctx.getSpec()).randomSignedBeaconBlock();
     when(client.isFinalized(block.getSlot())).thenReturn(false);

@@ -162,7 +162,8 @@ public class JsonProviderPropertyTest {
   }
 
   @Property
-  void roundTripBlsPubKey(@ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+  void roundTripBlsPubKey(
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BLSPubKey original = new BLSPubKey(dataStructureUtil.randomPublicKey());
@@ -173,7 +174,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   void roundTripBlsSignature(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BLSSignature original = new BLSSignature(dataStructureUtil.randomSignature());
@@ -185,7 +186,7 @@ public class JsonProviderPropertyTest {
   @Property
   public void roundTripBitVector(
       @ForAll final int seed,
-      @ForAll(supplier = SpecSupplier.class) Spec spec,
+      @ForAll(supplier = SpecSupplier.class) final Spec spec,
       @ForAll @IntRange(min = 1, max = 1000) final int size)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
@@ -198,7 +199,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripFork(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Fork original = new Fork(dataStructureUtil.randomFork());
@@ -210,7 +211,7 @@ public class JsonProviderPropertyTest {
   @Property
   public void roundTripCheckpoint(
       @ForAll final int seed,
-      @ForAll(supplier = SpecSupplier.class) Spec spec,
+      @ForAll(supplier = SpecSupplier.class) final Spec spec,
       @ForAll final long epoch)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
@@ -223,7 +224,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripValidator(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Validator original = new Validator(dataStructureUtil.randomValidator());
@@ -234,7 +235,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripAttestationData(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final AttestationData original = new AttestationData(dataStructureUtil.randomAttestationData());
@@ -245,7 +246,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripIndexedAttestation(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final IndexedAttestation original =
@@ -270,7 +271,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripEth1Data(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Eth1Data original = new Eth1Data(dataStructureUtil.randomEth1Data());
@@ -281,7 +282,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripDepositData(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final DepositData original = new DepositData(dataStructureUtil.randomDepositData());
@@ -292,7 +293,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripBeaconBlockHeader(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final BeaconBlockHeader original =
@@ -304,7 +305,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripBeaconProposerSlashing(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final ProposerSlashing original =
@@ -316,7 +317,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripBeaconAttesterSlashing(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final AttesterSlashing original =
@@ -328,7 +329,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripBeaconAttestation(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Attestation original = new Attestation(dataStructureUtil.randomAttestation());
@@ -339,7 +340,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripDeposit(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final Deposit original = new Deposit(dataStructureUtil.randomDeposit());
@@ -350,7 +351,7 @@ public class JsonProviderPropertyTest {
 
   @Property
   public void roundTripVoluntaryExit(
-      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) Spec spec)
+      @ForAll final int seed, @ForAll(supplier = SpecSupplier.class) final Spec spec)
       throws JsonProcessingException {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final VoluntaryExit original = new VoluntaryExit(dataStructureUtil.randomVoluntaryExit());
@@ -362,7 +363,7 @@ public class JsonProviderPropertyTest {
   @Property(tries = 100)
   public void roundTripSignedBeaconBlock(
       @ForAll final int seed,
-      @ForAll(supplier = SpecSupplier.class) Spec spec,
+      @ForAll(supplier = SpecSupplier.class) final Spec spec,
       @ForAll final long slot,
       @ForAll @Size(32) final byte[] parentRoot,
       @ForAll @Size(32) final byte[] stateRoot,
@@ -389,7 +390,7 @@ public class JsonProviderPropertyTest {
   @Property(tries = 100)
   public void roundTripBeaconState(
       @ForAll final int seed,
-      @ForAll(supplier = SpecSupplier.class) Spec spec,
+      @ForAll(supplier = SpecSupplier.class) final Spec spec,
       @ForAll @IntRange(max = 1000) final int validatorCount,
       @ForAll @IntRange(max = 1000) final int numItemsInSSZLists)
       throws Exception {

@@ -142,11 +142,19 @@ public class V4FinalizedStateTreeStorageLogic
 
     @Override
     public void addReconstructedFinalizedState(
-        KvStoreAccessor db,
-        KvStoreTransaction transaction,
-        SchemaCombinedTreeState schema,
-        BeaconState state) {
+        final KvStoreAccessor db,
+        final KvStoreTransaction transaction,
+        final SchemaCombinedTreeState schema,
+        final BeaconState state) {
       addFinalizedState(db, transaction, schema, state);
+    }
+
+    @Override
+    public void deleteFinalizedState(
+        final KvStoreTransaction transaction,
+        final SchemaCombinedTreeState schema,
+        final UInt64 slot) {
+      transaction.delete(schema.getColumnFinalizedStateRootsBySlot(), slot);
     }
 
     @Override

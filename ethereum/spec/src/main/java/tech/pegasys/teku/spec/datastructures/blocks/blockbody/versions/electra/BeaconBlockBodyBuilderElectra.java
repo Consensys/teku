@@ -13,39 +13,20 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyBuilderDeneb;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
-  private SszList<SignedConsolidation> consolidations;
 
   public BeaconBlockBodyBuilderElectra(
       final BeaconBlockBodySchema<? extends BeaconBlockBodyElectra> schema,
       final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyElectra> blindedSchema) {
     super(schema, blindedSchema);
-  }
-
-  protected SszList<SignedConsolidation> getConsolidations() {
-    return consolidations;
-  }
-
-  @Override
-  public Boolean supportsConsolidations() {
-    return true;
-  }
-
-  @Override
-  public BeaconBlockBodyBuilder consolidations(final SszList<SignedConsolidation> consolidations) {
-    this.consolidations = consolidations;
-    return this;
   }
 
   @Override
@@ -73,8 +54,7 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
           (ExecutionPayloadHeaderElectraImpl)
               executionPayloadHeader.toVersionElectra().orElseThrow(),
           getBlsToExecutionChanges(),
-          getBlobKzgCommitments(),
-          getConsolidations());
+          getBlobKzgCommitments());
     }
 
     final BeaconBlockBodySchemaElectraImpl schema =
@@ -92,7 +72,6 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
         syncAggregate,
         (ExecutionPayloadElectraImpl) executionPayload.toVersionElectra().orElseThrow(),
         getBlsToExecutionChanges(),
-        getBlobKzgCommitments(),
-        getConsolidations());
+        getBlobKzgCommitments());
   }
 }

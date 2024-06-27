@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 
 public class ContainersGenerator {
 
-  private final int maxFields = 19;
+  private final int maxFields = 20;
   private final Path templateSrcPath;
   private final Path targetSrcPath;
   private final String typePackagePath = "tech/pegasys/teku/infrastructure/ssz/containers/";
@@ -90,12 +90,12 @@ public class ContainersGenerator {
             Map.entry(
                 "FieldsDeclarations",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "SszSchema<V" + i + "> fieldSchema" + i)
+                    .mapToObj(i -> "final SszSchema<V" + i + "> fieldSchema" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "NamedFieldsDeclarations",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "NamedSchema<V" + i + "> fieldNamedSchema" + i)
+                    .mapToObj(i -> "final NamedSchema<V" + i + "> fieldNamedSchema" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "Fields",
@@ -110,7 +110,7 @@ public class ContainersGenerator {
             Map.entry(
                 "ViewParams",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "V" + i + " arg" + i)
+                    .mapToObj(i -> "final V" + i + " arg" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "ViewArgs",

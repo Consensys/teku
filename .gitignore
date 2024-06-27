@@ -59,8 +59,3 @@ eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
 
 /teku.db
 node_modules
-
-/test-network/grafana/data
-/test-network/grafana/logs
-/test-network/grafana/provisioning/dashboards/teku-dashboard-grafana.json
-/test-network/data/

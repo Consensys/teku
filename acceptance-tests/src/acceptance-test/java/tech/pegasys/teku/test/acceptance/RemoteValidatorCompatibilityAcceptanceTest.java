@@ -29,7 +29,7 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
 
   @Test
   void shouldRunUpdatedValidatorAgainstOldBeaconNode() throws Exception {
-    verifyCompatibility(TekuDockerVersion.V23_9_0, TekuDockerVersion.LOCAL_BUILD);
+    verifyCompatibility(TekuDockerVersion.V24_2_0, TekuDockerVersion.LOCAL_BUILD);
   }
 
   @Test

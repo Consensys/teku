@@ -31,7 +31,7 @@ You'll find us on [Discord] and that's the fastest way to get an answer.
 ### Your first code contribution
 Start by looking through the 'good first issue' and 'help wanted' issues:
 * [Good First Issue][search-label-good-first-issue] - issues which should only require a few lines of code, and a test or two.
-* [Help wanted issues][search-label-help-wanted] - issues which are a bit more involved than `good first issue` issues.
+* [Help wanted issues][search-label-help-wanted] - issues that are a bit more involved than `good first issue` issues.
 
 ### Local Development
 The codebase is maintained using the "*contributor workflow*" where everyone without exception contributes patch proposals using "*pull-requests*". This facilitates social contribution, easy testing and peer review.
@@ -47,7 +47,7 @@ In general a commit serves a single purpose and diffs should be easily comprehen
 
 ### Architectural Best Practices
 
-Questions on architectural best practices will be guided by the principles set forth in [Effective Java](http://index-of.es/Java/Effective%20Java.pdf) by Joshua Bloch
+Questions on architectural best practices will be guided by the principles set forth in Effective Java by Joshua Bloch
 
 ### Automated Test coverage
 All code submissions must be accompanied by appropriate automated tests.  The goal is to provide confidence in the code’s robustness, while avoiding redundant tests.

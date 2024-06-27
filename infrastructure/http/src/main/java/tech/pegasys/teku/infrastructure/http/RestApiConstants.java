@@ -183,9 +183,7 @@ public class RestApiConstants {
           + SC_SERVICE_UNAVAILABLE
           + " status code if set to true and no validators have been registered with the builder";
   public static final String SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION =
-      "Skip verification of the `randao_reveal` value. If this flag is set then the\n"
-          + " `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n"
-          + "  is a flag and does not take a value";
+      "Skip verification of the `randao_reveal` value. Ignored in the Teku implementation.";
 
   public static final String BUILDER_BOOST_FACTOR = "builder_boost_factor";
   public static final String BUILDER_BOOST_FACTOR_DESCRIPTION =
