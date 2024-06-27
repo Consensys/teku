@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -71,6 +72,10 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     final ReadinessStatus readinessStatus =
         readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
     return readinessStatus.isReady();
+  }
+
+  public ReadinessStatus getReadinessStatus(final RemoteValidatorApiChannel beaconNodeApi) {
+    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
   }
 
   public int getReadinessStatusWeight(final RemoteValidatorApiChannel beaconNodeApi) {
@@ -143,7 +148,8 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     final SafeFuture<Void> primaryReadinessCheck = performPrimaryReadinessCheck();
     final Stream<SafeFuture<?>> failoverReadinessChecks =
         failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
-    return SafeFuture.allOf(primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks));
+    return SafeFuture.allOf(
+        Streams.concat(Stream.of(primaryReadinessCheck), failoverReadinessChecks));
   }
 
   private SafeFuture<Void> performFailoverReadinessCheck(final RemoteValidatorApiChannel failover) {
@@ -192,9 +198,10 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     if (!isPrimaryNode) {
       return;
     }
+    // Filtering of duplicates if needed happens on receiver's side
+    beaconNodeReadinessChannel.onPrimaryNodeReady();
     if (latestPrimaryNodeReadiness.compareAndSet(false, true)) {
       validatorLogger.primaryBeaconNodeIsBackAndReady();
-      beaconNodeReadinessChannel.onPrimaryNodeBackReady();
     }
   }
 
