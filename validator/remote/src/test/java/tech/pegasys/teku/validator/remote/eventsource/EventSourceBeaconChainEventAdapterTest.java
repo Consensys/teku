@@ -101,7 +101,7 @@ public class EventSourceBeaconChainEventAdapterTest {
   }
 
   @Test
-  public void dontJumpBetweenFailoversWhenFailoverIsReady() {
+  public void doNotSwitchToFailoverWhenCurrentBeaconNodeIsReady() {
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         mock(BeaconNodeReadinessManager.class);
     final RemoteValidatorApiChannel primaryNode = mock(RemoteValidatorApiChannel.class);
