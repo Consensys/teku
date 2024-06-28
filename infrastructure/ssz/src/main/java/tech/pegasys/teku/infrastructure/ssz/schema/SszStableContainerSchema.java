@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -59,7 +60,7 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
     };
   }
 
-  List<? extends NamedIndexedSchema<?>> getDefinedChildrenSchemas();
+  List<NamedSchema<?>> getDefinedChildrenSchemas();
 
   int getMaxFieldCount();
 

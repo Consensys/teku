@@ -44,7 +44,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszProfileSchema<C extends SszProfile>
-    extends AbstractSszContainerSchema<C> implements SszProfileSchema<C> {
+    extends AbstractSszContainerWithOptionalSchema<C> implements SszProfileSchema<C> {
 
   private final IntList activeFieldIndicesCache;
   private final SszBitvector activeFields;
