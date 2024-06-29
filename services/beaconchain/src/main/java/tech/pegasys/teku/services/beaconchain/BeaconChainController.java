@@ -951,6 +951,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
+            dataProvider.getNetworkDataProvider(),
             combinedChainDataClient,
             syncService,
             blockFactory,

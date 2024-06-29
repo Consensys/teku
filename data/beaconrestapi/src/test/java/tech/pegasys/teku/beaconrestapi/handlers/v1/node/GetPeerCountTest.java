@@ -23,19 +23,18 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class GetPeerCountTest extends AbstractMigratedBeaconHandlerTest {
-  private final Eth2Peer peer1 = mock(Eth2Peer.class);
-  private final Eth2Peer peer2 = mock(Eth2Peer.class);
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
-  private final List<Eth2Peer> data = List.of(peer1, peer2);
-  private final GetPeerCount.ResponseData peerCountData = new GetPeerCount.ResponseData(data);
+  private final PeerCount peerCount =
+      new PeerCountBuilder().disconnected(UInt64.valueOf(2)).connected(UInt64.valueOf(4)).build();
 
   @BeforeEach
   void setUp() {
@@ -45,11 +44,11 @@ class GetPeerCountTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldReturnListOfPeers() throws Exception {
 
-    when(networkDataProvider.getEth2Peers()).thenReturn(data);
+    when(networkDataProvider.getPeerCount()).thenReturn(peerCount);
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(peerCountData);
+    assertThat(request.getResponseBody()).isEqualTo(peerCount);
   }
 
   @Test
@@ -64,9 +63,9 @@ class GetPeerCountTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    final String data = getResponseStringFromMetadata(handler, SC_OK, peerCountData);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, peerCount);
     assertThat(data)
         .isEqualTo(
-            "{\"data\":{\"disconnected\":\"2\",\"connecting\":\"0\",\"connected\":\"0\",\"disconnecting\":\"0\"}}");
+            "{\"data\":{\"disconnected\":\"2\",\"connecting\":\"0\",\"connected\":\"4\",\"disconnecting\":\"0\"}}");
   }
 }
