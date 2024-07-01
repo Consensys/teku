@@ -208,7 +208,7 @@ public class TekuConfigurationTest {
   public static class TestNetworkModule {
     private final Eth2P2PNetworkBuilder eth2P2PNetworkBuilder;
 
-    public TestNetworkModule(Eth2P2PNetworkBuilder eth2P2PNetworkBuilder) {
+    public TestNetworkModule(final Eth2P2PNetworkBuilder eth2P2PNetworkBuilder) {
       this.eth2P2PNetworkBuilder = eth2P2PNetworkBuilder;
     }
 
@@ -220,27 +220,27 @@ public class TekuConfigurationTest {
     @Provides
     @Singleton
     static Eth2P2PNetwork eth2P2PNetwork(
-        Spec spec,
-        P2PConfig p2pConfig,
-        MetricsSystem metricsSystem,
-        @AsyncRunnerModule.NetworkAsyncRunner AsyncRunner networkAsyncRunner,
-        TimeProvider timeProvider,
-        EventChannels eventChannels,
-        KeyValueStore<String, Bytes> keyValueStore,
-        Eth2P2PNetworkBuilder eth2P2PNetworkBuilder,
-        CombinedChainDataClient combinedChainDataClient,
-        BlockManager blockManager,
-        BlobSidecarManager blobSidecarManager,
-        AttestationManager attestationManager,
-        OperationPool<AttesterSlashing> attesterSlashingPool,
-        OperationPool<ProposerSlashing> proposerSlashingPool,
-        OperationPool<SignedVoluntaryExit> voluntaryExitPool,
-        SyncCommitteeContributionPool syncCommitteeContributionPool,
-        SyncCommitteeMessagePool syncCommitteeMessagePool,
-        OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
-        KZG kzg,
-        WeakSubjectivityValidator weakSubjectivityValidator,
-        DebugDataDumper p2pDebugDataDumper) {
+        final Spec spec,
+        final P2PConfig p2pConfig,
+        final MetricsSystem metricsSystem,
+        @AsyncRunnerModule.NetworkAsyncRunner final AsyncRunner networkAsyncRunner,
+        final TimeProvider timeProvider,
+        final EventChannels eventChannels,
+        final KeyValueStore<String, Bytes> keyValueStore,
+        final Eth2P2PNetworkBuilder eth2P2PNetworkBuilder,
+        final CombinedChainDataClient combinedChainDataClient,
+        final BlockManager blockManager,
+        final BlobSidecarManager blobSidecarManager,
+        final AttestationManager attestationManager,
+        final OperationPool<AttesterSlashing> attesterSlashingPool,
+        final OperationPool<ProposerSlashing> proposerSlashingPool,
+        final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+        final SyncCommitteeContributionPool syncCommitteeContributionPool,
+        final SyncCommitteeMessagePool syncCommitteeMessagePool,
+        final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
+        final KZG kzg,
+        final WeakSubjectivityValidator weakSubjectivityValidator,
+        final DebugDataDumper p2pDebugDataDumper) {
 
       return NetworkModule.eth2P2PNetwork(
           spec,
@@ -268,7 +268,7 @@ public class TekuConfigurationTest {
 
     @Provides
     @Singleton
-    static DebugDataDumper p2pDebugDataDumper(DataDirLayout dataDirLayout) {
+    static DebugDataDumper p2pDebugDataDumper(final DataDirLayout dataDirLayout) {
       return NetworkModule.debugDataDumper(dataDirLayout);
     }
   }

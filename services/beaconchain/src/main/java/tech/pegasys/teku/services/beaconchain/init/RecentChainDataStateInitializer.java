@@ -50,7 +50,7 @@ public class RecentChainDataStateInitializer {
   @Inject
   public RecentChainDataStateInitializer() {}
 
-  public void setupInitialState(RecentChainData recentChainData) {
+  public void setupInitialState(final RecentChainData recentChainData) {
 
     final Optional<AnchorPoint> initialAnchor =
         tryLoadingAnchorPointFromInitialState(beaconConfig.eth2NetworkConfig())
@@ -132,7 +132,7 @@ public class RecentChainDataStateInitializer {
     return weakSubjectivityInitializer.loadInitialAnchorPoint(spec, initialState);
   }
 
-  protected void setupInteropState(RecentChainData recentChainData) {
+  protected void setupInteropState(final RecentChainData recentChainData) {
     final InteropConfig config = beaconConfig.interopConfig();
     statusLogger.generatingMockStartGenesis(
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());

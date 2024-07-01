@@ -62,22 +62,22 @@ public interface SyncModule {
   @Provides
   @Singleton
   static SyncServiceFactory syncServiceFactory(
-      Spec spec,
-      SyncConfig syncConfig,
-      Eth2NetworkConfiguration eth2NetworkConfig,
-      MetricsSystem metricsSystem,
-      AsyncRunnerFactory asyncRunnerFactory,
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      CombinedChainDataClient combinedChainDataClient,
-      StorageUpdateChannel storageUpdateChannel,
-      Eth2P2PNetwork p2pNetwork,
-      BlockImporter blockImporter,
-      BlobSidecarManager blobSidecarManager,
-      PendingPool<SignedBeaconBlock> pendingBlocksPool,
-      BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      SignatureVerificationService signatureVerificationService) {
+      final Spec spec,
+      final SyncConfig syncConfig,
+      final Eth2NetworkConfiguration eth2NetworkConfig,
+      final MetricsSystem metricsSystem,
+      final AsyncRunnerFactory asyncRunnerFactory,
+      @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final StorageUpdateChannel storageUpdateChannel,
+      final Eth2P2PNetwork p2pNetwork,
+      final BlockImporter blockImporter,
+      final BlobSidecarManager blobSidecarManager,
+      final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final SignatureVerificationService signatureVerificationService) {
     return new DefaultSyncServiceFactory(
         syncConfig,
         eth2NetworkConfig.getNetworkBoostrapConfig().getGenesisState(),
@@ -102,15 +102,15 @@ public interface SyncModule {
   @Provides
   @Singleton
   static SyncService syncService(
-      SyncServiceFactory syncServiceFactory,
-      EventChannels eventChannels,
-      ForkChoice forkChoice,
-      ForkChoiceNotifier forkChoiceNotifier,
-      DepositProvider depositProvider,
-      Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
-      Eth2P2PNetwork p2pNetwork,
-      ChainHeadChannel chainHeadChannelPublisher,
-      EventLogger eventLogger) {
+      final SyncServiceFactory syncServiceFactory,
+      final EventChannels eventChannels,
+      final ForkChoice forkChoice,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final DepositProvider depositProvider,
+      final Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
+      final Eth2P2PNetwork p2pNetwork,
+      final ChainHeadChannel chainHeadChannelPublisher,
+      final EventLogger eventLogger) {
     SyncService syncService = syncServiceFactory.create(eventChannels);
 
     // chainHeadChannel subscription
@@ -145,10 +145,10 @@ public interface SyncModule {
   @Provides
   @Singleton
   static RecentBlocksFetcher recentBlocksFetcher(
-      SyncService syncService,
-      BlockManager blockManager,
-      EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber,
-      LoggingModule.InitLogger initLogger) {
+      final SyncService syncService,
+      final BlockManager blockManager,
+      final EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber,
+      final LoggingModule.InitLogger initLogger) {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
@@ -171,7 +171,7 @@ public interface SyncModule {
   @Provides
   @Singleton
   static RecentBlobSidecarsFetcher recentBlobSidecarsFetcher(
-      SyncService syncService, BlobSidecarManager blobSidecarManager) {
+      final SyncService syncService, final BlobSidecarManager blobSidecarManager) {
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();
     recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(

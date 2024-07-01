@@ -77,7 +77,7 @@ public interface MetricsModule {
   @Provides
   @Singleton
   @FutureItemsMetric
-  static SettableLabelledGauge futureItemsMetric(MetricsSystem metricsSystem) {
+  static SettableLabelledGauge futureItemsMetric(final MetricsSystem metricsSystem) {
     return SettableLabelledGauge.create(
         metricsSystem,
         BEACON,
@@ -89,7 +89,7 @@ public interface MetricsModule {
   @Provides
   @Singleton
   @SubnetSubscriptionsMetric
-  static SettableLabelledGauge subnetSubscriptionsMetric(MetricsSystem metricsSystem) {
+  static SettableLabelledGauge subnetSubscriptionsMetric(final MetricsSystem metricsSystem) {
     return SettableLabelledGauge.create(
         metricsSystem,
         TekuMetricCategory.NETWORK,
@@ -101,7 +101,7 @@ public interface MetricsModule {
   @Provides
   @Singleton
   @PerformanceTrackerTimings
-  static SettableGauge performanceTrackerTimings(MetricsSystem metricsSystem) {
+  static SettableGauge performanceTrackerTimings(final MetricsSystem metricsSystem) {
     return SettableGauge.create(
         metricsSystem,
         BEACON,
@@ -112,27 +112,28 @@ public interface MetricsModule {
   @Provides
   @Singleton
   static FutureItems<BlobSidecar> futureBlobSidecars(
-      @FutureItemsMetric SettableLabelledGauge futureItemsMetric) {
+      @FutureItemsMetric final SettableLabelledGauge futureItemsMetric) {
     return FutureItems.create(BlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
   }
 
   @Provides
   @Singleton
-  static ValidatorPerformanceMetrics validatorPerformanceMetrics(MetricsSystem metricsSystem) {
+  static ValidatorPerformanceMetrics validatorPerformanceMetrics(
+      final MetricsSystem metricsSystem) {
     return new ValidatorPerformanceMetrics(metricsSystem);
   }
 
   @Provides
   @Singleton
   static PerformanceTracker performanceTracker(
-      Spec spec,
-      ValidatorConfig validatorConfig,
-      CombinedChainDataClient combinedChainDataClient,
-      @PerformanceTrackerTimings SettableGauge performanceTrackerTimings,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      ValidatorPerformanceMetrics validatorPerformanceMetrics,
-      ActiveValidatorTracker activeValidatorTracker,
-      StatusLogger statusLogger) {
+      final Spec spec,
+      final ValidatorConfig validatorConfig,
+      final CombinedChainDataClient combinedChainDataClient,
+      @PerformanceTrackerTimings final SettableGauge performanceTrackerTimings,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final ValidatorPerformanceMetrics validatorPerformanceMetrics,
+      final ActiveValidatorTracker activeValidatorTracker,
+      final StatusLogger statusLogger) {
     ValidatorPerformanceTrackingMode mode = validatorConfig.getValidatorPerformanceTrackingMode();
     if (mode.isEnabled()) {
       DefaultPerformanceTracker performanceTracker =
@@ -156,11 +157,11 @@ public interface MetricsModule {
   @Provides
   @Singleton
   static SyncCommitteeMetrics syncCommitteeMetrics(
-      Spec spec,
-      RecentChainData recentChainData,
-      MetricsSystem metricsSystem,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      EventChannelSubscriber<ChainHeadChannel> chainHeadChannelSubscriber) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final MetricsSystem metricsSystem,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final EventChannelSubscriber<ChainHeadChannel> chainHeadChannelSubscriber) {
     SyncCommitteeMetrics syncCommitteeMetrics =
         new SyncCommitteeMetrics(spec, recentChainData, metricsSystem);
     slotEventsChannelSubscriber.subscribe(syncCommitteeMetrics);
@@ -172,13 +173,13 @@ public interface MetricsModule {
   @Provides
   @Singleton
   static BeaconChainMetrics beaconChainMetrics(
-      Spec spec,
-      MetricsSystem metricsSystem,
-      RecentChainData recentChainData,
-      SlotProcessor slotProcessor,
-      Eth2P2PNetwork p2pNetwork,
-      Eth1DataCache eth1DataCache,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
+      final Spec spec,
+      final MetricsSystem metricsSystem,
+      final RecentChainData recentChainData,
+      final SlotProcessor slotProcessor,
+      final Eth2P2PNetwork p2pNetwork,
+      final Eth1DataCache eth1DataCache,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
 
     final BeaconChainMetrics beaconChainMetrics =
         new BeaconChainMetrics(
@@ -196,7 +197,9 @@ public interface MetricsModule {
   @Singleton
   static BlockProductionAndPublishingPerformanceFactory
       blockProductionAndPublishingPerformanceFactory(
-          TimeProvider timeProvider, RecentChainData recentChainData, MetricsConfig metricsConfig) {
+          final TimeProvider timeProvider,
+          final RecentChainData recentChainData,
+          final MetricsConfig metricsConfig) {
     return new BlockProductionAndPublishingPerformanceFactory(
         timeProvider,
         (slot) -> secondsToMillis(recentChainData.computeTimeAtSlot(slot)),
@@ -210,17 +213,17 @@ public interface MetricsModule {
   @Provides
   @Singleton
   static DutyMetrics dutyMetrics(
-      MetricsSystem metricsSystem,
-      Spec spec,
-      TimeProvider timeProvider,
-      RecentChainData recentChainData) {
+      final MetricsSystem metricsSystem,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData) {
     return DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec);
   }
 
   @Provides
   @Singleton
   static FutureItems<ValidatableAttestation> futureAttestations(
-      @FutureItemsMetric SettableLabelledGauge futureItemsMetric) {
+      @FutureItemsMetric final SettableLabelledGauge futureItemsMetric) {
     return FutureItems.create(
         ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
         UInt64.valueOf(3),
@@ -231,14 +234,14 @@ public interface MetricsModule {
   @Provides
   @Singleton
   static FutureItems<SignedBeaconBlock> futureBlocks(
-      @FutureItemsMetric SettableLabelledGauge futureItemsMetric) {
+      @FutureItemsMetric final SettableLabelledGauge futureItemsMetric) {
     return FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
   }
 
   @Provides
   @Singleton
   static Optional<BlockImportMetrics> blockImportMetrics(
-      MetricsConfig metricsConfig, MetricsSystem metricsSystem) {
+      final MetricsConfig metricsConfig, final MetricsSystem metricsSystem) {
     return metricsConfig.isBlockPerformanceEnabled()
         ? Optional.of(BlockImportMetrics.create(metricsSystem))
         : Optional.empty();
@@ -247,7 +250,7 @@ public interface MetricsModule {
   @Provides
   @Singleton
   static TickProcessingPerformanceRecordFactory tickProcessingPerformanceRecordFactory(
-      TimeProvider timeProvider, MetricsConfig metricsConfig) {
+      final TimeProvider timeProvider, final MetricsConfig metricsConfig) {
     return () ->
         metricsConfig.isTickPerformanceEnabled()
             ? Optional.of(

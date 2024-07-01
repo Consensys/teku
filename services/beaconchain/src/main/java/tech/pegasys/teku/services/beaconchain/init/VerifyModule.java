@@ -41,37 +41,39 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public interface VerifyModule {
   @Provides
   @Singleton
-  static GossipValidationHelper gossipValidationHelper(Spec spec, RecentChainData recentChainData) {
+  static GossipValidationHelper gossipValidationHelper(
+      final Spec spec, final RecentChainData recentChainData) {
     return new GossipValidationHelper(spec, recentChainData);
   }
 
   @Provides
   @Singleton
   static AttesterSlashingValidator attesterSlashingValidator(
-      Spec spec, RecentChainData recentChainData) {
+      final Spec spec, final RecentChainData recentChainData) {
     return new AttesterSlashingValidator(recentChainData, spec);
   }
 
   @Provides
   @Singleton
   static ProposerSlashingValidator proposerSlashingValidator(
-      Spec spec, RecentChainData recentChainData) {
+      final Spec spec, final RecentChainData recentChainData) {
     return new ProposerSlashingValidator(spec, recentChainData);
   }
 
   @Provides
   @Singleton
-  static VoluntaryExitValidator voluntaryExitValidator(Spec spec, RecentChainData recentChainData) {
+  static VoluntaryExitValidator voluntaryExitValidator(
+      final Spec spec, final RecentChainData recentChainData) {
     return new VoluntaryExitValidator(spec, recentChainData);
   }
 
   @Provides
   @Singleton
   static SignedBlsToExecutionChangeValidator signedBlsToExecutionChangeValidator(
-      Spec spec,
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      SignatureVerificationService signatureVerificationService) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final SignatureVerificationService signatureVerificationService) {
     return new SignedBlsToExecutionChangeValidator(
         spec, timeProvider, recentChainData, signatureVerificationService);
   }
@@ -79,17 +81,19 @@ public interface VerifyModule {
   @Provides
   @Singleton
   static MergeTransitionBlockValidator mergeTransitionBlockValidator(
-      Spec spec, RecentChainData recentChainData, ExecutionLayerChannel executionLayer) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final ExecutionLayerChannel executionLayer) {
     return new MergeTransitionBlockValidator(spec, recentChainData, executionLayer);
   }
 
   @Provides
   @Singleton
   static AttestationValidator attestationValidator(
-      Spec spec,
-      RecentChainData recentChainData,
-      SignatureVerificationService signatureVerificationService,
-      MetricsSystem metricsSystem) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SignatureVerificationService signatureVerificationService,
+      final MetricsSystem metricsSystem) {
     return new AttestationValidator(
         spec, recentChainData, signatureVerificationService, metricsSystem);
   }
@@ -97,9 +101,9 @@ public interface VerifyModule {
   @Provides
   @Singleton
   static AggregateAttestationValidator aggregateAttestationValidator(
-      Spec spec,
-      AttestationValidator attestationValidator,
-      SignatureVerificationService signatureVerificationService) {
+      final Spec spec,
+      final AttestationValidator attestationValidator,
+      final SignatureVerificationService signatureVerificationService) {
     return new AggregateAttestationValidator(
         spec, attestationValidator, signatureVerificationService);
   }
@@ -107,18 +111,18 @@ public interface VerifyModule {
   @Provides
   @Singleton
   static SyncCommitteeStateUtils syncCommitteeStateUtils(
-      Spec spec, RecentChainData recentChainData) {
+      final Spec spec, final RecentChainData recentChainData) {
     return new SyncCommitteeStateUtils(spec, recentChainData);
   }
 
   @Provides
   @Singleton
   static SignedContributionAndProofValidator signedContributionAndProofValidator(
-      Spec spec,
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      SyncCommitteeStateUtils syncCommitteeStateUtils,
-      SignatureVerificationService signatureVerificationService) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final SyncCommitteeStateUtils syncCommitteeStateUtils,
+      final SignatureVerificationService signatureVerificationService) {
     return new SignedContributionAndProofValidator(
         spec, recentChainData, syncCommitteeStateUtils, timeProvider, signatureVerificationService);
   }
@@ -126,11 +130,11 @@ public interface VerifyModule {
   @Provides
   @Singleton
   static SyncCommitteeMessageValidator syncCommitteeMessageValidator(
-      Spec spec,
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      SyncCommitteeStateUtils syncCommitteeStateUtils,
-      SignatureVerificationService signatureVerificationService) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final SyncCommitteeStateUtils syncCommitteeStateUtils,
+      final SignatureVerificationService signatureVerificationService) {
     return new SyncCommitteeMessageValidator(
         spec, recentChainData, syncCommitteeStateUtils, signatureVerificationService, timeProvider);
   }
@@ -138,16 +142,16 @@ public interface VerifyModule {
   @Provides
   @Singleton
   static BlockGossipValidator blockGossipValidator(
-      Spec spec,
-      GossipValidationHelper gossipValidationHelper,
-      ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher) {
+      final Spec spec,
+      final GossipValidationHelper gossipValidationHelper,
+      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher) {
     return new BlockGossipValidator(
         spec, gossipValidationHelper, receivedBlockEventsChannelPublisher);
   }
 
   @Provides
   @Singleton
-  static BlockValidator blockValidator(BlockGossipValidator blockGossipValidator) {
+  static BlockValidator blockValidator(final BlockGossipValidator blockGossipValidator) {
     return new BlockValidator(blockGossipValidator);
   }
 }

@@ -89,23 +89,23 @@ public interface BeaconModule {
   @Provides
   @Singleton
   static EpochCachePrimer epochCachePrimer(
-      Spec spec,
-      RecentChainData recentChainData,
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner) {
     return new EpochCachePrimer(spec, recentChainData, beaconAsyncRunner);
   }
 
   @Provides
   @Singleton
   static SlotProcessor slotProcessor(
-      Spec spec,
-      RecentChainData recentChainData,
-      SyncService syncService,
-      ForkChoiceTrigger forkChoiceTrigger,
-      ForkChoiceNotifier forkChoiceNotifier,
-      Eth2P2PNetwork p2pNetwork,
-      SlotEventsChannel slotEventsChannelPublisher,
-      EpochCachePrimer epochCachePrimer) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final SyncService syncService,
+      final ForkChoiceTrigger forkChoiceTrigger,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final Eth2P2PNetwork p2pNetwork,
+      final SlotEventsChannel slotEventsChannelPublisher,
+      final EpochCachePrimer epochCachePrimer) {
     return new SlotProcessor(
         spec,
         recentChainData,
@@ -120,12 +120,12 @@ public interface BeaconModule {
   @Provides
   @Singleton
   static BlockImporter blockImporter(
-      Spec spec,
-      RecentChainData recentChainData,
-      ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher,
-      ForkChoice forkChoice,
-      WeakSubjectivityValidator weakSubjectivityValidator,
-      ExecutionLayerChannel executionLayer) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher,
+      final ForkChoice forkChoice,
+      final WeakSubjectivityValidator weakSubjectivityValidator,
+      final ExecutionLayerChannel executionLayer) {
     return new BlockImporter(
         spec,
         receivedBlockEventsChannelPublisher,
@@ -138,19 +138,20 @@ public interface BeaconModule {
   @Provides
   @Singleton
   static BlockManager blockManager(
-      EventLogger eventLogger,
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      BlockValidator blockValidator,
-      BlockImporter blockImporter,
-      BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      PendingPool<SignedBeaconBlock> pendingBlocks,
-      @InvalidBlockRoots Map<Bytes32, BlockImportResult> invalidBlockRoots,
-      Optional<BlockImportMetrics> blockImportMetrics,
-      FutureItems<SignedBeaconBlock> futureBlocks,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      EventChannelSubscriber<BlockImportChannel> blockImportChannelSubscriber,
-      EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber) {
+      final EventLogger eventLogger,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final BlockValidator blockValidator,
+      final BlockImporter blockImporter,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final PendingPool<SignedBeaconBlock> pendingBlocks,
+      @InvalidBlockRoots final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final Optional<BlockImportMetrics> blockImportMetrics,
+      final FutureItems<SignedBeaconBlock> futureBlocks,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final EventChannelSubscriber<BlockImportChannel> blockImportChannelSubscriber,
+      final EventChannelSubscriber<ReceivedBlockEventsChannel>
+          receivedBlockEventsChannelSubscriber) {
 
     BlockManager blockManager =
         new BlockManager(
@@ -175,14 +176,14 @@ public interface BeaconModule {
   @Provides
   @Singleton
   static ProposersDataManager proposersDataManager(
-      Eth2NetworkConfiguration eth2NetworkConfig,
-      Spec spec,
-      MetricsSystem metricsSystem,
-      @ForkChoiceNotifierExecutor AsyncRunnerEventThread forkChoiceNotifierExecutor,
-      ExecutionLayerChannel executionLayer,
-      RecentChainData recentChainData,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      @ProposerDefaultFeeRecipient Optional<Eth1Address> proposerDefaultFeeRecipient) {
+      final Eth2NetworkConfiguration eth2NetworkConfig,
+      final Spec spec,
+      final MetricsSystem metricsSystem,
+      @ForkChoiceNotifierExecutor final AsyncRunnerEventThread forkChoiceNotifierExecutor,
+      final ExecutionLayerChannel executionLayer,
+      final RecentChainData recentChainData,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      @ProposerDefaultFeeRecipient final Optional<Eth1Address> proposerDefaultFeeRecipient) {
 
     ProposersDataManager proposersDataManager =
         new ProposersDataManager(
@@ -200,14 +201,14 @@ public interface BeaconModule {
   @Provides
   @Singleton
   static OperationsReOrgManager operationsReOrgManager(
-      OperationPool<AttesterSlashing> attesterSlashingPool,
-      OperationPool<ProposerSlashing> proposerSlashingPool,
-      OperationPool<SignedVoluntaryExit> voluntaryExitPool,
-      AggregatingAttestationPool attestationPool,
-      AttestationManager attestationManager,
-      OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
-      RecentChainData recentChainData,
-      EventChannelSubscriber<ChainHeadChannel> chainHeadChannelSubscriber) {
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final AggregatingAttestationPool attestationPool,
+      final AttestationManager attestationManager,
+      final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
+      final RecentChainData recentChainData,
+      final EventChannelSubscriber<ChainHeadChannel> chainHeadChannelSubscriber) {
 
     OperationsReOrgManager operationsReOrgManager =
         new OperationsReOrgManager(
@@ -225,12 +226,12 @@ public interface BeaconModule {
   @Provides
   @Singleton
   static TickHandler tickHandler(
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      ForkChoice forkChoice,
-      SlotProcessor slotProcessor,
-      TickProcessingPerformanceRecordFactory tickProcessingPerformanceRecordFactory,
-      GenesisTimeTracker genesisTimeTracker) {
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final ForkChoice forkChoice,
+      final SlotProcessor slotProcessor,
+      final TickProcessingPerformanceRecordFactory tickProcessingPerformanceRecordFactory,
+      final GenesisTimeTracker genesisTimeTracker) {
     return () -> {
       if (recentChainData.isPreGenesis()) {
         return;
@@ -251,17 +252,17 @@ public interface BeaconModule {
 
   @Provides
   @Singleton
-  static TimerService timerService(TickHandler tickHandler) {
+  static TimerService timerService(final TickHandler tickHandler) {
     return new TimerService(tickHandler::onTick);
   }
 
   @Provides
   @Singleton
   static GenesisTimeTracker genesisTimeTracker(
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      Eth2P2PNetwork p2pNetwork,
-      StatusLogger statusLogger) {
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final Eth2P2PNetwork p2pNetwork,
+      final StatusLogger statusLogger) {
     return new GenesisTimeTracker() {
       private UInt64 lastUpdateTime = UInt64.ZERO;
 
@@ -284,7 +285,7 @@ public interface BeaconModule {
 
   @Provides
   @Singleton
-  static TickProcessor tickProcessor(Spec spec, RecentChainData recentChainData) {
+  static TickProcessor tickProcessor(final Spec spec, final RecentChainData recentChainData) {
     return new TickProcessor(spec, recentChainData);
   }
 }

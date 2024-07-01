@@ -34,7 +34,7 @@ public class LateInitDelegateBeaconChainController extends Service
     implements BeaconChainControllerFacade {
 
   public static BeaconChainControllerFactory createLateInitFactory(
-      BeaconChainControllerFactory delegateFactory) {
+      final BeaconChainControllerFactory delegateFactory) {
     return (serviceConfig, beaconConfig) ->
         new LateInitDelegateBeaconChainController(serviceConfig, beaconConfig, delegateFactory);
   }
@@ -48,9 +48,9 @@ public class LateInitDelegateBeaconChainController extends Service
   private volatile BeaconChainControllerFacade delegate;
 
   public LateInitDelegateBeaconChainController(
-      ServiceConfig serviceConfig,
-      BeaconChainConfiguration beaconConfig,
-      BeaconChainControllerFactory delegateFactory) {
+      final ServiceConfig serviceConfig,
+      final BeaconChainConfiguration beaconConfig,
+      final BeaconChainControllerFactory delegateFactory) {
     this.serviceConfig = serviceConfig;
     this.beaconConfig = beaconConfig;
     this.delegateFactory = delegateFactory;

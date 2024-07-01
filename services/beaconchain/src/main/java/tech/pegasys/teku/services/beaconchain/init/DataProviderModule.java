@@ -64,15 +64,16 @@ public interface DataProviderModule {
   @Provides
   @Singleton
   static Eth1DataProvider eth1DataProvider(
-      Eth1DataCache eth1DataCache, DepositProvider depositProvider) {
+      final Eth1DataCache eth1DataCache, final DepositProvider depositProvider) {
     return new Eth1DataProvider(eth1DataCache, depositProvider);
   }
 
   @Provides
   @Singleton
   static ExecutionClientDataProvider executionClientDataProvider(
-      DataProvider dataProvider,
-      EventChannelSubscriber<ExecutionClientEventsChannel> executionClientEventsChannelSubscriber) {
+      final DataProvider dataProvider,
+      final EventChannelSubscriber<ExecutionClientEventsChannel>
+          executionClientEventsChannelSubscriber) {
 
     final ExecutionClientDataProvider executionClientDataProvider =
         dataProvider.getExecutionClientDataProvider();
@@ -83,15 +84,15 @@ public interface DataProviderModule {
   @Provides
   @Singleton
   static Optional<BeaconRestApi> beaconRestApi(
-      InitLogger initLogger,
-      Spec spec,
-      BeaconRestApiConfig beaconRestApiConfig,
-      @EventAsyncRunner AsyncRunner eventAsyncRunner,
-      TimeProvider timeProvider,
-      Eth1DataProvider eth1DataProvider,
-      DataProvider dataProvider,
-      EventChannels eventChannels,
-      LivenessTrackingStatus livenessTrackingStatus) {
+      final InitLogger initLogger,
+      final Spec spec,
+      final BeaconRestApiConfig beaconRestApiConfig,
+      @EventAsyncRunner final AsyncRunner eventAsyncRunner,
+      final TimeProvider timeProvider,
+      final Eth1DataProvider eth1DataProvider,
+      final DataProvider dataProvider,
+      final EventChannels eventChannels,
+      final LivenessTrackingStatus livenessTrackingStatus) {
     if (!beaconRestApiConfig.isRestApiEnabled()) {
       initLogger.logger().info("rest-api-enabled is false, not starting rest api.");
       return Optional.empty();
@@ -119,26 +120,26 @@ public interface DataProviderModule {
   @Provides
   @Singleton
   static DataProvider dataProvider(
-      Spec spec,
-      RecentChainData recentChainData,
-      CombinedChainDataClient combinedChainDataClient,
-      RewardCalculator rewardCalculator,
-      Eth2P2PNetwork p2pNetwork,
-      SyncService syncService,
-      ValidatorApiChannel validatorApiChannel,
-      ActiveValidatorChannel activeValidatorChannel,
-      AggregatingAttestationPool attestationPool,
-      BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      AttestationManager attestationManager,
-      OperationPool<AttesterSlashing> attesterSlashingPool,
-      OperationPool<ProposerSlashing> proposerSlashingPool,
-      OperationPool<SignedVoluntaryExit> voluntaryExitPool,
-      OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
-      SyncCommitteeContributionPool syncCommitteeContributionPool,
-      ProposersDataManager proposersDataManager,
-      ForkChoiceNotifier forkChoiceNotifier,
-      LivenessTrackingStatus livenessTrackingStatus,
-      @RejectedExecutionCountSupplier IntSupplier rejectedExecutionCountSupplier) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final RewardCalculator rewardCalculator,
+      final Eth2P2PNetwork p2pNetwork,
+      final SyncService syncService,
+      final ValidatorApiChannel validatorApiChannel,
+      final ActiveValidatorChannel activeValidatorChannel,
+      final AggregatingAttestationPool attestationPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final AttestationManager attestationManager,
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
+      final ProposersDataManager proposersDataManager,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final LivenessTrackingStatus livenessTrackingStatus,
+      @RejectedExecutionCountSupplier final IntSupplier rejectedExecutionCountSupplier) {
 
     // TODO adopt Dagger instead of DataProvider.builder()
     return DataProvider.builder()
@@ -166,7 +167,8 @@ public interface DataProviderModule {
   }
 
   @Provides
-  static LivenessTrackingStatus livenessTrackingStatus(BeaconChainConfiguration beaconConfig) {
+  static LivenessTrackingStatus livenessTrackingStatus(
+      final BeaconChainConfiguration beaconConfig) {
     return new LivenessTrackingStatus(
         beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()
             || beaconConfig.validatorConfig().isDoppelgangerDetectionEnabled());

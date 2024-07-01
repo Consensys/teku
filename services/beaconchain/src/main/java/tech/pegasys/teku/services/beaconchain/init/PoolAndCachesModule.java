@@ -79,16 +79,16 @@ public interface PoolAndCachesModule {
 
   @Provides
   @Singleton
-  static PoolFactory poolFactory(MetricsSystem metricsSystem) {
+  static PoolFactory poolFactory(final MetricsSystem metricsSystem) {
     return new PoolFactory(metricsSystem);
   }
 
   @Provides
   @Singleton
   static PendingPool<SignedBeaconBlock> pendingBlocksPool(
-      Spec spec,
-      PoolFactory poolFactory,
-      EventChannelSubscriber<FinalizedCheckpointChannel> channelSubscriber) {
+      final Spec spec,
+      final PoolFactory poolFactory,
+      final EventChannelSubscriber<FinalizedCheckpointChannel> channelSubscriber) {
     PendingPool<SignedBeaconBlock> pool = poolFactory.createPendingPoolForBlocks(spec);
     channelSubscriber.subscribe(pool);
     return pool;
@@ -111,13 +111,14 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool(
-      Spec spec,
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      BlockImportChannel blockImportChannel,
-      PoolFactory poolFactory,
-      EventChannelSubscriber<FinalizedCheckpointChannel> finalizedCheckpointChannelSubscriber) {
+      final Spec spec,
+      @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final BlockImportChannel blockImportChannel,
+      final PoolFactory poolFactory,
+      final EventChannelSubscriber<FinalizedCheckpointChannel>
+          finalizedCheckpointChannelSubscriber) {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
@@ -132,11 +133,11 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static OperationPool<AttesterSlashing> attesterSlashingPool(
-      MetricsSystem metricsSystem,
-      SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
-      BlockImporter blockImporter,
-      AttesterSlashingValidator attesterSlashingValidator,
-      ForkChoice forkChoice) {
+      final MetricsSystem metricsSystem,
+      final SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
+      final BlockImporter blockImporter,
+      final AttesterSlashingValidator attesterSlashingValidator,
+      final ForkChoice forkChoice) {
     OperationPool<AttesterSlashing> attesterSlashingPool =
         new SimpleOperationPool<>(
             "AttesterSlashingPool",
@@ -155,10 +156,10 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static OperationPool<ProposerSlashing> proposerSlashingPool(
-      MetricsSystem metricsSystem,
-      SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
-      BlockImporter blockImporter,
-      ProposerSlashingValidator validator) {
+      final MetricsSystem metricsSystem,
+      final SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
+      final BlockImporter blockImporter,
+      final ProposerSlashingValidator validator) {
     SimpleOperationPool<ProposerSlashing> proposerSlashingPool =
         new SimpleOperationPool<>(
             "ProposerSlashingPool",
@@ -172,12 +173,12 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static OperationPool<SignedVoluntaryExit> voluntaryExitPool(
-      MetricsSystem metricsSystem,
-      @OperationPoolAsyncRunner AsyncRunner operationPoolAsyncRunner,
-      TimeProvider timeProvider,
-      SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
-      BlockImporter blockImporter,
-      VoluntaryExitValidator validator) {
+      final MetricsSystem metricsSystem,
+      @OperationPoolAsyncRunner final AsyncRunner operationPoolAsyncRunner,
+      final TimeProvider timeProvider,
+      final SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
+      final BlockImporter blockImporter,
+      final VoluntaryExitValidator validator) {
     MappedOperationPool<SignedVoluntaryExit> voluntaryExitPool =
         new MappedOperationPool<>(
             "VoluntaryExitPool",
@@ -193,12 +194,12 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static OperationPool<SignedBlsToExecutionChange> signedBlsToExecutionChangePool(
-      MetricsSystem metricsSystem,
-      @OperationPoolAsyncRunner AsyncRunner operationPoolAsyncRunner,
-      TimeProvider timeProvider,
-      SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
-      BlockImporter blockImporter,
-      SignedBlsToExecutionChangeValidator validator) {
+      final MetricsSystem metricsSystem,
+      @OperationPoolAsyncRunner final AsyncRunner operationPoolAsyncRunner,
+      final TimeProvider timeProvider,
+      final SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier,
+      final BlockImporter blockImporter,
+      final SignedBlsToExecutionChangeValidator validator) {
     OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
         new MappedOperationPool<>(
             "SignedBlsToExecutionChangePool",
@@ -218,9 +219,10 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static PendingPool<ValidatableAttestation> pendingAttestationPool(
-      Spec spec,
-      PoolFactory poolFactory,
-      EventChannelSubscriber<FinalizedCheckpointChannel> finalizedCheckpointChannelSubscriber) {
+      final Spec spec,
+      final PoolFactory poolFactory,
+      final EventChannelSubscriber<FinalizedCheckpointChannel>
+          finalizedCheckpointChannelSubscriber) {
     final PendingPool<ValidatableAttestation> pendingAttestations =
         poolFactory.createPendingPoolForAttestations(spec);
     finalizedCheckpointChannelSubscriber.subscribe(pendingAttestations);
@@ -230,9 +232,9 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static SyncCommitteeContributionPool syncCommitteeContributionPool(
-      Spec spec,
-      SignedContributionAndProofValidator signedContributionAndProofValidator,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
+      final Spec spec,
+      final SignedContributionAndProofValidator signedContributionAndProofValidator,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
     SyncCommitteeContributionPool syncCommitteeContributionPool =
         new SyncCommitteeContributionPool(spec, signedContributionAndProofValidator);
 
@@ -243,9 +245,9 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static SyncCommitteeMessagePool syncCommitteeMessagePool(
-      Spec spec,
-      SyncCommitteeMessageValidator syncCommitteeMessageValidator,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
+      final Spec spec,
+      final SyncCommitteeMessageValidator syncCommitteeMessageValidator,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
     SyncCommitteeMessagePool syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(spec, syncCommitteeMessageValidator);
     slotEventsChannelSubscriber.subscribe(syncCommitteeMessagePool);
@@ -255,11 +257,11 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static AggregatingAttestationPool aggregatingAttestationPool(
-      Spec spec,
-      RecentChainData recentChainData,
-      MetricsSystem metricsSystem,
-      BlockImporter blockImporter,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final MetricsSystem metricsSystem,
+      final BlockImporter blockImporter,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
     AggregatingAttestationPool attestationPool =
         new AggregatingAttestationPool(
             spec, recentChainData, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
@@ -272,7 +274,7 @@ public interface PoolAndCachesModule {
   @Provides
   @Singleton
   static FailedExecutionPool failedExecutionPool(
-      BlockManager blockManager, @BeaconAsyncRunner AsyncRunner beaconAsyncRunner) {
+      final BlockManager blockManager, @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner) {
     return new FailedExecutionPool(blockManager, beaconAsyncRunner);
   }
 }

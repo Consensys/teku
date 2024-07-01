@@ -42,17 +42,17 @@ public interface ForkChoiceModule {
   @Provides
   @Singleton
   static ForkChoice forkChoice(
-      Spec spec,
-      Eth2NetworkConfiguration eth2NetworkConfig,
-      @ForkChoiceExecutor AsyncRunnerEventThread forkChoiceExecutor,
-      MetricsSystem metricsSystem,
-      RecentChainData recentChainData,
-      BlobSidecarManager blobSidecarManager,
-      ForkChoiceNotifier forkChoiceNotifier,
-      ForkChoiceStateProvider forkChoiceStateProvider,
-      DebugDataDumper debugDataDumper,
-      TickProcessor tickProcessor,
-      MergeTransitionBlockValidator mergeTransitionBlockValidator) {
+      final Spec spec,
+      final Eth2NetworkConfiguration eth2NetworkConfig,
+      @ForkChoiceExecutor final AsyncRunnerEventThread forkChoiceExecutor,
+      final MetricsSystem metricsSystem,
+      final RecentChainData recentChainData,
+      final BlobSidecarManager blobSidecarManager,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final ForkChoiceStateProvider forkChoiceStateProvider,
+      final DebugDataDumper debugDataDumper,
+      final TickProcessor tickProcessor,
+      final MergeTransitionBlockValidator mergeTransitionBlockValidator) {
     return new ForkChoice(
         spec,
         forkChoiceExecutor,
@@ -69,28 +69,28 @@ public interface ForkChoiceModule {
 
   @Provides
   @Singleton
-  static ForkChoiceTrigger forkChoiceTrigger(ForkChoice forkChoice) {
+  static ForkChoiceTrigger forkChoiceTrigger(final ForkChoice forkChoice) {
     return new ForkChoiceTrigger(forkChoice);
   }
 
   @Provides
   @Singleton
   static ForkChoiceStateProvider forkChoiceStateProvider(
-      @ForkChoiceExecutor AsyncRunnerEventThread forkChoiceExecutor,
-      RecentChainData recentChainData) {
+      @ForkChoiceExecutor final AsyncRunnerEventThread forkChoiceExecutor,
+      final RecentChainData recentChainData) {
     return new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData);
   }
 
   @Provides
   @Singleton
   static ForkChoiceNotifier forkChoiceNotifier(
-      Spec spec,
-      @ForkChoiceNotifierExecutor AsyncRunnerEventThread forkChoiceNotifierExecutor,
-      TimeProvider timeProvider,
-      ProposersDataManager proposersDataManager,
-      ExecutionLayerChannel executionLayer,
-      RecentChainData recentChainData,
-      ForkChoiceStateProvider forkChoiceStateProvider) {
+      final Spec spec,
+      @ForkChoiceNotifierExecutor final AsyncRunnerEventThread forkChoiceNotifierExecutor,
+      final TimeProvider timeProvider,
+      final ProposersDataManager proposersDataManager,
+      final ExecutionLayerChannel executionLayer,
+      final RecentChainData recentChainData,
+      final ForkChoiceStateProvider forkChoiceStateProvider) {
 
     return new ForkChoiceNotifierImpl(
         forkChoiceStateProvider,

@@ -84,7 +84,8 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static ActiveValidatorTracker activeValidatorTracker(
-      Spec spec, EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
+      final Spec spec,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
     ActiveValidatorTracker activeValidatorTracker = new ActiveValidatorTracker(spec);
     slotEventsChannelSubscriber.subscribe(activeValidatorTracker);
     return activeValidatorTracker;
@@ -93,8 +94,8 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static ExecutionLayerBlockProductionManager executionLayerBlockProductionManager(
-      ExecutionLayerChannel executionLayer,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
+      final ExecutionLayerChannel executionLayer,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber) {
 
     return ExecutionLayerBlockManagerFactory.create(executionLayer, slotEventsChannelSubscriber);
   }
@@ -102,12 +103,11 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static GraffitiBuilder graffitiBuilder(
-      ValidatorConfig validatorConfig,
-      EventChannelSubscriber<ExecutionClientVersionChannel>
+      final ValidatorConfig validatorConfig,
+      final EventChannelSubscriber<ExecutionClientVersionChannel>
           executionClientVersionChannelSubscriber) {
     GraffitiBuilder graffitiBuilder =
-        new GraffitiBuilder(
-            validatorConfig.getClientGraffitiAppendFormat());
+        new GraffitiBuilder(validatorConfig.getClientGraffitiAppendFormat());
     executionClientVersionChannelSubscriber.subscribe(graffitiBuilder);
     return graffitiBuilder;
   }
@@ -115,10 +115,11 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static ExecutionClientVersionProvider executionClientVersionProvider(
-      GraffitiBuilder graffitiBuilder,
-      ExecutionLayerChannel executionLayer,
-      ExecutionClientVersionChannel executionClientVersionChannelPublisher,
-      EventChannelSubscriber<ExecutionClientEventsChannel> executionClientEventsChannelSubscriber) {
+      final GraffitiBuilder graffitiBuilder,
+      final ExecutionLayerChannel executionLayer,
+      final ExecutionClientVersionChannel executionClientVersionChannelPublisher,
+      final EventChannelSubscriber<ExecutionClientEventsChannel>
+          executionClientEventsChannelSubscriber) {
 
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
@@ -132,18 +133,18 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static BlockOperationSelectorFactory blockOperationSelectorFactory(
-      Spec spec,
-      AggregatingAttestationPool attestationPool,
-      OperationPool<AttesterSlashing> attesterSlashingPool,
-      OperationPool<ProposerSlashing> proposerSlashingPool,
-      OperationPool<SignedVoluntaryExit> voluntaryExitPool,
-      OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
-      SyncCommitteeContributionPool syncCommitteeContributionPool,
-      DepositProvider depositProvider,
-      Eth1DataCache eth1DataCache,
-      ForkChoiceNotifier forkChoiceNotifier,
-      ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
-      GraffitiBuilder graffitiBuilder) {
+      final Spec spec,
+      final AggregatingAttestationPool attestationPool,
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
+      final DepositProvider depositProvider,
+      final Eth1DataCache eth1DataCache,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
+      final GraffitiBuilder graffitiBuilder) {
 
     return new BlockOperationSelectorFactory(
         spec,
@@ -163,46 +164,46 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static BlockFactory blockFactory(
-      Spec spec, BlockOperationSelectorFactory blockOperationSelectorFactory) {
+      final Spec spec, final BlockOperationSelectorFactory blockOperationSelectorFactory) {
     return new MilestoneBasedBlockFactory(spec, blockOperationSelectorFactory);
   }
 
   @Provides
   @Singleton
   static ChainDataProvider chainDataProvider(
-      Spec spec,
-      RecentChainData recentChainData,
-      CombinedChainDataClient combinedChainDataClient,
-      RewardCalculator rewardCalculator) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final RewardCalculator rewardCalculator) {
     return new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);
   }
 
   @Provides
   @Singleton
   static ValidatorApiHandler validatorApiHandler(
-      Spec spec,
-      ChainDataProvider chainDataProvider,
-      DataProvider dataProvider,
-      CombinedChainDataClient combinedChainDataClient,
-      SyncService syncService,
-      BlockFactory blockFactory,
-      BlockImportChannel blockImportChannel,
-      BlockGossipChannel blockGossipChannel,
-      BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      BlobSidecarGossipChannel blobSidecarGossipChannel,
-      AggregatingAttestationPool attestationPool,
-      AttestationManager attestationManager,
-      AttestationTopicSubscriber attestationTopicSubscriber,
-      ActiveValidatorTracker activeValidatorTracker,
-      DutyMetrics dutyMetrics,
-      PerformanceTracker performanceTracker,
-      ForkChoiceTrigger forkChoiceTrigger,
-      ProposersDataManager proposersDataManager,
-      SyncCommitteeMessagePool syncCommitteeMessagePool,
-      SyncCommitteeContributionPool syncCommitteeContributionPool,
-      SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-      BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory,
-      EventChannelSubscriber<ValidatorApiChannel> validatorApiChannelSubscriber) {
+      final Spec spec,
+      final ChainDataProvider chainDataProvider,
+      final DataProvider dataProvider,
+      final CombinedChainDataClient combinedChainDataClient,
+      final SyncService syncService,
+      final BlockFactory blockFactory,
+      final BlockImportChannel blockImportChannel,
+      final BlockGossipChannel blockGossipChannel,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final BlobSidecarGossipChannel blobSidecarGossipChannel,
+      final AggregatingAttestationPool attestationPool,
+      final AttestationManager attestationManager,
+      final AttestationTopicSubscriber attestationTopicSubscriber,
+      final ActiveValidatorTracker activeValidatorTracker,
+      final DutyMetrics dutyMetrics,
+      final PerformanceTracker performanceTracker,
+      final ForkChoiceTrigger forkChoiceTrigger,
+      final ProposersDataManager proposersDataManager,
+      final SyncCommitteeMessagePool syncCommitteeMessagePool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
+      final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
+      final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory,
+      final EventChannelSubscriber<ValidatorApiChannel> validatorApiChannelSubscriber) {
     ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             chainDataProvider,
@@ -236,18 +237,19 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static AttestationManager attestationManager(
-      Spec spec,
-      BlockImporter blockImporter,
-      AggregateAttestationValidator aggregateValidator,
-      PendingPool<ValidatableAttestation> pendingAttestations,
-      FutureItems<ValidatableAttestation> futureAttestations,
-      ForkChoice forkChoice,
-      AggregatingAttestationPool attestationPool,
-      AttestationValidator attestationValidator,
-      SignatureVerificationService signatureVerificationService,
-      ActiveValidatorChannel activeValidatorChannel,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber) {
+      final Spec spec,
+      final BlockImporter blockImporter,
+      final AggregateAttestationValidator aggregateValidator,
+      final PendingPool<ValidatableAttestation> pendingAttestations,
+      final FutureItems<ValidatableAttestation> futureAttestations,
+      final ForkChoice forkChoice,
+      final AggregatingAttestationPool attestationPool,
+      final AttestationValidator attestationValidator,
+      final SignatureVerificationService signatureVerificationService,
+      final ActiveValidatorChannel activeValidatorChannel,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final EventChannelSubscriber<ReceivedBlockEventsChannel>
+          receivedBlockEventsChannelSubscriber) {
 
     // TODO
     blockImporter.subscribeToVerifiedBlockAttestations(
@@ -277,15 +279,16 @@ public interface ValidatorModule {
   @Provides
   @Singleton
   static ValidatorIsConnectedProvider validatorIsConnectedProvider(
-      Lazy<ForkChoiceNotifier> forkChoiceNotifier) {
+      final Lazy<ForkChoiceNotifier> forkChoiceNotifier) {
     return new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier.get());
   }
 
   @Provides
   @Singleton
   static ValidatorIndexCacheTracker validatorIndexCacheTracker(
-      RecentChainData recentChainData,
-      EventChannelSubscriber<FinalizedCheckpointChannel> finalizedCheckpointChannelSubscriber) {
+      final RecentChainData recentChainData,
+      final EventChannelSubscriber<FinalizedCheckpointChannel>
+          finalizedCheckpointChannelSubscriber) {
     final ValidatorIndexCacheTracker validatorIndexCacheTracker =
         new ValidatorIndexCacheTracker(recentChainData);
     finalizedCheckpointChannelSubscriber.subscribe(validatorIndexCacheTracker);

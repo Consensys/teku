@@ -25,7 +25,7 @@ public class ExternalDependenciesModule {
   private final BeaconChainConfiguration beaconConfig;
 
   public ExternalDependenciesModule(
-      ServiceConfig serviceConfig, BeaconChainConfiguration beaconConfig) {
+      final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.serviceConfig = serviceConfig;
     this.beaconConfig = beaconConfig;
   }

@@ -72,10 +72,10 @@ public interface MainModule {
   @Provides
   @IntoSet
   static VoidInitializer initSlashingEventsSubscriptions(
-      ValidatorConfig validatorConfig,
-      ValidatorTimingChannel validatorTimingChannel,
-      OperationPool<AttesterSlashing> attesterSlashingPool,
-      OperationPool<ProposerSlashing> proposerSlashingPool) {
+      final ValidatorConfig validatorConfig,
+      final ValidatorTimingChannel validatorTimingChannel,
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool) {
     if (validatorConfig.isShutdownWhenValidatorSlashedEnabled()) {
       attesterSlashingPool.subscribeOperationAdded(
           (operation, validationStatus, fromNetwork) ->
@@ -90,10 +90,10 @@ public interface MainModule {
   @Provides
   @IntoSet
   static VoidInitializer initGenesisHandler(
-      RecentChainData recentChainData,
-      Lazy<GenesisHandler> genesisHandler,
-      PowchainConfiguration powchainConfig,
-      StatusLogger statusLogger) {
+      final RecentChainData recentChainData,
+      final Lazy<GenesisHandler> genesisHandler,
+      final PowchainConfiguration powchainConfig,
+      final StatusLogger statusLogger) {
     if (!recentChainData.isPreGenesis()) {
       // We already have a genesis block - no need for a genesis handler
     } else if (!powchainConfig.isEnabled()) {
@@ -109,7 +109,8 @@ public interface MainModule {
   @Provides
   @IntoSet
   @SuppressWarnings("UnusedVariable")
-  static VoidInitializer initOperationsReOrgManager(OperationsReOrgManager operationsReOrgManager) {
+  static VoidInitializer initOperationsReOrgManager(
+      final OperationsReOrgManager operationsReOrgManager) {
     return new VoidInitializer();
   }
 
@@ -117,14 +118,14 @@ public interface MainModule {
   @IntoSet
   @SuppressWarnings("UnusedVariable")
   static VoidInitializer initValidatorIndexCacheTracker(
-      ValidatorIndexCacheTracker validatorIndexCacheTracker) {
+      final ValidatorIndexCacheTracker validatorIndexCacheTracker) {
     return new VoidInitializer();
   }
 
   @Provides
   @IntoSet
   @SuppressWarnings("UnusedVariable")
-  static VoidInitializer initRecentBlocksFetcher(RecentBlocksFetcher recentBlocksFetcher) {
+  static VoidInitializer initRecentBlocksFetcher(final RecentBlocksFetcher recentBlocksFetcher) {
     return new VoidInitializer();
   }
 
@@ -132,14 +133,16 @@ public interface MainModule {
   @IntoSet
   @SuppressWarnings("UnusedVariable")
   static VoidInitializer initRecentBlobSidecarsFetcher(
-      RecentBlobSidecarsFetcher recentBlobSidecarsFetcher) {
+      final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher) {
     return new VoidInitializer();
   }
 
   @Provides
   @IntoSet
   static VoidInitializer subscribeFailedPayloadExecution(
-      Spec spec, BlockManager blockManager, FailedExecutionPool failedExecutionPool) {
+      final Spec spec,
+      final BlockManager blockManager,
+      final FailedExecutionPool failedExecutionPool) {
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager.subscribeFailedPayloadExecution(failedExecutionPool::addFailedBlock);
     }
@@ -149,8 +152,8 @@ public interface MainModule {
   @Provides
   @IntoSet
   static VoidInitializer subscribeOnStoreInitialized(
-      RecentChainData recentChainData,
-      StorageModule.OnStoreInitializedHandler onStoreInitializedHandler) {
+      final RecentChainData recentChainData,
+      final StorageModule.OnStoreInitializedHandler onStoreInitializedHandler) {
 
     recentChainData.subscribeStoreInitialized(onStoreInitializedHandler::handle);
     return new VoidInitializer();
@@ -160,15 +163,15 @@ public interface MainModule {
   @Singleton
   @SuppressWarnings("UnusedVariable")
   static ServiceStarter serviceStarter(
-      Set<VoidInitializer> allInitializers,
-      Optional<BeaconRestApi> beaconRestApi,
-      SyncService syncService,
-      BlockManager blockManager,
-      AttestationManager attestationManager,
-      Eth2P2PNetwork p2pNetwork,
-      TimerService timerService,
-      Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
-      InitLogger initLogger) {
+      final Set<VoidInitializer> allInitializers,
+      final Optional<BeaconRestApi> beaconRestApi,
+      final SyncService syncService,
+      final BlockManager blockManager,
+      final AttestationManager attestationManager,
+      final Eth2P2PNetwork p2pNetwork,
+      final TimerService timerService,
+      final Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
+      final InitLogger initLogger) {
     return () ->
         SafeFuture.fromRunnable(() -> initLogger.logger().info("Starting BeaconChain services"))
             .thenCompose(
@@ -194,15 +197,15 @@ public interface MainModule {
   @Provides
   @Singleton
   static ServiceStopper serviceStopper(
-      Optional<BeaconRestApi> beaconRestApi,
-      SyncService syncService,
-      BlockManager blockManager,
-      AttestationManager attestationManager,
-      Eth2P2PNetwork p2pNetwork,
-      TimerService timerService,
-      Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
-      @ForkChoiceExecutor AsyncRunnerEventThread forkChoiceExecutor,
-      @ForkChoiceNotifierExecutor AsyncRunnerEventThread forkChoiceNotifierExecutor) {
+      final Optional<BeaconRestApi> beaconRestApi,
+      final SyncService syncService,
+      final BlockManager blockManager,
+      final AttestationManager attestationManager,
+      final Eth2P2PNetwork p2pNetwork,
+      final TimerService timerService,
+      final Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor,
+      @ForkChoiceExecutor final AsyncRunnerEventThread forkChoiceExecutor,
+      @ForkChoiceNotifierExecutor final AsyncRunnerEventThread forkChoiceNotifierExecutor) {
     return () ->
         SafeFuture.allOf(
                 beaconRestApi.map(BeaconRestApi::stop).orElse(SafeFuture.completedFuture(null)),

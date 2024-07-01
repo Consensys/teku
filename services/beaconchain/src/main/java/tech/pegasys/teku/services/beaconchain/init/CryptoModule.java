@@ -35,10 +35,10 @@ public interface CryptoModule {
   @Provides
   @Singleton
   static SignatureVerificationService signatureVerificationService(
-      P2PConfig p2PConfig,
-      MetricsSystem metricsSystem,
-      AsyncRunnerFactory asyncRunnerFactory,
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner) {
+      final P2PConfig p2PConfig,
+      final MetricsSystem metricsSystem,
+      final AsyncRunnerFactory asyncRunnerFactory,
+      @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner) {
     return new AggregatingSignatureVerificationService(
         metricsSystem,
         asyncRunnerFactory,
@@ -51,7 +51,7 @@ public interface CryptoModule {
 
   @Provides
   @Singleton
-  static KZG kzg(Eth2NetworkConfiguration eth2NetworkConfig, Spec spec) {
+  static KZG kzg(final Eth2NetworkConfiguration eth2NetworkConfig, final Spec spec) {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       KZG kzg = KZG.getInstance();
       final String trustedSetupFile =

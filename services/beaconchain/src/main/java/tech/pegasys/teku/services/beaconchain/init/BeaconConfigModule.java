@@ -20,7 +20,6 @@ import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
@@ -32,52 +31,52 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 public interface BeaconConfigModule {
 
   @Provides
-  static Spec spec(BeaconChainConfiguration config) {
+  static Spec spec(final BeaconChainConfiguration config) {
     return config.getSpec();
   }
 
   @Provides
-  static Eth2NetworkConfiguration eth2NetworkConfig(BeaconChainConfiguration config) {
+  static Eth2NetworkConfiguration eth2NetworkConfig(final BeaconChainConfiguration config) {
     return config.eth2NetworkConfig();
   }
 
   @Provides
-  static StoreConfig storeConfig(BeaconChainConfiguration config) {
+  static StoreConfig storeConfig(final BeaconChainConfiguration config) {
     return config.storeConfig();
   }
 
   @Provides
-  static PowchainConfiguration powchainConfig(BeaconChainConfiguration config) {
+  static PowchainConfiguration powchainConfig(final BeaconChainConfiguration config) {
     return config.powchainConfig();
   }
 
   @Provides
-  static P2PConfig p2pConfig(BeaconChainConfiguration config) {
+  static P2PConfig p2pConfig(final BeaconChainConfiguration config) {
     return config.p2pConfig();
   }
 
   @Provides
-  static ValidatorConfig validatorConfig(BeaconChainConfiguration config) {
+  static ValidatorConfig validatorConfig(final BeaconChainConfiguration config) {
     return config.validatorConfig();
   }
 
   @Provides
-  static SyncConfig syncConfig(BeaconChainConfiguration config) {
+  static SyncConfig syncConfig(final BeaconChainConfiguration config) {
     return config.syncConfig();
   }
 
   @Provides
-  static BeaconRestApiConfig beaconRestApiConfig(BeaconChainConfiguration config) {
+  static BeaconRestApiConfig beaconRestApiConfig(final BeaconChainConfiguration config) {
     return config.beaconRestApiConfig();
   }
 
   @Provides
-  static WeakSubjectivityConfig weakSubjectivityConfig(BeaconChainConfiguration config) {
+  static WeakSubjectivityConfig weakSubjectivityConfig(final BeaconChainConfiguration config) {
     return config.weakSubjectivity();
   }
 
   @Provides
-  static MetricsConfig metricsConfig(BeaconChainConfiguration config) {
+  static MetricsConfig metricsConfig(final BeaconChainConfiguration config) {
     return config.getMetricsConfig();
   }
 }

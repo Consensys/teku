@@ -45,10 +45,10 @@ public interface BlobModule {
   @Provides
   @Singleton
   static BlobSidecarGossipValidator blobSidecarGossipValidator(
-      Spec spec,
-      KZG kzg,
-      @InvalidBlockRoots Map<Bytes32, BlockImportResult> invalidBlockRoots,
-      GossipValidationHelper gossipValidationHelper) {
+      final Spec spec,
+      final KZG kzg,
+      @InvalidBlockRoots final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final GossipValidationHelper gossipValidationHelper) {
     final MiscHelpersDeneb miscHelpers =
         MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
     return BlobSidecarGossipValidator.create(
@@ -58,15 +58,15 @@ public interface BlobModule {
   @Provides
   @Singleton
   static BlobSidecarManager blobSidecarManager(
-      Spec spec,
-      KZG kzg,
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
-      RecentChainData recentChainData,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      BlobSidecarGossipValidator blobSidecarGossipValidator,
-      @InvalidBlobSidecarRoots Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
-      FutureItems<BlobSidecar> futureBlobSidecars) {
+      final Spec spec,
+      final KZG kzg,
+      @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner,
+      final RecentChainData recentChainData,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final BlobSidecarGossipValidator blobSidecarGossipValidator,
+      @InvalidBlobSidecarRoots final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
+      final FutureItems<BlobSidecar> futureBlobSidecars) {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(

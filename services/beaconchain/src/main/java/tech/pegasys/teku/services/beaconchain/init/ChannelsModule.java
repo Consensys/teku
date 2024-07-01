@@ -46,58 +46,60 @@ public interface ChannelsModule {
   // Publishers
 
   @Provides
-  static SlotEventsChannel slotEventsChannel(EventChannels eventChannels) {
+  static SlotEventsChannel slotEventsChannel(final EventChannels eventChannels) {
     return eventChannels.getPublisher(SlotEventsChannel.class);
   }
 
   @Provides
   static ExecutionLayerChannel executionLayerChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+      final EventChannels eventChannels, @BeaconAsyncRunner final AsyncRunner asyncRunner) {
     return eventChannels.getPublisher(ExecutionLayerChannel.class, asyncRunner);
   }
 
   @Provides
   static BlockImportChannel blockImportChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+      final EventChannels eventChannels, @BeaconAsyncRunner final AsyncRunner asyncRunner) {
     return eventChannels.getPublisher(BlockImportChannel.class, asyncRunner);
   }
 
   @Provides
   static CombinedStorageChannel combinedStorageChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+      final EventChannels eventChannels, @BeaconAsyncRunner final AsyncRunner asyncRunner) {
     return eventChannels.getPublisher(CombinedStorageChannel.class, asyncRunner);
   }
 
   @Provides
   static ValidatorApiChannel validatorApiChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+      final EventChannels eventChannels, @BeaconAsyncRunner final AsyncRunner asyncRunner) {
     return eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner);
   }
 
   @Provides
   static ActiveValidatorChannel activeValidatorChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+      final EventChannels eventChannels, @BeaconAsyncRunner final AsyncRunner asyncRunner) {
     return eventChannels.getPublisher(ActiveValidatorChannel.class, asyncRunner);
   }
 
   @Provides
   static Eth1DepositStorageChannel eth1DepositStorageChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+      final EventChannels eventChannels, @BeaconAsyncRunner final AsyncRunner asyncRunner) {
     return eventChannels.getPublisher(Eth1DepositStorageChannel.class, asyncRunner);
   }
 
   @Provides
-  static ExecutionClientVersionChannel executionClientVersionChannel(EventChannels eventChannels) {
+  static ExecutionClientVersionChannel executionClientVersionChannel(
+      final EventChannels eventChannels) {
     return eventChannels.getPublisher(ExecutionClientVersionChannel.class);
   }
 
   @Provides
-  static BlockGossipChannel blockGossipChannel(EventChannels eventChannels) {
+  static BlockGossipChannel blockGossipChannel(final EventChannels eventChannels) {
     return eventChannels.getPublisher(BlockGossipChannel.class);
   }
 
   @Provides
-  static BlobSidecarGossipChannel blobSidecarGossipChannel(EventChannels eventChannels, Spec spec) {
+  static BlobSidecarGossipChannel blobSidecarGossipChannel(
+      final EventChannels eventChannels, final Spec spec) {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       return eventChannels.getPublisher(BlobSidecarGossipChannel.class);
     } else {
@@ -106,28 +108,28 @@ public interface ChannelsModule {
   }
 
   @Provides
-  static ReceivedBlockEventsChannel receivedBlockEventsChannel(EventChannels eventChannels) {
+  static ReceivedBlockEventsChannel receivedBlockEventsChannel(final EventChannels eventChannels) {
     return eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
   }
 
   @Provides
-  static ChainHeadChannel chainHeadChannel(EventChannels eventChannels) {
+  static ChainHeadChannel chainHeadChannel(final EventChannels eventChannels) {
     return eventChannels.getPublisher(ChainHeadChannel.class);
   }
 
   @Provides
-  static VoteUpdateChannel voteUpdateChannel(EventChannels eventChannels) {
+  static VoteUpdateChannel voteUpdateChannel(final EventChannels eventChannels) {
     return eventChannels.getPublisher(VoteUpdateChannel.class);
   }
 
   @Provides
   static FinalizedCheckpointChannel finalizedCheckpointChannel(
-      EventChannels eventChannels, @BeaconAsyncRunner AsyncRunner asyncRunner) {
+      final EventChannels eventChannels, @BeaconAsyncRunner final AsyncRunner asyncRunner) {
     return eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner);
   }
 
   @Provides
-  static ValidatorTimingChannel validatorTimingChannel(EventChannels eventChannels) {
+  static ValidatorTimingChannel validatorTimingChannel(final EventChannels eventChannels) {
     return eventChannels.getPublisher(ValidatorTimingChannel.class);
   }
 
@@ -135,55 +137,55 @@ public interface ChannelsModule {
 
   @Provides
   static EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber(
-      EventChannels eventChannels) {
+      final EventChannels eventChannels) {
     return eventChannels.createSubscriber(SlotEventsChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<FinalizedCheckpointChannel> finalizedCheckpointChannelSubscriber(
-      EventChannels eventChannels) {
+      final EventChannels eventChannels) {
     return eventChannels.createSubscriber(FinalizedCheckpointChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<ChainHeadChannel> chainHeadChannelSubscriber(
-      EventChannels eventChannels) {
+      final EventChannels eventChannels) {
     return eventChannels.createSubscriber(ChainHeadChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<Eth1EventsChannel> eth1EventsChannelSubscriber(
-      EventChannels eventChannels) {
+      final EventChannels eventChannels) {
     return eventChannels.createSubscriber(Eth1EventsChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<ExecutionClientVersionChannel>
-      executionClientVersionChannelSubscriber(EventChannels eventChannels) {
+      executionClientVersionChannelSubscriber(final EventChannels eventChannels) {
     return eventChannels.createSubscriber(ExecutionClientVersionChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<ExecutionClientEventsChannel>
-      executionClientEventsChannelSubscriber(EventChannels eventChannels) {
+      executionClientEventsChannelSubscriber(final EventChannels eventChannels) {
     return eventChannels.createSubscriber(ExecutionClientEventsChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<ReceivedBlockEventsChannel> receivedBlockEventsChannelSubscriber(
-      EventChannels eventChannels) {
+      final EventChannels eventChannels) {
     return eventChannels.createSubscriber(ReceivedBlockEventsChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<BlockImportChannel> blockImportChannelSubscriber(
-      EventChannels eventChannels) {
+      final EventChannels eventChannels) {
     return eventChannels.createSubscriber(BlockImportChannel.class);
   }
 
   @Provides
   static EventChannelSubscriber<ValidatorApiChannel> validatorApiChannelSubscriber(
-      EventChannels eventChannels, BeaconRestApiConfig beaconRestApiConfig) {
+      final EventChannels eventChannels, final BeaconRestApiConfig beaconRestApiConfig) {
     return eventChannels.createSubscriberMultithreaded(
         ValidatorApiChannel.class, beaconRestApiConfig.getValidatorThreads());
   }

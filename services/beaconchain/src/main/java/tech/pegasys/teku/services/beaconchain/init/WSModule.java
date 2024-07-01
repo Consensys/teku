@@ -54,10 +54,10 @@ public interface WSModule {
   @Provides
   @Singleton
   static SafeFuture<WeakSubjectivityFinalizedConfig> weakSubjectivityFinalizedConfigFuture(
-      WeakSubjectivityInitializer weakSubjectivityInitializer,
-      WeakSubjectivityConfig weakSubjectivityConfig,
-      StorageQueryChannel storageQueryChannel,
-      StorageUpdateChannel storageUpdateChannel) {
+      final WeakSubjectivityInitializer weakSubjectivityInitializer,
+      final WeakSubjectivityConfig weakSubjectivityConfig,
+      final StorageQueryChannel storageQueryChannel,
+      final StorageUpdateChannel storageUpdateChannel) {
     SafeFuture<WeakSubjectivityConfig> finalizedConfig =
         weakSubjectivityInitializer.finalizeAndStoreConfig(
             weakSubjectivityConfig, storageQueryChannel, storageUpdateChannel);
@@ -68,24 +68,24 @@ public interface WSModule {
   @Singleton
   // TODO producer ?
   static WeakSubjectivityFinalizedConfig weakSubjectivityConfig(
-      SafeFuture<WeakSubjectivityFinalizedConfig> weakSubjectivityConfigFuture) {
+      final SafeFuture<WeakSubjectivityFinalizedConfig> weakSubjectivityConfigFuture) {
     return weakSubjectivityConfigFuture.join();
   }
 
   @Provides
   @Singleton
   static WeakSubjectivityValidator weakSubjectivityValidator(
-      WeakSubjectivityFinalizedConfig weakSubjectivityConfig) {
+      final WeakSubjectivityFinalizedConfig weakSubjectivityConfig) {
     return WeakSubjectivityValidator.moderate(weakSubjectivityConfig.config());
   }
 
   @Provides
   @Singleton
   static WeakSubjectivityPeriodValidator weakSubjectivityPeriodValidator(
-      Spec spec,
-      CurrentSlotProvider currentSlotProvider,
-      WeakSubjectivityConfig weakSubjectivityConfig,
-      WeakSubjectivityInitializer weakSubjectivityInitializer) {
+      final Spec spec,
+      final CurrentSlotProvider currentSlotProvider,
+      final WeakSubjectivityConfig weakSubjectivityConfig,
+      final WeakSubjectivityInitializer weakSubjectivityInitializer) {
     return client -> {
       final AnchorPoint latestFinalizedAnchor = client.getStore().getLatestFinalized();
       final UInt64 currentSlot = currentSlotProvider.getCurrentSlot(client.getGenesisTime());
@@ -99,9 +99,9 @@ public interface WSModule {
   @Provides
   @Singleton
   static WeakSubjectivityStoreChainValidator weakSubjectivityStoreChainValidator(
-      WeakSubjectivityValidator weakSubjectivityValidator,
-      CombinedChainDataClient combinedChainDataClient,
-      RecentChainData recentChainData) {
+      final WeakSubjectivityValidator weakSubjectivityValidator,
+      final CombinedChainDataClient combinedChainDataClient,
+      final RecentChainData recentChainData) {
     return currentSlot -> {
       weakSubjectivityValidator
           .validateChainIsConsistentWithWSCheckpoint(combinedChainDataClient)

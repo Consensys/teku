@@ -39,7 +39,7 @@ public interface SpecModule {
   interface SchemaSupplier<T extends SszSchema<?>> extends Function<UInt64, T> {
 
     @Override
-    default T apply(UInt64 slot) {
+    default T apply(final UInt64 slot) {
       return getSchemaAtSlot(slot);
     }
 
@@ -48,27 +48,27 @@ public interface SpecModule {
 
   @Provides
   @Singleton
-  static SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockBodySchemaSupplier(Spec spec) {
+  static SchemaSupplier<BeaconBlockBodySchema<?>> beaconBlockBodySchemaSupplier(final Spec spec) {
     return slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
   @Provides
   @Singleton
-  static RewardCalculator rewardCalculator(Spec spec) {
+  static RewardCalculator rewardCalculator(final Spec spec) {
     return new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
   }
 
   @Provides
   @Singleton
-  static CurrentSlotProvider currentSlotProvider(Spec spec, TimeProvider timeProvider) {
+  static CurrentSlotProvider currentSlotProvider(final Spec spec, final TimeProvider timeProvider) {
     return new CurrentSlotProvider() {
       @Override
-      public UInt64 getCurrentSlot(UInt64 genesisTime) {
+      public UInt64 getCurrentSlot(final UInt64 genesisTime) {
         return getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
       }
 
       @Override
-      public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
+      public UInt64 getCurrentSlot(final UInt64 currentTime, final UInt64 genesisTime) {
         return spec.getCurrentSlot(currentTime, genesisTime);
       }
     };

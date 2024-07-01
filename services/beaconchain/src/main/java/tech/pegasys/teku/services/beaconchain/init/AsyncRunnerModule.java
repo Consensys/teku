@@ -47,7 +47,8 @@ public interface AsyncRunnerModule {
   @Singleton
   @BeaconAsyncRunner
   static AsyncRunner beaconAsyncRunner(
-      AsyncRunnerFactory asyncRunnerFactory, Eth2NetworkConfiguration eth2NetworkConfig) {
+      final AsyncRunnerFactory asyncRunnerFactory,
+      final Eth2NetworkConfiguration eth2NetworkConfig) {
     return asyncRunnerFactory.create(
         "beaconchain",
         eth2NetworkConfig.getAsyncBeaconChainMaxThreads(),
@@ -58,7 +59,8 @@ public interface AsyncRunnerModule {
   @Singleton
   @NetworkAsyncRunner
   static AsyncRunner networkAsyncRunner(
-      AsyncRunnerFactory asyncRunnerFactory, Eth2NetworkConfiguration eth2NetworkConfig) {
+      final AsyncRunnerFactory asyncRunnerFactory,
+      final Eth2NetworkConfiguration eth2NetworkConfig) {
     return asyncRunnerFactory.create(
         "p2p", eth2NetworkConfig.getAsyncP2pMaxThreads(), eth2NetworkConfig.getAsyncP2pMaxQueue());
   }
@@ -66,21 +68,21 @@ public interface AsyncRunnerModule {
   @Provides
   @Singleton
   @EventAsyncRunner
-  static AsyncRunner eventAsyncRunner(AsyncRunnerFactory asyncRunnerFactory) {
+  static AsyncRunner eventAsyncRunner(final AsyncRunnerFactory asyncRunnerFactory) {
     return asyncRunnerFactory.create("events", 10);
   }
 
   @Provides
   @Singleton
   @OperationPoolAsyncRunner
-  static AsyncRunner operationPoolAsyncRunner(AsyncRunnerFactory asyncRunnerFactory) {
+  static AsyncRunner operationPoolAsyncRunner(final AsyncRunnerFactory asyncRunnerFactory) {
     return asyncRunnerFactory.create("operationPoolUpdater", 1);
   }
 
   @Provides
   @Singleton
   @ForkChoiceExecutor
-  static AsyncRunnerEventThread forkChoiceExecutor(AsyncRunnerFactory asyncRunnerFactory) {
+  static AsyncRunnerEventThread forkChoiceExecutor(final AsyncRunnerFactory asyncRunnerFactory) {
     AsyncRunnerEventThread forkChoiceExecutor =
         new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
     forkChoiceExecutor.start();
@@ -90,7 +92,8 @@ public interface AsyncRunnerModule {
   @Provides
   @Singleton
   @ForkChoiceNotifierExecutor
-  static AsyncRunnerEventThread forkChoiceNotifierExecutor(AsyncRunnerFactory asyncRunnerFactory) {
+  static AsyncRunnerEventThread forkChoiceNotifierExecutor(
+      final AsyncRunnerFactory asyncRunnerFactory) {
     AsyncRunnerEventThread forkChoiceNotifierExecutor =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
     forkChoiceNotifierExecutor.start();

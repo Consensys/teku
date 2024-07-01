@@ -54,13 +54,13 @@ public interface PowModule {
   @Provides
   @Singleton
   static Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor(
-      Spec spec,
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
-      TimeProvider timeProvider,
-      ExecutionLayerChannel executionLayer,
-      RecentChainData recentChainData,
-      ForkChoiceNotifier forkChoiceNotifier,
-      EventLogger eventLogger) {
+      final Spec spec,
+      @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner,
+      final TimeProvider timeProvider,
+      final ExecutionLayerChannel executionLayer,
+      final RecentChainData recentChainData,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final EventLogger eventLogger) {
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       return Optional.of(
           new TerminalPowBlockMonitor(
@@ -78,24 +78,24 @@ public interface PowModule {
 
   @Provides
   @Singleton
-  static Eth1DataCache eth1DataCache(Spec spec, MetricsSystem metricsSystem) {
+  static Eth1DataCache eth1DataCache(final Spec spec, final MetricsSystem metricsSystem) {
     return new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec));
   }
 
   @Provides
   @Singleton
   static DepositProvider depositProvider(
-      Spec spec,
-      PowchainConfiguration powchainConfig,
-      MetricsSystem metricsSystem,
-      RecentChainData recentChainData,
-      Eth1DataCache eth1DataCache,
-      StorageUpdateChannel storageUpdateChannel,
-      Eth1DepositStorageChannel eth1DepositStorageChannel,
-      EventChannelSubscriber<Eth1EventsChannel> eth1EventsChannelSubscriber,
-      EventChannelSubscriber<FinalizedCheckpointChannel> finalizedCheckpointChannelSubscriber,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      EventLogger eventLogger) {
+      final Spec spec,
+      final PowchainConfiguration powchainConfig,
+      final MetricsSystem metricsSystem,
+      final RecentChainData recentChainData,
+      final Eth1DataCache eth1DataCache,
+      final StorageUpdateChannel storageUpdateChannel,
+      final Eth1DepositStorageChannel eth1DepositStorageChannel,
+      final EventChannelSubscriber<Eth1EventsChannel> eth1EventsChannelSubscriber,
+      final EventChannelSubscriber<FinalizedCheckpointChannel> finalizedCheckpointChannelSubscriber,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final EventLogger eventLogger) {
     DepositProvider depositProvider =
         new DepositProvider(
             metricsSystem,
@@ -117,10 +117,10 @@ public interface PowModule {
   @Singleton
   @ProposerDefaultFeeRecipient
   static Optional<Eth1Address> proposerDefaultFeeRecipient(
-      Spec spec,
-      ValidatorConfig validatorConfig,
-      BeaconRestApiConfig restApiConfig,
-      StatusLogger statusLogger) {
+      final Spec spec,
+      final ValidatorConfig validatorConfig,
+      final BeaconRestApiConfig restApiConfig,
+      final StatusLogger statusLogger) {
     if (!spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       return Optional.of(Eth1Address.ZERO);
     }
@@ -138,10 +138,10 @@ public interface PowModule {
   @Provides
   @Singleton
   static GenesisHandler genesisHandler(
-      TimeProvider timeProvider,
-      Spec spec,
-      RecentChainData recentChainData,
-      EventChannelSubscriber<Eth1EventsChannel> eth1EventsChannelSubscriber) {
+      final TimeProvider timeProvider,
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final EventChannelSubscriber<Eth1EventsChannel> eth1EventsChannelSubscriber) {
     GenesisHandler genesisHandler = new GenesisHandler(recentChainData, timeProvider, spec);
     eth1EventsChannelSubscriber.subscribe(genesisHandler);
     return genesisHandler;

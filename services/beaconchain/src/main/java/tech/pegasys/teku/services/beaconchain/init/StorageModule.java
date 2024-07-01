@@ -69,7 +69,7 @@ public interface StorageModule {
 
   @Provides
   @Singleton
-  static KeyValueStore<String, Bytes> keyValueStore(DataDirLayout dataDirLayout) {
+  static KeyValueStore<String, Bytes> keyValueStore(final DataDirLayout dataDirLayout) {
     return new FileKeyValueStore(
         dataDirLayout.getBeaconDataDirectory().resolve(KEY_VALUE_STORE_SUBDIRECTORY));
   }
@@ -77,7 +77,9 @@ public interface StorageModule {
   @Provides
   @Singleton
   static EarliestAvailableBlockSlot earliestAvailableBlockSlot(
-      StoreConfig storeConfig, TimeProvider timeProvider, StorageQueryChannel storageQueryChannel) {
+      final StoreConfig storeConfig,
+      final TimeProvider timeProvider,
+      final StorageQueryChannel storageQueryChannel) {
     return new EarliestAvailableBlockSlot(
         storageQueryChannel, timeProvider, storeConfig.getEarliestAvailableBlockSlotFrequency());
   }
@@ -85,10 +87,10 @@ public interface StorageModule {
   @Provides
   @Singleton
   static CombinedChainDataClient combinedChainDataClient(
-      Spec spec,
-      StorageQueryChannel storageQueryChannel,
-      RecentChainData recentChainData,
-      EarliestAvailableBlockSlot earliestAvailableBlockSlot) {
+      final Spec spec,
+      final StorageQueryChannel storageQueryChannel,
+      final RecentChainData recentChainData,
+      final EarliestAvailableBlockSlot earliestAvailableBlockSlot) {
     return new CombinedChainDataClient(
         recentChainData, storageQueryChannel, spec, earliestAvailableBlockSlot);
   }
@@ -97,20 +99,20 @@ public interface StorageModule {
   @Singleton
   @SuppressWarnings("UnusedVariable")
   static SafeFuture<RecentChainData> recentChainDataFuture(
-      @BeaconAsyncRunner AsyncRunner beaconAsyncRunner,
-      TimeProvider timeProvider,
-      MetricsSystem metricsSystem,
-      Spec spec,
-      StoreConfig storeConfig,
-      StorageQueryChannel storageQueryChannel,
-      StorageUpdateChannel storageUpdateChannel,
-      Lazy<BlockBlobSidecarsTrackersPool> blockBlobSidecarsTrackersPool,
-      VoteUpdateChannel voteUpdateChannel,
-      FinalizedCheckpointChannel finalizedCheckpointChannel,
-      ChainHeadChannel chainHeadChannel,
-      ValidatorIsConnectedProvider validatorIsConnectedProvider,
+      @BeaconAsyncRunner final AsyncRunner beaconAsyncRunner,
+      final TimeProvider timeProvider,
+      final MetricsSystem metricsSystem,
+      final Spec spec,
+      final StoreConfig storeConfig,
+      final StorageQueryChannel storageQueryChannel,
+      final StorageUpdateChannel storageUpdateChannel,
+      final Lazy<BlockBlobSidecarsTrackersPool> blockBlobSidecarsTrackersPool,
+      final VoteUpdateChannel voteUpdateChannel,
+      final FinalizedCheckpointChannel finalizedCheckpointChannel,
+      final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       // TODO is there a better option for this dependency ?
-      WeakSubjectivityFinalizedConfig __) {
+      final WeakSubjectivityFinalizedConfig __) {
 
     return StorageBackedRecentChainData.create(
         metricsSystem,
@@ -132,11 +134,11 @@ public interface StorageModule {
   @Singleton
   // TODO producer ?
   static RecentChainData recentChainData(
-      Eth2NetworkConfiguration eth2NetworkConfig,
-      SafeFuture<RecentChainData> recentChainDataFuture,
-      StatusLogger statusLogger,
-      Lazy<WeakSubjectivityPeriodValidator> weakSubjectivityPeriodValidator,
-      Lazy<RecentChainDataStateInitializer> recentChainDataStateInitializer) {
+      final Eth2NetworkConfiguration eth2NetworkConfig,
+      final SafeFuture<RecentChainData> recentChainDataFuture,
+      final StatusLogger statusLogger,
+      final Lazy<WeakSubjectivityPeriodValidator> weakSubjectivityPeriodValidator,
+      final Lazy<RecentChainDataStateInitializer> recentChainDataStateInitializer) {
 
     RecentChainData recentChainData = recentChainDataFuture.join();
 
@@ -167,13 +169,13 @@ public interface StorageModule {
   @Provides
   @Singleton
   static OnStoreInitializedHandler onStoreInitializedHandler(
-      TimeProvider timeProvider,
-      RecentChainData recentChainData,
-      CurrentSlotProvider currentSlotProvider,
-      Lazy<WeakSubjectivityStoreChainValidator> weakSubjectivityStoreChainValidator,
-      Lazy<GenesisTimeTracker> genesisTimeTracker,
-      SlotProcessor slotProcessor,
-      PerformanceTracker performanceTracker) {
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final CurrentSlotProvider currentSlotProvider,
+      final Lazy<WeakSubjectivityStoreChainValidator> weakSubjectivityStoreChainValidator,
+      final Lazy<GenesisTimeTracker> genesisTimeTracker,
+      final SlotProcessor slotProcessor,
+      final PerformanceTracker performanceTracker) {
     return () -> {
       UInt64 genesisTime = recentChainData.getGenesisTime();
       UInt64 currentTime = timeProvider.getTimeInSeconds();

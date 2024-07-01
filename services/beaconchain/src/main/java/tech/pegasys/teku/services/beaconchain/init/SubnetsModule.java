@@ -35,11 +35,12 @@ public interface SubnetsModule {
   @Provides
   @Singleton
   static AttestationTopicSubscriber attestationTopicSubscriber(
-      @MetricsModule.SubnetSubscriptionsMetric SettableLabelledGauge subnetSubscriptionsMetric,
-      Spec spec,
-      P2PConfig p2pConfig,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      Eth2P2PNetwork p2pNetwork) {
+      @MetricsModule.SubnetSubscriptionsMetric
+          final SettableLabelledGauge subnetSubscriptionsMetric,
+      final Spec spec,
+      final P2PConfig p2pConfig,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final Eth2P2PNetwork p2pNetwork) {
     AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(spec, p2pNetwork, subnetSubscriptionsMetric);
     if (p2pConfig.isSubscribeAllSubnetsEnabled()) {
@@ -51,12 +52,12 @@ public interface SubnetsModule {
   @Provides
   @Singleton
   static StableSubnetSubscriber stableSubnetSubscriber(
-      Spec spec,
-      P2PConfig p2pConfig,
-      Eth2P2PNetwork p2pNetwork,
-      AttestationTopicSubscriber attestationTopicSubscriber,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      LoggingModule.InitLogger logger) {
+      final Spec spec,
+      final P2PConfig p2pConfig,
+      final Eth2P2PNetwork p2pNetwork,
+      final AttestationTopicSubscriber attestationTopicSubscriber,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final LoggingModule.InitLogger logger) {
     final StableSubnetSubscriber stableSubnetSubscriber;
     if (p2pConfig.isSubscribeAllSubnetsEnabled()) {
       logger.logger().info("Subscribing to all attestation subnets");
@@ -81,10 +82,10 @@ public interface SubnetsModule {
   @Provides
   @Singleton
   static SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager(
-      Spec spec,
-      P2PConfig p2pConfig,
-      EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
-      Eth2P2PNetwork p2pNetwork) {
+      final Spec spec,
+      final P2PConfig p2pConfig,
+      final EventChannelSubscriber<SlotEventsChannel> slotEventsChannelSubscriber,
+      final Eth2P2PNetwork p2pNetwork) {
 
     final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
     if (p2pConfig.isSubscribeAllSubnetsEnabled()) {
