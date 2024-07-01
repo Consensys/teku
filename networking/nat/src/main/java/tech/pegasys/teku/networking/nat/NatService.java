@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.networking.nat;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 
@@ -59,8 +61,10 @@ public class NatService extends Service {
         .start()
         .thenRun(
             () -> {
-              requestPortForward(natManager, p2pPort);
-              p2pPortIpv6.ifPresent(port -> requestPortForward(natManager, port));
+              final Set<Integer> p2pPorts = new HashSet<>();
+              p2pPorts.add(p2pPort);
+              p2pPortIpv6.ifPresent(p2pPorts::add);
+              p2pPorts.forEach(port -> requestPortForward(natManager, port));
             });
   }
 
