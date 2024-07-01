@@ -170,13 +170,13 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPort(final int listenUdpPort) {
-      validatePort(listenUdpPort, "listenUdpPort");
+      validatePort(listenUdpPort, "--p2p-udp-port");
       this.listenUdpPort = OptionalInt.of(listenUdpPort);
       return this;
     }
 
     public Builder listenUdpPortDefault(final int listenUdpPort) {
-      validatePort(listenUdpPort, "listenUdpPortDefault");
+      validatePort(listenUdpPort, "--p2p-udp-port");
       if (this.listenUdpPort.isEmpty()) {
         this.listenUdpPort = OptionalInt.of(listenUdpPort);
       }
@@ -184,13 +184,13 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPortIpv6(final int listenUdpPortIpv6) {
-      validatePort(listenUdpPortIpv6, "listenUdpPortIpv6");
+      validatePort(listenUdpPortIpv6, "--Xp2p-udp-port-ipv6");
       this.listenUdpPortIpv6 = OptionalInt.of(listenUdpPortIpv6);
       return this;
     }
 
     public Builder listenUdpPortIpv6Default(final int listenUdpPortIpv6) {
-      validatePort(listenUdpPortIpv6, "listenUdpPortIpv6Default");
+      validatePort(listenUdpPortIpv6, "--Xp2p-udp-port-ipv6");
       if (this.listenUdpPortIpv6.isEmpty()) {
         this.listenUdpPortIpv6 = OptionalInt.of(listenUdpPortIpv6);
       }
@@ -200,7 +200,7 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        validatePort(advertisedUdpPort.getAsInt(), "advertisedUdpPort");
+        validatePort(advertisedUdpPort.getAsInt(), "--p2p-advertised-udp-port");
       }
       this.advertisedUdpPort = advertisedUdpPort;
       return this;
@@ -209,7 +209,7 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        validatePort(advertisedUdpPort.getAsInt(), "advertisedUdpPortDefault");
+        validatePort(advertisedUdpPort.getAsInt(), "--p2p-advertised-udp-port");
       }
       if (this.advertisedUdpPort.isEmpty()) {
         this.advertisedUdpPort = advertisedUdpPort;
@@ -220,7 +220,7 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPortIpv6(final OptionalInt advertisedUdpPortIpv6) {
       checkNotNull(advertisedUdpPortIpv6);
       if (advertisedUdpPortIpv6.isPresent()) {
-        validatePort(advertisedUdpPortIpv6.getAsInt(), "advertisedUdpPortIpv6");
+        validatePort(advertisedUdpPortIpv6.getAsInt(), "--Xp2p-advertised-udp-port-ipv6");
       }
       this.advertisedUdpPortIpv6 = advertisedUdpPortIpv6;
       return this;
@@ -229,7 +229,7 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPortIpv6Default(final OptionalInt advertisedUdpPortIpv6) {
       checkNotNull(advertisedUdpPortIpv6);
       if (advertisedUdpPortIpv6.isPresent()) {
-        validatePort(advertisedUdpPortIpv6.getAsInt(), "advertisedUdpPortIpv6Default");
+        validatePort(advertisedUdpPortIpv6.getAsInt(), "--Xp2p-advertised-udp-port-ipv6");
       }
       if (this.advertisedUdpPortIpv6.isEmpty()) {
         this.advertisedUdpPortIpv6 = advertisedUdpPortIpv6;
@@ -290,9 +290,9 @@ public class DiscoveryConfig {
       return this;
     }
 
-    private void validatePort(final int port, final String parameter) {
+    private void validatePort(final int port, final String cliOption) {
       if (!PortAvailability.isPortValid(port)) {
-        throw new InvalidConfigurationException(String.format("Invalid %s: %d", parameter, port));
+        throw new InvalidConfigurationException(String.format("Invalid %s: %d", cliOption, port));
       }
     }
   }

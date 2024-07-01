@@ -307,27 +307,27 @@ public class NetworkConfig {
     }
 
     public Builder listenPort(final int listenPort) {
-      validatePort(listenPort, "listenPort");
+      validatePort(listenPort, "--p2p-port");
       this.listenPort = listenPort;
       return this;
     }
 
     public Builder listenPortIpv6(final int listenPortIpv6) {
-      validatePort(listenPortIpv6, "listenPortIpv6");
+      validatePort(listenPortIpv6, "-Xp2p-port-ipv6");
       this.listenPortIpv6 = listenPortIpv6;
       return this;
     }
 
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
-      advertisedPort.ifPresent(port -> validatePort(port, "advertisedPort"));
+      advertisedPort.ifPresent(port -> validatePort(port, "--p2p-advertised-ip"));
       this.advertisedPort = advertisedPort;
       return this;
     }
 
     public Builder advertisedPortIpv6(final OptionalInt advertisedPortIpv6) {
       checkNotNull(advertisedPortIpv6);
-      advertisedPortIpv6.ifPresent(port -> validatePort(port, "advertisedPortIpv6"));
+      advertisedPortIpv6.ifPresent(port -> validatePort(port, "--Xp2p-advertised-port-ipv6"));
       this.advertisedPortIpv6 = advertisedPortIpv6;
       return this;
     }
@@ -362,9 +362,9 @@ public class NetworkConfig {
       }
     }
 
-    private void validatePort(final int port, final String parameter) {
+    private void validatePort(final int port, final String cliOption) {
       if (!PortAvailability.isPortValid(port)) {
-        throw new InvalidConfigurationException(String.format("Invalid %s: %d", parameter, port));
+        throw new InvalidConfigurationException(String.format("Invalid %s: %d", cliOption, port));
       }
     }
   }
