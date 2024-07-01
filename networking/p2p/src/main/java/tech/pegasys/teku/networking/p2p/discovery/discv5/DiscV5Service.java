@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static java.util.Collections.emptyList;
 
-import com.google.common.base.Preconditions;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -88,13 +87,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     this.nodeRecordConverter = nodeRecordConverter;
     final List<String> networkInterfaces = p2pConfig.getNetworkInterfaces();
-    Preconditions.checkState(
-        networkInterfaces.size() == 1 || networkInterfaces.size() == 2,
-        "The configured network interfaces must be either 1 or 2");
-    if (networkInterfaces.size() == 1) {
-      discoverySystemBuilder.listen(networkInterfaces.get(0), discoConfig.getListenUdpPort());
-    } else {
-      // IPv4 and IPv6 (dual-stack)
+    if (p2pConfig.isDualStackConfigured()) {
       final InetSocketAddress[] listenAddresses =
           networkInterfaces.stream()
               .map(
@@ -108,6 +101,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
                   })
               .toArray(InetSocketAddress[]::new);
       discoverySystemBuilder.listen(listenAddresses);
+    } else {
+      discoverySystemBuilder.listen(networkInterfaces.get(0), discoConfig.getListenUdpPort());
     }
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
@@ -118,16 +113,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
         new NodeRecordBuilder().secretKey(localNodePrivateKey).seq(seqNo);
     if (p2pConfig.hasUserExplicitlySetAdvertisedIps()) {
       final List<String> advertisedIps = p2pConfig.getAdvertisedIps();
-      Preconditions.checkState(
-          advertisedIps.size() == 1 || advertisedIps.size() == 2,
-          "The configured advertised IPs must be either 1 or 2");
-      if (advertisedIps.size() == 1) {
-        nodeRecordBuilder.address(
-            advertisedIps.get(0),
-            discoConfig.getAdvertisedUdpPort(),
-            p2pConfig.getAdvertisedPort());
-      } else {
-        // IPv4 and IPv6 (dual-stack)
+      if (p2pConfig.isDualStackConfigured()) {
         advertisedIps.forEach(
             advertisedIp -> {
               final IPVersion ipVersion = IPVersionResolver.resolve(advertisedIp);
@@ -143,6 +129,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
                   };
               nodeRecordBuilder.address(advertisedIp, advertisedUdpPort, advertisedTcpPort);
             });
+      } else {
+        nodeRecordBuilder.address(
+            advertisedIps.get(0),
+            discoConfig.getAdvertisedUdpPort(),
+            p2pConfig.getAdvertisedPort());
       }
     }
     final NodeRecord localNodeRecord = nodeRecordBuilder.build();
@@ -172,15 +163,14 @@ public class DiscV5Service extends Service implements DiscoveryService {
     } else {
       return (oldRecord, newAddress) -> {
         final int newTcpPort;
-        if (p2pConfig.getNetworkInterfaces().size() == 1) {
-          newTcpPort = p2pConfig.getAdvertisedPort();
-        } else {
-          // IPv4 and IPv6 (dual-stack)
+        if (p2pConfig.isDualStackConfigured()) {
           newTcpPort =
               switch (IPVersionResolver.resolve(newAddress)) {
                 case IP_V4 -> p2pConfig.getAdvertisedPort();
                 case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
               };
+        } else {
+          newTcpPort = p2pConfig.getAdvertisedPort();
         }
         return Optional.of(
             oldRecord.withNewAddress(newAddress, Optional.of(newTcpPort), localNodePrivateKey));

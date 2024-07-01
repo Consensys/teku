@@ -64,8 +64,7 @@ public class BeaconNodeServiceController extends ServiceController {
         new NatService(
             tekuConfig.natConfiguration(),
             networkConfig.getListenPort(),
-            // // IPv4 and IPv6 (dual-stack)
-            networkConfig.getNetworkInterfaces().size() == 2
+            networkConfig.isDualStackConfigured()
                 ? Optional.of(networkConfig.getListenPortIpv6())
                 : Optional.empty(),
             tekuConfig.discovery().isDiscoveryEnabled()));
