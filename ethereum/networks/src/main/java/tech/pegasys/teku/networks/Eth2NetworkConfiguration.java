@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -46,6 +48,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfiguration {
+  private static final Logger LOG = LogManager.getLogger();
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
@@ -157,6 +160,13 @@ public class Eth2NetworkConfiguration {
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
+
+    LOG.debug(
+        "P2P async queue - {} threads, max queue size {} ", asyncP2pMaxThreads, asyncP2pMaxQueue);
+    LOG.debug(
+        "P2p beacon chain queue - {} threads, max queue size {} ",
+        asyncBeaconChainMaxThreads,
+        asyncBeaconChainMaxQueue);
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -551,6 +561,13 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder asyncP2pMaxQueueIfDefault(final Integer asyncP2pMaxQueue) {
+      if (this.asyncP2pMaxQueue == DEFAULT_ASYNC_P2P_MAX_QUEUE) {
+        return asyncP2pMaxQueue(asyncP2pMaxQueue);
+      }
+      return this;
+    }
+
     public Builder asyncBeaconChainMaxThreads(final int asyncBeaconChainMaxThreads) {
       this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
       return this;
@@ -558,6 +575,13 @@ public class Eth2NetworkConfiguration {
 
     public Builder asyncBeaconChainMaxQueue(final int asyncBeaconChainMaxQueue) {
       this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
+      return this;
+    }
+
+    public Builder asyncBeaconChainMaxQueueIfDefault(final int asyncBeaconChainMaxQueue) {
+      if (this.asyncBeaconChainMaxQueue == DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) {
+        return asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue);
+      }
       return this;
     }
 

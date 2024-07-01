@@ -54,6 +54,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED =
       true;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 40_000;
+  public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS = 60_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
@@ -195,6 +196,9 @@ public class ValidatorConfig {
     this.isLocalSlashingProtectionSynchronizedModeEnabled =
         isLocalSlashingProtectionSynchronizedModeEnabled;
     this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
+
+    LOG.debug(
+        "Executor queue - {} threads, max queue size {} ", executorThreads, executorMaxQueueSize);
   }
 
   public static Builder builder() {
@@ -649,6 +653,13 @@ public class ValidatorConfig {
 
     public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
       this.executorMaxQueueSize = executorMaxQueueSize;
+      return this;
+    }
+
+    public Builder executorMaxQueueSizeIfDefault(final int executorMaxQueueSize) {
+      if (this.executorMaxQueueSize == DEFAULT_EXECUTOR_MAX_QUEUE_SIZE) {
+        this.executorMaxQueueSize(executorMaxQueueSize);
+      }
       return this;
     }
 
