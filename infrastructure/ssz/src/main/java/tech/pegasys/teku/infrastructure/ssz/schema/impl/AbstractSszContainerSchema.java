@@ -69,12 +69,12 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     }
   }
 
-  protected static <T extends SszData> NamedSchema<T> namedSchema(
+  public static <T extends SszData> NamedSchema<T> namedSchema(
       final SszFieldName fieldName, final SszSchema<T> schema) {
     return namedSchema(fieldName.getSszFieldName(), schema);
   }
 
-  protected static <T extends SszData> NamedSchema<T> namedSchema(
+  public static <T extends SszData> NamedSchema<T> namedSchema(
       final String fieldName, final SszSchema<T> schema) {
     return new NamedSchema<>(fieldName, schema);
   }

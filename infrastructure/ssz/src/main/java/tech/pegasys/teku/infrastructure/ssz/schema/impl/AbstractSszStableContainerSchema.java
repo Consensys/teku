@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
@@ -23,6 +25,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszStableContainerTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
@@ -41,55 +45,24 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
 
-  public static List<? extends NamedIndexedSchema<?>> continuousActiveNamedSchemas(
-      final List<? extends NamedSchema<?>> namedSchemas) {
-    return IntStream.range(0, namedSchemas.size())
-        .mapToObj(index -> NamedIndexedSchema.of(index, namedSchemas.get(index)))
-        .toList();
-  }
-
-  public static List<? extends NamedIndexedSchema<?>> continuousActiveSchemas(
-      final SszSchema<?>... schemas) {
-    return IntStream.range(0, schemas.length)
-        .mapToObj(index -> new NamedIndexedSchema<>("field-" + index, index, schemas[index]))
-        .toList();
-  }
-
-  public static class NamedIndexedSchema<T extends SszData> extends NamedSchema<T> {
-    private final int index;
-
-    protected NamedIndexedSchema(final String name, final int index, final SszSchema<T> schema) {
-      super(name, schema);
-      this.index = index;
-    }
-
-    protected static <T extends SszData> NamedIndexedSchema<T> of(
-        final int index, final NamedSchema<T> schema) {
-      return new NamedIndexedSchema<>(schema.getName(), index, schema.getSchema());
-    }
-
-    public int getIndex() {
-      return index;
-    }
-  }
-
-  public static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
-      final SszFieldName fieldName, final int index, final SszSchema<T> schema) {
-    return namedIndexedSchema(fieldName.getSszFieldName(), index, schema);
-  }
-
-  public static <T extends SszData> NamedIndexedSchema<T> namedIndexedSchema(
-      final String fieldName, final int index, final SszSchema<T> schema) {
-    return new NamedIndexedSchema<>(fieldName, index, schema);
-  }
-
   public AbstractSszStableContainerSchema(
       final String name,
-      final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas,
+      final List<NamedSchema<?>> definedChildrenSchemas,
       final int maxFieldCount) {
-    super(name, definedChildrenSchemas, Set.of(), definedChildrenSchemas.stream().map(NamedIndexedSchema::getIndex).collect(Collectors.toUnmodifiableSet()), maxFieldCount);
+    super(name, definedChildrenSchemas, Set.of(), IntSet.of(IntStream.range(0, definedChildrenSchemas.size()).toArray()), maxFieldCount);
 
     this.jsonTypeDefinition = SszStableContainerTypeDefinition.createFor(this);
+  }
+
+  @Override
+  int sszSerializeActiveFields(final TreeNode node, final SszWriter writer) {
+    return getActiveFieldsSchema().sszSerializeTree(node,writer);
+  }
+
+  @Override
+  SszBitvector sszDeserializeActiveFieldsTree(final SszReader reader) {
+    final SszReader activeFieldsReader = reader.slice(getActiveFieldsSchema().getSszFixedPartSize());
+    return getActiveFieldsSchema().sszDeserialize(activeFieldsReader);
   }
 
   @Override

@@ -15,12 +15,12 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.CONTAINER_G_INDEX;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -29,12 +29,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.json.SszProfileTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszStableContainerTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -47,52 +47,54 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
     extends AbstractSszContainerWithOptionalSchema<C> implements SszProfileSchema<C> {
 
   private final IntList activeFieldIndicesCache;
-  private final SszBitvector activeFields;
+  private final SszBitvector requiredFields;
+  private final Optional<SszBitvector> optionalFields;
+  private final Optional<SszBitvectorSchema<SszBitvector>> optionalFieldsSchema;
   private final SszStableContainerSchema<? extends SszStableContainer> stableContainer;
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   public AbstractSszProfileSchema(
       final String name,
       final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema,
-      final Set<Integer> activeFieldIndices) {
-    super(name, prepareSchemas(stableContainerSchema, activeFieldIndices));
+      final Set<Integer> requiredFieldIndices,
+      final Set<Integer> optionalFieldIndices) {
+    super(name, stableContainerSchema.getDefinedChildrenSchemas(),requiredFieldIndices, optionalFieldIndices, stableContainerSchema.getMaxFieldCount());
+if(optionalFieldIndices.size() > 0) {
+    optionalFieldsSchema = Optional.of(SszBitvectorSchema.create(optionalFieldIndices.size()));
+} else {
+  optionalFieldsSchema = Optional.empty();
+}
+
+    optionalFields = optionalFieldsSchema.map(s -> s.ofBits(optionalFieldIndices));
+
+
 
     this.stableContainer = stableContainerSchema;
     this.activeFieldIndicesCache =
         IntList.of(
-            activeFieldIndices.stream()
+            requiredFieldIndices.stream()
                 .sorted(Comparator.naturalOrder())
-                .mapToInt(index -> getEffectiveChildIndex(index, stableContainerSchema))
+                    .mapToInt(i-> i)
                 .toArray());
-    this.activeFields = getActiveFieldsSchema().ofBits(activeFieldIndices);
-    this.jsonTypeDefinition = SszProfileTypeDefinition.createFor(this);
+    this.requiredFields = getActiveFieldsSchema().ofBits(requiredFieldIndices);
+    this.jsonTypeDefinition = null; //SszStableContainerTypeDefinition.createFor(this);
   }
 
-  private static int getEffectiveChildIndex(
-      final int index,
-      final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema) {
-    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas =
-        stableContainerSchema.getDefinedChildrenSchemas();
-    checkArgument(index >= 0 && index < definedChildrenSchemas.size(), "Index out of bounds");
-
-    return definedChildrenSchemas.get(index).getIndex();
-  }
-
-  private static List<? extends NamedSchema<?>> prepareSchemas(
-      final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
-      final Set<Integer> activeFieldIndices) {
-    return stableContainer.getDefinedChildrenSchemas().stream()
-        .map(
-            namedIndexedSchema -> {
-              final int index = namedIndexedSchema.getIndex();
-              if (activeFieldIndices.contains(index)) {
-                return namedIndexedSchema;
-              }
-              return new NamedIndexedSchema<>(
-                  "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
-            })
-        .toList();
-  }
+//  private static List<? extends NamedSchema<?>> prepareSchemas(
+//      final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
+//      final Set<Integer> activeFieldIndices) {
+//    return stableContainer.getDefinedChildrenSchemas().stream()
+//        .map(
+//            namedIndexedSchema -> {
+//              final int index = namedIndexedSchema.getIndex();
+//              if (activeFieldIndices.contains(index)) {
+//                return namedIndexedSchema;
+//              }
+//              return new NamedIndexedSchema<>(
+//                  "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
+//            })
+//        .toList();
+//  }
 
   @Override
   public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
@@ -106,26 +108,34 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
 
   @Override
   public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
-    checkArgument(fieldValues.size() == activeFields.getBitCount(), "Wrong number of filed values");
+    checkArgument(fieldValues.size() == requiredFields.getBitCount(), "Wrong number of filed values");
     final int allFieldsSize = Math.toIntExact(getMaxLength());
     final List<SszData> allFields = new ArrayList<>(allFieldsSize);
 
     for (int index = 0, fieldIndex = 0; index < allFieldsSize; index++) {
-      allFields.add(activeFields.getBit(index) ? fieldValues.get(fieldIndex++) : SszNone.INSTANCE);
+      allFields.add(requiredFields.getBit(index) ? fieldValues.get(fieldIndex++) : SszNone.INSTANCE);
     }
 
     return BranchNode.create(
-        super.createTreeFromFieldValues(allFields), activeFields.getBackingNode());
+        super.createTreeFromFieldValues(allFields), requiredFields.getBackingNode());
   }
 
   @Override
-  public TreeNode sszDeserializeTree(final SszReader reader) {
-    return BranchNode.create(super.sszDeserializeTree(reader), activeFields.getBackingNode());
+  int sszSerializeActiveFields(final TreeNode node, final SszWriter writer) {
+    checkArgument(optionalFieldsSchema.isPresent());
+    return optionalFieldsSchema.get().sszSerializeTree(node,writer);
+  }
+
+  @Override
+  SszBitvector sszDeserializeActiveFieldsTree(final SszReader reader) {
+    checkArgument(optionalFieldsSchema.isPresent());
+    final SszReader activeFieldsReader = reader.slice(optionalFieldsSchema.get().getSszFixedPartSize());
+    return optionalFieldsSchema.get().sszDeserialize(activeFieldsReader);
   }
 
   @Override
   public TreeNode getDefaultTree() {
-    return BranchNode.create(super.getDefaultTree(), activeFields.getBackingNode());
+    return BranchNode.create(super.getDefaultTree(), requiredFields.getBackingNode());
   }
 
   @Override
@@ -182,7 +192,7 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
             lastUsefulGIndex,
             this::loadChildNode);
 
-    return BranchNode.create(containerTree, activeFields.getBackingNode());
+    return BranchNode.create(containerTree, requiredFields.getBackingNode());
   }
 
   private TreeNode loadChildNode(
@@ -193,7 +203,7 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
 
   @Override
   public SszBitvector getActiveFields() {
-    return activeFields;
+    return requiredFields;
   }
 
   @Override

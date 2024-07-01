@@ -15,7 +15,8 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.namedIndexedSchema;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
+
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -35,18 +36,18 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AbstractSszStableContainerSchemaTest {
   static final int MAX_SHAPE_FIELD_COUNT = 4;
 
-  static final List<NamedIndexedSchema<?>> SHAPE_SCHEMAS =
+  static final List<NamedSchema<?>> SHAPE_SCHEMAS =
       List.of(
-          namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
-          namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
+              namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
+              namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
+              namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
 
   static final int SIDE_INDEX = 0;
   static final int COLOR_INDEX = 1;
@@ -125,7 +126,7 @@ public class AbstractSszStableContainerSchemaTest {
 
   private static final SszProfileSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
-          "Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES) {
+          "Circle", SHAPE_STABLE_CONTAINER_SCHEMA, CIRCLE_SCHEMA_INDICES, Set.of()) {
         @Override
         public CircleProfile createFromBackingNode(final TreeNode node) {
           return new CircleProfile(this, node);
@@ -134,7 +135,7 @@ public class AbstractSszStableContainerSchemaTest {
 
   private static final SszProfileSchema<SquareProfile> SQUARE_PROFILE_SCHEMA =
       new AbstractSszProfileSchema<>(
-          "Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES) {
+          "Square", SHAPE_STABLE_CONTAINER_SCHEMA, SQUARE_SCHEMA_INDICES, Set.of()) {
         @Override
         public SquareProfile createFromBackingNode(final TreeNode node) {
           return new SquareProfile(this, node);

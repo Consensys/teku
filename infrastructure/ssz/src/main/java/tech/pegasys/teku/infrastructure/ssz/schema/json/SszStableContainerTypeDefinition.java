@@ -19,10 +19,9 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefin
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 
 public class SszStableContainerTypeDefinition {
 
@@ -34,25 +33,23 @@ public class SszStableContainerTypeDefinition {
         .name(schema.getContainerName())
         .initializer(() -> new StableContainerBuilder<>(schema))
         .finisher(StableContainerBuilder::build);
-    final List<? extends NamedIndexedSchema<?>> definedChildrenSchemas =
+    final List<? extends NamedSchema<?>> definedChildrenSchemas =
         schema.getDefinedChildrenSchemas();
-    for (NamedIndexedSchema<?> schemaChild : definedChildrenSchemas) {
-      addField(schema, builder, schemaChild.getName(), schemaChild.getIndex());
+
+    for(int index = 0; index < definedChildrenSchemas.size(); index++) {
+      final NamedSchema<?> schemaChild = definedChildrenSchemas.get(index);
+      addField(builder,schemaChild.getSchema(), schemaChild.getName(), index);
     }
     return builder.build();
   }
 
-  private static <DataT extends SszStableContainer, SchemaT extends SszStableContainerSchema<DataT>>
+  private static <DataT extends SszStableContainer>
       void addField(
-          final SchemaT schema,
           final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>>
               builder,
+          final SszSchema<?> childSchema,
           final String childName,
           final int fieldIndex) {
-    final SszSchema<?> childSchema = schema.getChildSchema(fieldIndex);
-    if (childSchema.equals(SszPrimitiveSchemas.NONE_SCHEMA)) {
-      return;
-    }
     builder.withOptionalField(
         childName,
         childSchema.getJsonTypeDefinition(),

@@ -37,10 +37,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RandomSszDataGenerator {
@@ -116,15 +116,14 @@ public class RandomSszDataGenerator {
       }
     } else if (schema instanceof AbstractSszStableContainerSchema<?> containerSchema) {
 
-      final List<? extends NamedIndexedSchema<?>> definedFieldSchemas =
+      final List<NamedSchema<?>> definedFieldSchemas =
           containerSchema.toStableContainerSchema().orElseThrow().getDefinedChildrenSchemas();
       return Stream.generate(
           () -> {
             List<Optional<? extends SszData>> children =
                 definedFieldSchemas.stream()
                     .map(
-                        definedFieldSchema ->
-                            containerSchema.getChildSchema(definedFieldSchema.getIndex()))
+                            NamedSchema::getSchema)
                     .map(this::randomStableContainerData)
                     .collect(Collectors.toList());
             return (T) containerSchema.createFromOptionalFieldValues(children);

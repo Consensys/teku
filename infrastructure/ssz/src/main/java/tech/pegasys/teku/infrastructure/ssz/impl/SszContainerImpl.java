@@ -48,8 +48,8 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
   }
 
   @Override
-  public AbstractSszContainerSchema<?> getSchema() {
-    return (AbstractSszContainerSchema<?>) super.getSchema();
+  public SszContainerSchema<?> getSchema() {
+    return (SszContainerSchema<?>) super.getSchema();
   }
 
   @Override

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.namedIndexedSchema;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +24,9 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
+
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -33,11 +34,11 @@ public class TestStableContainers {
 
   static final int MAX_SHAPE_FIELD_COUNT = 4;
 
-  static final List<NamedIndexedSchema<?>> SHAPE_SCHEMAS =
+  static final List<NamedSchema<?>> SHAPE_SCHEMAS =
       List.of(
-          namedIndexedSchema("side", 0, SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedIndexedSchema("color", 1, SszPrimitiveSchemas.UINT8_SCHEMA),
-          namedIndexedSchema("radius", 2, SszPrimitiveSchemas.UINT64_SCHEMA));
+          namedSchema("side",  SszPrimitiveSchemas.UINT64_SCHEMA),
+              namedSchema("color",  SszPrimitiveSchemas.UINT8_SCHEMA),
+              namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
 
   static final int SIDE_INDEX = 0;
   static final int COLOR_INDEX = 1;
@@ -83,12 +84,12 @@ public class TestStableContainers {
         }
       };
 
-  static final List<NamedIndexedSchema<?>> NESTED_SCHEMAS =
+  static final List<NamedSchema<?>> NESTED_SCHEMAS =
       List.of(
-          namedIndexedSchema(
-              "bytevector", 0, SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
-          namedIndexedSchema("shapeStableContainer", 1, SHAPE_STABLE_CONTAINER_SCHEMA),
-          namedIndexedSchema("testContainer", 2, TestContainer.SSZ_SCHEMA));
+          namedSchema(
+              "bytevector",  SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
+              namedSchema("shapeStableContainer",  SHAPE_STABLE_CONTAINER_SCHEMA),
+              namedSchema("testContainer",  TestContainer.SSZ_SCHEMA));
 
   public static final SszStableContainerSchema<ShapeStableContainer>
       NESTED_STABLE_CONTAINER_SCHEMA =

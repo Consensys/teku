@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.NamedIndexedSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public interface SszStableContainerSchema<C extends SszStableContainer>
@@ -34,7 +33,7 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
    */
   static <C extends SszStableContainer> SszStableContainerSchema<C> create(
       final String name,
-      final List<NamedIndexedSchema<?>> activeChildrenSchemas,
+      final List<NamedSchema<?>> activeChildrenSchemas,
       final int maxFieldCount,
       final BiFunction<SszStableContainerSchema<C>, TreeNode, C> instanceCtor) {
     return new AbstractSszStableContainerSchema<>(name, activeChildrenSchemas, maxFieldCount) {
@@ -50,7 +49,7 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
    * be used in profile schema creation only. There will be actual ssz type for it.
    */
   static <C extends SszStableContainer> SszStableContainerSchema<C> createForProfileOnly(
-      final int maxFieldCount, final List<? extends NamedIndexedSchema<?>> activeChildrenSchemas) {
+      final int maxFieldCount, final List<NamedSchema<?>> activeChildrenSchemas) {
     return new AbstractSszStableContainerSchema<>("", activeChildrenSchemas, maxFieldCount) {
       @Override
       public C createFromBackingNode(final TreeNode node) {
