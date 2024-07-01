@@ -313,14 +313,14 @@ public class NetworkConfig {
     }
 
     public Builder listenPortIpv6(final int listenPortIpv6) {
-      validatePort(listenPortIpv6, "-Xp2p-port-ipv6");
+      validatePort(listenPortIpv6, "--Xp2p-port-ipv6");
       this.listenPortIpv6 = listenPortIpv6;
       return this;
     }
 
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
-      advertisedPort.ifPresent(port -> validatePort(port, "--p2p-advertised-ip"));
+      advertisedPort.ifPresent(port -> validatePort(port, "--p2p-advertised-port"));
       this.advertisedPort = advertisedPort;
       return this;
     }
