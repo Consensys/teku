@@ -56,6 +56,27 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private long dataStorageFrequency = StorageConfiguration.DEFAULT_STORAGE_FREQUENCY;
 
   @CommandLine.Option(
+      names = {"--Xdata-storage-archive-finalized-states-retained"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Sets the period of retained finalized states in disk, in slots. "
+              + "This option is ignored if --data-storage-mode is set to PRUNE or MINIMAL",
+      arity = "1",
+      hidden = true)
+  private long dataStorageRetainedEpochs = StorageConfiguration.DEFAULT_STORAGE_RETAINED_SLOTS;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-state-pruning-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Interval in seconds between finalized state pruning",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private long statePruningIntervalSeconds =
+      StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL.toSeconds();
+
+  @CommandLine.Option(
       names = {"--Xdata-storage-create-db-version"},
       paramLabel = "<VERSION>",
       description = "Database version to create",
@@ -180,7 +201,9 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .blockPruningLimit(blockPruningLimit)
                 .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
-                .blobsPruningLimit(blobsPruningLimit));
+                .blobsPruningLimit(blobsPruningLimit)
+                .retainedSlots(dataStorageRetainedEpochs)
+                .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds)));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())

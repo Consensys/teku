@@ -432,6 +432,86 @@ public class KvStoreDatabase implements Database {
     }
   }
 
+  @Override
+  public Optional<UInt64> pruneFinalizedStates(
+      final Optional<UInt64> lastPrunedSlot, final UInt64 lastSlotToPrune, final long pruneLimit) {
+    final Optional<UInt64> earliestFinalizedStateSlot;
+
+    if (lastPrunedSlot.isEmpty()) {
+      earliestFinalizedStateSlot = dao.getEarliestFinalizedStateSlot();
+    } else {
+      earliestFinalizedStateSlot = lastPrunedSlot;
+    }
+
+    LOG.debug(
+        "Earliest finalized state stored is for slot {}",
+        () ->
+            earliestFinalizedStateSlot.isEmpty()
+                ? "EMPTY"
+                : earliestFinalizedStateSlot.get().toString());
+    return earliestFinalizedStateSlot
+        .map(uInt64 -> pruneFinalizedStateForSlots(uInt64, lastSlotToPrune, pruneLimit))
+        .or(() -> Optional.of(lastSlotToPrune));
+  }
+
+  private UInt64 pruneFinalizedStateForSlots(
+      final UInt64 earliestFinalizedStateSlot,
+      final UInt64 lastSlotToPrune,
+      final long pruneLimit) {
+    final List<Pair<UInt64, Optional<Bytes32>>> slotsToPruneStateFor;
+
+    try (final Stream<UInt64> stream =
+        dao.streamFinalizedStateSlots(earliestFinalizedStateSlot, lastSlotToPrune)) {
+      slotsToPruneStateFor =
+          // should probably create a cache (populated when adding finalized states)
+          // to query from rather than hit the db
+          stream
+              .limit(pruneLimit)
+              .map(
+                  slot ->
+                      Pair.of(
+                          slot,
+                          dao.getFinalizedBlockAtSlot(slot).map(SignedBeaconBlock::getStateRoot)))
+              .toList();
+    }
+    if (slotsToPruneStateFor.isEmpty()) {
+      LOG.debug("No finalized state to prune up to {} slot", lastSlotToPrune);
+      return lastSlotToPrune;
+    }
+
+    final UInt64 lastPrunedBlockSlot =
+        slotsToPruneStateFor.get(slotsToPruneStateFor.size() - 1).getLeft();
+
+    deleteFinalizedStatesForSlot(slotsToPruneStateFor);
+
+    return slotsToPruneStateFor.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
+  }
+
+  private void deleteFinalizedStatesForSlot(
+      final List<Pair<UInt64, Optional<Bytes32>>> slotsToPruneStateFor) {
+    if (!slotsToPruneStateFor.isEmpty()) {
+      if (slotsToPruneStateFor.size() < 20) {
+        LOG.debug(
+            "Received finalized slots ({}) to delete state",
+            () -> slotsToPruneStateFor.stream().map(Pair::getLeft).toList());
+      } else {
+        LOG.debug("Received {} finalized slots to delete state", slotsToPruneStateFor.size());
+      }
+
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        slotsToPruneStateFor.forEach(
+            pair -> {
+              updater.deleteFinalizedState(pair.getLeft());
+              pair.getRight().ifPresent(updater::deleteFinalizedStateRoot);
+            });
+
+        updater.commit();
+      } catch (Exception e) {
+        LOG.error("Failed to prune finalized states", e);
+      }
+    }
+  }
+
   protected void updateHotBlocks(
       final HotUpdater updater,
       final Map<Bytes32, BlockAndCheckpoints> addedBlocks,
