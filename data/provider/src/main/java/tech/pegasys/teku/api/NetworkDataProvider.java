@@ -62,8 +62,7 @@ public class NetworkDataProvider {
   }
 
   public List<String> getDiscoveryAddresses() {
-    Optional<String> discoveryAddressOptional = network.getDiscoveryAddress();
-    return discoveryAddressOptional.map(List::of).orElseGet(List::of);
+    return network.getDiscoveryAddresses().orElseGet(List::of);
   }
 
   public MetadataMessage getMetadata() {

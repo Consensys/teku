@@ -91,8 +91,8 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
-    return network.getDiscoveryAddress();
+  public Optional<List<String>> getDiscoveryAddresses() {
+    return network.getDiscoveryAddresses();
   }
 
   @Override

@@ -18,6 +18,7 @@ import static java.util.Collections.emptyList;
 import com.google.common.base.Preconditions;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -260,21 +261,31 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
-    // TODO: https://github.com/Consensys/teku/issues/8069
+  public Optional<List<String>> getDiscoveryAddresses() {
     final NodeRecord nodeRecord = discoverySystem.getLocalNodeRecord();
-    if (nodeRecord.getUdpAddress().isEmpty()) {
+    final List<InetSocketAddress> updAddresses = new ArrayList<>();
+    nodeRecord.getUdpAddress().ifPresent(updAddresses::add);
+    nodeRecord.getUdp6Address().ifPresent(updAddresses::add);
+    if (updAddresses.isEmpty()) {
       return Optional.empty();
     }
-    final DiscoveryPeer discoveryPeer =
-        new DiscoveryPeer(
-            (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
-            nodeRecord.getUdpAddress().get(),
-            Optional.empty(),
-            currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
-            currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault());
-
-    return Optional.of(MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString());
+    final List<String> discoveryAddresses =
+        updAddresses.stream()
+            .map(
+                updAddress -> {
+                  final DiscoveryPeer discoveryPeer =
+                      new DiscoveryPeer(
+                          (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
+                          updAddress,
+                          Optional.empty(),
+                          currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
+                          currentSchemaDefinitionsSupplier
+                              .getSyncnetsENRFieldSchema()
+                              .getDefault());
+                  return MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString();
+                })
+            .toList();
+    return Optional.of(discoveryAddresses);
   }
 
   @Override
