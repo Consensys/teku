@@ -26,11 +26,11 @@ public class NatService extends Service {
 
   NatService(
       final int p2pPort,
-      final Optional<Integer> p2pPortipv6,
+      final Optional<Integer> p2pPortIpv6,
       final boolean isDiscoveryEnabled,
       final Optional<NatManager> maybeNatManager) {
     this.p2pPort = p2pPort;
-    this.p2pPortIpv6 = p2pPortipv6;
+    this.p2pPortIpv6 = p2pPortIpv6;
     this.isDiscoveryEnabled = isDiscoveryEnabled;
     this.maybeNatManager = maybeNatManager;
   }
