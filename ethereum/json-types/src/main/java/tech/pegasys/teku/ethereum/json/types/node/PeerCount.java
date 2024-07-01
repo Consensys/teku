@@ -33,19 +33,19 @@ public class PeerCount {
     this.disconnecting = disconnecting;
   }
 
-  UInt64 getDisconnected() {
+  public UInt64 getDisconnected() {
     return disconnected;
   }
 
-  UInt64 getConnecting() {
+  public UInt64 getConnecting() {
     return connecting;
   }
 
-  UInt64 getConnected() {
+  public UInt64 getConnected() {
     return connected;
   }
 
-  UInt64 getDisconnecting() {
+  public UInt64 getDisconnecting() {
     return disconnecting;
   }
 
