@@ -43,8 +43,8 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataFileDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataFileDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -80,7 +80,7 @@ public interface NetworkModule {
       OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       KZG kzg,
       WeakSubjectivityValidator weakSubjectivityValidator,
-      P2PDebugDataDumper p2pDebugDataDumper) {
+      DebugDataDumper p2pDebugDataDumper) {
     if (!p2pConfig.getNetworkConfig().isEnabled()) {
       return new NoOpEth2P2PNetwork(spec);
     }
@@ -141,9 +141,9 @@ public interface NetworkModule {
 
   @Provides
   @Singleton
-  static P2PDebugDataDumper p2pDebugDataDumper(P2PConfig p2pConfig, DataDirLayout dataDirLayout) {
-    return p2pConfig.isP2pDumpsToFileEnabled()
-        ? new P2PDebugDataFileDumper(dataDirLayout.getDebugDataDirectory())
-        : P2PDebugDataDumper.NOOP;
+  static DebugDataDumper debugDataDumper(DataDirLayout dataDirLayout) {
+    return dataDirLayout.isDebugDataDumpingEnabled()
+        ? new DebugDataFileDumper(dataDirLayout.getDebugDataDirectory())
+        : DebugDataDumper.NOOP;
   }
 }

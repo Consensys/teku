@@ -80,7 +80,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -240,7 +240,7 @@ public class TekuConfigurationTest {
         OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
         KZG kzg,
         WeakSubjectivityValidator weakSubjectivityValidator,
-        P2PDebugDataDumper p2pDebugDataDumper) {
+        DebugDataDumper p2pDebugDataDumper) {
 
       return NetworkModule.eth2P2PNetwork(
           spec,
@@ -268,8 +268,8 @@ public class TekuConfigurationTest {
 
     @Provides
     @Singleton
-    static P2PDebugDataDumper p2pDebugDataDumper(P2PConfig p2pConfig, DataDirLayout dataDirLayout) {
-      return NetworkModule.p2pDebugDataDumper(p2pConfig, dataDirLayout);
+    static DebugDataDumper p2pDebugDataDumper(DataDirLayout dataDirLayout) {
+      return NetworkModule.debugDataDumper(dataDirLayout);
     }
   }
 }

@@ -107,8 +107,7 @@ public interface ValidatorModule {
           executionClientVersionChannelSubscriber) {
     GraffitiBuilder graffitiBuilder =
         new GraffitiBuilder(
-            validatorConfig.getClientGraffitiAppendFormat(),
-            validatorConfig.getGraffitiProvider().get());
+            validatorConfig.getClientGraffitiAppendFormat());
     executionClientVersionChannelSubscriber.subscribe(graffitiBuilder);
     return graffitiBuilder;
   }

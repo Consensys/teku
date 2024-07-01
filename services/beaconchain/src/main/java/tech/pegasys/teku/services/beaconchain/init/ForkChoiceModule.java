@@ -33,7 +33,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
-import tech.pegasys.teku.statetransition.util.P2PDebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 @Module
@@ -50,7 +50,7 @@ public interface ForkChoiceModule {
       BlobSidecarManager blobSidecarManager,
       ForkChoiceNotifier forkChoiceNotifier,
       ForkChoiceStateProvider forkChoiceStateProvider,
-      P2PDebugDataDumper p2pDebugDataDumper,
+      DebugDataDumper debugDataDumper,
       TickProcessor tickProcessor,
       MergeTransitionBlockValidator mergeTransitionBlockValidator) {
     return new ForkChoice(
@@ -63,7 +63,7 @@ public interface ForkChoiceModule {
         tickProcessor,
         mergeTransitionBlockValidator,
         eth2NetworkConfig.isForkChoiceLateBlockReorgEnabled(),
-        p2pDebugDataDumper,
+        debugDataDumper,
         metricsSystem);
   }
 
