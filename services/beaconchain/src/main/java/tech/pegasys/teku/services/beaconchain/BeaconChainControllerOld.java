@@ -216,7 +216,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainController extends Service implements BeaconChainControllerFacade {
+public class BeaconChainControllerOld extends Service implements BeaconChainControllerFacade {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -292,7 +292,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected IntSupplier rejectedExecutionCountSupplier;
   protected DebugDataDumper debugDataDumper;
 
-  public BeaconChainController(
+  public BeaconChainControllerOld(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     final Eth2NetworkConfiguration eth2NetworkConfig = beaconConfig.eth2NetworkConfig();
     final DataDirLayout dataDirLayout = serviceConfig.getDataDirLayout();
@@ -406,11 +406,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected SafeFuture<?> initialize() {
+
+    timerService = new TimerService(this::onTick);
+
     final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
             eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
-    timerService = new TimerService(this::onTick);
 
     final CombinedStorageChannel combinedStorageChannel =
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
@@ -889,7 +891,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initExecutionLayerBlockProductionManager() {
     LOG.debug("BeaconChainController.initExecutionLayerBlockProductionManager()");
     this.executionLayerBlockProductionManager =
-        ExecutionLayerBlockManagerFactory.create(executionLayer, eventChannels);
+        ExecutionLayerBlockManagerFactory.create(
+            executionLayer, eventChannels.createSubscriber(SlotEventsChannel.class));
   }
 
   public void initRewardCalculator() {

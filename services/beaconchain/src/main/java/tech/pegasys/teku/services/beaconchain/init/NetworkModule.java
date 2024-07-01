@@ -1,0 +1,149 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.services.beaconchain.init;
+
+import dagger.Module;
+import dagger.Provides;
+import java.util.Optional;
+import javax.inject.Singleton;
+import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.services.beaconchain.init.AsyncRunnerModule.NetworkAsyncRunner;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
+import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.statetransition.util.DebugDataFileDumper;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.KeyValueStore;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+
+@Module
+public interface NetworkModule {
+
+  @Provides
+  static Eth2P2PNetworkBuilder eth2P2PNetworkBuilder() {
+    return Eth2P2PNetworkBuilder.create();
+  }
+
+  @Provides
+  @Singleton
+  static Eth2P2PNetwork eth2P2PNetwork(
+      final Spec spec,
+      final P2PConfig p2pConfig,
+      final MetricsSystem metricsSystem,
+      @NetworkAsyncRunner final AsyncRunner networkAsyncRunner,
+      final TimeProvider timeProvider,
+      final EventChannels eventChannels,
+      final KeyValueStore<String, Bytes> keyValueStore,
+      final Eth2P2PNetworkBuilder eth2P2PNetworkBuilder,
+      final CombinedChainDataClient combinedChainDataClient,
+      final BlockManager blockManager,
+      final BlobSidecarManager blobSidecarManager,
+      final AttestationManager attestationManager,
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
+      final SyncCommitteeMessagePool syncCommitteeMessagePool,
+      final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
+      final KZG kzg,
+      final WeakSubjectivityValidator weakSubjectivityValidator,
+      final DebugDataDumper p2pDebugDataDumper) {
+    if (!p2pConfig.getNetworkConfig().isEnabled()) {
+      return new NoOpEth2P2PNetwork(spec);
+    }
+
+    DiscoveryConfig discoveryConfig = p2pConfig.getDiscoveryConfig();
+    final Optional<Integer> maybeUdpPort =
+        discoveryConfig.isDiscoveryEnabled()
+            ? Optional.of(discoveryConfig.getListenUdpPort())
+            : Optional.empty();
+
+    PortAvailability.checkPortsAvailable(
+        p2pConfig.getNetworkConfig().getListenPort(), maybeUdpPort);
+
+    // TODO adopt Dagger instead of eth2P2PNetworkBuilder()
+    Eth2P2PNetwork p2pNetwork =
+        eth2P2PNetworkBuilder
+            .config(p2pConfig)
+            .eventChannels(eventChannels)
+            .combinedChainDataClient(combinedChainDataClient)
+            .gossipedBlockProcessor(blockManager::validateAndImportBlock)
+            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
+            .gossipedAttestationProcessor(attestationManager::addAttestation)
+            .gossipedAggregateProcessor(attestationManager::addAggregate)
+            .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
+            .gossipedProposerSlashingProcessor(proposerSlashingPool::addRemote)
+            .gossipedVoluntaryExitProcessor(voluntaryExitPool::addRemote)
+            .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
+            .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
+            .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
+            .processedAttestationSubscriptionProvider(
+                attestationManager::subscribeToAttestationsToSend)
+            .metricsSystem(metricsSystem)
+            .timeProvider(timeProvider)
+            .asyncRunner(networkAsyncRunner)
+            .keyValueStore(keyValueStore)
+            .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
+            .specProvider(spec)
+            .kzg(kzg)
+            .recordMessageArrival(true)
+            .p2pDebugDataDumper(p2pDebugDataDumper)
+            .build();
+
+    syncCommitteeMessagePool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeMessage));
+    syncCommitteeContributionPool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeContribution));
+    proposerSlashingPool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishProposerSlashing));
+    attesterSlashingPool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishAttesterSlashing));
+    voluntaryExitPool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
+    blsToExecutionChangePool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
+
+    return p2pNetwork;
+  }
+
+  @Provides
+  @Singleton
+  static DebugDataDumper debugDataDumper(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.isDebugDataDumpingEnabled()
+        ? new DebugDataFileDumper(dataDirLayout.getDebugDataDirectory())
+        : DebugDataDumper.NOOP;
+  }
+}

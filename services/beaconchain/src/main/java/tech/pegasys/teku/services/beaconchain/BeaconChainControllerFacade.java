@@ -19,6 +19,7 @@ import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -29,7 +30,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
  * might be changed in any version in backward incompatible way
  */
-public interface BeaconChainControllerFacade {
+public interface BeaconChainControllerFacade extends ServiceFacade {
 
   Spec getSpec();
 

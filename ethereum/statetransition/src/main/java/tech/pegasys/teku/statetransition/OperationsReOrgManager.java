@@ -43,7 +43,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final AttestationManager attestationManager;
   private final AggregatingAttestationPool attestationPool;
-  private final MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool;
+  private final OperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool;
   private final RecentChainData recentChainData;
 
   public OperationsReOrgManager(
@@ -52,7 +52,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
       final OperationPool<SignedVoluntaryExit> exitPool,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
-      final MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool,
+      final OperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool,
       final RecentChainData recentChainData) {
     this.exitPool = exitPool;
     this.proposerSlashingPool = proposerSlashingPool;

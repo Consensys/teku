@@ -34,6 +34,9 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:client')
 
+  implementation 'com.google.dagger:dagger:2.51.1'
+  annotationProcessor 'com.google.dagger:dagger-compiler:2.51.1'
+
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
@@ -43,4 +46,12 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
 
   implementation 'io.libp2p:jvm-libp2p'
+}
+
+tasks.withType(JavaCompile) {
+  options.compilerArgs += [
+          '-Adagger.formatGeneratedSource=enabled',
+          '-Adagger.fullBindingGraphValidation=ERROR',
+          '-Adagger.ignoreProvisionKeyWildcards=ENABLED'
+  ]
 }
