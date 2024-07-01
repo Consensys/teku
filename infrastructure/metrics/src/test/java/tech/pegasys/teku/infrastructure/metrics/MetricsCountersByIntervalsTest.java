@@ -73,6 +73,7 @@ public class MetricsCountersByIntervalsTest {
         metricsSystem
             .streamObservations(CATEGORY)
             .filter(ob -> ob.getMetricName().equals(COUNTER_NAME))
+            .filter(ob -> !ob.getLabels().contains("created"))
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
 
     assertThat(values)
@@ -117,6 +118,7 @@ public class MetricsCountersByIntervalsTest {
         metricsSystem
             .streamObservations(CATEGORY)
             .filter(ob -> ob.getMetricName().equals(COUNTER_NAME))
+            .filter(ob -> !ob.getLabels().contains("created"))
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
 
     assertThat(values).containsOnly(entry(List.of("label1Val1", "label2UnknownVal", "[0,∞)"), 1d));
@@ -141,6 +143,7 @@ public class MetricsCountersByIntervalsTest {
         metricsSystem
             .streamObservations(CATEGORY)
             .filter(ob -> ob.getMetricName().equals(COUNTER_NAME))
+            .filter(ob -> !ob.getLabels().contains("created"))
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
 
     assertThat(values).containsOnly(entry(List.of("a", "b", "[0,∞)"), 0d));

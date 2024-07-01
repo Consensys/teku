@@ -59,7 +59,7 @@ class ExternalSignerTestUtil {
       final long failCount,
       final long timeoutCount) {
     final StubCounter labelledCounter =
-        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "external_signer_requests");
+        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "external_signer_requests_total");
     assertThat(labelledCounter.getValue("success")).isEqualTo(successCount);
     assertThat(labelledCounter.getValue("failed")).isEqualTo(failCount);
     assertThat(labelledCounter.getValue("timeout")).isEqualTo(timeoutCount);

@@ -2,20 +2,13 @@
 
 ## Upcoming Breaking Changes
 
-- Next release will introduce a breaking change to Teku's metrics. This is due to some metrics changing names after a library upgrade.
-We recommend all users of the `Teku - Detailed` dashboard to upgrade to version [Revision 12](https://grafana.com/api/dashboards/16737/revisions/12/download)  
-as soon as possible. Documentation with all metrics that have been renamed will be provided.
-- Next release will require Java 21. The current release is compatible, please consider upgrading before the next release.
-- From the next release, you will need to explicitly set `--data-storage-mode=(prune|archive)` unless you're using minimal data-storage-mode (which is the default behaviour).
-
 ## Current Releases
-
-For information on changes in released versions of Teku, see
-the [releases page](https://github.com/Consensys/teku/releases).
 
 ## Unreleased Changes
 
 ### Breaking Changes
+
+- Updated counter metrics to incorporate the suffix `_total`. If you are using a custom dashboard to monitor Teku metrics, you might need to update the metrics manually when breaking changes are introduced. For more information, see [Update metrics](../../how-to/monitor/update-metrics.md).
 
 ### Additions and Improvements
 

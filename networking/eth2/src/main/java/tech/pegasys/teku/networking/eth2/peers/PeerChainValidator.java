@@ -59,7 +59,7 @@ public class PeerChainValidator {
     final LabelledMetric<Counter> validationCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
-            "peer_chain_validation_attempts",
+            "peer_chain_validation_attempts_total",
             "Number of peers chain verification has been performed on",
             "status");
     validationStartedCounter = validationCounter.labels("started");

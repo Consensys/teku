@@ -35,14 +35,14 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
     consumedEventCounter =
         metricsSystem.createLabelledCounter(
             EVENTBUS,
-            "event_consumed_count",
+            "event_consumed_count_total",
             "Total number of events consumed",
             "channel",
             "subscriber");
     failedEventCounter =
         metricsSystem.createLabelledCounter(
             EVENTBUS,
-            "event_failed_count",
+            "event_failed_count_total",
             "Number of events which failed to be processed",
             "channel",
             "subscriber");

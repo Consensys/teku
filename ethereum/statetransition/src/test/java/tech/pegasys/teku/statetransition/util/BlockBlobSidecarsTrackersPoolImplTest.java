@@ -1066,7 +1066,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   private void assertStats(final String type, final String subType, final double count) {
-    assertThat(getMetricsValues("block_blobs_trackers_pool_stats").get(List.of(type, subType)))
+    assertThat(
+            getMetricsValues("block_blobs_trackers_pool_stats_total").get(List.of(type, subType)))
         .isEqualTo(count);
   }
 

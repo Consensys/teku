@@ -197,7 +197,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     final LabelledMetric<Counter> versionCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            VersionProvider.CLIENT_IDENTITY + "_version",
+            VersionProvider.CLIENT_IDENTITY + "_version_total",
             "Teku version in use",
             "version");
     versionCounter.labels(version).inc();

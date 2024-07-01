@@ -63,7 +63,7 @@ public class PoolFactory {
     this.blockBlobSidecarsTrackersPoolStats =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            "block_blobs_trackers_pool_stats",
+            "block_blobs_trackers_pool_stats_total",
             "Block-blobs trackers pool statistics",
             "type",
             "subtype");

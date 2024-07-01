@@ -85,7 +85,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            "execution_payload_source",
+            "execution_payload_source_total",
             "Counter recording the source of the execution payload during block production",
             "source",
             "fallback_reason");
