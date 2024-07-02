@@ -103,6 +103,10 @@ public class NetworkConfig {
     return networkInterfaces;
   }
 
+  public boolean isDualStackConfigured() {
+    return networkInterfaces.size() == 2;
+  }
+
   public List<String> getAdvertisedIps() {
     return advertisedIps.orElse(networkInterfaces).stream()
         .map(this::resolveAnyLocalAddress)
