@@ -145,6 +145,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Bytes4 fuluForkVersion;
   private final UInt64 fuluForkEpoch;
 
+  private final boolean blsDisabled;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -224,7 +226,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Bytes4 electraForkVersion,
       final UInt64 electraForkEpoch,
       final Bytes4 fuluForkVersion,
-      final UInt64 fuluForkEpoch) {
+      final UInt64 fuluForkEpoch,
+      final boolean blsDisabled) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -305,6 +308,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.electraForkEpoch = electraForkEpoch;
     this.fuluForkVersion = fuluForkVersion;
     this.fuluForkEpoch = fuluForkEpoch;
+    this.blsDisabled = blsDisabled;
   }
 
   @Override
@@ -635,6 +639,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getReorgParentWeightThreshold() {
     return reorgParentWeightThreshold;
+  }
+
+  @Override
+  public boolean isBlsDisabled() {
+    return blsDisabled;
   }
 
   @Override

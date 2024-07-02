@@ -160,6 +160,9 @@ public class SpecConfigBuilder {
           .appendBuilder(electraBuilder)
           .appendBuilder(fuluBuilder);
 
+  // Allows to handle spec tests with BLS disabled
+  private Boolean blsDisabled = false;
+
   public SpecConfigAndParent<SpecConfigFulu> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
@@ -262,7 +265,8 @@ public class SpecConfigBuilder {
                 electraForkVersion,
                 electraForkEpoch,
                 fuluForkVersion,
-                fuluForkEpoch));
+                fuluForkEpoch,
+                blsDisabled));
 
     return builderChain.build(config);
   }
@@ -904,6 +908,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder fuluBuilder(final Consumer<FuluBuilder> consumer) {
     builderChain.withBuilder(FuluBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder blsDisabled(final Boolean blsDisabled) {
+    this.blsDisabled = blsDisabled;
     return this;
   }
 }

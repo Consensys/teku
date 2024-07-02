@@ -191,6 +191,9 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getReorgParentWeightThreshold();
 
+  // Handle spec tests with BLS disabled
+  boolean isBlsDisabled();
+
   // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();

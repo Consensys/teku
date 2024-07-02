@@ -143,7 +143,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             signedBlock,
             blockSlotState,
             indexedAttestationCache,
-            signatureVerifier,
+            // Handle spec test run with BLS disabled
+            specConfig.isBlsDisabled() ? BLSSignatureVerifier.NO_OP : signatureVerifier,
             payloadExecutor);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
