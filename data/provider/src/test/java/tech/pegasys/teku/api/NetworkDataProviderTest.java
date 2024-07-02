@@ -36,7 +36,7 @@ public class NetworkDataProviderTest {
     final Eth2Peer peer2 = mock(Eth2Peer.class);
     when(p2pNetwork.streamPeers()).thenReturn(Stream.of(peer1, peer2));
 
-    assertThat(network.getPeerCount()).isEqualTo(2);
+    assertThat(network.countPeers()).isEqualTo(2);
     verify(p2pNetwork).streamPeers();
   }
 
@@ -45,7 +45,7 @@ public class NetworkDataProviderTest {
     final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
     when(p2pNetwork.streamPeers()).thenReturn(Stream.of());
 
-    assertThat(network.getPeerCount()).isEqualTo(0);
+    assertThat(network.countPeers()).isEqualTo(0);
     verify(p2pNetwork).streamPeers();
   }
 
