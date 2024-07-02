@@ -52,13 +52,17 @@ public class TestDefinition {
   }
 
   public Spec getSpec() {
+    return getSpec(Boolean.FALSE);
+  }
+
+  public Spec getSpec(Boolean blsDisabled) {
     if (spec == null) {
-      createSpec();
+      createSpec(blsDisabled);
     }
     return spec;
   }
 
-  private void createSpec() {
+  private void createSpec(Boolean blsDisabled) {
     final Eth2Network network =
         switch (configName) {
           case TestSpecConfig.MAINNET -> Eth2Network.MAINNET;
@@ -75,7 +79,7 @@ public class TestDefinition {
           case TestFork.ELECTRA -> SpecMilestone.ELECTRA;
           default -> throw new IllegalArgumentException("Unknown fork: " + fork);
         };
-    spec = TestSpecFactory.create(milestone, network);
+    spec = TestSpecFactory.create(milestone, network, builder -> builder.blsDisabled(blsDisabled));
   }
 
   public String getTestType() {
