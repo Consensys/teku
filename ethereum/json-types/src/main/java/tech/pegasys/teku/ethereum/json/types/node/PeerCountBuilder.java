@@ -48,9 +48,9 @@ public class PeerCountBuilder {
           .withField("data", PEER_COUNT_DATA_TYPE, Function.identity(), PeerCountBuilder::peerCount)
           .build();
 
-  private UInt64 disconnected;
+  private UInt64 disconnected = UInt64.ZERO;
   private UInt64 connecting = UInt64.ZERO;
-  private UInt64 connected;
+  private UInt64 connected = UInt64.ZERO;
   private UInt64 disconnecting = UInt64.ZERO;
 
   public PeerCountBuilder disconnected(final UInt64 disconnected) {
