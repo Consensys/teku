@@ -303,13 +303,24 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public void onTick(
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
+    onTick(currentTimeMillis, performanceRecord, false);
+  }
+
+  public void onTick(
+      final UInt64 currentTimeMillis,
+      final Optional<TickProcessingPerformance> performanceRecord,
+      final boolean discardDeferredAttestations) {
     final UpdatableStore store = recentChainData.getStore();
     final UInt64 slotAtStartOfTick = spec.getCurrentSlot(store);
     tickProcessor.onTick(currentTimeMillis).join();
     performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
     final UInt64 currentSlot = spec.getCurrentSlot(store);
     if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
-      applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
+      if (discardDeferredAttestations) {
+        discardDeferredAttestations(currentSlot);
+      } else {
+        applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
+      }
     }
     performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
   }
@@ -834,7 +845,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .forEach(
             validatorIndex -> {
               final VoteTracker voteTracker = transaction.getVote(validatorIndex);
-              transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
+              if (!voteTracker.isEquivocating()) {
+                transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
+              }
             });
   }
 
@@ -875,6 +888,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return SafeFuture.COMPLETE;
     }
     return applyDeferredAttestations(deferredVoteUpdates);
+  }
+
+  private void discardDeferredAttestations(final UInt64 slot) {
+    deferredAttestations.prune(slot);
   }
 
   private ForkChoiceStrategy getForkChoiceStrategy() {
