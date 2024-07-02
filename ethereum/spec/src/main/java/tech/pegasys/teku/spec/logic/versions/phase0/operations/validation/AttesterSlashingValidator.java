@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.logic.common.operations.validation.Operatio
 
 import java.util.Optional;
 import java.util.Set;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -48,14 +49,16 @@ public class AttesterSlashingValidator
   @Override
   public Optional<OperationInvalidReason> validate(
       final Fork fork, final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return validate(fork, state, attesterSlashing, SlashedIndicesCaptor.NOOP);
+    return validate(
+        fork, state, attesterSlashing, SlashedIndicesCaptor.NOOP, BLSSignatureVerifier.SIMPLE);
   }
 
   public Optional<OperationInvalidReason> validate(
       final Fork fork,
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
-      final SlashedIndicesCaptor slashedIndicesCaptor) {
+      final SlashedIndicesCaptor slashedIndicesCaptor,
+      final BLSSignatureVerifier signatureVerifier) {
     IndexedAttestation attestation1 = attesterSlashing.getAttestation1();
     IndexedAttestation attestation2 = attesterSlashing.getAttestation2();
     return firstOf(
@@ -66,11 +69,15 @@ public class AttesterSlashingValidator
                 AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE),
         () ->
             check(
-                attestationUtil.isValidIndexedAttestation(fork, state, attestation1).isSuccessful(),
+                attestationUtil
+                    .isValidIndexedAttestation(fork, state, attestation1, signatureVerifier)
+                    .isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_1_INVALID),
         () ->
             check(
-                attestationUtil.isValidIndexedAttestation(fork, state, attestation2).isSuccessful(),
+                attestationUtil
+                    .isValidIndexedAttestation(fork, state, attestation2, signatureVerifier)
+                    .isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_2_INVALID),
         () -> {
           boolean slashedAny = false;
