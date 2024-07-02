@@ -15,10 +15,13 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.util.List;
 import java.util.Optional;
+
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public interface SszProfileSchema<C extends SszProfile> extends SszContainerSchema<C> {
   SszStableContainerSchema<? extends SszStableContainer> getStableContainerSchema();
@@ -49,6 +52,12 @@ public interface SszProfileSchema<C extends SszProfile> extends SszContainerSche
 
   default SszSchema<?> getNthActiveFieldSchema(final int nthActiveField) {
     return getChildSchema(getNthActiveFieldIndex(nthActiveField));
+  }
+
+  TreeNode createTreeFromOptionalFieldValues(List<Optional<? extends SszData>> fieldValues);
+
+  default C createFromOptionalFieldValues(final List<Optional<? extends SszData>> fieldValues) {
+    return createFromBackingNode(createTreeFromOptionalFieldValues(fieldValues));
   }
 
   @Override

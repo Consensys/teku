@@ -55,8 +55,8 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   }
 
   @Override
-  int sszSerializeActiveFields(final TreeNode node, final SszWriter writer) {
-    return getActiveFieldsSchema().sszSerializeTree(node,writer);
+  int sszSerializeActiveFields(final SszBitvector activeFieldsBitvector, final SszWriter writer) {
+    return getActiveFieldsSchema().sszSerializeTree(activeFieldsBitvector.getBackingNode(),writer);
   }
 
   @Override

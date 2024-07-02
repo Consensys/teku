@@ -197,12 +197,12 @@ public abstract class AbstractSszContainerWithOptionalSchema<C extends SszContai
     }
 
     final int fieldsCount = getFieldsCount();
-    checkArgument(fieldValues.size() < fieldsCount, "Wrong number of filed values");
+    checkArgument(fieldValues.size() <= fieldsCount, "Wrong number of filed values");
 
     final List<SszData> allFields = new ArrayList<>(fieldsCount);
 
     for (int index = 0, fieldIndex = 0; index < fieldsCount; index++) {
-      if (fieldIndex >= fieldValues.size()) {
+      if (fieldIndex >= fieldValues.size() || !requiredFields.getBit(index)) {
         allFields.add(SszNone.INSTANCE);
       } else {
         allFields.add(fieldValues.get(fieldIndex++));
@@ -308,13 +308,13 @@ public abstract class AbstractSszContainerWithOptionalSchema<C extends SszContai
     }
   }
 
-  abstract int sszSerializeActiveFields(final TreeNode node, final SszWriter writer);
+  abstract int sszSerializeActiveFields(final SszBitvector activeFieldsBitvector, final SszWriter writer);
 
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     final SszBitvector activeFieldsBitvector = getActiveFieldsBitvector(node);
     // we won't write active field when no optional fields are permitted
-    final int activeFieldsWroteBytes = optionalFields.getBitCount() > 0 ? sszSerializeActiveFields(activeFieldsBitvector.getBackingNode(), writer) : 0;
+    final int activeFieldsWroteBytes = optionalFields.getBitCount() > 0 ? sszSerializeActiveFields(activeFieldsBitvector, writer) : 0;
 
     final TreeNode containerTree = node.get(CONTAINER_G_INDEX);
 
@@ -326,7 +326,7 @@ public abstract class AbstractSszContainerWithOptionalSchema<C extends SszContai
       final int activeFieldIndex = activeIndicesIterator.next();
 
       final TreeNode childSubtree =
-          containerTree.get(getChildGeneralizedIndex(activeFieldIndex));
+          containerTree.get(SszContainerSchema.super.getChildGeneralizedIndex(activeFieldIndex));
       final SszSchema<?> childType = getChildSchema(activeFieldIndex);
       if (childType.isFixedSize()) {
         int size = childType.sszSerializeTree(childSubtree, writer);
@@ -346,7 +346,7 @@ public abstract class AbstractSszContainerWithOptionalSchema<C extends SszContai
               SszSchema<?> childType = getChildSchema(activeFieldIndex);
               if (!childType.isFixedSize()) {
                 final TreeNode childSubtree =
-                    containerTree.get(getChildGeneralizedIndex(activeFieldIndex));
+                    containerTree.get(SszContainerSchema.super.getChildGeneralizedIndex(activeFieldIndex));
                 int size = childType.sszSerializeTree(childSubtree, writer);
                 assert size == variableSizes[activeFieldIndex];
               }
@@ -376,7 +376,7 @@ public abstract class AbstractSszContainerWithOptionalSchema<C extends SszContai
       return BranchNode.create(
               deserializeContainer(reader, activeFields), activeFields.getBackingNode());
     }
-    return deserializeContainer(reader, requiredFields);
+    return BranchNode.create(deserializeContainer(reader, requiredFields), requiredFields.getBackingNode());
   }
 
   private TreeNode deserializeContainer(final SszReader reader, final SszBitvector activeFields) {

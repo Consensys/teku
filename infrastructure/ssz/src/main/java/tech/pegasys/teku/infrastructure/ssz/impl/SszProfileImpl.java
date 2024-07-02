@@ -27,17 +27,31 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszProfileImpl extends SszContainerImpl implements SszProfile {
 
+  private final SszBitvector activeFields;
+
   public SszProfileImpl(final SszProfileSchema<?> type) {
     super(type);
+    this.activeFields =
+            getSchema().toStableContainerSchema().orElseThrow().getDefaultActiveFields();
   }
 
   public SszProfileImpl(final SszProfileSchema<?> type, final TreeNode backingNode) {
     super(type, backingNode);
+    this.activeFields =
+            getSchema()
+                    .toStableContainerSchema()
+                    .orElseThrow()
+                    .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
   public SszProfileImpl(
       final SszProfileSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
     super(type, backingNode, cache);
+    this.activeFields =
+            getSchema()
+                    .toStableContainerSchema()
+                    .orElseThrow()
+                    .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
   public SszProfileImpl(final SszProfileSchema<?> type, final SszData... memberValues) {
@@ -54,6 +68,12 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
           type.getChildSchema(i),
           memberValues[i].getSchema());
     }
+
+    this.activeFields =
+            getSchema()
+                    .toStableContainerSchema()
+                    .orElseThrow()
+                    .getActiveFieldsBitvectorFromBackingNode(getBackingNode());
   }
 
   @Override
@@ -69,7 +89,7 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
   }
 
   public SszBitvector getActiveFields() {
-    return getSchema().toProfileSchema().orElseThrow().getActiveFields();
+    return activeFields;
   }
 
   private static IntCache<SszData> createCache(final SszData... memberValues) {
@@ -83,11 +103,13 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
   @Override
   public String toString() {
     return getSchema().getContainerName()
-        + "{"
-        + getActiveFields()
+            + "{activeFields="
+            + activeFields
+            + ", "
+            + activeFields
             .streamAllSetBits()
             .mapToObj(idx -> getSchema().getFieldNames().get(idx) + "=" + get(idx))
             .collect(Collectors.joining(", "))
-        + "}";
+            + "}";
   }
 }

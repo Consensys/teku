@@ -13,4 +13,4 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-public interface SszProfile extends SszContainer {}
+public interface SszProfile extends SszStableContainer {}

@@ -16,12 +16,16 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -48,7 +52,9 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
 
   private final IntList activeFieldIndicesCache;
   private final SszBitvector requiredFields;
-  private final Optional<SszBitvector> optionalFields;
+  private final IntList optionalFieldIndicesCache;
+  private final Integer[] optionalMapping;
+  private final Set<Integer> optionalFieldIndices;
   private final Optional<SszBitvectorSchema<SszBitvector>> optionalFieldsSchema;
   private final SszStableContainerSchema<? extends SszStableContainer> stableContainer;
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
@@ -59,14 +65,23 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
       final Set<Integer> requiredFieldIndices,
       final Set<Integer> optionalFieldIndices) {
     super(name, stableContainerSchema.getDefinedChildrenSchemas(),requiredFieldIndices, optionalFieldIndices, stableContainerSchema.getMaxFieldCount());
+    this.optionalFieldIndices = optionalFieldIndices;
 if(optionalFieldIndices.size() > 0) {
     optionalFieldsSchema = Optional.of(SszBitvectorSchema.create(optionalFieldIndices.size()));
+
+  this.optionalFieldIndicesCache = IntList.of(optionalFieldIndices.stream()
+          .sorted(Comparator.naturalOrder()).mapToInt(i -> i).toArray());
+
+
+  this.optionalMapping = new Integer[optionalFieldIndicesCache.getInt(optionalFieldIndices.size()-1)+1];
+  optionalFieldIndices.stream()
+          .sorted(Comparator.naturalOrder()).forEach(i -> optionalMapping[i] = optionalFieldIndicesCache.indexOf((int)i));
+
 } else {
-  optionalFieldsSchema = Optional.empty();
+  this.optionalFieldsSchema = Optional.empty();
+  this.optionalMapping= new Integer[0];
+  this.optionalFieldIndicesCache = IntList.of();
 }
-
-    optionalFields = optionalFieldsSchema.map(s -> s.ofBits(optionalFieldIndices));
-
 
 
     this.stableContainer = stableContainerSchema;
@@ -106,31 +121,35 @@ if(optionalFieldIndices.size() > 0) {
     return stableContainer;
   }
 
+//  @Override
+//  public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
+//    checkArgument(fieldValues.size() == requiredFields.getBitCount(), "Wrong number of filed values");
+//    final int allFieldsSize = Math.toIntExact(getMaxLength());
+//    final List<SszData> allFields = new ArrayList<>(allFieldsSize);
+//
+//    for (int index = 0, fieldIndex = 0; index < allFieldsSize; index++) {
+//      allFields.add(requiredFields.getBit(index) ? fieldValues.get(fieldIndex++) : SszNone.INSTANCE);
+//    }
+//
+//    return BranchNode.create(
+//        super.createTreeFromFieldValues(allFields), requiredFields.getBackingNode());
+//  }
+
   @Override
-  public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
-    checkArgument(fieldValues.size() == requiredFields.getBitCount(), "Wrong number of filed values");
-    final int allFieldsSize = Math.toIntExact(getMaxLength());
-    final List<SszData> allFields = new ArrayList<>(allFieldsSize);
-
-    for (int index = 0, fieldIndex = 0; index < allFieldsSize; index++) {
-      allFields.add(requiredFields.getBit(index) ? fieldValues.get(fieldIndex++) : SszNone.INSTANCE);
-    }
-
-    return BranchNode.create(
-        super.createTreeFromFieldValues(allFields), requiredFields.getBackingNode());
-  }
-
-  @Override
-  int sszSerializeActiveFields(final TreeNode node, final SszWriter writer) {
+  int sszSerializeActiveFields(final SszBitvector activeFieldsBitvector, final SszWriter writer) {
     checkArgument(optionalFieldsSchema.isPresent());
-    return optionalFieldsSchema.get().sszSerializeTree(node,writer);
+    final IntList a = new IntArrayList(optionalFieldIndices.size());
+    optionalFieldIndices.stream().filter(activeFieldsBitvector::getBit).map(i ->optionalMapping[i]).forEach(a::add);
+
+    return optionalFieldsSchema.get().sszSerializeTree(optionalFieldsSchema.get().ofBits(a).getBackingNode(),writer);
   }
 
   @Override
   SszBitvector sszDeserializeActiveFieldsTree(final SszReader reader) {
     checkArgument(optionalFieldsSchema.isPresent());
-    final SszReader activeFieldsReader = reader.slice(optionalFieldsSchema.get().getSszFixedPartSize());
-    return optionalFieldsSchema.get().sszDeserialize(activeFieldsReader);
+    final SszReader optionalFieldsReader = reader.slice(optionalFieldsSchema.get().getSszFixedPartSize());
+    final SszBitvector optionalFields = optionalFieldsSchema.get().sszDeserialize(optionalFieldsReader);
+    return getActiveFieldsSchema().ofBits(IntStream.concat(requiredFields.streamAllSetBits(), optionalFields.streamAllSetBits().map(optionalFieldIndicesCache::getInt)).toArray());
   }
 
   @Override
@@ -206,8 +225,8 @@ if(optionalFieldIndices.size() > 0) {
     return requiredFields;
   }
 
-  @Override
-  public long getChildGeneralizedIndex(final long elementIndex) {
-    return GIndexUtil.gIdxCompose(CONTAINER_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
-  }
+//  @Override
+//  public long getChildGeneralizedIndex(final long elementIndex) {
+//    return GIndexUtil.gIdxCompose(CONTAINER_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
+//  }
 }
