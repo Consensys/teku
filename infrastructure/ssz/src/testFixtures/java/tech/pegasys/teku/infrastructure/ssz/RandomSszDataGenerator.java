@@ -117,13 +117,12 @@ public class RandomSszDataGenerator {
     } else if (schema instanceof AbstractSszStableContainerSchema<?> containerSchema) {
 
       final List<NamedSchema<?>> definedFieldSchemas =
-          containerSchema.toStableContainerSchema().orElseThrow().getDefinedChildrenSchemas();
+          containerSchema.toStableContainerSchemaRequired().getChildrenNamedSchemas();
       return Stream.generate(
           () -> {
             List<Optional<? extends SszData>> children =
                 definedFieldSchemas.stream()
-                    .map(
-                            NamedSchema::getSchema)
+                    .map(NamedSchema::getSchema)
                     .map(this::randomStableContainerData)
                     .collect(Collectors.toList());
             return (T) containerSchema.createFromOptionalFieldValues(children);
@@ -133,8 +132,9 @@ public class RandomSszDataGenerator {
           (AbstractSszProfileSchema<SszProfile>) schema;
       return Stream.generate(
           () -> {
+            // TODO fix?
             List<SszData> children =
-                containerSchema.getActiveChildrenSchemas().stream()
+                containerSchema.getFieldSchemas().stream()
                     .map(this::randomData)
                     .collect(Collectors.toList());
             return (T) containerSchema.createFromFieldValues(children);

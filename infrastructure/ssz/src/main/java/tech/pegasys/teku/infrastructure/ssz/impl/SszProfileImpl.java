@@ -15,43 +15,26 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszProfileImpl extends SszContainerImpl implements SszProfile {
-
-  private final SszBitvector activeFields;
+public class SszProfileImpl extends SszStableContainerBaseImpl implements SszProfile {
 
   public SszProfileImpl(final SszProfileSchema<?> type) {
     super(type);
-    this.activeFields =
-            getSchema().toStableContainerSchema().orElseThrow().getDefaultActiveFields();
   }
 
   public SszProfileImpl(final SszProfileSchema<?> type, final TreeNode backingNode) {
     super(type, backingNode);
-    this.activeFields =
-            getSchema()
-                    .toStableContainerSchema()
-                    .orElseThrow()
-                    .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
   public SszProfileImpl(
       final SszProfileSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
     super(type, backingNode, cache);
-    this.activeFields =
-            getSchema()
-                    .toStableContainerSchema()
-                    .orElseThrow()
-                    .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
   public SszProfileImpl(final SszProfileSchema<?> type, final SszData... memberValues) {
@@ -68,28 +51,6 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
           type.getChildSchema(i),
           memberValues[i].getSchema());
     }
-
-    this.activeFields =
-            getSchema()
-                    .toStableContainerSchema()
-                    .orElseThrow()
-                    .getActiveFieldsBitvectorFromBackingNode(getBackingNode());
-  }
-
-  @Override
-  protected void checkIndex(final int index) {
-    super.checkIndex(index);
-    if (!isFieldActive(index)) {
-      throw new NoSuchElementException("Index " + index + " is not active in this profile");
-    }
-  }
-
-  public boolean isFieldActive(final int index) {
-    return getActiveFields().getBit(index);
-  }
-
-  public SszBitvector getActiveFields() {
-    return activeFields;
   }
 
   private static IntCache<SszData> createCache(final SszData... memberValues) {
@@ -98,18 +59,5 @@ public class SszProfileImpl extends SszContainerImpl implements SszProfile {
       cache.invalidateWithNewValue(i, memberValues[i]);
     }
     return cache;
-  }
-
-  @Override
-  public String toString() {
-    return getSchema().getContainerName()
-            + "{activeFields="
-            + activeFields
-            + ", "
-            + activeFields
-            .streamAllSetBits()
-            .mapToObj(idx -> getSchema().getFieldNames().get(idx) + "=" + get(idx))
-            .collect(Collectors.joining(", "))
-            + "}";
   }
 }

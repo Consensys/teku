@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
-
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -36,9 +35,9 @@ public class TestStableContainers {
 
   static final List<NamedSchema<?>> SHAPE_SCHEMAS =
       List.of(
-          namedSchema("side",  SszPrimitiveSchemas.UINT64_SCHEMA),
-              namedSchema("color",  SszPrimitiveSchemas.UINT8_SCHEMA),
-              namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
+          namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
+          namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
 
   static final int SIDE_INDEX = 0;
   static final int COLOR_INDEX = 1;
@@ -86,10 +85,9 @@ public class TestStableContainers {
 
   static final List<NamedSchema<?>> NESTED_SCHEMAS =
       List.of(
-          namedSchema(
-              "bytevector",  SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
-              namedSchema("shapeStableContainer",  SHAPE_STABLE_CONTAINER_SCHEMA),
-              namedSchema("testContainer",  TestContainer.SSZ_SCHEMA));
+          namedSchema("bytevector", SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
+          namedSchema("shapeStableContainer", SHAPE_STABLE_CONTAINER_SCHEMA),
+          namedSchema("testContainer", TestContainer.SSZ_SCHEMA));
 
   public static final SszStableContainerSchema<ShapeStableContainer>
       NESTED_STABLE_CONTAINER_SCHEMA =

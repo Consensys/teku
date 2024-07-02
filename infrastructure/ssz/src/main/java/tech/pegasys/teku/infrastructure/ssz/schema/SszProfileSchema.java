@@ -13,61 +13,25 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
-import java.util.List;
-import java.util.Optional;
-
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public interface SszProfileSchema<C extends SszProfile> extends SszContainerSchema<C> {
+public interface SszProfileSchema<C extends SszProfile> extends SszStableContainerBaseSchema<C> {
   SszStableContainerSchema<? extends SszStableContainer> getStableContainerSchema();
 
   default SszBitvectorSchema<SszBitvector> getActiveFieldsSchema() {
     return getStableContainerSchema().getActiveFieldsSchema();
   }
 
-  int getActiveFieldCount();
-
-  SszBitvector getActiveFields();
-
-  default List<? extends SszSchema<?>> getActiveChildrenSchemas() {
-    return getActiveFields().streamAllSetBits().mapToObj(this::getChildSchema).toList();
-  }
-
-  default boolean isFieldActive(final int index) {
-    return getActiveFields().getBit(index);
-  }
-
-  /**
-   * This method resolves the index of the nth active field.
-   *
-   * @param nthActiveField Nth active field
-   * @return index
-   */
-  int getNthActiveFieldIndex(int nthActiveField);
-
-  default SszSchema<?> getNthActiveFieldSchema(final int nthActiveField) {
-    return getChildSchema(getNthActiveFieldIndex(nthActiveField));
-  }
-
-  TreeNode createTreeFromOptionalFieldValues(List<Optional<? extends SszData>> fieldValues);
-
-  default C createFromOptionalFieldValues(final List<Optional<? extends SszData>> fieldValues) {
-    return createFromBackingNode(createTreeFromOptionalFieldValues(fieldValues));
+  @Override
+  default SszStableContainerSchema<?> toStableContainerSchemaRequired() {
+    return getStableContainerSchema();
   }
 
   @Override
-  default Optional<SszStableContainerSchema<?>> toStableContainerSchema() {
-    return Optional.of(getStableContainerSchema());
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  default Optional<SszProfileSchema<?>> toProfileSchema() {
-    return Optional.of(this);
+  default SszProfileSchema<?> toProfileSchemaRequired() {
+    return this;
   }
 }

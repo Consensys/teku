@@ -14,18 +14,14 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BiFunction;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public interface SszStableContainerSchema<C extends SszStableContainer>
-    extends SszContainerSchema<C> {
+    extends SszStableContainerBaseSchema<C> {
 
   /**
    * Creates a new {@link SszStableContainer} schema with specified field schemas and container
@@ -59,24 +55,8 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
     };
   }
 
-  List<NamedSchema<?>> getDefinedChildrenSchemas();
-
-  int getMaxFieldCount();
-
-  SszBitvectorSchema<SszBitvector> getActiveFieldsSchema();
-
-  TreeNode createTreeFromOptionalFieldValues(List<Optional<? extends SszData>> fieldValues);
-
-  default C createFromOptionalFieldValues(final List<Optional<? extends SszData>> fieldValues) {
-    return createFromBackingNode(createTreeFromOptionalFieldValues(fieldValues));
-  }
-
-  SszBitvector getDefaultActiveFields();
-
-  SszBitvector getActiveFieldsBitvectorFromBackingNode(TreeNode node);
-
   @Override
-  default Optional<SszStableContainerSchema<?>> toStableContainerSchema() {
-    return Optional.of(this);
+  default SszStableContainerSchema<?> toStableContainerSchemaRequired() {
+    return this;
   }
 }

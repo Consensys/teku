@@ -33,23 +33,20 @@ public class SszStableContainerTypeDefinition {
         .name(schema.getContainerName())
         .initializer(() -> new StableContainerBuilder<>(schema))
         .finisher(StableContainerBuilder::build);
-    final List<? extends NamedSchema<?>> definedChildrenSchemas =
-        schema.getDefinedChildrenSchemas();
+    final List<? extends NamedSchema<?>> definedChildrenSchemas = schema.getChildrenNamedSchemas();
 
-    for(int index = 0; index < definedChildrenSchemas.size(); index++) {
+    for (int index = 0; index < definedChildrenSchemas.size(); index++) {
       final NamedSchema<?> schemaChild = definedChildrenSchemas.get(index);
-      addField(builder,schemaChild.getSchema(), schemaChild.getName(), index);
+      addField(builder, schemaChild.getSchema(), schemaChild.getName(), index);
     }
     return builder.build();
   }
 
-  private static <DataT extends SszStableContainer>
-      void addField(
-          final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>>
-              builder,
-          final SszSchema<?> childSchema,
-          final String childName,
-          final int fieldIndex) {
+  private static <DataT extends SszStableContainer> void addField(
+      final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>> builder,
+      final SszSchema<?> childSchema,
+      final String childName,
+      final int fieldIndex) {
     builder.withOptionalField(
         childName,
         childSchema.getJsonTypeDefinition(),
@@ -65,8 +62,7 @@ public class SszStableContainerTypeDefinition {
     public StableContainerBuilder(final SszStableContainerSchema<DataT> schema) {
       this.schema = schema;
       this.values =
-          (Optional<? extends SszData>[])
-              new Optional<?>[schema.getDefinedChildrenSchemas().size()];
+          (Optional<? extends SszData>[]) new Optional<?>[schema.getChildrenNamedSchemas().size()];
     }
 
     public void setValue(final int childIndex, final Optional<? extends SszData> value) {

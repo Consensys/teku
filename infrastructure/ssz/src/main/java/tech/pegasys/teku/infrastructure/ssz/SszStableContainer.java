@@ -13,27 +13,4 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-
-public interface SszStableContainer extends SszContainer {
-  boolean isFieldActive(int index);
-
-  SszBitvector getActiveFields();
-
-  default Optional<SszData> getOptional(final int index) {
-    try {
-      return Optional.of(get(index));
-    } catch (final NoSuchElementException __) {
-      return Optional.empty();
-    }
-  }
-
-  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  // container is heterogeneous by its nature so making unsafe cast here
-  // is more convenient and is not less safe
-  default <C extends SszData> Optional<C> getAnyOptional(final int index) {
-    return (Optional<C>) getOptional(index);
-  }
-}
+public interface SszStableContainer extends SszStableContainerBase {}

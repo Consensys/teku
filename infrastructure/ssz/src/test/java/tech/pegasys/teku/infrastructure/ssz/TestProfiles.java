@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import java.util.List;
@@ -38,9 +37,9 @@ public class TestProfiles {
 
   static final List<NamedSchema<?>> SHAPE_SCHEMAS =
       List.of(
-              namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
-              namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
-              namedSchema("radius",  SszPrimitiveSchemas.UINT64_SCHEMA));
+          namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
+          namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
 
   static final int SIDE_INDEX = 0;
   static final int COLOR_INDEX = 1;
@@ -112,9 +111,7 @@ public class TestProfiles {
       extends AbstractSszStableContainerSchema<ShapeStableContainer> {
 
     public StableContainerSchema(
-        final String name,
-        final List<NamedSchema<?>> childrenSchemas,
-        final int maxFieldCount) {
+        final String name, final List<NamedSchema<?>> childrenSchemas, final int maxFieldCount) {
       super(name, childrenSchemas, maxFieldCount);
     }
 
