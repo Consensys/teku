@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import java.util.Optional;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -34,7 +35,8 @@ public interface OperationValidator {
       Fork fork,
       BeaconState state,
       AttesterSlashing attesterSlashing,
-      AttesterSlashingValidator.SlashedIndicesCaptor slashedIndicesCaptor);
+      AttesterSlashingValidator.SlashedIndicesCaptor slashedIndicesCaptor,
+      BLSSignatureVerifier signatureVerifier);
 
   Optional<OperationInvalidReason> validateProposerSlashing(
       Fork fork, BeaconState state, ProposerSlashing proposerSlashing);
