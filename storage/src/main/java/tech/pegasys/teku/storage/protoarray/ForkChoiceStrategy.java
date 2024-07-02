@@ -182,6 +182,23 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
+  public List<ProtoNodeData> getViableChainHeads() {
+    protoArrayLock.readLock().lock();
+    try {
+      return protoArray.getNodes().stream()
+          .filter(
+              protoNode ->
+                  protoNode.getBestChildIndex().isEmpty()
+                      && protoArray.nodeIsViableForHead(protoNode)
+                      && protoArray.isJustifiedRootOrDescendant(protoNode))
+          .map(ProtoNode::getBlockData)
+          .toList();
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   public ForkChoiceState getForkChoiceState(
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,

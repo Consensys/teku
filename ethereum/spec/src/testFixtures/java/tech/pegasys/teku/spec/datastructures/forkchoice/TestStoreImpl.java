@@ -447,6 +447,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
+    public List<ProtoNodeData> getViableChainHeads() {
+      return getChainHeads(false);
+    }
+
+    @Override
     public Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(final Bytes32 head) {
       return Optional.empty();
     }

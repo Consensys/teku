@@ -97,6 +97,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
         .orElse(Collections.emptyList());
   }
 
+  @Override
+  public List<ProtoNodeData> getViableChainHeads() {
+    return getChainHeads(false);
+  }
+
   private static ProtoNodeData asProtoNodeData(final SignedBlockAndState blockAndState) {
     return new ProtoNodeData(
         blockAndState.getSlot(),
