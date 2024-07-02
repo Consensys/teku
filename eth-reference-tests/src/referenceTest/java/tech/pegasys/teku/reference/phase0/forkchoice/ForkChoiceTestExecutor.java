@@ -17,15 +17,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.reference.BlsSetting.IGNORED;
+import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,6 +48,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.reference.BlsSetting;
 import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -53,12 +60,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
@@ -92,6 +102,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("sync/optimistic", new ForkChoiceTestExecutor())
           .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
+          // Fork choice generated test types
+          .put("fork_choice_generated/block_weight_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_generated/block_tree_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_generated/attester_slashing_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_generated/invalid_message_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_generated/block_cover_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_generated/shuffling_test", new ForkChoiceTestExecutor())
           .build();
 
   private final List<?> testsToSkip;
@@ -107,9 +124,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           "Test " + testDefinition.getDisplayName() + " has been ignored");
     }
 
-    // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
-    // tests actually have one, so we currently don't bother trying to load it.
-    final Spec spec = testDefinition.getSpec();
+    // Load `meta.yaml` and read the BLS setting
+    final ForkChoiceMetaData metaData = getMetaData(testDefinition);
+    final boolean blsDisabled = metaData.getBlsSetting() == IGNORED;
+    final Spec spec = testDefinition.getSpec(blsDisabled);
     final BeaconState anchorState =
         TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state" + SSZ_SNAPPY_EXTENSION);
     final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
@@ -197,7 +215,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         applyChecks(recentChainData, forkChoice, step);
 
       } else if (step.containsKey("tick")) {
-        forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")), Optional.empty());
+        forkChoice.onTick(secondsToMillis(getUInt64(step, "tick")), Optional.empty(), true);
         final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
         LOG.info("Current slot: {} Epoch: {}", currentSlot, spec.computeEpochAtSlot(currentSlot));
       } else if (step.containsKey("block")) {
@@ -279,14 +297,20 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final ForkChoice forkChoice,
       final Map<String, Object> step) {
     final String attestationName = get(step, "attestation");
+    final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final Attestation attestation =
         TestDataUtils.loadSsz(
             testDefinition,
             attestationName + SSZ_SNAPPY_EXTENSION,
             testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
     final Spec spec = testDefinition.getSpec();
-    assertThat(forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation)))
-        .isCompleted();
+    final SafeFuture<AttestationProcessingResult> result =
+        forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation));
+    assertThat(result).isCompleted();
+    AttestationProcessingResult processingResult = safeJoin(result);
+    assertThat(processingResult.isSuccessful())
+        .withFailMessage(processingResult.getInvalidReason())
+        .isEqualTo(valid);
   }
 
   private void applyAttesterSlashing(
@@ -483,6 +507,32 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             assertThat(expectedValidatorIsConnected).isTrue();
           }
 
+          case "viable_for_head_roots_and_weights" -> {
+            final List<Map<String, Object>> viableHeadRootsAndWeightsData = get(checks, checkType);
+            final Map<Bytes32, UInt64> viableHeadRootsAndWeights =
+                viableHeadRootsAndWeightsData.stream()
+                    .collect(
+                        Collectors.toMap(
+                            entry -> Bytes32.fromHexString((String) entry.get("root")),
+                            entry -> UInt64.valueOf(entry.get("weight").toString())));
+            List<ProtoNodeData> chainHeads =
+                recentChainData
+                    .getForkChoiceStrategy()
+                    .map(ReadOnlyForkChoiceStrategy::getViableChainHeads)
+                    .orElse(Collections.emptyList());
+            Set<Bytes32> actualViableHeadRoots =
+                chainHeads.stream().map(ProtoNodeData::getRoot).collect(Collectors.toSet());
+            assertThat(actualViableHeadRoots)
+                .describedAs("viable head roots")
+                .isEqualTo(viableHeadRootsAndWeights.keySet());
+
+            for (ProtoNodeData chainHead : chainHeads) {
+              assertThat(chainHead.getWeight())
+                  .describedAs("viable head weight")
+                  .isEqualTo(viableHeadRootsAndWeights.get(chainHead.getRoot()));
+            }
+          }
+
           default -> throw new UnsupportedOperationException(
               "Unsupported check type: " + checkType);
         }
@@ -533,5 +583,33 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private static Optional<Bytes32> getOptionallyBytes32(
       final Map<String, Object> yamlData, final String key) {
     return ForkChoiceTestExecutor.<String>getOptionally(yamlData, key).map(Bytes32::fromHexString);
+  }
+
+  private static ForkChoiceMetaData getMetaData(TestDefinition testDefinition) throws IOException {
+    final ForkChoiceMetaData metaData;
+    final Path metaPath = testDefinition.getTestDirectory().resolve("meta.yaml");
+    if (metaPath.toFile().exists()) {
+      metaData = loadYaml(testDefinition, "meta.yaml", ForkChoiceMetaData.class);
+    } else {
+      metaData = ForkChoiceMetaData.DEFAULT;
+    }
+
+    return metaData;
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private static class ForkChoiceMetaData {
+    static final ForkChoiceMetaData DEFAULT = new ForkChoiceMetaData(0);
+
+    private ForkChoiceMetaData(
+        @JsonProperty(value = "bls_setting", required = false, defaultValue = "0") int blsSetting) {
+      this.blsSetting = blsSetting;
+    }
+
+    private final int blsSetting;
+
+    public BlsSetting getBlsSetting() {
+      return BlsSetting.forCode(blsSetting);
+    }
   }
 }
