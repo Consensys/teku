@@ -145,6 +145,6 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
   }
 
   default SszProfileSchema<?> toProfileSchemaRequired() {
-    throw new UnsupportedOperationException("Not a StableContainer schema");
+    throw new UnsupportedOperationException("Not a Profile schema");
   }
 }

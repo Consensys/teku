@@ -18,14 +18,15 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
+import tech.pegasys.teku.infrastructure.ssz.SszStableContainerBase;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerBaseSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 
-public class SszStableContainerTypeDefinition {
+public class SszStableContainerBaseTypeDefinition {
 
-  public static <DataT extends SszStableContainer, SchemaT extends SszStableContainerSchema<DataT>>
+  public static <
+          DataT extends SszStableContainerBase, SchemaT extends SszStableContainerBaseSchema<DataT>>
       DeserializableTypeDefinition<DataT> createFor(final SchemaT schema) {
     final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>> builder =
         DeserializableTypeDefinition.object();
@@ -42,7 +43,7 @@ public class SszStableContainerTypeDefinition {
     return builder.build();
   }
 
-  private static <DataT extends SszStableContainer> void addField(
+  private static <DataT extends SszStableContainerBase> void addField(
       final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>> builder,
       final SszSchema<?> childSchema,
       final String childName,
@@ -54,12 +55,12 @@ public class SszStableContainerTypeDefinition {
         (b, value) -> b.setValue(fieldIndex, value));
   }
 
-  private static class StableContainerBuilder<DataT extends SszStableContainer> {
-    private final SszStableContainerSchema<DataT> schema;
+  private static class StableContainerBuilder<DataT extends SszStableContainerBase> {
+    private final SszStableContainerBaseSchema<DataT> schema;
     private final Optional<? extends SszData>[] values;
 
     @SuppressWarnings("unchecked")
-    public StableContainerBuilder(final SszStableContainerSchema<DataT> schema) {
+    public StableContainerBuilder(final SszStableContainerBaseSchema<DataT> schema) {
       this.schema = schema;
       this.values =
           (Optional<? extends SszData>[]) new Optional<?>[schema.getChildrenNamedSchemas().size()];

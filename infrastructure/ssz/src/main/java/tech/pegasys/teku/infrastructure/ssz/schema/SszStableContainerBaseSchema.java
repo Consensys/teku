@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
  *       SszData}.
  * </ol>
  *
- * @param <C>
+ * @param <C> the type of actual container class
  */
 public interface SszStableContainerBaseSchema<C extends SszStableContainerBase>
     extends SszContainerSchema<C> {

@@ -17,19 +17,15 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.json.SszStableContainerTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
     extends AbstractSszStableContainerBaseSchema<C> implements SszStableContainerSchema<C> {
-
-  private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   public AbstractSszStableContainerSchema(
       final String name,
@@ -41,8 +37,6 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
         Set.of(),
         IntSet.of(IntStream.range(0, definedChildrenSchemas.size()).toArray()),
         maxFieldCount);
-
-    this.jsonTypeDefinition = SszStableContainerTypeDefinition.createFor(this);
   }
 
   @Override
@@ -55,10 +49,5 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
     final SszReader activeFieldsReader =
         reader.slice(getActiveFieldsSchema().getSszFixedPartSize());
     return getActiveFieldsSchema().sszDeserialize(activeFieldsReader);
-  }
-
-  @Override
-  public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
-    return jsonTypeDefinition;
   }
 }

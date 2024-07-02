@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerBaseSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.json.SszStableContainerBaseTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
@@ -77,7 +78,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
  *       not-empty)
  * </ol>
  *
- * @param <C>
+ * @param <C> the type of actual container class
  */
 public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableContainerBase>
     implements SszStableContainerBaseSchema<C> {
@@ -100,7 +101,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   // private final SszBitvector disallowedFields;
   private final TreeNode defaultTreeNode;
 
-  // private final DeserializableTypeDefinition<C> jsonTypeDefinition;
+  private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   private static long getContainerGIndex(final long rootGIndex) {
     return GIndexUtil.gIdxLeftGIndex(rootGIndex);
@@ -161,7 +162,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
             createDefaultContainerTreeNode(requiredFieldIndices), requiredFields.getBackingNode());
     this.hasOptionalFields = optionalFields.getBitCount() > 0;
     // TODO jsonTypeDefinition
-    // this.jsonTypeDefinition = SszStableContainerTypeDefinition.createFor(this);
+    this.jsonTypeDefinition = SszStableContainerBaseTypeDefinition.createFor(this);
   }
 
   protected TreeNode createDefaultContainerTreeNode(final Set<Integer> activeFieldIndices) {
@@ -178,8 +179,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
 
   @Override
   public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
-    // return jsonTypeDefinition;
-    return null;
+    return jsonTypeDefinition;
   }
 
   @Override

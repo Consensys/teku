@@ -254,24 +254,24 @@ public class AbstractSszStableContainerSchemaTest {
     assertThat(square.sszSerialize()).isEqualTo(Bytes.fromHexString("0x420000000000000001"));
 
     // json square round trip
-    //    final String squareJson =
-    //        JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //
-    //    System.out.println("squareJson: " + squareJson);
-    //
-    //    final SquareProfile squareFromJson =
-    //        JsonUtil.parse(squareJson, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //    assertThat(squareFromJson).isEqualTo(square);
+    final String squareJson =
+        JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
+
+    System.out.println("squareJson: " + squareJson);
+
+    final SquareProfile squareFromJson =
+        JsonUtil.parse(squareJson, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
+    assertThat(squareFromJson).isEqualTo(square);
 
     // json circle round trip
-    //    final String circleJson =
-    //        JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //
-    //    System.out.println("circleJson: " + circleJson);
-    //
-    //    final CircleProfile circleFromJson =
-    //        JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //    assertThat(circleFromJson).isEqualTo(circle);
+    final String circleJson =
+        JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
+
+    System.out.println("circleJson: " + circleJson);
+
+    final CircleProfile circleFromJson =
+        JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
+    assertThat(circleFromJson).isEqualTo(circle);
 
     CircleProfile deserializedCircle =
         CIRCLE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
@@ -337,24 +337,21 @@ public class AbstractSszStableContainerSchemaTest {
         .isEqualTo(Bytes.fromHexString("0x0142000000000000000103"));
 
     // json squareWithOptional round trip
-    //    final String squareJson =
-    //        JsonUtil.serialize(squareWithOptional, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //
-    //    System.out.println("squareJson: " + squareJson);
-    //
-    //    final SquareProfile squareFromJson =
-    //        JsonUtil.parse(squareJson, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //    assertThat(squareFromJson).isEqualTo(squareWithOptional);
+    final String squareJson =
+        JsonUtil.serialize(
+            squareWithOptional, SQUARE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
+
+    final SquareProfile squareFromJson =
+        JsonUtil.parse(squareJson, SQUARE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
+    assertThat(squareFromJson).isEqualTo(squareWithOptional);
 
     // json circle round trip
-    //    final String circleJson =
-    //        JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //
-    //    System.out.println("circleJson: " + circleJson);
-    //
-    //    final CircleProfile circleFromJson =
-    //        JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
-    //    assertThat(circleFromJson).isEqualTo(circle);
+    final String circleJson =
+        JsonUtil.serialize(circle, CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
+
+    final CircleProfile circleFromJson =
+        JsonUtil.parse(circleJson, CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
+    assertThat(circleFromJson).isEqualTo(circle);
 
     CircleProfile deserializedCircle =
         CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.sszDeserialize(

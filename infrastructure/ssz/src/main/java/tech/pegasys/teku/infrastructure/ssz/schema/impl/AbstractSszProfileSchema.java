@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -48,7 +47,6 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
   private final Set<Integer> optionalFieldIndices;
   private final Optional<SszBitvectorSchema<SszBitvector>> optionalFieldsSchema;
   private final SszStableContainerSchema<? extends SszStableContainer> stableContainer;
-  private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   public AbstractSszProfileSchema(
       final String name,
@@ -90,7 +88,6 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
                 .sorted(Comparator.naturalOrder())
                 .mapToInt(i -> i)
                 .toArray());
-    this.jsonTypeDefinition = null; // SszStableContainerTypeDefinition.createFor(this);
   }
 
   //  private static List<? extends NamedSchema<?>> prepareSchemas(
@@ -108,11 +105,6 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
   //            })
   //        .toList();
   //  }
-
-  @Override
-  public DeserializableTypeDefinition<C> getJsonTypeDefinition() {
-    return jsonTypeDefinition;
-  }
 
   @Override
   public SszStableContainerSchema<? extends SszStableContainer> getStableContainerSchema() {
