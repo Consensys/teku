@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelect
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
@@ -64,6 +66,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final GetSyncingStatusRequest getSyncingStatusRequest;
   private final GetGenesisRequest getGenesisRequest;
   private final GetProposerDutiesRequest getProposerDutiesRequest;
+  private final GetPeerCountRequest getPeerCountRequest;
   private final GetStateValidatorsRequest getStateValidatorsRequest;
   private final PostAttesterDutiesRequest postAttesterDutiesRequest;
   private final PostStateValidatorsRequest postStateValidatorsRequest;
@@ -85,6 +88,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
+    this.getPeerCountRequest = new GetPeerCountRequest(baseEndpoint, okHttpClient);
     this.getStateValidatorsRequest = new GetStateValidatorsRequest(baseEndpoint, okHttpClient);
     this.postStateValidatorsRequest = new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
     this.postSyncDutiesRequest = new PostSyncDutiesRequest(baseEndpoint, okHttpClient);
@@ -115,6 +119,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
   public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
     return getProposerDutiesRequest.getProposerDuties(epoch);
+  }
+
+  public Optional<PeerCount> getPeerCount() {
+    return getPeerCountRequest.getPeerCount();
   }
 
   public Optional<List<StateValidatorData>> getStateValidators(final List<String> validatorIds) {
