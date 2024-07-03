@@ -84,6 +84,7 @@ public class PredicatesElectra extends Predicates {
    * @param validator
    * @return
    */
+  @Override
   public boolean hasExecutionWithdrawalCredential(final Validator validator) {
     return hasEth1WithdrawalCredential(validator) || hasCompoundingWithdrawalCredential(validator);
   }
