@@ -637,8 +637,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         slot ->
             combinedChainDataClient
                 .getBlockAtSlotExact(slot)
-                .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock))
-                .join();
+                .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock));
 
     SpecConfigEip7594 configEip7594 =
         SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());

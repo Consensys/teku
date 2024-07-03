@@ -14,11 +14,12 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
 public interface CanonicalBlockResolver {
 
   /** Should return the canonical block at slot */
-  Optional<BeaconBlock> getBlockAtSlot(UInt64 slot);
+  SafeFuture<Optional<BeaconBlock>> getBlockAtSlot(UInt64 slot);
 }

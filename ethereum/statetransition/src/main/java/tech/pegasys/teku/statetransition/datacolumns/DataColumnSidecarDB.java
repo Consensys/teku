@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
@@ -23,15 +24,15 @@ public interface DataColumnSidecarDB {
 
   // read
 
-  Optional<UInt64> getFirstIncompleteSlot();
+  SafeFuture<Optional<UInt64>> getFirstIncompleteSlot();
 
-  Optional<DataColumnSidecar> getSidecar(DataColumnIdentifier identifier);
+  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier);
 
-  Stream<DataColumnIdentifier> streamColumnIdentifiers(UInt64 slot);
+  SafeFuture<Stream<DataColumnIdentifier>> streamColumnIdentifiers(UInt64 slot);
 
   // update
 
-  void setFirstIncompleteSlot(UInt64 slot);
+  SafeFuture<Void> setFirstIncompleteSlot(UInt64 slot);
 
   void addSidecar(DataColumnSidecar sidecar);
 

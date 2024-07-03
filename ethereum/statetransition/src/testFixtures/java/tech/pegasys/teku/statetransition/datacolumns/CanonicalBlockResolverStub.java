@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -46,7 +47,7 @@ public class CanonicalBlockResolverStub implements CanonicalBlockResolver {
   }
 
   @Override
-  public Optional<BeaconBlock> getBlockAtSlot(UInt64 slot) {
-    return Optional.ofNullable(chain.get(slot));
+  public SafeFuture<Optional<BeaconBlock>> getBlockAtSlot(UInt64 slot) {
+    return SafeFuture.completedFuture(Optional.ofNullable(chain.get(slot)));
   }
 }

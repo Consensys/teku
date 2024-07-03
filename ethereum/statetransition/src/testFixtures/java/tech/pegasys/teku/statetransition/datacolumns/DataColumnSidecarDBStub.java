@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
@@ -31,13 +32,14 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   private Map<UInt64, Set<DataColumnIdentifier>> slotIds = new HashMap<>();
 
   @Override
-  public void setFirstIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> setFirstIncompleteSlot(UInt64 slot) {
     this.firstIncompleteSlot = Optional.of(slot);
+    return SafeFuture.COMPLETE;
   }
 
   @Override
-  public Optional<UInt64> getFirstIncompleteSlot() {
-    return firstIncompleteSlot;
+  public SafeFuture<Optional<UInt64>> getFirstIncompleteSlot() {
+    return SafeFuture.completedFuture(firstIncompleteSlot);
   }
 
   @Override
@@ -48,13 +50,13 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
-  public Optional<DataColumnSidecar> getSidecar(DataColumnIdentifier identifier) {
-    return Optional.ofNullable(db.get(identifier));
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier) {
+    return SafeFuture.completedFuture(Optional.ofNullable(db.get(identifier)));
   }
 
   @Override
-  public Stream<DataColumnIdentifier> streamColumnIdentifiers(UInt64 slot) {
-    return slotIds.getOrDefault(slot, Collections.emptySet()).stream();
+  public SafeFuture<Stream<DataColumnIdentifier>> streamColumnIdentifiers(UInt64 slot) {
+    return SafeFuture.completedFuture(slotIds.getOrDefault(slot, Collections.emptySet()).stream());
   }
 
   @Override

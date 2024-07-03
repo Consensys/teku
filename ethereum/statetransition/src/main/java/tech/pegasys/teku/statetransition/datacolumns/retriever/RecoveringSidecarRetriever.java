@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -97,57 +96,72 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   @VisibleForTesting
-  synchronized void maybeInitiateRecovery(
+  void maybeInitiateRecovery(
       ColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> promise) {
-    Optional<BeaconBlock> maybeBlock = blockResolver.getBlockAtSlot(columnId.slot());
-    if (!maybeBlock
-        .map(b -> b.getRoot().equals(columnId.identifier().getBlockRoot()))
-        .orElse(false)) {
-      LOG.info("[nyota] Recovery: CAN'T initiate recovery for " + columnId);
-      promise.completeExceptionally(new NotOnCanonicalChainException(columnId, maybeBlock));
-    } else {
-      BeaconBlock block = maybeBlock.orElseThrow();
-      LOG.info("[nyota] Recovery: initiating recovery for " + columnId);
-      RecoveryEntry recovery =
-          recoveryBySlot.compute(
-              columnId.slot(),
-              (slot, existingRecovery) -> {
-                if (existingRecovery != null
-                    && !existingRecovery.block.getRoot().equals(block.getRoot())) {
-                  // we are recovering obsolete column which is no more on our canonical chain
-                  existingRecovery.cancel();
-                }
-                if (existingRecovery == null || existingRecovery.cancelled) {
-                  return createNewRecovery(block);
-                } else {
-                  return existingRecovery;
-                }
-              });
-      recovery.addRequest(columnId.identifier().getIndex(), promise);
-    }
+    blockResolver
+        .getBlockAtSlot(columnId.slot())
+        .thenPeek(
+            maybeBlock -> {
+              if (!maybeBlock
+                  .map(b -> b.getRoot().equals(columnId.identifier().getBlockRoot()))
+                  .orElse(false)) {
+                LOG.info("[nyota] Recovery: CAN'T initiate recovery for " + columnId);
+                promise.completeExceptionally(
+                    new NotOnCanonicalChainException(columnId, maybeBlock));
+              } else {
+                final BeaconBlock block = maybeBlock.orElseThrow();
+                LOG.info("[nyota] Recovery: initiating recovery for " + columnId);
+                final RecoveryEntry recovery = addRecovery(columnId, block);
+                recovery.addRequest(columnId.identifier().getIndex(), promise);
+              }
+            })
+        .ifExceptionGetsHereRaiseABug();
   }
 
-  private synchronized void recoveryComplete(RecoveryEntry entry) {
-    LOG.trace("Recovery complete for entry {}", entry);
+  private synchronized RecoveryEntry addRecovery(
+      final ColumnSlotAndIdentifier columnId, final BeaconBlock block) {
+    return recoveryBySlot.compute(
+        columnId.slot(),
+        (slot, existingRecovery) -> {
+          if (existingRecovery != null
+              && !existingRecovery.block.getRoot().equals(block.getRoot())) {
+            // we are recovering obsolete column which is no more on our canonical chain
+            existingRecovery.cancel();
+          }
+          if (existingRecovery == null || existingRecovery.cancelled) {
+            return createNewRecovery(block);
+          } else {
+            return existingRecovery;
+          }
+        });
   }
 
-  private RecoveryEntry createNewRecovery(BeaconBlock block) {
-    RecoveryEntry recoveryEntry = new RecoveryEntry(block, kzg, specHelpers);
+  private RecoveryEntry createNewRecovery(final BeaconBlock block) {
+    final RecoveryEntry recoveryEntry = new RecoveryEntry(block, kzg, specHelpers);
     LOG.info(
         "[nyota] Recovery: new RecoveryEntry for slot {} and block {} ",
         recoveryEntry.block.getSlot(),
         recoveryEntry.block.getRoot());
     sidecarDB
         .streamColumnIdentifiers(block.getSlot())
-        .limit(recoverColumnCount)
-        .forEach(
-            colId -> {
-              Optional<DataColumnSidecar> maybeSidecar = sidecarDB.getSidecar(colId);
-              maybeSidecar.ifPresent(recoveryEntry::addSidecar);
-            });
+        .thenCompose(
+            dataColumnIdentifiers ->
+                SafeFuture.collectAll(
+                    dataColumnIdentifiers.limit(recoverColumnCount).map(sidecarDB::getSidecar)))
+        .thenPeek(
+            maybeDataColumnSidecars -> {
+              maybeDataColumnSidecars.forEach(
+                  maybeDataColumnSidecar ->
+                      maybeDataColumnSidecar.ifPresent(recoveryEntry::addSidecar));
+              recoveryEntry.initRecoveryRequests();
+            })
+        .ifExceptionGetsHereRaiseABug();
 
-    recoveryEntry.initRecoveryRequests();
     return recoveryEntry;
+  }
+
+  private synchronized void recoveryComplete(RecoveryEntry entry) {
+    LOG.trace("Recovery complete for entry {}", entry);
   }
 
   private class RecoveryEntry {
