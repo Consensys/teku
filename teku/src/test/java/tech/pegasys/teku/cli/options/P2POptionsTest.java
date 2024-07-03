@@ -109,7 +109,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void advertisedIps_shouldDefaultToEmpty() {
     final NetworkConfig config = getTekuConfigurationFromArguments().network();
-    assertThat(config.hasUserExplicitlySetAdvertisedIp()).isFalse();
+    assertThat(config.hasUserExplicitlySetAdvertisedIps()).isFalse();
   }
 
   @Test

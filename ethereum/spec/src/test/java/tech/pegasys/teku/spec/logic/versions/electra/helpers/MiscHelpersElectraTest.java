@@ -14,12 +14,18 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
@@ -72,5 +78,26 @@ public class MiscHelpersElectraTest {
                 });
 
     assertThat(miscHelpersElectra.isFormerDepositMechanismDisabled(state)).isFalse();
+  }
+
+  @Test
+  public void computeProposerIndexShouldUseMaxEffectiveBalanceElectra() {
+    final SpecConfigElectra specConfigElectra =
+        spy(SpecConfigElectra.required(spec.getGenesisSpecConfig()));
+    final MiscHelpersElectra miscHelpersElectra =
+        new MiscHelpersElectra(specConfigElectra, predicates, schemaDefinitionsElectra);
+
+    final BeaconState state =
+        new BeaconStateTestBuilder(dataStructureUtil)
+            .forkVersion(spec.getGenesisSpecConfig().getGenesisForkVersion())
+            .activeValidator(UInt64.THIRTY_TWO_ETH)
+            .activeValidator(UInt64.THIRTY_TWO_ETH)
+            .activeValidator(UInt64.THIRTY_TWO_ETH)
+            .build();
+
+    miscHelpersElectra.computeProposerIndex(state, IntList.of(0, 1, 2), Bytes32.ZERO);
+
+    verify(specConfigElectra).getMaxEffectiveBalanceElectra();
+    verify(specConfigElectra, never()).getMaxEffectiveBalance();
   }
 }

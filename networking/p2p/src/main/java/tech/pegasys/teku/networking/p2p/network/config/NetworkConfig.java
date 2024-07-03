@@ -109,7 +109,7 @@ public class NetworkConfig {
         .toList();
   }
 
-  public boolean hasUserExplicitlySetAdvertisedIp() {
+  public boolean hasUserExplicitlySetAdvertisedIps() {
     return advertisedIps.isPresent();
   }
 

@@ -98,6 +98,11 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @return the sequence of sync committee indices
    */
   public IntList getNextSyncCommitteeIndices(final BeaconState state) {
+    return getNextSyncCommitteeIndices(state, config.getMaxEffectiveBalance());
+  }
+
+  protected IntList getNextSyncCommitteeIndices(
+      final BeaconState state, final UInt64 maxEffectiveBalance) {
     final UInt64 epoch = getCurrentEpoch(state).plus(1);
     final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = activeValidatorIndices.size();
@@ -107,7 +112,6 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     int i = 0;
     final SszList<Validator> validators = state.getValidators();
     final IntList syncCommitteeIndices = new IntArrayList();
-    final UInt64 maxEffectiveBalance = config.getMaxEffectiveBalance();
     final int syncCommitteeSize = altairConfig.getSyncCommitteeSize();
 
     final Sha256 sha256 = getSha256Instance();

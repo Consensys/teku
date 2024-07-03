@@ -186,7 +186,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
+  public Optional<List<String>> getDiscoveryAddresses() {
     return Optional.empty();
   }
 
