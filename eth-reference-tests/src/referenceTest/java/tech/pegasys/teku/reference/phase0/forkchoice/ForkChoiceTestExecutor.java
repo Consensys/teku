@@ -585,7 +585,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     return ForkChoiceTestExecutor.<String>getOptionally(yamlData, key).map(Bytes32::fromHexString);
   }
 
-  private static ForkChoiceMetaData getMetaData(TestDefinition testDefinition) throws IOException {
+  private static ForkChoiceMetaData getMetaData(final TestDefinition testDefinition)
+      throws IOException {
     final ForkChoiceMetaData metaData;
     final Path metaPath = testDefinition.getTestDirectory().resolve("meta.yaml");
     if (metaPath.toFile().exists()) {
