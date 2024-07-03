@@ -32,7 +32,7 @@ abstract class EventDeliverer<T> {
     publishedEventCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.EVENTBUS,
-            "event_published_count",
+            "event_published_count_total",
             "Total number of events published",
             "channel");
   }

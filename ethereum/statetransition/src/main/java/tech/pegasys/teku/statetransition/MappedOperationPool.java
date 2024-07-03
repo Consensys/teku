@@ -98,7 +98,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
     validationReasonCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            OPERATION_POOL_SIZE_VALIDATION_REASON + metricType,
+            OPERATION_POOL_SIZE_VALIDATION_REASON + metricType + "_total",
             "Total number of attempts to add an operation to the pool, broken down by validation result",
             "result");
 
