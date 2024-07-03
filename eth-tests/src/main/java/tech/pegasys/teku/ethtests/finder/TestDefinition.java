@@ -55,14 +55,14 @@ public class TestDefinition {
     return getSpec(Boolean.FALSE);
   }
 
-  public Spec getSpec(Boolean blsDisabled) {
+  public Spec getSpec(boolean blsDisabled) {
     if (spec == null) {
       createSpec(blsDisabled);
     }
     return spec;
   }
 
-  private void createSpec(Boolean blsDisabled) {
+  private void createSpec(boolean blsDisabled) {
     final Eth2Network network =
         switch (configName) {
           case TestSpecConfig.MAINNET -> Eth2Network.MAINNET;
