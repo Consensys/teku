@@ -85,7 +85,7 @@ public class PredicatesElectra extends Predicates {
    * @return
    */
   public boolean hasExecutionWithdrawalCredential(final Validator validator) {
-    return hasCompoundingWithdrawalCredential(validator) || hasEth1WithdrawalCredential(validator);
+    return hasEth1WithdrawalCredential(validator) || hasCompoundingWithdrawalCredential(validator);
   }
 
   /**
