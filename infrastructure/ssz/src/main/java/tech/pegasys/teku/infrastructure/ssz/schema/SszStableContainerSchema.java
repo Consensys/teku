@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
@@ -56,7 +57,12 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
   }
 
   @Override
-  default SszStableContainerSchema<?> toStableContainerSchemaRequired() {
+  default Optional<SszStableContainerSchema<?>> toStableContainerSchema() {
+    return Optional.of(this);
+  }
+
+  @Override
+  default SszStableContainerBaseSchema<?> toStableContainerSchemaBaseRequired() {
     return this;
   }
 }

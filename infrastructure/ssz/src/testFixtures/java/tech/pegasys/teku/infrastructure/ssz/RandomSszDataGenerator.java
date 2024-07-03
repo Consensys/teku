@@ -117,7 +117,7 @@ public class RandomSszDataGenerator {
     } else if (schema instanceof AbstractSszStableContainerSchema<?> containerSchema) {
 
       final List<NamedSchema<?>> definedFieldSchemas =
-          containerSchema.toStableContainerSchemaRequired().getChildrenNamedSchemas();
+          containerSchema.toStableContainerSchemaBaseRequired().getChildrenNamedSchemas();
       return Stream.generate(
           () -> {
             List<Optional<? extends SszData>> children =

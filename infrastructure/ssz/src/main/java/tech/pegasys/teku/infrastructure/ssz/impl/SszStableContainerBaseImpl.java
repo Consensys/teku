@@ -30,7 +30,7 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
   public SszStableContainerBaseImpl(
       final SszStableContainerBaseSchema<? extends SszStableContainerBase> type) {
     super(type);
-    this.activeFields = getSchema().toStableContainerSchemaRequired().getDefaultActiveFields();
+    this.activeFields = getSchema().toStableContainerSchemaBaseRequired().getDefaultActiveFields();
   }
 
   public SszStableContainerBaseImpl(
@@ -39,7 +39,7 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
     super(type, backingNode);
     this.activeFields =
         getSchema()
-            .toStableContainerSchemaRequired()
+            .toStableContainerSchemaBaseRequired()
             .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
@@ -48,7 +48,7 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
     super(type, backingNode, cache);
     this.activeFields =
         getSchema()
-            .toStableContainerSchemaRequired()
+            .toStableContainerSchemaBaseRequired()
             .getActiveFieldsBitvectorFromBackingNode(backingNode);
   }
 
@@ -72,7 +72,7 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
 
   @Override
   protected int sizeImpl() {
-    return this.getSchema().toStableContainerSchemaRequired().getMaxFieldCount();
+    return this.getSchema().toStableContainerSchemaBaseRequired().getMaxFieldCount();
   }
 
   @Override

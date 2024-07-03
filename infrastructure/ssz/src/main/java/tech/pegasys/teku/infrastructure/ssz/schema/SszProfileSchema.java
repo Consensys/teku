@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -26,12 +27,12 @@ public interface SszProfileSchema<C extends SszProfile> extends SszStableContain
   }
 
   @Override
-  default SszStableContainerSchema<?> toStableContainerSchemaRequired() {
-    return getStableContainerSchema();
+  default SszStableContainerBaseSchema<?> toStableContainerSchemaBaseRequired() {
+    return this;
   }
 
   @Override
-  default SszProfileSchema<?> toProfileSchemaRequired() {
-    return this;
+  default Optional<SszProfileSchema<?>> toProfileSchema() {
+    return Optional.of(this);
   }
 }
