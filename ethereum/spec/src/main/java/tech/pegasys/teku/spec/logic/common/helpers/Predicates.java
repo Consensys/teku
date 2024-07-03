@@ -160,7 +160,7 @@ public class Predicates {
 
   public boolean isPartiallyWithdrawableValidatorEth1CredentialsChecked(
       final Validator validator, final UInt64 balance) {
-    final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
+    final UInt64 maxEffectiveBalance = getValidatorMaxEffectiveBalance(validator);
     final boolean hasMaxEffectiveBalance =
         validator.getEffectiveBalance().equals(maxEffectiveBalance);
     final boolean hasExcessBalance = balance.isGreaterThan(maxEffectiveBalance);

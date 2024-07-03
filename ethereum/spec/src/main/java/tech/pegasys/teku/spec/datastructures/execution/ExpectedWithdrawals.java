@@ -244,7 +244,7 @@ public class ExpectedWithdrawals {
                   withdrawalIndex,
                   UInt64.valueOf(validatorIndex),
                   new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                  balance.minus(predicates.getValidatorMaxEffectiveBalance(validator))));
+                  balance.minusMinZero(predicates.getValidatorMaxEffectiveBalance(validator))));
           withdrawalIndex = withdrawalIndex.increment();
         }
 
