@@ -29,14 +29,19 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainerBase;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -366,6 +371,45 @@ public class AbstractSszStableContainerSchemaTest {
 
     assertSquareProfile(squareWithOptional, (byte) 1, UInt64.valueOf(0x42), Optional.of((byte) 3));
     assertThat(deserializedSquare).isEqualTo(squareWithOptional);
+  }
+
+  @Test
+  void computeSszLengthBounds() {
+    final AbstractSszStableContainerBaseSchema<SszStableContainerBase>
+        variableProfileWithOptionals =
+            new AbstractSszStableContainerBaseSchema<>(
+                "Test",
+                List.of(
+                    namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
+                    namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
+                    namedSchema(
+                        "description", SszListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 32)),
+                    namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA),
+                    namedSchema("style", SszPrimitiveSchemas.UINT8_SCHEMA),
+                    namedSchema(
+                        "description2", SszListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 32))),
+                Set.of(0, 1, 2),
+                Set.of(4, 5),
+                10) {
+              @Override
+              int sszSerializeActiveFields(SszBitvector activeFieldsBitvector, SszWriter writer) {
+                throw new UnsupportedOperationException();
+              }
+
+              @Override
+              SszBitvector sszDeserializeActiveFieldsTree(SszReader reader) {
+                throw new UnsupportedOperationException();
+              }
+
+              @Override
+              public SszStableContainerBase createFromBackingNode(final TreeNode node) {
+                throw new UnsupportedOperationException();
+              }
+            };
+
+    final SszLengthBounds bounds = variableProfileWithOptionals.getSszLengthBounds();
+    assertThat(bounds.getMinBytes()).isEqualTo(13);
+    assertThat(bounds.getMaxBytes()).isEqualTo(82);
   }
 
   private void assertSquare(

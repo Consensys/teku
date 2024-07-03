@@ -29,7 +29,6 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -161,7 +160,6 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
         BranchNode.create(
             createDefaultContainerTreeNode(requiredFieldIndices), requiredFields.getBackingNode());
     this.hasOptionalFields = optionalFields.getBitCount() > 0;
-    // TODO jsonTypeDefinition
     this.jsonTypeDefinition = SszStableContainerBaseTypeDefinition.createFor(this);
   }
 
@@ -352,10 +350,6 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   /**
    * Delegates serialization to deriving classes: Profile and StableContainer have different
    * serialization\deserialization rules
-   *
-   * @param activeFieldsBitvector
-   * @param writer
-   * @return
    */
   abstract int sszSerializeActiveFields(
       final SszBitvector activeFieldsBitvector, final SszWriter writer);
@@ -421,9 +415,6 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   /**
    * Delegates deserialization to deriving classes: Profile and StableContainer have different
    * serialization\deserialization rules
-   *
-   * @param reader
-   * @return active field bitvector
    */
   abstract SszBitvector sszDeserializeActiveFieldsTree(final SszReader reader);
 
@@ -514,16 +505,38 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     return sszLengthBounds.get();
   }
 
+  /**
+   * Bounds are calculate as follows:
+   *
+   * <ol>
+   *   <li>Min bound is the min bound for the required only fields
+   *   <li>Max bound is the max bound for the required fields and all optional fields
+   * </ol>
+   */
   private SszLengthBounds computeSszLengthBounds() {
-    // TODO reimplement: it should be
-    //   SszLengthBounds(minOfOnlyActiveFields,maxOfActiveFields+AllOptionalFields)
-    return IntStream.range(0, getFieldsCount())
-        .mapToObj(this::getChildSchema)
+    final SszLengthBounds requiredOnlyFieldsBounds =
+        requiredFields
+            .streamAllSetBits()
+            .mapToObj(this::computeSingleSchemaLengthBounds)
+            .reduce(SszLengthBounds.ZERO, SszLengthBounds::add);
+
+    final SszLengthBounds includingOptionalFieldsBounds =
+        optionalFields
+            .streamAllSetBits()
+            .mapToObj(this::computeSingleSchemaLengthBounds)
+            .reduce(requiredOnlyFieldsBounds, SszLengthBounds::add);
+
+    return requiredOnlyFieldsBounds.or(includingOptionalFieldsBounds);
+  }
+
+  private SszLengthBounds computeSingleSchemaLengthBounds(final int fieldIndex) {
+    final SszSchema<?> schema = getChildSchema(fieldIndex);
+    return schema
+        .getSszLengthBounds()
         // dynamic sized children need 4-byte offset
-        .map(t -> t.getSszLengthBounds().addBytes((t.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)))
+        .addBytes((schema.isFixedSize() ? 0 : SSZ_LENGTH_SIZE))
         // elements are not packed in containers
-        .map(SszLengthBounds::ceilToBytes)
-        .reduce(SszLengthBounds.ZERO, SszLengthBounds::add);
+        .ceilToBytes();
   }
 
   // TODO load and store
