@@ -12,6 +12,6 @@
 
 ### Additions and Improvements
 
-- Updated bootnode for sepolia network.
+- Updated bootnode for Sepolia network.
 
 ### Bug Fixes
