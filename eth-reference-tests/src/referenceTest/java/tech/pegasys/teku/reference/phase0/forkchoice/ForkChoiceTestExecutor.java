@@ -603,7 +603,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     static final ForkChoiceMetaData DEFAULT = new ForkChoiceMetaData(0);
 
     private ForkChoiceMetaData(
-        @JsonProperty(value = "bls_setting", required = false, defaultValue = "0") int blsSetting) {
+        @JsonProperty(value = "bls_setting", required = false, defaultValue = "0")
+            final int blsSetting) {
       this.blsSetting = blsSetting;
     }
 
