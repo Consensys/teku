@@ -521,7 +521,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         .thenReturn(completedFuture(Optional.of(internalState)));
 
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
-        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+        provider.getLightClientBootstrap(expectedBlockHeader.getRoot());
 
     LightClientBootstrap bootstrap = safeJoin(future).orElseThrow().getData();
 
@@ -542,7 +542,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
-        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+        provider.getLightClientBootstrap(expectedBlockHeader.getRoot());
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 
@@ -559,7 +559,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         .thenReturn(completedFuture(Optional.of(internalState)));
 
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
-        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+        provider.getLightClientBootstrap(expectedBlockHeader.getRoot());
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 

@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 
 @Fork(1)
 @State(Scope.Thread)
-public class AttesterDutiesGeneraterBenchmark {
+public class AttesterDutiesGeneratorBenchmark {
   private static final SerializableTypeDefinition<AttesterDuty> ATTESTER_DUTY_TYPE =
       SerializableTypeDefinition.object(AttesterDuty.class)
           .name("AttesterDuty")

@@ -163,7 +163,7 @@ public class LateBlockReorgLogic {
     }
 
     final SignedBeaconBlock head = maybeHead.get();
-    final boolean isFfgCompetitive = isFfgCompetetive(headRoot, head.getParentRoot());
+    final boolean isFfgCompetitive = isFfgCompetitive(headRoot, head.getParentRoot());
     final boolean isSingleSlotReorg = isSingleSlotReorg(head, slot);
 
     // from the initial list, check
@@ -212,7 +212,7 @@ public class LateBlockReorgLogic {
     final boolean isShufflingStableAndForkChoiceOk =
         isForkChoiceStableAndFinalizationOk(proposalSlot);
 
-    final boolean isFfgCompetitive = isFfgCompetetive(headRoot, head.getParentRoot());
+    final boolean isFfgCompetitive = isFfgCompetitive(headRoot, head.getParentRoot());
     final Optional<UInt64> maybeParentSlot =
         recentChainData.getSlotForBlockRoot(head.getParentRoot());
 
@@ -301,7 +301,7 @@ public class LateBlockReorgLogic {
     return getStore().getProposerBoostRoot().map(root -> !root.equals(headRoot)).orElse(false);
   }
 
-  boolean isFfgCompetetive(final Bytes32 headRoot, final Bytes32 parentRoot) {
+  boolean isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return getStore().isFfgCompetitive(headRoot, parentRoot).orElse(false);
   }
 

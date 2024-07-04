@@ -65,7 +65,7 @@ class FinalizedMerkleTree extends MerkleTree {
       final long endIndex,
       final int depth,
       final Consumer<Bytes32> consumer) {
-    throw new UnsupportedOperationException("Cannot iterate finalized leafs");
+    throw new UnsupportedOperationException("Cannot iterate finalized leaves");
   }
 
   @Override

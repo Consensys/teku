@@ -517,7 +517,7 @@ public class ChainDataProvider {
     return true;
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> getLightClientBoostrap(
+  public SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> getLightClientBootstrap(
       final Bytes32 blockRootParam) {
     return stateSelectorFactory
         .blockRootSelector(blockRootParam)

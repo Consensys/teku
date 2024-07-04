@@ -221,7 +221,7 @@ public class TekuConfiguration {
       powchainConfigBuilder.setDepositSnapshotPathForNetwork(
           eth2NetworkConfiguration.getEth2Network());
       eth2NetworkConfiguration
-          .getNetworkBoostrapConfig()
+          .getNetworkBootstrapConfig()
           .getCheckpointSyncUrl()
           .ifPresent(powchainConfigBuilder::checkpointSyncDepositSnapshotUrl);
       p2pConfigBuilder.discovery(
@@ -258,7 +258,7 @@ public class TekuConfiguration {
 
       // Check for invalid config settings
       if (syncConfig.isReconstructHistoricStatesEnabled()
-          && eth2NetworkConfiguration.getNetworkBoostrapConfig().getGenesisState().isEmpty()) {
+          && eth2NetworkConfiguration.getNetworkBootstrapConfig().getGenesisState().isEmpty()) {
         throw new InvalidConfigurationException(
             "Genesis state required when reconstructing historic states");
       }

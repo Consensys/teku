@@ -96,7 +96,7 @@ public class RepairCommand implements Runnable {
 
     final Optional<AnchorPoint> initialAnchor =
         wsInitializer.loadInitialAnchorPoint(
-            spec, networkConfiguration.getNetworkBoostrapConfig().getInitialState());
+            spec, networkConfiguration.getNetworkBootstrapConfig().getInitialState());
 
     final UInt64 computedSlot = getComputedSlot(initialAnchor, spec);
     final UInt64 computedEpoch =

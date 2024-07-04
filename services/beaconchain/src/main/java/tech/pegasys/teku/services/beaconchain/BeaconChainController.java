@@ -87,7 +87,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.networks.StateBoostrapConfig;
+import tech.pegasys.teku.networks.StateBootstrapConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -470,13 +470,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   private boolean isUsingCustomInitialState() {
-    return beaconConfig.eth2NetworkConfig().getNetworkBoostrapConfig().isUsingCustomInitialState();
+    return beaconConfig.eth2NetworkConfig().getNetworkBootstrapConfig().isUsingCustomInitialState();
   }
 
   private boolean isAllowSyncOutsideWeakSubjectivityPeriod() {
     return beaconConfig
         .eth2NetworkConfig()
-        .getNetworkBoostrapConfig()
+        .getNetworkBootstrapConfig()
         .isAllowSyncOutsideWeakSubjectivityPeriod();
   }
 
@@ -1246,7 +1246,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SyncServiceFactory createSyncServiceFactory() {
     return new DefaultSyncServiceFactory(
         beaconConfig.syncConfig(),
-        beaconConfig.eth2NetworkConfig().getNetworkBoostrapConfig().getGenesisState(),
+        beaconConfig.eth2NetworkConfig().getNetworkBootstrapConfig().getGenesisState(),
         metricsSystem,
         asyncRunnerFactory,
         beaconAsyncRunner,
@@ -1369,7 +1369,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .or(
                 () ->
                     attemptToLoadAnchorPoint(
-                        networkConfiguration.getNetworkBoostrapConfig().getGenesisState()));
+                        networkConfiguration.getNetworkBootstrapConfig().getGenesisState()));
 
     /*
      If flag to allow sync outside of weak subjectivity period has been set, we pass an instance of
@@ -1415,12 +1415,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     try {
       initialAnchor =
           attemptToLoadAnchorPoint(
-              networkConfiguration.getNetworkBoostrapConfig().getInitialState());
+              networkConfiguration.getNetworkBootstrapConfig().getInitialState());
     } catch (final InvalidConfigurationException e) {
-      final StateBoostrapConfig stateBoostrapConfig =
-          networkConfiguration.getNetworkBoostrapConfig();
-      if (stateBoostrapConfig.isUsingCustomInitialState()
-          && !stateBoostrapConfig.isUsingCheckpointSync()) {
+      final StateBootstrapConfig stateBootstrapConfig =
+          networkConfiguration.getNetworkBootstrapConfig();
+      if (stateBootstrapConfig.isUsingCustomInitialState()
+          && !stateBootstrapConfig.isUsingCheckpointSync()) {
         throw e;
       }
       STATUS_LOG.warnFailedToLoadInitialState(e.getMessage());

@@ -78,7 +78,7 @@ public class Eth2NetworkConfiguration {
 
   private final Spec spec;
   private final String constants;
-  private final StateBoostrapConfig stateBoostrapConfig;
+  private final StateBootstrapConfig stateBootstrapConfig;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
@@ -105,7 +105,7 @@ public class Eth2NetworkConfiguration {
   private Eth2NetworkConfiguration(
       final Spec spec,
       final String constants,
-      final StateBoostrapConfig stateBoostrapConfig,
+      final StateBootstrapConfig stateBootstrapConfig,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
@@ -130,7 +130,7 @@ public class Eth2NetworkConfiguration {
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     this.spec = spec;
     this.constants = constants;
-    this.stateBoostrapConfig = stateBoostrapConfig;
+    this.stateBootstrapConfig = stateBootstrapConfig;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
@@ -184,8 +184,8 @@ public class Eth2NetworkConfiguration {
     return constants;
   }
 
-  public StateBoostrapConfig getNetworkBoostrapConfig() {
-    return stateBoostrapConfig;
+  public StateBootstrapConfig getNetworkBootstrapConfig() {
+    return stateBootstrapConfig;
   }
 
   public Integer getStartupTargetPeerCount() {
@@ -292,7 +292,7 @@ public class Eth2NetworkConfiguration {
             == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
         && Objects.equals(spec, that.spec)
         && Objects.equals(constants, that.constants)
-        && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
+        && Objects.equals(stateBootstrapConfig, that.stateBootstrapConfig)
         && Objects.equals(discoveryBootnodes, that.discoveryBootnodes)
         && Objects.equals(altairForkEpoch, that.altairForkEpoch)
         && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
@@ -314,7 +314,7 @@ public class Eth2NetworkConfiguration {
     return Objects.hash(
         spec,
         constants,
-        stateBoostrapConfig,
+        stateBootstrapConfig,
         startupTargetPeerCount,
         startupTimeoutSeconds,
         discoveryBootnodes,
@@ -431,7 +431,7 @@ public class Eth2NetworkConfiguration {
       return new Eth2NetworkConfiguration(
           spec,
           constants,
-          new StateBoostrapConfig(
+          new StateBootstrapConfig(
               genesisState,
               initialState,
               checkpointSyncUrl,

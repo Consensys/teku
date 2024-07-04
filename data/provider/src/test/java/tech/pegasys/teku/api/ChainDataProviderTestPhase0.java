@@ -350,7 +350,7 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
         .thenReturn(completedFuture(Optional.of(internalState)));
 
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
-        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
+        provider.getLightClientBootstrap(expectedBlockHeader.getRoot());
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 

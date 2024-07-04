@@ -57,11 +57,11 @@ public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTe
   @Test
   void shouldReturnLightClientBootstrap() throws Exception {
     final LightClientBootstrap lightClientBootstrap =
-        dataStructureUtil.randomLightClientBoostrap(UInt64.ONE);
+        dataStructureUtil.randomLightClientBootstrap(UInt64.ONE);
     final ObjectAndMetaData<LightClientBootstrap> responseData =
         new ObjectAndMetaData<>(lightClientBootstrap, SpecMilestone.ALTAIR, false, true, false);
 
-    when(chainDataProvider.getLightClientBoostrap(eq(blockRoot)))
+    when(chainDataProvider.getLightClientBootstrap(eq(blockRoot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(responseData)));
 
     handler.handleRequest(request);
@@ -73,7 +73,7 @@ public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTe
   @Test
   void metadata_shouldHandle200() throws IOException {
     LightClientBootstrap lightClientBootstrap =
-        dataStructureUtil.randomLightClientBoostrap(UInt64.ONE);
+        dataStructureUtil.randomLightClientBootstrap(UInt64.ONE);
     ObjectAndMetaData<LightClientBootstrap> responseData =
         new ObjectAndMetaData<>(lightClientBootstrap, SpecMilestone.ALTAIR, false, true, false);
 

@@ -58,8 +58,8 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(eth2NetworkConfig.getEth1DepositContractAddress());
 
     // WS config
-    assertThat(tekuConfig.eth2NetworkConfiguration().getNetworkBoostrapConfig().getInitialState())
-        .isEqualTo(eth2NetworkConfig.getNetworkBoostrapConfig().getInitialState());
+    assertThat(tekuConfig.eth2NetworkConfiguration().getNetworkBootstrapConfig().getInitialState())
+        .isEqualTo(eth2NetworkConfig.getNetworkBootstrapConfig().getInitialState());
 
     // p2p config
     assertThat(tekuConfig.discovery().getBootnodes())
@@ -158,7 +158,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void initialState_shouldAcceptValue() {
     final String state = "state.ssz";
     final TekuConfiguration config = getTekuConfigurationFromArguments("--initial-state", state);
-    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getInitialState())
+    assertThat(config.eth2NetworkConfiguration().getNetworkBootstrapConfig().getInitialState())
         .contains(state);
   }
 
@@ -167,15 +167,15 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final String network = "holesky";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
-    assertThat(networkConfig.getNetworkBoostrapConfig().getInitialState()).isPresent();
+    assertThat(networkConfig.getNetworkBootstrapConfig().getInitialState()).isPresent();
 
     final TekuConfiguration config = getTekuConfigurationFromArguments("--network", network);
-    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getInitialState())
-        .isEqualTo(networkConfig.getNetworkBoostrapConfig().getInitialState());
+    assertThat(config.eth2NetworkConfiguration().getNetworkBootstrapConfig().getInitialState())
+        .isEqualTo(networkConfig.getNetworkBootstrapConfig().getInitialState());
     assertThat(
             config
                 .eth2NetworkConfiguration()
-                .getNetworkBoostrapConfig()
+                .getNetworkBootstrapConfig()
                 .isUsingCustomInitialState())
         .isFalse();
   }
@@ -186,16 +186,16 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final String network = "holesky";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
-    assertThat(networkConfig.getNetworkBoostrapConfig().getInitialState()).isPresent();
+    assertThat(networkConfig.getNetworkBootstrapConfig().getInitialState()).isPresent();
 
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--initial-state", state, "--network", network);
-    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getInitialState())
+    assertThat(config.eth2NetworkConfiguration().getNetworkBootstrapConfig().getInitialState())
         .contains(state);
     assertThat(
             config
                 .eth2NetworkConfiguration()
-                .getNetworkBoostrapConfig()
+                .getNetworkBootstrapConfig()
                 .isUsingCustomInitialState())
         .isTrue();
   }
@@ -204,13 +204,13 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void initialState_shouldDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Optional<String> defaultState =
-        config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getInitialState();
-    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getInitialState())
+        config.eth2NetworkConfiguration().getNetworkBootstrapConfig().getInitialState();
+    assertThat(config.eth2NetworkConfiguration().getNetworkBootstrapConfig().getInitialState())
         .isEqualTo(defaultState);
     assertThat(
             config
                 .eth2NetworkConfiguration()
-                .getNetworkBoostrapConfig()
+                .getNetworkBootstrapConfig()
                 .isUsingCustomInitialState())
         .isFalse();
   }

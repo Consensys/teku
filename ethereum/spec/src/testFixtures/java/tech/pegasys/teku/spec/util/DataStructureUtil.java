@@ -2025,7 +2025,7 @@ public final class DataStructureUtil {
             randomSignature());
   }
 
-  public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
+  public LightClientBootstrap randomLightClientBootstrap(final UInt64 slot) {
     final LightClientBootstrapSchema bootstrapSchema =
         getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
     final LightClientHeaderSchema headerSchema =

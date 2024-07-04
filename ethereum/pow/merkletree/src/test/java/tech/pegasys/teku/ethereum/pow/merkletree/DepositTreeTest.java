@@ -71,12 +71,12 @@ class DepositTreeTest {
     final Function<Integer, Eth1Data> eth1Generator =
         deposits -> new Eth1Data(depositRoot, UInt64.valueOf(deposits), blockHash);
 
-    final List<Bytes32> leafs = new ArrayList<>();
+    final List<Bytes32> leaves = new ArrayList<>();
     for (int i = 0; i < depositsCount; ++i) {
-      leafs.add(Bytes32.random());
+      leaves.add(Bytes32.random());
     }
     final DepositTree fullTree = new DepositTree();
-    leafs.forEach(fullTree::pushLeaf);
+    leaves.forEach(fullTree::pushLeaf);
     fullTree.finalize(eth1Generator.apply(depositsCount), UInt64.ZERO);
     final DepositTreeSnapshot fullTreeSnapshot = fullTree.getSnapshot().orElseThrow();
 
@@ -85,7 +85,7 @@ class DepositTreeTest {
 
       final DepositTree customTree = new DepositTree();
       for (int j = 0; j < depositsCount; ++j) {
-        customTree.pushLeaf(leafs.get(j));
+        customTree.pushLeaf(leaves.get(j));
       }
       customTree.finalize(eth1Generator.apply(finalized), UInt64.ZERO);
       final Optional<DepositTreeSnapshot> customTreeSnapshot = customTree.getSnapshot();

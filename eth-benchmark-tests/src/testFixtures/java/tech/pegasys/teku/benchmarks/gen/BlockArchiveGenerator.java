@@ -134,10 +134,10 @@ public class BlockArchiveGenerator {
         System.out.println(" => Processing epoch " + j);
         final UInt64 epoch = UInt64.valueOf(j);
         final BeaconState epochState = getBestState().orElseThrow();
-        final UInt64 committeCountPerSlot =
+        final UInt64 committeeCountPerSlot =
             beaconStateAccessors.getCommitteeCountPerSlot(epochState, epoch);
         final EpochAttestationSchedule attestationCommitteeAssignments =
-            validatorsUtil.getAttestationCommitteesAtEpoch(epochState, epoch, committeCountPerSlot);
+            validatorsUtil.getAttestationCommitteesAtEpoch(epochState, epoch, committeeCountPerSlot);
         for (int i = 0; i < slotsPerEpoch; i++) {
           final UInt64 slotStart = timeProvider.getTimeInMillis();
           final UInt64 previousSlot = localStorage.getHeadSlot();

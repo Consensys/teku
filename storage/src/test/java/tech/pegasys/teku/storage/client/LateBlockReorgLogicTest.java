@@ -327,7 +327,7 @@ class LateBlockReorgLogicTest {
   @Test
   void getProposerHead_ffgNotCompetitive() {
     getProposerHeadPassFirstGate();
-    withFfgNotCompetetive();
+    withFfgNotCompetitive();
     withParentSlot(Optional.of(UInt64.ZERO));
     assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
         .isEqualTo(blockRoot);
@@ -336,7 +336,7 @@ class LateBlockReorgLogicTest {
   @Test
   void getProposerHead_notSingleSlotReorgBecauseParentSlot() {
     getProposerHeadPassFirstGate();
-    withFfgIsCompetetive();
+    withFfgIsCompetitive();
     assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
         .isEqualTo(blockRoot);
   }
@@ -345,7 +345,7 @@ class LateBlockReorgLogicTest {
   void getProposerHead_notSingleSlotReorgBecauseCurrentSlot() {
     getProposerHeadPassFirstGate();
     withParentSlot(Optional.of(UInt64.ZERO));
-    withFfgIsCompetetive();
+    withFfgIsCompetitive();
     assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(3)))
         .isEqualTo(blockRoot);
   }
@@ -392,17 +392,17 @@ class LateBlockReorgLogicTest {
   }
 
   @Test
-  void shouldOverrideForkChoice_ffgNotCompetetive() {
+  void shouldOverrideForkChoice_ffgNotCompetitive() {
     shouldOverrideForkChoicePassFirstGate();
     withParentSlot(Optional.of(UInt64.ZERO));
-    withFfgNotCompetetive();
+    withFfgNotCompetitive();
     assertThat(reorgLogicInstrumented.shouldOverrideForkChoiceUpdate(blockRoot)).isFalse();
   }
 
   @Test
   void shouldOverrideForkChoice_parentSlotMissing() {
     shouldOverrideForkChoicePassFirstGate();
-    withFfgIsCompetetive();
+    withFfgIsCompetitive();
     assertThat(reorgLogicInstrumented.shouldOverrideForkChoiceUpdate(blockRoot)).isFalse();
   }
 
@@ -455,7 +455,7 @@ class LateBlockReorgLogicTest {
 
   private void getProposerHeadPassSecondGate() {
     getProposerHeadPassFirstGate();
-    withFfgIsCompetetive();
+    withFfgIsCompetitive();
     withParentSlot(Optional.of(UInt64.ZERO));
   }
 
@@ -475,11 +475,11 @@ class LateBlockReorgLogicTest {
     when(store.getBlockIfAvailable(any())).thenReturn(signedBlockAndState.getSignedBeaconBlock());
   }
 
-  private void withFfgIsCompetetive() {
+  private void withFfgIsCompetitive() {
     when(store.isFfgCompetitive(any(), any())).thenReturn(Optional.of(true));
   }
 
-  private void withFfgNotCompetetive() {
+  private void withFfgNotCompetitive() {
     when(store.isFfgCompetitive(any(), any())).thenReturn(Optional.of(false));
   }
 

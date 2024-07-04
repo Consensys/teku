@@ -16,14 +16,14 @@ package tech.pegasys.teku.networks;
 import java.util.Objects;
 import java.util.Optional;
 
-public class StateBoostrapConfig {
+public class StateBootstrapConfig {
   private final Optional<String> genesisState;
   private final Optional<String> initialState;
   private final Optional<String> checkpointSyncUrl;
   private final boolean isUsingCustomInitialState;
   private final boolean allowSyncOutsideWeakSubjectivityPeriod;
 
-  public StateBoostrapConfig(
+  public StateBootstrapConfig(
       final Optional<String> genesisState,
       final Optional<String> initialState,
       final Optional<String> checkpointSyncUrl,
@@ -68,7 +68,7 @@ public class StateBoostrapConfig {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final StateBoostrapConfig that = (StateBoostrapConfig) o;
+    final StateBootstrapConfig that = (StateBootstrapConfig) o;
     return isUsingCustomInitialState == that.isUsingCustomInitialState
         && allowSyncOutsideWeakSubjectivityPeriod == that.allowSyncOutsideWeakSubjectivityPeriod
         && Objects.equals(genesisState, that.genesisState)

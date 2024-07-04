@@ -33,7 +33,7 @@ public class LightClientUtilTest {
   private final LightClientUtil lightClientUtil = spec.getLightClientUtilRequired(UInt64.ZERO);
 
   @Test
-  public void getBoostrap_shouldReturnValidBootstrap() {
+  public void getBootstrap_shouldReturnValidBootstrap() {
     BeaconState state = dataStructureUtil.stateBuilderAltair().build();
     LightClientHeader expectedHeader =
         new LightClientHeaderSchema().create(BeaconBlockHeader.fromState(state));

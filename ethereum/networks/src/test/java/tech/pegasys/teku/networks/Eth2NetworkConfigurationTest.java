@@ -44,7 +44,7 @@ public class Eth2NetworkConfigurationTest {
 
     assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
     assertThat(networkConfigBuilder.build()).isEqualTo(networkConfig);
-    assertThat(networkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
+    assertThat(networkConfig.getNetworkBootstrapConfig().isUsingCustomInitialState()).isFalse();
   }
 
   @Test
@@ -159,7 +159,7 @@ public class Eth2NetworkConfigurationTest {
   public void shouldNotHaveCustomInitialStateFlagWhenUsingPreConfiguredNetworks() {
     final Eth2NetworkConfiguration eth2NetworkConfig =
         new Eth2NetworkConfiguration.Builder().applyNetworkDefaults(Eth2Network.MAINNET).build();
-    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
+    assertThat(eth2NetworkConfig.getNetworkBootstrapConfig().isUsingCustomInitialState()).isFalse();
   }
 
   @Test
@@ -169,8 +169,8 @@ public class Eth2NetworkConfigurationTest {
             .applyNetworkDefaults(Eth2Network.MAINNET)
             .customInitialState("/foo/bar")
             .build();
-    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().getInitialState()).hasValue("/foo/bar");
-    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isTrue();
+    assertThat(eth2NetworkConfig.getNetworkBootstrapConfig().getInitialState()).hasValue("/foo/bar");
+    assertThat(eth2NetworkConfig.getNetworkBootstrapConfig().isUsingCustomInitialState()).isTrue();
   }
 
   @Test
@@ -182,11 +182,11 @@ public class Eth2NetworkConfigurationTest {
             .checkpointSyncUrl(checkpointSyncUrl)
             .build();
 
-    final StateBoostrapConfig networkBoostrapConfig = eth2NetworkConfig.getNetworkBoostrapConfig();
-    assertThat(networkBoostrapConfig.getInitialState())
+    final StateBootstrapConfig networkBootstrapConfig = eth2NetworkConfig.getNetworkBootstrapConfig();
+    assertThat(networkBootstrapConfig.getInitialState())
         .contains(checkpointSyncUrl + "/" + FINALIZED_STATE_URL_PATH);
-    assertThat(networkBoostrapConfig.getGenesisState())
+    assertThat(networkBootstrapConfig.getGenesisState())
         .contains(checkpointSyncUrl + "/" + GENESIS_STATE_URL_PATH);
-    assertThat(networkBoostrapConfig.isUsingCustomInitialState()).isFalse();
+    assertThat(networkBootstrapConfig.isUsingCustomInitialState()).isFalse();
   }
 }
