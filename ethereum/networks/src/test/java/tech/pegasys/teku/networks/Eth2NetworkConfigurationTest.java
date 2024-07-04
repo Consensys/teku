@@ -169,7 +169,8 @@ public class Eth2NetworkConfigurationTest {
             .applyNetworkDefaults(Eth2Network.MAINNET)
             .customInitialState("/foo/bar")
             .build();
-    assertThat(eth2NetworkConfig.getNetworkBootstrapConfig().getInitialState()).hasValue("/foo/bar");
+    assertThat(eth2NetworkConfig.getNetworkBootstrapConfig().getInitialState())
+        .hasValue("/foo/bar");
     assertThat(eth2NetworkConfig.getNetworkBootstrapConfig().isUsingCustomInitialState()).isTrue();
   }
 
@@ -182,7 +183,8 @@ public class Eth2NetworkConfigurationTest {
             .checkpointSyncUrl(checkpointSyncUrl)
             .build();
 
-    final StateBootstrapConfig networkBootstrapConfig = eth2NetworkConfig.getNetworkBootstrapConfig();
+    final StateBootstrapConfig networkBootstrapConfig =
+        eth2NetworkConfig.getNetworkBootstrapConfig();
     assertThat(networkBootstrapConfig.getInitialState())
         .contains(checkpointSyncUrl + "/" + FINALIZED_STATE_URL_PATH);
     assertThat(networkBootstrapConfig.getGenesisState())
