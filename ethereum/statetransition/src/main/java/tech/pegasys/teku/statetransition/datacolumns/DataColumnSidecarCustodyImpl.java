@@ -239,9 +239,14 @@ public class DataColumnSidecarCustodyImpl
                         custody ->
                             db.setFirstIncompleteSlot(custody.slot())
                                 .ifExceptionGetsHereRaiseABug(),
-                        () ->
-                            db.setFirstIncompleteSlot(slotCustodies.getLast().slot())
-                                .ifExceptionGetsHereRaiseABug()));
+                        () -> {
+                          if (slotCustodies.isEmpty()) {
+                            return;
+                          }
+                          db.setFirstIncompleteSlot(
+                                  slotCustodies.get(slotCustodies.size() - 1).slot())
+                              .ifExceptionGetsHereRaiseABug();
+                        }));
   }
 
   private SafeFuture<List<SlotCustody>> retrievePotentiallyIncompleteSlotCustodies(
