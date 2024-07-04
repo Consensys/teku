@@ -12,4 +12,6 @@
 
 ### Additions and Improvements
 
+- Updated bootnodes for Sepolia network.
+
 ### Bug Fixes
