@@ -180,12 +180,14 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     return jsonTypeDefinition;
   }
 
+  /** MaxLength exposes the effective potential numbers of fields */
   @Override
   public long getMaxLength() {
     // TODO memoize
     return requiredFields.getBitCount() + optionalFields.getBitCount();
   }
 
+  /** The backing tree node is always filled up maxFieldCount, so maxChunks must reflect it */
   @Override
   public long maxChunks() {
     return (getMaxFieldCount() - 1) / getElementsPerChunk() + 1;

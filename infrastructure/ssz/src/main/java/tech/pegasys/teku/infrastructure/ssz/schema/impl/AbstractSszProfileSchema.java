@@ -38,12 +38,21 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranch
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
+/**
+ * The Profile overrides the stable container logic by:
+ *
+ * <ol>
+ *   <li>Skipping active bitvector serialization\deserialization when there are no optional fields
+ *   <li>In case of allowed optional fields, the active bitvector will only represents the optional
+ *       fields. Required fields are not represented
+ * </ol>
+ */
 public abstract class AbstractSszProfileSchema<C extends SszProfile>
     extends AbstractSszStableContainerBaseSchema<C> implements SszProfileSchema<C> {
 
   private final IntList activeFieldIndicesCache;
-  private final IntList optionalFieldIndicesCache;
-  private final Integer[] optionalMapping;
+  private final IntList optionalFieldIndexToSchemaIndexCache;
+  private final int[] schemaIndexToOptionalFieldIndexCache;
   private final Set<Integer> optionalFieldIndices;
   private final Optional<SszBitvectorSchema<SszBitvector>> optionalFieldsSchema;
   private final SszStableContainerSchema<? extends SszStableContainer> stableContainer;
@@ -62,23 +71,49 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
     this.optionalFieldIndices = optionalFieldIndices;
     if (optionalFieldIndices.isEmpty()) {
       this.optionalFieldsSchema = Optional.empty();
-      this.optionalMapping = new Integer[0];
-      this.optionalFieldIndicesCache = IntList.of();
+      this.schemaIndexToOptionalFieldIndexCache = new int[0];
+      this.optionalFieldIndexToSchemaIndexCache = IntList.of();
 
     } else {
+      // we need create a dedicated bitvector schema. The optional fields bitvector will represent
+      // which of the optional fields are being used (i.e. first bit represent the first optional
+      // field in order of declaration, the second bit the second one and so on)
       this.optionalFieldsSchema =
           Optional.of(SszBitvectorSchema.create(optionalFieldIndices.size()));
-      this.optionalFieldIndicesCache =
+
+      // to support serialization and deserialization we need two caches be able to quickly get
+      // schema field index of a given optional field index and vice versa.
+      //
+      // Example:
+      //
+      // optional index to schema index:
+      // 0->2
+      // 1->4
+      // 2->5
+      //
+      // schema index to optional index:
+      // 0->null
+      // 1->null
+      // 2->0
+      // 3->null
+      // 4->1
+      // 5->1
+
+      this.optionalFieldIndexToSchemaIndexCache =
           IntList.of(
               optionalFieldIndices.stream()
                   .sorted(Comparator.naturalOrder())
                   .mapToInt(i -> i)
                   .toArray());
-      this.optionalMapping =
-          new Integer[optionalFieldIndicesCache.getInt(optionalFieldIndices.size() - 1) + 1];
+
+      this.schemaIndexToOptionalFieldIndexCache =
+          new int[optionalFieldIndexToSchemaIndexCache.getInt(optionalFieldIndices.size() - 1) + 1];
       optionalFieldIndices.stream()
           .sorted(Comparator.naturalOrder())
-          .forEach(i -> optionalMapping[i] = optionalFieldIndicesCache.indexOf((int) i));
+          .forEach(
+              i ->
+                  schemaIndexToOptionalFieldIndexCache[i] =
+                      optionalFieldIndexToSchemaIndexCache.indexOf((int) i));
     }
 
     this.stableContainer = stableContainerSchema;
@@ -90,42 +125,10 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
                 .toArray());
   }
 
-  //  private static List<? extends NamedSchema<?>> prepareSchemas(
-  //      final SszStableContainerSchema<? extends SszStableContainer> stableContainer,
-  //      final Set<Integer> activeFieldIndices) {
-  //    return stableContainer.getDefinedChildrenSchemas().stream()
-  //        .map(
-  //            namedIndexedSchema -> {
-  //              final int index = namedIndexedSchema.getIndex();
-  //              if (activeFieldIndices.contains(index)) {
-  //                return namedIndexedSchema;
-  //              }
-  //              return new NamedIndexedSchema<>(
-  //                  "__none_" + index, index, SszPrimitiveSchemas.NONE_SCHEMA);
-  //            })
-  //        .toList();
-  //  }
-
   @Override
   public SszStableContainerSchema<? extends SszStableContainer> getStableContainerSchema() {
     return stableContainer;
   }
-
-  //  @Override
-  //  public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
-  //    checkArgument(fieldValues.size() == requiredFields.getBitCount(), "Wrong number of filed
-  // values");
-  //    final int allFieldsSize = Math.toIntExact(getMaxLength());
-  //    final List<SszData> allFields = new ArrayList<>(allFieldsSize);
-  //
-  //    for (int index = 0, fieldIndex = 0; index < allFieldsSize; index++) {
-  //      allFields.add(requiredFields.getBit(index) ? fieldValues.get(fieldIndex++) :
-  // SszNone.INSTANCE);
-  //    }
-  //
-  //    return BranchNode.create(
-  //        super.createTreeFromFieldValues(allFields), requiredFields.getBackingNode());
-  //  }
 
   @Override
   int sszSerializeActiveFields(final SszBitvector activeFieldsBitvector, final SszWriter writer) {
@@ -133,15 +136,16 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
       // without optional fields, a profile won't serialize the bitvector
       return 0;
     }
-    final IntList a = new IntArrayList(optionalFieldIndices.size());
+    final IntList optionalFieldsBits = new IntArrayList(optionalFieldIndices.size());
     optionalFieldIndices.stream()
         .filter(activeFieldsBitvector::getBit)
-        .map(i -> optionalMapping[i])
-        .forEach(a::add);
+        .mapToInt(i -> schemaIndexToOptionalFieldIndexCache[i])
+        .forEach(optionalFieldsBits::add);
 
     return optionalFieldsSchema
         .get()
-        .sszSerializeTree(optionalFieldsSchema.get().ofBits(a).getBackingNode(), writer);
+        .sszSerializeTree(
+            optionalFieldsSchema.get().ofBits(optionalFieldsBits).getBackingNode(), writer);
   }
 
   @Override
@@ -158,7 +162,9 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
         .ofBits(
             IntStream.concat(
                     getRequiredFields().streamAllSetBits(),
-                    optionalFields.streamAllSetBits().map(optionalFieldIndicesCache::getInt))
+                    optionalFields
+                        .streamAllSetBits()
+                        .map(optionalFieldIndexToSchemaIndexCache::getInt))
                 .toArray());
   }
 
