@@ -233,7 +233,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
   @Test
   void profileSanityTest() throws JsonProcessingException {
 
-    CircleProfile circle =
+    final CircleProfile circle =
         CIRCLE_PROFILE_SCHEMA.createFromFieldValues(
             List.of(
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
@@ -246,7 +246,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 "0xe823471310312d52aa1135d971a3ed72ba041ade3ec5b5077c17a39d73ab17c5"));
     assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x014200000000000000"));
 
-    SquareProfile square =
+    final SquareProfile square =
         SQUARE_PROFILE_SCHEMA.createFromFieldValues(
             List.of(
                 SszUInt64.of(UInt64.valueOf(0x42)),
@@ -263,6 +263,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     final String squareJson =
         JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
 
+    // TODO check JSON fields instead of printing
     System.out.println("squareJson: " + squareJson);
 
     final SquareProfile squareFromJson =
@@ -279,13 +280,13 @@ public class AbstractSszStableContainerBaseSchemaTest {
         JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
     assertThat(circleFromJson).isEqualTo(circle);
 
-    CircleProfile deserializedCircle =
+    final CircleProfile deserializedCircle =
         CIRCLE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
 
     assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
     assertThat(deserializedCircle).isEqualTo(circle);
 
-    SquareProfile deserializedSquare =
+    final SquareProfile deserializedSquare =
         SQUARE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));
 
     assertSquareProfile(square, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
@@ -295,7 +296,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
   @Test
   void profileWithOptionalSanityTest() throws JsonProcessingException {
 
-    CircleProfile circle =
+    final CircleProfile circle =
         CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.createFromOptionalFieldValues(
             List.of(
                 Optional.empty(),
@@ -309,7 +310,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 "0xe823471310312d52aa1135d971a3ed72ba041ade3ec5b5077c17a39d73ab17c5"));
     assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x00014200000000000000"));
 
-    CircleProfile circleWithOptional =
+    final CircleProfile circleWithOptional =
         CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.createFromOptionalFieldValues(
             List.of(
                 Optional.empty(),
@@ -326,7 +327,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(circleWithOptional.sszSerialize())
         .isEqualTo(Bytes.fromHexString("0x0101420000000000000003"));
 
-    SquareProfile squareWithOptional =
+    final SquareProfile squareWithOptional =
         SQUARE_PROFILE_WITH_OPTIONAL_SCHEMA.createFromOptionalFieldValues(
             List.of(
                 Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
@@ -359,14 +360,14 @@ public class AbstractSszStableContainerBaseSchemaTest {
         JsonUtil.parse(circleJson, CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
     assertThat(circleFromJson).isEqualTo(circle);
 
-    CircleProfile deserializedCircle =
+    final CircleProfile deserializedCircle =
         CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.sszDeserialize(
             Bytes.fromHexString("0x00014200000000000000"));
 
     assertCircleProfile(deserializedCircle, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
     assertThat(deserializedCircle).isEqualTo(circle);
 
-    SquareProfile deserializedSquare =
+    final SquareProfile deserializedSquare =
         SQUARE_PROFILE_WITH_OPTIONAL_SCHEMA.sszDeserialize(
             Bytes.fromHexString("0x0142000000000000000103"));
 
@@ -415,7 +416,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
 
   @Test
   void shouldThrowOutOfBoundsException() {
-    CircleProfile circle =
+    final CircleProfile circle =
         CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.createFromOptionalFieldValues(
             List.of(
                 Optional.empty(),
@@ -423,6 +424,15 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
 
     assertThatThrownBy(() -> circle.get(MAX_SHAPE_FIELD_COUNT))
+        .isInstanceOf(IndexOutOfBoundsException.class);
+
+    final ShapeStableContainer square =
+        SHAPE_STABLE_CONTAINER_SCHEMA.createFromOptionalFieldValues(
+            List.of(
+                Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
+                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1))));
+
+    assertThatThrownBy(() -> square.get(MAX_SHAPE_FIELD_COUNT))
         .isInstanceOf(IndexOutOfBoundsException.class);
   }
 

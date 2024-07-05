@@ -86,6 +86,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
 
   private final Supplier<SszLengthBounds> sszLengthBounds =
       Suppliers.memoize(this::computeSszLengthBounds);
+  private final Supplier<Long> maxLength = Suppliers.memoize(this::computeMaxLength);
   private final String containerName;
   private final List<NamedSchema<?>> definedChildrenNamedSchemas;
   private final Object2IntMap<String> definedChildrenNamesToFieldIndex;
@@ -97,7 +98,6 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   private final SszBitvector requiredFields;
   private final SszBitvector optionalFields;
   private final boolean hasOptionalFields;
-  // private final SszBitvector disallowedFields;
   private final TreeNode defaultTreeNode;
 
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
@@ -122,7 +122,6 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
 
     this.containerName = name;
     this.maxFieldCount = maxFieldCount;
-
     this.definedChildrenNamedSchemas = definedChildrenNamedSchemas;
     this.definedChildrenSchemas =
         definedChildrenNamedSchemas.stream().map(NamedSchema::getSchema).toList();
@@ -130,32 +129,12 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     this.requiredFields = activeFieldsSchema.ofBits(requiredFieldIndices);
     this.optionalFields = activeFieldsSchema.ofBits(optionalFieldIndices);
     this.treeWidth = SszStableContainerBaseSchema.super.treeWidth();
-    //    this.activeFieldIndicesCache =
-    //            IntList.of(
-    //                    requiredFieldIndices.stream()
-    //                            .sorted(Comparator.naturalOrder())
-    //                            .mapToInt(index -> getEffectiveChildIndex(index,
-    // definedChildrenNamedSchemas))
-    //                            .toArray());
-    //
-    //    this.optionalFieldIndicesCache = IntList.of(
-    //            optionalFieldIndices.stream()
-    //                    .sorted(Comparator.naturalOrder())
-    //                    .mapToInt(index -> getEffectiveChildIndex(index,
-    // definedChildrenNamedSchemas))
-    //                    .toArray());
-
     this.definedChildrenNames =
         definedChildrenNamedSchemas.stream().map(NamedSchema::getName).toList();
     this.definedChildrenNamesToFieldIndex = new Object2IntOpenHashMap<>();
     for (int i = 0; i < definedChildrenNamedSchemas.size(); i++) {
       definedChildrenNamesToFieldIndex.put(definedChildrenNamedSchemas.get(i).getName(), i);
     }
-
-    //    this.disallowedFields = activeFieldsSchema.ofBits(IntStream.range(0,
-    // maxFieldCount).filter(i -> !(requiredFields.getBit(i) ||
-    // optionalFields.getBit(i))).toArray());
-
     this.defaultTreeNode =
         BranchNode.create(
             createDefaultContainerTreeNode(requiredFieldIndices), requiredFields.getBackingNode());
@@ -183,7 +162,10 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   /** MaxLength exposes the effective potential numbers of fields */
   @Override
   public long getMaxLength() {
-    // TODO memoize
+    return maxLength.get();
+  }
+
+  private long computeMaxLength() {
     return (long) requiredFields.getBitCount() + optionalFields.getBitCount();
   }
 
