@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 public interface SszProfileSchema<C extends SszProfile> extends SszStableContainerBaseSchema<C> {
   SszStableContainerSchema<? extends SszStableContainer> getStableContainerSchema();
 
+  @Override
   default SszBitvectorSchema<SszBitvector> getActiveFieldsSchema() {
     return getStableContainerSchema().getActiveFieldsSchema();
   }

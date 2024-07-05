@@ -45,7 +45,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class AbstractSszStableContainerSchemaTest {
+public class AbstractSszStableContainerBaseSchemaTest {
   static final int MAX_SHAPE_FIELD_COUNT = 5;
 
   static final List<NamedSchema<?>> SHAPE_SCHEMAS =

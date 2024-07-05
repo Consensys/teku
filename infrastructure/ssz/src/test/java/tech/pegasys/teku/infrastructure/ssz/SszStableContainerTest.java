@@ -13,8 +13,16 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.NoSuchElementException;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.RandomSszDataGenerator.StableContainerMode;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerBaseSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchemaTest;
 
 public class SszStableContainerTest
@@ -42,5 +50,48 @@ public class SszStableContainerTest
                     // more combinations of active fields
                     anotherRound.randomData(schema),
                     anotherRound.randomData(schema)));
+  }
+
+  @Override
+  public IntStream streamOutOfBoundsIndices(final SszComposite<?> data) {
+    return IntStream.of(
+        -1,
+        data.size(),
+        (int)
+            Long.min(
+                Integer.MAX_VALUE,
+                ((SszStableContainerBaseSchema<?>) data.getSchema()).getMaxFieldCount()));
+  }
+
+  @Override
+  public IntStream streamValidIndices(final SszComposite<?> data) {
+    final SszBitvector activeFields =
+        ((SszStableContainerBaseSchema<?>) data.getSchema())
+            .getActiveFieldsBitvectorFromBackingNode(data.getBackingNode());
+    return activeFields.streamAllSetBits();
+  }
+
+  IntStream streamInactiveIndices(final SszComposite<?> data) {
+    final SszBitvector activeFields =
+        ((SszStableContainerBaseSchema<?>) data.getSchema())
+            .getActiveFieldsBitvectorFromBackingNode(data.getBackingNode());
+    return activeFields
+        .getSchema()
+        .ofBits(
+            IntStream.range(0, activeFields.getSchema().getLength())
+                .filter(i -> !activeFields.getBit(i))
+                .toArray())
+        .streamAllSetBits();
+  }
+
+  @MethodSource("sszDataArguments")
+  @ParameterizedTest
+  void get_throwsNoSuchElement(final SszComposite<?> data) {
+    streamInactiveIndices(data)
+        .forEach(
+            wrongIndex ->
+                assertThatThrownBy(() -> data.get(wrongIndex))
+                    .as("child %s", wrongIndex)
+                    .isInstanceOf(NoSuchElementException.class));
   }
 }

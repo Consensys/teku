@@ -184,13 +184,13 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   @Override
   public long getMaxLength() {
     // TODO memoize
-    return requiredFields.getBitCount() + optionalFields.getBitCount();
+    return (long) requiredFields.getBitCount() + optionalFields.getBitCount();
   }
 
   /** The backing tree node is always filled up maxFieldCount, so maxChunks must reflect it */
   @Override
   public long maxChunks() {
-    return (getMaxFieldCount() - 1) / getElementsPerChunk() + 1;
+    return ((long) getMaxFieldCount() - 1) / getElementsPerChunk() + 1;
   }
 
   @Override
@@ -253,6 +253,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     return BranchNode.create(containerTree, requiredFields.getBackingNode());
   }
 
+  @Override
   public TreeNode createTreeFromOptionalFieldValues(
       final List<Optional<? extends SszData>> fieldValues) {
     final int fieldsCount = getMaxFieldCount();
@@ -491,6 +492,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     return TreeUtil.createTree(childrenSubtrees);
   }
 
+  @Override
   public SszBitvectorSchema<SszBitvector> getActiveFieldsSchema() {
     return activeFieldsSchema;
   }
