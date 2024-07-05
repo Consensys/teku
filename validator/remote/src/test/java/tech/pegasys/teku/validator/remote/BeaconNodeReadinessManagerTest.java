@@ -177,24 +177,25 @@ public class BeaconNodeReadinessManagerTest {
     final RemoteValidatorApiChannel primaryBeaconNodeApi = mock(RemoteValidatorApiChannel.class);
     when(primaryBeaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
-    // Since the BN is optimistic, the peer count won't be checked and hence not required
+    // Since the BN is optimistic, the peer count won't be checked
     when(primaryBeaconNodeApi.getPeerCount())
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(enoughPeers)));
 
     // Failover BN, syncing
     final RemoteValidatorApiChannel syncingFailover = mock(RemoteValidatorApiChannel.class);
     when(syncingFailover.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
-    // Since the BN is syncing/not ready, the peer count won't be checked and hence not required
-    when(syncingFailover.getPeerCount()).thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    // Since the BN is syncing/not ready, the peer count won't be checked
+    when(syncingFailover.getPeerCount())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(enoughPeers)));
 
     // Failover BN, synced optimistic
     final RemoteValidatorApiChannel syncedOptimisticFailover =
         mock(RemoteValidatorApiChannel.class);
     when(syncedOptimisticFailover.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
-    // Since the BN is optimistic, the peer count won't be checked and hence not required
+    // Since the BN is optimistic, the peer count won't be checked
     when(syncedOptimisticFailover.getPeerCount())
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(enoughPeers)));
 
     // Failover BN synced and non-optimistic/ready
     final RemoteValidatorApiChannel syncedNonOptimisticNotEnoughPeersFailover =
