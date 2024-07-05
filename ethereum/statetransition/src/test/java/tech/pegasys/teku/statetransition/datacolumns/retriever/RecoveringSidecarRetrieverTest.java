@@ -20,11 +20,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
@@ -32,9 +30,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -62,8 +61,8 @@ public class RecoveringSidecarRetrieverTest {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
   }
 
-  private SignedBeaconBlockHeader createSigned(BeaconBlock block) {
-    return dataStructureUtil.signedBlock(block).asHeader();
+  private SignedBeaconBlock createSigned(BeaconBlock block) {
+    return dataStructureUtil.signedBlock(block);
   }
 
   private ColumnSlotAndIdentifier createId(BeaconBlock block, int colIdx) {
@@ -87,14 +86,10 @@ public class RecoveringSidecarRetrieverTest {
             new StubAsyncRunner(),
             Duration.ofSeconds(1),
             128);
-    List<Bytes> blobs =
-        Stream.generate(dataStructureUtil::randomBlob)
-            .map(SszByteVectorImpl::getBytes)
-            .limit(blobCount)
-            .toList();
+    List<Blob> blobs = Stream.generate(dataStructureUtil::randomBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecars(block, createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecars(createSigned(block), blobs, kzg);
 
     List<Integer> dbColumnIndexes =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();

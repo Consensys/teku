@@ -27,12 +27,12 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
+import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
@@ -263,15 +263,15 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                           .toList())
               .toList();
       List<List<KZGCellWithColumnId>> blobColumnCells = transpose(columnBlobCells);
-      List<Bytes> recoveredBlobs =
-          blobColumnCells.stream().parallel().map(kzg::recoverCells).map(kzg::computeBlob).toList();
+      List<List<KZGCellAndProof>> kzgCellsAndProofs =
+          blobColumnCells.stream().parallel().map(kzg::recoverCellsAndProofs).toList();
       DataColumnSidecar anyExistingSidecar =
           existingSidecarsByColIdx.values().stream().findFirst().orElseThrow();
       SignedBeaconBlockHeader signedBeaconBlockHeader =
           anyExistingSidecar.getSignedBeaconBlockHeader();
       List<DataColumnSidecar> recoveredSidecars =
           specHelpers.constructDataColumnSidecars(
-              block, signedBeaconBlockHeader, recoveredBlobs, kzg);
+              block, signedBeaconBlockHeader, kzgCellsAndProofs);
       Map<UInt64, DataColumnSidecar> recoveredSidecarsAsMap =
           recoveredSidecars.stream()
               .collect(Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, i -> i));

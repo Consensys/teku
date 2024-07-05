@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.kzg;
 
-import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_EXT_BLOB;
-
+import java.math.BigInteger;
 import java.util.List;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 
@@ -25,6 +23,13 @@ import org.apache.tuweni.bytes.Bytes48;
  * entry-point for all KZG operations in Teku.
  */
 public interface KZG {
+  BigInteger BLS_MODULUS =
+      new BigInteger(
+          "52435875175126190479447740508185965837690552500527637822603658699938581184513");
+  int BYTES_PER_G1 = 48;
+  int BYTES_PER_G2 = 96;
+  int CELLS_PER_EXT_BLOB = 128;
+  int FIELD_ELEMENTS_PER_BLOB = 4096;
 
   static KZG getInstance() {
     return CKZG4844.getInstance();
@@ -67,23 +72,8 @@ public interface KZG {
         }
 
         @Override
-        public List<KZGCell> computeCells(Bytes blob) {
-          List<KZGCell> blobCells = KZGCell.splitBytes(blob);
-          return Stream.concat(
-                  blobCells.stream(), Stream.generate(() -> KZGCell.ZERO).limit(blobCells.size()))
-              .toList();
-        }
-
-        @Override
-        public Bytes computeBlob(List<KZGCell> cells) {
-          return Bytes.EMPTY;
-        }
-
-        @Override
         public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
-          return computeCells(blob).stream()
-              .map(cell -> new KZGCellAndProof(cell, KZGProof.fromBytesCompressed(Bytes48.ZERO)))
-              .toList();
+          throw new RuntimeException("Not implemented");
         }
 
         @Override
@@ -101,11 +91,8 @@ public interface KZG {
         }
 
         @Override
-        public List<KZGCell> recoverCells(List<KZGCellWithColumnId> cells) {
-          if (cells.size() < CELLS_PER_EXT_BLOB) {
-            throw new IllegalArgumentException("Can't recover from " + cells.size() + " cells");
-          }
-          return cells.stream().map(KZGCellWithColumnId::cell).limit(CELLS_PER_EXT_BLOB).toList();
+        public List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells) {
+          throw new RuntimeException("Not implemented");
         }
       };
 
@@ -126,10 +113,6 @@ public interface KZG {
 
   // EIP-7594 methods
 
-  Bytes computeBlob(List<KZGCell> cells);
-
-  List<KZGCell> computeCells(Bytes blob);
-
   List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 
   boolean verifyCellProof(KZGCommitment commitment, KZGCellWithColumnId cellWithID, KZGProof proof);
@@ -137,6 +120,5 @@ public interface KZG {
   boolean verifyCellProofBatch(
       List<KZGCommitment> commitments, List<KZGCellWithIds> cellWithIDs, List<KZGProof> proofs);
 
-  /** Check {@link KzgRecoverAllCellsTestExecutor} for implementation requirements */
-  List<KZGCell> recoverCells(List<KZGCellWithColumnId> cells);
+  List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells);
 }

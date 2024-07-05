@@ -18,21 +18,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Streams;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
+import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
+import tech.pegasys.teku.kzg.KZGProof;
 
-public class KzgRecoverAllCellsTestExecutor extends KzgTestExecutor {
+public class KzgRecoverCellsAndKzgProofsTestExecutor extends KzgTestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
-    final List<KZGCell> expectedKzgCells = data.getOutput();
-    List<KZGCell> actualKzgCells;
+    final List<KZGCellAndProof> expectedKzgCells = data.getOutput();
+    List<KZGCellAndProof> actualKzgCells;
     try {
-      final List<Integer> cellIds = data.getInput().getCellIds();
+      final List<Integer> cellIds = data.getInput().getCellIndices();
       final List<KZGCell> cells = data.getInput().getCells();
       if (cells.size() != cellIds.size()) {
         throw new RuntimeException("Cells doesn't match ids");
@@ -40,7 +44,7 @@ public class KzgRecoverAllCellsTestExecutor extends KzgTestExecutor {
       final List<KZGCellWithColumnId> cellWithIds =
           Streams.zip(cells.stream(), cellIds.stream(), KZGCellWithColumnId::fromCellAndColumn)
               .toList();
-      actualKzgCells = kzg.recoverCells(cellWithIds);
+      actualKzgCells = kzg.recoverCellsAndProofs(cellWithIds);
     } catch (final RuntimeException ex) {
       actualKzgCells = null;
     }
@@ -52,34 +56,53 @@ public class KzgRecoverAllCellsTestExecutor extends KzgTestExecutor {
     private Input input;
 
     @JsonProperty(value = "output", required = true)
-    private List<String> output;
+    private List<List<String>> output;
 
     public Input getInput() {
       return input;
     }
 
-    public List<KZGCell> getOutput() {
-      return output == null
-          ? null
-          : output.stream()
-              .map(cellString -> new KZGCell(Bytes.fromHexString(cellString)))
-              .toList();
+    public List<KZGCellAndProof> getOutput() {
+      if (output == null) {
+        return null;
+      }
+      final List<String> cellStrings = output.get(0);
+      final List<String> proofStrings = output.get(1);
+      if (cellStrings.size() != proofStrings.size()) {
+        throw new RuntimeException("Number of cells and proofs should be the same");
+      }
+      return IntStream.range(0, cellStrings.size())
+          .mapToObj(
+              index ->
+                  new KZGCellAndProof(
+                      new KZGCell(Bytes.fromHexString(cellStrings.get(index))),
+                      KZGProof.fromHexString(proofStrings.get(index))))
+          .toList();
     }
 
     private static class Input {
-      @JsonProperty(value = "cell_ids", required = true)
-      private List<Integer> cellIds;
+      @JsonProperty(value = "cell_indices", required = true)
+      private List<Integer> cellIndices;
 
       @JsonProperty(value = "cells", required = true)
       private List<String> cells;
 
-      public List<Integer> getCellIds() {
-        return cellIds;
+      @JsonProperty(value = "proofs", required = true)
+      private List<String> proofs;
+
+      public List<Integer> getCellIndices() {
+        return cellIndices;
       }
 
       public List<KZGCell> getCells() {
         return cells.stream()
             .map(cellString -> new KZGCell(Bytes.fromHexString(cellString)))
+            .toList();
+      }
+
+      public List<KZGProof> getProfos() {
+        return proofs.stream()
+            .map(proofString -> new KZGProof(Bytes48.fromHexString(proofString)))
             .toList();
       }
     }

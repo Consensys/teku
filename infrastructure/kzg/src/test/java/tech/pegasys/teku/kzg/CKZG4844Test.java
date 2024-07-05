@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.kzg;
 
-import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_BLOB;
-import static ethereum.ckzg4844.CKZG4844JNI.CELLS_PER_EXT_BLOB;
-import static ethereum.ckzg4844.CKZG4844JNI.FIELD_ELEMENTS_PER_BLOB;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.teku.kzg.KZG.BLS_MODULUS;
+import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
+import static tech.pegasys.teku.kzg.KZG.FIELD_ELEMENTS_PER_BLOB;
 
 import com.google.common.collect.Streams;
-import ethereum.ckzg4844.CKZG4844JNI;
 import ethereum.ckzg4844.CKZGException;
 import ethereum.ckzg4844.CKZGException.CKZGError;
 import java.math.BigInteger;
@@ -130,14 +129,6 @@ public final class CKZG4844Test {
   @Test
   public void testVerifyingEmptyBatch() {
     assertThat(CKZG.verifyBlobKzgProofBatch(List.of(), List.of(), List.of())).isTrue();
-  }
-
-  @Test
-  public void testExtendingBlob() {
-    Bytes blob = getSampleBlob();
-    Bytes extBlob = Bytes.wrap(CKZG4844JNI.computeCells(blob.toArrayUnsafe()));
-    assertThat(extBlob.size()).isEqualTo(blob.size() * 2);
-    assertThat(extBlob.slice(0, blob.size())).isEqualTo(blob);
   }
 
   @Test
@@ -278,7 +269,8 @@ public final class CKZG4844Test {
 
   @Test
   public void testInvalidLengthG2PointInNewTrustedSetup() {
-    assertThatThrownBy(() -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString(""))))
+    assertThatThrownBy(
+            () -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString("")), List.of()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Expected G2 point to be 96 bytes");
   }
@@ -286,18 +278,21 @@ public final class CKZG4844Test {
   static final int CELLS_PER_ORIG_BLOB = CELLS_PER_EXT_BLOB / 2;
 
   @Test
-  public void testComputeRecoverCells() {
+  public void testComputeRecoverCellsAndProofs() {
     Bytes blob = getSampleBlob();
-    List<KZGCell> cells = CKZG.computeCells(blob);
-    assertThat(cells).hasSize(CELLS_PER_EXT_BLOB);
+    List<KZGCellAndProof> cellAndProofs = CKZG.computeCellsAndProofs(blob);
+    assertThat(cellAndProofs).hasSize(CELLS_PER_EXT_BLOB);
 
     List<KZGCellWithColumnId> cellsToRecover =
         IntStream.range(CELLS_PER_ORIG_BLOB, CELLS_PER_EXT_BLOB)
-            .mapToObj(i -> new KZGCellWithColumnId(cells.get(i), KZGCellID.fromCellColumnIndex(i)))
+            .mapToObj(
+                i ->
+                    new KZGCellWithColumnId(
+                        cellAndProofs.get(i).cell(), KZGCellID.fromCellColumnIndex(i)))
             .toList();
 
-    List<KZGCell> recoveredCells = CKZG.recoverCells(cellsToRecover);
-    assertThat(recoveredCells).isEqualTo(cells);
+    List<KZGCellAndProof> recoveredCells = CKZG.recoverCellsAndProofs(cellsToRecover);
+    assertThat(recoveredCells).isEqualTo(cellAndProofs);
   }
 
   private List<Bytes> getSampleBlobs(final int count) {

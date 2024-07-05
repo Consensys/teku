@@ -14,17 +14,18 @@
 package tech.pegasys.teku.kzg;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G1;
-import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G2;
+import static tech.pegasys.teku.kzg.KZG.BYTES_PER_G1;
+import static tech.pegasys.teku.kzg.KZG.BYTES_PER_G2;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
-record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
+record TrustedSetup(List<Bytes> g1Lagrange, List<Bytes> g2Monomial, List<Bytes> g1Monomial) {
 
   public TrustedSetup {
-    g1Points.forEach(this::validateG1Point);
-    g2Points.forEach(this::validateG2Point);
+    g1Lagrange.forEach(this::validateG1Point);
+    g2Monomial.forEach(this::validateG2Point);
+    g1Monomial.forEach(this::validateG1Point);
   }
 
   private void validateG1Point(final Bytes g1Point) {

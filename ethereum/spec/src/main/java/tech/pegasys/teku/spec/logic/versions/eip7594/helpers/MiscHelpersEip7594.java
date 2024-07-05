@@ -22,12 +22,10 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -194,16 +192,14 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     return constructDataColumnSidecars(
         signedBeaconBlock.getMessage(),
         signedBeaconBlock.asHeader(),
-        blobs.stream().map(SszByteVectorImpl::getBytes).toList(),
-        kzg);
+        blobs.stream().map(blob -> kzg.computeCellsAndProofs(blob.getBytes())).toList());
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final BeaconBlock beaconBlock,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
-      final List<Bytes> blobs,
-      final KZG kzg) {
-    if (blobs.isEmpty()) {
+      final List<List<KZGCellAndProof>> blobsCellsAndProofs) {
+    if (blobsCellsAndProofs.isEmpty()) {
       return Collections.emptyList();
     }
     final BeaconBlockBodyEip7594 beaconBlockBody =
@@ -218,9 +214,6 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
         schemaDefinitions.getDataColumnSidecarSchema();
     final SszListSchema<SszKZGProof, ?> kzgProofsSchema =
         dataColumnSidecarSchema.getKzgProofsSchema();
-
-    List<List<KZGCellAndProof>> blobsCellsAndProofs =
-        blobs.stream().parallel().map(kzg::computeCellsAndProofs).toList();
 
     int columnCount = blobsCellsAndProofs.get(0).size();
 

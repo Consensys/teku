@@ -32,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes;
 final class CKZG4844 implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int PRECOMPUTE_DEFAULT = 0;
 
   private static CKZG4844 instance;
 
@@ -71,13 +72,16 @@ final class CKZG4844 implements KZG {
             freeTrustedSetup();
           });
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFile);
-      final List<Bytes> g1Points = trustedSetup.g1Points();
-      final List<Bytes> g2Points = trustedSetup.g2Points();
+      final List<Bytes> g1PointsLagrange = trustedSetup.g1Lagrange();
+      final List<Bytes> g2PointsMonomial = trustedSetup.g2Monomial();
+      final List<Bytes> g1PointsMonomial = trustedSetup.g1Monomial();
       CKZG4844JNI.loadTrustedSetup(
-          CKZG4844Utils.flattenG1Points(g1Points),
-          g1Points.size(),
-          CKZG4844Utils.flattenG2Points(g2Points),
-          g2Points.size());
+          CKZG4844Utils.flattenG1Points(g1PointsMonomial),
+          CKZG4844Utils.flattenG1Points(g1PointsLagrange),
+          g1PointsLagrange.size(),
+          CKZG4844Utils.flattenG2Points(g2PointsMonomial),
+          g2PointsMonomial.size(),
+          PRECOMPUTE_DEFAULT);
       LOG.debug("Loaded trusted setup from {}", trustedSetupFile);
       loadedTrustedSetupFile = Optional.of(trustedSetupFile);
     } catch (final Exception ex) {
@@ -151,18 +155,6 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
-  public Bytes computeBlob(List<KZGCell> cells) {
-    Bytes cellsBytes = Bytes.wrap(cells.stream().map(KZGCell::bytes).toList());
-    return Bytes.wrap(CKZG4844JNI.cellsToBlob(cellsBytes.toArrayUnsafe()));
-  }
-
-  @Override
-  public List<KZGCell> computeCells(Bytes blob) {
-    byte[] cellBytes = CKZG4844JNI.computeCells(blob.toArrayUnsafe());
-    return KZGCell.splitBytes(Bytes.wrap(cellBytes));
-  }
-
-  @Override
   public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
     CellsAndProofs cellsAndProofs = CKZG4844JNI.computeCellsAndKzgProofs(blob.toArrayUnsafe());
     List<KZGCell> cells = KZGCell.splitBytes(Bytes.wrap(cellsAndProofs.getCells()));
@@ -205,12 +197,19 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
-  public List<KZGCell> recoverCells(List<KZGCellWithColumnId> cells) {
+  public List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells) {
     long[] cellIds = cells.stream().mapToLong(c -> c.columnId().id().longValue()).toArray();
     byte[] cellBytes =
         CKZG4844Utils.flattenBytes(
             cells.stream().map(c -> c.cell().bytes()).toList(), cells.size() * BYTES_PER_CELL);
-    byte[] recovered = CKZG4844JNI.recoverAllCells(cellIds, cellBytes);
-    return KZGCell.splitBytes(Bytes.wrap(recovered));
+    CellsAndProofs cellsAndProofs = CKZG4844JNI.recoverCellsAndKzgProofs(cellIds, cellBytes);
+    List<KZGCell> fullCells = KZGCell.splitBytes(Bytes.wrap(cellsAndProofs.getCells()));
+    List<KZGProof> fullProofs = KZGProof.splitBytes(Bytes.wrap(cellsAndProofs.getProofs()));
+    if (fullCells.size() != fullProofs.size()) {
+      throw new KZGException("Cells and proofs size differ");
+    }
+    return IntStream.range(0, fullCells.size())
+        .mapToObj(i -> new KZGCellAndProof(fullCells.get(i), fullProofs.get(i)))
+        .toList();
   }
 }
