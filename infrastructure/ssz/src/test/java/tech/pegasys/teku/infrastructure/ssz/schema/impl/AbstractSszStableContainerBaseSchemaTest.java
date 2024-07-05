@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContai
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
@@ -412,6 +413,19 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(bounds.getMaxBytes()).isEqualTo(82);
   }
 
+  @Test
+  void shouldThrowOutOfBoundsException() {
+    CircleProfile circle =
+        CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.createFromOptionalFieldValues(
+            List.of(
+                Optional.empty(),
+                Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
+                Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
+
+    assertThatThrownBy(() -> circle.get(MAX_SHAPE_FIELD_COUNT))
+        .isInstanceOf(IndexOutOfBoundsException.class);
+  }
+
   private void assertSquare(
       final SszStableContainer container, final byte color, final UInt64 side) {
     assertOptionalFieldValue(
@@ -459,7 +473,9 @@ public class AbstractSszStableContainerBaseSchemaTest {
       final Optional<? extends SszData> value) {
     value.ifPresentOrElse(
         sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
-        () -> assertThatThrownBy(() -> container.get(fieldIndex)));
+        () ->
+            assertThatThrownBy(() -> container.get(fieldIndex))
+                .isInstanceOf(NoSuchElementException.class));
 
     assertThat(container.getOptional(fieldIndex)).isEqualTo(value);
   }
@@ -468,6 +484,8 @@ public class AbstractSszStableContainerBaseSchemaTest {
       final SszProfile container, final int fieldIndex, final Optional<? extends SszData> value) {
     value.ifPresentOrElse(
         sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
-        () -> assertThatThrownBy(() -> container.get(fieldIndex)));
+        () ->
+            assertThatThrownBy(() -> container.get(fieldIndex))
+                .isInstanceOf(NoSuchElementException.class));
   }
 }

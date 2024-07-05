@@ -46,14 +46,20 @@ public interface SszCompositeTestBase extends SszDataTestBase {
             });
   }
 
+  default IntStream streamOutOfBoundsIndices(final SszComposite<?> data) {
+    return IntStream.of(
+        -1, data.size(), (int) Long.min(Integer.MAX_VALUE, data.getSchema().getMaxLength()));
+  }
+
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default void get_throwsOutOfBounds(final SszComposite<?> data) {
-    assertThatThrownBy(() -> data.get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
-    assertThatThrownBy(() -> data.get(data.size())).isInstanceOf(IndexOutOfBoundsException.class);
-    assertThatThrownBy(
-            () -> data.get((int) Long.min(Integer.MAX_VALUE, data.getSchema().getMaxLength())))
-        .isInstanceOf(IndexOutOfBoundsException.class);
+    streamOutOfBoundsIndices(data)
+        .forEach(
+            wrongIndex ->
+                assertThatThrownBy(() -> data.get(wrongIndex))
+                    .as("child %s", wrongIndex)
+                    .isInstanceOf(IndexOutOfBoundsException.class));
   }
 
   @MethodSource("sszDataArguments")

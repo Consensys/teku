@@ -17,7 +17,6 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainerBase;
-import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
@@ -30,20 +29,14 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
 
   public SszStableContainerBaseImpl(
       final SszStableContainerBaseSchema<? extends SszStableContainerBase> type) {
-    super(
-        type,
-        type.getDefaultTree(),
-        new ArrayIntCache<>(type.toStableContainerSchemaBaseRequired().getMaxFieldCount()));
+    super(type, type.getDefaultTree());
     this.activeFields = getSchema().toStableContainerSchemaBaseRequired().getDefaultActiveFields();
   }
 
   public SszStableContainerBaseImpl(
       final SszStableContainerBaseSchema<? extends SszStableContainerBase> type,
       final TreeNode backingNode) {
-    super(
-        type,
-        backingNode,
-        new ArrayIntCache<>(type.toStableContainerSchemaBaseRequired().getMaxFieldCount()));
+    super(type, backingNode);
     this.activeFields =
         getSchema()
             .toStableContainerSchemaBaseRequired()
@@ -71,15 +64,11 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
 
   @Override
   protected void checkIndex(final int index) {
-    super.checkIndex(index);
+    // note: isFieldActive will also throw IndexOutOfBounds if checking an index greater than the
+    // expected size of the activeFields schema (which is the maxFieldCount)
     if (!isFieldActive(index)) {
       throw new NoSuchElementException("Index " + index + " is not active in the stable container");
     }
-  }
-
-  @Override
-  protected int sizeImpl() {
-    return activeFields.getLastSetBitIndex() + 1;
   }
 
   @Override

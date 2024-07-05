@@ -53,6 +53,16 @@ public class SszStableContainerTest
   }
 
   @Override
+  public IntStream streamOutOfBoundsIndices(final SszComposite<?> data) {
+    return IntStream.of(
+        -1,
+        (int)
+            Long.min(
+                Integer.MAX_VALUE,
+                ((SszStableContainerBaseSchema<?>) data.getSchema()).getMaxFieldCount()));
+  }
+
+  @Override
   public IntStream streamValidIndices(final SszComposite<?> data) {
     final SszBitvector activeFields =
         ((SszStableContainerBaseSchema<?>) data.getSchema())
@@ -60,7 +70,7 @@ public class SszStableContainerTest
     return activeFields.streamAllSetBits();
   }
 
-  IntStream streamInactiveIndices(final SszComposite<?> data) {
+  protected IntStream streamNotPresentIndices(final SszComposite<?> data) {
     final SszStableContainerBaseSchema<?> schema =
         ((SszStableContainerBaseSchema<?>) data.getSchema());
     final SszBitvector activeFields =
@@ -79,7 +89,7 @@ public class SszStableContainerTest
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   void get_throwsNoSuchElement(final SszComposite<?> data) {
-    streamInactiveIndices(data)
+    streamNotPresentIndices(data)
         .forEach(
             wrongIndex ->
                 assertThatThrownBy(() -> data.get(wrongIndex))

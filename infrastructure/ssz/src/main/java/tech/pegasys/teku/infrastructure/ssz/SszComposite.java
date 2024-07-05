@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
+import java.util.NoSuchElementException;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 
 /**
@@ -27,10 +28,16 @@ public interface SszComposite<SszChildT extends SszData> extends SszData {
     return (int) getSchema().getMaxLength();
   }
 
+  default int lastIndex() {
+    return size() - 1;
+  }
+
   /**
    * Returns the child at index
    *
-   * @throws IndexOutOfBoundsException if index >= size()
+   * @throws IndexOutOfBoundsException if index >= lastIndex()
+   * @throws NoSuchElementException if index < lastIndex() but field was not found (for sparse
+   *     containers like StableContainer)
    */
   SszChildT get(int index);
 
