@@ -17,6 +17,7 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainerBase;
+import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
@@ -29,14 +30,20 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
 
   public SszStableContainerBaseImpl(
       final SszStableContainerBaseSchema<? extends SszStableContainerBase> type) {
-    super(type);
+    super(
+        type,
+        type.getDefaultTree(),
+        new ArrayIntCache<>(type.toStableContainerSchemaBaseRequired().getMaxFieldCount()));
     this.activeFields = getSchema().toStableContainerSchemaBaseRequired().getDefaultActiveFields();
   }
 
   public SszStableContainerBaseImpl(
       final SszStableContainerBaseSchema<? extends SszStableContainerBase> type,
       final TreeNode backingNode) {
-    super(type, backingNode);
+    super(
+        type,
+        backingNode,
+        new ArrayIntCache<>(type.toStableContainerSchemaBaseRequired().getMaxFieldCount()));
     this.activeFields =
         getSchema()
             .toStableContainerSchemaBaseRequired()
@@ -72,7 +79,7 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
 
   @Override
   protected int sizeImpl() {
-    return this.getSchema().toStableContainerSchemaBaseRequired().getMaxFieldCount();
+    return activeFields.getLastSetBitIndex() + 1;
   }
 
   @Override

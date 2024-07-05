@@ -53,17 +53,6 @@ public class SszStableContainerTest
   }
 
   @Override
-  public IntStream streamOutOfBoundsIndices(final SszComposite<?> data) {
-    return IntStream.of(
-        -1,
-        data.size(),
-        (int)
-            Long.min(
-                Integer.MAX_VALUE,
-                ((SszStableContainerBaseSchema<?>) data.getSchema()).getMaxFieldCount()));
-  }
-
-  @Override
   public IntStream streamValidIndices(final SszComposite<?> data) {
     final SszBitvector activeFields =
         ((SszStableContainerBaseSchema<?>) data.getSchema())
@@ -72,14 +61,17 @@ public class SszStableContainerTest
   }
 
   IntStream streamInactiveIndices(final SszComposite<?> data) {
+    final SszStableContainerBaseSchema<?> schema =
+        ((SszStableContainerBaseSchema<?>) data.getSchema());
     final SszBitvector activeFields =
-        ((SszStableContainerBaseSchema<?>) data.getSchema())
-            .getActiveFieldsBitvectorFromBackingNode(data.getBackingNode());
+        schema.getActiveFieldsBitvectorFromBackingNode(data.getBackingNode());
+
+    final int lastActiveIndex = activeFields.getLastSetBitIndex();
     return activeFields
         .getSchema()
         .ofBits(
             IntStream.range(0, activeFields.getSchema().getLength())
-                .filter(i -> !activeFields.getBit(i))
+                .filter(i -> !activeFields.getBit(i) && i <= lastActiveIndex)
                 .toArray())
         .streamAllSetBits();
   }
