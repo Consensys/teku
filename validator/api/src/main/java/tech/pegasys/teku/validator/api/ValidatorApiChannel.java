@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -81,6 +82,11 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<PeerCount>> getPeerCount() {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -208,6 +214,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
       UInt64 epoch, IntCollection validatorIndices);
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
+
+  SafeFuture<Optional<PeerCount>> getPeerCount();
 
   /**
    * @param requestedBlinded can be removed once block creation V2 APIs are removed in favour of V3

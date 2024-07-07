@@ -25,5 +25,5 @@ public interface BeaconNodeReadinessChannel extends VoidReturningChannelInterfac
 
   void onFailoverNodeNotReady(RemoteValidatorApiChannel failoverNotReady);
 
-  void onPrimaryNodeBackReady();
+  void onPrimaryNodeReady();
 }

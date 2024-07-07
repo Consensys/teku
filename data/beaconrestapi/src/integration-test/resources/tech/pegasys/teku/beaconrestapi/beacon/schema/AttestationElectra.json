@@ -1,7 +1,7 @@
 {
   "title" : "AttestationElectra",
   "type" : "object",
-  "required" : [ "aggregation_bits", "data", "committee_bits", "signature" ],
+  "required" : [ "aggregation_bits", "data", "signature", "committee_bits" ],
   "properties" : {
     "aggregation_bits" : {
       "type" : "string",
@@ -12,13 +12,13 @@
     "data" : {
       "$ref" : "#/components/schemas/AttestationData"
     },
-    "committee_bits" : {
+    "signature" : {
       "type" : "string",
       "pattern" : "^0x[a-fA-F0-9]{2,}$",
       "description" : "SSZ hexadecimal",
       "format" : "bytes"
     },
-    "signature" : {
+    "committee_bits" : {
       "type" : "string",
       "pattern" : "^0x[a-fA-F0-9]{2,}$",
       "description" : "SSZ hexadecimal",

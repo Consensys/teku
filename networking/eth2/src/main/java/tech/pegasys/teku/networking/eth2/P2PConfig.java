@@ -200,7 +200,10 @@ public class P2PConfig {
 
       final NetworkConfig networkConfig = this.networkConfig.build();
       discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
+      discoveryConfig.listenUdpPortIpv6Default(networkConfig.getListenPortIpv6());
       discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
+      discoveryConfig.advertisedUdpPortIpv6Default(
+          OptionalInt.of(networkConfig.getAdvertisedPortIpv6()));
 
       return new P2PConfig(
           spec,

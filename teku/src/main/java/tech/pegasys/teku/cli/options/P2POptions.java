@@ -78,6 +78,17 @@ public class P2POptions {
   private Integer p2pUdpPort;
 
   @Option(
+      names = {"--Xp2p-udp-port-ipv6"},
+      paramLabel = "<INTEGER>",
+      description =
+          """
+             IPv6 UDP port used for discovery. This port is only used when listening over both IPv4 and IPv6.
+             If listening over only IPv6, the value of --p2p-udp-port will be used. The default is the port specified in --Xp2p-port-ipv6""",
+      hidden = true,
+      arity = "1")
+  private Integer p2pUdpPortIpv6;
+
+  @Option(
       names = {"--p2p-discovery-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -127,6 +138,17 @@ public class P2POptions {
           "Advertised UDP port to external peers. The default is the port specified in --p2p-advertised-port",
       arity = "1")
   private Integer p2pAdvertisedUdpPort;
+
+  @Option(
+      names = {"--Xp2p-advertised-udp-port-ipv6"},
+      paramLabel = "<INTEGER>",
+      description =
+          """
+         Advertised IPv6 UDP port to external peers. This port is only used when advertising both IPv4 and IPv6 addresses.
+         If advertising only an IPv6 address, the value of ---p2p-advertised-udp-port will be used. The default is the port specified in --Xp2p-advertised-port-ipv6""",
+      hidden = true,
+      arity = "1")
+  private Integer p2pAdvertisedUdpPortIpv6;
 
   @Option(
       names = {"--p2p-private-key-file"},
@@ -388,8 +410,14 @@ public class P2POptions {
               if (p2pUdpPort != null) {
                 d.listenUdpPort(p2pUdpPort);
               }
+              if (p2pUdpPortIpv6 != null) {
+                d.listenUdpPortIpv6(p2pUdpPortIpv6);
+              }
               if (p2pAdvertisedUdpPort != null) {
                 d.advertisedUdpPort(OptionalInt.of(p2pAdvertisedUdpPort));
+              }
+              if (p2pAdvertisedUdpPortIpv6 != null) {
+                d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
                   .staticPeers(p2pStaticPeers)

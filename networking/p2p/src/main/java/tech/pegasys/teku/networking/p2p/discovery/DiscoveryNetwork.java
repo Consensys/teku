@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -115,8 +116,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
-    return discoveryService.getDiscoveryAddress();
+  public Optional<List<String>> getDiscoveryAddresses() {
+    return discoveryService.getDiscoveryAddresses();
   }
 
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIds) {

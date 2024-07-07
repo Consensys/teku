@@ -368,7 +368,7 @@ class MatchingDataAttestationGroupTest {
     return ValidatableAttestation.from(
         spec,
         attestationSchema.create(
-            aggregationBits, attestationData, committeeBits, dataStructureUtil.randomSignature()),
+            aggregationBits, attestationData, dataStructureUtil.randomSignature(), committeeBits),
         committeeSizes);
   }
 }

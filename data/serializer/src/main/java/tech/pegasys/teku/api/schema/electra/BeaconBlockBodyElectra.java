@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -49,9 +48,6 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
   @JsonProperty("blob_kzg_commitments")
   public final List<KZGCommitment> blobKZGCommitments;
 
-  @JsonProperty("consolidations")
-  public final List<SignedConsolidation> consolidations;
-
   @JsonCreator
   public BeaconBlockBodyElectra(
       @JsonProperty("randao_reveal") final BLSSignature randaoReveal,
@@ -66,8 +62,7 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
       @JsonProperty("execution_payload") final ExecutionPayloadElectra executionPayload,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
-      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments,
-      @JsonProperty("consolidations") final List<SignedConsolidation> consolidations) {
+      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments) {
     super(
         randaoReveal,
         eth1Data,
@@ -84,7 +79,6 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
     this.blsToExecutionChanges = blsToExecutionChanges;
     checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blocks");
     this.blobKZGCommitments = blobKZGCommitments;
-    this.consolidations = consolidations;
   }
 
   public BeaconBlockBodyElectra(
@@ -106,10 +100,6 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
-    this.consolidations =
-        message.getConsolidations().stream()
-            .map(SignedConsolidation::new)
-            .collect(Collectors.toList());
   }
 
   @Override
@@ -125,8 +115,6 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             getBeaconBlockBodySchema(spec).getBlsToExecutionChangesSchema();
     final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
         getBeaconBlockBodySchema(spec).getBlobKzgCommitmentsSchema();
-    final SszListSchema<tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation, ?>
-        signedConsolidationSchema = getBeaconBlockBodySchema(spec).getConsolidationsSchema();
     return super.asInternalBeaconBlockBody(
         spec,
         builder -> {
@@ -140,10 +128,6 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
-          builder.consolidations(
-              this.consolidations.stream()
-                  .map(b -> b.asInternalSignedConsolidation(spec))
-                  .collect(signedConsolidationSchema.collector()));
           return SafeFuture.COMPLETE;
         });
   }

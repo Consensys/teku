@@ -43,7 +43,9 @@ class ElectraStateUpgradeTest {
       SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
   private final MiscHelpersElectra miscHelpersElectra =
       new MiscHelpersElectra(
-          spec.getGenesisSpecConfig(), predicatesElectra, spec.getGenesisSchemaDefinitions());
+          spec.getGenesisSpecConfig().toVersionElectra().orElseThrow(),
+          predicatesElectra,
+          spec.getGenesisSchemaDefinitions());
   final BeaconStateAccessorsElectra stateAccessorsElectra =
       new BeaconStateAccessorsElectra(
           spec.getGenesisSpecConfig(), predicatesElectra, miscHelpersElectra);

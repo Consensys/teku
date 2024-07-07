@@ -900,9 +900,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final GraffitiBuilder graffitiBuilder =
-        new GraffitiBuilder(
-            beaconConfig.validatorConfig().getClientGraffitiAppendFormat(),
-            beaconConfig.validatorConfig().getGraffitiProvider().get());
+        new GraffitiBuilder(beaconConfig.validatorConfig().getClientGraffitiAppendFormat());
     eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
@@ -953,6 +951,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
+            dataProvider.getNetworkDataProvider(),
             combinedChainDataClient,
             syncService,
             blockFactory,

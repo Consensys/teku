@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +36,9 @@ public class DiscoveryConfig {
 
   private final boolean isDiscoveryEnabled;
   private final int listenUdpPort;
+  private final int listenUpdPortIpv6;
   private final OptionalInt advertisedUdpPort;
+  private final OptionalInt advertisedUdpPortIpv6;
   private final List<String> staticPeers;
   private final List<String> bootnodes;
   private final int minPeers;
@@ -46,7 +49,9 @@ public class DiscoveryConfig {
   private DiscoveryConfig(
       final boolean isDiscoveryEnabled,
       final int listenUdpPort,
+      final int listenUpdPortIpv6,
       final OptionalInt advertisedUdpPort,
+      final OptionalInt advertisedUdpPortIpv6,
       final List<String> staticPeers,
       final List<String> bootnodes,
       final int minPeers,
@@ -55,7 +60,9 @@ public class DiscoveryConfig {
       final boolean siteLocalAddressesEnabled) {
     this.isDiscoveryEnabled = isDiscoveryEnabled;
     this.listenUdpPort = listenUdpPort;
+    this.listenUpdPortIpv6 = listenUpdPortIpv6;
     this.advertisedUdpPort = advertisedUdpPort;
+    this.advertisedUdpPortIpv6 = advertisedUdpPortIpv6;
     this.staticPeers = staticPeers;
     this.bootnodes = bootnodes;
     this.minPeers = minPeers;
@@ -78,8 +85,16 @@ public class DiscoveryConfig {
     return listenUdpPort;
   }
 
+  public int getListenUpdPortIpv6() {
+    return listenUpdPortIpv6;
+  }
+
   public int getAdvertisedUdpPort() {
     return advertisedUdpPort.orElse(listenUdpPort);
+  }
+
+  public int getAdvertisedUdpPortIpv6() {
+    return advertisedUdpPortIpv6.orElse(listenUpdPortIpv6);
   }
 
   public List<String> getStaticPeers() {
@@ -114,7 +129,9 @@ public class DiscoveryConfig {
     private int maxPeers = DEFAULT_P2P_PEERS_UPPER_BOUND;
     private OptionalInt minRandomlySelectedPeers = OptionalInt.empty();
     private OptionalInt listenUdpPort = OptionalInt.empty();
+    private OptionalInt listenUdpPortIpv6 = OptionalInt.empty();
     private OptionalInt advertisedUdpPort = OptionalInt.empty();
+    private OptionalInt advertisedUdpPortIpv6 = OptionalInt.empty();
     private boolean siteLocalAddressesEnabled = DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED;
 
     private Builder() {}
@@ -125,7 +142,9 @@ public class DiscoveryConfig {
       return new DiscoveryConfig(
           isDiscoveryEnabled,
           listenUdpPort.orElseThrow(),
+          listenUdpPortIpv6.orElseThrow(),
           advertisedUdpPort,
+          advertisedUdpPortIpv6,
           staticPeers,
           bootnodes == null ? Collections.emptyList() : bootnodes,
           minPeers,
@@ -145,6 +164,9 @@ public class DiscoveryConfig {
       if (listenUdpPort.isEmpty()) {
         listenUdpPort = OptionalInt.of(DEFAULT_P2P_PORT);
       }
+      if (listenUdpPortIpv6.isEmpty()) {
+        listenUdpPortIpv6 = OptionalInt.of(DEFAULT_P2P_PORT_IPV6);
+      }
     }
 
     public Builder isDiscoveryEnabled(final Boolean discoveryEnabled) {
@@ -154,21 +176,29 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPort(final int listenUdpPort) {
-      if (!PortAvailability.isPortValid(listenUdpPort)) {
-        throw new InvalidConfigurationException(
-            String.format("Invalid listenUdpPort: %d", listenUdpPort));
-      }
+      validatePort(listenUdpPort, "--p2p-udp-port");
       this.listenUdpPort = OptionalInt.of(listenUdpPort);
       return this;
     }
 
     public Builder listenUdpPortDefault(final int listenUdpPort) {
-      if (!PortAvailability.isPortValid(listenUdpPort)) {
-        throw new InvalidConfigurationException(
-            String.format("Invalid listenUdpPortDefault: %d", listenUdpPort));
-      }
+      validatePort(listenUdpPort, "--p2p-udp-port");
       if (this.listenUdpPort.isEmpty()) {
         this.listenUdpPort = OptionalInt.of(listenUdpPort);
+      }
+      return this;
+    }
+
+    public Builder listenUdpPortIpv6(final int listenUdpPortIpv6) {
+      validatePort(listenUdpPortIpv6, "--Xp2p-udp-port-ipv6");
+      this.listenUdpPortIpv6 = OptionalInt.of(listenUdpPortIpv6);
+      return this;
+    }
+
+    public Builder listenUdpPortIpv6Default(final int listenUdpPortIpv6) {
+      validatePort(listenUdpPortIpv6, "--Xp2p-udp-port-ipv6");
+      if (this.listenUdpPortIpv6.isEmpty()) {
+        this.listenUdpPortIpv6 = OptionalInt.of(listenUdpPortIpv6);
       }
       return this;
     }
@@ -176,10 +206,7 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        if (!PortAvailability.isPortValid(advertisedUdpPort.getAsInt())) {
-          throw new InvalidConfigurationException(
-              String.format("Invalid advertisedUdpPort: %d", advertisedUdpPort.getAsInt()));
-        }
+        validatePort(advertisedUdpPort.getAsInt(), "--p2p-advertised-udp-port");
       }
       this.advertisedUdpPort = advertisedUdpPort;
       return this;
@@ -188,13 +215,30 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        if (!PortAvailability.isPortValid(advertisedUdpPort.getAsInt())) {
-          throw new InvalidConfigurationException(
-              String.format("Invalid advertisedUdpPortDefault: %d", advertisedUdpPort.getAsInt()));
-        }
+        validatePort(advertisedUdpPort.getAsInt(), "--p2p-advertised-udp-port");
       }
       if (this.advertisedUdpPort.isEmpty()) {
         this.advertisedUdpPort = advertisedUdpPort;
+      }
+      return this;
+    }
+
+    public Builder advertisedUdpPortIpv6(final OptionalInt advertisedUdpPortIpv6) {
+      checkNotNull(advertisedUdpPortIpv6);
+      if (advertisedUdpPortIpv6.isPresent()) {
+        validatePort(advertisedUdpPortIpv6.getAsInt(), "--Xp2p-advertised-udp-port-ipv6");
+      }
+      this.advertisedUdpPortIpv6 = advertisedUdpPortIpv6;
+      return this;
+    }
+
+    public Builder advertisedUdpPortIpv6Default(final OptionalInt advertisedUdpPortIpv6) {
+      checkNotNull(advertisedUdpPortIpv6);
+      if (advertisedUdpPortIpv6.isPresent()) {
+        validatePort(advertisedUdpPortIpv6.getAsInt(), "--Xp2p-advertised-udp-port-ipv6");
+      }
+      if (this.advertisedUdpPortIpv6.isEmpty()) {
+        this.advertisedUdpPortIpv6 = advertisedUdpPortIpv6;
       }
       return this;
     }
@@ -264,6 +308,12 @@ public class DiscoveryConfig {
     public Builder siteLocalAddressesEnabled(final boolean siteLocalAddressesEnabled) {
       this.siteLocalAddressesEnabled = siteLocalAddressesEnabled;
       return this;
+    }
+
+    private void validatePort(final int port, final String cliOption) {
+      if (!PortAvailability.isPortValid(port)) {
+        throw new InvalidConfigurationException(String.format("Invalid %s: %d", cliOption, port));
+      }
     }
   }
 }
