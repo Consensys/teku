@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema.createForProfileOnly;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +31,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainerBase;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -41,8 +41,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
-import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
-import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -377,41 +375,47 @@ public class AbstractSszStableContainerBaseSchemaTest {
 
   @Test
   void computeSszLengthBounds() {
-    final AbstractSszStableContainerBaseSchema<SszStableContainerBase>
-        variableProfileWithOptionals =
-            new AbstractSszStableContainerBaseSchema<>(
-                "Test",
-                List.of(
-                    namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
-                    namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
-                    namedSchema(
-                        "description", SszListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 32)),
-                    namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA),
-                    namedSchema("style", SszPrimitiveSchemas.UINT8_SCHEMA),
-                    namedSchema(
-                        "description2", SszListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 32))),
-                Set.of(0, 1, 2),
-                Set.of(4, 5),
-                10) {
-              @Override
-              int sszSerializeActiveFields(SszBitvector activeFieldsBitvector, SszWriter writer) {
-                throw new UnsupportedOperationException();
-              }
+    final SszStableContainerSchema<SszStableContainer> stableContainer =
+        createForProfileOnly(
+            48,
+            List.of(
+                namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
+                namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
+                namedSchema(
+                    "description", SszListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 32)),
+                namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA),
+                namedSchema("style", SszPrimitiveSchemas.UINT8_SCHEMA),
+                namedSchema(
+                    "description2", SszListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 32))));
 
-              @Override
-              SszBitvector sszDeserializeActiveFieldsTree(SszReader reader) {
-                throw new UnsupportedOperationException();
-              }
+    final SszLengthBounds boundsWithOptionals =
+        getSszLengthBoundsForProfile(stableContainer, Set.of(0, 1, 2), Set.of(4, 5));
+    assertThat(boundsWithOptionals.getMinBytes()).isEqualTo(14);
+    assertThat(boundsWithOptionals.getMaxBytes()).isEqualTo(83);
 
-              @Override
-              public SszStableContainerBase createFromBackingNode(final TreeNode node) {
-                throw new UnsupportedOperationException();
-              }
-            };
+    final SszLengthBounds boundsWithoutOptionals =
+        getSszLengthBoundsForProfile(stableContainer, Set.of(0, 1, 2), Set.of());
+    assertThat(boundsWithoutOptionals.getMinBytes()).isEqualTo(13);
+    assertThat(boundsWithoutOptionals.getMaxBytes()).isEqualTo(45);
 
-    final SszLengthBounds bounds = variableProfileWithOptionals.getSszLengthBounds();
-    assertThat(bounds.getMinBytes()).isEqualTo(13);
-    assertThat(bounds.getMaxBytes()).isEqualTo(82);
+    final SszLengthBounds stableContainerBounds = stableContainer.getSszLengthBounds();
+    assertThat(stableContainerBounds.getMinBytes()).isEqualTo(6);
+    assertThat(stableContainerBounds.getMaxBytes()).isEqualTo(96);
+  }
+
+  private SszLengthBounds getSszLengthBoundsForProfile(
+      final SszStableContainerSchema<?> stableContainer,
+      final Set<Integer> requiredFieldIndices,
+      final Set<Integer> optionalFieldIndices) {
+
+    return new AbstractSszProfileSchema<>(
+        "Test", stableContainer, requiredFieldIndices, optionalFieldIndices) {
+
+      @Override
+      public SszProfileImpl createFromBackingNode(TreeNode node) {
+        throw new UnsupportedOperationException();
+      }
+    }.getSszLengthBounds();
   }
 
   @Test

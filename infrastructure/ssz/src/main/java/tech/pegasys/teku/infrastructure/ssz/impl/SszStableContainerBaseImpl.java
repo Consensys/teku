@@ -30,7 +30,7 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
   public SszStableContainerBaseImpl(
       final SszStableContainerBaseSchema<? extends SszStableContainerBase> type) {
     super(type, type.getDefaultTree());
-    this.activeFields = getSchema().toStableContainerSchemaBaseRequired().getDefaultActiveFields();
+    this.activeFields = getSchema().toStableContainerSchemaBaseRequired().getRequiredFields();
   }
 
   public SszStableContainerBaseImpl(

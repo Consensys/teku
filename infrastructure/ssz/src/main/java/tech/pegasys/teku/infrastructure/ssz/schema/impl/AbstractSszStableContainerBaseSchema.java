@@ -193,8 +193,14 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     return requiredFields;
   }
 
-  protected SszBitvector getRequiredFields() {
+  @Override
+  public SszBitvector getRequiredFields() {
     return requiredFields;
+  }
+
+  @Override
+  public SszBitvector getOptionalFields() {
+    return optionalFields;
   }
 
   @Override
@@ -300,6 +306,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
     if (hasOptionalFields) {
+      // for containers with optional fields
       final SszBitvector activeFields = getActiveFieldsBitvectorFromBackingNode(node);
 
       final int containerSize =
@@ -313,6 +320,10 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
                     return schema.isFixedSize() ? childSize : childSize + SSZ_LENGTH_SIZE;
                   })
               .sum();
+
+      // TODO: bug?
+      //  shouldn't we delegate the size to profile or stablecontainer since we serialize the active
+      // field differently?
       final int activeFieldsSize = activeFieldsSchema.getSszSize(activeFields.getBackingNode());
       return containerSize + activeFieldsSize;
     }
@@ -492,7 +503,15 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   }
 
   /**
+   * Delegates activeFields bounds: Profile and StableContainer have different
+   * serialization\deserialization rules
+   */
+  abstract SszLengthBounds computeActiveFieldsSszLengthBounds();
+
+  /**
    * Bounds are calculate as follows:
+   *
+   * <p>ActiveFields bitvector bounds added to
    *
    * <ol>
    *   <li>Min bound is the min bound for the required only fields
@@ -512,7 +531,9 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
             .mapToObj(this::computeSingleSchemaLengthBounds)
             .reduce(requiredOnlyFieldsBounds, SszLengthBounds::add);
 
-    return requiredOnlyFieldsBounds.or(includingOptionalFieldsBounds);
+    return requiredOnlyFieldsBounds
+        .or(includingOptionalFieldsBounds)
+        .add(computeActiveFieldsSszLengthBounds());
   }
 
   private SszLengthBounds computeSingleSchemaLengthBounds(final int fieldIndex) {
@@ -525,8 +546,6 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
         .ceilToBytes();
   }
 
-  // TODO load and store
-
   @Override
   public void storeBackingNodes(
       final TreeNodeStore nodeStore,
@@ -537,25 +556,29 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     final TreeNode activeFieldsBitvectorSubtree = node.get(BITVECTOR_G_INDEX);
 
     storeContainerBackingNodes(
-        activeFieldsSchema.createFromBackingNode(activeFieldsBitvectorSubtree),
+        getActiveFieldsBitvectorFromBackingNode(node),
         nodeStore,
         maxBranchLevelsSkipped,
         getContainerGIndex(rootGIndex),
         containerSubtree);
 
-    activeFieldsSchema.storeBackingNodes(
-        nodeStore,
-        maxBranchLevelsSkipped,
-        getBitvectorGIndex(rootGIndex),
-        activeFieldsBitvectorSubtree);
+    final Bytes32[] children;
+    if (hasOptionalFields) {
+      activeFieldsSchema.storeBackingNodes(
+          nodeStore,
+          maxBranchLevelsSkipped,
+          getBitvectorGIndex(rootGIndex),
+          activeFieldsBitvectorSubtree);
 
-    nodeStore.storeBranchNode(
-        node.hashTreeRoot(),
-        rootGIndex,
-        1,
-        new Bytes32[] {
-          containerSubtree.hashTreeRoot(), activeFieldsBitvectorSubtree.hashTreeRoot()
-        });
+      children =
+          new Bytes32[] {
+            containerSubtree.hashTreeRoot(), activeFieldsBitvectorSubtree.hashTreeRoot()
+          };
+    } else {
+      children = new Bytes32[] {containerSubtree.hashTreeRoot()};
+    }
+
+    nodeStore.storeBranchNode(node.hashTreeRoot(), rootGIndex, 1, children);
   }
 
   private void storeContainerBackingNodes(
@@ -599,9 +622,10 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     if (activeFields.getBit(childIndex)) {
       final SszSchema<?> childSchema = getChildSchema(childIndex);
       childSchema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
+    } else {
+      SszPrimitiveSchemas.NONE_SCHEMA.storeBackingNodes(
+          nodeStore, maxBranchLevelsSkipped, gIndex, node);
     }
-    SszPrimitiveSchemas.NONE_SCHEMA.storeBackingNodes(
-        nodeStore, maxBranchLevelsSkipped, gIndex, node);
   }
 
   @Override
@@ -611,19 +635,29 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
       return getDefaultTree();
     }
     final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
-    checkState(
-        branchData.getChildren().length == 2,
-        "Stable container root node must have exactly 2 children");
+    if (hasOptionalFields) {
+      checkState(
+          branchData.getChildren().length == 2,
+          "Stable container root node must have exactly 2 children when allows optional fields");
+    } else {
+      checkState(
+          branchData.getChildren().length == 1,
+          "Stable container root node must have exactly 1 children when optional fields are not allowed");
+    }
+
     checkState(branchData.getDepth() == 1, "Stable container root node must have depth of 1");
     final Bytes32 containerHash = branchData.getChildren()[0];
-    final Bytes32 activeFieldsBitvectorHash = branchData.getChildren()[1];
 
-    final TreeNode activeFieldsTreeNode =
-        activeFieldsSchema.loadBackingNodes(
-            nodeSource, activeFieldsBitvectorHash, getBitvectorGIndex(rootGIndex));
-
-    final SszBitvector activeFields =
-        activeFieldsSchema.createFromBackingNode(activeFieldsTreeNode);
+    final SszBitvector activeFields;
+    if (hasOptionalFields) {
+      final Bytes32 activeFieldsBitvectorHash = branchData.getChildren()[1];
+      final TreeNode activeFieldsTreeNode =
+          activeFieldsSchema.loadBackingNodes(
+              nodeSource, activeFieldsBitvectorHash, getBitvectorGIndex(rootGIndex));
+      activeFields = activeFieldsSchema.createFromBackingNode(activeFieldsTreeNode);
+    } else {
+      activeFields = requiredFields;
+    }
 
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
@@ -638,7 +672,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
             (tns, childHash, childGIndex) ->
                 loadChildNode(activeFields, tns, childHash, childGIndex));
 
-    return BranchNode.create(containerTreeNode, activeFieldsTreeNode);
+    return BranchNode.create(containerTreeNode, activeFields.getBackingNode());
   }
 
   private TreeNode loadChildNode(
@@ -682,16 +716,6 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   @Override
   public List<String> getFieldNames() {
     return definedChildrenNames;
-  }
-
-  @Override
-  public final boolean hasOptionalFields() {
-    return hasOptionalFields;
-  }
-
-  @Override
-  public SszBitvector getDefaultActiveFields() {
-    return requiredFields;
   }
 
   @Override

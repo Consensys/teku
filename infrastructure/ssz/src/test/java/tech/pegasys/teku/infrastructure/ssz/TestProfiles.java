@@ -38,7 +38,7 @@ public class TestProfiles {
   static final List<NamedSchema<?>> SHAPE_SCHEMAS =
       List.of(
           namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("color", SszPrimitiveSchemas.UINT8_SCHEMA),
+          namedSchema("color", SszPrimitiveSchemas.BYTE_SCHEMA),
           namedSchema("radius", SszPrimitiveSchemas.UINT64_SCHEMA));
 
   static final int SIDE_INDEX = 0;

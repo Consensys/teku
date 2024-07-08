@@ -25,10 +25,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public interface SszCompositeTestBase extends SszDataTestBase {
 
-  default IntStream streamValidIndices(final SszComposite<?> data) {
-    return IntStream.range(0, data.size());
-  }
-
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default void get_childSchemaMatches(final SszComposite<?> data) {

@@ -32,12 +32,16 @@ public class SszStableContainerTest
   public Stream<SszContainer> sszData() {
     RandomSszDataGenerator smallListsRandomSCGen = new RandomSszDataGenerator().withMaxListSize(1);
     RandomSszDataGenerator largeListsRandomSCGen =
-        new RandomSszDataGenerator().withMaxListSize(1024);
+        new RandomSszDataGenerator()
+            .withStableContainerMode(StableContainerMode.RANDOM)
+            .withMaxListSize(1024);
     RandomSszDataGenerator emptySCGen =
         new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.EMPTY);
     RandomSszDataGenerator fullSCGen =
         new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.FULL);
-    RandomSszDataGenerator anotherRound = new RandomSszDataGenerator();
+
+    RandomSszDataGenerator anotherRound =
+        new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.RANDOM);
     return SszStableContainerSchemaTest.testContainerSchemas()
         .flatMap(
             schema ->

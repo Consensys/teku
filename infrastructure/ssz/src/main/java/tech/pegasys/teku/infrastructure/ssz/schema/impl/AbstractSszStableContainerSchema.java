@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
 
@@ -37,6 +38,11 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
         Set.of(),
         IntSet.of(IntStream.range(0, definedChildrenSchemas.size()).toArray()),
         maxFieldCount);
+  }
+
+  @Override
+  SszLengthBounds computeActiveFieldsSszLengthBounds() {
+    return getActiveFieldsSchema().getSszLengthBounds();
   }
 
   @Override

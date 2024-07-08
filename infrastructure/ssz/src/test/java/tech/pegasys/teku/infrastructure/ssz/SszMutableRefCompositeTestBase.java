@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataTestBase.passWhenEmpty;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,7 +33,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
             .map(d -> (SszComposite<?>) d)
             .flatMap(
                 data ->
-                    IntStream.range(0, data.size())
+                    streamValidIndices(data)
                         .limit(32)
                         .filter(
                             i ->
@@ -62,7 +61,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszDataAssert.assertThatSszData(data.get(updateChildIndex))
         .isEqualByGettersTo(newChildValue)
         .isEqualBySszTo(newChildValue);
-    IntStream.range(0, data.size())
+    streamValidIndices(data)
         .limit(32)
         .forEach(
             i -> {
@@ -76,7 +75,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszDataAssert.assertThatSszData(updatedData).isNotEqualByAllMeansTo(data);
     SszDataAssert.assertThatSszData(updatedData.get(updateChildIndex))
         .isEqualByAllMeansTo(newChildValue);
-    IntStream.range(0, data.size())
+    streamValidIndices(data)
         .limit(32)
         .forEach(
             i -> {

@@ -13,30 +13,21 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
-import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
-import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 /**
  * The Profile overrides the stable container logic by:
@@ -131,6 +122,13 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
   }
 
   @Override
+  SszLengthBounds computeActiveFieldsSszLengthBounds() {
+    return optionalFieldsSchema
+        .map(SszBitvectorSchema::getSszLengthBounds)
+        .orElse(SszLengthBounds.ZERO);
+  }
+
+  @Override
   int sszSerializeActiveFields(final SszBitvector activeFieldsBitvector, final SszWriter writer) {
     if (optionalFieldsSchema.isEmpty()) {
       // without optional fields, a profile won't serialize the bitvector
@@ -167,63 +165,4 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
                         .map(optionalFieldIndexToSchemaIndexCache::getInt))
                 .toArray());
   }
-
-  @Override
-  public void storeBackingNodes(
-      final TreeNodeStore nodeStore,
-      final int maxBranchLevelsSkipped,
-      final long rootGIndex,
-      final TreeNode node) {
-    final TreeNode containerSubtree = node.get(CONTAINER_G_INDEX);
-    super.storeBackingNodes(
-        nodeStore,
-        maxBranchLevelsSkipped,
-        GIndexUtil.gIdxLeftGIndex(rootGIndex),
-        node.get(CONTAINER_G_INDEX));
-
-    nodeStore.storeBranchNode(
-        node.hashTreeRoot(), rootGIndex, 1, new Bytes32[] {containerSubtree.hashTreeRoot()});
-  }
-
-  @Override
-  public TreeNode loadBackingNodes(
-      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
-    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
-      return getDefaultTree();
-    }
-
-    final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
-    checkState(
-        branchData.getChildren().length == 1, "Profile root node must have exactly 1 children");
-    checkState(branchData.getDepth() == 1, "Profile root node must have depth of 1");
-    final Bytes32 containerHash = branchData.getChildren()[0];
-
-    long containerRootGIndex = GIndexUtil.gIdxLeftGIndex(rootGIndex);
-
-    final long lastUsefulGIndex =
-        GIndexUtil.gIdxChildGIndex(containerRootGIndex, maxChunks() - 1, treeDepth());
-    TreeNode containerTree =
-        LoadingUtil.loadNodesToDepth(
-            nodeSource,
-            containerHash,
-            containerRootGIndex,
-            treeDepth(),
-            super.getDefaultTree(),
-            lastUsefulGIndex,
-            this::loadChildNode);
-
-    return BranchNode.create(containerTree, getRequiredFields().getBackingNode());
-  }
-
-  private TreeNode loadChildNode(
-      final TreeNodeSource nodeSource, final Bytes32 childHash, final long childGIndex) {
-    final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth());
-    return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
-  }
-
-  //  @Override
-  //  public long getChildGeneralizedIndex(final long elementIndex) {
-  //    return GIndexUtil.gIdxCompose(CONTAINER_G_INDEX,
-  // super.getChildGeneralizedIndex(elementIndex));
-  //  }
 }

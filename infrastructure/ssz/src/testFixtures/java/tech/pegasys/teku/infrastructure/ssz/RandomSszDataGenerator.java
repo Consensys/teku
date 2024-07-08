@@ -18,11 +18,13 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -37,10 +39,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerBaseSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RandomSszDataGenerator {
@@ -56,7 +56,7 @@ public class RandomSszDataGenerator {
   private final StableContainerMode stableContainerMode;
 
   public RandomSszDataGenerator() {
-    this(new Random(1), 16 * 1024, StableContainerMode.RANDOM);
+    this(new Random(1), 16 * 1024, StableContainerMode.FULL);
   }
 
   public RandomSszDataGenerator(
@@ -103,8 +103,6 @@ public class RandomSszDataGenerator {
         return (Stream<T>) Stream.generate(byteSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
         return (Stream<T>) Stream.generate(uintSupplier);
-      } else if (schema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
-        return (Stream<T>) Stream.generate(byteSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT256_SCHEMA)) {
         return (Stream<T>) Stream.generate(uint256Supplier);
       } else if (schema.equals(SszPrimitiveSchemas.BYTES4_SCHEMA)) {
@@ -114,30 +112,32 @@ public class RandomSszDataGenerator {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
-    } else if (schema instanceof AbstractSszStableContainerSchema<?> containerSchema) {
+    } else if (schema
+        instanceof AbstractSszStableContainerBaseSchema<?> stableContainerBaseSchema) {
+      return Stream.generate(
+          () -> {
+            final SszBitvector requiredFields = stableContainerBaseSchema.getRequiredFields();
+            final SszBitvector optionalFields = stableContainerBaseSchema.getOptionalFields();
+            final int lastIndex =
+                Math.max(requiredFields.getLastSetBitIndex(), optionalFields.getLastSetBitIndex());
 
-      final List<NamedSchema<?>> definedFieldSchemas =
-          containerSchema.toStableContainerSchemaBaseRequired().getChildrenNamedSchemas();
-      return Stream.generate(
-          () -> {
-            List<Optional<? extends SszData>> children =
-                definedFieldSchemas.stream()
-                    .map(NamedSchema::getSchema)
-                    .map(this::randomStableContainerData)
-                    .collect(Collectors.toList());
-            return (T) containerSchema.createFromOptionalFieldValues(children);
-          });
-    } else if (schema instanceof AbstractSszProfileSchema<?>) {
-      AbstractSszProfileSchema<SszProfile> containerSchema =
-          (AbstractSszProfileSchema<SszProfile>) schema;
-      return Stream.generate(
-          () -> {
-            // TODO fix?
-            List<SszData> children =
-                containerSchema.getFieldSchemas().stream()
-                    .map(this::randomData)
-                    .collect(Collectors.toList());
-            return (T) containerSchema.createFromFieldValues(children);
+            final List<Optional<? extends SszData>> values =
+                IntStream.rangeClosed(0, lastIndex)
+                    .mapToObj(
+                        index -> {
+                          if (requiredFields.getBit(index)) {
+                            return Optional.of(
+                                randomData(stableContainerBaseSchema.getChildSchema(index)));
+                          }
+                          if (optionalFields.getBit(index)) {
+                            return randomStableContainerData(
+                                stableContainerBaseSchema.getChildSchema(index));
+                          }
+                          return Optional.<SszData>empty();
+                        })
+                    .toList();
+
+            return (T) stableContainerBaseSchema.createFromOptionalFieldValues(values);
           });
     } else if (schema instanceof AbstractSszContainerSchema) {
       AbstractSszContainerSchema<SszContainer> containerSchema =

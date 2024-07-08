@@ -49,8 +49,6 @@ public interface SszStableContainerBaseSchema<C extends SszStableContainerBase>
 
   List<NamedSchema<?>> getChildrenNamedSchemas();
 
-  boolean hasOptionalFields();
-
   SszBitvectorSchema<SszBitvector> getActiveFieldsSchema();
 
   TreeNode createTreeFromOptionalFieldValues(List<Optional<? extends SszData>> fieldValues);
@@ -59,7 +57,9 @@ public interface SszStableContainerBaseSchema<C extends SszStableContainerBase>
     return createFromBackingNode(createTreeFromOptionalFieldValues(fieldValues));
   }
 
-  SszBitvector getDefaultActiveFields();
+  SszBitvector getRequiredFields();
+
+  SszBitvector getOptionalFields();
 
   SszBitvector getActiveFieldsBitvectorFromBackingNode(TreeNode node);
 }
