@@ -31,8 +31,8 @@ public interface KZG {
   int CELLS_PER_EXT_BLOB = 128;
   int FIELD_ELEMENTS_PER_BLOB = 4096;
 
-  static KZG getInstance() {
-    return CKZG4844.getInstance();
+  static KZG getInstance(final boolean rustKzgEnabled) {
+    return rustKzgEnabled ? RustWithCKZG.getInstance() : CKZG4844.getInstance();
   }
 
   KZG NOOP =

@@ -53,7 +53,7 @@ public class RecoveringSidecarRetrieverTest {
   final MiscHelpersEip7594 miscHelpers =
       MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
   final int columnCount = config.getNumberOfColumns();
-  final KZG kzg = KZG.getInstance();
+  final KZG kzg = KZG.getInstance(false);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 

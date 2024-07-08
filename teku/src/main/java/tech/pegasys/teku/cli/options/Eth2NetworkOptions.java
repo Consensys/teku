@@ -91,6 +91,17 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
+      names = {"--Xrust-kzg-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Use Rust KZG library LibPeerDASKZG with fallback to CKZG4844 for EIP-4844 methods",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean rustKzgEnabled = Eth2NetworkConfiguration.DEFAULT_RUST_KZG_ENABLED;
+
+  @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allow late blocks to be reorged out if they meet the requirements.",
@@ -336,7 +347,8 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .epochsStoreBlobs(epochsStoreBlobs)
-        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
+        .rustKzgEnabled(rustKzgEnabled);
   }
 
   public String getNetwork() {

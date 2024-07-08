@@ -44,7 +44,7 @@ public class KzgRetriever {
                         () ->
                             new IllegalArgumentException(
                                 "No trusted setup configured for " + network)));
-    final KZG kzg = KZG.getInstance();
+    final KZG kzg = KZG.getInstance(false);
     kzg.loadTrustedSetup(trustedSetupFile);
     return kzg;
   }

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.kzg;
 
-public final class CKZG4844Test extends KZGAbstractTest {
-  public CKZG4844Test() {
-    super(CKZG4844.getInstance());
+public final class RustWithCKZGTest extends KZGAbstractTest {
+  public RustWithCKZGTest() {
+    super(RustWithCKZG.getInstance());
   }
 }
