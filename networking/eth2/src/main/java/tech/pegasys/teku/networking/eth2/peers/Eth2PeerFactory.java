@@ -29,6 +29,7 @@ public class Eth2PeerFactory {
 
   private static final long TIME_OUT = 60;
   private static final int REQUEST_RATE_LIMIT_BOOST = 50;
+  private static final int BLOCK_RATE_LIMIT_BOOST = 10;
   private final Spec spec;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -75,7 +76,8 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
-        RateTracker.create(peerRateLimit, TIME_OUT, timeProvider, "blocks"),
+        RateTracker.create(
+            peerRateLimit * BLOCK_RATE_LIMIT_BOOST, TIME_OUT, timeProvider, "blocks"),
         RateTracker.create(
             peerRateLimit * spec.getMaxBlobsPerBlock().orElse(1),
             TIME_OUT,
