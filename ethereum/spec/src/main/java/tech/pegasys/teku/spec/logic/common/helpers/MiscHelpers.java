@@ -113,12 +113,12 @@ public class MiscHelpers {
     final int total = indices.size();
     byte[] hash = null;
     while (true) {
-      int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
+      final int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
         hash = sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
-      int randomByte = UnsignedBytes.toInt(hash[i % 32]);
-      UInt64 validatorEffectiveBalance =
+      final int randomByte = UnsignedBytes.toInt(hash[i % 32]);
+      final UInt64 validatorEffectiveBalance =
           state.getValidators().get(candidateIndex).getEffectiveBalance();
       if (validatorEffectiveBalance
           .times(MAX_RANDOM_BYTE)
