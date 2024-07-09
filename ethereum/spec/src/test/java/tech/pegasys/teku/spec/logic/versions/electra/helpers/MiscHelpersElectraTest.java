@@ -19,8 +19,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
-import it.unimi.dsi.fastutil.ints.IntList;
-import org.apache.tuweni.bytes.Bytes32;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,8 +29,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
@@ -136,7 +134,7 @@ public class MiscHelpersElectraTest {
     assertThat(proposerIndexCount).isEqualTo(4);
   }
 
-  private BeaconState randomStateWithConsolidatedValidator(int consolidationAmount) {
+  private BeaconState randomStateWithConsolidatedValidator(final int consolidationAmount) {
     final BeaconState preState = dataStructureUtil.randomBeaconState(8);
     return BeaconStateElectra.required(preState)
         .updated(
