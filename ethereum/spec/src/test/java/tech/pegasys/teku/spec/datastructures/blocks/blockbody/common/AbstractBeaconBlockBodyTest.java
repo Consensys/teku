@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -166,9 +165,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   void equalsReturnsFalseWhenAttesterSlashingsAreDifferent() {
     // Create copy of attesterSlashings and change the element to ensure it is different.
     attesterSlashings =
-        Stream.concat(
-                Stream.of(dataStructureUtil.randomAttesterSlashing()), attesterSlashings.stream())
-            .collect(blockBodySchema.getAttesterSlashingsSchema().collector());
+        blockBodySchema.getAttesterSlashingsSchema().of(dataStructureUtil.randomAttesterSlashing());
 
     T testBeaconBlockBody = createBlockBody();
 

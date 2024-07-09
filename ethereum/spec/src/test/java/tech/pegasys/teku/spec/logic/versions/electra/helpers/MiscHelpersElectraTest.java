@@ -14,8 +14,13 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+import org.apache.tuweni.bytes.Bytes32;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,6 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -66,7 +72,7 @@ public class MiscHelpersElectraTest {
                   final UInt64 eth1DepositIndex = dataStructureUtil.randomUInt64();
                   mutableState.setEth1DepositIndex(eth1DepositIndex);
                   MutableBeaconStateElectra.required(mutableState)
-                      .setDepositReceiptsStartIndex(eth1DepositIndex);
+                      .setDepositRequestsStartIndex(eth1DepositIndex);
                 });
 
     assertThat(miscHelpersElectra.isFormerDepositMechanismDisabled(state)).isTrue();
@@ -82,11 +88,32 @@ public class MiscHelpersElectraTest {
                 mutableState -> {
                   mutableState.setEth1DepositIndex(UInt64.valueOf(64));
                   MutableBeaconStateElectra.required(mutableState)
-                      .setDepositReceiptsStartIndex(
-                          SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX);
+                      .setDepositRequestsStartIndex(
+                          SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
                 });
 
     assertThat(miscHelpersElectra.isFormerDepositMechanismDisabled(state)).isFalse();
+  }
+
+  @Test
+  public void computeProposerIndexShouldUseMaxEffectiveBalanceElectra() {
+    final SpecConfigElectra specConfigElectra =
+        spy(SpecConfigElectra.required(spec.getGenesisSpecConfig()));
+    final MiscHelpersElectra miscHelpersElectra =
+        new MiscHelpersElectra(specConfigElectra, predicates, schemaDefinitionsElectra);
+
+    final BeaconState state =
+        new BeaconStateTestBuilder(dataStructureUtil)
+            .forkVersion(spec.getGenesisSpecConfig().getGenesisForkVersion())
+            .activeValidator(UInt64.THIRTY_TWO_ETH)
+            .activeValidator(UInt64.THIRTY_TWO_ETH)
+            .activeValidator(UInt64.THIRTY_TWO_ETH)
+            .build();
+
+    miscHelpersElectra.computeProposerIndex(state, IntList.of(0, 1, 2), Bytes32.ZERO);
+
+    verify(specConfigElectra).getMaxEffectiveBalanceElectra();
+    verify(specConfigElectra, never()).getMaxEffectiveBalance();
   }
 
   @Test

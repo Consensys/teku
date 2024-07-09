@@ -22,10 +22,12 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload>
     extends SszContainerSchema<T>, BuilderPayloadSchema<T> {
@@ -39,15 +41,20 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
 
   WithdrawalSchema getWithdrawalSchemaRequired();
 
-  SszListSchema<DepositReceipt, ? extends SszList<DepositReceipt>>
-      getDepositReceiptsSchemaRequired();
+  SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
+      getDepositRequestsSchemaRequired();
 
-  DepositReceiptSchema getDepositReceiptSchemaRequired();
+  DepositRequestSchema getDepositRequestSchemaRequired();
 
-  SszListSchema<ExecutionLayerWithdrawalRequest, ? extends SszList<ExecutionLayerWithdrawalRequest>>
-      getExecutionLayerWithdrawalRequestsSchemaRequired();
+  SszListSchema<WithdrawalRequest, ? extends SszList<WithdrawalRequest>>
+      getWithdrawalRequestsSchemaRequired();
 
-  ExecutionLayerWithdrawalRequestSchema getExecutionLayerWithdrawalRequestSchemaRequired();
+  WithdrawalRequestSchema getWithdrawalRequestSchemaRequired();
+
+  ConsolidationRequestSchema getConsolidationRequestSchemaRequired();
+
+  SszListSchema<ConsolidationRequest, ? extends SszList<ConsolidationRequest>>
+      getConsolidationRequestsSchemaRequired();
 
   LongList getBlindedNodeGeneralizedIndices();
 

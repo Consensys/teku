@@ -56,6 +56,8 @@ import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
@@ -437,6 +439,19 @@ class RemoteValidatorApiHandlerTest {
 
     assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
     assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.getDependentRoot());
+  }
+
+  @Test
+  public void getPeerCount_WhenAvailable_ReturnPeerCount() {
+    final PeerCount response =
+        new PeerCountBuilder()
+            .connected(UInt64.valueOf(10))
+            .disconnected(UInt64.valueOf(5))
+            .build();
+    when(typeDefClient.getPeerCount()).thenReturn(Optional.of(response));
+    final SafeFuture<Optional<PeerCount>> peerCountFuture = apiHandler.getPeerCount();
+    PeerCount peerCount = unwrapToValue(peerCountFuture);
+    assertThat(peerCount).isEqualTo(response);
   }
 
   @Test

@@ -42,6 +42,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -127,6 +129,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       blockProductionAndPublishingPerformanceFactory;
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
+  private final NetworkDataProvider networkDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
@@ -149,6 +152,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
       final NodeDataProvider nodeDataProvider,
+      final NetworkDataProvider networkDataProvider,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
       final BlockFactory blockFactory,
@@ -174,6 +178,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
     this.nodeDataProvider = nodeDataProvider;
+    this.networkDataProvider = networkDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
     this.blockFactory = blockFactory;
@@ -297,6 +302,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(
             optionalState ->
                 optionalState.map(state -> getProposerDutiesFromIndicesAndState(state, epoch)));
+  }
+
+  @Override
+  public SafeFuture<Optional<PeerCount>> getPeerCount() {
+    return SafeFuture.completedFuture(Optional.of(networkDataProvider.getPeerCount()));
   }
 
   @Override

@@ -94,7 +94,7 @@ public class Readiness extends RestApiEndpoint {
   private boolean belowTargetPeerCount(final RestApiRequest request) {
     return request
         .getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER)
-        .map(targetPeerCount -> networkDataProvider.getPeerCount() < targetPeerCount)
+        .map(targetPeerCount -> networkDataProvider.countPeers() < targetPeerCount)
         .orElse(false);
   }
 

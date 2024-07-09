@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.operations;
 
-import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,8 +24,6 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.consolidations.Consolidation;
-import tech.pegasys.teku.spec.datastructures.consolidations.SignedConsolidation;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -139,25 +136,6 @@ public class OperationSignatureVerifier {
     final BLSSignature signature = signedBlsToExecutionChange.getSignature();
 
     return signatureVerifier.verify(publicKey, signingRoot, signature);
-  }
-
-  /* Signature verification for process_consolidation */
-  public boolean verifyConsolidationSignature(
-      final BeaconState state,
-      final SignedConsolidation signedConsolidation,
-      final BLSSignatureVerifier signatureVerifier) {
-    final Bytes32 domain =
-        miscHelpers.computeDomain(Domain.DOMAIN_CONSOLIDATION, state.getGenesisValidatorsRoot());
-    final Consolidation consolidation = signedConsolidation.getMessage();
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(consolidation, domain);
-
-    final BLSPublicKey sourcePublicKey =
-        state.getValidators().get(consolidation.getSourceIndex()).getPublicKey();
-    final BLSPublicKey targetPublicKey =
-        state.getValidators().get(consolidation.getTargetIndex()).getPublicKey();
-
-    return signatureVerifier.verify(
-        List.of(sourcePublicKey, targetPublicKey), signingRoot, signedConsolidation.getSignature());
   }
 
   private Bytes calculateBlsToExecutionChangeSigningRoot(

@@ -545,8 +545,8 @@ public class AttestationBitsAggregatorElectraTest {
             attestationSchema.create(
                 aggregationBits,
                 attestationData,
-                committeeBits,
-                dataStructureUtil.randomSignature()));
+                dataStructureUtil.randomSignature(),
+                committeeBits));
     when(attestation.getCommitteesSize()).thenReturn(Optional.of(committeeSizes));
 
     return attestation;

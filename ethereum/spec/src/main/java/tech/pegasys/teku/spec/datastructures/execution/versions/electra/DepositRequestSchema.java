@@ -27,13 +27,13 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class DepositReceiptSchema
+public class DepositRequestSchema
     extends ContainerSchema5<
-        DepositReceipt, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
+        DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
 
-  public DepositReceiptSchema() {
+  public DepositRequestSchema() {
     super(
-        "DepositReceipt",
+        "DepositRequest",
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE),
         namedSchema("withdrawal_credentials", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -41,17 +41,17 @@ public class DepositReceiptSchema
         namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
-  public DepositReceipt create(
+  public DepositRequest create(
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,
       final BLSSignature signature,
       final UInt64 index) {
-    return new DepositReceipt(this, pubkey, withdrawalCredentials, amount, signature, index);
+    return new DepositRequest(this, pubkey, withdrawalCredentials, amount, signature, index);
   }
 
   @Override
-  public DepositReceipt createFromBackingNode(final TreeNode node) {
-    return new DepositReceipt(this, node);
+  public DepositRequest createFromBackingNode(final TreeNode node) {
+    return new DepositRequest(this, node);
   }
 }

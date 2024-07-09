@@ -93,7 +93,7 @@ public class ExternalSigner implements Signer {
     final LabelledMetric<Counter> labelledCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
-            "external_signer_requests",
+            "external_signer_requests_total",
             "Completed external signer counts",
             "result");
     successCounter = labelledCounter.labels("success");

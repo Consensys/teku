@@ -124,7 +124,7 @@ public abstract class AbstractBlockFactoryTest {
   protected ExecutionPayloadResult cachedExecutionPayloadResult = null;
 
   protected GraffitiBuilder graffitiBuilder =
-      new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED, Optional.empty());
+      new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED);
 
   @BeforeAll
   public static void initSession() {

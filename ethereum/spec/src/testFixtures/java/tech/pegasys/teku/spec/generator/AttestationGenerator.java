@@ -110,8 +110,8 @@ public class AttestationGenerator {
     return attestationSchema.create(
         targetBitlist,
         srcAttestations.get(0).getData(),
-        () -> srcAttestations.get(0).getCommitteeBitsRequired(),
-        targetSig);
+        targetSig,
+        () -> srcAttestations.get(0).getCommitteeBitsRequired());
   }
 
   public Attestation validAttestation(final StateAndBlockSummary blockAndState) {
@@ -416,8 +416,8 @@ public class AttestationGenerator {
       return attestationSchema.create(
           aggregationBitfield,
           attestationData,
-          getCommitteeBitsSupplier(attestationSchema, committeeIndex),
-          signature);
+          signature,
+          getCommitteeBitsSupplier(attestationSchema, committeeIndex));
     }
 
     private SszBitlist getAggregationBits(
