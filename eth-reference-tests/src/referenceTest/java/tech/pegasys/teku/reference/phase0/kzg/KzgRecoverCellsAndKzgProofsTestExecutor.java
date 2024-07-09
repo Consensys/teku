@@ -100,6 +100,7 @@ public class KzgRecoverCellsAndKzgProofsTestExecutor extends KzgTestExecutor {
             .toList();
       }
 
+      @SuppressWarnings("Unused")
       public List<KZGProof> getProfos() {
         return proofs.stream()
             .map(proofString -> new KZGProof(Bytes48.fromHexString(proofString)))
