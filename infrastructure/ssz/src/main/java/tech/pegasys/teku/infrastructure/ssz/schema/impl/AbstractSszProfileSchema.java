@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public abstract class AbstractSszProfileSchema<C extends SszProfile>
     extends AbstractSszStableContainerBaseSchema<C> implements SszProfileSchema<C> {
 
-  private final IntList activeFieldIndicesCache;
   private final IntList optionalFieldIndexToSchemaIndexCache;
   private final int[] schemaIndexToOptionalFieldIndexCache;
   private final Set<Integer> optionalFieldIndices;
@@ -78,12 +77,12 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
       //
       // Example:
       //
-      // optional index to schema index:
+      // optional index to schema index (optionalFieldIndexToSchemaIndexCache):
       // 0->2
       // 1->4
       // 2->5
       //
-      // schema index to optional index:
+      // schema index to optional index (schemaIndexToOptionalFieldIndexCache):
       // 0->null
       // 1->null
       // 2->0
@@ -109,12 +108,6 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
     }
 
     this.stableContainer = stableContainerSchema;
-    this.activeFieldIndicesCache =
-        IntList.of(
-            requiredFieldIndices.stream()
-                .sorted(Comparator.naturalOrder())
-                .mapToInt(i -> i)
-                .toArray());
   }
 
   @Override
