@@ -56,7 +56,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    *
    * <p>May be overridden by the ENV_MILESTONE environment variable.
    */
-  private static final String MILESTONE = "electra";
+  private static final String MILESTONE = "";
 
   /**
    * Filter tests to run only those where the display name contains this string.
