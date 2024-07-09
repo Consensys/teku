@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 /**
  * The Profile overrides the stable container logic by:
@@ -126,6 +127,11 @@ public abstract class AbstractSszProfileSchema<C extends SszProfile>
     return optionalFieldsSchema
         .map(SszBitvectorSchema::getSszLengthBounds)
         .orElse(SszLengthBounds.ZERO);
+  }
+
+  @Override
+  int getSszActiveFieldsSize(final TreeNode node) {
+    return optionalFieldsSchema.map(schema -> schema.getSszSize(node)).orElse(0);
   }
 
   @Override

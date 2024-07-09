@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public abstract class AbstractSszStableContainerSchema<C extends SszStableContainer>
     extends AbstractSszStableContainerBaseSchema<C> implements SszStableContainerSchema<C> {
@@ -43,6 +44,11 @@ public abstract class AbstractSszStableContainerSchema<C extends SszStableContai
   @Override
   SszLengthBounds computeActiveFieldsSszLengthBounds() {
     return getActiveFieldsSchema().getSszLengthBounds();
+  }
+
+  @Override
+  int getSszActiveFieldsSize(final TreeNode node) {
+    return getActiveFieldsSchema().getSszSize(node);
   }
 
   @Override

@@ -303,6 +303,12 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     return calcSszFixedPartSize(requiredFields);
   }
 
+  /**
+   * Delegates active fields size: Profile and StableContainer have different
+   * serialization\deserialization rules
+   */
+  abstract int getSszActiveFieldsSize(final TreeNode node);
+
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
     if (hasOptionalFields) {
@@ -321,10 +327,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
                   })
               .sum();
 
-      // TODO: bug?
-      //  shouldn't we delegate the size to profile or stablecontainer since we serialize the active
-      // field differently?
-      final int activeFieldsSize = activeFieldsSchema.getSszSize(activeFields.getBackingNode());
+      final int activeFieldsSize = getSszActiveFieldsSize(activeFields.getBackingNode());
       return containerSize + activeFieldsSize;
     }
 

@@ -45,7 +45,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AbstractSszStableContainerBaseSchemaTest {
-  static final int MAX_SHAPE_FIELD_COUNT = 5;
+  static final int MAX_SHAPE_FIELD_COUNT = 16;
 
   static final List<NamedSchema<?>> SHAPE_SCHEMAS =
       List.of(
@@ -179,8 +179,8 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(square.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0xddc7acd38ae9d6d6788c14bd7635aeb1d7694768d7e00e1795bb6d328ec14f28"));
-    assertThat(square.sszSerialize()).isEqualTo(Bytes.fromHexString("0x03420000000000000001"));
+                "0x676ebb1aa0a62edeae70c7c1e36be52910662cf662eead3ef524ffdfe7a61c59"));
+    assertThat(square.sszSerialize()).isEqualTo(Bytes.fromHexString("0x0300420000000000000001"));
 
     final ShapeStableContainer circle =
         SHAPE_STABLE_CONTAINER_SCHEMA.createFromOptionalFieldValues(
@@ -193,8 +193,8 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(circle.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0xe823471310312d52aa1135d971a3ed72ba041ade3ec5b5077c17a39d73ab17c5"));
-    assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x06014200000000000000"));
+                "0x905b9b66f05a75db8441d55fe82b081f00a306467b526f83a4222fa0642211bc"));
+    assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x0600014200000000000000"));
 
     // json square round trip
     final String squareJson =
@@ -215,14 +215,16 @@ public class AbstractSszStableContainerBaseSchemaTest {
     // ssz circle deserialization
 
     ShapeStableContainer deserializedCircle =
-        SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x06014200000000000000"));
+        SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(
+            Bytes.fromHexString("0x0600014200000000000000"));
 
     assertCircle(circle, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedCircle).isEqualTo(circle);
 
     // ssz square deserialization
     ShapeStableContainer deserializedSquare =
-        SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(Bytes.fromHexString("0x03420000000000000001"));
+        SHAPE_STABLE_CONTAINER_SCHEMA.sszDeserialize(
+            Bytes.fromHexString("0x0300420000000000000001"));
 
     assertSquare(square, (byte) 1, UInt64.valueOf(0x42));
     assertThat(deserializedSquare).isEqualTo(square);
@@ -241,7 +243,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(circle.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0xe823471310312d52aa1135d971a3ed72ba041ade3ec5b5077c17a39d73ab17c5"));
+                "0x905b9b66f05a75db8441d55fe82b081f00a306467b526f83a4222fa0642211bc"));
     assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x014200000000000000"));
 
     final SquareProfile square =
@@ -254,7 +256,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(square.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0xddc7acd38ae9d6d6788c14bd7635aeb1d7694768d7e00e1795bb6d328ec14f28"));
+                "0x676ebb1aa0a62edeae70c7c1e36be52910662cf662eead3ef524ffdfe7a61c59"));
     assertThat(square.sszSerialize()).isEqualTo(Bytes.fromHexString("0x420000000000000001"));
 
     // json square round trip
@@ -305,7 +307,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(circle.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0xe823471310312d52aa1135d971a3ed72ba041ade3ec5b5077c17a39d73ab17c5"));
+                "0x905b9b66f05a75db8441d55fe82b081f00a306467b526f83a4222fa0642211bc"));
     assertThat(circle.sszSerialize()).isEqualTo(Bytes.fromHexString("0x00014200000000000000"));
 
     final CircleProfile circleWithOptional =
@@ -321,7 +323,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(circleWithOptional.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0xc34a2669febfec69fd04f51698339b183cba43548c17303e1dd88c4bf451504c"));
+                "0x969d1bbccfad8aa59dc9f7c0a4a79d80d6dc76ad0b88224ca413983b81eed232"));
     assertThat(circleWithOptional.sszSerialize())
         .isEqualTo(Bytes.fromHexString("0x0101420000000000000003"));
 
@@ -337,7 +339,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     assertThat(squareWithOptional.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0x763802b1b20e709f08faf13ce94b32f49fd69f218e2e5ee4a3c2dfed62121ec1"));
+                "0x162a5167b484695d5e2d18a5674c6d654650572542e058072431575ff5592db0"));
     assertThat(squareWithOptional.sszSerialize())
         .isEqualTo(Bytes.fromHexString("0x0142000000000000000103"));
 
