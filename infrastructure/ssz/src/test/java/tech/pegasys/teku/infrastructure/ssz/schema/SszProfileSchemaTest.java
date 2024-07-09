@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.CIRCLE_PROFILE_SCHEMA;
 import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.SQUARE_PROFILE_SCHEMA;
 
 import java.util.stream.Stream;
+import org.assertj.core.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class SszProfileSchemaTest extends SszCompositeSchemaTestBase {
 
@@ -27,5 +31,15 @@ public class SszProfileSchemaTest extends SszCompositeSchemaTestBase {
   @Override
   public Stream<SszContainerSchema<?>> testSchemas() {
     return testContainerSchemas();
+  }
+
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  @Override
+  void getChildSchema_shouldThrowIndexOutOfBounds(final SszCompositeSchema<?> schema) {
+    Assumptions.assumeThat(schema.getMaxLength()).isLessThan(Integer.MAX_VALUE);
+    int tooBigIndex = ((SszProfileSchema<?>) schema).getChildrenNamedSchemas().size();
+    assertThatThrownBy(() -> schema.getChildSchema(tooBigIndex))
+        .isInstanceOf(IndexOutOfBoundsException.class);
   }
 }
