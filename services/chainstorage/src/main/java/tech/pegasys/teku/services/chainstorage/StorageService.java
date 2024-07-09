@@ -66,7 +66,6 @@ public class StorageService extends Service implements StorageServiceFacade {
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
-    LOG.info("Storage service created");
   }
 
   @Override

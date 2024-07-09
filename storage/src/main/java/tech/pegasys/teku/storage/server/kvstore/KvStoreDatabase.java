@@ -463,8 +463,6 @@ public class KvStoreDatabase implements Database {
     try (final Stream<UInt64> stream =
         dao.streamFinalizedStateSlots(earliestFinalizedStateSlot, lastSlotToPrune)) {
       slotsToPruneStateFor =
-          // should probably create a cache (populated when adding finalized states)
-          // to query from rather than hit the db
           stream
               .limit(pruneLimit)
               .map(
@@ -479,12 +477,12 @@ public class KvStoreDatabase implements Database {
       return lastSlotToPrune;
     }
 
-    final UInt64 lastPrunedBlockSlot =
+    final UInt64 lastPrunedSlot =
         slotsToPruneStateFor.get(slotsToPruneStateFor.size() - 1).getLeft();
 
     deleteFinalizedStatesForSlot(slotsToPruneStateFor);
 
-    return slotsToPruneStateFor.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
+    return slotsToPruneStateFor.size() < pruneLimit ? lastSlotToPrune : lastPrunedSlot;
   }
 
   private void deleteFinalizedStatesForSlot(

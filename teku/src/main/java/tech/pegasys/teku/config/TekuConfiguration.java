@@ -292,6 +292,13 @@ public class TekuConfiguration {
         }
       }
 
+      if (storageConfiguration.getRetainedSlots() > 0
+          && storageConfiguration.getRetainedSlots()
+              < storageConfiguration.getDataStorageFrequency()) {
+        throw new InvalidConfigurationException(
+            "Frequency of storing finalized states must be less than or equal to the number of retained slots");
+      }
+
       return new TekuConfiguration(
           eth2NetworkConfiguration,
           spec,
