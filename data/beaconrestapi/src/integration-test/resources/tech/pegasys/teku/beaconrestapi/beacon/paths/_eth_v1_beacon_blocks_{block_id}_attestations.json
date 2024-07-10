@@ -4,6 +4,7 @@
     "operationId" : "getBlockAttestations",
     "summary" : "Get block attestations",
     "description" : "Retrieves attestations included in requested block.",
+    "deprecated": true,
     "parameters" : [ {
       "name" : "block_id",
       "required" : true,
