@@ -269,15 +269,22 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
-    final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
-        (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
-    // TODO fix for electra (only used in Beacon API)
+    final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot = getSlotFilter(maybeSlot);
+
     final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
         (group) ->
             maybeCommitteeIndex
                 .map(index -> group.getAttestationData().getIndex().equals(index))
                 .orElse(true);
+
+    final SchemaDefinitions schemaDefinitions = getSchemaDefinitions(maybeSlot);
+
+    final SszListSchema<Attestation, ?> attestationsSchema =
+        schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
+
+    final boolean requestRequiresAttestationWithCommitteeBits =
+        schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     return dataHashBySlot.descendingMap().entrySet().stream()
         .filter(filterForSlot)
@@ -288,7 +295,33 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(filterForCommitteeIndex)
         .flatMap(MatchingDataAttestationGroup::stream)
         .map(ValidatableAttestation::getAttestation)
+        .filter(
+            attestation ->
+                attestation.requiresCommitteeBits() == requestRequiresAttestationWithCommitteeBits)
+        .limit(attestationsSchema.getMaxLength())
         .toList();
+  }
+
+  private SchemaDefinitions getSchemaDefinitions(final Optional<UInt64> maybeSlot) {
+    if (maybeSlot.isPresent()) {
+      return spec.atSlot(maybeSlot.get()).getSchemaDefinitions();
+    } else if (recentChainData.getCurrentSlot().isPresent()) {
+      return spec.atSlot(recentChainData.getCurrentSlot().get()).getSchemaDefinitions();
+    } else {
+      return spec.getGenesisSchemaDefinitions();
+    }
+  }
+
+  private Predicate<Map.Entry<UInt64, Set<Bytes>>> getSlotFilter(final Optional<UInt64> maybeSlot) {
+    if (maybeSlot.isPresent()) {
+      return (entry) -> entry.getKey().equals(maybeSlot.get());
+    } else {
+      return (entry) ->
+          recentChainData
+              .getCurrentSlot()
+              .map(currentSlot -> entry.getKey().equals(currentSlot))
+              .orElse(true);
+    }
   }
 
   private boolean isValid(
