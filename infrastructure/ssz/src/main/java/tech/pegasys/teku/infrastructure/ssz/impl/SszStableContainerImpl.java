@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -34,7 +33,9 @@ public class SszStableContainerImpl extends SszStableContainerBaseImpl
   }
 
   public SszStableContainerImpl(
-      final SszCompositeSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
+      final SszStableContainerSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 }

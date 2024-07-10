@@ -63,14 +63,14 @@ public class SszContainerImpl extends AbstractSszComposite<SszData> implements S
 
   @Override
   protected IntCache<SszData> createCache() {
-    return new ArrayIntCache<>(lastIndex() + 1);
+    return new ArrayIntCache<>(size());
   }
 
   @Override
   protected void checkIndex(final int index) {
-    if (index > lastIndex()) {
+    if (index >= size()) {
       throw new IndexOutOfBoundsException(
-          "Invalid index " + index + " for container with last valid index " + lastIndex());
+          "Invalid index " + index + " for container with size " + size());
     }
   }
 

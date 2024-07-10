@@ -414,7 +414,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
         "Test", stableContainer, requiredFieldIndices, optionalFieldIndices) {
 
       @Override
-      public SszProfileImpl createFromBackingNode(TreeNode node) {
+      public SszProfileImpl createFromBackingNode(final TreeNode node) {
         throw new UnsupportedOperationException();
       }
     }.getSszLengthBounds();

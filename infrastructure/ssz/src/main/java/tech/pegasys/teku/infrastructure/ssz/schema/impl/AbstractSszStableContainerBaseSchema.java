@@ -86,7 +86,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
 
   private final Supplier<SszLengthBounds> sszLengthBounds =
       Suppliers.memoize(this::computeSszLengthBounds);
-  private final Supplier<Long> maxLength = Suppliers.memoize(this::computeMaxLength);
+  private final int cachedMaxLength;
   private final String containerName;
   private final List<NamedSchema<?>> definedChildrenNamedSchemas;
   private final Object2IntMap<String> definedChildrenNamesToFieldIndex;
@@ -128,6 +128,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     this.activeFieldsSchema = SszBitvectorSchema.create(maxFieldCount);
     this.requiredFields = activeFieldsSchema.ofBits(requiredFieldIndices);
     this.optionalFields = activeFieldsSchema.ofBits(optionalFieldIndices);
+    this.cachedMaxLength = requiredFields.getBitCount() + optionalFields.getBitCount();
     this.treeWidth = SszStableContainerBaseSchema.super.treeWidth();
     this.definedChildrenNames =
         definedChildrenNamedSchemas.stream().map(NamedSchema::getName).toList();
@@ -162,11 +163,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   /** MaxLength exposes the effective potential numbers of fields */
   @Override
   public long getMaxLength() {
-    return maxLength.get();
-  }
-
-  private long computeMaxLength() {
-    return (long) requiredFields.getBitCount() + optionalFields.getBitCount();
+    return cachedMaxLength;
   }
 
   /** The backing tree node is always filled up maxFieldCount, so maxChunks must reflect it */
@@ -211,6 +208,11 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   @Override
   public TreeNode getDefaultTree() {
     return defaultTreeNode;
+  }
+
+  @Override
+  public boolean hasOptionalFields() {
+    return hasOptionalFields;
   }
 
   @Override

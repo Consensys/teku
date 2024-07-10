@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchemaTest;
 
-public class SszProfileTest implements SszCompositeTestBase, SszMutableRefCompositeTestBase {
+public class SszProfileTest extends AbstractSszStableContainerBaseTest {
 
   @Override
   public Stream<SszContainer> sszData() {

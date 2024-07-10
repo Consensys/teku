@@ -28,15 +28,12 @@ public interface SszComposite<SszChildT extends SszData> extends SszData {
     return (int) getSchema().getMaxLength();
   }
 
-  default int lastIndex() {
-    return size() - 1;
-  }
-
   /**
    * Returns the child at index
    *
-   * @throws IndexOutOfBoundsException if index >= lastIndex()
-   * @throws NoSuchElementException if index < lastIndex() but field was not found (for sparse
+   * @throws IndexOutOfBoundsException if index > last valid index (which is size() - 1 for
+   *     non-sparse containers like StableContainer)
+   * @throws NoSuchElementException if index <= last valid index but field was not found (for sparse
    *     containers like StableContainer)
    */
   SszChildT get(int index);

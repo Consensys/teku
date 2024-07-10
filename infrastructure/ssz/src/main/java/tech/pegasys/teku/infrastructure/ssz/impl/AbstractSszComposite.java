@@ -133,8 +133,8 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
    * Checks the child index
    *
    * @throws IndexOutOfBoundsException if index is invalid
-   * @throws NoSuchElementException if field is not present (for data structures permitting optional
-   *     values)
+   * @throws NoSuchElementException if field is not present (for sparse data structures like
+   *     StableContainers)
    */
   protected abstract void checkIndex(int index);
 

@@ -61,5 +61,13 @@ public interface SszStableContainerBaseSchema<C extends SszStableContainerBase>
 
   SszBitvector getOptionalFields();
 
+  default boolean isFieldAllowed(final int index) {
+    return getRequiredFields().getBit(index) || getOptionalFields().getBit(index);
+  }
+
+  default boolean hasOptionalFields() {
+    return getOptionalFields().getBitCount() > 0;
+  }
+
   SszBitvector getActiveFieldsBitvectorFromBackingNode(TreeNode node);
 }
