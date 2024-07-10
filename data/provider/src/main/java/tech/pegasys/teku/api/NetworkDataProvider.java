@@ -18,6 +18,9 @@ import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.Peer;
 import tech.pegasys.teku.api.response.v1.node.State;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -53,7 +56,7 @@ public class NetworkDataProvider {
    *
    * @return the the number of peers currently connected to the client
    */
-  public long getPeerCount() {
+  public long countPeers() {
     return network.streamPeers().count();
   }
 
@@ -62,8 +65,7 @@ public class NetworkDataProvider {
   }
 
   public List<String> getDiscoveryAddresses() {
-    Optional<String> discoveryAddressOptional = network.getDiscoveryAddress();
-    return discoveryAddressOptional.map(List::of).orElseGet(List::of);
+    return network.getDiscoveryAddresses().orElseGet(List::of);
   }
 
   public MetadataMessage getMetadata() {
@@ -76,6 +78,24 @@ public class NetworkDataProvider {
 
   public List<Eth2Peer> getEth2Peers() {
     return network.streamPeers().toList();
+  }
+
+  public PeerCount getPeerCount() {
+    long disconnected = 0;
+    long connected = 0;
+
+    for (Eth2Peer peer : getEth2Peers()) {
+      if (peer.isConnected()) {
+        connected++;
+      } else {
+        disconnected++;
+      }
+    }
+
+    return new PeerCountBuilder()
+        .disconnected(UInt64.valueOf(disconnected))
+        .connected(UInt64.valueOf(connected))
+        .build();
   }
 
   public List<Eth2Peer> getPeerScores() {

@@ -49,7 +49,7 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     when(eth2P2PNetwork.getNodeId()).thenReturn(node1);
     when(eth2P2PNetwork.getEnr()).thenReturn(Optional.of(enr));
     when(eth2P2PNetwork.getNodeAddresses()).thenReturn(List.of(address));
-    when(eth2P2PNetwork.getDiscoveryAddress()).thenReturn(Optional.of(discoveryAddress));
+    when(eth2P2PNetwork.getDiscoveryAddresses()).thenReturn(Optional.of(List.of(discoveryAddress)));
   }
 
   @Test

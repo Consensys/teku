@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -27,7 +29,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 public class MiscHelpersElectra extends MiscHelpersDeneb {
 
   public MiscHelpersElectra(
-      final SpecConfig specConfig,
+      final SpecConfigElectra specConfig,
       final Predicates predicates,
       final SchemaDefinitions schemaDefinitions) {
     super(
@@ -44,6 +46,16 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
                 new IllegalArgumentException(
                     "Expected Electra misc helpers but got: "
                         + miscHelpers.getClass().getSimpleName()));
+  }
+
+  @Override
+  public int computeProposerIndex(
+      final BeaconState state, final IntList indices, final Bytes32 seed) {
+    return computeProposerIndex(
+        state,
+        indices,
+        seed,
+        SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra());
   }
 
   @Override

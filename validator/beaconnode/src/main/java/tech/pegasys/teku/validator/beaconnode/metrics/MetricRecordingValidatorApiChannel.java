@@ -32,6 +32,7 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -125,6 +126,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countOptionalDataRequest(
         delegate.getProposerDuties(epoch),
         BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<PeerCount>> getPeerCount() {
+    return countOptionalDataRequest(
+        delegate.getPeerCount(), BeaconNodeRequestLabels.GET_PEER_COUNT_METHOD);
   }
 
   @Override

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.eventsource;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager.ReadinessStatus.READY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -134,7 +135,7 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   @Override
-  public void onPrimaryNodeBackReady() {
+  public void onPrimaryNodeReady() {
     if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
       switchBackToPrimaryEventStream();
     }
@@ -179,6 +180,12 @@ public class EventSourceBeaconChainEventAdapter
   // synchronized because of the ConnectionErrorHandler and the BeaconNodeReadinessChannel callbacks
   private synchronized boolean switchToFailoverEventStreamIfAvailable() {
     if (failoverBeaconNodeApis.isEmpty()) {
+      return false;
+    }
+    // No need to change anything if current node is READY
+    if (beaconNodeReadinessManager
+        .getReadinessStatus(currentBeaconNodeUsedForEventStreaming)
+        .equals(READY)) {
       return false;
     }
     return findReadyFailoverAndSwitch();
