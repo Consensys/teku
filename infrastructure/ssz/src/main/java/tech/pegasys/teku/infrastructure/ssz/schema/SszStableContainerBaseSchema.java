@@ -62,6 +62,7 @@ public interface SszStableContainerBaseSchema<C extends SszStableContainerBase>
   SszBitvector getOptionalFields();
 
   default boolean isFieldAllowed(final int index) {
+    if (index >= getMaxFieldCount()) return false;
     return getRequiredFields().getBit(index) || getOptionalFields().getBit(index);
   }
 

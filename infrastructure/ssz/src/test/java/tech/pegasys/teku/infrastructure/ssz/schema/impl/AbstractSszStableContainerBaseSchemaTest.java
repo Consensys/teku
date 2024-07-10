@@ -239,7 +239,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1),
                 SszUInt64.of(UInt64.valueOf(0x42))));
 
-    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
+    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42), Optional.empty(), false);
     assertThat(circle.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
@@ -252,7 +252,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 SszUInt64.of(UInt64.valueOf(0x42)),
                 SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)));
 
-    assertSquareProfile(square, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
+    assertSquareProfile(square, (byte) 1, UInt64.valueOf(0x42), Optional.empty(), false);
     assertThat(square.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
@@ -283,13 +283,13 @@ public class AbstractSszStableContainerBaseSchemaTest {
     final CircleProfile deserializedCircle =
         CIRCLE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x014200000000000000"));
 
-    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
+    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42), Optional.empty(), false);
     assertThat(deserializedCircle).isEqualTo(circle);
 
     final SquareProfile deserializedSquare =
         SQUARE_PROFILE_SCHEMA.sszDeserialize(Bytes.fromHexString("0x420000000000000001"));
 
-    assertSquareProfile(square, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
+    assertSquareProfile(square, (byte) 1, UInt64.valueOf(0x42), Optional.empty(), false);
     assertThat(deserializedSquare).isEqualTo(square);
   }
 
@@ -303,7 +303,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 1)),
                 Optional.of(SszUInt64.of(UInt64.valueOf(0x42)))));
 
-    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
+    assertCircleProfile(circle, (byte) 1, UInt64.valueOf(0x42), Optional.empty(), true);
     assertThat(circle.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
@@ -318,7 +318,8 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 Optional.of(SszUInt64.of(UInt64.valueOf(0x42))),
                 Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 3))));
 
-    assertCircleProfile(circleWithOptional, (byte) 1, UInt64.valueOf(0x42), Optional.of((byte) 3));
+    assertCircleProfile(
+        circleWithOptional, (byte) 1, UInt64.valueOf(0x42), Optional.of((byte) 3), true);
 
     assertThat(circleWithOptional.hashTreeRoot())
         .isEqualTo(
@@ -335,7 +336,8 @@ public class AbstractSszStableContainerBaseSchemaTest {
                 Optional.empty(),
                 Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed((byte) 3))));
 
-    assertSquareProfile(squareWithOptional, (byte) 1, UInt64.valueOf(0x42), Optional.of((byte) 3));
+    assertSquareProfile(
+        squareWithOptional, (byte) 1, UInt64.valueOf(0x42), Optional.of((byte) 3), true);
     assertThat(squareWithOptional.hashTreeRoot())
         .isEqualTo(
             Bytes32.fromHexString(
@@ -364,14 +366,15 @@ public class AbstractSszStableContainerBaseSchemaTest {
         CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.sszDeserialize(
             Bytes.fromHexString("0x00014200000000000000"));
 
-    assertCircleProfile(deserializedCircle, (byte) 1, UInt64.valueOf(0x42), Optional.empty());
+    assertCircleProfile(deserializedCircle, (byte) 1, UInt64.valueOf(0x42), Optional.empty(), true);
     assertThat(deserializedCircle).isEqualTo(circle);
 
     final SquareProfile deserializedSquare =
         SQUARE_PROFILE_WITH_OPTIONAL_SCHEMA.sszDeserialize(
             Bytes.fromHexString("0x0142000000000000000103"));
 
-    assertSquareProfile(squareWithOptional, (byte) 1, UInt64.valueOf(0x42), Optional.of((byte) 3));
+    assertSquareProfile(
+        squareWithOptional, (byte) 1, UInt64.valueOf(0x42), Optional.of((byte) 3), true);
     assertThat(deserializedSquare).isEqualTo(squareWithOptional);
   }
 
@@ -445,63 +448,83 @@ public class AbstractSszStableContainerBaseSchemaTest {
   private void assertSquare(
       final SszStableContainer container, final byte color, final UInt64 side) {
     assertOptionalFieldValue(
-        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
-    assertOptionalFieldValue(container, SIDE_INDEX, Optional.of(SszUInt64.of(side)));
-    assertOptionalFieldValue(container, RADIUS_INDEX, Optional.empty());
+        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)), true);
+    assertOptionalFieldValue(container, SIDE_INDEX, Optional.of(SszUInt64.of(side)), true);
+    assertOptionalFieldValue(container, RADIUS_INDEX, Optional.empty(), true);
   }
 
   private void assertCircle(
       final SszStableContainer container, final byte color, final UInt64 radius) {
     assertOptionalFieldValue(
-        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
-    assertOptionalFieldValue(container, RADIUS_INDEX, Optional.of(SszUInt64.of(radius)));
-    assertOptionalFieldValue(container, SIDE_INDEX, Optional.empty());
+        container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)), true);
+    assertOptionalFieldValue(container, RADIUS_INDEX, Optional.of(SszUInt64.of(radius)), true);
+    assertOptionalFieldValue(container, SIDE_INDEX, Optional.empty(), true);
   }
 
   private void assertSquareProfile(
-      final SszProfile container, final byte color, final UInt64 side, final Optional<Byte> style) {
-    assertRequiredFieldValue(
+      final SszProfile container,
+      final byte color,
+      final UInt64 side,
+      final Optional<Byte> style,
+      final boolean styleAllowed) {
+    assertFixedFieldValue(
         container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
-    assertRequiredFieldValue(container, SIDE_INDEX, Optional.of(SszUInt64.of(side)));
-    assertRequiredFieldValue(container, RADIUS_INDEX, Optional.empty());
+    assertFixedFieldValue(container, SIDE_INDEX, Optional.of(SszUInt64.of(side)));
+    assertFixedFieldValue(container, RADIUS_INDEX, Optional.empty());
 
     assertOptionalFieldValue(
-        container, STYLE_INDEX, style.map(SszPrimitiveSchemas.UINT8_SCHEMA::boxed));
+        container, STYLE_INDEX, style.map(SszPrimitiveSchemas.UINT8_SCHEMA::boxed), styleAllowed);
   }
 
   private void assertCircleProfile(
       final SszProfile container,
       final byte color,
       final UInt64 radius,
-      final Optional<Byte> style) {
-    assertRequiredFieldValue(
+      final Optional<Byte> style,
+      final boolean styleAllowed) {
+    assertFixedFieldValue(
         container, COLOR_INDEX, Optional.of(SszPrimitiveSchemas.UINT8_SCHEMA.boxed(color)));
-    assertRequiredFieldValue(container, RADIUS_INDEX, Optional.of(SszUInt64.of(radius)));
-    assertRequiredFieldValue(container, SIDE_INDEX, Optional.empty());
+    assertFixedFieldValue(container, RADIUS_INDEX, Optional.of(SszUInt64.of(radius)));
+    assertFixedFieldValue(container, SIDE_INDEX, Optional.empty());
 
     assertOptionalFieldValue(
-        container, STYLE_INDEX, style.map(SszPrimitiveSchemas.UINT8_SCHEMA::boxed));
+        container, STYLE_INDEX, style.map(SszPrimitiveSchemas.UINT8_SCHEMA::boxed), styleAllowed);
   }
 
   private void assertOptionalFieldValue(
       final SszStableContainerBase container,
       final int fieldIndex,
-      final Optional<? extends SszData> value) {
-    value.ifPresentOrElse(
-        sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
-        () ->
-            assertThatThrownBy(() -> container.get(fieldIndex))
-                .isInstanceOf(NoSuchElementException.class));
+      final Optional<? extends SszData> value,
+      final boolean isAllowed) {
+    if (isAllowed) {
+      value.ifPresentOrElse(
+          sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
+          () ->
+              assertThatThrownBy(() -> container.get(fieldIndex))
+                  .isInstanceOf(NoSuchElementException.class));
 
-    assertThat(container.getOptional(fieldIndex)).isEqualTo(value);
+      assertThat(container.getOptional(fieldIndex)).isEqualTo(value);
+    } else {
+
+      assertThatThrownBy(() -> container.getOptional(fieldIndex))
+          .isInstanceOf(IndexOutOfBoundsException.class);
+      assertThatThrownBy(() -> container.get(fieldIndex))
+          .isInstanceOf(IndexOutOfBoundsException.class);
+    }
   }
 
-  private void assertRequiredFieldValue(
+  private void assertFixedFieldValue(
       final SszProfile container, final int fieldIndex, final Optional<? extends SszData> value) {
     value.ifPresentOrElse(
-        sszData -> assertThat(container.get(fieldIndex)).isEqualTo(sszData),
-        () ->
-            assertThatThrownBy(() -> container.get(fieldIndex))
-                .isInstanceOf(NoSuchElementException.class));
+        sszData -> {
+          assertThat(container.get(fieldIndex)).isEqualTo(sszData);
+          assertThat(container.getOptional(fieldIndex)).isEqualTo(value);
+        },
+        () -> {
+          assertThatThrownBy(() -> container.get(fieldIndex))
+              .isInstanceOf(IndexOutOfBoundsException.class);
+          assertThatThrownBy(() -> container.getOptional(fieldIndex))
+              .isInstanceOf(IndexOutOfBoundsException.class);
+        });
   }
 }

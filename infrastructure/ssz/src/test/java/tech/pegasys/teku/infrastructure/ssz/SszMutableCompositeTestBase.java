@@ -170,16 +170,10 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     }
   }
 
-  @MethodSource("sszMutableCompositeArguments")
+  @MethodSource("sszMutableCompositeWithUpdateIndicesArguments")
   @ParameterizedTest
-  default void set_shouldNotHaveSideEffects(final SszMutableComposite<SszData> data) {
-    List<Integer> updatedIndices =
-        IntStream.concat(IntStream.range(0, 2), IntStream.of(data.size() - 1))
-            .distinct()
-            .filter(i -> i >= 0 && i < data.size())
-            .boxed()
-            .collect(Collectors.toList());
-
+  default void set_shouldNotHaveSideEffects(
+      final SszMutableComposite<SszData> data, final List<Integer> updatedIndices) {
     SszComposite<SszData> origData = data.commitChanges();
 
     SszCompositeSchema<?> schema = data.getSchema();

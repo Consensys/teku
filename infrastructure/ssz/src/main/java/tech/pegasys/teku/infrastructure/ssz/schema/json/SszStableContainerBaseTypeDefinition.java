@@ -38,20 +38,26 @@ public class SszStableContainerBaseTypeDefinition {
 
     for (int index = 0; index < definedChildrenSchemas.size(); index++) {
       final NamedSchema<?> schemaChild = definedChildrenSchemas.get(index);
-      addField(builder, schemaChild.getSchema(), schemaChild.getName(), index);
+      addField(schema, builder, schemaChild.getSchema(), schemaChild.getName(), index);
     }
     return builder.build();
   }
 
-  private static <DataT extends SszStableContainerBase> void addField(
-      final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>> builder,
-      final SszSchema<?> childSchema,
-      final String childName,
-      final int fieldIndex) {
+  private static <
+          DataT extends SszStableContainerBase, SchemaT extends SszStableContainerBaseSchema<DataT>>
+      void addField(
+          final SchemaT schema,
+          final DeserializableObjectTypeDefinitionBuilder<DataT, StableContainerBuilder<DataT>>
+              builder,
+          final SszSchema<?> childSchema,
+          final String childName,
+          final int fieldIndex) {
     builder.withOptionalField(
         childName,
         childSchema.getJsonTypeDefinition(),
-        value -> value.getAnyOptional(fieldIndex),
+        schema.isFieldAllowed(fieldIndex)
+            ? value -> value.getAnyOptional(fieldIndex)
+            : value -> Optional.empty(),
         (b, value) -> b.setValue(fieldIndex, value));
   }
 

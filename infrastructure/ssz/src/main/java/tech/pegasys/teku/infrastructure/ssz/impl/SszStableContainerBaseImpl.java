@@ -81,7 +81,7 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
   @Override
   public SszMutableContainer createWritableCopy() {
     if (isWritableSupported()) {
-      return super.createWritableCopy();
+      return new SszMutableStableContainerBaseImpl(this);
     }
     throw new UnsupportedOperationException(
         "Mutation on Stable Containers or Profiles with optional fields is not currently supported");
@@ -109,16 +109,13 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
 
   @Override
   protected void checkIndex(final int index) {
-    if (index > activeFields.getLastSetBitIndex()) {
-      throw new IndexOutOfBoundsException(
-          "Invalid index "
-              + index
-              + " for container with last active index "
-              + activeFields.getLastSetBitIndex());
+    if (isFieldActive(index)) {
+      return;
     }
-    if (!isFieldActive(index)) {
+    if (getSchema().toStableContainerSchemaBaseRequired().isFieldAllowed(index)) {
       throw new NoSuchElementException("Index " + index + " is not active in the stable container");
     }
+    throw new IndexOutOfBoundsException("Index " + index + " is not allowed");
   }
 
   @Override
