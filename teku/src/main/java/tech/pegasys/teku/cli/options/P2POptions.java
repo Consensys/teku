@@ -14,7 +14,9 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
@@ -416,9 +418,18 @@ public class P2POptions {
               if (p2pAdvertisedUdpPort != null) {
                 d.advertisedUdpPort(OptionalInt.of(p2pAdvertisedUdpPort));
               }
-              if (p2pLowerBound.isPresent() && p2pUpperBound.isPresent()) {
-                d.minPeers(getP2pLowerBound().getAsInt()).maxPeers(getP2pUpperBound().getAsInt());
-              }
+              final OptionalInt maybeUpperBound = getP2pUpperBound();
+              final OptionalInt maybeLowerBound = getP2pLowerBound();
+              d.minPeers(
+                  maybeLowerBound.orElse(
+                      subscribeAllSubnetsEnabled
+                          ? DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS
+                          : DEFAULT_P2P_PEERS_LOWER_BOUND));
+              d.maxPeers(
+                  maybeUpperBound.orElse(
+                      subscribeAllSubnetsEnabled
+                          ? DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS
+                          : DEFAULT_P2P_PEERS_UPPER_BOUND));
               if (p2pAdvertisedUdpPortIpv6 != null) {
                 d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
@@ -467,10 +478,6 @@ public class P2POptions {
               eth ->
                   eth.asyncP2pMaxQueueIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS)
                       .asyncBeaconChainMaxQueueIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS))
-          .discovery(
-              d ->
-                  d.maxPeersIfDefault(DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS)
-                      .minPeersIfDefault(DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS))
           .p2p(p2p -> p2p.batchVerifyQueueCapacityIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS));
     }
     natOptions.configure(builder);
