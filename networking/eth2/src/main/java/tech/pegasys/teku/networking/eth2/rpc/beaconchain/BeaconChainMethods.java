@@ -123,6 +123,7 @@ public class BeaconChainMethods {
     blobSidecarsByRoot.ifPresent(allMethods::add);
     blobSidecarsByRange.ifPresent(allMethods::add);
     dataColumnSidecarsByRoot.ifPresent(allMethods::add);
+    dataColumnSidecarsByRange.ifPresent(allMethods::add);
   }
 
   public static BeaconChainMethods create(
