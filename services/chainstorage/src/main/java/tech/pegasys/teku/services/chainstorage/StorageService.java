@@ -17,6 +17,8 @@ import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
+import tech.pegasys.teku.storage.server.pruner.StatePruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
   private final StorageConfiguration config;
@@ -49,8 +52,10 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private volatile Optional<BlobSidecarPruner> blobsPruner = Optional.empty();
+  private volatile Optional<StatePruner> statePruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
+  private static final Logger LOG = LogManager.getLogger();
 
   public StorageService(
       final ServiceConfig serviceConfig,
@@ -108,6 +113,26 @@ public class StorageService extends Service implements StorageServiceFacade {
                             config.getBlockPruningInterval(),
                             config.getBlockPruningLimit(),
                             "block",
+                            pruningTimingsLabelledGauge,
+                            pruningActiveLabelledGauge));
+              }
+              if (config.getDataStorageMode().storesFinalizedStates()
+                  && config.getRetainedSlots() > -1) {
+                LOG.info(
+                    "State pruner will run every: {} minute(s), retaining states for the last {} finalized slots. Limited to {} state prune per execution. ",
+                    config.getStatePruningInterval().toMinutes(),
+                    config.getRetainedSlots(),
+                    config.getStatePruningLimit());
+                statePruner =
+                    Optional.of(
+                        new StatePruner(
+                            config.getSpec(),
+                            database,
+                            storagePrunerAsyncRunner,
+                            config.getStatePruningInterval(),
+                            config.getRetainedSlots(),
+                            config.getStatePruningLimit(),
+                            "state",
                             pruningTimingsLabelledGauge,
                             pruningActiveLabelledGauge));
               }
@@ -170,6 +195,11 @@ public class StorageService extends Service implements StorageServiceFacade {
             __ ->
                 blobsPruner
                     .map(BlobSidecarPruner::start)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .thenCompose(
+            __ ->
+                statePruner
+                    .map(StatePruner::start)
                     .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 

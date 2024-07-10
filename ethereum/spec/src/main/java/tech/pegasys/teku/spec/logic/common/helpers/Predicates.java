@@ -100,6 +100,16 @@ public class Predicates {
   }
 
   /**
+   * has_execution_withdrawal_credential
+   *
+   * @param validator
+   * @return
+   */
+  public boolean hasExecutionWithdrawalCredential(final Validator validator) {
+    return hasEth1WithdrawalCredential(validator);
+  }
+
+  /**
    * Get the execution address from a validator's withdrawal credentials. This method does not check
    * if the validator has the correct type of withdrawal credentials (e.g. prefixes 0x01 and 0x02).
    *
@@ -150,7 +160,7 @@ public class Predicates {
 
   public boolean isPartiallyWithdrawableValidatorEth1CredentialsChecked(
       final Validator validator, final UInt64 balance) {
-    final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
+    final UInt64 maxEffectiveBalance = getValidatorMaxEffectiveBalance(validator);
     final boolean hasMaxEffectiveBalance =
         validator.getEffectiveBalance().equals(maxEffectiveBalance);
     final boolean hasExcessBalance = balance.isGreaterThan(maxEffectiveBalance);

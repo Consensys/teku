@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -98,6 +99,11 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return dutiesProviderChannel.getProposerDuties(epoch);
+  }
+
+  @Override
+  public SafeFuture<Optional<PeerCount>> getPeerCount() {
+    return dutiesProviderChannel.getPeerCount();
   }
 
   @Override

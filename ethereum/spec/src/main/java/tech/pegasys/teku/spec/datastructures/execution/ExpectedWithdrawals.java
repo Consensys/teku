@@ -218,8 +218,6 @@ public class ExpectedWithdrawals {
         specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
     final int bound = Math.min(validatorCount, maxValidatorsPerWithdrawalsSweep);
 
-    final UInt64 maxEffectiveBalance = specConfigCapella.getMaxEffectiveBalance();
-
     UInt64 withdrawalIndex =
         partialWithdrawals.isEmpty()
             ? preState.getNextWithdrawalIndex()
@@ -228,7 +226,7 @@ public class ExpectedWithdrawals {
 
     for (int i = 0; i < bound; i++) {
       final Validator validator = validators.get(validatorIndex);
-      if (predicates.hasEth1WithdrawalCredential(validator)) {
+      if (predicates.hasExecutionWithdrawalCredential(validator)) {
         final UInt64 balance = balances.get(validatorIndex).get();
 
         if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
@@ -246,7 +244,7 @@ public class ExpectedWithdrawals {
                   withdrawalIndex,
                   UInt64.valueOf(validatorIndex),
                   new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                  balance.minus(maxEffectiveBalance)));
+                  balance.minusMinZero(predicates.getValidatorMaxEffectiveBalance(validator))));
           withdrawalIndex = withdrawalIndex.increment();
         }
 

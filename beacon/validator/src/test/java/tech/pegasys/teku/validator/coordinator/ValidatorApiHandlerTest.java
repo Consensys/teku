@@ -55,6 +55,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -157,6 +158,7 @@ class ValidatorApiHandlerTest {
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
+  private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
@@ -198,6 +200,7 @@ class ValidatorApiHandlerTest {
         new ValidatorApiHandler(
             chainDataProvider,
             nodeDataProvider,
+            networkDataProvider,
             chainDataClient,
             syncStateProvider,
             blockFactory,
@@ -452,6 +455,7 @@ class ValidatorApiHandlerTest {
         new ValidatorApiHandler(
             chainDataProvider,
             nodeDataProvider,
+            networkDataProvider,
             chainDataClient,
             syncStateProvider,
             blockFactory,
@@ -1362,6 +1366,7 @@ class ValidatorApiHandlerTest {
         new ValidatorApiHandler(
             chainDataProvider,
             nodeDataProvider,
+            networkDataProvider,
             chainDataClient,
             syncStateProvider,
             blockFactory,
