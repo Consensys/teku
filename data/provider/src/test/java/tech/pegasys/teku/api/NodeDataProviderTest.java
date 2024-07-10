@@ -14,17 +14,24 @@
 package tech.pegasys.teku.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -82,7 +89,8 @@ public class NodeDataProviderTest {
             false,
             validatorChannel,
             proposersDataManager,
-            forkChoiceNotifier);
+            forkChoiceNotifier,
+            spec);
   }
 
   @Test
@@ -112,5 +120,75 @@ public class NodeDataProviderTest {
     assertThat(future).isCompleted();
     assertThat(future.get())
         .isEqualTo(List.of(new SubmitDataError(UInt64.ONE, "Computer says no")));
+  }
+
+  @Test
+  void attestationsMetaDataLookUp_ThrowsWhenNoSlotAndNoAttestations() {
+    when(attestationPool.getAttestations(any(), any())).thenReturn(Collections.emptyList());
+    assertThatThrownBy(
+            () -> provider.getAttestationsAndMetaData(Optional.empty(), Optional.empty()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Unable to determine spec version. No slot parameter provided and no attestations found");
+  }
+
+  @Test
+  void attestationsMetaDataLookUp_UseFirstAttestationSlot_WhenSlotParamNotProvided() {
+    final Spec specMock = mock(Spec.class);
+    final SpecVersion specVersionMock = mock(SpecVersion.class);
+    final SpecMilestone specMilestone = mock(SpecMilestone.class);
+    when(specVersionMock.getMilestone()).thenReturn(specMilestone);
+    when(specMock.atSlot(any())).thenReturn(specVersionMock);
+    provider =
+        new NodeDataProvider(
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
+            blsToExecutionChangePool,
+            syncCommitteeContributionPool,
+            blockBlobSidecarsTrackersPool,
+            attestationManager,
+            false,
+            validatorChannel,
+            proposersDataManager,
+            forkChoiceNotifier,
+            specMock);
+    when(attestationPool.getAttestations(any(), any()))
+        .thenReturn(
+            List.of(
+                dataStructureUtil.randomAttestation(5), dataStructureUtil.randomAttestation(10)));
+    provider.getAttestationsAndMetaData(Optional.empty(), Optional.empty());
+    verify(specMock).atSlot(eq(UInt64.valueOf(5)));
+  }
+
+  @Test
+  void attestationsMetaDataLookUp_UseSlot_WhenSlotParamNotProvided() {
+    final Spec specMock = mock(Spec.class);
+    final SpecVersion specVersionMock = mock(SpecVersion.class);
+    final SpecMilestone specMilestone = mock(SpecMilestone.class);
+    when(specVersionMock.getMilestone()).thenReturn(specMilestone);
+    when(specMock.atSlot(any())).thenReturn(specVersionMock);
+    provider =
+        new NodeDataProvider(
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
+            blsToExecutionChangePool,
+            syncCommitteeContributionPool,
+            blockBlobSidecarsTrackersPool,
+            attestationManager,
+            false,
+            validatorChannel,
+            proposersDataManager,
+            forkChoiceNotifier,
+            specMock);
+    when(attestationPool.getAttestations(any(), any()))
+        .thenReturn(
+            List.of(
+                dataStructureUtil.randomAttestation(5), dataStructureUtil.randomAttestation(10)));
+    provider.getAttestationsAndMetaData(Optional.of(UInt64.valueOf(8)), Optional.empty());
+    verify(specMock).atSlot(eq(UInt64.valueOf(8)));
   }
 }
