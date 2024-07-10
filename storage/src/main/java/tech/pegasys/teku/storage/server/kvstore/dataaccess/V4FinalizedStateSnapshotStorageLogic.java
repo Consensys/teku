@@ -40,6 +40,12 @@ public class V4FinalizedStateSnapshotStorageLogic<S extends SchemaFinalizedSnaps
   }
 
   @Override
+  public Optional<UInt64> getEarliestAvailableFinalizedStateSlot(
+      final KvStoreAccessor db, final S schema) {
+    return db.getFirstEntry(schema.getColumnFinalizedStatesBySlot()).map(ColumnEntry::getKey);
+  }
+
+  @Override
   public FinalizedStateUpdater<S> updater() {
     return new FinalizedStateSnapshotUpdater<>(stateStorageFrequency);
   }

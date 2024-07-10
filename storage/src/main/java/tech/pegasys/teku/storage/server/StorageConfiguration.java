@@ -38,6 +38,9 @@ public class StorageConfiguration {
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
+  public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(5);
+  public static final long DEFAULT_STORAGE_RETAINED_SLOTS = -1;
+  public static final int DEFAULT_STATE_PRUNING_LIMIT = 1;
 
   // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
   // target. Let's configure 48 pruning per minute, so we have some room for catching up.
@@ -53,8 +56,11 @@ public class StorageConfiguration {
   private final int maxKnownNodeCacheSize;
   private final Duration blockPruningInterval;
   private final int blockPruningLimit;
+  private final Duration statePruningInterval;
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
+  private final long retainedSlots;
+  private final int statePruningLimit;
 
   private final int stateRebuildTimeoutSeconds;
 
@@ -70,6 +76,9 @@ public class StorageConfiguration {
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
       final int stateRebuildTimeoutSeconds,
+      final long retainedSlots,
+      final Duration statePruningInterval,
+      final int statePruningLimit,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -82,6 +91,9 @@ public class StorageConfiguration {
     this.blobsPruningInterval = blobsPruningInterval;
     this.blobsPruningLimit = blobsPruningLimit;
     this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
+    this.retainedSlots = retainedSlots;
+    this.statePruningInterval = statePruningInterval;
+    this.statePruningLimit = statePruningLimit;
     this.spec = spec;
   }
 
@@ -133,6 +145,18 @@ public class StorageConfiguration {
     return blobsPruningLimit;
   }
 
+  public long getRetainedSlots() {
+    return retainedSlots;
+  }
+
+  public Duration getStatePruningInterval() {
+    return statePruningInterval;
+  }
+
+  public int getStatePruningLimit() {
+    return statePruningLimit;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -152,6 +176,9 @@ public class StorageConfiguration {
     private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
     private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
+    private Duration statePruningInterval = DEFAULT_STATE_PRUNING_INTERVAL;
+    private long retainedSlots = DEFAULT_STORAGE_RETAINED_SLOTS;
+    private int statePruningLimit = DEFAULT_STATE_PRUNING_LIMIT;
 
     private Builder() {}
 
@@ -244,6 +271,32 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder retainedSlots(final long retainedSlots) {
+      if (retainedSlots < -1) {
+        throw new InvalidConfigurationException(
+            "Invalid number of slots to retain finalized states for");
+      }
+      this.retainedSlots = retainedSlots;
+      return this;
+    }
+
+    public Builder statePruningInterval(final Duration statePruningInterval) {
+      if (statePruningInterval.isNegative() || statePruningInterval.isZero()) {
+        throw new InvalidConfigurationException("Block pruning interval must be positive");
+      }
+      this.statePruningInterval = statePruningInterval;
+      return this;
+    }
+
+    public Builder statePruningLimit(final int statePruningLimit) {
+      if (statePruningLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid statePruningLimit: %d", statePruningLimit));
+      }
+      this.statePruningLimit = statePruningLimit;
+      return this;
+    }
+
     public StorageConfiguration build() {
       determineDataStorageMode();
       return new StorageConfiguration(
@@ -258,6 +311,9 @@ public class StorageConfiguration {
           blobsPruningInterval,
           blobsPruningLimit,
           stateRebuildTimeoutSeconds,
+          retainedSlots,
+          statePruningInterval,
+          statePruningLimit,
           spec);
     }
 
