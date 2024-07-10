@@ -813,6 +813,16 @@ public final class DataStructureUtil {
             this::randomCommitteeBitvector);
   }
 
+  public Attestation randomElectraAttestation() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getAttestationSchema()
+        .create(
+            randomBitlist(),
+            randomAttestationData(),
+            randomSignature(),
+            this::randomCommitteeBitvector);
+  }
+
   public Attestation randomAttestation(final long slot) {
     return randomAttestation(UInt64.valueOf(slot));
   }
