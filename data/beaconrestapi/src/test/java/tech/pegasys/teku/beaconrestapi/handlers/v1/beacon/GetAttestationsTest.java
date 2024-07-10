@@ -81,7 +81,7 @@ class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetAttestationsTest.class, "getAttestationsPhase0.json"), UTF_8);
+            Resources.getResource(GetAttestationsTest.class, "getAttestations.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
 }
