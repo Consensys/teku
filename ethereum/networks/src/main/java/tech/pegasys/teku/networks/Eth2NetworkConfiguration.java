@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -361,9 +362,9 @@ public class Eth2NetworkConfiguration {
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
-    private int asyncP2pMaxQueue = DEFAULT_ASYNC_P2P_MAX_QUEUE;
+    private OptionalInt asyncP2pMaxQueue = OptionalInt.empty();
     private int asyncBeaconChainMaxThreads = DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
-    private int asyncBeaconChainMaxQueue = DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
+    private OptionalInt asyncBeaconChainMaxQueue = OptionalInt.empty();
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
@@ -464,9 +465,9 @@ public class Eth2NetworkConfiguration {
           eth2Network,
           maybeEpochsStoreBlobs,
           asyncP2pMaxThreads,
-          asyncP2pMaxQueue,
+          asyncP2pMaxQueue.orElse(DEFAULT_ASYNC_P2P_MAX_QUEUE),
           asyncBeaconChainMaxThreads,
-          asyncBeaconChainMaxQueue,
+          asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
           forkChoiceUpdatedAlwaysSendPayloadAttributes);
     }
@@ -482,7 +483,7 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxThreads < 256,
           "P2P Max threads must be <= 255 (Xnetwork-async-p2p-max-threads - default 10)");
       checkArgument(
-          asyncP2pMaxQueue >= 2000,
+          asyncP2pMaxQueue.orElse(DEFAULT_ASYNC_P2P_MAX_QUEUE) >= 2000,
           "P2P Max Queue size must be at least 2000 (Xnetwork-async-p2p-max-queue - default 5000)");
 
       checkArgument(
@@ -492,7 +493,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads < 256,
           "P2P Max threads must be <= 255 (Xnetwork-async-beaconchain-max-threads - default 5)");
       checkArgument(
-          asyncBeaconChainMaxQueue >= 2000,
+          asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) >= 2000,
           "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 5000)");
     }
 
@@ -557,12 +558,12 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder asyncP2pMaxQueue(final Integer asyncP2pMaxQueue) {
-      this.asyncP2pMaxQueue = asyncP2pMaxQueue;
+      this.asyncP2pMaxQueue = OptionalInt.of(asyncP2pMaxQueue);
       return this;
     }
 
     public Builder asyncP2pMaxQueueIfDefault(final Integer asyncP2pMaxQueue) {
-      if (this.asyncP2pMaxQueue == DEFAULT_ASYNC_P2P_MAX_QUEUE) {
+      if (this.asyncP2pMaxQueue.isEmpty()) {
         return asyncP2pMaxQueue(asyncP2pMaxQueue);
       }
       return this;
@@ -574,12 +575,12 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder asyncBeaconChainMaxQueue(final int asyncBeaconChainMaxQueue) {
-      this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
+      this.asyncBeaconChainMaxQueue = OptionalInt.of(asyncBeaconChainMaxQueue);
       return this;
     }
 
     public Builder asyncBeaconChainMaxQueueIfDefault(final int asyncBeaconChainMaxQueue) {
-      if (this.asyncBeaconChainMaxQueue == DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) {
+      if (this.asyncBeaconChainMaxQueue.isEmpty()) {
         return asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue);
       }
       return this;

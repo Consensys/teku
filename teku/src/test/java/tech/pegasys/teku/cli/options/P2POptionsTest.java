@@ -298,6 +298,21 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void allSubnetsShouldNotOverridePeersIfExplicitlySetWithDefaults() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-lower-bound",
+            "64",
+            "--p2p-peer-upper-bound",
+            "100",
+            "--p2p-subscribe-all-subnets-enabled",
+            "true");
+
+    assertThat(tekuConfiguration.discovery().getMinPeers()).isEqualTo(64);
+    assertThat(tekuConfiguration.discovery().getMaxPeers()).isEqualTo(100);
+  }
+
+  @Test
   public void allSubnetsShouldNotOverrideQueuesIfExplicitlySet() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(

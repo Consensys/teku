@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -416,7 +417,7 @@ public class ValidatorConfig {
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
     private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
-    private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
+    private OptionalInt executorMaxQueueSize = OptionalInt.empty();
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
     private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
@@ -652,12 +653,12 @@ public class ValidatorConfig {
     }
 
     public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
-      this.executorMaxQueueSize = executorMaxQueueSize;
+      this.executorMaxQueueSize = OptionalInt.of(executorMaxQueueSize);
       return this;
     }
 
     public Builder executorMaxQueueSizeIfDefault(final int executorMaxQueueSize) {
-      if (this.executorMaxQueueSize == DEFAULT_EXECUTOR_MAX_QUEUE_SIZE) {
+      if (this.executorMaxQueueSize.isEmpty()) {
         this.executorMaxQueueSize(executorMaxQueueSize);
       }
       return this;
@@ -721,7 +722,7 @@ public class ValidatorConfig {
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
-          executorMaxQueueSize,
+          executorMaxQueueSize.orElse(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE),
           executorThreads,
           sentryNodeConfigurationFile,
           isLocalSlashingProtectionSynchronizedModeEnabled,
