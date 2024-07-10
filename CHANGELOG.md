@@ -18,5 +18,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
+- Added a state pruner that can limit the number of finalized states stored when running an archive node.
 
 ### Bug Fixes
