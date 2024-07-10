@@ -113,12 +113,13 @@ public class NodeDataProvider {
 
   private ObjectAndMetaData<List<Attestation>> lookupMetaData(
       final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
-    final UInt64 slot = getSlot(attestations, maybeSlot);
+    final UInt64 slot = getSlotForAttestations(attestations, maybeSlot);
     return new ObjectAndMetaData<>(
         attestations, spec.atSlot(slot).getMilestone(), false, false, false);
   }
 
-  private UInt64 getSlot(final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
+  private UInt64 getSlotForAttestations(
+      final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
     return maybeSlot.orElseGet(
         () ->
             attestations.stream()
