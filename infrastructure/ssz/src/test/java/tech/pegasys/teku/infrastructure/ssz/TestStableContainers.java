@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
+import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.CIRCLE_PROFILE_SCHEMA;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import java.util.List;
@@ -92,6 +93,21 @@ public class TestStableContainers {
   public static final SszStableContainerSchema<ShapeStableContainer>
       NESTED_STABLE_CONTAINER_SCHEMA =
           new AbstractSszStableContainerSchema<>("NestedStableContainer", NESTED_SCHEMAS, 8) {
+            @Override
+            public ShapeStableContainer createFromBackingNode(final TreeNode node) {
+              return new ShapeStableContainer(this, node);
+            }
+          };
+
+  static final List<NamedSchema<?>> PROFILE_NESTED_SCHEMAS =
+          List.of(
+                  namedSchema("bytevector", SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
+                  namedSchema("circleProfile", CIRCLE_PROFILE_SCHEMA),
+                  namedSchema("testContainer", TestContainer.SSZ_SCHEMA));
+
+  public static final SszStableContainerSchema<ShapeStableContainer>
+          PROFILE_NESTED_STABLE_CONTAINER_SCHEMA =
+          new AbstractSszStableContainerSchema<>("ProfileNestedStableContainer", PROFILE_NESTED_SCHEMAS, 8) {
             @Override
             public ShapeStableContainer createFromBackingNode(final TreeNode node) {
               return new ShapeStableContainer(this, node);

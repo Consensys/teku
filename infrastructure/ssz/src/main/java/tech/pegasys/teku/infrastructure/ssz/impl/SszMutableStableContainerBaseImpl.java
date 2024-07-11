@@ -51,4 +51,9 @@ public class SszMutableStableContainerBaseImpl extends SszMutableContainerImpl {
 
     throw new NoSuchElementException("Index " + index + " is not active in the stable container");
   }
+
+  @Override
+  public String toString() {
+    return "Mutable " + backingStableContainerBaseView.toString();
+  }
 }

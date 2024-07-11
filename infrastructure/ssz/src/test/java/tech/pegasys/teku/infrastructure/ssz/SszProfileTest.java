@@ -14,21 +14,27 @@
 package tech.pegasys.teku.infrastructure.ssz;
 
 import java.util.stream.Stream;
+
+import tech.pegasys.teku.infrastructure.ssz.RandomSszDataGenerator.StableContainerMode;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchemaTest;
 
 public class SszProfileTest extends AbstractSszStableContainerBaseTest {
 
   @Override
   public Stream<SszContainer> sszData() {
-    RandomSszDataGenerator smallListsRandomSCGen = new RandomSszDataGenerator().withMaxListSize(1);
-    RandomSszDataGenerator largeListsRandomSCGen =
-        new RandomSszDataGenerator().withMaxListSize(1024);
+    RandomSszDataGenerator randomSCGen =
+        new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.RANDOM);;
+    RandomSszDataGenerator emptySCGen =
+            new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.EMPTY);
+    RandomSszDataGenerator fullSCGen =
+            new RandomSszDataGenerator().withStableContainerMode(StableContainerMode.FULL);
     return SszProfileSchemaTest.testContainerSchemas()
         .flatMap(
             schema ->
                 Stream.of(
                     schema.getDefault(),
-                    smallListsRandomSCGen.randomData(schema),
-                    largeListsRandomSCGen.randomData(schema)));
+                        randomSCGen.randomData(schema),
+                        emptySCGen.randomData(schema),
+                        fullSCGen.randomData(schema)));
   }
 }

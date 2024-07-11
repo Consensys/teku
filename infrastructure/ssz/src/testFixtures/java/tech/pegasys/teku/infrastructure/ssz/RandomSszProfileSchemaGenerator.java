@@ -64,6 +64,46 @@ public class RandomSszProfileSchemaGenerator {
         .map(sets -> generateProfile(sets.left(), sets.right()));
   }
 
+  public RandomSszProfileSchemaGenerator withMinRequiredFields(final int minRequiredFields) {
+    return new RandomSszProfileSchemaGenerator(
+        random,
+        stableContainerSchema,
+        minRequiredFields,
+        maxRequiredFields,
+        minOptionalFields,
+        maxOptionalFields);
+  }
+
+  public RandomSszProfileSchemaGenerator withMaxRequiredFields(final int maxRequiredFields) {
+    return new RandomSszProfileSchemaGenerator(
+        random,
+        stableContainerSchema,
+        minRequiredFields,
+        maxRequiredFields,
+        minOptionalFields,
+        maxOptionalFields);
+  }
+
+  public RandomSszProfileSchemaGenerator withMinOptionalFields(final int minOptionalFields) {
+    return new RandomSszProfileSchemaGenerator(
+        random,
+        stableContainerSchema,
+        minRequiredFields,
+        maxRequiredFields,
+        minOptionalFields,
+        maxOptionalFields);
+  }
+
+  public RandomSszProfileSchemaGenerator withMaxOptionalFields(final int maxOptionalFields) {
+    return new RandomSszProfileSchemaGenerator(
+        random,
+        stableContainerSchema,
+        minRequiredFields,
+        maxRequiredFields,
+        minOptionalFields,
+        maxOptionalFields);
+  }
+
   private Stream<Pair<Set<Integer>, Set<Integer>>> generateDistinctRandomRequiredOptionalSets() {
     return Stream.generate(
             () -> {
@@ -90,15 +130,9 @@ public class RandomSszProfileSchemaGenerator {
     }
 
     // Randomly determine the sizes of the two subsets within the given constraints
-    final int requiredFieldsSize =
-        minRequiredFields
-            + random.nextInt(Math.min(maxRequiredFields, rangeSize) - minRequiredFields + 1);
-    final int optionalFieldsSize =
-        minOptionalFields
-            + random.nextInt(
-                Math.min(maxOptionalFields, rangeSize - requiredFieldsSize)
-                    - minOptionalFields
-                    + 1);
+    final int requiredFieldsSize = (maxRequiredFields > 0) ? minRequiredFields + random.nextInt(Math.min(maxRequiredFields, rangeSize) - minRequiredFields + 1) : 0;
+    final int optionalFieldsSize = (maxOptionalFields > 0) ? minOptionalFields + random.nextInt(Math.min(maxOptionalFields, rangeSize - requiredFieldsSize) - minOptionalFields + 1) : 0;
+
 
     final Set<Integer> allNumbers = new HashSet<>();
     for (int i = 0; i < rangeSize; i++) {
@@ -127,7 +161,7 @@ public class RandomSszProfileSchemaGenerator {
       final Set<Integer> requiredFieldIndices, final Set<Integer> optionalFieldIndices) {
 
     return new AbstractSszProfileSchema<>(
-        "Test-Req" + requiredFieldIndices + "-Opt" + optionalFieldIndices,
+            stableContainerSchema.getContainerName()+"-Profile-Req" + requiredFieldIndices + "-Opt" + optionalFieldIndices,
         stableContainerSchema,
         requiredFieldIndices,
         optionalFieldIndices) {
