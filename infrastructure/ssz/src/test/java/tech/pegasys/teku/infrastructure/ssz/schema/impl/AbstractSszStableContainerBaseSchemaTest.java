@@ -15,7 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz.schema.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema.createForProfileOnly;
+import static tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema.createFromNamedSchemasForProfileOnly;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -381,7 +381,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
   @Test
   void computeSszLengthBounds() {
     final SszStableContainerSchema<SszStableContainer> stableContainer =
-        createForProfileOnly(
+        createFromNamedSchemasForProfileOnly(
             48,
             List.of(
                 namedSchema("side", SszPrimitiveSchemas.UINT64_SCHEMA),

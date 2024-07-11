@@ -14,15 +14,18 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveNamedSchemas;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_BEACON_STATE_FIELDS;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -36,14 +39,15 @@ public abstract class AbstractBeaconStateProfileSchema<
   protected AbstractBeaconStateProfileSchema(final String name, final List<SszField> allFields) {
     super(
         name,
-        SszStableContainerSchema.createForProfileOnly(
+        SszStableContainerSchema.createFromNamedSchemasForProfileOnly(
             MAX_BEACON_STATE_FIELDS,
-            continuousActiveNamedSchemas(
-                allFields.stream()
-                    .map(f -> namedSchema(f.getName(), f.getSchema().get()))
-                    .toList())),
-        IntStream.range(0, allFields.size()).boxed().collect(Collectors.toUnmodifiableSet()));
+                createNamedSchemas(allFields)),
+        IntStream.range(0, allFields.size()).boxed().collect(Collectors.toUnmodifiableSet()), Set.of());
     validateFields(allFields);
+  }
+
+  private static List<NamedSchema<?>> createNamedSchemas(final List<SszField> allFields) {
+    return allFields.stream().<NamedSchema<?>>map(f -> namedSchema(f.getName(), f.getSchema().get())).toList();
   }
 
   protected AbstractBeaconStateProfileSchema(

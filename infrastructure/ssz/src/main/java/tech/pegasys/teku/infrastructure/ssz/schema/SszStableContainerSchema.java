@@ -16,10 +16,14 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
+
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 public interface SszStableContainerSchema<C extends SszStableContainer>
     extends SszStableContainerBaseSchema<C> {
@@ -43,9 +47,9 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
 
   /**
    * Creates a new {@link SszStableContainer} schema with specified field schemas. It is designed to
-   * be used in profile schema creation only. There will be actual ssz type for it.
+   * be used in profile schema creation only. There will be no ssz views for it.
    */
-  static <C extends SszStableContainer> SszStableContainerSchema<C> createForProfileOnly(
+  static <C extends SszStableContainer> SszStableContainerSchema<C> createFromNamedSchemasForProfileOnly(
       final int maxFieldCount, final List<NamedSchema<?>> activeChildrenSchemas) {
     return new AbstractSszStableContainerSchema<>("", activeChildrenSchemas, maxFieldCount) {
       @Override
@@ -54,6 +58,11 @@ public interface SszStableContainerSchema<C extends SszStableContainer>
             "This stable container schema is meant to be used for creating a profile schema");
       }
     };
+  }
+
+  static <C extends SszStableContainer> SszStableContainerSchema<C> createFromSchemasForProfileOnly(
+          final int maxFieldCount, final List<SszSchema<?>> activeChildrenSchemas) {
+    return createFromNamedSchemasForProfileOnly(maxFieldCount, IntStream.range(0, activeChildrenSchemas.size()).<NamedSchema<?>>mapToObj(i -> namedSchema("field-" + i, activeChildrenSchemas.get(i))).toList());
   }
 
   @Override

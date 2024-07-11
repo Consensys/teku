@@ -23,11 +23,13 @@ public class /*$$ViewClassName*/ ProfileTemplate /*$$*/<
         /*$$ViewTypes*/ V0 extends SszData,
         V1 extends SszData /*$$*/>
     extends SszProfileImpl {
+  final /*$$TypeClassName*/ ProfileSchemaTemplate<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/> /*$$*/ schemaCache;
 
   protected /*$$ViewClassName*/ ProfileTemplate /*$$*/(
       final /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>
           schema) {
     super(schema);
+    this.schemaCache = schema;
   }
 
   protected /*$$ViewClassName*/ ProfileTemplate /*$$*/(
@@ -35,6 +37,7 @@ public class /*$$ViewClassName*/ ProfileTemplate /*$$*/<
           schema,
       final TreeNode backingNode) {
     super(schema, backingNode);
+    this.schemaCache = schema;
   }
 
   protected /*$$ViewClassName*/ ProfileTemplate /*$$*/(
@@ -43,15 +46,16 @@ public class /*$$ViewClassName*/ ProfileTemplate /*$$*/<
       final V0 arg1,
       final V1 arg2 /*$$*/) {
     super(schema, /*$$ViewArgs*/ arg1, arg2 /*$$*/);
+    this.schemaCache = schema;
   }
 
   /*$$Getters*/
   protected V0 getField0() {
-    return getAny(getSchema().toProfileSchema().orElseThrow().getNthActiveFieldIndex(0));
+    return getAny(schemaCache.mapToIndex(0));
   }
 
   protected V1 getField1() {
-    return getAny(getSchema().toProfileSchema().orElseThrow().getNthActiveFieldIndex(1));
+    return getAny(schemaCache.mapToIndex(1));
   }
   /*$$*/
 }

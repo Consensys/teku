@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.containers;
 
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveNamedSchemas;
-import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema.continuousActiveSchemas;
-
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -26,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszProfile;
 import tech.pegasys.teku.infrastructure.ssz.SszStableContainer;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -33,6 +31,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
         C extends SszProfile, /*$$ViewTypes*/ V0 extends SszData, V1 extends SszData /*$$*/>
     extends AbstractSszProfileSchema<C> {
+
+          final private int[] indexMapping;
 
   public static <
           C extends SszProfile, /*$$ViewTypes*/ V0 extends SszData, V1 extends SszData /*$$*/>
@@ -62,8 +62,8 @@ public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
       final int maxFieldCount) {
     this(
         containerName,
-        SszStableContainerSchema.createForProfileOnly(
-            maxFieldCount, continuousActiveSchemas(/*$$Fields*/ fieldSchema1, fieldSchema2 /*$$*/)),
+        SszStableContainerSchema.createFromSchemasForProfileOnly(
+            maxFieldCount, List.of(/*$$Fields*/ fieldSchema1, fieldSchema2 /*$$*/)),
         IntStream.range(0, /*$$NumberOfFields*/ 2 /*$$*/)
             .boxed()
             .collect(Collectors.toUnmodifiableSet()));
@@ -77,10 +77,9 @@ public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
       final int maxFieldCount) {
     this(
         containerName,
-        SszStableContainerSchema.createForProfileOnly(
+        SszStableContainerSchema.createFromNamedSchemasForProfileOnly(
             maxFieldCount,
-            continuousActiveNamedSchemas(
-                List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/))),
+                List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/)),
         IntStream.range(0, /*$$NumberOfFields*/ 2 /*$$*/)
             .boxed()
             .collect(Collectors.toUnmodifiableSet()));
@@ -91,20 +90,27 @@ public abstract class /*$$TypeClassName*/ ProfileSchemaTemplate /*$$*/<
       final SszStableContainerSchema<? extends SszStableContainer> stableContainerSchema,
       final Set<Integer> activeFieldIndices) {
 
-    super(containerName, stableContainerSchema, activeFieldIndices);
+    super(containerName, stableContainerSchema, activeFieldIndices, Set.of());
 
     assert activeFieldIndices.size() == /*$$NumberOfFields*/ 2 /*$$*/;
+
+    this.indexMapping = activeFieldIndices.stream().sorted().mapToInt(i->i).toArray();
+
+  }
+
+  protected int mapToIndex(int fieldNumber) {
+    return indexMapping[fieldNumber];
   }
 
   /*$$TypeGetters*/
   @SuppressWarnings("unchecked")
   public SszSchema<V0> getFieldSchema0() {
-    return (SszSchema<V0>) getNthActiveFieldSchema(0);
+    return (SszSchema<V0>) getChildSchema(indexMapping[0]);
   }
 
   @SuppressWarnings("unchecked")
   public SszSchema<V1> getFieldSchema1() {
-    return (SszSchema<V1>) getNthActiveFieldSchema(1);
+    return (SszSchema<V1>) getChildSchema(indexMapping[1]);
   }
   /*$$*/
 }
