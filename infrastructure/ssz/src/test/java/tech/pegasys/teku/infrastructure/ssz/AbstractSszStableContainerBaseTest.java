@@ -18,8 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import com.google.common.primitives.Ints;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -29,7 +27,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerBaseSchema;
 
 public abstract class AbstractSszStableContainerBaseTest
     implements SszCompositeTestBase, SszMutableRefCompositeTestBase {
-
 
   @Override
   @MethodSource("sszMutableCompositeArguments")
@@ -42,27 +39,22 @@ public abstract class AbstractSszStableContainerBaseTest
   @Override
   public Stream<Arguments> sszMutableCompositeWithUpdateIndicesArguments() {
     return SszDataTestBase.passWhenEmpty(
-            sszMutableComposites()
-                    .filter(data -> data.size() > 0)
-                    .map(
-                            data -> Arguments.of(data, streamValidIndices(data).boxed().toList())
-                                    ));
+        sszMutableComposites()
+            .filter(data -> data.size() > 0)
+            .map(data -> Arguments.of(data, streamValidIndices(data).boxed().toList())));
   }
 
   @Override
   public IntStream streamOutOfBoundsIndices(final SszComposite<?> data) {
-    final SszStableContainerBaseSchema<?> schema = (SszStableContainerBaseSchema<?>) data.getSchema();
+    final SszStableContainerBaseSchema<?> schema =
+        (SszStableContainerBaseSchema<?>) data.getSchema();
 
-    final IntStream notAllowedStream = IntStream.range(0, schema.getMaxFieldCount()).
-            filter(i -> !schema.isFieldAllowed(i));
+    final IntStream notAllowedStream =
+        IntStream.range(0, schema.getMaxFieldCount()).filter(i -> !schema.isFieldAllowed(i));
 
-
-    return IntStream.concat(notAllowedStream, IntStream.of(
-            -1,
-            (int)
-                    Long.min(
-                            Integer.MAX_VALUE,
-                            schema.getMaxFieldCount())));
+    return IntStream.concat(
+        notAllowedStream,
+        IntStream.of(-1, (int) Long.min(Integer.MAX_VALUE, schema.getMaxFieldCount())));
   }
 
   @Override
@@ -83,7 +75,7 @@ public abstract class AbstractSszStableContainerBaseTest
         .getSchema()
         .ofBits(
             IntStream.range(0, activeFields.getSchema().getLength())
-                    .filter(schema::isFieldAllowed)
+                .filter(schema::isFieldAllowed)
                 .filter(i -> !activeFields.getBit(i))
                 .toArray())
         .streamAllSetBits();

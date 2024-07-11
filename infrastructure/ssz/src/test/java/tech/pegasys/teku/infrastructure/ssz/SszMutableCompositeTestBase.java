@@ -17,16 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataTestBase.passWhenEmpty;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import it.unimi.dsi.fastutil.ints.IntList;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -105,8 +103,8 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     final OptionalInt firstValidIndex = streamValidIndices(data).findFirst();
     Assumptions.assumeThat(firstValidIndex).isPresent();
 
-
-    assertThatThrownBy(() -> data.set(firstValidIndex.getAsInt(), null)).isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> data.set(firstValidIndex.getAsInt(), null))
+        .isInstanceOf(NullPointerException.class);
   }
 
   @MethodSource("sszMutableCompositeArguments")
@@ -141,42 +139,47 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
       data.set(updateIndex, updateValue);
     }
 
-
-    streamValidIndices(data).forEach(i -> {
-      int idx = updateIndices.indexOf(i);
-      if (idx < 0) {
-        SszDataAssert.assertThatSszData(data.get(i)).isEqualByAllMeansTo(origData.get(i));
-      } else {
-        SszData updateValue = newChildrenValues.get(idx);
-        SszDataAssert.assertThatSszData(data.get(i)).isEqualByAllMeansTo(updateValue);
-      }
-    });
+    streamValidIndices(data)
+        .forEach(
+            i -> {
+              int idx = updateIndices.indexOf(i);
+              if (idx < 0) {
+                SszDataAssert.assertThatSszData(data.get(i)).isEqualByAllMeansTo(origData.get(i));
+              } else {
+                SszData updateValue = newChildrenValues.get(idx);
+                SszDataAssert.assertThatSszData(data.get(i)).isEqualByAllMeansTo(updateValue);
+              }
+            });
 
     SszComposite<SszData> data1 = data.commitChanges();
 
-
-    streamValidIndices(data).forEach(i -> {
-      int idx = updateIndices.indexOf(i);
-      if (idx < 0) {
-        SszDataAssert.assertThatSszData(data1.get(i)).isEqualByAllMeansTo(origData.get(i));
-      } else {
-        SszData updateValue = newChildrenValues.get(idx);
-        SszDataAssert.assertThatSszData(data1.get(i)).isEqualByAllMeansTo(updateValue);
-      }
-    });
+    streamValidIndices(data)
+        .forEach(
+            i -> {
+              int idx = updateIndices.indexOf(i);
+              if (idx < 0) {
+                SszDataAssert.assertThatSszData(data1.get(i)).isEqualByAllMeansTo(origData.get(i));
+              } else {
+                SszData updateValue = newChildrenValues.get(idx);
+                SszDataAssert.assertThatSszData(data1.get(i)).isEqualByAllMeansTo(updateValue);
+              }
+            });
 
     SszComposite<?> data2 = schema.createFromBackingNode(data1.getBackingNode());
 
-    streamValidIndices(data).forEach(i -> {
-      int idx = updateIndices.indexOf(i);
-      if (idx < 0) {
-        SszDataAssert.assertThatSszData((SszData) data2.get(i))
-                .isEqualByAllMeansTo(origData.get(i));
-      } else {
-        SszData updateValue = newChildrenValues.get(idx);
-        SszDataAssert.assertThatSszData((SszData) data2.get(i)).isEqualByAllMeansTo(updateValue);
-      }
-    });
+    streamValidIndices(data)
+        .forEach(
+            i -> {
+              int idx = updateIndices.indexOf(i);
+              if (idx < 0) {
+                SszDataAssert.assertThatSszData((SszData) data2.get(i))
+                    .isEqualByAllMeansTo(origData.get(i));
+              } else {
+                SszData updateValue = newChildrenValues.get(idx);
+                SszDataAssert.assertThatSszData((SszData) data2.get(i))
+                    .isEqualByAllMeansTo(updateValue);
+              }
+            });
   }
 
   @MethodSource("sszMutableCompositeWithUpdateIndicesArguments")
@@ -211,7 +214,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
       SszComposite<SszData> updated = updatedData.get(i);
       for (int i1 = 0; i1 < updated.size(); i1++) {
         if (i1 != updatedIndices.get(i)) {
-          if(validIndices.contains(i1)) {
+          if (validIndices.contains(i1)) {
             SszDataAssert.assertThatSszData(updated.get(i1)).isEqualByAllMeansTo(origData.get(i1));
           }
         } else {
@@ -279,11 +282,15 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
     AtomicInteger invalidateCount = new AtomicInteger();
     data.setInvalidator(__ -> invalidateCount.incrementAndGet());
-    data.set(firstValidIndex.getAsInt(), GENERATOR.randomData(data.getSchema().getChildSchema(firstValidIndex.getAsInt())));
+    data.set(
+        firstValidIndex.getAsInt(),
+        GENERATOR.randomData(data.getSchema().getChildSchema(firstValidIndex.getAsInt())));
 
     assertThat(invalidateCount).hasValue(1);
 
-    data.update(firstValidIndex.getAsInt(), __ -> GENERATOR.randomData(data.getSchema().getChildSchema(firstValidIndex.getAsInt())));
+    data.update(
+        firstValidIndex.getAsInt(),
+        __ -> GENERATOR.randomData(data.getSchema().getChildSchema(firstValidIndex.getAsInt())));
 
     assertThat(invalidateCount).hasValue(2);
   }

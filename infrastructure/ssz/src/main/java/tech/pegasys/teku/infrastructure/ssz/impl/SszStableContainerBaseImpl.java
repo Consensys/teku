@@ -122,9 +122,9 @@ public class SszStableContainerBaseImpl extends SszContainerImpl implements SszS
   public String toString() {
     return getSchema().getContainerName()
         + "{activeFields="
-        + activeFields +
-            ", optionalFields: " +
-            getSchema().toStableContainerSchemaBaseRequired().getOptionalFields()
+        + activeFields
+        + ", optionalFields: "
+        + getSchema().toStableContainerSchemaBaseRequired().getOptionalFields()
         + ", "
         + activeFields
             .streamAllSetBits()
