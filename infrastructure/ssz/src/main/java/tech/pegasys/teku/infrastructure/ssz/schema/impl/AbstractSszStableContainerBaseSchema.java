@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Queue;
@@ -740,6 +741,11 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
     return definedChildrenSchemas.equals(that.definedChildrenSchemas)
         && requiredFields.equals(that.requiredFields)
         && optionalFields.equals(that.optionalFields);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(definedChildrenSchemas, requiredFields, optionalFields);
   }
 
   @Override
