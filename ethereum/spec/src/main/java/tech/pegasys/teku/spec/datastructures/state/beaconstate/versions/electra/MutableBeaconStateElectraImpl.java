@@ -78,12 +78,12 @@ public class MutableBeaconStateElectraImpl
   }
 
   @Override
-  public boolean isFieldActive(int index) {
-    return false;
+  public boolean isFieldActive(final int index) {
+    return backingStableContainerBaseView.isFieldActive(index);
   }
 
   @Override
   public SszBitvector getActiveFields() {
-    return null;
+    return backingStableContainerBaseView.getActiveFields();
   }
 }

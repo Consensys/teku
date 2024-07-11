@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_ATTESTATION_FIELDS;
 
 import java.util.Optional;
