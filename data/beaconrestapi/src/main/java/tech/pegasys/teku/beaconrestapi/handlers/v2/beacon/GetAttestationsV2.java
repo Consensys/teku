@@ -92,7 +92,7 @@ public class GetAttestationsV2 extends RestApiEndpoint {
             schemaDefinitionCache, "Attestation", schemaGetters);
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
-        .name("getPoolAttestationsV2Response")
+        .name("GetPoolAttestationsV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField("data", listOf(attestationType), ObjectAndMetaData::getData)
         .build();
