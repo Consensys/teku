@@ -14,10 +14,18 @@
       "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
     },
     "data" : {
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/components/schemas/AttestationElectra"
-      }
+      "type" : "object",
+      "oneOf" : [ {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/AttestationElectra"
+        }
+      }, {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/AttestationPhase0"
+        }
+      } ]
     }
   }
 }

@@ -232,7 +232,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetBlockRoot(dataProvider))
             .endpoint(new GetFinalizedBlockRoot(dataProvider))
             .endpoint(new GetBlockAttestations(dataProvider, spec))
-            .endpoint(new GetBlockAttestationsV2(dataProvider, spec))
+            .endpoint(new GetBlockAttestationsV2(dataProvider, schemaCache))
             .endpoint(new GetAttestations(dataProvider, spec))
             .endpoint(new PostAttestation(dataProvider, schemaCache))
             .endpoint(new GetAttesterSlashings(dataProvider, spec))

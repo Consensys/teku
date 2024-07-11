@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
@@ -68,7 +69,7 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
-    setHandler(new GetBlockAttestationsV2(chainDataProvider, specMinimalPhase0));
+    setHandler(new GetBlockAttestationsV2(chainDataProvider, schemaDefinitionCache));
     request.setPathParameter("block_id", "head");
   }
 
@@ -112,7 +113,10 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200_phase0Attestations() throws IOException {
-    setHandler(new GetBlockAttestationsV2(chainDataProvider, specMinimalPhase0));
+    setHandler(
+        new GetBlockAttestationsV2(
+            chainDataProvider, new SchemaDefinitionCache(specMinimalPhase0)));
+
     final String data = getResponseStringFromMetadata(handler, SC_OK, phase0responseData);
     final String expected =
         Resources.toString(
@@ -124,7 +128,10 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200_electraAttestations() throws IOException {
-    setHandler(new GetBlockAttestationsV2(chainDataProvider, specMinimalElectra));
+    setHandler(
+        new GetBlockAttestationsV2(
+            chainDataProvider, new SchemaDefinitionCache(specMinimalElectra)));
+
     final String data = getResponseStringFromMetadata(handler, SC_OK, electraResponseData);
     final String expected =
         Resources.toString(
