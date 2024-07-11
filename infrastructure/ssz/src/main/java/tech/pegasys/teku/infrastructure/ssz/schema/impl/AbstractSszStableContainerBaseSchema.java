@@ -729,6 +729,20 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   }
 
   @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    AbstractSszStableContainerBaseSchema<?> that = (AbstractSszStableContainerBaseSchema<?>) o;
+    return definedChildrenSchemas.equals(that.definedChildrenSchemas)
+        && requiredFields.equals(that.requiredFields)
+        && optionalFields.equals(that.optionalFields);
+  }
+
+  @Override
   public String toString() {
     return getContainerName();
   }
