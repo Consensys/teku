@@ -28,36 +28,39 @@ public class SszProfileSchemaTest extends SszCompositeSchemaTestBase {
 
   public static Stream<SszProfileSchema<?>> testContainerSchemas() {
 
-
     return Stream.of(
-            // generates 10 variation of profiles over SHAPE stable container with a random mix of required and optionals
+            // generates 10 variation of profiles over SHAPE stable container with a random mix of
+            // required and optionals
             new RandomSszProfileSchemaGenerator(SHAPE_STABLE_CONTAINER_SCHEMA)
-        .randomProfileSchemasStream()
-        .limit(10),
+                .randomProfileSchemasStream()
+                .limit(10),
 
-            // generates 10 variation of profiles over NESTED stable container with a random mix of required and optionals
+            // generates 10 variation of profiles over NESTED stable container with a random mix of
+            // required and optionals
             new RandomSszProfileSchemaGenerator(NESTED_STABLE_CONTAINER_SCHEMA)
-                    .randomProfileSchemasStream()
-                    .limit(10),
+                .randomProfileSchemasStream()
+                .limit(10),
 
-            // generates 10 variation of profiles over PROFILE NESTED stable container with a random mix of required and optionals
+            // generates 10 variation of profiles over PROFILE NESTED stable container with a random
+            // mix of required and optionals
             new RandomSszProfileSchemaGenerator(PROFILE_NESTED_STABLE_CONTAINER_SCHEMA)
-                    .randomProfileSchemasStream()
-                    .limit(10),
+                .randomProfileSchemasStream()
+                .limit(10),
 
             // a nested with all optionals
             new RandomSszProfileSchemaGenerator(NESTED_STABLE_CONTAINER_SCHEMA)
-                    .withMaxRequiredFields(0)
-                    .withMinOptionalFields(NESTED_STABLE_CONTAINER_SCHEMA.getFieldsCount())
-                    .randomProfileSchemasStream().limit(1),
-
+                .withMaxRequiredFields(0)
+                .withMinOptionalFields(NESTED_STABLE_CONTAINER_SCHEMA.getFieldsCount())
+                .randomProfileSchemasStream()
+                .limit(1),
 
             // all required
             new RandomSszProfileSchemaGenerator(NESTED_STABLE_CONTAINER_SCHEMA)
-                    .withMinRequiredFields(NESTED_STABLE_CONTAINER_SCHEMA.getFieldsCount())
-                    .withMaxOptionalFields(0)
-                    .randomProfileSchemasStream().limit(1)
-            ).flatMap(s -> s) ;
+                .withMinRequiredFields(NESTED_STABLE_CONTAINER_SCHEMA.getFieldsCount())
+                .withMaxOptionalFields(0)
+                .randomProfileSchemasStream()
+                .limit(1))
+        .flatMap(s -> s);
     // return Stream.of(SQUARE_PROFILE_SCHEMA, CIRCLE_PROFILE_SCHEMA);
   }
 

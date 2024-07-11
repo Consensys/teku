@@ -130,9 +130,19 @@ public class RandomSszProfileSchemaGenerator {
     }
 
     // Randomly determine the sizes of the two subsets within the given constraints
-    final int requiredFieldsSize = (maxRequiredFields > 0) ? minRequiredFields + random.nextInt(Math.min(maxRequiredFields, rangeSize) - minRequiredFields + 1) : 0;
-    final int optionalFieldsSize = (maxOptionalFields > 0) ? minOptionalFields + random.nextInt(Math.min(maxOptionalFields, rangeSize - requiredFieldsSize) - minOptionalFields + 1) : 0;
-
+    final int requiredFieldsSize =
+        (maxRequiredFields > 0)
+            ? minRequiredFields
+                + random.nextInt(Math.min(maxRequiredFields, rangeSize) - minRequiredFields + 1)
+            : 0;
+    final int optionalFieldsSize =
+        (maxOptionalFields > 0)
+            ? minOptionalFields
+                + random.nextInt(
+                    Math.min(maxOptionalFields, rangeSize - requiredFieldsSize)
+                        - minOptionalFields
+                        + 1)
+            : 0;
 
     final Set<Integer> allNumbers = new HashSet<>();
     for (int i = 0; i < rangeSize; i++) {
@@ -161,7 +171,11 @@ public class RandomSszProfileSchemaGenerator {
       final Set<Integer> requiredFieldIndices, final Set<Integer> optionalFieldIndices) {
 
     return new AbstractSszProfileSchema<>(
-            stableContainerSchema.getContainerName()+"-Profile-Req" + requiredFieldIndices + "-Opt" + optionalFieldIndices,
+        stableContainerSchema.getContainerName()
+            + "-Profile-Req"
+            + requiredFieldIndices
+            + "-Opt"
+            + optionalFieldIndices,
         stableContainerSchema,
         requiredFieldIndices,
         optionalFieldIndices) {

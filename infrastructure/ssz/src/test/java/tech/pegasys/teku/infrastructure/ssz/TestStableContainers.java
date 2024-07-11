@@ -100,14 +100,15 @@ public class TestStableContainers {
           };
 
   static final List<NamedSchema<?>> PROFILE_NESTED_SCHEMAS =
-          List.of(
-                  namedSchema("bytevector", SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
-                  namedSchema("circleProfile", CIRCLE_PROFILE_SCHEMA),
-                  namedSchema("testContainer", TestContainer.SSZ_SCHEMA));
+      List.of(
+          namedSchema("bytevector", SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
+          namedSchema("circleProfile", CIRCLE_PROFILE_SCHEMA),
+          namedSchema("testContainer", TestContainer.SSZ_SCHEMA));
 
   public static final SszStableContainerSchema<ShapeStableContainer>
-          PROFILE_NESTED_STABLE_CONTAINER_SCHEMA =
-          new AbstractSszStableContainerSchema<>("ProfileNestedStableContainer", PROFILE_NESTED_SCHEMAS, 8) {
+      PROFILE_NESTED_STABLE_CONTAINER_SCHEMA =
+          new AbstractSszStableContainerSchema<>(
+              "ProfileNestedStableContainer", PROFILE_NESTED_SCHEMAS, 8) {
             @Override
             public ShapeStableContainer createFromBackingNode(final TreeNode node) {
               return new ShapeStableContainer(this, node);

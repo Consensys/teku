@@ -188,7 +188,8 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
 
     int fieldToSet = findFirstValidIndex(mutableData);
 
-    SszData newChildData = GENERATOR.randomData(mutableComposite.getSchema().getChildSchema(fieldToSet));
+    SszData newChildData =
+        GENERATOR.randomData(mutableComposite.getSchema().getChildSchema(fieldToSet));
     mutableComposite.set(fieldToSet, newChildData);
     SszMutableComposite<SszData> writableCopy = orig.createWritableCopy();
     writableCopy.set(fieldToSet, newChildData);
@@ -196,8 +197,11 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
   }
 
   static int findFirstValidIndex(final SszMutableData mutableData) {
-    if(mutableData.getSchema() instanceof SszStableContainerBaseSchema<?> stableSchema) {
-      return IntStream.range(0, stableSchema.getFieldsCount()).filter(stableSchema::isFieldAllowed).findFirst().orElseThrow();
+    if (mutableData.getSchema() instanceof SszStableContainerBaseSchema<?> stableSchema) {
+      return IntStream.range(0, stableSchema.getFieldsCount())
+          .filter(stableSchema::isFieldAllowed)
+          .findFirst()
+          .orElseThrow();
     }
     return 0;
   }
