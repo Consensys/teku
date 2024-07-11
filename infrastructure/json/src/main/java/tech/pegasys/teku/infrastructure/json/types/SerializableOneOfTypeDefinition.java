@@ -75,7 +75,8 @@ public class SerializableOneOfTypeDefinition<TObject>
     }
     gen.writeStringField("type", "object");
     gen.writeArrayFieldStart("oneOf");
-    for (SerializableTypeDefinition<? extends TObject> t : types.values()) {
+    for (SerializableTypeDefinition<? extends TObject> t :
+        types.values().stream().distinct().toList()) {
       t.serializeOpenApiTypeOrReference(gen);
     }
     gen.writeEndArray();
