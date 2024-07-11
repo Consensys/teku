@@ -219,7 +219,7 @@ public class ContainersGenerator {
                         i ->
                             (""
                                     + "protected V$ getField$() {\n"
-                                    + "    return getAny(getSchema().toProfileSchema().orElseThrow().getNthActiveFieldIndex($));\n"
+                                    + "    return getAny(schemaCache.mapToIndex($));\n"
                                     + "  }")
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))),
@@ -230,7 +230,7 @@ public class ContainersGenerator {
                         i ->
                             ("  @SuppressWarnings(\"unchecked\")\n"
                                     + "  public SszSchema<V$> getFieldSchema$() {\n"
-                                    + "    return (SszSchema<V$>) getNthActiveFieldSchema($);\n"
+                                    + "    return (SszSchema<V$>) getChildSchema(indexMapping[$]);\n"
                                     + "  }\n")
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));

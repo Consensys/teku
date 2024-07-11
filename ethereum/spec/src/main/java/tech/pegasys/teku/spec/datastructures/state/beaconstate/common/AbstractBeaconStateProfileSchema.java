@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_BEACON_STATE_FIELDS;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -40,14 +39,16 @@ public abstract class AbstractBeaconStateProfileSchema<
     super(
         name,
         SszStableContainerSchema.createFromNamedSchemasForProfileOnly(
-            MAX_BEACON_STATE_FIELDS,
-                createNamedSchemas(allFields)),
-        IntStream.range(0, allFields.size()).boxed().collect(Collectors.toUnmodifiableSet()), Set.of());
+            MAX_BEACON_STATE_FIELDS, createNamedSchemas(allFields)),
+        IntStream.range(0, allFields.size()).boxed().collect(Collectors.toUnmodifiableSet()),
+        Set.of());
     validateFields(allFields);
   }
 
   private static List<NamedSchema<?>> createNamedSchemas(final List<SszField> allFields) {
-    return allFields.stream().<NamedSchema<?>>map(f -> namedSchema(f.getName(), f.getSchema().get())).toList();
+    return allFields.stream()
+        .<NamedSchema<?>>map(f -> namedSchema(f.getName(), f.getSchema().get()))
+        .toList();
   }
 
   protected AbstractBeaconStateProfileSchema(
