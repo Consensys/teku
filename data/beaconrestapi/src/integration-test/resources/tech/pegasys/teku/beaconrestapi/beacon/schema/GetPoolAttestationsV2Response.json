@@ -1,5 +1,5 @@
 {
-  "title" : "getPoolAttestationsV2Response",
+  "title" : "GetPoolAttestationsV2Response",
   "type" : "object",
   "required" : [ "version", "data" ],
   "properties" : {
@@ -13,14 +13,6 @@
         "title" : "Attestation",
         "type" : "object",
         "oneOf" : [ {
-          "$ref" : "#/components/schemas/AttestationPhase0"
-        }, {
-          "$ref" : "#/components/schemas/AttestationPhase0"
-        }, {
-          "$ref" : "#/components/schemas/AttestationPhase0"
-        }, {
-          "$ref" : "#/components/schemas/AttestationPhase0"
-        }, {
           "$ref" : "#/components/schemas/AttestationPhase0"
         }, {
           "$ref" : "#/components/schemas/AttestationElectra"
