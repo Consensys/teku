@@ -16,20 +16,27 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.CIRCLE_PROFILE_SCHEMA;
 import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.SQUARE_PROFILE_SCHEMA;
+import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.SHAPE_STABLE_CONTAINER_SCHEMA;
 
+import java.util.Set;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.ssz.RandomSszProfileSchemaGenerator;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszProfileSchemaTest extends SszCompositeSchemaTestBase {
 
-  public static Stream<SszContainerSchema<?>> testContainerSchemas() {
-    return Stream.of(SQUARE_PROFILE_SCHEMA, CIRCLE_PROFILE_SCHEMA);
+  public static Stream<SszProfileSchema<?>> testContainerSchemas() {
+    return new RandomSszProfileSchemaGenerator(SHAPE_STABLE_CONTAINER_SCHEMA).randomProfileSchemasStream().limit(10);
+    //return Stream.of(SQUARE_PROFILE_SCHEMA, CIRCLE_PROFILE_SCHEMA);
   }
 
   @Override
-  public Stream<SszContainerSchema<?>> testSchemas() {
+  public Stream<SszProfileSchema<?>> testSchemas() {
     return testContainerSchemas();
   }
 

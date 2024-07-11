@@ -177,7 +177,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
   private static Optional<SszData> getOptionally(final SszComposite<?> composite, final int index) {
     try {
       return Optional.of(composite.get(index));
-    } catch (NoSuchElementException __) {
+    } catch (NoSuchElementException | IndexOutOfBoundsException __) {
       return Optional.empty();
     }
   }

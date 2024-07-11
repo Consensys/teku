@@ -283,6 +283,11 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   }
 
   @Override
+  public int getFieldsCount() {
+    return definedChildrenNamedSchemas.size();
+  }
+
+  @Override
   public boolean isFixedSize() {
     if (hasOptionalFields) {
       // for containers with optional fields we behave as variable ssz
