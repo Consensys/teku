@@ -289,7 +289,7 @@ public class StorageConfiguration {
     }
 
     public Builder statePruningLimit(final int statePruningLimit) {
-      if (statePruningLimit < 0) {
+      if (statePruningLimit < 0 || statePruningLimit > 100) {
         throw new InvalidConfigurationException(
             String.format("Invalid statePruningLimit: %d", statePruningLimit));
       }
