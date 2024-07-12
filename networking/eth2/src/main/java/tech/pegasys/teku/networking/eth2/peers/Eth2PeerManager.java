@@ -238,7 +238,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT)
+                peer.disconnectCleanly(DisconnectReason.NO_STATUS_RECEIVED)
                     .ifExceptionGetsHereRaiseABug();
               }
             },
@@ -249,7 +249,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               LOG.error(
                   "Error while waiting for peer {} to exchange status. Disconnecting",
                   peer.getId());
-              peer.disconnectImmediately(Optional.of(DisconnectReason.REMOTE_FAULT), true);
+              peer.disconnectImmediately(Optional.of(DisconnectReason.NO_STATUS_RECEIVED), true);
             });
   }
 
