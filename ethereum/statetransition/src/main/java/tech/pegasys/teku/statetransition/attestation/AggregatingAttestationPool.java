@@ -270,7 +270,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
 
-    final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot = getSlotFilter(maybeSlot);
+    final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
+        (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
     final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
         (group) ->
@@ -309,18 +310,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       return spec.atSlot(recentChainData.getCurrentSlot().get()).getSchemaDefinitions();
     } else {
       return spec.getGenesisSchemaDefinitions();
-    }
-  }
-
-  private Predicate<Map.Entry<UInt64, Set<Bytes>>> getSlotFilter(final Optional<UInt64> maybeSlot) {
-    if (maybeSlot.isPresent()) {
-      return (entry) -> entry.getKey().equals(maybeSlot.get());
-    } else {
-      return (entry) ->
-          recentChainData
-              .getCurrentSlot()
-              .map(currentSlot -> entry.getKey().equals(currentSlot))
-              .orElse(true);
     }
   }
 
