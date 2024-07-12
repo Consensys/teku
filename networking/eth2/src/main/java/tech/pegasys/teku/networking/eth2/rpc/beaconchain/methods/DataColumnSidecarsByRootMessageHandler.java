@@ -17,8 +17,10 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -52,6 +54,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
   private static final Logger LOG_DAS = LogManager.getLogger("das-nyota");
+  private static final AtomicLong REQUEST_ID_COUNTER = new AtomicLong();
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -81,6 +84,19 @@ public class DataColumnSidecarsByRootMessageHandler
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
   }
 
+  private SafeFuture<Boolean> validateAndSendMaybeRespond(
+      final DataColumnIdentifier identifier,
+      final Optional<DataColumnSidecar> maybeSidecar,
+      final UInt64 finalizedEpoch,
+      final ResponseCallback<DataColumnSidecar> callback) {
+    return validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
+        .thenCompose(
+            __ ->
+                maybeSidecar
+                    .map(sideCar -> callback.respond(sideCar).thenApply(___ -> true))
+                    .orElse(SafeFuture.completedFuture(false)));
+  }
+
   @Override
   public void onIncomingMessage(
       final String protocolId,
@@ -88,13 +104,16 @@ public class DataColumnSidecarsByRootMessageHandler
       final DataColumnSidecarsByRootRequestMessage message,
       final ResponseCallback<DataColumnSidecar> callback) {
 
+    long requestId = REQUEST_ID_COUNTER.getAndIncrement();
+
     LOG.debug(
         "Peer {} requested {} data column sidecars with identifiers: {}",
         peer.getId(),
         message.size(),
         message);
     LOG_DAS.info(
-        "[nyota] DataColumnSidecarsByRootMessageHandler: REQUEST {} data column sidecars from {}",
+        "[nyota] DataColumnSidecarsByRootMessageHandler: REQUEST(#{}) {} data column sidecars from {}",
+        requestId,
         message.size(),
         peer.getId());
 
@@ -109,49 +128,45 @@ public class DataColumnSidecarsByRootMessageHandler
     requestCounter.labels("ok").inc();
     totalDataColumnSidecarsRequestedCounter.inc(message.size());
 
-    SafeFuture<Void> future = SafeFuture.COMPLETE;
-    final AtomicInteger sentDataColumnSidecars = new AtomicInteger(0);
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
-    for (final DataColumnIdentifier identifier : message) {
-      future =
-          future
-              .thenCompose(__ -> retrieveDataColumnSidecar(identifier))
-              .thenCompose(
-                  maybeSidecar ->
-                      validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
-                          .thenApply(__ -> maybeSidecar))
-              .thenComposeChecked(
-                  maybeSidecar ->
-                      maybeSidecar
-                          .map(
-                              dataColumnSidecar ->
-                                  callback
-                                      .respond(dataColumnSidecar)
-                                      .thenRun(sentDataColumnSidecars::incrementAndGet))
-                          .orElse(SafeFuture.COMPLETE));
-    }
+    Stream<SafeFuture<Boolean>> responseStream =
+        message.stream()
+            .map(
+                identifier ->
+                    retrieveDataColumnSidecar(identifier)
+                        .thenCompose(
+                            maybeSidecar ->
+                                validateAndSendMaybeRespond(
+                                    identifier, maybeSidecar, finalizedEpoch, callback)));
 
-    future.finish(
-        () -> {
-          if (sentDataColumnSidecars.get() != message.size()) {
-            peer.adjustDataColumnSidecarsRequest(
-                dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecars.get());
-          }
-          callback.completeSuccessfully();
-          LOG_DAS.info(
-              "[nyota] DataColumnSidecarsByRootMessageHandler: RESPOND {} data column sidecars to {}",
-              sentDataColumnSidecars.get(),
-              peer.getId());
-        },
-        err -> {
-          peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
-          handleError(callback, err);
-          LOG_DAS.info(
-              "[nyota] DataColumnSidecarsByRootMessageHandler: ERROR to {}: {}",
-              peer.getId(),
-              err.toString());
-        });
+    SafeFuture<List<Boolean>> listOfResponses = SafeFuture.collectAll(responseStream);
+
+    listOfResponses
+        .thenApply(list -> list.stream().filter(isSent -> isSent).count())
+        .thenAccept(
+            sentDataColumnSidecarsCount -> {
+              if (sentDataColumnSidecarsCount != message.size()) {
+                peer.adjustDataColumnSidecarsRequest(
+                    dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecarsCount);
+              }
+              callback.completeSuccessfully();
+              LOG_DAS.info(
+                  "[nyota] DataColumnSidecarsByRootMessageHandler: RESPOND(#{}) {} data column sidecars to {}",
+                  requestId,
+                  sentDataColumnSidecarsCount,
+                  peer.getId());
+            })
+        .finish(
+            err -> {
+              peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
+              handleError(callback, err);
+              LOG_DAS.info(
+                  "[nyota] DataColumnSidecarsByRootMessageHandler: ERROR(#{}) to {}: {}",
+                  requestId,
+                  peer.getId(),
+                  err.toString());
+            });
   }
 
   private UInt64 getFinalizedEpoch() {
