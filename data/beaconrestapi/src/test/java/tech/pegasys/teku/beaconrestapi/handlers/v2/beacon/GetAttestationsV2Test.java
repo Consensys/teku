@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(allMilestones = true)
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 public class GetAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   private SpecMilestone specMilestone;
@@ -95,16 +96,8 @@ public class GetAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void metadata_shouldHandle200() throws Exception {
-    List<Attestation> attestations;
-    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
-      attestations =
-          List.of(
-              dataStructureUtil.randomElectraAttestation(),
-              dataStructureUtil.randomElectraAttestation());
-    } else {
-      attestations =
-          List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    }
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
     final ObjectAndMetaData<List<Attestation>> responseData = withMetaData(attestations);
     final String responseDataAsString = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final JsonNode responseDataAsJsonNode = JsonTestUtil.parseAsJsonNode(responseDataAsString);
