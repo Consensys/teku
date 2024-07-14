@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -99,14 +100,8 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
 
     final SerializableOneOfTypeDefinition<List<Attestation>> oneOfTypeDefinition =
         new SerializableOneOfTypeDefinitionBuilder<List<Attestation>>()
-            .withType(
-                attestations ->
-                    !attestations.isEmpty() && attestations.get(0).requiresCommitteeBits(),
-                listOf(electraAttestationTypeDef))
-            .withType(
-                attestations ->
-                    attestations.isEmpty() || !attestations.get(0).requiresCommitteeBits(),
-                listOf(phase0AttestationTypeDef))
+            .withType(electraAttestationsPredicate(), listOf(electraAttestationTypeDef))
+            .withType(phase0AttestationsPredicate(), listOf(phase0AttestationTypeDef))
             .build();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
@@ -116,5 +111,15 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField("data", oneOfTypeDefinition, ObjectAndMetaData::getData)
         .build();
+  }
+
+  private static Predicate<List<Attestation>> phase0AttestationsPredicate() {
+    // Before Electra attestations do not require committee bits
+    return attestations -> attestations.isEmpty() || !attestations.get(0).requiresCommitteeBits();
+  }
+
+  private static Predicate<List<Attestation>> electraAttestationsPredicate() {
+    // Only once we are in Electra attestations will have committee bits
+    return attestations -> !attestations.isEmpty() && attestations.get(0).requiresCommitteeBits();
   }
 }
