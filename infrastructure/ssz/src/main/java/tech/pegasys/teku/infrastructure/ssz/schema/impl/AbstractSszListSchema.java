@@ -125,6 +125,11 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
+  public boolean hasExtraDataInBackingTree() {
+    return true;
+  }
+
+  @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int elementsCount = getLength(node);
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
-import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.CIRCLE_PROFILE_SCHEMA;
-
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -26,27 +24,23 @@ public abstract class SszListSchemaTestBase extends SszCollectionSchemaTestBase 
 
   public static Stream<SszListSchema<?, ?>> complexListSchemas() {
     return complexElementSchemas()
-    //Stream.of(CIRCLE_PROFILE_SCHEMA)
         .flatMap(
             elementSchema ->
                 Stream.concat(
                     Stream.of(
-//                        SszListSchema.create(elementSchema, 0),
-//                        SszListSchema.create(elementSchema, 1)
-                        SszListSchema.create(elementSchema, 2)
-//                        SszListSchema.create(elementSchema, 3),
-//                        SszListSchema.create(elementSchema, 10)
-//                        SszListSchema.create(elementSchema, 1L << 33)
-                        ),
-                //    Stream.of()
-                    createSuperNodeVariant(elementSchema)
-                ));
+                        SszListSchema.create(elementSchema, 0),
+                        SszListSchema.create(elementSchema, 1),
+                        SszListSchema.create(elementSchema, 2),
+                        SszListSchema.create(elementSchema, 3),
+                        SszListSchema.create(elementSchema, 10),
+                        SszListSchema.create(elementSchema, 1L << 33)),
+                    createSuperNodeVariant(elementSchema)));
   }
 
   private static Stream<? extends SszListSchema<?, ?>> createSuperNodeVariant(
       final SszSchema<?> elementSchema) {
     // SuperNodes only support fixed sized content
-    return elementSchema.isFixedSize()
+    return elementSchema.isFixedSize() && !elementSchema.hasExtraDataInBackingTree()
         ? Stream.of(SszListSchema.create(elementSchema, 1L << 16, SszSchemaHints.sszSuperNode(8)))
         : Stream.empty();
   }

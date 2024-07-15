@@ -43,6 +43,11 @@ public interface SszOptionalSchema<
   }
 
   @Override
+  default boolean hasExtraDataInBackingTree() {
+    return true;
+  }
+
+  @Override
   default int getSszFixedPartSize() {
     return 0;
   }

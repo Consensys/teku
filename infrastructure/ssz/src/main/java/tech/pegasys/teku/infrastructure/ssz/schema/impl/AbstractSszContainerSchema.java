@@ -215,6 +215,17 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
+  public boolean hasExtraDataInBackingTree() {
+    // TODO, can we cache this?
+    for (int i = 0; i < getFieldsCount(); i++) {
+      if (getChildSchema(i).hasExtraDataInBackingTree()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
   public int getSszFixedPartSize() {
     return fixedPartSize;
   }

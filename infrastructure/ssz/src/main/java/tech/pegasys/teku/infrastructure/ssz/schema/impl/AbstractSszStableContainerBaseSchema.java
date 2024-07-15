@@ -93,6 +93,8 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   private final Object2IntMap<String> definedChildrenNamesToFieldIndex;
   private final List<String> definedChildrenNames;
   private final List<? extends SszSchema<?>> definedChildrenSchemas;
+  private final int sszFixedPartSize;
+  private final boolean isFixedSize;
   private final int maxFieldCount;
   private final long treeWidth;
   private final SszBitvectorSchema<SszBitvector> activeFieldsSchema;
@@ -142,6 +144,8 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
             createDefaultContainerTreeNode(requiredFieldIndices), requiredFields.getBackingNode());
     this.hasOptionalFields = optionalFields.getBitCount() > 0;
     this.jsonTypeDefinition = SszStableContainerBaseTypeDefinition.createFor(this);
+    this.sszFixedPartSize = calcSszFixedPartSize();
+    this.isFixedSize = calcIsFixedSize();
   }
 
   protected TreeNode createDefaultContainerTreeNode(final Set<Integer> activeFieldIndices) {
@@ -290,6 +294,10 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
 
   @Override
   public boolean isFixedSize() {
+    return isFixedSize;
+  }
+
+  private boolean calcIsFixedSize() {
     if (hasOptionalFields) {
       // for containers with optional fields we behave as variable ssz
       return false;
@@ -302,7 +310,16 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   }
 
   @Override
+  public boolean hasExtraDataInBackingTree() {
+    return true;
+  }
+
+  @Override
   public int getSszFixedPartSize() {
+    return sszFixedPartSize;
+  }
+
+  int calcSszFixedPartSize() {
     if (hasOptionalFields) {
       // for containers with optional fields we behave as variable ssz
       return 0;
@@ -341,17 +358,20 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
 
     if (isFixedSize()) {
       return 0;
-    } else {
-
-      return requiredFields
-          .streamAllSetBits()
-          .map(
-              index -> {
-                final SszSchema<?> childType = getChildSchema(index);
-                return childType.getSszSize(node.get(getChildGeneralizedIndex(index)));
-              })
-          .sum();
     }
+
+    final int[] size = {0};
+    requiredFields
+        .streamAllSetBits()
+        .forEach(
+            index -> {
+              final SszSchema<?> childType = getChildSchema(index);
+              if (!childType.isFixedSize()) {
+                size[0] += childType.getSszSize(node.get(getChildGeneralizedIndex(index)));
+              }
+            });
+
+    return size[0];
   }
 
   /**
@@ -670,8 +690,9 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
       activeFields = requiredFields;
     }
 
+    int lastActiveFieldOrFirst = Math.max(0, activeFields.getLastSetBitIndex());
     final long lastUsefulGIndex =
-        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
+        GIndexUtil.gIdxChildGIndex(rootGIndex, lastActiveFieldOrFirst, treeDepth());
     final TreeNode containerTreeNode =
         LoadingUtil.loadNodesToDepth(
             nodeSource,
@@ -692,7 +713,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
       final Bytes32 childHash,
       final long childGIndex) {
     final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth());
-    if (activeFields.getBit(childIndex)) {
+    if (activeFields.getLastSetBitIndex() >= childIndex && activeFields.getBit(childIndex)) {
       return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
     }
     return SszPrimitiveSchemas.NONE_SCHEMA.loadBackingNodes(nodeSource, childHash, childGIndex);

@@ -140,10 +140,10 @@ public abstract class AbstractSszCollectionSchema<
   public int sszSerializeVector(
       final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     if (getElementSchema().isFixedSize()) {
-      if (getElementSchema().isPrimitive()) {
-        return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
+      if (getElementSchema().hasExtraDataInBackingTree()) {
+        return sszSerializeFixedVector(vectorNode, writer, elementsCount);
       }
-      return sszSerializeFixedVector(vectorNode, writer, elementsCount);
+      return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
     } else {
       return sszSerializeVariableVector(vectorNode, writer, elementsCount);
     }
@@ -202,6 +202,7 @@ public abstract class AbstractSszCollectionSchema<
 
   protected DeserializedData sszDeserializeVector(final SszReader reader) {
     if (getElementSchema().isFixedSize()) {
+      // TODO handle supernode check wrt hasExtraDataInBackingTree
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
       return sszSuperNodeHint
           .map(superNodeHint -> sszDeserializeSupernode(reader, superNodeHint.getDepth()))
