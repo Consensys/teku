@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -93,9 +93,38 @@ public class MilestoneDependentTypesUtil {
         .getJsonTypeDefinition();
   }
 
+  public static <T extends SszData> DeserializableTypeDefinition<List<T>> slotBasedSelectorForList(
+      String json,
+      SchemaDefinitionCache schemaDefinitionCache,
+      final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    final Optional<UInt64> slot =
+        // Attestations list
+        getSlotFromArray(json, "/0/data/slot");
+    final SpecMilestone milestone =
+        schemaDefinitionCache.milestoneAtSlot(
+            slot.orElseThrow(() -> new BadRequestException("Could not locate slot in JSON data")));
+    final DeserializableTypeDefinition<? extends T> attestationTypeDefinition =
+        getSchema
+            .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+            .getJsonTypeDefinition();
+    return DeserializableTypeDefinition.listOf(attestationTypeDefinition);
+  }
+
   private static Optional<UInt64> getSlot(final String json, final String... path) {
     try {
       return JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, path);
+    } catch (final JsonProcessingException e) {
+      throw new BadRequestException(e.getMessage());
+    } catch (IllegalStateException e) {
+      return Optional.empty();
+    }
+  }
+
+  private static Optional<UInt64> getSlotFromArray(final String json, final String path) {
+    try {
+      return JsonUtil.getAttributeFromArray(json, CoreTypes.UINT64_TYPE, path);
+    } catch (IllegalStateException e) {
+      return Optional.empty();
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());
     }

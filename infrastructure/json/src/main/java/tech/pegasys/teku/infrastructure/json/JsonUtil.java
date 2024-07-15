@@ -18,6 +18,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -135,6 +137,29 @@ public class JsonUtil {
       throws JsonProcessingException {
     try (final JsonParser parser = FACTORY.createParser(json)) {
       return getAttributeFromParser(parser, type, 0, path);
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  public static <T> Optional<T> getAttributeFromArray(
+      final String json, final DeserializableTypeDefinition<T> type, final String path)
+      throws JsonProcessingException {
+    try {
+      final ObjectMapper objectMapper = new ObjectMapper();
+      final JsonNode rootNode = objectMapper.readTree(json);
+      // Use JsonPointer to directly access the slot value
+      final JsonNode targetNode = rootNode.at(path);
+      if (targetNode.isMissingNode()) {
+        return Optional.empty();
+      }
+      // Create a JsonParser from the target node
+      final JsonParser nodeParser = objectMapper.treeAsTokens(targetNode);
+      // Move to the first token
+      nodeParser.nextToken();
+      return Optional.of(type.deserialize(nodeParser));
     } catch (final JsonProcessingException e) {
       throw e;
     } catch (final IOException e) {
