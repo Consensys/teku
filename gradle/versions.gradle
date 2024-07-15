@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.17.1'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.17.2'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.26.1') {
+    dependencySet(group: 'com.google.errorprone', version: '2.28.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -16,7 +16,7 @@ dependencyManagement {
 
     dependency 'com.google.guava:guava:33.1.0-jre'
 
-    dependency 'org.jsoup:jsoup:1.17.2'
+    dependency 'org.jsoup:jsoup:1.18.1'
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
 
@@ -53,7 +53,7 @@ dependencyManagement {
     dependency 'org.webjars:swagger-ui:5.17.14'
 
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.173'
+    dependency 'io.github.classgraph:classgraph:4.8.174'
     dependencySet(group: 'com.github.oshi', version: '6.6.1') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
@@ -70,7 +70,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.6.7'
+    dependency 'io.projectreactor:reactor-core:3.6.8'
 
     dependency 'it.unimi.dsi:fastutil:8.5.12'
 
@@ -98,7 +98,7 @@ dependencyManagement {
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
 
-    dependency 'org.assertj:assertj-core:3.26.0'
+    dependency 'org.assertj:assertj-core:3.26.3'
 
     dependency 'org.awaitility:awaitility:4.2.1'
 
@@ -107,7 +107,7 @@ dependencyManagement {
       entry 'bcpkix-jdk18on'
     }
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.10.2') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.10.3') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
@@ -168,12 +168,12 @@ dependencyManagement {
       entry "org.jupnp.support"
     }
 
-    dependencySet(group: 'io.jsonwebtoken', version: '0.12.5') {
+    dependencySet(group: 'io.jsonwebtoken', version: '0.12.6') {
       entry 'jjwt-api'
       entry 'jjwt-impl'
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.8.5'
+    dependency 'net.jqwik:jqwik:1.9.0'
   }
 }
