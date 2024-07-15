@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableComposite;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableRefComposite;
+import tech.pegasys.teku.infrastructure.ssz.SszStableContainerBase;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -91,7 +92,15 @@ public abstract class AbstractSszMutableComposite<
 
     childrenChanges.put(index, createChangeRecordByValue(immutableValue));
 
-    sizeCache = index >= sizeCache ? index + 1 : sizeCache;
+    if (!(backingImmutableData instanceof SszStableContainerBase)) {
+      // stable container have sparse index so size cannot be compared with index
+      // Currently, the only mutable StableContainer we support is a Profile with no optional
+      // fields,
+      // so we can assume the size never changes.
+      // See:
+      // tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerBaseImpl.createWritableCopy
+      sizeCache = index >= sizeCache ? index + 1 : sizeCache;
+    }
     invalidate();
   }
 

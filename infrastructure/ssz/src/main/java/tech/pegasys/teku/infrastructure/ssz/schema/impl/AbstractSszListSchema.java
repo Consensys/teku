@@ -106,6 +106,7 @@ public abstract class AbstractSszListSchema<
     int length = getLength(node);
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
+      // TODO avoid calculating getSszElementBitSize() twice
       if (getSszElementBitSize() == 1) {
         // BitlistImpl is handled specially
         return length / 8 + 1;
@@ -121,6 +122,11 @@ public abstract class AbstractSszListSchema<
   @Override
   public boolean isFixedSize() {
     return false;
+  }
+
+  @Override
+  public boolean hasExtraDataInBackingTree() {
+    return true;
   }
 
   @Override

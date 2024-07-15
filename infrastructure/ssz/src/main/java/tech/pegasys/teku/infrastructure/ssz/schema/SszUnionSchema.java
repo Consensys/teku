@@ -54,6 +54,11 @@ public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<Ss
   }
 
   @Override
+  default boolean hasExtraDataInBackingTree() {
+    return true;
+  }
+
+  @Override
   default int getSszFixedPartSize() {
     return SELECTOR_SIZE_BYTES;
   }

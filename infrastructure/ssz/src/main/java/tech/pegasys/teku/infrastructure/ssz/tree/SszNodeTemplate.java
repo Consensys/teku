@@ -69,6 +69,9 @@ public class SszNodeTemplate {
 
   public static SszNodeTemplate createFromType(final SszSchema<?> sszSchema) {
     checkArgument(sszSchema.isFixedSize(), "Only fixed size types supported");
+    checkArgument(
+        !sszSchema.hasExtraDataInBackingTree(),
+        "Types containing extra data in backing tree are not supported");
 
     return createFromTree(sszSchema.getDefaultTree());
   }

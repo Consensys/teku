@@ -55,7 +55,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       return new NamedSchema<>(name, schema);
     }
 
-    private NamedSchema(final String name, final SszSchema<T> schema) {
+    protected NamedSchema(final String name, final SszSchema<T> schema) {
       this.name = name;
       this.schema = schema;
     }
@@ -69,12 +69,12 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     }
   }
 
-  protected static <T extends SszData> NamedSchema<T> namedSchema(
+  public static <T extends SszData> NamedSchema<T> namedSchema(
       final SszFieldName fieldName, final SszSchema<T> schema) {
     return namedSchema(fieldName.getSszFieldName(), schema);
   }
 
-  protected static <T extends SszData> NamedSchema<T> namedSchema(
+  public static <T extends SszData> NamedSchema<T> namedSchema(
       final String fieldName, final SszSchema<T> schema) {
     return new NamedSchema<>(fieldName, schema);
   }
@@ -205,12 +205,24 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public boolean isFixedSize() {
+    // TODO, can we cache this?
     for (int i = 0; i < getFieldsCount(); i++) {
       if (!getChildSchema(i).isFixedSize()) {
         return false;
       }
     }
     return true;
+  }
+
+  @Override
+  public boolean hasExtraDataInBackingTree() {
+    // TODO, can we cache this?
+    for (int i = 0; i < getFieldsCount(); i++) {
+      if (getChildSchema(i).hasExtraDataInBackingTree()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

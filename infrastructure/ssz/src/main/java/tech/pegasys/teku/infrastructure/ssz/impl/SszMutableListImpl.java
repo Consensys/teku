@@ -102,4 +102,9 @@ public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT 
   public SszMutableList<SszElementT> createWritableCopy() {
     throw new UnsupportedOperationException("Creating a copy from writable list is not supported");
   }
+
+  @Override
+  public String toString() {
+    return "Mutable" + backingImmutableData;
+  }
 }

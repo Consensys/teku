@@ -40,7 +40,7 @@ public abstract class SszListSchemaTestBase extends SszCollectionSchemaTestBase 
   private static Stream<? extends SszListSchema<?, ?>> createSuperNodeVariant(
       final SszSchema<?> elementSchema) {
     // SuperNodes only support fixed sized content
-    return elementSchema.isFixedSize()
+    return elementSchema.isFixedSize() && !elementSchema.hasExtraDataInBackingTree()
         ? Stream.of(SszListSchema.create(elementSchema, 1L << 16, SszSchemaHints.sszSuperNode(8)))
         : Stream.empty();
   }

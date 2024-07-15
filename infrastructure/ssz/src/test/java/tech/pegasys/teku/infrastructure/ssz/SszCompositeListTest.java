@@ -85,6 +85,11 @@ public class SszCompositeListTest {
         }
 
         @Override
+        public boolean hasExtraDataInBackingTree() {
+          return false;
+        }
+
+        @Override
         public int getSszFixedPartSize() {
           return 0;
         }

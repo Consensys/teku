@@ -18,11 +18,13 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -38,6 +40,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerBaseSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RandomSszDataGenerator {
@@ -50,14 +53,17 @@ public class RandomSszDataGenerator {
 
   private final Random random;
   private final int maxListSize;
+  private final StableContainerMode stableContainerMode;
 
   public RandomSszDataGenerator() {
-    this(new Random(1), 16 * 1024);
+    this(new Random(1), 16 * 1024, StableContainerMode.FULL);
   }
 
-  public RandomSszDataGenerator(final Random random, final int maxListSize) {
+  public RandomSszDataGenerator(
+      final Random random, final int maxListSize, final StableContainerMode stableContainerMode) {
     this.random = random;
     this.maxListSize = maxListSize;
+    this.stableContainerMode = stableContainerMode;
     bitSupplier = () -> SszBit.of(random.nextBoolean());
     byteSupplier = () -> SszByte.of(random.nextInt());
     bytes4Supplier = () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
@@ -67,11 +73,23 @@ public class RandomSszDataGenerator {
   }
 
   public RandomSszDataGenerator withMaxListSize(final int maxListSize) {
-    return new RandomSszDataGenerator(random, maxListSize);
+    return new RandomSszDataGenerator(random, maxListSize, stableContainerMode);
+  }
+
+  public RandomSszDataGenerator withStableContainerMode(final StableContainerMode mode) {
+    return new RandomSszDataGenerator(random, maxListSize, mode);
   }
 
   public <T extends SszData> T randomData(final SszSchema<T> schema) {
     return randomDataStream(schema).findFirst().orElseThrow();
+  }
+
+  private <T extends SszData> Optional<T> randomStableContainerData(final SszSchema<T> schema) {
+    return switch (stableContainerMode) {
+      case EMPTY -> Optional.empty();
+      case FULL -> Optional.of(randomData(schema));
+      case RANDOM -> random.nextBoolean() ? Optional.of(randomData(schema)) : Optional.empty();
+    };
   }
 
   @SuppressWarnings("unchecked")
@@ -94,6 +112,33 @@ public class RandomSszDataGenerator {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
+    } else if (schema
+        instanceof AbstractSszStableContainerBaseSchema<?> stableContainerBaseSchema) {
+      return Stream.generate(
+          () -> {
+            final SszBitvector requiredFields = stableContainerBaseSchema.getRequiredFields();
+            final SszBitvector optionalFields = stableContainerBaseSchema.getOptionalFields();
+            final int lastIndex =
+                Math.max(requiredFields.getLastSetBitIndex(), optionalFields.getLastSetBitIndex());
+
+            final List<Optional<? extends SszData>> values =
+                IntStream.rangeClosed(0, lastIndex)
+                    .mapToObj(
+                        index -> {
+                          if (requiredFields.getBit(index)) {
+                            return Optional.of(
+                                randomData(stableContainerBaseSchema.getChildSchema(index)));
+                          }
+                          if (optionalFields.getBit(index)) {
+                            return randomStableContainerData(
+                                stableContainerBaseSchema.getChildSchema(index));
+                          }
+                          return Optional.<SszData>empty();
+                        })
+                    .toList();
+
+            return (T) stableContainerBaseSchema.createFromOptionalFieldValues(values);
+          });
     } else if (schema instanceof AbstractSszContainerSchema<?> containerSchema) {
       return Stream.generate(
           () -> {
@@ -146,5 +191,11 @@ public class RandomSszDataGenerator {
     } else {
       throw new IllegalArgumentException("Unknown schema: " + schema);
     }
+  }
+
+  public enum StableContainerMode {
+    EMPTY,
+    FULL,
+    RANDOM
   }
 }
