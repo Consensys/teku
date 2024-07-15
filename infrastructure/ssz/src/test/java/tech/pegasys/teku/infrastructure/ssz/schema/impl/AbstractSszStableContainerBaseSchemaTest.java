@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema.createFromNamedSchemasForProfileOnly;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -26,6 +25,7 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszProfile;
@@ -167,7 +167,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
       };
 
   @Test
-  void stableContainerSanityTest() throws JsonProcessingException {
+  void stableContainerSanityTest() throws Exception {
 
     final ShapeStableContainer square =
         SHAPE_STABLE_CONTAINER_SCHEMA.createFromOptionalFieldValues(
@@ -200,6 +200,8 @@ public class AbstractSszStableContainerBaseSchemaTest {
     final String squareJson =
         JsonUtil.serialize(square, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
 
+    assertThat(JsonTestUtil.parse(squareJson)).containsOnlyKeys("side", "color");
+
     final ShapeStableContainer squareFromJson =
         JsonUtil.parse(squareJson, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
     assertThat(squareFromJson).isEqualTo(square);
@@ -207,6 +209,8 @@ public class AbstractSszStableContainerBaseSchemaTest {
     // json circle round trip
     final String circleJson =
         JsonUtil.serialize(circle, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
+
+    assertThat(JsonTestUtil.parse(circleJson)).containsOnlyKeys("radius", "color");
 
     final ShapeStableContainer circleFromJson =
         JsonUtil.parse(circleJson, SHAPE_STABLE_CONTAINER_SCHEMA.getJsonTypeDefinition());
@@ -231,7 +235,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
   }
 
   @Test
-  void profileSanityTest() throws JsonProcessingException {
+  void profileSanityTest() throws Exception {
 
     final CircleProfile circle =
         CIRCLE_PROFILE_SCHEMA.createFromFieldValues(
@@ -263,8 +267,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     final String squareJson =
         JsonUtil.serialize(square, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
 
-    // TODO check JSON fields instead of printing
-    System.out.println("squareJson: " + squareJson);
+    assertThat(JsonTestUtil.parse(squareJson)).containsOnlyKeys("side", "color");
 
     final SquareProfile squareFromJson =
         JsonUtil.parse(squareJson, SQUARE_PROFILE_SCHEMA.getJsonTypeDefinition());
@@ -274,7 +277,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
     final String circleJson =
         JsonUtil.serialize(circle, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
 
-    System.out.println("circleJson: " + circleJson);
+    assertThat(JsonTestUtil.parse(circleJson)).containsOnlyKeys("radius", "color");
 
     final CircleProfile circleFromJson =
         JsonUtil.parse(circleJson, CIRCLE_PROFILE_SCHEMA.getJsonTypeDefinition());
@@ -294,7 +297,7 @@ public class AbstractSszStableContainerBaseSchemaTest {
   }
 
   @Test
-  void profileWithOptionalSanityTest() throws JsonProcessingException {
+  void profileWithOptionalSanityTest() throws Exception {
 
     final CircleProfile circle =
         CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.createFromOptionalFieldValues(
@@ -350,13 +353,17 @@ public class AbstractSszStableContainerBaseSchemaTest {
         JsonUtil.serialize(
             squareWithOptional, SQUARE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
 
+    assertThat(JsonTestUtil.parse(squareJson)).containsOnlyKeys("side", "color", "style");
+
     final SquareProfile squareFromJson =
         JsonUtil.parse(squareJson, SQUARE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
     assertThat(squareFromJson).isEqualTo(squareWithOptional);
 
-    // json circle round trip
+    // json circle round trip (optional not set)
     final String circleJson =
         JsonUtil.serialize(circle, CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());
+
+    assertThat(JsonTestUtil.parse(circleJson)).containsOnlyKeys("radius", "color");
 
     final CircleProfile circleFromJson =
         JsonUtil.parse(circleJson, CIRCLE_PROFILE_WITH_OPTIONAL_SCHEMA.getJsonTypeDefinition());

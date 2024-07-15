@@ -202,7 +202,6 @@ public abstract class AbstractSszCollectionSchema<
 
   protected DeserializedData sszDeserializeVector(final SszReader reader) {
     if (getElementSchema().isFixedSize()) {
-      // TODO handle supernode check wrt hasExtraDataInBackingTree
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
       return sszSuperNodeHint
           .map(superNodeHint -> sszDeserializeSupernode(reader, superNodeHint.getDepth()))

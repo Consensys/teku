@@ -55,8 +55,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranch
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
-// TODO memoizations for non-optional schema
-
 /**
  * Implements the common container logic shared among Profile and StableContainer as per <a
  * href="https://eips.ethereum.org/EIPS/eip-7495">eip-7495</a> specifications.
