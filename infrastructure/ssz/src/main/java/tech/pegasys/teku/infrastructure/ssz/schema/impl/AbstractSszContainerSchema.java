@@ -205,6 +205,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public boolean isFixedSize() {
+    // TODO, can we cache this?
     for (int i = 0; i < getFieldsCount(); i++) {
       if (!getChildSchema(i).isFixedSize()) {
         return false;

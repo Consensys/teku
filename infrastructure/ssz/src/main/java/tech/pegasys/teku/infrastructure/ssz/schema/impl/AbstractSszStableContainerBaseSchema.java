@@ -320,7 +320,7 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   @Override
   public int getSszVariablePartSize(final TreeNode node) {
     if (hasOptionalFields) {
-      // for containers with optional fields
+      // containers with optional fields always behaves as variable ssz
       final SszBitvector activeFields = getActiveFieldsBitvectorFromBackingNode(node);
 
       final int containerSize =

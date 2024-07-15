@@ -13,26 +13,28 @@
 
 package tech.pegasys.teku.infrastructure.ssz;
 
-import static tech.pegasys.teku.infrastructure.ssz.TestProfiles.CIRCLE_PROFILE_SCHEMA;
 import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.TestContainer;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszProfileImpl;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszProfileSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TestStableContainers {
 
-  static final int MAX_SHAPE_FIELD_COUNT = 4;
+  static final int MAX_SHAPE_FIELD_COUNT = 17;
 
   static final List<NamedSchema<?>> SHAPE_SCHEMAS =
       List.of(
@@ -68,14 +70,6 @@ public class TestStableContainers {
     }
   }
 
-  public static class NestedStableContainer extends SszStableContainerImpl {
-    NestedStableContainer(
-        final SszStableContainerSchema<? extends SszStableContainerImpl> type,
-        final TreeNode backingNode) {
-      super(type, backingNode);
-    }
-  }
-
   public static final SszStableContainerSchema<ShapeStableContainer> SHAPE_STABLE_CONTAINER_SCHEMA =
       new AbstractSszStableContainerSchema<>("Shape", SHAPE_SCHEMAS, MAX_SHAPE_FIELD_COUNT) {
         @Override
@@ -86,7 +80,7 @@ public class TestStableContainers {
 
   static final List<NamedSchema<?>> NESTED_SCHEMAS =
       List.of(
-          namedSchema("bytevector", SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
+          namedSchema("byte", SszPrimitiveSchemas.BYTE_SCHEMA),
           namedSchema("shapeStableContainer", SHAPE_STABLE_CONTAINER_SCHEMA),
           namedSchema("testContainer", TestContainer.SSZ_SCHEMA));
 
@@ -99,16 +93,45 @@ public class TestStableContainers {
             }
           };
 
-  static final List<NamedSchema<?>> PROFILE_NESTED_SCHEMAS =
+  public static class CircleProfile extends SszProfileImpl {
+    CircleProfile(
+        final SszProfileSchema<? extends SszProfileImpl> type, final TreeNode backingNode) {
+      super(type, backingNode);
+    }
+
+    Byte getColor() {
+      final SszByte color = getAny(COLOR_INDEX);
+      return color.get();
+    }
+
+    UInt64 getRadius() {
+      final SszUInt64 radius = getAny(RADIUS_INDEX);
+      return radius.get();
+    }
+  }
+
+  public static final SszProfileSchema<CircleProfile> CIRCLE_PROFILE_SCHEMA =
+      new AbstractSszProfileSchema<>(
+          "CircleProfile",
+          SHAPE_STABLE_CONTAINER_SCHEMA,
+          Set.of(RADIUS_INDEX, COLOR_INDEX),
+          Set.of()) {
+        @Override
+        public CircleProfile createFromBackingNode(final TreeNode node) {
+          return new CircleProfile(this, node);
+        }
+      };
+
+  static final List<NamedSchema<?>> NESTED_PROFILE_SCHEMAS =
       List.of(
-          namedSchema("bytevector", SszVectorSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, 64)),
+          namedSchema("uint64", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("circleProfile", CIRCLE_PROFILE_SCHEMA),
           namedSchema("testContainer", TestContainer.SSZ_SCHEMA));
 
   public static final SszStableContainerSchema<ShapeStableContainer>
-      PROFILE_NESTED_STABLE_CONTAINER_SCHEMA =
+      NESTED_PROFILE_STABLE_CONTAINER_SCHEMA =
           new AbstractSszStableContainerSchema<>(
-              "ProfileNestedStableContainer", PROFILE_NESTED_SCHEMAS, 8) {
+              "NestedProfileListStableContainer", NESTED_PROFILE_SCHEMAS, 8) {
             @Override
             public ShapeStableContainer createFromBackingNode(final TreeNode node) {
               return new ShapeStableContainer(this, node);

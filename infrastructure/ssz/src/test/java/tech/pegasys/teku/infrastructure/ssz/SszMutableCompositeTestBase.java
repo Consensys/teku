@@ -92,7 +92,8 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   @ParameterizedTest
   default void set_throwsIndexOutOfBounds(final SszMutableComposite<SszData> data) {
     SszData someData = getSomeNewChild(data.getSchema());
-    assertThatThrownBy(() -> data.set(data.size() + 1, someData))
+    final int outOfBoundsIndex = streamValidIndices(data).max().orElse(0) + 1;
+    assertThatThrownBy(() -> data.set(outOfBoundsIndex, someData))
         .isInstanceOf(IndexOutOfBoundsException.class);
     assertThatThrownBy(() -> data.set(-1, someData)).isInstanceOf(IndexOutOfBoundsException.class);
   }

@@ -14,10 +14,11 @@
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.NESTED_PROFILE_STABLE_CONTAINER_SCHEMA;
 import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.NESTED_STABLE_CONTAINER_SCHEMA;
-import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.PROFILE_NESTED_STABLE_CONTAINER_SCHEMA;
 import static tech.pegasys.teku.infrastructure.ssz.TestStableContainers.SHAPE_STABLE_CONTAINER_SCHEMA;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -43,7 +44,7 @@ public class SszProfileSchemaTest extends SszCompositeSchemaTestBase {
 
             // generates 10 variation of profiles over PROFILE NESTED stable container with a random
             // mix of required and optionals
-            new RandomSszProfileSchemaGenerator(PROFILE_NESTED_STABLE_CONTAINER_SCHEMA)
+            new RandomSszProfileSchemaGenerator(NESTED_PROFILE_STABLE_CONTAINER_SCHEMA)
                 .randomProfileSchemasStream()
                 .limit(10),
 
@@ -60,8 +61,7 @@ public class SszProfileSchemaTest extends SszCompositeSchemaTestBase {
                 .withMaxOptionalFields(0)
                 .randomProfileSchemasStream()
                 .limit(1))
-        .flatMap(s -> s);
-    // return Stream.of(SQUARE_PROFILE_SCHEMA, CIRCLE_PROFILE_SCHEMA);
+        .flatMap(Function.identity());
   }
 
   @Override

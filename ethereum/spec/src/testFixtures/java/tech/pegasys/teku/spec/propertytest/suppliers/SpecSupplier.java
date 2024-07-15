@@ -27,7 +27,7 @@ public class SpecSupplier implements ArbitrarySupplier<Spec> {
 
   @SuppressWarnings("unused")
   public SpecSupplier() {
-    this(SpecMilestone.PHASE0);
+    this(SpecMilestone.ELECTRA);
   }
 
   public SpecSupplier(final SpecMilestone minimumSpecMilestone) {
