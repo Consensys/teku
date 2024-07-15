@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_QUEUE;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +26,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
+import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -211,8 +211,9 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<NUMBER>",
       description = "Override the queue size of the p2p async runner",
+      converter = OptionalIntConverter.class,
       arity = "1")
-  private Integer asyncP2pMaxQueue = DEFAULT_ASYNC_P2P_MAX_QUEUE;
+  private OptionalInt asyncP2pMaxQueue = OptionalInt.empty();
 
   @Option(
       names = {"--Xnetwork-async-beaconchain-max-threads"},
@@ -227,8 +228,9 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<NUMBER>",
       description = "Override the queue size of the beaconchain queue",
+      converter = OptionalIntConverter.class,
       arity = "1")
-  private Integer asyncBeaconChainMaxQueue = DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
+  private OptionalInt asyncBeaconChainMaxQueue = OptionalInt.empty();
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -348,12 +350,12 @@ public class Eth2NetworkOptions {
         .ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled)
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
-        .asyncP2pMaxQueue(asyncP2pMaxQueue)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
-        .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
+    asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
+    asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
   }
 
   public String getNetwork() {

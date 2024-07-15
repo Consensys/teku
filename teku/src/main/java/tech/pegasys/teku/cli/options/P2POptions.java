@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +28,7 @@ import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
+import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
@@ -158,15 +164,17 @@ public class P2POptions {
       names = {"--p2p-peer-lower-bound"},
       paramLabel = "<INTEGER>",
       description = "Lower bound on the target number of peers",
+      converter = OptionalIntConverter.class,
       arity = "1")
-  private int p2pLowerBound = DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
+  private OptionalInt p2pLowerBound = OptionalInt.empty();
 
   @Option(
       names = {"--p2p-peer-upper-bound"},
       paramLabel = "<INTEGER>",
       description = "Upper bound on the target number of peers",
+      converter = OptionalIntConverter.class,
       arity = "1")
-  private int p2pUpperBound = DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
+  private OptionalInt p2pUpperBound = OptionalInt.empty();
 
   @Option(
       names = {"--Xp2p-target-subnet-subscriber-count"},
@@ -317,8 +325,9 @@ public class P2POptions {
       paramLabel = "<NUMBER>",
       description = "Maximum queue size for pending aggregated signature verification",
       arity = "1",
+      converter = OptionalIntConverter.class,
       hidden = true)
-  private int batchVerifyQueueCapacity = P2PConfig.DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY;
+  private OptionalInt batchVerifyQueueCapacity = OptionalInt.empty();
 
   @Option(
       names = {"--Xp2p-batch-verify-signatures-max-batch-size"},
@@ -360,22 +369,18 @@ public class P2POptions {
       fallbackValue = "true")
   private boolean yamuxEnabled = NetworkConfig.DEFAULT_YAMUX_ENABLED;
 
-  private int getP2pLowerBound() {
-    if (p2pLowerBound > p2pUpperBound) {
-      STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
-      return p2pUpperBound;
-    } else {
-      return p2pLowerBound;
+  private OptionalInt getP2pLowerBound() {
+    if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
+      return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
     }
+    return p2pLowerBound;
   }
 
-  private int getP2pUpperBound() {
-    if (p2pUpperBound < p2pLowerBound) {
-      STATUS_LOG.adjustingP2pUpperBoundToLowerBound(p2pLowerBound);
-      return p2pLowerBound;
-    } else {
-      return p2pUpperBound;
+  private OptionalInt getP2pUpperBound() {
+    if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
+      return p2pLowerBound.getAsInt() > p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
     }
+    return p2pUpperBound;
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
@@ -384,17 +389,18 @@ public class P2POptions {
 
     builder
         .p2p(
-            b ->
-                b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
-                    .batchVerifyMaxThreads(batchVerifyMaxThreads)
-                    .batchVerifyQueueCapacity(batchVerifyQueueCapacity)
-                    .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
-                    .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
-                    .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-                    .isGossipScoringEnabled(gossipScoringEnabled)
-                    .peerRateLimit(peerRateLimit)
-                    .allTopicsFilterEnabled(allTopicsFilterEnabled)
-                    .peerRequestLimit(peerRequestLimit))
+            b -> {
+              b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                  .batchVerifyMaxThreads(batchVerifyMaxThreads)
+                  .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
+                  .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
+                  .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
+                  .isGossipScoringEnabled(gossipScoringEnabled)
+                  .peerRateLimit(peerRateLimit)
+                  .allTopicsFilterEnabled(allTopicsFilterEnabled)
+                  .peerRequestLimit(peerRequestLimit);
+              batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
+            })
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {
@@ -412,13 +418,23 @@ public class P2POptions {
               if (p2pAdvertisedUdpPort != null) {
                 d.advertisedUdpPort(OptionalInt.of(p2pAdvertisedUdpPort));
               }
+              final OptionalInt maybeUpperBound = getP2pUpperBound();
+              final OptionalInt maybeLowerBound = getP2pLowerBound();
+              d.minPeers(
+                  maybeLowerBound.orElse(
+                      subscribeAllSubnetsEnabled
+                          ? DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS
+                          : DEFAULT_P2P_PEERS_LOWER_BOUND));
+              d.maxPeers(
+                  maybeUpperBound.orElse(
+                      subscribeAllSubnetsEnabled
+                          ? DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS
+                          : DEFAULT_P2P_PEERS_UPPER_BOUND));
               if (p2pAdvertisedUdpPortIpv6 != null) {
                 d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
                   .staticPeers(p2pStaticPeers)
-                  .minPeers(getP2pLowerBound())
-                  .maxPeers(getP2pUpperBound())
                   .siteLocalAddressesEnabled(siteLocalAddressesEnabled);
             })
         .network(
@@ -453,6 +469,17 @@ public class P2POptions {
                     .forwardSyncMaxBlocksPerMinute(forwardSyncRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
+
+    if (subscribeAllSubnetsEnabled) {
+      builder
+          .validator(
+              v -> v.executorMaxQueueSizeIfDefault(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS))
+          .eth2NetworkConfig(
+              eth ->
+                  eth.asyncP2pMaxQueueIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS)
+                      .asyncBeaconChainMaxQueueIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS))
+          .p2p(p2p -> p2p.batchVerifyQueueCapacityIfDefault(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS));
+    }
     natOptions.configure(builder);
   }
 }

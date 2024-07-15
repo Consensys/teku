@@ -1,10 +1,9 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getBlockAttestations",
+    "operationId" : "getBlockAttestationsV2",
     "summary" : "Get block attestations",
     "description" : "Retrieves attestations included in requested block.",
-    "deprecated": true,
     "parameters" : [ {
       "name" : "block_id",
       "required" : true,
@@ -21,7 +20,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetBlockAttestationsResponse"
+              "$ref" : "#/components/schemas/GetBlockAttestationsResponseV2"
             }
           }
         }
