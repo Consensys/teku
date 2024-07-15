@@ -169,7 +169,7 @@ public class P2PConfig {
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
-    private int batchVerifyQueueCapacity = DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY;
+    private OptionalInt batchVerifyQueueCapacity = OptionalInt.empty();
     private int batchVerifyMaxBatchSize = DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
@@ -216,7 +216,7 @@ public class P2PConfig {
           peerRateLimit,
           peerRequestLimit,
           batchVerifyMaxThreads,
-          batchVerifyQueueCapacity,
+          batchVerifyQueueCapacity.orElse(DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY),
           batchVerifyMaxBatchSize,
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled);
@@ -293,12 +293,19 @@ public class P2PConfig {
       return this;
     }
 
+    public Builder batchVerifyQueueCapacityIfDefault(final int batchVerifyQueueCapacity) {
+      if (this.batchVerifyQueueCapacity.isEmpty()) {
+        return this.batchVerifyQueueCapacity(batchVerifyQueueCapacity);
+      }
+      return this;
+    }
+
     public Builder batchVerifyQueueCapacity(final int batchVerifyQueueCapacity) {
       if (batchVerifyQueueCapacity < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid batchVerifyQueueCapacity: %d", batchVerifyQueueCapacity));
       }
-      this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
+      this.batchVerifyQueueCapacity = OptionalInt.of(batchVerifyQueueCapacity);
       return this;
     }
 

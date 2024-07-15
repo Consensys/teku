@@ -20,14 +20,18 @@ import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFA
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class DiscoveryConfig {
-
+  private static final Logger LOG = LogManager.getLogger();
   public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
   public static final int DEFAULT_P2P_PEERS_LOWER_BOUND = 64;
   public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 100;
+  public static final int DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS = 60;
+  public static final int DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS = 80;
   public static final boolean DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED = false;
 
   private final boolean isDiscoveryEnabled;
@@ -65,6 +69,8 @@ public class DiscoveryConfig {
     this.maxPeers = maxPeers;
     this.minRandomlySelectedPeers = minRandomlySelectedPeers;
     this.siteLocalAddressesEnabled = siteLocalAddressesEnabled;
+
+    LOG.debug("Peer limits - Minimum {}, Maximum {}", minPeers, maxPeers);
   }
 
   public static Builder builder() {
@@ -119,8 +125,8 @@ public class DiscoveryConfig {
     private Boolean isDiscoveryEnabled = DEFAULT_P2P_DISCOVERY_ENABLED;
     private List<String> staticPeers = Collections.emptyList();
     private List<String> bootnodes;
-    private int minPeers = DEFAULT_P2P_PEERS_LOWER_BOUND;
-    private int maxPeers = DEFAULT_P2P_PEERS_UPPER_BOUND;
+    private OptionalInt minPeers = OptionalInt.empty();
+    private OptionalInt maxPeers = OptionalInt.empty();
     private OptionalInt minRandomlySelectedPeers = OptionalInt.empty();
     private OptionalInt listenUdpPort = OptionalInt.empty();
     private OptionalInt listenUdpPortIpv6 = OptionalInt.empty();
@@ -141,18 +147,19 @@ public class DiscoveryConfig {
           advertisedUdpPortIpv6,
           staticPeers,
           bootnodes == null ? Collections.emptyList() : bootnodes,
-          minPeers,
-          maxPeers,
+          minPeers.orElse(DEFAULT_P2P_PEERS_LOWER_BOUND),
+          maxPeers.orElse(DEFAULT_P2P_PEERS_UPPER_BOUND),
           minRandomlySelectedPeers.orElseThrow(),
           siteLocalAddressesEnabled);
     }
 
     private void initMissingDefaults() {
       if (minRandomlySelectedPeers.isEmpty()) {
-        if (maxPeers == 0) {
+        if (maxPeers.isPresent() && maxPeers.getAsInt() == 0) {
           minRandomlySelectedPeers = OptionalInt.of(0);
         } else {
-          minRandomlySelectedPeers = OptionalInt.of(Math.max(1, minPeers * 2 / 10));
+          minRandomlySelectedPeers =
+              OptionalInt.of(Math.max(1, minPeers.orElse(DEFAULT_P2P_PEERS_LOWER_BOUND) * 2 / 10));
         }
       }
       if (listenUdpPort.isEmpty()) {
@@ -257,12 +264,26 @@ public class DiscoveryConfig {
       return this;
     }
 
+    public Builder minPeersIfDefault(final Integer minPeers) {
+      if (this.minPeers.isEmpty()) {
+        return minPeers(minPeers);
+      }
+      return this;
+    }
+
     public Builder minPeers(final Integer minPeers) {
       checkNotNull(minPeers);
       if (minPeers < 0) {
         throw new InvalidConfigurationException(String.format("Invalid minPeers: %d", minPeers));
       }
-      this.minPeers = minPeers;
+      this.minPeers = OptionalInt.of(minPeers);
+      return this;
+    }
+
+    public Builder maxPeersIfDefault(final Integer maxPeers) {
+      if (this.maxPeers.isEmpty()) {
+        return maxPeers(maxPeers);
+      }
       return this;
     }
 
@@ -271,7 +292,7 @@ public class DiscoveryConfig {
       if (maxPeers < 0) {
         throw new InvalidConfigurationException(String.format("Invalid maxPeers: %d", maxPeers));
       }
-      this.maxPeers = maxPeers;
+      this.maxPeers = OptionalInt.of(maxPeers);
       return this;
     }
 
