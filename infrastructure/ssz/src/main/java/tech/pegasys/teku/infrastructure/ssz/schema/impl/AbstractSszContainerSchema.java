@@ -88,6 +88,8 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   private final TreeNode defaultTree;
   private final long treeWidth;
   private final int fixedPartSize;
+  private final boolean hasExtraDataInBackingTree;
+  private final boolean isFixedSize;
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   protected AbstractSszContainerSchema(
@@ -106,6 +108,8 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
     this.fixedPartSize = calcSszFixedPartSize();
+    this.isFixedSize = calcIsFixedSize();
+    this.hasExtraDataInBackingTree = calcHasExtraDataInBackingTree();
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
@@ -120,6 +124,8 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
     this.fixedPartSize = calcSszFixedPartSize();
+    this.isFixedSize = calcIsFixedSize();
+    this.hasExtraDataInBackingTree = calcHasExtraDataInBackingTree();
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
@@ -205,7 +211,10 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public boolean isFixedSize() {
-    // TODO, can we cache this?
+    return isFixedSize;
+  }
+
+  private boolean calcIsFixedSize() {
     for (int i = 0; i < getFieldsCount(); i++) {
       if (!getChildSchema(i).isFixedSize()) {
         return false;
@@ -216,7 +225,10 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public boolean hasExtraDataInBackingTree() {
-    // TODO, can we cache this?
+    return hasExtraDataInBackingTree;
+  }
+
+  private boolean calcHasExtraDataInBackingTree() {
     for (int i = 0; i < getFieldsCount(); i++) {
       if (getChildSchema(i).hasExtraDataInBackingTree()) {
         return true;
