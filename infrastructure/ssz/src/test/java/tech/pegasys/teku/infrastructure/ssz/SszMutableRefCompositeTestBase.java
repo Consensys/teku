@@ -24,6 +24,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerBaseSchema;
 
 public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestBase {
   RandomSszDataGenerator GENERATOR = new RandomSszDataGenerator();
@@ -34,7 +35,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
             .map(d -> (SszComposite<?>) d)
             .flatMap(
                 data ->
-                    IntStream.range(0, data.size())
+                    streamValidIndices(data)
                         .limit(32)
                         .filter(
                             i ->
@@ -62,7 +63,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszDataAssert.assertThatSszData(data.get(updateChildIndex))
         .isEqualByGettersTo(newChildValue)
         .isEqualBySszTo(newChildValue);
-    IntStream.range(0, data.size())
+    streamValidIndices(data)
         .limit(32)
         .forEach(
             i -> {
@@ -76,7 +77,7 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszDataAssert.assertThatSszData(updatedData).isNotEqualByAllMeansTo(data);
     SszDataAssert.assertThatSszData(updatedData.get(updateChildIndex))
         .isEqualByAllMeansTo(newChildValue);
-    IntStream.range(0, data.size())
+    streamValidIndices(data)
         .limit(32)
         .forEach(
             i -> {
@@ -184,10 +185,24 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszMutableComposite<SszData> mutableComposite = (SszMutableComposite<SszData>) mutableData;
     Assumptions.assumeTrue(mutableComposite.size() > 0);
     SszComposite<SszData> orig = mutableComposite.commitChanges();
-    SszData newChildData = GENERATOR.randomData(mutableComposite.getSchema().getChildSchema(0));
-    mutableComposite.set(0, newChildData);
+
+    int fieldToSet = findFirstValidIndex(mutableData);
+
+    SszData newChildData =
+        GENERATOR.randomData(mutableComposite.getSchema().getChildSchema(fieldToSet));
+    mutableComposite.set(fieldToSet, newChildData);
     SszMutableComposite<SszData> writableCopy = orig.createWritableCopy();
-    writableCopy.set(0, newChildData);
+    writableCopy.set(fieldToSet, newChildData);
     return writableCopy.commitChanges();
+  }
+
+  static int findFirstValidIndex(final SszMutableData mutableData) {
+    if (mutableData.getSchema() instanceof SszStableContainerBaseSchema<?> stableSchema) {
+      return IntStream.range(0, stableSchema.getFieldsCount())
+          .filter(stableSchema::isFieldAllowed)
+          .findFirst()
+          .orElseThrow();
+    }
+    return 0;
   }
 }

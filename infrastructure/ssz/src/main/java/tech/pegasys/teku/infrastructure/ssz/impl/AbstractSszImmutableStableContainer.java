@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.Objects;
@@ -22,41 +20,40 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-/** Handy base class for immutable containers */
-public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
-
-  protected AbstractSszImmutableContainer(
-      final AbstractSszContainerSchema<? extends AbstractSszImmutableContainer> schema) {
+// TODO can be deleted?
+public abstract class AbstractSszImmutableStableContainer extends SszStableContainerImpl {
+  protected AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema) {
     this(schema, schema.getDefaultTree());
   }
 
-  protected AbstractSszImmutableContainer(
-      final SszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+  protected AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema,
       final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public AbstractSszImmutableContainer(
-      final SszCompositeSchema<?> type, final TreeNode backingNode, final IntCache<SszData> cache) {
+  public AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache) {
     super(type, backingNode, cache);
   }
 
-  protected AbstractSszImmutableContainer(
-      final SszContainerSchema<? extends AbstractSszImmutableContainer> schema,
+  protected AbstractSszImmutableStableContainer(
+      final SszStableContainerSchema<? extends AbstractSszImmutableStableContainer> schema,
       final SszData... memberValues) {
     super(
         schema,
         schema.createTreeFromFieldValues(Arrays.asList(memberValues)),
         createCache(memberValues));
-    checkArgument(
-        memberValues.length == this.getSchema().getMaxLength(),
-        "Wrong number of member values: %s",
-        memberValues.length);
+    //    checkArgument(
+    //        memberValues.length == schema.getActiveFieldCount(),
+    //        "Wrong number of member values: %s",
+    //        memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       Preconditions.checkArgument(
           memberValues[i].getSchema().equals(schema.getChildSchema(i)),
@@ -96,11 +93,11 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
       return true;
     }
 
-    if (!(obj instanceof AbstractSszImmutableContainer)) {
+    if (!(obj instanceof AbstractSszImmutableStableContainer)) {
       return false;
     }
 
-    AbstractSszImmutableContainer other = (AbstractSszImmutableContainer) obj;
+    AbstractSszImmutableStableContainer other = (AbstractSszImmutableStableContainer) obj;
     return hashTreeRoot().equals(other.hashTreeRoot());
   }
 

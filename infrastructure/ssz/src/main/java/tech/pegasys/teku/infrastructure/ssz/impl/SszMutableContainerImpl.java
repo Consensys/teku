@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableRefContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
@@ -36,8 +36,8 @@ public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData
   }
 
   @Override
-  public AbstractSszContainerSchema<?> getSchema() {
-    return (AbstractSszContainerSchema<?>) super.getSchema();
+  public SszContainerSchema<?> getSchema() {
+    return (SszContainerSchema<?>) super.getSchema();
   }
 
   @Override

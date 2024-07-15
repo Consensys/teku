@@ -137,6 +137,11 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
+  public boolean hasExtraDataInBackingTree() {
+    return false;
+  }
+
+  @Override
   public int getSszFixedPartSize() {
     return sszSize;
   }
