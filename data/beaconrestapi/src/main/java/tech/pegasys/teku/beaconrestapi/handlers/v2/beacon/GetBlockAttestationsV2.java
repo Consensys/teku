@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
@@ -24,38 +25,45 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
-public class GetBlockAttestations extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}/attestations";
+public class GetBlockAttestationsV2 extends RestApiEndpoint {
+
+  public static final String ROUTE = "/eth/v2/beacon/blocks/{block_id}/attestations";
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlockAttestations(final DataProvider dataProvider, final Spec spec) {
-    this(dataProvider.getChainDataProvider(), spec);
+  public GetBlockAttestationsV2(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
-  public GetBlockAttestations(final ChainDataProvider chainDataProvider, final Spec spec) {
+  public GetBlockAttestationsV2(
+      final ChainDataProvider chainDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getBlockAttestations")
+            .operationId("getBlockAttestationsV2")
             .summary("Get block attestations")
             .description("Retrieves attestations included in requested block.")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_BLOCK_ID)
-            .response(SC_OK, "Request successful", getResponseType(spec))
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotFoundResponse()
-            .deprecated(true)
             .build());
     this.chainDataProvider = chainDataProvider;
   }
@@ -73,19 +81,45 @@ public class GetBlockAttestations extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
+  @SuppressWarnings("unchecked")
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
-      final Spec spec) {
-    final AttestationSchema<?> dataSchema =
-        spec.getGenesisSchemaDefinitions().getAttestationSchema();
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final DeserializableTypeDefinition<Attestation> electraAttestationTypeDef =
+        (DeserializableTypeDefinition<Attestation>)
+            schemaDefinitionCache
+                .getSchemaDefinition(SpecMilestone.ELECTRA)
+                .getAttestationSchema()
+                .getJsonTypeDefinition();
+
+    final DeserializableTypeDefinition<Attestation> phase0AttestationTypeDef =
+        (DeserializableTypeDefinition<Attestation>)
+            schemaDefinitionCache
+                .getSchemaDefinition(SpecMilestone.PHASE0)
+                .getAttestationSchema()
+                .getJsonTypeDefinition();
+
+    final SerializableOneOfTypeDefinition<List<Attestation>> oneOfTypeDefinition =
+        new SerializableOneOfTypeDefinitionBuilder<List<Attestation>>()
+            .withType(electraAttestationsPredicate(), listOf(electraAttestationTypeDef))
+            .withType(phase0AttestationsPredicate(), listOf(phase0AttestationTypeDef))
+            .build();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
-        .name("GetBlockAttestationsResponse")
+        .name("GetBlockAttestationsResponseV2")
         .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-        .withField(
-            "data",
-            listOf(dataSchema.castTypeToAttestationSchema().getJsonTypeDefinition()),
-            ObjectAndMetaData::getData)
+        .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
+        .withField("data", oneOfTypeDefinition, ObjectAndMetaData::getData)
         .build();
+  }
+
+  private static Predicate<List<Attestation>> phase0AttestationsPredicate() {
+    // Before Electra attestations do not require committee bits
+    return attestations -> attestations.isEmpty() || !attestations.get(0).requiresCommitteeBits();
+  }
+
+  private static Predicate<List<Attestation>> electraAttestationsPredicate() {
+    // Only once we are in Electra attestations will have committee bits
+    return attestations -> !attestations.isEmpty() && attestations.get(0).requiresCommitteeBits();
   }
 }

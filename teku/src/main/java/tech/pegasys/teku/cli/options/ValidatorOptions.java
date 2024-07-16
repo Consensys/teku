@@ -20,12 +20,14 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
+import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -114,8 +116,9 @@ public class ValidatorOptions {
       showDefaultValue = Visibility.ALWAYS,
       description = "Set the maximum queue size of the validator executor",
       hidden = true,
+      converter = OptionalIntConverter.class,
       arity = "1")
-  private int executorMaxQueueSize = ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
+  private OptionalInt executorMaxQueueSize = OptionalInt.empty();
 
   @Option(
       names = {"--doppelganger-detection-enabled"},
@@ -177,25 +180,26 @@ public class ValidatorOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
-        config ->
-            config
-                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                .validatorExternalSignerSlashingProtectionEnabled(
-                    validatorExternalSignerSlashingProtectionEnabled)
-                .isLocalSlashingProtectionSynchronizedModeEnabled(
-                    isLocalSlashingProtectionSynchronizedEnabled)
-                .graffitiProvider(
-                    new FileBackedGraffitiProvider(
-                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
-                .generateEarlyAttestations(generateEarlyAttestations)
-                .executorMaxQueueSize(executorMaxQueueSize)
-                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
-                .executorThreads(executorThreads)
-                .blockV3enabled(blockV3Enabled)
-                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
-                .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed));
+        config -> {
+          config
+              .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+              .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+              .validatorExternalSignerSlashingProtectionEnabled(
+                  validatorExternalSignerSlashingProtectionEnabled)
+              .isLocalSlashingProtectionSynchronizedModeEnabled(
+                  isLocalSlashingProtectionSynchronizedEnabled)
+              .graffitiProvider(
+                  new FileBackedGraffitiProvider(
+                      Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+              .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
+              .generateEarlyAttestations(generateEarlyAttestations)
+              .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
+              .executorThreads(executorThreads)
+              .blockV3enabled(blockV3Enabled)
+              .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
+              .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed);
+          executorMaxQueueSize.ifPresent(config::executorMaxQueueSize);
+        });
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
