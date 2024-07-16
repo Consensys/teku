@@ -154,9 +154,10 @@ public abstract class AbstractSszCollectionSchema<
     if (elementsCount == 0) {
       return 0;
     }
-    SszSchema<?> elementType = getElementSchema();
+
+    final SszSchema<?> elementType = getElementSchema();
+    final int nodesCount = getChunks(elementsCount);
     int writtenData = 0;
-    int nodesCount = getChunks(elementsCount);
     for (int i = 0; i < nodesCount; i++) {
       TreeNode childSubtree = vectorNode.get(getChildGeneralizedIndex(i));
       writtenData += elementType.sszSerializeTree(childSubtree, writer);
