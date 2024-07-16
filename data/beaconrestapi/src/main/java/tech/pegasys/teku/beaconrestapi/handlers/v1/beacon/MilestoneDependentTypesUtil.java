@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -93,11 +96,27 @@ public class MilestoneDependentTypesUtil {
         .getJsonTypeDefinition();
   }
 
+  public static <T extends SszData> DeserializableTypeDefinition<? extends T> headerBasedSelector(
+      Map<String, String> headers,
+      SchemaDefinitionCache schemaDefinitionCache,
+      final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    try {
+      final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
+      return getSchema
+          .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+          .getJsonTypeDefinition();
+    } catch (Exception e) {
+      throw new BadRequestException(String.format("Bad %s header value", HEADER_CONSENSUS_VERSION));
+    }
+  }
+
   private static Optional<UInt64> getSlot(final String json, final String... path) {
     try {
       return JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, path);
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());
+    } catch (IllegalStateException e) {
+      return Optional.empty();
     }
   }
 
