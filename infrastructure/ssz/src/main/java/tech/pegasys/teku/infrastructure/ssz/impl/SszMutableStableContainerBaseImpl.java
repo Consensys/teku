@@ -53,6 +53,16 @@ public class SszMutableStableContainerBaseImpl extends SszMutableContainerImpl {
   }
 
   @Override
+  protected int calcNewSize(final int index) {
+    // StableContainer have sparse index so size cannot be compared with index.
+    // Currently, the only mutable StableContainer we support is a Profile with no optional
+    // fields, so we can assume the size never changes.
+    // See:
+    // tech.pegasys.teku.infrastructure.ssz.impl.SszStableContainerBaseImpl.createWritableCopy
+    return size();
+  }
+
+  @Override
   public String toString() {
     return "Mutable " + backingStableContainerBaseView.toString();
   }
