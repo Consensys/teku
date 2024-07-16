@@ -15,6 +15,10 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -257,5 +261,78 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             () -> createConfigBuilder().sync(s -> s.historicalSyncBatchSize(3000)).build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Historical sync batch size cannot be greater than 128");
+  }
+
+  @Test
+  public void allSubnetsShouldOverrideQueueSizesAndPeers() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--p2p-subscribe-all-subnets-enabled", "true");
+
+    assertThat(tekuConfiguration.discovery().getMaxPeers())
+        .isEqualTo(DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS);
+    assertThat(tekuConfiguration.discovery().getMinPeers())
+        .isEqualTo(DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncBeaconChainMaxQueue())
+        .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncP2pMaxQueue())
+        .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
+        .isEqualTo(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity())
+        .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+  }
+
+  @Test
+  public void allSubnetsShouldNotOverridePeersIfExplicitlySet() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-subscribe-all-subnets-enabled",
+            "true",
+            "--p2p-peer-lower-bound",
+            "20",
+            "--p2p-peer-upper-bound",
+            "21");
+
+    assertThat(tekuConfiguration.discovery().getMaxPeers()).isEqualTo(21);
+    assertThat(tekuConfiguration.discovery().getMinPeers()).isEqualTo(20);
+  }
+
+  @Test
+  public void allSubnetsShouldNotOverridePeersIfExplicitlySetWithDefaults() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-lower-bound",
+            "64",
+            "--p2p-peer-upper-bound",
+            "100",
+            "--p2p-subscribe-all-subnets-enabled",
+            "true");
+
+    assertThat(tekuConfiguration.discovery().getMinPeers()).isEqualTo(64);
+    assertThat(tekuConfiguration.discovery().getMaxPeers()).isEqualTo(100);
+  }
+
+  @Test
+  public void allSubnetsShouldNotOverrideQueuesIfExplicitlySet() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-subscribe-all-subnets-enabled",
+            "true",
+            "--Xnetwork-async-p2p-max-queue",
+            "15000",
+            "--Xnetwork-async-beaconchain-max-queue",
+            "15020",
+            "--Xvalidator-executor-max-queue-size",
+            "15120",
+            "--Xp2p-batch-verify-signatures-queue-capacity",
+            "15220");
+
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncP2pMaxQueue())
+        .isEqualTo(15_000);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncBeaconChainMaxQueue())
+        .isEqualTo(15_020);
+    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
+        .isEqualTo(15_120);
+    assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);
   }
 }
