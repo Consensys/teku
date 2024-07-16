@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.networking.nat.NatService;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
@@ -58,10 +59,15 @@ public class BeaconNodeServiceController extends ServiceController {
     final BeaconChainService beaconChainService =
         new BeaconChainService(serviceConfig, tekuConfig.beaconChain());
     services.add(beaconChainService);
+    final NetworkConfig networkConfig = tekuConfig.network();
     services.add(
         new NatService(
             tekuConfig.natConfiguration(),
-            tekuConfig.network().getListenPort(),
+            networkConfig.getListenPort(),
+            networkConfig.getNetworkInterfaces().size() == 2
+                // IPv4 and IPv6 (dual-stack)
+                ? Optional.of(networkConfig.getListenPortIpv6())
+                : Optional.empty(),
             tekuConfig.discovery().isDiscoveryEnabled()));
     // making it a Supplier ensures that BeaconChainService has been started and RecentChainData has
     // been initialized when `get()` is called
