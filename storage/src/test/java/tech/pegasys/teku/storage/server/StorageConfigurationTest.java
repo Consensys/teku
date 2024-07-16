@@ -135,7 +135,7 @@ public class StorageConfigurationTest {
   }
 
   @Test
-  public void shouldFailIfUserConfiguresStatePrunerLimitTooHigh(@TempDir final Path dir) {
+  public void shouldFailIfUserConfiguresStatePrunerLimitTooHigh() {
 
     assertThatThrownBy(
             () -> StorageConfiguration.builder().dataStorageMode(ARCHIVE).statePruningLimit(101))
