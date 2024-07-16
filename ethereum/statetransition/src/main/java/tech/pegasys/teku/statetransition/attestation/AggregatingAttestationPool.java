@@ -229,7 +229,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
     final SchemaDefinitions schemaDefinitions =
-        spec.atSlot(stateAtBlockSlot.getSlot()).getSchemaDefinitions();
+        getSchemaDefinitions(Optional.of(stateAtBlockSlot.getSlot()));
 
     final SszListSchema<Attestation, ?> attestationsSchema =
         schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
@@ -303,7 +303,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .toList();
   }
 
-  private SchemaDefinitions getSchemaDefinitions(final Optional<UInt64> maybeSlot) {
+  private synchronized SchemaDefinitions getSchemaDefinitions(final Optional<UInt64> maybeSlot) {
     if (maybeSlot.isPresent()) {
       return spec.atSlot(maybeSlot.get()).getSchemaDefinitions();
     } else if (recentChainData.getCurrentSlot().isPresent()) {
