@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.MilestoneSpecificOctetStreamRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OctetStreamRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfArrayJsonRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition.BodyTypeSelector;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.RequestContentTypeDefinition;
@@ -618,6 +619,15 @@ public class EndpointMetadata {
       this.requestBodyTypes.put(
           ContentTypes.JSON,
           new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyTypeForList(
+        final SerializableTypeDefinition<List<T>> requestBodyType,
+        final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<T> bodyTypeSelector) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON,
+          new OneOfArrayJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
       return this;
     }
 
