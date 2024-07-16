@@ -24,6 +24,7 @@ import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -33,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -104,6 +106,41 @@ public class StorageConfigurationTest {
             .build();
 
     assertThat(storageConfig.getDataStorageMode()).isEqualTo(ARCHIVE);
+  }
+
+  @Test
+  public void shouldFailIfUserConfiguresStatePrunerIntervalTooLow() {
+
+    assertThatThrownBy(
+            () ->
+                StorageConfiguration.builder()
+                    .dataStorageMode(ARCHIVE)
+                    .statePruningInterval(Duration.ofSeconds(1)))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining(
+            "Block pruning interval must be a value between 30 seconds and 1 day");
+  }
+
+  @Test
+  public void shouldFailIfUserConfiguresStatePrunerIntervalTooHigh() {
+
+    assertThatThrownBy(
+            () ->
+                StorageConfiguration.builder()
+                    .dataStorageMode(ARCHIVE)
+                    .statePruningInterval(Duration.ofDays(2)))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining(
+            "Block pruning interval must be a value between 30 seconds and 1 day");
+  }
+
+  @Test
+  public void shouldFailIfUserConfiguresStatePrunerLimitTooHigh(@TempDir final Path dir) {
+
+    assertThatThrownBy(
+            () -> StorageConfiguration.builder().dataStorageMode(ARCHIVE).statePruningLimit(101))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("Invalid statePruningLimit:");
   }
 
   private static void createInvalidStorageModeFile(final Path dir) throws IOException {
