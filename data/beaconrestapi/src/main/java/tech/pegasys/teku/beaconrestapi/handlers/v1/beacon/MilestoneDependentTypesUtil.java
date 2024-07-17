@@ -107,8 +107,7 @@ public class MilestoneDependentTypesUtil {
           .getJsonTypeDefinition();
     } catch (Exception e) {
       throw new BadRequestException(
-          String.format(
-              "Eth-Consensus-Version (%s) header value was unexpected", HEADER_CONSENSUS_VERSION));
+          String.format("(%s) header value was unexpected", HEADER_CONSENSUS_VERSION));
     }
   }
 
