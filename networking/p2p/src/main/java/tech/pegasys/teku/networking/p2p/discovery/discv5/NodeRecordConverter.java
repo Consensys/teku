@@ -35,12 +35,18 @@ public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
 
   public Optional<DiscoveryPeer> convertToDiscoveryPeer(
-      final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
-    // TODO: https://github.com/Consensys/teku/issues/8069
-    return nodeRecord
-        .getTcpAddress()
-        .or(nodeRecord::getTcp6Address)
-        .map(address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
+      final NodeRecord nodeRecord,
+      final boolean supportsIpv6,
+      final SchemaDefinitions schemaDefinitions) {
+    final Optional<InetSocketAddress> tcpAddress;
+    if (supportsIpv6) {
+      // prefer IPv6 address
+      tcpAddress = nodeRecord.getTcp6Address().or(nodeRecord::getTcpAddress);
+    } else {
+      tcpAddress = nodeRecord.getTcpAddress();
+    }
+    return tcpAddress.map(
+        address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
   }
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
