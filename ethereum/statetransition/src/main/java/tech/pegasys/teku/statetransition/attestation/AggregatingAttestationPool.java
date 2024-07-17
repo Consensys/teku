@@ -229,7 +229,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
     final SchemaDefinitions schemaDefinitions =
-        getSchemaDefinitions(Optional.of(stateAtBlockSlot.getSlot()));
+        spec.atSlot(stateAtBlockSlot.getSlot()).getSchemaDefinitions();
 
     final SszListSchema<Attestation, ?> attestationsSchema =
         schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
@@ -278,8 +278,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             maybeCommitteeIndex
                 .map(index -> group.getAttestationData().getIndex().equals(index))
                 .orElse(true);
-
-    final SchemaDefinitions schemaDefinitions = getSchemaDefinitions(maybeSlot);
+    final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
+    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
     final SszListSchema<Attestation, ?> attestationsSchema =
         schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
@@ -301,16 +301,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                 attestation.requiresCommitteeBits() == requestRequiresAttestationWithCommitteeBits)
         .limit(attestationsSchema.getMaxLength())
         .toList();
-  }
-
-  private synchronized SchemaDefinitions getSchemaDefinitions(final Optional<UInt64> maybeSlot) {
-    if (maybeSlot.isPresent()) {
-      return spec.atSlot(maybeSlot.get()).getSchemaDefinitions();
-    } else if (recentChainData.getCurrentSlot().isPresent()) {
-      return spec.atSlot(recentChainData.getCurrentSlot().get()).getSchemaDefinitions();
-    } else {
-      return spec.getGenesisSchemaDefinitions();
-    }
   }
 
   private boolean isValid(
