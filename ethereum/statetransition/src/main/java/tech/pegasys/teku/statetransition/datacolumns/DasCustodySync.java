@@ -57,11 +57,13 @@ public class DasCustodySync implements SlotEventsChannel {
     this(custody, retriever, 10 * 1024, 2 * 1024);
   }
 
-  private synchronized void onRequestComplete(PendingRequest request, DataColumnSidecar response) {
+  private void onRequestComplete(PendingRequest request, DataColumnSidecar response) {
     custody.onNewValidatedDataColumnSidecar(response);
-    pendingRequests.remove(request.columnId);
-    syncedColumnCount.incrementAndGet();
-    fillUpIfNeeded();
+    synchronized (this) {
+      pendingRequests.remove(request.columnId);
+      syncedColumnCount.incrementAndGet();
+      fillUpIfNeeded();
+    }
   }
 
   private boolean wasCancelledImplicitly(Throwable exception) {

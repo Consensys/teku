@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -38,10 +39,11 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
       DataColumnIdentifier columnIdentifier,
       SafeFuture<DataColumnSidecar> promise) {}
 
-  private List<RequestEntry> bufferedRequests = new ArrayList<>();
+  private final ConcurrentLinkedQueue<RequestEntry> bufferedRequests =
+      new ConcurrentLinkedQueue<>();
 
   @Override
-  public synchronized SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
+  public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
       UInt256 nodeId, DataColumnIdentifier columnIdentifier) {
     RequestEntry entry = new RequestEntry(nodeId, columnIdentifier, new SafeFuture<>());
     bufferedRequests.add(entry);
@@ -50,13 +52,9 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
   @Override
   public void flush() {
-    final List<RequestEntry> requests;
-    synchronized (this) {
-      requests = bufferedRequests;
-      bufferedRequests = new ArrayList<>();
-    }
     Map<UInt256, List<RequestEntry>> byNodes = new HashMap<>();
-    for (RequestEntry request : requests) {
+    RequestEntry request;
+    while ((request = bufferedRequests.poll()) != null) {
       byNodes.computeIfAbsent(request.nodeId, __ -> new ArrayList<>()).add(request);
     }
     for (Map.Entry<UInt256, List<RequestEntry>> entry : byNodes.entrySet()) {

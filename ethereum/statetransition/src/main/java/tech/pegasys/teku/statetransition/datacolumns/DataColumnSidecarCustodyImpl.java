@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,10 +94,8 @@ public class DataColumnSidecarCustodyImpl
   private final UInt64 eip7594StartEpoch;
   private final Duration requestTimeout;
 
-  private UInt64 currentSlot = null;
-
-  @VisibleForTesting
-  Map<DataColumnIdentifier, List<SafeFuture<DataColumnSidecar>>> pendingRequests = new HashMap<>();
+  @VisibleForTesting final PendingRequests pendingRequests = new PendingRequests();
+  private volatile UInt64 currentSlot = null;
 
   public DataColumnSidecarCustodyImpl(
       Spec spec,
@@ -144,22 +143,15 @@ public class DataColumnSidecarCustodyImpl
   }
 
   @Override
-  public synchronized void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
+  public void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
     if (isMyCustody(dataColumnSidecar.getSlot(), dataColumnSidecar.getIndex())) {
       db.addSidecar(dataColumnSidecar);
       final List<SafeFuture<DataColumnSidecar>> pendingRequests =
           this.pendingRequests.remove(DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
-      if (pendingRequests != null) {
-        for (SafeFuture<DataColumnSidecar> pendingRequest : pendingRequests) {
-          pendingRequest.complete(dataColumnSidecar);
-        }
+      for (SafeFuture<DataColumnSidecar> pendingRequest : pendingRequests) {
+        pendingRequest.complete(dataColumnSidecar);
       }
     }
-  }
-
-  private synchronized void clearCancelledPendingRequests() {
-    pendingRequests.values().forEach(promises -> promises.removeIf(CompletableFuture::isDone));
-    pendingRequests.entrySet().removeIf(e -> e.getValue().isEmpty());
   }
 
   private boolean isMyCustody(UInt64 slot, UInt64 columnIndex) {
@@ -184,7 +176,6 @@ public class DataColumnSidecarCustodyImpl
               if (existingColumn.isPresent()) {
                 return SafeFuture.completedFuture(existingColumn);
               } else {
-                clearCancelledPendingRequests();
                 SafeFuture<DataColumnSidecar> promise = new SafeFuture<>();
                 addPendingRequest(columnId, promise);
                 return promise
@@ -202,9 +193,9 @@ public class DataColumnSidecarCustodyImpl
             });
   }
 
-  private synchronized void addPendingRequest(
+  private void addPendingRequest(
       final DataColumnIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
-    pendingRequests.computeIfAbsent(columnId, __ -> new ArrayList<>()).add(promise);
+    pendingRequests.add(columnId, promise);
   }
 
   private void onEpoch(UInt64 epoch) {
@@ -320,5 +311,27 @@ public class DataColumnSidecarCustodyImpl
                                     colId ->
                                         new ColumnSlotAndIdentifier(slotCustody.slot(), colId)))
                     .toList());
+  }
+
+  @VisibleForTesting
+  static class PendingRequests {
+
+    final Map<DataColumnIdentifier, List<SafeFuture<DataColumnSidecar>>> requests = new HashMap<>();
+
+    synchronized void add(
+        final DataColumnIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
+      clearCancelledPendingRequests();
+      requests.computeIfAbsent(columnId, __ -> new ArrayList<>()).add(promise);
+    }
+
+    synchronized List<SafeFuture<DataColumnSidecar>> remove(final DataColumnIdentifier columnId) {
+      List<SafeFuture<DataColumnSidecar>> ret = requests.remove(columnId);
+      return ret == null ? Collections.emptyList() : ret;
+    }
+
+    private void clearCancelledPendingRequests() {
+      requests.values().forEach(promises -> promises.removeIf(CompletableFuture::isDone));
+      requests.entrySet().removeIf(e -> e.getValue().isEmpty());
+    }
   }
 }

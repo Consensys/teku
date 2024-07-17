@@ -187,9 +187,7 @@ public class SimpleSidecarRetriever
       RetrieveRequest request, DataColumnSidecar maybeResult, Throwable maybeError) {
     if (maybeResult != null) {
       pendingRequests.remove(request.columnId);
-      asyncRunner
-          .runAsync(() -> request.result.complete(maybeResult))
-          .ifExceptionGetsHereRaiseABug();
+      request.result.completeAsync(maybeResult, asyncRunner);
       request.peerSearchRequest.dispose();
       retrieveCounter.incrementAndGet();
     } else {

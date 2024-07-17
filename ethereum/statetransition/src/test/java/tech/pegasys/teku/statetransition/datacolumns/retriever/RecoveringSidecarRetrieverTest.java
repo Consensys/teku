@@ -44,6 +44,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 
 public class RecoveringSidecarRetrieverTest {
 
+  final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
   final Spec spec = TestSpecFactory.createMinimalEip7594();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
@@ -83,7 +84,7 @@ public class RecoveringSidecarRetrieverTest {
             miscHelpers,
             blockResolver,
             db,
-            new StubAsyncRunner(),
+            stubAsyncRunner,
             Duration.ofSeconds(1),
             128);
     List<Blob> blobs = Stream.generate(dataStructureUtil::randomBlob).limit(blobCount).toList();
@@ -116,6 +117,8 @@ public class RecoveringSidecarRetrieverTest {
               req.promise()
                   .complete(sidecars.get(req.columnId().identifier().getIndex().intValue()));
             });
+
+    stubAsyncRunner.executeQueuedActions();
 
     assertThat(res0.get(1, TimeUnit.SECONDS)).isEqualTo(sidecars.get(0));
     assertThat(res1.get(1, TimeUnit.SECONDS)).isEqualTo(sidecars.get(1));

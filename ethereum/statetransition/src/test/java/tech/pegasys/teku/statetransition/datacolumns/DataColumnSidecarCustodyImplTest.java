@@ -92,6 +92,6 @@ public class DataColumnSidecarCustodyImplTest {
     custody.onNewValidatedDataColumnSidecar(sidecar1);
     assertThat(fRet4.get().get()).isEqualTo(sidecar1);
 
-    assertThat(custody.pendingRequests).isEmpty();
+    assertThat(custody.pendingRequests.requests).isEmpty();
   }
 }

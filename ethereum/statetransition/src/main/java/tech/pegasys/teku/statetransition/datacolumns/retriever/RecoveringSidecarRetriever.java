@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -170,7 +169,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     private final MiscHelpersEip7594 specHelpers;
 
     private final Map<UInt64, DataColumnSidecar> existingSidecarsByColIdx = new HashMap<>();
-    private final Map<UInt64, List<CompletableFuture<DataColumnSidecar>>> promisesByColIdx =
+    private final Map<UInt64, List<SafeFuture<DataColumnSidecar>>> promisesByColIdx =
         new HashMap<>();
     private List<SafeFuture<DataColumnSidecar>> recoveryRequests;
     private boolean recovered = false;
@@ -182,10 +181,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       this.specHelpers = specHelpers;
     }
 
-    public synchronized void addRequest(
-        UInt64 columnIndex, CompletableFuture<DataColumnSidecar> promise) {
+    public synchronized void addRequest(UInt64 columnIndex, SafeFuture<DataColumnSidecar> promise) {
       if (recovered) {
-        promise.complete(existingSidecarsByColIdx.get(columnIndex));
+        promise.completeAsync(existingSidecarsByColIdx.get(columnIndex), asyncRunner);
       } else {
         promisesByColIdx.computeIfAbsent(columnIndex, __ -> new ArrayList<>()).add(promise);
       }
@@ -212,7 +210,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       promisesByColIdx.forEach(
           (key, value) -> {
             DataColumnSidecar columnSidecar = existingSidecarsByColIdx.get(key);
-            value.forEach(promise -> promise.complete(columnSidecar));
+            value.forEach(promise -> promise.completeAsync(columnSidecar, asyncRunner));
           });
       promisesByColIdx.clear();
       RecoveringSidecarRetriever.this.recoveryComplete(this);
@@ -245,8 +243,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
           .flatMap(Collection::stream)
           .forEach(
               promise ->
-                  promise.completeExceptionally(
-                      new NotOnCanonicalChainException("Canonical block changed")));
+                  promise.completeExceptionallyAsync(
+                      new NotOnCanonicalChainException("Canonical block changed"), asyncRunner));
     }
 
     private void recover() {
