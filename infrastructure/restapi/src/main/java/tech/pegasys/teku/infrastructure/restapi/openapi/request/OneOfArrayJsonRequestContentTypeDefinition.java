@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 public class OneOfArrayJsonRequestContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
-    implements RequestContentTypeDefinition<T> {
+    implements RequestContentTypeDefinition<List<? extends T>> {
 
   private final BodyTypeSelector<T> bodyTypeSelector;
 
@@ -38,12 +38,13 @@ public class OneOfArrayJsonRequestContentTypeDefinition<T> extends DelegatingOpe
   }
 
   @Override
-  public T deserialize(final InputStream in) throws IOException {
+  public List<? extends T> deserialize(final InputStream in) throws IOException {
     return deserialize(in, Map.of());
   }
 
   @Override
-  public T deserialize(final InputStream in, final Map<String, String> headers) throws IOException {
+  public List<? extends T> deserialize(final InputStream in, final Map<String, String> headers)
+      throws IOException {
     final String json = IOUtils.toString(in, StandardCharsets.UTF_8);
     final DeserializableTypeDefinition<? extends T> type =
         bodyTypeSelector.selectType(new BodyTypeSelectorContext(json, headers));
@@ -52,12 +53,11 @@ public class OneOfArrayJsonRequestContentTypeDefinition<T> extends DelegatingOpe
       throw new MissingRequestBodyException();
     }
 
-    if (!openApiTypeDefinition.isEquivalentToDeserializableType(
-        DeserializableTypeDefinition.listOf(type))) {
+    if (!openApiTypeDefinition.getReferencedTypeDefinitions().contains(type)) {
       throw new IllegalStateException(
           "Schema determined for parsing request body is not listed in requestBodyTypes");
     }
-    return JsonUtil.parse(json, type);
+    return JsonUtil.parse(json, DeserializableTypeDefinition.listOf(type));
   }
 
   public interface BodyTypeSelector<T> {
