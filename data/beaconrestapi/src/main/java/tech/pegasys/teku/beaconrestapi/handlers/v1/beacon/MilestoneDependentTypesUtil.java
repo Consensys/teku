@@ -97,8 +97,8 @@ public class MilestoneDependentTypesUtil {
   }
 
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> headerBasedSelector(
-      Map<String, String> headers,
-      SchemaDefinitionCache schemaDefinitionCache,
+      final Map<String, String> headers,
+      final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
     try {
       final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
@@ -106,7 +106,9 @@ public class MilestoneDependentTypesUtil {
           .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
           .getJsonTypeDefinition();
     } catch (Exception e) {
-      throw new BadRequestException(String.format("Bad %s header value", HEADER_CONSENSUS_VERSION));
+      throw new BadRequestException(
+          String.format(
+              "Eth-Consensus-Version (%s) header value was unexpected", HEADER_CONSENSUS_VERSION));
     }
   }
 
