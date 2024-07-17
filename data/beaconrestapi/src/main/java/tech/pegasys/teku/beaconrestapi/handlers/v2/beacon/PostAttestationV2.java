@@ -61,7 +61,7 @@ public class PostAttestationV2 extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<Attestation> attestations = request.getRequestBody();
     final SafeFuture<List<SubmitDataError>> future =
         validatorDataProvider.submitAttestations(attestations);
