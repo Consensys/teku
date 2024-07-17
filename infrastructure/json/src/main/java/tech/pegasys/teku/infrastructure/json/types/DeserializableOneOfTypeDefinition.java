@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -41,6 +42,11 @@ public class DeserializableOneOfTypeDefinition<TObject>
 
   static <TObject> DeserializableOneOfTypeDefinitionBuilder<TObject> object() {
     return new DeserializableOneOfTypeDefinitionBuilder<>();
+  }
+
+  static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
+      final DeserializableTypeDefinition<TObject> itemType) {
+    return new DeserializableListTypeDefinition<>(itemType, Optional.empty());
   }
 
   public DeserializableTypeDefinition<? extends TObject> getMatchingType(final String content) {
