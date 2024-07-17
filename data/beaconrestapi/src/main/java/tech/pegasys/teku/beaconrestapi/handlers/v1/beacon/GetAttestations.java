@@ -52,6 +52,7 @@ public class GetAttestations extends RestApiEndpoint {
             .description(
                 "Retrieves attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
+            .deprecated(true)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
             .response(SC_OK, "Request successful", getResponseType(spec))
