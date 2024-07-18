@@ -281,9 +281,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
-    final SszListSchema<Attestation, ?> attestationsSchema =
-        schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
-
     final boolean requestRequiresAttestationWithCommitteeBits =
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
@@ -299,7 +296,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(
             attestation ->
                 attestation.requiresCommitteeBits() == requestRequiresAttestationWithCommitteeBits)
-        .limit(attestationsSchema.getMaxLength())
         .toList();
   }
 
