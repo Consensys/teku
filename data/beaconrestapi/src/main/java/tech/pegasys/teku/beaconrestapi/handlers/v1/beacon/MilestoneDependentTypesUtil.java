@@ -116,8 +116,6 @@ public class MilestoneDependentTypesUtil {
       return JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, path);
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());
-    } catch (IllegalStateException e) {
-      return Optional.empty();
     }
   }
 
