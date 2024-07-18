@@ -474,7 +474,7 @@ public class DasSamplerImpl
     if (assignedSampleColumns.isEmpty()) {
       return Collections.emptyList();
     }
-    SlotAndBlockRoot from = assignedSampleColumns.navigableKeySet().getFirst();
+    SlotAndBlockRoot from = assignedSampleColumns.navigableKeySet().first();
     final UInt64 toSlot;
     if (from.getSlot().plus(limit).isLessThan(toSlotIncluded)) {
       toSlot = from.getSlot().plus(limit);
@@ -493,7 +493,7 @@ public class DasSamplerImpl
         .toList();
   }
 
-  public SafeFuture<Void> addSlotTask(
+  private SafeFuture<Void> addSlotTask(
       final UInt64 slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
     return assignSampleColumns(slot, blockRoot, parentRoot);
   }
