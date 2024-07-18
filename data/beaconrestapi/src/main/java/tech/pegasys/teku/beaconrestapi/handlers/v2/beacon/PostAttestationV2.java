@@ -110,7 +110,7 @@ public class PostAttestationV2 extends RestApiEndpoint {
                 + "If an attestation is validated successfully, the node MUST publish that attestation on the appropriate subnet.\n"
                 + "If one or more attestations fail validation, the node MUST return a 400 error with details of which attestations have failed, and why.")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
-        .requestBodyTypeForList(
+        .requestBodyType(
             SerializableTypeDefinition.listOf(attestationSchemaDefinition), attestationBodySelector)
         .headerRequired(
             ETH_CONSENSUS_VERSION_TYPE.withDescription(

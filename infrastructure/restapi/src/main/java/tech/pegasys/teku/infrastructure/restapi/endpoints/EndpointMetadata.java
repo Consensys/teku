@@ -622,7 +622,7 @@ public class EndpointMetadata {
       return this;
     }
 
-    public <T> EndpointMetaDataBuilder requestBodyTypeForList(
+    public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableTypeDefinition<List<T>> requestBodyType,
         final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<T> bodyTypeSelector) {
       this.requestBodyTypes.put(
