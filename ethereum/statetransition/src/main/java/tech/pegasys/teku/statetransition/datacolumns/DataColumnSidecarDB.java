@@ -24,7 +24,9 @@ public interface DataColumnSidecarDB {
 
   // read
 
-  SafeFuture<Optional<UInt64>> getFirstIncompleteSlot();
+  SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
+
+  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
 
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier);
 
@@ -32,7 +34,9 @@ public interface DataColumnSidecarDB {
 
   // update
 
-  SafeFuture<Void> setFirstIncompleteSlot(UInt64 slot);
+  SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
+
+  SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot);
 
   void addSidecar(DataColumnSidecar sidecar);
 

@@ -21,7 +21,9 @@ public interface SidecarUpdateChannel extends VoidReturningChannelInterface {
 
   // TODO: as it's pushed separately from sidecars, an eventual consistency could occur.
   //  Clarify that it's safe
-  void onFirstIncompleteSlot(UInt64 slot);
+  void onFirstCustodyIncompleteSlot(UInt64 slot);
+
+  void onFirstSamplerIncompleteSlot(UInt64 slot);
 
   void onNewSidecar(DataColumnSidecar sidecar);
 

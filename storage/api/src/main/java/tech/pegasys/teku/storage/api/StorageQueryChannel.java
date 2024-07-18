@@ -110,7 +110,9 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       SlotAndBlockRoot slotAndBlockRoot);
 
-  SafeFuture<Optional<UInt64>> getFirstIncompleteSlot();
+  SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
+
+  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
 
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(ColumnSlotAndIdentifier identifier);
 

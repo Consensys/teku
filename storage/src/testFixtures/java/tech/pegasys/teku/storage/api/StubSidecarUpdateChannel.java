@@ -18,7 +18,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 
 public class StubSidecarUpdateChannel implements SidecarUpdateChannel {
   @Override
-  public void onFirstIncompleteSlot(UInt64 slot) {}
+  public void onFirstCustodyIncompleteSlot(UInt64 slot) {}
+
+  @Override
+  public void onFirstSamplerIncompleteSlot(UInt64 slot) {}
 
   @Override
   public void onNewSidecar(DataColumnSidecar sidecar) {}

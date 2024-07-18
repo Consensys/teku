@@ -368,8 +368,13 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstIncompleteSlot() {
-    return SafeFuture.of(database::getFirstIncompleteSlot);
+  public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {
+    return SafeFuture.of(database::getFirstCustodyIncompleteSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
+    return SafeFuture.of(database::getFirstSamplerIncompleteSlot);
   }
 
   @Override
@@ -407,8 +412,13 @@ public class ChainStorage
   }
 
   @Override
-  public void onFirstIncompleteSlot(final UInt64 slot) {
-    database.setFirstIncompleteSlot(slot);
+  public void onFirstCustodyIncompleteSlot(final UInt64 slot) {
+    database.setFirstCustodyIncompleteSlot(slot);
+  }
+
+  @Override
+  public void onFirstSamplerIncompleteSlot(final UInt64 slot) {
+    database.setFirstSamplerIncompleteSlot(slot);
   }
 
   @Override

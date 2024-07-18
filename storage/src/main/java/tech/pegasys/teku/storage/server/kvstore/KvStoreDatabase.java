@@ -925,8 +925,13 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getFirstIncompleteSlot() {
-    return dao.getFirstIncompleteSlot();
+  public Optional<UInt64> getFirstCustodyIncompleteSlot() {
+    return dao.getFirstCustodyIncompleteSlot();
+  }
+
+  @Override
+  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
+    return dao.getFirstSamplerIncompleteSlot();
   }
 
   @Override
@@ -948,9 +953,17 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void setFirstIncompleteSlot(final UInt64 slot) {
+  public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.setFirstIncompleteSlot(slot);
+      updater.setFirstCustodyIncompleteSlot(slot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setFirstSamplerIncompleteSlot(slot);
       updater.commit();
     }
   }

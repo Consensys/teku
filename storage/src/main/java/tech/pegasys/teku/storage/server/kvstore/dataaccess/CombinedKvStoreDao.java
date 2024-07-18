@@ -518,8 +518,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<UInt64> getFirstIncompleteSlot() {
-    return db.get(schema.getVariableFirstIncompleteSlot());
+  public Optional<UInt64> getFirstCustodyIncompleteSlot() {
+    return db.get(schema.getVariableFirstCustodyIncompleteSlot());
+  }
+
+  @Override
+  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
+    return db.get(schema.getVariableFirstSamplerIncompleteSlot());
   }
 
   @Override
@@ -817,8 +822,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void setFirstIncompleteSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableFirstIncompleteSlot(), slot);
+    public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableFirstCustodyIncompleteSlot(), slot);
+    }
+
+    @Override
+    public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableFirstSamplerIncompleteSlot(), slot);
     }
 
     @Override

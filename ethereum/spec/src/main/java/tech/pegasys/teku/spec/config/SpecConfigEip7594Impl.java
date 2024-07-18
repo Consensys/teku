@@ -26,6 +26,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
   private final int numberOfColumns;
   private final int dataColumnSidecarSubnetCount;
   private final int custodyRequirement;
+  private final int samplesPerSlot;
   private final UInt64 fieldElementsPerCell;
   private final UInt64 fieldElementsPerExtBlob;
   private final UInt64 kzgCommitmentsInclusionProofDepth;
@@ -42,6 +43,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
       final int numberOfColumns,
       final int dataColumnSidecarSubnetCount,
       final int custodyRequirement,
+      final int samplesPerSlot,
       final int minEpochsForDataColumnSidecarsRequests,
       final int maxRequestDataColumnSidecars) {
     super(specConfig);
@@ -53,6 +55,7 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
     this.numberOfColumns = numberOfColumns;
     this.dataColumnSidecarSubnetCount = dataColumnSidecarSubnetCount;
     this.custodyRequirement = custodyRequirement;
+    this.samplesPerSlot = samplesPerSlot;
     this.minEpochsForDataColumnSidecarsRequests = minEpochsForDataColumnSidecarsRequests;
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
   }
@@ -95,6 +98,11 @@ public class SpecConfigEip7594Impl extends DelegatingSpecConfigDeneb implements 
   @Override
   public int getCustodyRequirement() {
     return custodyRequirement;
+  }
+
+  @Override
+  public int getSamplesPerSlot() {
+    return samplesPerSlot;
   }
 
   @Override

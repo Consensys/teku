@@ -74,6 +74,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilit
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -93,6 +94,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
   private final BlobSidecarManager blobSidecarManager;
+  private final DasSamplerManager dasSamplerManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final AttestationStateSelector attestationStateSelector;
@@ -113,6 +115,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final BlobSidecarManager blobSidecarManager,
+      final DasSamplerManager dasSamplerManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
@@ -122,6 +125,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.blobSidecarManager = blobSidecarManager;
+    this.dasSamplerManager = dasSamplerManager;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
@@ -156,6 +160,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceExecutor,
         recentChainData,
         blobSidecarManager,
+        DasSamplerManager.NOOP,
         forkChoiceNotifier,
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
@@ -429,6 +434,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         blobSidecarManager.createAvailabilityChecker(block);
+    // TODO: integrate result
+    dasSamplerManager
+        .checkDataAvailability(block)
+        .finish(
+            () ->
+                LOG.info(
+                    "ForkChoice: DAS check successful for block {} ({})",
+                    block.getRoot(),
+                    block.getSlot()),
+            ex ->
+                LOG.error(
+                    String.format(
+                        "ForkChoice: DAS check failed for block %s (%s)",
+                        block.getRoot(), block.getSlot()),
+                    ex));
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 

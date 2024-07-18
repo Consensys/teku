@@ -88,7 +88,9 @@ public interface SchemaCombined extends Schema {
 
   KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot();
 
-  KvStoreVariable<UInt64> getVariableFirstIncompleteSlot();
+  KvStoreVariable<UInt64> getVariableFirstCustodyIncompleteSlot();
+
+  KvStoreVariable<UInt64> getVariableFirstSamplerIncompleteSlot();
 
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 

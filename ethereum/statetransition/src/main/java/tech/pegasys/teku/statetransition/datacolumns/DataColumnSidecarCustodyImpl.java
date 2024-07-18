@@ -228,13 +228,13 @@ public class DataColumnSidecarCustodyImpl
                     .findFirst()
                     .ifPresentOrElse(
                         custody ->
-                            db.setFirstIncompleteSlot(custody.slot())
+                            db.setFirstCustodyIncompleteSlot(custody.slot())
                                 .ifExceptionGetsHereRaiseABug(),
                         () -> {
                           if (slotCustodies.isEmpty()) {
                             return;
                           }
-                          db.setFirstIncompleteSlot(
+                          db.setFirstCustodyIncompleteSlot(
                                   slotCustodies.get(slotCustodies.size() - 1).slot())
                               .ifExceptionGetsHereRaiseABug();
                         }));
@@ -242,7 +242,7 @@ public class DataColumnSidecarCustodyImpl
 
   private SafeFuture<List<SlotCustody>> retrievePotentiallyIncompleteSlotCustodies(
       final UInt64 toSlotIncluded, final int limit) {
-    return db.getFirstIncompleteSlot()
+    return db.getFirstCustodyIncompleteSlot()
         .thenCompose(
             maybeFirstIncompleteSlot -> {
               final UInt64 firstIncompleteSlot =

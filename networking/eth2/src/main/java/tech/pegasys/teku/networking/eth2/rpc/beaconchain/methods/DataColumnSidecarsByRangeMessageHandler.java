@@ -136,7 +136,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     final SafeFuture<Optional<UInt64>> earliestDataColumnSidecarSlotFuture =
         combinedChainDataClient.getEarliestDataColumnSidecarSlot();
     final SafeFuture<Optional<UInt64>> firstIncompleteSlotFuture =
-        combinedChainDataClient.getFirstIncompleteSlot();
+        combinedChainDataClient.getFirstCustodyIncompleteSlot();
     SafeFuture.collectAll(earliestDataColumnSidecarSlotFuture, firstIncompleteSlotFuture)
         .thenCompose(
             slotOptionals -> {

@@ -200,8 +200,10 @@ public class Eth2P2PNetworkBuilder {
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
-    int dasTotalCustodySubnetCount =
-        config.getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594));
+    final int dasTotalCustodySubnetCount =
+        spec.isMilestoneSupported(SpecMilestone.EIP7594)
+            ? config.getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594))
+            : 0;
 
     return new ActiveEth2P2PNetwork(
         config.getSpec(),

@@ -240,7 +240,9 @@ public interface Database extends AutoCloseable {
   UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit);
 
   // Sidecars
-  Optional<UInt64> getFirstIncompleteSlot();
+  Optional<UInt64> getFirstCustodyIncompleteSlot();
+
+  Optional<UInt64> getFirstSamplerIncompleteSlot();
 
   Optional<DataColumnSidecar> getSidecar(ColumnSlotAndIdentifier identifier);
 
@@ -254,7 +256,9 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
 
-  void setFirstIncompleteSlot(UInt64 slot);
+  void setFirstCustodyIncompleteSlot(UInt64 slot);
+
+  void setFirstSamplerIncompleteSlot(UInt64 slot);
 
   void addSidecar(DataColumnSidecar sidecar);
 

@@ -25,6 +25,8 @@ public interface NetworkingSpecConfigEip7594 extends NetworkingSpecConfig {
 
   int getCustodyRequirement();
 
+  int getSamplesPerSlot();
+
   int getMinEpochsForDataColumnSidecarsRequests();
 
   int getMaxRequestDataColumnSidecars();

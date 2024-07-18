@@ -159,7 +159,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
     if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
-      LOG.info("Using custody sidecar columns count: {}", dasTotalCustodySubnetCount);
+      LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
     }
 

@@ -93,6 +93,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidati
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -159,6 +160,7 @@ class ForkChoiceTest {
             eventThread,
             recentChainData,
             blobSidecarManager,
+            DasSamplerManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -414,6 +416,7 @@ class ForkChoiceTest {
             eventThread,
             recentChainData,
             BlobSidecarManager.NOOP,
+            DasSamplerManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

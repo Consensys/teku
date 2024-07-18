@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface DataAvailabilitySampler {
+  DataAvailabilitySampler NOOP = (slot, blockRoot, parentRoot) -> SafeFuture.COMPLETE;
 
-  SafeFuture<Void> checkDataAvailability(UInt64 slot, Bytes32 blockRoot);
+  SafeFuture<Void> checkDataAvailability(UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot);
 }

@@ -330,7 +330,12 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getFirstIncompleteSlot() {
+  public Optional<UInt64> getFirstCustodyIncompleteSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
     return Optional.empty();
   }
 
@@ -352,7 +357,10 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void setFirstIncompleteSlot(UInt64 slot) {}
+  public void setFirstCustodyIncompleteSlot(UInt64 slot) {}
+
+  @Override
+  public void setFirstSamplerIncompleteSlot(UInt64 slot) {}
 
   @Override
   public void addSidecar(DataColumnSidecar sidecar) {}

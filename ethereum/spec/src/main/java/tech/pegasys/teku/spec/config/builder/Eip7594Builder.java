@@ -36,6 +36,7 @@ public class Eip7594Builder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer numberOfColumns;
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
+  private Integer samplesPerSlot;
   private Integer minEpochsForDataColumnSidecarsRequests;
   private Integer maxRequestDataColumnSidecars;
 
@@ -53,6 +54,7 @@ public class Eip7594Builder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         numberOfColumns,
         dataColumnSidecarSubnetCount,
         custodyRequirement,
+        samplesPerSlot,
         minEpochsForDataColumnSidecarsRequests,
         maxRequestDataColumnSidecars);
   }
@@ -104,6 +106,12 @@ public class Eip7594Builder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
+  public Eip7594Builder samplesPerSlot(final Integer samplesPerSlot) {
+    checkNotNull(samplesPerSlot);
+    this.samplesPerSlot = samplesPerSlot;
+    return this;
+  }
+
   public Eip7594Builder minEpochsForDataColumnSidecarsRequests(final Integer custodyEpochs) {
     checkNotNull(custodyEpochs);
     this.minEpochsForDataColumnSidecarsRequests = custodyEpochs;
@@ -140,6 +148,7 @@ public class Eip7594Builder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("numberOfColumns", numberOfColumns);
     constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);
     constants.put("custodyRequirement", custodyRequirement);
+    constants.put("samplesPerSlot", samplesPerSlot);
     constants.put("fieldElementsPerCell", fieldElementsPerCell);
     constants.put("fieldElementsPerExtBlob", fieldElementsPerExtBlob);
     constants.put("kzgCommitmentsInclusionProofDepth", kzgCommitmentsInclusionProofDepth);

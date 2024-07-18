@@ -2188,14 +2188,27 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void setFirstIncompleteSlot_isOperative(final DatabaseContext context) throws IOException {
+  public void setFirstCustodyIncompleteSlot_isOperative(final DatabaseContext context)
+      throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalEip7594());
     initialize(context);
-    assertThat(database.getFirstIncompleteSlot().isEmpty()).isTrue();
+    assertThat(database.getFirstCustodyIncompleteSlot().isEmpty()).isTrue();
 
     final UInt64 incompleteSlot = UInt64.valueOf(123);
-    database.setFirstIncompleteSlot(UInt64.valueOf(123));
-    assertThat(database.getFirstIncompleteSlot()).contains(incompleteSlot);
+    database.setFirstCustodyIncompleteSlot(UInt64.valueOf(123));
+    assertThat(database.getFirstCustodyIncompleteSlot()).contains(incompleteSlot);
+  }
+
+  @TestTemplate
+  public void setFirstSamplerIncompleteSlot_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalEip7594());
+    initialize(context);
+    assertThat(database.getFirstSamplerIncompleteSlot().isEmpty()).isTrue();
+
+    final UInt64 incompleteSlot = UInt64.valueOf(123);
+    database.setFirstSamplerIncompleteSlot(UInt64.valueOf(123));
+    assertThat(database.getFirstSamplerIncompleteSlot()).contains(incompleteSlot);
   }
 
   @TestTemplate
