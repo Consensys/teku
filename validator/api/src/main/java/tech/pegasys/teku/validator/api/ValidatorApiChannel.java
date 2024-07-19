@@ -30,6 +30,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionP
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;

@@ -39,6 +39,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionP
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -61,7 +62,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconNodeRequestLabels;
 
