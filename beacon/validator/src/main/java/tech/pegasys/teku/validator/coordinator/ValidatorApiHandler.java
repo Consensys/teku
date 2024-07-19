@@ -584,7 +584,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
       final SpecMilestone specMilestone, final List<Attestation> attestations) {
-    return sendSignedAttestations(attestations);
+    return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
