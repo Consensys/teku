@@ -54,7 +54,7 @@ public class SszProfileImpl extends SszStableContainerBaseImpl implements SszPro
   }
 
   private static IntCache<SszData> createCache(final SszData... memberValues) {
-    ArrayIntCache<SszData> cache = new ArrayIntCache<>(memberValues.length);
+    final ArrayIntCache<SszData> cache = new ArrayIntCache<>(memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       cache.invalidateWithNewValue(i, memberValues[i]);
     }
