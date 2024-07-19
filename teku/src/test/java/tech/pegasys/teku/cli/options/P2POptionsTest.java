@@ -335,4 +335,24 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(15_120);
     assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);
   }
+
+  @Test
+  public void defaultPortsAreSetCorrectly() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+
+    final DiscoveryConfig discoveryConfig = tekuConfiguration.discovery();
+    assertThat(discoveryConfig.getListenUdpPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
+    assertThat(discoveryConfig.getListenUpdPortIpv6())
+        .isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
+    assertThat(discoveryConfig.getAdvertisedUdpPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
+    assertThat(discoveryConfig.getAdvertisedUdpPortIpv6())
+        .isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
+
+    final NetworkConfig networkConfig = tekuConfiguration.network();
+    assertThat(networkConfig.getListenPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
+    assertThat(networkConfig.getListenPortIpv6()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
+    assertThat(networkConfig.getAdvertisedPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
+    assertThat(networkConfig.getAdvertisedPortIpv6())
+        .isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
+  }
 }
