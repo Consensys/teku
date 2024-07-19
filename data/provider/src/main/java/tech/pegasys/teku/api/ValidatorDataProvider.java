@@ -136,6 +136,11 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendSignedAttestations(attestations);
   }
 
+  public SafeFuture<List<SubmitDataError>> submitAttestationsV2(
+          final SpecMilestone specMilestone, final List<Attestation> attestations) {
+    return validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations);
+  }
+
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock,
       final BroadcastValidationLevel broadcastValidationLevel) {

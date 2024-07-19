@@ -63,8 +63,9 @@ public class PostAttestationsV2 extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<Attestation> attestations = request.getRequestBody();
+    final SpecMilestone specMilestone = request.getRequestHeader(ETH_CONSENSUS_VERSION_TYPE);
     final SafeFuture<List<SubmitDataError>> future =
-        validatorDataProvider.submitAttestations(attestations);
+        validatorDataProvider.submitAttestationsV2(specMilestone, attestations);
 
     request.respondAsync(
         future.thenApply(
