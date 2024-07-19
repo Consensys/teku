@@ -18,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import java.util.List;
@@ -341,18 +343,15 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
 
     final DiscoveryConfig discoveryConfig = tekuConfiguration.discovery();
-    assertThat(discoveryConfig.getListenUdpPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
-    assertThat(discoveryConfig.getListenUpdPortIpv6())
-        .isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
-    assertThat(discoveryConfig.getAdvertisedUdpPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
-    assertThat(discoveryConfig.getAdvertisedUdpPortIpv6())
-        .isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
+    assertThat(discoveryConfig.getListenUdpPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(discoveryConfig.getListenUpdPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
+    assertThat(discoveryConfig.getAdvertisedUdpPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(discoveryConfig.getAdvertisedUdpPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
 
     final NetworkConfig networkConfig = tekuConfiguration.network();
-    assertThat(networkConfig.getListenPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
-    assertThat(networkConfig.getListenPortIpv6()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
-    assertThat(networkConfig.getAdvertisedPort()).isEqualTo(NetworkConfig.DEFAULT_P2P_PORT);
-    assertThat(networkConfig.getAdvertisedPortIpv6())
-        .isEqualTo(NetworkConfig.DEFAULT_P2P_PORT_IPV6);
+    assertThat(networkConfig.getListenPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(networkConfig.getListenPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
+    assertThat(networkConfig.getAdvertisedPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(networkConfig.getAdvertisedPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
   }
 }
