@@ -36,7 +36,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -505,14 +504,17 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void postSubscribeToSyncCommitteeSubnets_makesExpectedRequest() throws InterruptedException {
+  public void postSubscribeToSyncCommitteeSubnets_makesExpectedRequest()
+      throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    final Collection<SyncCommitteeSubnetSubscription> subscriptions = List.of(new SyncCommitteeSubnetSubscription(0, IntSet.of(1), UInt64.ZERO));
+    final Collection<SyncCommitteeSubnetSubscription> subscriptions =
+        List.of(new SyncCommitteeSubnetSubscription(0, IntSet.of(1), UInt64.ZERO));
 
     okHttpValidatorTypeDefClient.subscribeToSyncCommitteeSubnets(subscriptions);
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
-    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/sync_committee_subscriptions");
+    assertThat(recordedRequest.getPath())
+        .isEqualTo("/eth/v1/validator/sync_committee_subscriptions");
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(JSON_CONTENT_TYPE);
     assertThat(recordedRequest.getBody().readUtf8())
