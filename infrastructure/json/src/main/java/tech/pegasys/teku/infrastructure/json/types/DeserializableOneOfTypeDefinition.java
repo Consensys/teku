@@ -34,13 +34,12 @@ public class DeserializableOneOfTypeDefinition<TObject>
     this.parserTypes = parserTypes;
   }
 
-  public static <TObject, TBuilder>
-      DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> object(
-          @SuppressWarnings("unused") final Class<TObject> type) {
+  public static <TObject> DeserializableOneOfTypeDefinitionBuilder<TObject> object(
+      @SuppressWarnings("unused") final Class<TObject> type) {
     return object();
   }
 
-  static <TObject, TBuilder> DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> object() {
+  static <TObject> DeserializableOneOfTypeDefinitionBuilder<TObject> object() {
     return new DeserializableOneOfTypeDefinitionBuilder<>();
   }
 

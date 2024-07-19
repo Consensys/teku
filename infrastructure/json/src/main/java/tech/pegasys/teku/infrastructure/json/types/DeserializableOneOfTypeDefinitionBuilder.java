@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-public class DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> {
+public class DeserializableOneOfTypeDefinitionBuilder<TObject> {
 
   private final Map<Predicate<TObject>, DeserializableTypeDefinition<? extends TObject>> types =
       new LinkedHashMap<>();
@@ -31,23 +31,22 @@ public class DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> {
 
   DeserializableOneOfTypeDefinitionBuilder() {}
 
-  public DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> name(final String name) {
+  public DeserializableOneOfTypeDefinitionBuilder<TObject> name(final String name) {
     this.name = Optional.of(name);
     return this;
   }
 
-  public DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> title(final String title) {
+  public DeserializableOneOfTypeDefinitionBuilder<TObject> title(final String title) {
     this.title = Optional.of(title);
     return this;
   }
 
-  public DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> description(
-      final String description) {
+  public DeserializableOneOfTypeDefinitionBuilder<TObject> description(final String description) {
     this.description = Optional.of(description);
     return this;
   }
 
-  public <T extends TObject> DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> withType(
+  public <T extends TObject> DeserializableOneOfTypeDefinitionBuilder<TObject> withType(
       final Predicate<TObject> predicate,
       final Predicate<String> parserType,
       final DeserializableTypeDefinition<T> typeDefinition) {
