@@ -43,17 +43,17 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
-public class PostAttestationV2 extends RestApiEndpoint {
+public class PostAttestationsV2 extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v2/beacon/pool/attestations";
   private final ValidatorDataProvider validatorDataProvider;
 
-  public PostAttestationV2(
+  public PostAttestationsV2(
       final DataProvider validatorDataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(validatorDataProvider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
-  public PostAttestationV2(
+  public PostAttestationsV2(
       final ValidatorDataProvider validatorDataProvider,
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(createMetadata(schemaDefinitionCache));

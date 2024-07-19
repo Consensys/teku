@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
-public class PostAttestationV2Test extends AbstractMigratedBeaconHandlerTest {
+public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   private SpecMilestone specMilestone;
 
@@ -59,7 +59,7 @@ public class PostAttestationV2Test extends AbstractMigratedBeaconHandlerTest {
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
     schemaDefinitionCache = new SchemaDefinitionCache(spec);
-    setHandler(new PostAttestationV2(validatorDataProvider, schemaDefinitionCache));
+    setHandler(new PostAttestationsV2(validatorDataProvider, schemaDefinitionCache));
   }
 
   @TestTemplate
@@ -117,7 +117,7 @@ public class PostAttestationV2Test extends AbstractMigratedBeaconHandlerTest {
     final JsonNode expected =
         JsonTestUtil.parseAsJsonNode(
             Resources.toString(
-                Resources.getResource(PostAttestationV2Test.class, "errorListBadRequest.json"),
+                Resources.getResource(PostAttestationsV2Test.class, "errorListBadRequest.json"),
                 UTF_8));
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
@@ -135,6 +135,6 @@ public class PostAttestationV2Test extends AbstractMigratedBeaconHandlerTest {
   private String getExpectedResponseAsJson(final SpecMilestone specMilestone) throws IOException {
     final String fileName =
         String.format("postAttestationRequestBody%s.json", specMilestone.name());
-    return Resources.toString(Resources.getResource(PostAttestationV2Test.class, fileName), UTF_8);
+    return Resources.toString(Resources.getResource(PostAttestationsV2Test.class, fileName), UTF_8);
   }
 }
