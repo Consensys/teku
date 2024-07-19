@@ -15,14 +15,12 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -31,7 +29,6 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -43,7 +40,6 @@ import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase
 public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase {
 
   private PostAttestationsRequest request;
-  private final JsonProvider jsonProvider = new JsonProvider();
 
   @BeforeEach
   void setupRequest() {
@@ -77,14 +73,5 @@ public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
-  }
-
-  private String asJson(final Object object) {
-    try {
-      return jsonProvider.objectToJSON(object);
-    } catch (JsonProcessingException e) {
-      fail("Error conversing object to json", e);
-      return "";
-    }
   }
 }
