@@ -14,49 +14,7 @@
 package tech.pegasys.teku.ethereum.json.types.validator;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SyncCommitteeSubnetSubscription {
-  private final int validatorIndex;
-  private final IntSet syncCommitteeIndices;
-  private final UInt64 untilEpoch;
-
-  public SyncCommitteeSubnetSubscription(
-      final int validatorIndex, final IntSet syncCommitteeIndices, final UInt64 untilEpoch) {
-    this.validatorIndex = validatorIndex;
-    this.syncCommitteeIndices = syncCommitteeIndices;
-    this.untilEpoch = untilEpoch;
-  }
-
-  public int getValidatorIndex() {
-    return validatorIndex;
-  }
-
-  public IntSet getSyncCommitteeIndices() {
-    return syncCommitteeIndices;
-  }
-
-  public UInt64 getUntilEpoch() {
-    return untilEpoch;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SyncCommitteeSubnetSubscription that = (SyncCommitteeSubnetSubscription) o;
-    return validatorIndex == that.validatorIndex
-        && Objects.equals(syncCommitteeIndices, that.syncCommitteeIndices)
-        && Objects.equals(untilEpoch, that.untilEpoch);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(validatorIndex, syncCommitteeIndices, untilEpoch);
-  }
-}
+public record SyncCommitteeSubnetSubscription(
+    int validatorIndex, IntSet syncCommitteeIndices, UInt64 untilEpoch) {}

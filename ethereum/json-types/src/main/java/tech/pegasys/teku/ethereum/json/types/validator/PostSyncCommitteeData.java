@@ -62,9 +62,9 @@ public class PostSyncCommitteeData {
 
   public PostSyncCommitteeData(
       final SyncCommitteeSubnetSubscription syncCommitteeSubnetSubscription) {
-    this.validatorIndex = syncCommitteeSubnetSubscription.getValidatorIndex();
-    this.syncCommitteeIndices = syncCommitteeSubnetSubscription.getSyncCommitteeIndices();
-    this.untilEpoch = syncCommitteeSubnetSubscription.getUntilEpoch();
+    this.validatorIndex = syncCommitteeSubnetSubscription.validatorIndex();
+    this.syncCommitteeIndices = syncCommitteeSubnetSubscription.syncCommitteeIndices();
+    this.untilEpoch = syncCommitteeSubnetSubscription.untilEpoch();
   }
 
   public SyncCommitteeSubnetSubscription toSyncCommitteeSubnetSubscription() {
