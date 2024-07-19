@@ -18,7 +18,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelValueSubstring;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
@@ -73,8 +72,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
-import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -88,6 +85,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -476,28 +474,15 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   private void checkExecutionPayloadInBlock(final SignedBlock signedBlock) {
-    UInt64 slot = null;
-    ExecutionPayload executionPayload = null;
-    if (signedBlock instanceof final SignedBeaconBlockBellatrix signedBeaconBlockBellatrix) {
-      executionPayload =
-          signedBeaconBlockBellatrix
-              .getMessage()
-              .getBody()
-              .executionPayload
-              .asInternalExecutionPayload(spec, signedBeaconBlockBellatrix.getMessage().slot);
-      slot = signedBeaconBlockBellatrix.getMessage().slot;
-    } else if (signedBlock instanceof final SignedBeaconBlockCapella signedBeaconBlockCapella) {
-      executionPayload =
-          signedBeaconBlockCapella
-              .getMessage()
-              .getBody()
-              .executionPayload
-              .asInternalExecutionPayload(spec, signedBeaconBlockCapella.getMessage().slot);
-      slot = signedBeaconBlockCapella.getMessage().slot;
-    }
+    assertThat(SignedBeaconBlock.class.isAssignableFrom(signedBlock.getClass())).isTrue();
+    final BeaconBlock beaconBlock =
+        ((SignedBeaconBlock) signedBlock).asInternalSignedBeaconBlock(spec).getMessage();
+    final UInt64 slot = beaconBlock.getSlot();
+    final Optional<ExecutionPayload> maybeExecutionPayload =
+        beaconBlock.getBody().getOptionalExecutionPayload();
 
-    assertNotNull(executionPayload);
-    assertThat(executionPayload.isDefault()).describedAs("Is default payload").isFalse();
+    assertThat(maybeExecutionPayload).isPresent();
+    assertThat(maybeExecutionPayload.get().isDefault()).describedAs("Is default payload").isFalse();
     LOG.debug("Non default execution payload found at slot " + slot);
   }
 
