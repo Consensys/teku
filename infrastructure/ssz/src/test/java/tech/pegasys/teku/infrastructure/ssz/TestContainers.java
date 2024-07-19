@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSche
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@SuppressWarnings("ClassInitializationDeadlock")
 public class TestContainers {
 
   public interface ImmutableSubContainer extends SszContainer {
