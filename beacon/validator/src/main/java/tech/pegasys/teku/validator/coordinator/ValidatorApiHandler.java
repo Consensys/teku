@@ -58,6 +58,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -104,7 +105,6 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -556,13 +556,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
       // untilEpoch is exclusive, so it will unsubscribe at the first slot of the specified index
-      final UInt64 untilEpoch = subscription.getUntilEpoch();
+      final UInt64 untilEpoch = subscription.untilEpoch();
       final UInt64 unsubscribeSlot = spec.computeStartSlotAtEpoch(untilEpoch);
       final SyncCommitteeUtil syncCommitteeUtil =
           spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(untilEpoch));
-      final IntSet syncCommitteeIndices = subscription.getSyncCommitteeIndices();
+      final IntSet syncCommitteeIndices = subscription.syncCommitteeIndices();
       performanceTracker.saveExpectedSyncCommitteeParticipant(
-          subscription.getValidatorIndex(), syncCommitteeIndices, untilEpoch.decrement());
+          subscription.validatorIndex(), syncCommitteeIndices, untilEpoch.decrement());
       syncCommitteeUtil
           .getSyncSubcommittees(syncCommitteeIndices)
           .forEach(index -> syncCommitteeSubscriptionManager.subscribe(index, unsubscribeSlot));

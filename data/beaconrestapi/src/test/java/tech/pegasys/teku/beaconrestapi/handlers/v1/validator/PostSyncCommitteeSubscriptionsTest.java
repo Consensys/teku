@@ -30,14 +30,13 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.ethereum.json.types.validator.PostSyncCommitteeData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class PostSyncCommitteeSubscriptionsTest extends AbstractMigratedBeaconHandlerTest {
-  private final List<PostSyncCommitteeSubscriptions.PostSyncCommitteeData> requestBody =
-      List.of(
-          new PostSyncCommitteeSubscriptions.PostSyncCommitteeData(
-              1, new IntOpenHashSet(List.of(0, 1)), UInt64.ONE));
+  private final List<PostSyncCommitteeData> requestBody =
+      List.of(new PostSyncCommitteeData(1, new IntOpenHashSet(List.of(0, 1)), UInt64.ONE));
 
   @BeforeEach
   void setup() {
