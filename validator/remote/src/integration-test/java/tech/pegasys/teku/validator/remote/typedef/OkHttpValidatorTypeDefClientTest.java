@@ -36,6 +36,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -360,7 +362,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  void postValidators_MakesExpectedRequest() throws Exception {
+  void postValidators_makesExpectedRequest() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     okHttpValidatorTypeDefClient.postStateValidators(List.of("1", "0x1234"));
@@ -373,7 +375,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  void getStateValidators_MakesExpectedRequest() throws Exception {
+  void getStateValidators_makesExpectedRequest() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     okHttpValidatorTypeDefClient.getStateValidators(List.of("1", "0x1234"));
@@ -388,14 +390,14 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void postValidators_WhenNoContent_ReturnsEmpty() {
+  public void postValidators_whenNoContent_returnsEmpty() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     assertThat(okHttpValidatorTypeDefClient.postStateValidators(List.of("1"))).isEmpty();
   }
 
   @TestTemplate
-  public void postValidators_WhenNotExisting_ThrowsException() {
+  public void postValidators_whenNotExisting_throwsException() {
     final List<Integer> responseCodes =
         List.of(SC_BAD_REQUEST, SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED);
     for (int code : responseCodes) {
@@ -410,7 +412,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void postValidators_WhenSuccess_ReturnsResponse() throws JsonProcessingException {
+  public void postValidators_whenSuccess_returnsResponse() throws JsonProcessingException {
     final List<StateValidatorData> expected =
         List.of(generateStateValidatorData(), generateStateValidatorData());
     final ObjectAndMetaData<List<StateValidatorData>> response =
@@ -446,7 +448,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void postSyncDuties_WhenSuccess_ReturnsResponse()
+  public void postSyncDuties_whenSuccess_returnsResponse()
       throws JsonProcessingException, InterruptedException {
     final List<SyncCommitteeDuty> duties =
         List.of(
@@ -476,7 +478,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void postAttesterDuties_WhenSuccess_ReturnsResponse()
+  public void postAttesterDuties_whenSuccess_returnsResponse()
       throws JsonProcessingException, InterruptedException {
     final List<AttesterDuty> duties = List.of(randomAttesterDuty(), randomAttesterDuty());
     final AttesterDuties response =
@@ -499,6 +501,25 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(response);
+  }
+
+  @TestTemplate
+  public void postSubscribeToSyncCommitteeSubnets_makesExpectedRequest()
+      throws InterruptedException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final Collection<SyncCommitteeSubnetSubscription> subscriptions =
+        List.of(new SyncCommitteeSubnetSubscription(0, IntSet.of(1), UInt64.ZERO));
+
+    okHttpValidatorTypeDefClient.subscribeToSyncCommitteeSubnets(subscriptions);
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getPath())
+        .isEqualTo("/eth/v1/validator/sync_committee_subscriptions");
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(JSON_CONTENT_TYPE);
+    assertThat(recordedRequest.getBody().readUtf8())
+        .isEqualTo(
+            "[{\"validator_index\":\"0\",\"sync_committee_indices\":[\"1\"],\"until_epoch\":\"0\"}]");
   }
 
   private AttesterDuty randomAttesterDuty() {

@@ -49,6 +49,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionP
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -72,7 +73,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
@@ -383,21 +383,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    return sendRequest(
-        () ->
-            apiClient.subscribeToSyncCommitteeSubnets(
-                subscriptions.stream()
-                    .map(
-                        subscription ->
-                            new tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription(
-                                UInt64.valueOf(subscription.getValidatorIndex()),
-                                subscription
-                                    .getSyncCommitteeIndices()
-                                    .intStream()
-                                    .mapToObj(UInt64::valueOf)
-                                    .toList(),
-                                subscription.getUntilEpoch()))
-                    .toList()));
+    return sendRequest(() -> typeDefClient.subscribeToSyncCommitteeSubnets(subscriptions));
   }
 
   @Override
