@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -143,6 +144,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
+            SpecMilestone specMilestone, List<Attestation> attestations) {
+          return SafeFuture.completedFuture(List.of());
+        }
+
+        @Override
         public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
             List<SignedAggregateAndProof> aggregateAndProofs) {
           return SafeFuture.completedFuture(List.of());
@@ -239,6 +246,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Void> subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations);
+
+  SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
+      SpecMilestone specMilestone, List<Attestation> attestations);
 
   SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       List<SignedAggregateAndProof> aggregateAndProofs);
