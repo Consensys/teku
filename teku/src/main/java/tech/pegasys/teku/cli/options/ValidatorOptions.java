@@ -149,6 +149,16 @@ public class ValidatorOptions {
   private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
 
   @Option(
+      names = {"--Xattestations-v2-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable the Attestations V2 API for attestations pool",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean attestationsV2Enabled = ValidatorConfig.DEFAULT_ATTESTATIONS_V2_ENABLED;
+
+  @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable terminating the process if no validator keys are found during startup",
@@ -196,6 +206,7 @@ public class ValidatorOptions {
               .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
               .executorThreads(executorThreads)
               .blockV3enabled(blockV3Enabled)
+              .attestationsV2Enabled(attestationsV2Enabled)
               .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
               .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed);
           executorMaxQueueSize.ifPresent(config::executorMaxQueueSize);

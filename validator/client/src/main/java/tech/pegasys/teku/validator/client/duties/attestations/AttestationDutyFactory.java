@@ -29,18 +29,20 @@ public class AttestationDutyFactory
   private final Spec spec;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
-
   private final ValidatorDutyMetrics validatorDutyMetrics;
+  private final boolean attestationsV2Enabled;
 
   public AttestationDutyFactory(
       final Spec spec,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
-      final ValidatorDutyMetrics validatorDutyMetrics) {
+      final ValidatorDutyMetrics validatorDutyMetrics,
+      final boolean attestationsV2Enabled) {
     this.spec = spec;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.validatorDutyMetrics = validatorDutyMetrics;
+    this.attestationsV2Enabled = attestationsV2Enabled;
   }
 
   @Override
@@ -51,7 +53,15 @@ public class AttestationDutyFactory
         slot,
         forkProvider,
         validatorApiChannel,
-        new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations),
+        new BatchAttestationSendingStrategy<>(
+            attestations -> {
+              if (attestationsV2Enabled) {
+                return validatorApiChannel.sendSignedAttestationsV2(
+                    spec.atSlot(slot).getMilestone(), attestations);
+              } else {
+                return validatorApiChannel.sendSignedAttestations(attestations);
+              }
+            }),
         validatorDutyMetrics);
   }
 
