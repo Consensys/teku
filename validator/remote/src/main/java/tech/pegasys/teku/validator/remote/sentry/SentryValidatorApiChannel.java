@@ -180,7 +180,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
       final SpecMilestone specMilestone, final List<Attestation> attestations) {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
-        .sendSignedAttestations(attestations);
+        .sendSignedAttestationsV2(specMilestone, attestations);
   }
 
   @Override

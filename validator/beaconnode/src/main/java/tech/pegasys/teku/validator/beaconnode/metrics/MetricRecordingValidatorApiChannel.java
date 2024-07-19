@@ -213,7 +213,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final SpecMilestone specMilestone, final List<Attestation> attestations) {
     try (final OperationTimer.TimingContext context =
         startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName())) {
-      SafeFuture<List<SubmitDataError>> request = delegate.sendSignedAttestations(attestations);
+      SafeFuture<List<SubmitDataError>> request =
+          delegate.sendSignedAttestationsV2(specMilestone, attestations);
       request.always(context::stopTimer);
       return countSendRequest(request, BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
     }
