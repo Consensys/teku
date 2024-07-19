@@ -154,8 +154,9 @@ public class StorageConfigurationTest {
             () ->
                 StorageConfiguration.builder()
                     .dataStorageMode(ARCHIVE)
+                    .dataStorageFrequency(1)
                     .retainedSlots(2048)
-                    .dataStorageFrequency(1))
+                    .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("State pruner cannot be enabled using tree mode storage");
   }
