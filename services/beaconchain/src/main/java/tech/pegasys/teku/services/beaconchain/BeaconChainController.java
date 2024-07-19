@@ -141,6 +141,7 @@ import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
+import tech.pegasys.teku.statetransition.datacolumns.DasLongPollCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
@@ -660,19 +661,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
-            spec,
-            canonicalBlockResolver,
-            sidecarDB,
-            nodeId,
-            totalMyCustodySubnets,
-            Duration.ofSeconds(5));
+            spec, canonicalBlockResolver, sidecarDB, nodeId, totalMyCustodySubnets);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
+
+    DasLongPollCustody custody =
+        new DasLongPollCustody(
+            dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, Duration.ofSeconds(5));
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-        dataColumnSidecarCustodyImpl::onNewValidatedDataColumnSidecar);
+        custody::onNewValidatedDataColumnSidecar);
     // TODO fix this dirty hack
     // This is to resolve the initialization loop Network <--> DAS Custody
-    this.dataColumnSidecarCustody.init(dataColumnSidecarCustodyImpl);
+    this.dataColumnSidecarCustody.init(custody);
 
     DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);

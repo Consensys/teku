@@ -15,26 +15,16 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.annotations.VisibleForTesting;
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -92,9 +82,7 @@ public class DataColumnSidecarCustodyImpl
   private final int totalCustodySubnetCount;
 
   private final UInt64 eip7594StartEpoch;
-  private final Duration requestTimeout;
 
-  @VisibleForTesting final PendingRequests pendingRequests = new PendingRequests();
   private volatile UInt64 currentSlot = null;
 
   public DataColumnSidecarCustodyImpl(
@@ -102,8 +90,7 @@ public class DataColumnSidecarCustodyImpl
       CanonicalBlockResolver blockResolver,
       DataColumnSidecarDB db,
       UInt256 nodeId,
-      int totalCustodySubnetCount,
-      Duration requestTimeout) {
+      int totalCustodySubnetCount) {
 
     checkNotNull(spec);
     checkNotNull(blockResolver);
@@ -116,7 +103,6 @@ public class DataColumnSidecarCustodyImpl
     this.nodeId = nodeId;
     this.totalCustodySubnetCount = totalCustodySubnetCount;
     this.eip7594StartEpoch = spec.getForkSchedule().getFork(SpecMilestone.EIP7594).getEpoch();
-    this.requestTimeout = requestTimeout;
   }
 
   private UInt64 getEarliestCustodySlot(UInt64 currentSlot) {
@@ -146,11 +132,6 @@ public class DataColumnSidecarCustodyImpl
   public void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
     if (isMyCustody(dataColumnSidecar.getSlot(), dataColumnSidecar.getIndex())) {
       db.addSidecar(dataColumnSidecar);
-      final List<SafeFuture<DataColumnSidecar>> pendingRequests =
-          this.pendingRequests.remove(DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
-      for (SafeFuture<DataColumnSidecar> pendingRequest : pendingRequests) {
-        pendingRequest.complete(dataColumnSidecar);
-      }
     }
   }
 
@@ -170,32 +151,7 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
       DataColumnIdentifier columnId) {
-    return db.getSidecar(columnId)
-        .thenCompose(
-            existingColumn -> {
-              if (existingColumn.isPresent()) {
-                return SafeFuture.completedFuture(existingColumn);
-              } else {
-                SafeFuture<DataColumnSidecar> promise = new SafeFuture<>();
-                addPendingRequest(columnId, promise);
-                return promise
-                    .orTimeout(requestTimeout)
-                    .thenApply(Optional::of)
-                    .exceptionally(
-                        err -> {
-                          if (ExceptionUtil.hasCause(err, TimeoutException.class)) {
-                            return Optional.empty();
-                          } else {
-                            throw new CompletionException(err);
-                          }
-                        });
-              }
-            });
-  }
-
-  private void addPendingRequest(
-      final DataColumnIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
-    pendingRequests.add(columnId, promise);
+    return db.getSidecar(columnId);
   }
 
   private void onEpoch(UInt64 epoch) {
@@ -311,27 +267,5 @@ public class DataColumnSidecarCustodyImpl
                                     colId ->
                                         new ColumnSlotAndIdentifier(slotCustody.slot(), colId)))
                     .toList());
-  }
-
-  @VisibleForTesting
-  static class PendingRequests {
-
-    final Map<DataColumnIdentifier, List<SafeFuture<DataColumnSidecar>>> requests = new HashMap<>();
-
-    synchronized void add(
-        final DataColumnIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
-      clearCancelledPendingRequests();
-      requests.computeIfAbsent(columnId, __ -> new ArrayList<>()).add(promise);
-    }
-
-    synchronized List<SafeFuture<DataColumnSidecar>> remove(final DataColumnIdentifier columnId) {
-      List<SafeFuture<DataColumnSidecar>> ret = requests.remove(columnId);
-      return ret == null ? Collections.emptyList() : ret;
-    }
-
-    private void clearCancelledPendingRequests() {
-      requests.values().forEach(promises -> promises.removeIf(CompletableFuture::isDone));
-      requests.entrySet().removeIf(e -> e.getValue().isEmpty());
-    }
   }
 }

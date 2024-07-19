@@ -15,11 +15,14 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -31,7 +34,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class DataColumnSidecarCustodyImplTest {
+@SuppressWarnings("JavaCase")
+public class DasLongPollCustodyTest {
+  final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
+  final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
 
   final Spec spec = TestSpecFactory.createMinimalEip7594();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
@@ -41,7 +47,9 @@ public class DataColumnSidecarCustodyImplTest {
   final SpecConfigEip7594 config =
       SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
   final int subnetCount = config.getDataColumnSidecarSubnetCount();
-  final int custodyCount = config.getCustodyRequirement();
+
+  final DataColumnSidecarCustodyImpl custodyImpl =
+      new DataColumnSidecarCustodyImpl(spec, blockResolver, db, myNodeId, subnetCount);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
@@ -54,40 +62,40 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
-  @SuppressWarnings("JavaCase")
-  void sanityTest() throws Throwable {
-    DataColumnSidecarCustodyImpl custody =
-        new DataColumnSidecarCustodyImpl(spec, blockResolver, db, myNodeId, subnetCount);
+  void testLongPollingColumnRequest() throws Exception {
+    Duration longPollTimeout = Duration.ofMillis(200);
+    DasLongPollCustody custody =
+        new DasLongPollCustody(custodyImpl, stubAsyncRunner, longPollTimeout);
+
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);
     DataColumnIdentifier columnId0 = DataColumnIdentifier.createFromSidecar(sidecar0);
-
-    SafeFuture<Optional<DataColumnSidecar>> fRet1 = custody.getCustodyDataColumnSidecar(columnId0);
-    Optional<DataColumnSidecar> ret1 = fRet1.get(1, TimeUnit.SECONDS);
-
-    assertThat(ret1).isEmpty();
-
-    SafeFuture<Optional<DataColumnSidecar>> fRet2_1 =
-        custody.getCustodyDataColumnSidecar(columnId0);
-    SafeFuture<Optional<DataColumnSidecar>> fRet2_2 =
-        custody.getCustodyDataColumnSidecar(columnId0);
-
-    custody.onNewValidatedDataColumnSidecar(sidecar0);
-
-    assertThat(fRet2_1.get().get()).isEqualTo(sidecar0);
-    assertThat(fRet2_2.get().get()).isEqualTo(sidecar0);
-
-    SafeFuture<Optional<DataColumnSidecar>> fRet3 = custody.getCustodyDataColumnSidecar(columnId0);
-
-    assertThat(fRet3.get().get()).isEqualTo(sidecar0);
-
     DataColumnSidecar sidecar1 = createSidecar(block, 1);
     DataColumnIdentifier columnId1 = DataColumnIdentifier.createFromSidecar(sidecar1);
 
-    SafeFuture<Optional<DataColumnSidecar>> fRet4 = custody.getCustodyDataColumnSidecar(columnId1);
-    assertThat(fRet4).isNotDone();
+    SafeFuture<Optional<DataColumnSidecar>> fRet0 = custody.getCustodyDataColumnSidecar(columnId0);
+    SafeFuture<Optional<DataColumnSidecar>> fRet0_1 =
+        custody.getCustodyDataColumnSidecar(columnId0);
+    SafeFuture<Optional<DataColumnSidecar>> fRet1 = custody.getCustodyDataColumnSidecar(columnId1);
 
-    custody.onNewValidatedDataColumnSidecar(sidecar1);
-    assertThat(fRet4.get().get()).isEqualTo(sidecar1);
+    stubTimeProvider.advanceTimeBy(longPollTimeout.minus(Duration.ofMillis(1)));
+    stubAsyncRunner.executeDueActions();
+
+    assertThat(fRet0).isNotDone();
+    assertThat(fRet0_1).isNotDone();
+    assertThat(fRet1).isNotDone();
+
+    custody.onNewValidatedDataColumnSidecar(sidecar0);
+
+    assertThat(fRet0.get(1, TimeUnit.SECONDS)).contains(sidecar0);
+    assertThat(fRet0_1.get(1, TimeUnit.SECONDS)).contains(sidecar0);
+    assertThat(fRet1).isNotDone();
+
+    stubTimeProvider.advanceTimeBy(Duration.ofMillis(2));
+    stubAsyncRunner.executeDueActions();
+
+    assertThat(fRet0.get(1, TimeUnit.SECONDS)).contains(sidecar0);
+    assertThat(fRet0_1.get(1, TimeUnit.SECONDS)).contains(sidecar0);
+    assertThat(fRet1.get(1, TimeUnit.SECONDS)).isEmpty();
   }
 }
