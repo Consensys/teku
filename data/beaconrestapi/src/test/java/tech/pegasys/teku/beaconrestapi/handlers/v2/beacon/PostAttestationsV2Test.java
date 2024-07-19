@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -33,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,8 +64,12 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void shouldBeAbleToSubmitAttestation() throws Exception {
-    request.setRequestBody(List.of(dataStructureUtil.randomAttestation()));
-    when(validatorDataProvider.submitAttestations(any()))
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+    request.setRequestBody(attestations);
+    request.setRequestHeader(
+        HEADER_CONSENSUS_VERSION, specMilestone.name().toLowerCase(Locale.ROOT));
+    when(validatorDataProvider.submitAttestationsV2(specMilestone, attestations))
         .thenReturn(SafeFuture.completedFuture(List.of()));
 
     handler.handleRequest(request);
@@ -76,18 +80,22 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void shouldReportInvalidAttestations() throws Exception {
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
     final List<SubmitDataError> errors =
         List.of(new SubmitDataError(UInt64.ZERO, "Bad Attestation"));
     final ErrorListBadRequest response =
         new ErrorListBadRequest(
             "Some items failed to publish, refer to errors for details", errors);
 
-    request.setRequestBody(List.of(dataStructureUtil.randomAttestation()));
-    when(validatorDataProvider.submitAttestations(any()))
+    request.setRequestHeader(
+        HEADER_CONSENSUS_VERSION, specMilestone.name().toLowerCase(Locale.ROOT));
+    request.setRequestBody(attestations);
+
+    when(validatorDataProvider.submitAttestationsV2(specMilestone, attestations))
         .thenReturn(SafeFuture.completedFuture(errors));
 
     handler.handleRequest(request);
-
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(response);
   }
