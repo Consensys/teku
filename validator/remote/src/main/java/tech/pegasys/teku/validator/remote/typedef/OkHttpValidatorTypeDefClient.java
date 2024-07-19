@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscr
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -62,6 +64,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttestationsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PrepareBeaconProposersRequest;
@@ -153,6 +156,12 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new ProduceBlockRequest(
             getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
     return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
+  }
+
+  public Optional<PostDataFailureResponse> postSignedAttestations(
+          final List<Attestation> attestations, final SpecMilestone specMilestone) {
+    final PostAttestationsRequest postAttestationsRequest = new PostAttestationsRequest(spec, getBaseEndpoint(), getOkHttpClient());
+    return postAttestationsRequest.postAttestations(attestations, specMilestone);
   }
 
   public void registerValidators(

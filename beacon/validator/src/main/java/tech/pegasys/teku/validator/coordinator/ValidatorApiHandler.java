@@ -71,6 +71,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -572,11 +573,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         () -> attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions));
   }
 
+  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
+      final SpecMilestone specMilestone, final List<Attestation> attestations) {
+    return sendSignedAttestations(attestations);
   }
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {

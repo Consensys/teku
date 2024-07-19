@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -232,6 +233,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         failoversSendSubnetSubscriptions);
   }
 
+  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
@@ -239,6 +241,12 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         apiChannel -> apiChannel.sendSignedAttestations(attestations),
         BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
         failoversPublishSignedDuties);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
+      final SpecMilestone specMilestone, final List<Attestation> attestations) {
+    return sendSignedAttestations(attestations);
   }
 
   @Override
