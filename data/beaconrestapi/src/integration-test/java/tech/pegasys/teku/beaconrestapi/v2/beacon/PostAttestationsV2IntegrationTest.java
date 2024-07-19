@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.v2.beacon;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -57,11 +56,11 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
   @TestTemplate
   void shouldPostAttestations_NoErrors() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
-
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
         post(
@@ -87,15 +86,16 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
         new SubmitDataError(UInt64.ZERO, "Bad attestation");
     final SubmitDataError secondSubmitDataError =
         new SubmitDataError(UInt64.ONE, "Very bad attestation");
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(
-            SafeFuture.completedFuture(List.of(firstSubmitDataError, secondSubmitDataError)));
 
     final List<Attestation> attestations =
         List.of(
             dataStructureUtil.randomAttestation(),
             dataStructureUtil.randomAttestation(),
             dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(
+            SafeFuture.completedFuture(List.of(firstSubmitDataError, secondSubmitDataError)));
 
     final Response response =
         post(
@@ -129,11 +129,11 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
   @TestTemplate
   void shouldFailWhenMissingConsensusHeader() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
-
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
         post(
@@ -156,11 +156,11 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
   @TestTemplate
   void shouldFailWhenBadConsensusHeaderValue() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
-
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
         post(
