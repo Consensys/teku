@@ -37,7 +37,8 @@ public class GenesisGenerator {
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private String network;
   private ValidatorKeystores validatorKeys;
-  private Optional<Function<Spec, ExecutionPayloadHeader>> genesisExecutionPayloadHeaderSource;
+  private Optional<Function<Spec, ExecutionPayloadHeader>> genesisExecutionPayloadHeaderSource =
+      Optional.empty();
   private int genesisDelaySeconds = 10;
   private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
