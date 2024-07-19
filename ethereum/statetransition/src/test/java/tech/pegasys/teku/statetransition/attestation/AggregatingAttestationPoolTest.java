@@ -483,7 +483,8 @@ class AggregatingAttestationPoolTest {
   }
 
   @TestTemplate
-  public void getAttestations_shouldReturnElectraAttestationsOnly_WhenAtLeastOneIsPresent() {
+  public void
+      getAttestations_shouldReturnElectraAttestationsOnly_whenElectraActivatesAndNoSlotProvided() {
     // Genesis spec must be before Electra in order to be able to add phase0 attestations
     assumeThat(specMilestone).isLessThan(ELECTRA);
     final Spec mockedSpec = mock(Spec.class);
@@ -503,7 +504,7 @@ class AggregatingAttestationPoolTest {
 
     // Adding an Electra attestation to the aggregation pool
     final Spec electraSpec = TestSpecFactory.createMinimalElectra();
-    // Electra activates from slot 10
+    // Electra activates from SLOT
     when(mockedSpec.atSlot(argThat(slot -> slot.isGreaterThanOrEqualTo(SLOT))))
         .thenReturn(electraSpec.getGenesisSpec());
     final AttestationData electraAttestationData = dataStructureUtil.randomAttestationData(SLOT);
