@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.v2.beacon;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -50,11 +48,8 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
   private SerializableTypeDefinition<List<Attestation>> attestationsListTypeDef;
 
   @BeforeEach
-  void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    spec = specContext.getSpec();
-    specMilestone = specContext.getSpecMilestone();
+  void setup() {
     startRestAPIAtGenesis(specMilestone);
-    dataStructureUtil = specContext.getDataStructureUtil();
     attestationsListTypeDef =
         SerializableTypeDefinition.listOf(
             spec.getGenesisSchemaDefinitions()
@@ -65,11 +60,11 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
   @TestTemplate
   void shouldPostAttestations_NoErrors() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
-
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
         post(
@@ -88,15 +83,16 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
         new SubmitDataError(UInt64.ZERO, "Bad attestation");
     final SubmitDataError secondSubmitDataError =
         new SubmitDataError(UInt64.ONE, "Very bad attestation");
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(
-            SafeFuture.completedFuture(List.of(firstSubmitDataError, secondSubmitDataError)));
 
     final List<Attestation> attestations =
         List.of(
             dataStructureUtil.randomAttestation(),
             dataStructureUtil.randomAttestation(),
             dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(
+            SafeFuture.completedFuture(List.of(firstSubmitDataError, secondSubmitDataError)));
 
     final Response response =
         post(
@@ -123,11 +119,11 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
   @TestTemplate
   void shouldFailWhenMissingConsensusHeader() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
-
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
         post(PostAttestationsV2.ROUTE, JsonUtil.serialize(attestations, attestationsListTypeDef));
@@ -141,11 +137,11 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
   @TestTemplate
   void shouldFailWhenBadConsensusHeaderValue() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
-
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final String badConsensusHeaderValue = "NonExistingMileStone";
     final Response response =
         post(
