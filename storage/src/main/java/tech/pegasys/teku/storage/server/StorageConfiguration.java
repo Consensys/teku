@@ -279,6 +279,11 @@ public class StorageConfiguration {
         throw new InvalidConfigurationException(
             "Invalid number of slots to retain finalized states for");
       }
+      if (dataStorageFrequency == 1 && retainedSlots > 0) {
+        // If we are in tree mode, we don't want to allow the state pruner to run
+        throw new InvalidConfigurationException(
+            "State pruner cannot be enabled using tree mode storage");
+      }
       this.retainedSlots = retainedSlots;
       return this;
     }

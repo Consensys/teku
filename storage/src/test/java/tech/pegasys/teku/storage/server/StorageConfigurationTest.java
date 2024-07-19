@@ -147,4 +147,16 @@ public class StorageConfigurationTest {
     // An empty storage mode path is invalid
     Files.createFile(dir.resolve(STORAGE_MODE_PATH));
   }
+
+  @Test
+  public void shouldFailIfUserEnableStatePrunerUsingTreeMode() {
+    assertThatThrownBy(
+            () ->
+                StorageConfiguration.builder()
+                    .dataStorageMode(ARCHIVE)
+                    .retainedSlots(2048)
+                    .dataStorageFrequency(1))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("State pruner cannot be enabled using tree mode storage");
+  }
 }
