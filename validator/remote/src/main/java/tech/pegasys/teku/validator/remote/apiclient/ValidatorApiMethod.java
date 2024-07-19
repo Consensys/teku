@@ -32,6 +32,7 @@ public enum ValidatorApiMethod {
   SEND_SIGNED_BLINDED_BLOCK_V2("eth/v2/beacon/blinded_blocks"),
   GET_ATTESTATION_DATA("eth/v1/validator/attestation_data"),
   SEND_SIGNED_ATTESTATION("eth/v1/beacon/pool/attestations"),
+  SEND_SIGNED_ATTESTATION_V2("eth/v2/beacon/pool/attestations"),
   SEND_SIGNED_VOLUNTARY_EXIT("eth/v1/beacon/pool/voluntary_exits"),
   SEND_SYNC_COMMITTEE_MESSAGES("eth/v1/beacon/pool/sync_committees"),
   GET_AGGREGATE("eth/v1/validator/aggregate_attestation"),
