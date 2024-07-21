@@ -65,6 +65,10 @@ class RemoteSpecLoader {
     return createApiClients(List.of(endpoint)).get(0);
   }
 
+  static OkHttpValidatorMinimalTypeDefClient createTypeDefClient(final URI endpoint) {
+    return createTypeDefClients(List.of(endpoint)).get(0);
+  }
+
   private static Spec getSpecWithFailovers(
       final List<OkHttpValidatorMinimalTypeDefClient> apiClients) {
     for (final OkHttpValidatorMinimalTypeDefClient apiClient : apiClients) {
