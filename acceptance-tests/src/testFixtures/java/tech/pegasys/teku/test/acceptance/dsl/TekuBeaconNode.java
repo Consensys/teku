@@ -72,7 +72,6 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -86,6 +85,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -467,22 +467,23 @@ public class TekuBeaconNode extends TekuNode {
         () -> {
           final Optional<SignedBlock> block = fetchHeadBlock();
           assertThat(block).isPresent();
-          assertThat(block.get()).isInstanceOf(SignedBeaconBlockBellatrix.class);
-
-          final SignedBeaconBlockBellatrix bellatrixBlock =
-              (SignedBeaconBlockBellatrix) block.get();
-          final ExecutionPayload executionPayload =
-              bellatrixBlock
-                  .getMessage()
-                  .getBody()
-                  .executionPayload
-                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot);
-          assertThat(executionPayload.isDefault()).describedAs("Is default payload").isFalse();
-          LOG.debug(
-              "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
+          checkExecutionPayloadInBlock(block.get());
         },
         5,
         MINUTES);
+  }
+
+  private void checkExecutionPayloadInBlock(final SignedBlock signedBlock) {
+    assertThat(SignedBeaconBlock.class.isAssignableFrom(signedBlock.getClass())).isTrue();
+    final BeaconBlock beaconBlock =
+        ((SignedBeaconBlock) signedBlock).asInternalSignedBeaconBlock(spec).getMessage();
+    final UInt64 slot = beaconBlock.getSlot();
+    final Optional<ExecutionPayload> maybeExecutionPayload =
+        beaconBlock.getBody().getOptionalExecutionPayload();
+
+    assertThat(maybeExecutionPayload).isPresent();
+    assertThat(maybeExecutionPayload.get().isDefault()).describedAs("Is default payload").isFalse();
+    LOG.debug("Non default execution payload found at slot " + slot);
   }
 
   public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBlock> assertions) {
