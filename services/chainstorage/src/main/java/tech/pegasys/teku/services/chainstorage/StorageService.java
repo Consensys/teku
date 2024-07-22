@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -120,7 +121,8 @@ public class StorageService extends Service implements StorageServiceFacade {
               if (config.getDataStorageMode().storesFinalizedStates()
                   && config.getRetainedSlots() > 0) {
                 if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE) {
-                  LOG.warn("State pruning is not supported with leveldb_tree database.");
+                  throw new InvalidConfigurationException(
+                      "State pruning is not supported with leveldb_tree database.");
                 } else {
                   LOG.info(
                       "State pruner will run every: {} minute(s), retaining states for the last {} finalized slots. Limited to {} state prune per execution. ",
