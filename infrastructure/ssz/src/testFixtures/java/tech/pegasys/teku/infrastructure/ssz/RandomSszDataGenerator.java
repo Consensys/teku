@@ -74,7 +74,7 @@ public class RandomSszDataGenerator {
     return randomDataStream(schema).findFirst().orElseThrow();
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "PatternMatchingInstanceof"})
   public <T extends SszData> Stream<T> randomDataStream(final SszSchema<T> schema) {
     if (schema instanceof AbstractSszPrimitiveSchema) {
       if (schema.equals(SszPrimitiveSchemas.NONE_SCHEMA)) {
