@@ -69,7 +69,7 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
       case "VarTestStruct" -> new VarTestStructSchema();
       case "FixedTestStruct" -> new FixedTestStructSchema();
       case "ComplexTestStruct" -> // Not implemented yet
-          new ComplexTestStructSchema();
+      new ComplexTestStructSchema();
       default -> throw new UnsupportedOperationException("Unsupported container type: " + type);
     };
   }
