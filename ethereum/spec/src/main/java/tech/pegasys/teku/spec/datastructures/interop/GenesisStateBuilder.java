@@ -146,19 +146,19 @@ public class GenesisStateBuilder {
         .getExecutionPayloadHeaderSchema()
         .createExecutionPayloadHeader(
             b -> {
-              b.blockHash(Bytes32.random());
+              b.blockHash(generateMockGenesisBlockHash());
               b.parentHash(Bytes32.ZERO);
               b.feeRecipient(Bytes20.ZERO);
               b.stateRoot(Bytes32.ZERO);
               b.receiptsRoot(Bytes32.ZERO);
-              b.logsBloom(Bytes.random(256));
-              b.prevRandao(Bytes32.random());
+              b.logsBloom(Bytes.repeat((byte) 0x00, 256));
+              b.prevRandao(Bytes32.ZERO);
               b.blockNumber(UInt64.ZERO);
-              b.gasLimit(UInt64.ONE);
+              b.gasLimit(UInt64.ZERO);
               b.gasUsed(UInt64.ZERO);
               b.timestamp(UInt64.ZERO);
-              b.extraData(Bytes.random(20));
-              b.baseFeePerGas(UInt256.ONE);
+              b.extraData(Bytes.repeat((byte) 0x00, 20));
+              b.baseFeePerGas(UInt256.ZERO);
               b.transactionsRoot(Bytes32.ZERO);
               // Capella
               b.withdrawalsRoot(() -> Bytes32.ZERO);
