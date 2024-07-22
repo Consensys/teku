@@ -91,6 +91,13 @@ commands:
           command: |
             sudo apt update
             sudo apt install -y openjdk-21-jdk
+            if [ "$(uname -m)" = "aarch64" ]; then
+              sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-arm64/bin/java
+              sudo update-alternatives --set javac /usr/lib/jvm/java-21-openjdk-arm64/bin/javac
+            else
+              sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+              sudo update-alternatives --set javac /usr/lib/jvm/java-21-openjdk-amd64/bin/javac
+            fi
   prepare:
     description: "Prepare"
     steps:
