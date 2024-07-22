@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_GATEW
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_GATEWAY_TIMEOUT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -53,11 +54,17 @@ public class ResponseHandler<TObject> {
     withHandler(SC_ACCEPTED, this::noValueHandler);
     withHandler(SC_NO_CONTENT, this::noValueHandler);
     withHandler(SC_BAD_REQUEST, this::defaultBadRequestHandler);
+    withHandler(SC_NOT_FOUND, this::notFoundHandler);
     withHandler(SC_TOO_MANY_REQUESTS, this::defaultTooManyRequestsHandler);
     withHandler(SC_INTERNAL_SERVER_ERROR, this::serviceErrorHandler);
     withHandler(SC_BAD_GATEWAY, this::serviceErrorHandler);
     withHandler(SC_SERVICE_UNAVAILABLE, this::serviceErrorHandler);
     withHandler(SC_GATEWAY_TIMEOUT, this::serviceErrorHandler);
+  }
+
+  private Optional<TObject> notFoundHandler(final Request request, final Response response) {
+    LOG.debug("Request to {} responded with status code {}", request.url(), response.code());
+    return Optional.empty();
   }
 
   public ResponseHandler(final DeserializableTypeDefinition<TObject> typeDefinition) {

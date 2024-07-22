@@ -17,11 +17,14 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSpecRequest;
 
 public class OkHttpValidatorMinimalTypeDefClient {
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
+  private final GetGenesisRequest getGenesisRequest;
 
   private final GetSpecRequest getSpecRequest;
 
@@ -30,6 +33,8 @@ public class OkHttpValidatorMinimalTypeDefClient {
     this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
     this.getSpecRequest = new GetSpecRequest(baseEndpoint, okHttpClient);
+
+    this.getGenesisRequest = new GetGenesisRequest(baseEndpoint, okHttpClient);
   }
 
   public Optional<Map<String, String>> getSpec() {
@@ -42,5 +47,13 @@ public class OkHttpValidatorMinimalTypeDefClient {
 
   public HttpUrl getBaseEndpoint() {
     return baseEndpoint;
+  }
+
+  public Optional<GenesisData> getGenesis() {
+    return getGenesisRequest
+        .getGenesisData()
+        .map(
+            response ->
+                new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 }
