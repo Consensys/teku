@@ -83,6 +83,14 @@ executors:
           <<: *docker-auth
 
 commands:
+  install_java_21:
+    description: "Install Java 21"
+    steps:
+      - run:
+          name: "Install Java 21"
+          command: |
+            sudo apt update
+            sudo apt install -y openjdk-21-jdk
   prepare:
     description: "Prepare"
     steps:
@@ -331,6 +339,7 @@ jobs:
     parallelism: 5
     executor: machine_executor_amd64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
@@ -449,6 +458,7 @@ jobs:
   publishDockerArm64:
     executor: machine_executor_arm64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
