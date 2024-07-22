@@ -59,6 +59,8 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -102,6 +104,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   private TekuConfiguration config;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private Spec spec;
+  private final TimeProvider timeProvider = new SystemTimeProvider();
 
   static final String WITHDRAWALS_PERMANENT_MESASGE =
       "These validators won't be able to be re-activated once this operation is complete.";
@@ -356,9 +359,16 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   }
 
   private Optional<UInt64> getEpoch() {
-    return apiClient
-        .getBlockHeader("head")
-        .map(response -> spec.computeEpochAtSlot(response.data.header.message.slot));
+    return typeDefClient
+        .getGenesis()
+        .map(
+            genesisResponse -> {
+              final UInt64 genesisTime = genesisResponse.getGenesisTime();
+              final UInt64 currentTime = timeProvider.getTimeInSeconds();
+              final UInt64 slot =
+                  spec.getGenesisSpec().miscHelpers().computeSlotAtTime(genesisTime, currentTime);
+              return spec.computeEpochAtSlot(slot);
+            });
   }
 
   private Optional<Bytes32> getGenesisRoot() {

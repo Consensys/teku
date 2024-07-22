@@ -110,7 +110,6 @@ public class VoluntaryExitCommandTest {
   @BeforeEach
   public void setup(final ClientAndServer server) throws IOException {
     this.mockBeaconServer = server;
-    configureSuccessfulHeadResponse(mockBeaconServer);
     configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulValidatorResponses(mockBeaconServer);
     originalSystemIn = System.in;
@@ -365,15 +364,15 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  void shouldExitFailureFutureEpoch() throws JsonProcessingException {
+  void shouldExitFailureFutureEpoch() throws IOException {
     configureSuccessfulSpecResponse(mockBeaconServer);
 
-    final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
+    final List<String> args = getCommandArguments(false, true, List.of("--epoch=1217550"));
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(1);
     assertThat(stdErr.toString(UTF_8))
-        .contains("The specified epoch 1024 is greater than current epoch");
+        .contains("The specified epoch 1217550 is greater than current epoch");
   }
 
   @Test
@@ -462,17 +461,6 @@ public class VoluntaryExitCommandTest {
     mockBeaconServer
         .when(request().withPath("/eth/v1/config/spec"))
         .respond(response().withStatusCode(200).withBody(getTestSpecJsonString(spec)));
-  }
-
-  private void configureSuccessfulHeadResponse(final ClientAndServer mockBeaconServer)
-      throws IOException {
-    final String testHead =
-        Resources.toString(
-            Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/head.json"),
-            UTF_8);
-    mockBeaconServer
-        .when(request().withPath("/eth/v1/beacon/headers/head"))
-        .respond(response().withStatusCode(200).withBody(testHead));
   }
 
   private void configureSuccessfulGenesisResponse(final ClientAndServer mockBeaconServer)
