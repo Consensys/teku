@@ -358,21 +358,12 @@ public class VoluntaryExitCommand implements Callable<Integer> {
         });
   }
 
-  private Optional<UInt64> getEpoch() {
-    return typeDefClient
-        .getGenesis()
-        .map(
-            genesisResponse -> {
-              final UInt64 genesisTime = genesisResponse.getGenesisTime();
-              final UInt64 currentTime = timeProvider.getTimeInSeconds();
-              final UInt64 slot =
-                  spec.getGenesisSpec().miscHelpers().computeSlotAtTime(genesisTime, currentTime);
-              return spec.computeEpochAtSlot(slot);
-            });
-  }
-
-  private Optional<Bytes32> getGenesisRoot() {
-    return typeDefClient.getGenesis().map(GenesisData::getGenesisValidatorsRoot);
+  private UInt64 getEpochFromGenesisData(final GenesisData genesisData) {
+    final UInt64 genesisTime = genesisData.getGenesisTime();
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    final UInt64 slot =
+        spec.getGenesisSpec().miscHelpers().computeSlotAtTime(genesisTime, currentTime);
+    return spec.computeEpochAtSlot(slot);
   }
 
   private void initialise() {
@@ -410,11 +401,12 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       spec = SpecFactory.create(network);
     }
 
-    validateOrDefaultEpoch();
+    final Optional<GenesisData> maybeGenesisData = typeDefClient.getGenesis();
+    validateOrDefaultEpoch(maybeGenesisData);
     fork = spec.getForkSchedule().getFork(epoch);
 
     // get genesis time
-    final Optional<Bytes32> maybeRoot = getGenesisRoot();
+    final Optional<Bytes32> maybeRoot = maybeGenesisData.map(GenesisData::getGenesisValidatorsRoot);
     if (maybeRoot.isEmpty()) {
       throw new InvalidConfigurationException(
           "Unable to fetch genesis data, cannot generate an exit.");
@@ -472,8 +464,8 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     }
   }
 
-  private void validateOrDefaultEpoch() {
-    final Optional<UInt64> maybeEpoch = getEpoch();
+  private void validateOrDefaultEpoch(final Optional<GenesisData> maybeGenesisData) {
+    final Optional<UInt64> maybeEpoch = maybeGenesisData.map(this::getEpochFromGenesisData);
 
     if (epoch == null) {
       if (maybeEpoch.isEmpty()) {
@@ -481,9 +473,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             "Could not calculate epoch from latest block header, please specify --epoch");
       }
       epoch = maybeEpoch.orElseThrow();
-    } else if (maybeEpoch.isPresent()
-        && epoch.isGreaterThan(maybeEpoch.get())
-        && voluntaryExitsFolder == null) {
+    } else if (maybeEpoch.isPresent() && epoch.isGreaterThan(maybeEpoch.get())) {
       throw new InvalidConfigurationException(
           String.format(
               "The specified epoch %s is greater than current epoch %s, cannot continue.",

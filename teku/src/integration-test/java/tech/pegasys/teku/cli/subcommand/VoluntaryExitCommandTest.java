@@ -57,9 +57,13 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -367,12 +371,12 @@ public class VoluntaryExitCommandTest {
   void shouldExitFailureFutureEpoch() throws IOException {
     configureSuccessfulSpecResponse(mockBeaconServer);
 
-    final List<String> args = getCommandArguments(false, true, List.of("--epoch=1217550"));
+    final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(1);
     assertThat(stdErr.toString(UTF_8))
-        .contains("The specified epoch 1217550 is greater than current epoch");
+        .contains("The specified epoch 1024 is greater than current epoch");
   }
 
   @Test
@@ -463,12 +467,21 @@ public class VoluntaryExitCommandTest {
         .respond(response().withStatusCode(200).withBody(getTestSpecJsonString(spec)));
   }
 
-  private void configureSuccessfulGenesisResponse(final ClientAndServer mockBeaconServer)
-      throws IOException {
+  private void configureSuccessfulGenesisResponse(final ClientAndServer mockBeaconServer) {
+    final TimeProvider timeProvider = new SystemTimeProvider();
+    final SpecConfig config = spec.getGenesisSpec().getConfig();
+    final UInt64 genesisTime =
+        timeProvider
+            .getTimeInSeconds()
+            .minus(1020L * config.getSecondsPerSlot() * config.getSlotsPerEpoch());
+
     final String testHead =
-        Resources.toString(
-            Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/genesis.json"),
-            UTF_8);
+        String.format(
+            "{ \"data\": {\"genesis_time\": \"%s\","
+                + "\"genesis_validators_root\": \"0xf03f804ff1c97ada13050eb617e66e88e1199c2ce1be0b6b27e36fafb8d3ee48\","
+                + "\"genesis_fork_version\": \"0x00004105\"}}",
+            genesisTime);
+
     mockBeaconServer
         .when(request().withPath("/eth/v1/beacon/genesis"))
         .respond(response().withStatusCode(200).withBody(testHead));
