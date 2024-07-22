@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.reference.phase0.ssz_generic;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
@@ -70,7 +69,7 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
       case "VarTestStruct" -> new VarTestStructSchema();
       case "FixedTestStruct" -> new FixedTestStructSchema();
       case "ComplexTestStruct" -> // Not implemented yet
-      new ComplexTestStructSchema();
+          new ComplexTestStructSchema();
       default -> throw new UnsupportedOperationException("Unsupported container type: " + type);
     };
   }
@@ -100,9 +99,8 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
       return ((SszByteList) value).sszSerialize().toHexString();
     } else if (value instanceof SszBitvector) {
       return ((SszBitvector) value).sszSerialize().toHexString();
-    } else if (value instanceof SszCollection<?>) {
-      final SszCollection<?> list = (SszCollection<?>) value;
-      return list.stream().map(this::format).collect(toList()).toString();
+    } else if (value instanceof final SszCollection<?> list) {
+      return list.stream().map(this::format).toList().toString();
     } else if (value instanceof SszContainer) {
       return formatSszContainer((SszContainer) value).toString();
     } else {
