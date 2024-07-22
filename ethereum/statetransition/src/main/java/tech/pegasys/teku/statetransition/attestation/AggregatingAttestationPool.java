@@ -269,15 +269,20 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
+
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
-    // TODO fix for electra (only used in Beacon API)
     final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
         (group) ->
             maybeCommitteeIndex
                 .map(index -> group.getAttestationData().getIndex().equals(index))
                 .orElse(true);
+    final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
+    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+
+    final boolean requestRequiresAttestationWithCommitteeBits =
+        schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     return dataHashBySlot.descendingMap().entrySet().stream()
         .filter(filterForSlot)
@@ -288,6 +293,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(filterForCommitteeIndex)
         .flatMap(MatchingDataAttestationGroup::stream)
         .map(ValidatableAttestation::getAttestation)
+        .filter(
+            attestation ->
+                attestation.requiresCommitteeBits() == requestRequiresAttestationWithCommitteeBits)
         .toList();
   }
 

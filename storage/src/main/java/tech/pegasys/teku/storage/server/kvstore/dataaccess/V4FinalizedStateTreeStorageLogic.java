@@ -160,7 +160,7 @@ public class V4FinalizedStateTreeStorageLogic
         final KvStoreTransaction transaction,
         final SchemaCombinedTreeState schema,
         final UInt64 slot) {
-      transaction.delete(schema.getColumnFinalizedStateRootsBySlot(), slot);
+      throw new RuntimeException("Tree mode does not support deleting finalized states");
     }
 
     @Override

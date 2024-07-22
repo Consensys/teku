@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.attestation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -64,7 +66,6 @@ class AggregatingAttestationPoolTest {
   private Spec spec;
   private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
-  private AttestationSchema<?> attestationSchema;
   private Optional<UInt64> committeeIndex;
   private final Spec mockSpec = mock(Spec.class);
   private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
@@ -84,7 +85,6 @@ class AggregatingAttestationPoolTest {
   public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
-    attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
     dataStructureUtil = specContext.getDataStructureUtil();
 
     committeeSizes = new Int2IntOpenHashMap();
@@ -115,6 +115,7 @@ class AggregatingAttestationPoolTest {
     when(mockSpec.getCurrentEpoch(any(BeaconState.class)))
         .thenAnswer(i -> spec.getCurrentEpoch(i.<BeaconState>getArgument(0)));
     when(mockSpec.atSlot(any())).thenAnswer(invocation -> spec.atSlot(invocation.getArgument(0)));
+    when(mockSpec.getGenesisSchemaDefinitions()).thenReturn(spec.getGenesisSchemaDefinitions());
   }
 
   @TestTemplate
@@ -471,18 +472,57 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getAttestations_shouldReturnAllAttestations() {
-    // TODO EIP7549 Handle Electra attestations
-    assumeThat(specMilestone).isLessThan(ELECTRA);
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3);
+    final AttestationData firstAttestationData = dataStructureUtil.randomAttestationData();
+    final Attestation firstAttestation =
+        addAttestationFromValidators(firstAttestationData, 1, 2, 3);
+    final AttestationData secondAttestationData = dataStructureUtil.randomAttestationData();
+    final Attestation secondAttestation =
+        addAttestationFromValidators(secondAttestationData, 3, 4, 5);
     assertThat(aggregatingPool.getAttestations(Optional.empty(), Optional.empty()))
-        .containsExactly(attestation);
+        .containsExactlyInAnyOrder(firstAttestation, secondAttestation);
+  }
+
+  @TestTemplate
+  public void
+      getAttestations_shouldReturnElectraAttestationsOnly_whenElectraActivatesAndNoSlotProvided() {
+    // Genesis spec must be before Electra in order to be able to add phase0 attestations
+    assumeThat(specMilestone).isLessThan(ELECTRA);
+    final Spec mockedSpec = mock(Spec.class);
+    final AggregatingAttestationPool aggregatingPool =
+        new AggregatingAttestationPool(
+            mockedSpec,
+            mockRecentChainData,
+            new NoOpMetricsSystem(),
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+    // Adding a phase0 attestation to the aggregation pool
+    final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
+    when(mockedSpec.atSlot(any())).thenReturn(phase0Spec.getGenesisSpec());
+    final DataStructureUtil phase0DataStructureUtil = new DataStructureUtil(phase0Spec);
+    final AttestationData phase0AttestationData =
+        phase0DataStructureUtil.randomAttestationData(SLOT.minus(4));
+    addAttestationFromValidators(aggregatingPool, phase0AttestationData, phase0Spec, 4, 5);
+
+    // Adding an Electra attestation to the aggregation pool
+    final Spec electraSpec = TestSpecFactory.createMinimalElectra();
+    // Electra activates from SLOT
+    when(mockedSpec.atSlot(argThat(slot -> slot.isGreaterThanOrEqualTo(SLOT))))
+        .thenReturn(electraSpec.getGenesisSpec());
+    final AttestationData electraAttestationData = dataStructureUtil.randomAttestationData(SLOT);
+    committeeIndex =
+        Optional.of(
+            dataStructureUtil.randomUInt64(
+                electraSpec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
+    final Attestation electraAttestation =
+        addAttestationFromValidators(aggregatingPool, electraAttestationData, electraSpec, 1, 2, 3);
+
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(SLOT));
+    // Should get the Electra attestation only
+    assertThat(aggregatingPool.getAttestations(Optional.empty(), Optional.empty()))
+        .containsExactly(electraAttestation);
   }
 
   @TestTemplate
   public void getAttestations_shouldReturnAttestationsForGivenCommitteeIndexOnly() {
-    // TODO EIP7549 Handle Electra attestations
-    assumeThat(specMilestone).isLessThan(ELECTRA);
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
     final AttestationData attestationData2 =
         new AttestationData(
@@ -560,18 +600,41 @@ class AggregatingAttestationPoolTest {
 
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
-    final Attestation attestation = createAttestation(data, validators);
+    return addAttestationFromValidators(data, spec, validators);
+  }
+
+  private Attestation addAttestationFromValidators(
+      final AttestationData data, final Spec spec, final int... validators) {
+    return addAttestationFromValidators(aggregatingPool, data, spec, validators);
+  }
+
+  private Attestation addAttestationFromValidators(
+      final AggregatingAttestationPool aggregatingAttestationPool,
+      final AttestationData data,
+      final Spec spec,
+      final int... validators) {
+    final Attestation attestation = createAttestation(data, spec, validators);
     ValidatableAttestation validatableAttestation =
         ValidatableAttestation.from(spec, attestation, committeeSizes);
     validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(
         dataStructureUtil.randomBeaconState(100, 15, data.getSlot()));
-    aggregatingPool.add(validatableAttestation);
+    aggregatingAttestationPool.add(validatableAttestation);
     return attestation;
   }
 
   private Attestation createAttestation(final AttestationData data, final int... validators) {
+    return createAttestation(data, spec, validators);
+  }
+
+  private Attestation createAttestation(
+      final AttestationData data, final Spec spec, final int... validators) {
+    final AttestationSchema<?> attestationSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
     final SszBitlist bitlist =
-        attestationSchema.getAggregationBitsSchema().ofBits(COMMITTEE_SIZE, validators);
+        spec.getGenesisSchemaDefinitions()
+            .getAttestationSchema()
+            .getAggregationBitsSchema()
+            .ofBits(COMMITTEE_SIZE, validators);
 
     final Supplier<SszBitvector> committeeBits;
 

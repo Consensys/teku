@@ -70,6 +70,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   private final DiscoverySystem discoverySystem;
   private final KeyValueStore<String, Bytes> kvStore;
+  private final boolean supportsIpv6;
   private final List<NodeRecord> bootnodes;
   private volatile Cancellable bootnodeRefreshTask;
 
@@ -92,7 +93,9 @@ public class DiscV5Service extends Service implements DiscoveryService {
         networkInterfaces.size() == 1 || networkInterfaces.size() == 2,
         "The configured network interfaces must be either 1 or 2");
     if (networkInterfaces.size() == 1) {
-      discoverySystemBuilder.listen(networkInterfaces.get(0), discoConfig.getListenUdpPort());
+      final String listenAddress = networkInterfaces.get(0);
+      discoverySystemBuilder.listen(listenAddress, discoConfig.getListenUdpPort());
+      this.supportsIpv6 = IPVersionResolver.resolve(listenAddress) == IPVersion.IP_V6;
     } else {
       // IPv4 and IPv6 (dual-stack)
       final InetSocketAddress[] listenAddresses =
@@ -108,6 +111,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
                   })
               .toArray(InetSocketAddress[]::new);
       discoverySystemBuilder.listen(listenAddresses);
+      this.supportsIpv6 = true;
     }
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
@@ -228,7 +232,10 @@ public class DiscV5Service extends Service implements DiscoveryService {
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
     return activeNodes()
         .flatMap(
-            node -> nodeRecordConverter.convertToDiscoveryPeer(node, schemaDefinitions).stream());
+            node ->
+                nodeRecordConverter
+                    .convertToDiscoveryPeer(node, supportsIpv6, schemaDefinitions)
+                    .stream());
   }
 
   @Override
@@ -246,7 +253,9 @@ public class DiscV5Service extends Service implements DiscoveryService {
     return foundNodes.stream()
         .flatMap(
             nodeRecord ->
-                nodeRecordConverter.convertToDiscoveryPeer(nodeRecord, schemaDefinitions).stream())
+                nodeRecordConverter
+                    .convertToDiscoveryPeer(nodeRecord, supportsIpv6, schemaDefinitions)
+                    .stream())
         .toList();
   }
 

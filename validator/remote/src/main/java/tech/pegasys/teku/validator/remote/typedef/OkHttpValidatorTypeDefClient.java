@@ -29,12 +29,12 @@ import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionP
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -44,7 +44,6 @@ import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
@@ -55,6 +54,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SendSubscribeToSyncCommitteeSubnetsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SyncCommitteeSelectionsRequest;
 
 public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefClient {
@@ -64,7 +64,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
   private final GetSyncingStatusRequest getSyncingStatusRequest;
-  private final GetGenesisRequest getGenesisRequest;
   private final GetProposerDutiesRequest getProposerDutiesRequest;
   private final GetPeerCountRequest getPeerCountRequest;
   private final GetStateValidatorsRequest getStateValidatorsRequest;
@@ -76,6 +75,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final CreateAttestationDataRequest createAttestationDataRequest;
   private final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest;
   private final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest;
+  private final SendSubscribeToSyncCommitteeSubnetsRequest subscribeToSyncCommitteeSubnetsRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -86,7 +86,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
-    this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
     this.getPeerCountRequest = new GetPeerCountRequest(baseEndpoint, okHttpClient);
     this.getStateValidatorsRequest = new GetStateValidatorsRequest(baseEndpoint, okHttpClient);
@@ -103,18 +102,12 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new BeaconCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
     this.syncCommitteeSelectionsRequest =
         new SyncCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
+    this.subscribeToSyncCommitteeSubnetsRequest =
+        new SendSubscribeToSyncCommitteeSubnetsRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
     return getSyncingStatusRequest.getSyncingStatus();
-  }
-
-  public Optional<GenesisData> getGenesis() {
-    return getGenesisRequest
-        .getGenesisData()
-        .map(
-            response ->
-                new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 
   public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
@@ -210,5 +203,11 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public Optional<List<SyncCommitteeSelectionProof>> getSyncCommitteeSelectionProof(
       final List<SyncCommitteeSelectionProof> validatorsPartialProofs) {
     return syncCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+  }
+
+  public void subscribeToSyncCommitteeSubnets(
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+    LOG.debug("Subscribing to sync committee subnets {}", subscriptions);
+    subscribeToSyncCommitteeSubnetsRequest.subscribeToSyncCommitteeSubnets(subscriptions);
   }
 }

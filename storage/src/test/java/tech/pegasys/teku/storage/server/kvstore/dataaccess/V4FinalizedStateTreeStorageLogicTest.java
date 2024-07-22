@@ -78,43 +78,6 @@ class V4FinalizedStateTreeStorageLogicTest {
     assertStateReloads(state4);
   }
 
-  @Test
-  void shouldStoreAndLoadNonDeletedStates() {
-    final BeaconState state1 = dataStructureUtil.randomBeaconState(UInt64.valueOf(3));
-    final BeaconState state2 = dataStructureUtil.randomBeaconState(UInt64.valueOf(5));
-    final BeaconState state3 = dataStructureUtil.randomBeaconState(UInt64.valueOf(7));
-    final BeaconState state4 = dataStructureUtil.randomBeaconState(UInt64.valueOf(10));
-    try (final KvStoreTransaction transaction = db.startTransaction()) {
-      final FinalizedStateUpdater<SchemaCombinedTreeState> updater = logic.updater();
-      updater.addFinalizedState(db, transaction, schema, state1);
-      updater.addFinalizedState(db, transaction, schema, state2);
-      updater.addFinalizedState(db, transaction, schema, state3);
-      updater.addFinalizedState(db, transaction, schema, state4);
-      transaction.commit();
-    }
-
-    assertStateReloads(state1);
-    assertStateReloads(state2);
-
-    try (final KvStoreTransaction transaction = db.startTransaction()) {
-      final FinalizedStateUpdater<SchemaCombinedTreeState> updater = logic.updater();
-      updater.deleteFinalizedState(transaction, schema, state1.getSlot());
-      updater.deleteFinalizedState(transaction, schema, state2.getSlot());
-      transaction.commit();
-    }
-
-    assertStateIsDeleted(state1.getSlot());
-    assertStateIsDeleted(state2.getSlot());
-    assertStateReloads(state3);
-    assertStateReloads(state4);
-  }
-
-  private void assertStateIsDeleted(final UInt64 slot) {
-    final Optional<BeaconState> loadedState =
-        logic.getLatestAvailableFinalizedState(db, schema, slot);
-    assertThat(loadedState).isEmpty();
-  }
-
   private void assertStateReloads(final BeaconState state) {
     assertStateReloads(state, state.getSlot());
   }
