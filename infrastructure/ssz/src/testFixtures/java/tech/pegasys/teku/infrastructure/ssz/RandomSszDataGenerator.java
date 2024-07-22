@@ -74,7 +74,7 @@ public class RandomSszDataGenerator {
     return randomDataStream(schema).findFirst().orElseThrow();
   }
 
-  @SuppressWarnings({"unchecked", "PatternMatchingInstanceof"})
+  @SuppressWarnings("unchecked")
   public <T extends SszData> Stream<T> randomDataStream(final SszSchema<T> schema) {
     if (schema instanceof AbstractSszPrimitiveSchema) {
       if (schema.equals(SszPrimitiveSchemas.NONE_SCHEMA)) {
@@ -94,9 +94,7 @@ public class RandomSszDataGenerator {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
-    } else if (schema instanceof AbstractSszContainerSchema) {
-      AbstractSszContainerSchema<SszContainer> containerSchema =
-          (AbstractSszContainerSchema<SszContainer>) schema;
+    } else if (schema instanceof AbstractSszContainerSchema<?> containerSchema) {
       return Stream.generate(
           () -> {
             List<SszData> children =
