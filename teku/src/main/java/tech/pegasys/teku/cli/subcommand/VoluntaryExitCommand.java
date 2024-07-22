@@ -473,7 +473,9 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             "Could not calculate epoch from latest block header, please specify --epoch");
       }
       epoch = maybeEpoch.orElseThrow();
-    } else if (maybeEpoch.isPresent() && epoch.isGreaterThan(maybeEpoch.get())) {
+    } else if (maybeEpoch.isPresent()
+        && epoch.isGreaterThan(maybeEpoch.get())
+        && voluntaryExitsFolder == null) {
       throw new InvalidConfigurationException(
           String.format(
               "The specified epoch %s is greater than current epoch %s, cannot continue.",

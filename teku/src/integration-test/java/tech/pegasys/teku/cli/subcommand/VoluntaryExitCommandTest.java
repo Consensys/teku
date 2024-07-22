@@ -380,6 +380,26 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
+  void shouldCreateExitForFutureEpochIfOutputFolderDefined(@TempDir final Path tempDir)
+      throws IOException {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    final List<String> args = new ArrayList<>();
+    args.addAll(commandArgs);
+    args.addAll(
+        List.of(
+            "--epoch",
+            "1024",
+            "--validator-public-keys",
+            validatorPubKey1,
+            "--save-exits-path",
+            tempDir.toAbsolutePath().toString()));
+
+    beaconNodeCommand.parse(args.toArray(new String[0]));
+    final String outString = stdOut.toString(UTF_8);
+    assertThat(StringUtils.countMatches(outString, "Writing signed exit for")).isEqualTo(1);
+  }
+
+  @Test
   void shouldUseCurrentForkDomainForSignatureBeforeDeneb() throws JsonProcessingException {
     setUserInput("yes");
     configureSuccessfulSpecResponse(mockBeaconServer);
