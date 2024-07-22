@@ -36,6 +36,7 @@ import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.CombinedStorageChannelSplitter;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
@@ -117,24 +118,28 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningActiveLabelledGauge));
               }
               if (config.getDataStorageMode().storesFinalizedStates()
-                  && config.getRetainedSlots() > -1) {
-                LOG.info(
-                    "State pruner will run every: {} minute(s), retaining states for the last {} finalized slots. Limited to {} state prune per execution. ",
-                    config.getStatePruningInterval().toMinutes(),
-                    config.getRetainedSlots(),
-                    config.getStatePruningLimit());
-                statePruner =
-                    Optional.of(
-                        new StatePruner(
-                            config.getSpec(),
-                            database,
-                            storagePrunerAsyncRunner,
-                            config.getStatePruningInterval(),
-                            config.getRetainedSlots(),
-                            config.getStatePruningLimit(),
-                            "state",
-                            pruningTimingsLabelledGauge,
-                            pruningActiveLabelledGauge));
+                  && config.getRetainedSlots() > 0) {
+                if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE) {
+                  LOG.warn("State pruning is not supported with leveldb_tree database.");
+                } else {
+                  LOG.info(
+                      "State pruner will run every: {} minute(s), retaining states for the last {} finalized slots. Limited to {} state prune per execution. ",
+                      config.getStatePruningInterval().toMinutes(),
+                      config.getRetainedSlots(),
+                      config.getStatePruningLimit());
+                  statePruner =
+                      Optional.of(
+                          new StatePruner(
+                              config.getSpec(),
+                              database,
+                              storagePrunerAsyncRunner,
+                              config.getStatePruningInterval(),
+                              config.getRetainedSlots(),
+                              config.getStatePruningLimit(),
+                              "state",
+                              pruningTimingsLabelledGauge,
+                              pruningActiveLabelledGauge));
+                }
               }
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
