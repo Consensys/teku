@@ -15,7 +15,6 @@ package tech.pegasys.teku.api;
 
 import static tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache.TRACKED_EPOCHS;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +49,7 @@ import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class NodeDataProvider {
@@ -66,6 +66,7 @@ public class NodeDataProvider {
   private final boolean isLivenessTrackingEnabled;
   private final ProposersDataManager proposersDataManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
+  private final RecentChainData recentChainData;
   private final Spec spec;
 
   public NodeDataProvider(
@@ -81,6 +82,7 @@ public class NodeDataProvider {
       final ActiveValidatorChannel activeValidatorChannel,
       final ProposersDataManager proposersDataManager,
       final ForkChoiceNotifier forkChoiceNotifier,
+      final RecentChainData recentChainData,
       final Spec spec) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -94,6 +96,7 @@ public class NodeDataProvider {
     this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
     this.proposersDataManager = proposersDataManager;
     this.forkChoiceNotifier = forkChoiceNotifier;
+    this.recentChainData = recentChainData;
     this.spec = spec;
   }
 
@@ -110,12 +113,18 @@ public class NodeDataProvider {
 
   private ObjectAndMetaData<List<Attestation>> lookupMetaData(
       final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
-    Preconditions.checkArgument(
-        !attestations.isEmpty() || maybeSlot.isPresent(),
-        "Unable to determine spec version. No slot parameter provided and no attestations found");
-    final UInt64 slot = maybeSlot.orElse(attestations.get(0).getData().getSlot());
+    final UInt64 slot = getSlot(attestations, maybeSlot);
     return new ObjectAndMetaData<>(
         attestations, spec.atSlot(slot).getMilestone(), false, false, false);
+  }
+
+  private UInt64 getSlot(final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
+    return maybeSlot.orElseGet(
+        () ->
+            attestations.stream()
+                .findFirst()
+                .map(attestation -> attestation.getData().getSlot())
+                .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO)));
   }
 
   public List<AttesterSlashing> getAttesterSlashings() {

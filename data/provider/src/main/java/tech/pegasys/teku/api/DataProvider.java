@@ -234,6 +234,7 @@ public class DataProvider {
               activeValidatorChannel,
               proposersDataManager,
               forkChoiceNotifier,
+              recentChainData,
               spec);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);
