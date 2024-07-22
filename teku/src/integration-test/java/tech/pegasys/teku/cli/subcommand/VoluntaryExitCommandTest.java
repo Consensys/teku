@@ -114,7 +114,6 @@ public class VoluntaryExitCommandTest {
   @BeforeEach
   public void setup(final ClientAndServer server) throws IOException {
     this.mockBeaconServer = server;
-    configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulValidatorResponses(mockBeaconServer);
     originalSystemIn = System.in;
     originalSystemOut = System.out;
@@ -151,6 +150,7 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldExitAllLoadedValidators() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
     final List<String> args = getCommandArguments(true, false, List.of());
@@ -165,6 +165,7 @@ public class VoluntaryExitCommandTest {
   public void shouldExitLoadedValidatorsUsingConfirmationMessage() throws JsonProcessingException {
     setUserInput("yes");
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
     final List<String> args = getCommandArguments(true, true, List.of());
@@ -178,6 +179,7 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldExitValidatorWithPubKeyFromKeyManagerOnly() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
     final List<String> args =
@@ -196,6 +198,7 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldAcceptNetworkOnCommandLine() {
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
 
     // No beacon-api offered by spec, so would need to be loaded from local network option
     final List<String> args =
@@ -213,6 +216,7 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldReturnRejectedReasonWhenExitIsRejectedByBeaconNode() throws IOException {
     configureRejectedVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
 
     final List<String> args =
         getCommandArguments(
@@ -242,6 +246,7 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldExitValidatorWithPubKeyFromPathOnly() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
     final List<String> args =
@@ -260,6 +265,7 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldSkipKeyManagerKeys() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
     final List<String> args =
@@ -278,6 +284,7 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldNotWarn_NotWithdrawableIfCapellaEnabled() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse(mockBeaconServer);
 
     final List<String> args = getCommandArguments(false, true, List.of());
     setUserInput("no");
@@ -293,6 +300,7 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldGenerateExitWithoutSendingToNode(@TempDir final Path tempDir) throws IOException {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse(mockBeaconServer);
     final Path outputFolder = tempDir.resolve("out");
     final List<String> args = new ArrayList<>();
     args.addAll(commandArgs);
@@ -320,6 +328,8 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldFailIfSaveFolderCannotBeCreated(@TempDir final Path tempDir) throws IOException {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse(mockBeaconServer);
+
     final Path invalidOutputDestination = tempDir.resolve("testFile");
     Files.writeString(invalidOutputDestination, "test");
     final List<String> args = new ArrayList<>();
@@ -340,6 +350,8 @@ public class VoluntaryExitCommandTest {
   @DisabledOnOs(OS.WINDOWS) // can't set permissions on windows
   void shouldFailIfSaveFolderHasInsufficientAccess(@TempDir final Path tempDir) throws IOException {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse(mockBeaconServer);
+
     final Path invalidOutputDestination = tempDir.resolve("testFile");
     tempDir.toFile().mkdir();
     tempDir.toFile().setWritable(false);
@@ -357,8 +369,28 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
+  void shouldFailIfGenesisDataNotAvailableAndNoEpochSpecified() throws JsonProcessingException {
+    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    final List<String> args =
+        getCommandArguments(false, true, List.of("--validator-public-keys", validatorPubKey1));
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8)).contains("Could not calculate epoch from genesis data");
+  }
+
+  @Test
+  void shouldFailToGenerateExitWithoutBeaconNodeAvailable() {
+    final List<String> args =
+        List.of("voluntary-exit", "--validator-public-keys", validatorPubKey1);
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8)).contains("Failed to connect to beacon node.");
+  }
+
+  @Test
   void shouldExitFailureWithNoValidatorKeysFound() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
 
     final List<String> args = commandArgs.subList(0, 5);
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
@@ -370,6 +402,7 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldExitFailureFutureEpoch() throws IOException {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
 
     final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
@@ -383,6 +416,7 @@ public class VoluntaryExitCommandTest {
   void shouldCreateExitForFutureEpochIfOutputFolderDefined(@TempDir final Path tempDir)
       throws IOException {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse(mockBeaconServer);
     final List<String> args = new ArrayList<>();
     args.addAll(commandArgs);
     args.addAll(
@@ -403,6 +437,8 @@ public class VoluntaryExitCommandTest {
   void shouldUseCurrentForkDomainForSignatureBeforeDeneb() throws JsonProcessingException {
     setUserInput("yes");
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
+
     final Supplier<List<SignedVoluntaryExit>> exitsCapture =
         configureSuccessfulVoluntaryExitResponseWithCapture(mockBeaconServer);
 
@@ -427,6 +463,8 @@ public class VoluntaryExitCommandTest {
   void shouldUseCapellaForkDomainForSignatureAfterCapella() throws JsonProcessingException {
     setUserInput("yes");
     configureSuccessfulDenebSpecResponse(mockBeaconServer);
+    configureSuccessfulGenesisResponse(mockBeaconServer);
+
     final Supplier<List<SignedVoluntaryExit>> exitsCapture =
         configureSuccessfulVoluntaryExitResponseWithCapture(mockBeaconServer);
 

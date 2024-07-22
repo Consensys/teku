@@ -470,7 +470,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     if (epoch == null) {
       if (maybeEpoch.isEmpty()) {
         throw new InvalidConfigurationException(
-            "Could not calculate epoch from latest block header, please specify --epoch");
+            "Could not calculate epoch from genesis data, please specify --epoch");
       }
       epoch = maybeEpoch.orElseThrow();
     } else if (maybeEpoch.isPresent()
