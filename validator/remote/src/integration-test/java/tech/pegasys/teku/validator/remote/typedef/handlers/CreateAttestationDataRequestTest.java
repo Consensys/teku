@@ -17,7 +17,7 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -46,7 +46,7 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_MakesExpectedRequest() throws Exception {
+  public void createAttestationData_makesExpectedRequest() throws Exception {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
@@ -65,7 +65,7 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_WhenBadRequest_ThrowsIllegalArgumentException() {
+  public void createAttestationData_whenBadRequest_throwsIllegalArgumentException() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
@@ -76,12 +76,12 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_WhenNotFound_ThrowsError() {
+  public void createAttestationData_whenInvalidResponse_throwsError() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
-    // An attestation could not be created for the specified slot
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    // An unexpected response is returned, such as 403-forbidden
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_FORBIDDEN));
 
     assertThatThrownBy(() -> request.createAttestationData(slot, committeeIndex))
         .isInstanceOf(RuntimeException.class)
@@ -89,7 +89,7 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_WhenSuccessWithNonData_ReturnsAttestationData()
+  public void createAttestationData_whenSuccessWithNonData_returnsAttestationData()
       throws Exception {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;

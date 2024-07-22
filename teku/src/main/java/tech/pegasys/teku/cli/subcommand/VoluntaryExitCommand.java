@@ -64,6 +64,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -75,6 +76,7 @@ import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 @CommandLine.Command(
     name = "voluntary-exit",
@@ -92,6 +94,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
   private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
+  private OkHttpValidatorMinimalTypeDefClient typeDefClient;
   private OkHttpValidatorRestApiClient apiClient;
   private Fork fork;
   private Bytes32 genesisRoot;
@@ -359,7 +362,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   }
 
   private Optional<Bytes32> getGenesisRoot() {
-    return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
+    return typeDefClient.getGenesis().map(GenesisData::getGenesisValidatorsRoot);
   }
 
   private void initialise() {
@@ -380,9 +383,18 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
+    typeDefClient =
+        config
+            .validatorClient()
+            .getValidatorConfig()
+            .getPrimaryBeaconNodeApiEndpoint()
+            .map(RemoteSpecLoader::createTypeDefClient)
+            .orElseThrow();
+
     if (network == null) {
-      SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
-      spec = getSpec(List.of(apiClient.getBaseEndpoint()));
+      SUB_COMMAND_LOG.display(
+          " - Loading network settings from " + typeDefClient.getBaseEndpoint());
+      spec = getSpec(typeDefClient);
     } else {
       SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
       spec = SpecFactory.create(network);
