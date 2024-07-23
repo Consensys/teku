@@ -73,13 +73,22 @@ public class NodeManager {
       final List<BLSKeyPair> validatorKeys,
       final Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
+    chainUtil.initializeStorage();
+    return create(spec, networkFactory, configureNetwork, storageClient, chainUtil);
+  }
+
+  public static NodeManager create(
+      final Spec spec,
+      final Eth2P2PNetworkFactory networkFactory,
+      final Consumer<Eth2P2PNetworkBuilder> configureNetwork,
+      final RecentChainData storageClient,
+      final BeaconChainUtil chainUtil)
+      throws Exception {
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(
             ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
-    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
-
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
-    chainUtil.initializeStorage();
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
