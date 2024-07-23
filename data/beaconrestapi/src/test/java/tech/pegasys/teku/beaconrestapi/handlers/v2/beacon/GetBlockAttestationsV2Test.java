@@ -94,7 +94,7 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(phase0responseData.getData().size()).isGreaterThan(0);
     assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-            .isEqualTo(Version.fromMilestone(phase0responseData.getMilestone()).name());
+        .isEqualTo(Version.fromMilestone(phase0responseData.getMilestone()).name());
   }
 
   @Test
@@ -110,7 +110,7 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(electraResponseData.getData().size()).isGreaterThan(0);
     assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-            .isEqualTo(Version.fromMilestone(electraResponseData.getMilestone()).name());
+        .isEqualTo(Version.fromMilestone(electraResponseData.getMilestone()).name());
   }
 
   @Test
