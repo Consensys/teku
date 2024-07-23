@@ -233,7 +233,9 @@ public class DataProvider {
               isLivenessTrackingEnabled,
               activeValidatorChannel,
               proposersDataManager,
-              forkChoiceNotifier);
+              forkChoiceNotifier,
+              recentChainData,
+              spec);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);
       final SyncDataProvider syncDataProvider =

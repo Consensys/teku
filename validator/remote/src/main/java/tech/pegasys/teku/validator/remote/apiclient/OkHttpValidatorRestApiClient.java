@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.remote.apiclient;
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
@@ -52,7 +51,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
@@ -94,15 +92,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public Optional<GetGenesisResponse> getGenesis() {
     return get(GET_GENESIS, EMPTY_MAP, createHandler(GetGenesisResponse.class));
-  }
-
-  public Optional<GetBlockHeaderResponse> getBlockHeader(final String blockId) {
-    return get(
-        GET_BLOCK_HEADER,
-        Map.of("block_id", blockId),
-        EMPTY_MAP,
-        EMPTY_MAP,
-        createHandler(GetBlockHeaderResponse.class));
   }
 
   /**
