@@ -1,0 +1,93 @@
+/*
+ * Copyright Consensys Software Inc., 2022
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
+
+import static tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot.getResponseType;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.commons.lang3.NotImplementedException;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+public class GetAttesterSlashingsV2 extends RestApiEndpoint {
+  public static final String ROUTE = "/eth/v2/beacon/pool/attester_slashings";
+
+  public GetAttesterSlashingsV2(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getNodeDataProvider(), schemaDefinitionCache);
+  }
+
+  GetAttesterSlashingsV2(
+      final NodeDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    super(
+        EndpointMetadata.get(ROUTE)
+            .operationId("getPoolAttesterSlashingsV2")
+            .summary("Get AttesterSlashings from operations pool")
+            .description(
+                "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
+            .tags(TAG_BEACON)
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .build());
+  }
+
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    throw new NotImplementedException("Not implemented");
+  }
+
+  private static SerializableTypeDefinition<ObjectAndMetaData<List<AttesterSlashing>>> getResponseType(
+          final SchemaDefinitionCache schemaDefinitionCache) {
+
+    final AttesterSlashing.AttesterSlashingSchema electraAttesterSlashingSchema =
+    schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA).getAttesterSlashingSchema();
+final AttesterSlashing.AttesterSlashingSchema phase0AttesterSlashingSchema =
+    schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttesterSlashingSchema();
+
+    final SerializableOneOfTypeDefinition<List<AttesterSlashing>> oneOfTypeDefinition =
+            new SerializableOneOfTypeDefinitionBuilder<List<AttesterSlashing>>()
+                    .withType((x)->true, listOf(electraAttesterSlashingSchema.getJsonTypeDefinition()))
+                    .withType((x)->true, listOf(phase0AttesterSlashingSchema.getJsonTypeDefinition()))
+                    .build();
+
+
+    return SerializableTypeDefinition.<ObjectAndMetaData<List<AttesterSlashing>>>object()
+            .name("GetPoolAttesterSlashingsV2Response")
+            .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
+            .withField("data", oneOfTypeDefinition ,ObjectAndMetaData::getData)
+            .build();
+  }
+
+}
