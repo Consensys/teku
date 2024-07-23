@@ -57,6 +57,7 @@ public class GetAggregateAttestation extends RestApiEndpoint {
             .description(
                 "Aggregates all attestations matching given attestation data root and slot.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .deprecated(true)
             .queryParamRequired(ATTESTATION_DATA_ROOT_PARAMETER)
             .queryParamRequired(SLOT_PARAM)
             .response(HttpStatusCodes.SC_OK, "Request successful", getResponseType(spec))
