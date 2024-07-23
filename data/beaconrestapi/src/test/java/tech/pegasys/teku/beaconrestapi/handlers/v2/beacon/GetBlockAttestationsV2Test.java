@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -91,6 +93,8 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(phase0responseData.getData().size()).isGreaterThan(0);
     assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
+    assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
+            .isEqualTo(Version.fromMilestone(phase0responseData.getMilestone()).name());
   }
 
   @Test
@@ -105,6 +109,8 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(electraResponseData.getData().size()).isGreaterThan(0);
     assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
+    assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
+            .isEqualTo(Version.fromMilestone(electraResponseData.getMilestone()).name());
   }
 
   @Test

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -75,9 +77,15 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
 
     request.respondAsync(
         future.thenApply(
-            maybeObjectAndMetaData ->
-                maybeObjectAndMetaData
-                    .map(AsyncApiResponse::respondOk)
+            maybeAttestationsAndMetadata ->
+                maybeAttestationsAndMetadata
+                    .map(
+                        attestationsAndMetadata -> {
+                          request.header(
+                              HEADER_CONSENSUS_VERSION,
+                              Version.fromMilestone(attestationsAndMetadata.getMilestone()).name());
+                          return AsyncApiResponse.respondOk(attestationsAndMetadata);
+                        })
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
