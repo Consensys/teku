@@ -433,6 +433,9 @@ public abstract class AbstractSszStableContainerBaseSchema<C extends SszStableCo
   @Override
   public TreeNode sszDeserializeTree(final SszReader reader) {
     final SszBitvector activeFields = sszDeserializeActiveFieldsTree(reader);
+    checkArgument(
+        activeFields.getLastSetBitIndex() < definedChildrenSchemas.size(),
+        "All extra bits in the Bitvector[N] that exceed the number of fields MUST be 0");
     return BranchNode.create(
         deserializeContainer(reader, activeFields), activeFields.getBackingNode());
   }
