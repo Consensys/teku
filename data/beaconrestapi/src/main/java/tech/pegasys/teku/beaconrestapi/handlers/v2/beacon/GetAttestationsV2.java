@@ -19,6 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDepend
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -77,8 +79,13 @@ public class GetAttestationsV2 extends RestApiEndpoint {
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
     final Optional<UInt64> committeeIndex =
         request.getOptionalQueryParameter(COMMITTEE_INDEX_PARAMETER);
+    final ObjectAndMetaData<List<Attestation>> attestationsAndMetaData =
+        nodeDataProvider.getAttestationsAndMetaData(slot, committeeIndex);
 
-    request.respondOk(nodeDataProvider.getAttestationsAndMetaData(slot, committeeIndex));
+    request.header(
+        HEADER_CONSENSUS_VERSION,
+        Version.fromMilestone(attestationsAndMetaData.getMilestone()).name());
+    request.respondOk(attestationsAndMetaData);
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
