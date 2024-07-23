@@ -24,6 +24,16 @@
         "example" : "1",
         "format" : "uint64"
       }
+    }, {
+      "name" : "committee_index",
+      "required" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Committee index to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
     } ],
     "responses" : {
       "200" : {
