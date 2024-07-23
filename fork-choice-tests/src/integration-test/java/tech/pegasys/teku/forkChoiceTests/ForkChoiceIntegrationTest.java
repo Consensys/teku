@@ -145,10 +145,7 @@ public class ForkChoiceIntegrationTest {
   }
 
   private static ForkChoiceTestStep getStepKind(final Map<String, Object> ss) {
-    return ss.keySet().stream()
-        .map(ForkChoiceTestStep::valueOf)
-        .collect(Collectors.toList())
-        .get(0);
+    return ss.keySet().stream().map(ForkChoiceTestStep::valueOf).toList().get(0);
   }
 
   private static <T extends SszData> T resolvePart(
@@ -156,8 +153,7 @@ public class ForkChoiceIntegrationTest {
       final SszSchema<? extends T> type,
       final File testFile,
       final Object value) {
-    if (value instanceof String) {
-      String path = (String) value;
+    if (value instanceof String path) {
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {
         Path partPath = Paths.get(testFile.getParentFile().getParent(), "cache", path);
         try {
@@ -225,9 +221,9 @@ public class ForkChoiceIntegrationTest {
         if (!processAttestation(forkChoice, (Attestation) step)) {
           attestationBuffer.add((Attestation) step);
         }
-      } else if (step instanceof Map) {
+      } else if (step instanceof Map<?, ?> rawChecks) {
         @SuppressWarnings("unchecked")
-        Map<String, Object> checks = (Map<String, Object>) step;
+        Map<String, Object> checks = (Map<String, Object>) rawChecks;
         for (Map.Entry<String, Object> e : checks.entrySet()) {
           String check = e.getKey();
           switch (check) {

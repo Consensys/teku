@@ -94,9 +94,7 @@ public class RandomSszDataGenerator {
       } else {
         throw new IllegalArgumentException("Unknown primitive schema: " + schema);
       }
-    } else if (schema instanceof AbstractSszContainerSchema) {
-      AbstractSszContainerSchema<SszContainer> containerSchema =
-          (AbstractSszContainerSchema<SszContainer>) schema;
+    } else if (schema instanceof AbstractSszContainerSchema<?> containerSchema) {
       return Stream.generate(
           () -> {
             List<SszData> children =
@@ -124,10 +122,9 @@ public class RandomSszDataGenerator {
             SszCollection<SszData> ret = collectionSchema.createFromElements(children);
             return (T) ret;
           });
-    } else if (schema instanceof SszUnionSchema) {
+    } else if (schema instanceof SszUnionSchema<?> unionSchema) {
       return Stream.generate(
           () -> {
-            SszUnionSchema<?> unionSchema = (SszUnionSchema<?>) schema;
             int selector = random.nextInt(unionSchema.getTypesCount());
             return (T)
                 unionSchema.createFromValue(
