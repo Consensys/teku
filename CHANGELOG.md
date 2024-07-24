@@ -13,7 +13,6 @@
 
 ### Additions and Improvements
 - Added a state pruner that can limit the number of finalized states stored when running an archive node.
-
 - Updated bootnodes for Sepolia network.
 - Implemented [GetBlockAttestationV2](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/getBlockAttestationsV2) (adding support for Electra attestations)
 - Implemented [GetAggregateAttestationV2](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Validator/getAggregatedAttestationV2) (adding support for Electra attestations)

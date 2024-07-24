@@ -28,9 +28,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -39,7 +39,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -105,24 +104,14 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
   private static SerializableTypeDefinition<ObjectAndMetaData<Attestation>> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
 
-    final DeserializableTypeDefinition<Attestation> electraAttestationTypeDef =
-        (DeserializableTypeDefinition<Attestation>)
-            schemaDefinitionCache
-                .getSchemaDefinition(SpecMilestone.ELECTRA)
-                .getAttestationSchema()
-                .getJsonTypeDefinition();
-
-    final DeserializableTypeDefinition<Attestation> phase0AttestationTypeDef =
-        (DeserializableTypeDefinition<Attestation>)
-            schemaDefinitionCache
-                .getSchemaDefinition(SpecMilestone.PHASE0)
-                .getAttestationSchema()
-                .getJsonTypeDefinition();
-
     final SerializableOneOfTypeDefinition<Attestation> oneOfTypeDefinition =
         new SerializableOneOfTypeDefinitionBuilder<Attestation>()
-            .withType(electraAttestationPredicate(), electraAttestationTypeDef)
-            .withType(phase0AttestationPredicate(), phase0AttestationTypeDef)
+            .withType(
+                electraAttestationPredicate(),
+                BeaconRestApiTypes.electraAttestationTypeDef(schemaDefinitionCache))
+            .withType(
+                phase0AttestationPredicate(),
+                BeaconRestApiTypes.phase0AttestationTypeDef(schemaDefinitionCache))
             .build();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<Attestation>>object()
@@ -139,6 +128,6 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
 
   private static Predicate<Attestation> electraAttestationPredicate() {
     // Only once we are in Electra attestations will have committee bits
-    return attestation -> attestation.requiresCommitteeBits();
+    return Attestation::requiresCommitteeBits;
   }
 }

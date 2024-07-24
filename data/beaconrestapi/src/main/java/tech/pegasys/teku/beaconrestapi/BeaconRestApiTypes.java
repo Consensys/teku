@@ -76,7 +76,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
@@ -246,6 +248,26 @@ public class BeaconRestApiTypes {
 
   public static final ParameterMetadata<SpecMilestone> ETH_CONSENSUS_VERSION_TYPE =
       new ParameterMetadata<>(HEADER_CONSENSUS_VERSION, MILESTONE_TYPE);
+
+  @SuppressWarnings("unchecked")
+  public static DeserializableTypeDefinition<Attestation> electraAttestationTypeDef(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return (DeserializableTypeDefinition<Attestation>)
+        schemaDefinitionCache
+            .getSchemaDefinition(SpecMilestone.ELECTRA)
+            .getAttestationSchema()
+            .getJsonTypeDefinition();
+  }
+
+  @SuppressWarnings("unchecked")
+  public static DeserializableTypeDefinition<Attestation> phase0AttestationTypeDef(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return (DeserializableTypeDefinition<Attestation>)
+        schemaDefinitionCache
+            .getSchemaDefinition(SpecMilestone.PHASE0)
+            .getAttestationSchema()
+            .getJsonTypeDefinition();
+  }
 
   @SuppressWarnings("JavaCase")
   public enum BroadcastValidationParameter {
