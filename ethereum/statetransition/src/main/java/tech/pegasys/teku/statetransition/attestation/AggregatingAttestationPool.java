@@ -25,7 +25,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -273,16 +275,22 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
-    final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
-        (group) ->
-            maybeCommitteeIndex
-                .map(index -> group.getAttestationData().getIndex().equals(index))
-                .orElse(true);
     final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
     final boolean requestRequiresAttestationWithCommitteeBits =
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
+
+    // Committee index filter predicate is used for pre Electra attestations only (the filter is
+    // applied to the index at the attestation data level)
+    // Post Electra the index is always set to 0 at the attestation data level (the filter
+    // is rather applied to the committee bits)
+    final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
+        (group) ->
+            requestRequiresAttestationWithCommitteeBits
+                || maybeCommitteeIndex
+                    .map(index -> group.getAttestationData().getIndex().equals(index))
+                    .orElse(true);
 
     return dataHashBySlot.descendingMap().entrySet().stream()
         .filter(filterForSlot)
@@ -291,12 +299,24 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
         .filter(filterForCommitteeIndex)
-        .flatMap(MatchingDataAttestationGroup::stream)
+        .flatMap(
+            streamMatchingAttestations(
+                maybeCommitteeIndex, requestRequiresAttestationWithCommitteeBits))
         .map(ValidatableAttestation::getAttestation)
         .filter(
             attestation ->
                 attestation.requiresCommitteeBits() == requestRequiresAttestationWithCommitteeBits)
         .toList();
+  }
+
+  private Function<MatchingDataAttestationGroup, Stream<ValidatableAttestation>>
+      streamMatchingAttestations(
+          final Optional<UInt64> maybeCommitteeIndex,
+          final boolean requestRequiresAttestationWithCommitteeBits) {
+    return matchingDataAttestationGroup ->
+        requestRequiresAttestationWithCommitteeBits
+            ? matchingDataAttestationGroup.stream(maybeCommitteeIndex)
+            : matchingDataAttestationGroup.stream();
   }
 
   private boolean isValid(
