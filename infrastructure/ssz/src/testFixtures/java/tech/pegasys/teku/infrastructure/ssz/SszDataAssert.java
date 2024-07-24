@@ -123,8 +123,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
               + ", actual: "
               + actual.getSchema());
     }
-    if (actual instanceof SszComposite) {
-      SszComposite<?> c1 = (SszComposite<?>) actual;
+    if (actual instanceof SszComposite<?> c1) {
       SszComposite<?> c2 = (SszComposite<?>) expected;
       if (c1.size() != c2.size()) {
         return List.of(

@@ -33,7 +33,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlsToExecutionChangeGossipIntegrationTest {
 
@@ -91,8 +94,14 @@ public class BlsToExecutionChangeGossipIntegrationTest {
                 .containsExactly(signedBlsToExecutionChange));
   }
 
+  @SuppressWarnings("deprecation")
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
-    return NodeManager.create(spec, networkFactory, validatorKeys, networkBuilder);
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
+    chainUtil.initializeStorage();
+    // Advancing chain to bypass "optimistic genesis" issue that prevents some gossip subscriptions
+    chainUtil.createAndImportBlockAtSlot(1);
+    return NodeManager.create(spec, networkFactory, networkBuilder, storageClient, chainUtil);
   }
 }
