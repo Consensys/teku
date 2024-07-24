@@ -39,7 +39,7 @@ public class StorageConfiguration {
   public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
   public static final Duration DEFAULT_STATE_PRUNING_INTERVAL = Duration.ofMinutes(5);
-  public static final long DEFAULT_STORAGE_RETAINED_SLOTS = -1;
+  public static final long DEFAULT_STORAGE_RETAINED_SLOTS = 0;
   public static final int DEFAULT_STATE_PRUNING_LIMIT = 1;
 
   // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
@@ -275,7 +275,7 @@ public class StorageConfiguration {
     }
 
     public Builder retainedSlots(final long retainedSlots) {
-      if (retainedSlots < -1) {
+      if (retainedSlots < 0) {
         throw new InvalidConfigurationException(
             "Invalid number of slots to retain finalized states for");
       }

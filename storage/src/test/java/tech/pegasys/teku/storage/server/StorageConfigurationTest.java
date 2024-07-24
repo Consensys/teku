@@ -109,7 +109,16 @@ public class StorageConfigurationTest {
   }
 
   @Test
-  public void shouldFailIfUserConfiguresStatePrunerIntervalTooLow() {
+  public void shouldFailIfUserConfiguresStatePruneSlotsRetainedLowerThanAllowed() {
+
+    assertThatThrownBy(
+            () -> StorageConfiguration.builder().dataStorageMode(ARCHIVE).retainedSlots(-1))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("Invalid number of slots to retain finalized states for");
+  }
+
+  @Test
+  public void shouldFailIfUserConfiguresStatePrunerLowerThanAllowed() {
 
     assertThatThrownBy(
             () ->
@@ -122,7 +131,7 @@ public class StorageConfigurationTest {
   }
 
   @Test
-  public void shouldFailIfUserConfiguresStatePrunerIntervalTooHigh() {
+  public void shouldFailIfUserConfiguresStatePrunerIntervalGreaterThanAllowed() {
 
     assertThatThrownBy(
             () ->
@@ -135,7 +144,7 @@ public class StorageConfigurationTest {
   }
 
   @Test
-  public void shouldFailIfUserConfiguresStatePrunerLimitTooHigh() {
+  public void shouldFailIfUserConfiguresStatePrunerLimitGreaterThanAllowed() {
 
     assertThatThrownBy(
             () -> StorageConfiguration.builder().dataStorageMode(ARCHIVE).statePruningLimit(101))
