@@ -1,10 +1,9 @@
 {
   "get" : {
     "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "getAggregatedAttestation",
+    "operationId" : "getAggregatedAttestationV2",
     "summary" : "Get aggregated attestation",
-    "description" : "Aggregates all attestations matching given attestation data root and slot.",
-    "deprecated" : true,
+    "description" : "Aggregates all attestations matching given attestation data root, slot and committee index.\nA 503 error must be returned if the block identified by the response\n`beacon_block_root` is optimistic (i.e. the aggregated attestation attests\nto a block that has not been fully verified by an execution engine).\nA 404 error must be returned if no attestation is available for the requested\n`attestation_data_root`.",
     "parameters" : [ {
       "name" : "attestation_data_root",
       "required" : true,
@@ -21,7 +20,17 @@
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "`uint64` Non-finalized slot for which to create the aggregation.",
+        "description" : "`uint64` value representing slot",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    }, {
+      "name" : "committee_index",
+      "required" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Committee index to query.",
         "example" : "1",
         "format" : "uint64"
       }
@@ -32,7 +41,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetAggregatedAttestationResponse"
+              "$ref" : "#/components/schemas/GetAggregatedAttestationResponseV2"
             }
           }
         }
