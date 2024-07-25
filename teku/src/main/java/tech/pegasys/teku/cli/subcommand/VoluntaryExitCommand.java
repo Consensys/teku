@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
@@ -77,7 +76,6 @@ import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 @CommandLine.Command(
@@ -95,9 +93,7 @@ import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefC
 public class VoluntaryExitCommand implements Callable<Integer> {
 
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
-  private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   private OkHttpValidatorMinimalTypeDefClient typeDefClient;
-  private OkHttpValidatorRestApiClient apiClient;
   private Fork fork;
   private Bytes32 genesisRoot;
   private Map<BLSPublicKey, Validator> validatorsMap;
@@ -268,27 +264,21 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
         validatorsMap.keySet().stream().map(BLSPublicKey::toString).toList();
-    for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
-      final List<String> batch =
-          publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-      apiClient
-          .getValidators(batch)
-          .ifPresent(
-              validatorResponses ->
-                  validatorResponses.forEach(
-                      response ->
-                          validatorIndices.put(
-                              response.validator.pubkey.asBLSPublicKey(),
-                              response.index.intValue())));
+    typeDefClient
+        .postStateValidators(publicKeys)
+        .ifPresent(
+            validatorList ->
+                validatorList.forEach(
+                    validator ->
+                        validatorIndices.put(
+                            validator.getPublicKey(), validator.getIntegerIndex().intValue())));
 
-      batch.forEach(
-          key -> {
-            if (!validatorIndices.containsKey(
-                BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(key)))) {
-              SUB_COMMAND_LOG.error("Validator not found: " + key);
-            }
-          });
-    }
+    publicKeys.forEach(
+        key -> {
+          if (!validatorIndices.containsKey(BLSPublicKey.fromHexString(key))) {
+            SUB_COMMAND_LOG.error("Validator not found: " + key);
+          }
+        });
     return validatorIndices;
   }
 
@@ -364,14 +354,6 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary_exits", 8);
-
-    apiClient =
-        config
-            .validatorClient()
-            .getValidatorConfig()
-            .getPrimaryBeaconNodeApiEndpoint()
-            .map(RemoteSpecLoader::createApiClient)
-            .orElseThrow();
 
     typeDefClient =
         config

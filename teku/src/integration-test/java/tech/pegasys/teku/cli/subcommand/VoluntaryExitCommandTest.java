@@ -50,7 +50,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.model.Parameter;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -615,16 +614,17 @@ public class VoluntaryExitCommandTest {
     server
         .when(
             request()
+                .withMethod("POST")
                 .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(
-                    Parameter.param(
-                        "id",
-                        String.join(
+                .withBody(
+                    "{\"ids\":["
+                        + String.join(
                             ",",
-                            validatorPubKey1,
-                            keyManagerPubKey1,
-                            keyManagerPubKey2,
-                            validatorPubKey2))))
+                            quoted(validatorPubKey1),
+                            quoted(keyManagerPubKey1),
+                            quoted(keyManagerPubKey2),
+                            quoted(validatorPubKey2))
+                        + "]}"))
         .respond(response().withStatusCode(200).withBody(validators));
   }
 
@@ -632,8 +632,9 @@ public class VoluntaryExitCommandTest {
     server
         .when(
             request()
+                .withMethod("POST")
                 .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", publicKey)))
+                .withBody("{\"ids\":[" + String.join(",", "\"" + publicKey + "\"") + "]}"))
         .respond(response().withStatusCode(200).withBody(responseString));
   }
 
@@ -695,12 +696,14 @@ public class VoluntaryExitCommandTest {
                 .map(
                     k ->
                         "{"
-                            + "\"validating_pubkey\": \""
-                            + k
-                            + "\","
-                            + "\"derivation_path\": \"\","
-                            + "\"readonly\": false"
-                            + "}")
+                            + quotedFieldName("validating_pubkey")
+                            + quoted(k)
+                            + ","
+                            + quotedFieldName("derivation_path")
+                            + quoted("")
+                            + ","
+                            + quotedFieldName("readonly")
+                            + "false}")
                 .collect(Collectors.joining(","))
             + "]}";
     server
@@ -718,6 +721,14 @@ public class VoluntaryExitCommandTest {
     server
         .when(request().withMethod("POST").withPath("/eth/v1/beacon/pool/voluntary_exits"))
         .respond(response().withStatusCode(400).withBody(rejectedExitResponseBody));
+  }
+
+  private String quoted(final String unquotedString) {
+    return "\"" + unquotedString + "\"";
+  }
+
+  private String quotedFieldName(final String unquotedString) {
+    return "\"" + unquotedString + "\":";
   }
 
   private String getTestSpecJsonString(final Spec spec) throws JsonProcessingException {
