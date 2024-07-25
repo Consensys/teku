@@ -238,12 +238,12 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   }
 
   private boolean noMatchingAttestations(
-      Optional<UInt64> committeeIndex, boolean requiresCommitteeBits) {
+      final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
     return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
         || noMatchingPreElectraAttestations(committeeIndex);
   }
 
-  private boolean noMatchingPreElectraAttestations(Optional<UInt64> committeeIndex) {
+  private boolean noMatchingPreElectraAttestations(final Optional<UInt64> committeeIndex) {
     return committeeIndex.isPresent()
         && !includedValidators.requiresCommitteeBits()
         && !attestationData.getIndex().equals(committeeIndex.get());
