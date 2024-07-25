@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -162,6 +163,35 @@ public class NodeDataProviderTest {
     when(attestationPool.getAttestations(any(), any())).thenReturn(Collections.emptyList());
     when(recentChainData.getCurrentSlot()).thenReturn(Optional.empty());
     provider.getAttestationsAndMetaData(Optional.empty(), Optional.empty());
+    verify(specMock).atSlot(eq(UInt64.ZERO));
+  }
+
+  @Test
+  void attesterSlashingsMetaDataLookUp_UseAttesterSlashingSlot_WhenListIsNotEmpty() {
+    final UInt64 slot = UInt64.valueOf(12);
+    final Spec specMock = setUpMockedSpec();
+    when(attesterSlashingPool.getAll())
+        .thenReturn(Set.of(dataStructureUtil.randomAttesterSlashingAtSlot(slot)));
+    provider.getAttesterSlashingsAndMetaData();
+    verify(specMock).atSlot(eq(slot));
+  }
+
+  @Test
+  void attesterSlashingsMetaDataLookUp_UseCurrentSlot_WhenSlotParamNotProvided_EmptyList() {
+    final Spec specMock = setUpMockedSpec();
+    when(attesterSlashingPool.getAll()).thenReturn(Set.of());
+    final UInt64 currentSlot = UInt64.valueOf(8);
+    when(recentChainData.getCurrentSlot()).thenReturn(Optional.of(currentSlot));
+    provider.getAttesterSlashingsAndMetaData();
+    verify(specMock).atSlot(eq(currentSlot));
+  }
+
+  @Test
+  void attesterSlashingsMetaDataLookUp_UseSlotZero_WhenEmptyList_NoCurrentSlot() {
+    final Spec specMock = setUpMockedSpec();
+    when(attesterSlashingPool.getAll()).thenReturn(Set.of());
+    when(recentChainData.getCurrentSlot()).thenReturn(Optional.empty());
+    provider.getAttesterSlashingsAndMetaData();
     verify(specMock).atSlot(eq(UInt64.ZERO));
   }
 
