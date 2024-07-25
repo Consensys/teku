@@ -275,6 +275,12 @@ public class VoluntaryExitCommand implements Callable<Integer> {
                         validatorIndices.put(
                             validator.getPublicKey(), validator.getIntegerIndex().intValue())));
 
+    publicKeys.forEach(
+        key -> {
+          if (!validatorIndices.containsKey(BLSPublicKey.fromHexString(key))) {
+            SUB_COMMAND_LOG.error("Validator not found: " + key);
+          }
+        });
     return validatorIndices;
   }
 
