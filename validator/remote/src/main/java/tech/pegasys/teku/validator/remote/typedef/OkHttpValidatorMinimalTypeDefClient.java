@@ -17,14 +17,18 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSpecRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostVoluntaryExitRequest;
 
 public class OkHttpValidatorMinimalTypeDefClient {
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
   private final GetGenesisRequest getGenesisRequest;
+  private final PostVoluntaryExitRequest postVoluntaryExitRequest;
 
   private final GetSpecRequest getSpecRequest;
 
@@ -35,6 +39,7 @@ public class OkHttpValidatorMinimalTypeDefClient {
     this.getSpecRequest = new GetSpecRequest(baseEndpoint, okHttpClient);
 
     this.getGenesisRequest = new GetGenesisRequest(baseEndpoint, okHttpClient);
+    this.postVoluntaryExitRequest = new PostVoluntaryExitRequest(baseEndpoint, okHttpClient);
   }
 
   public Optional<Map<String, String>> getSpec() {
@@ -55,5 +60,10 @@ public class OkHttpValidatorMinimalTypeDefClient {
         .map(
             response ->
                 new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
+  }
+
+  public void sendVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit)
+      throws BadRequestException {
+    postVoluntaryExitRequest.sendVoluntaryExit(signedVoluntaryExit);
   }
 }
