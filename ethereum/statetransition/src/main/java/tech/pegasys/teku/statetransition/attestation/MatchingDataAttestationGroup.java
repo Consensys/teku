@@ -151,9 +151,8 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
     if (noMatchingAttestations(committeeIndex, requiresCommitteeBits)) {
       return Stream.empty();
-    } else {
-      return StreamSupport.stream(spliterator(committeeIndex), false);
     }
+    return StreamSupport.stream(spliterator(committeeIndex), false);
   }
 
   public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
