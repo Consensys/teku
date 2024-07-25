@@ -276,7 +276,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
-    final boolean requestRequiresAttestationWithCommitteeBits =
+    final boolean requiresCommitteeBits =
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     return dataHashBySlot.descendingMap().entrySet().stream()
@@ -287,11 +287,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .flatMap(
             matchingDataAttestationGroup ->
-                matchingDataAttestationGroup.stream(maybeCommitteeIndex))
+                matchingDataAttestationGroup.stream(maybeCommitteeIndex, requiresCommitteeBits))
         .map(ValidatableAttestation::getAttestation)
-        .filter(
-            attestation ->
-                attestation.requiresCommitteeBits() == requestRequiresAttestationWithCommitteeBits)
         .toList();
   }
 

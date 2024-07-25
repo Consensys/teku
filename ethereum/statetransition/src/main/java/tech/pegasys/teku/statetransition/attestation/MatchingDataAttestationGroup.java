@@ -147,6 +147,22 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     return StreamSupport.stream(spliterator(committeeIndex), false);
   }
 
+  public Stream<ValidatableAttestation> stream(
+      final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
+    // Group Attestation type mismatch
+    if (requiresCommitteeBits != includedValidators.requiresCommitteeBits()) {
+      return Stream.empty();
+    }
+    // Pre electra attestation and committee index not matching
+    if (committeeIndex.isPresent()
+        && !includedValidators.requiresCommitteeBits()
+        && !attestationData.getIndex().equals(committeeIndex.get())) {
+      return Stream.empty();
+    }
+    // Filter based on the committee index
+    return StreamSupport.stream(spliterator(committeeIndex), false);
+  }
+
   public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
     return Spliterators.spliteratorUnknownSize(iterator(committeeIndex), 0);
   }
@@ -270,23 +286,21 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
           .iterator();
     }
 
+    /*
+    If we have attestations with committeeBits (Electra) then, if maybeCommitteeIndex is specified, we will consider attestation related to that committee only
+     */
     private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
-      final Attestation attestation = candidate.getAttestation();
-      final Optional<SszBitvector> maybeCommitteeBits = attestation.getCommitteeBits();
-      if (maybeCommitteeIndex.isEmpty()) {
+      final Optional<SszBitvector> maybeCommitteeBits =
+          candidate.getAttestation().getCommitteeBits();
+      if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
         return true;
       }
-      // Pre Electra attestation, filter based on the attestation data index
-      if (maybeCommitteeBits.isEmpty()) {
-        return attestation.getData().getIndex().equals(maybeCommitteeIndex.get());
-      } else {
-        // Post Electra attestation, filter on committee bits
-        final SszBitvector committeeBits = maybeCommitteeBits.get();
-        if (committeeBits.getBitCount() != 1) {
-          return false;
-        }
-        return committeeBits.isSet(maybeCommitteeIndex.get().intValue());
+
+      final SszBitvector committeeBits = maybeCommitteeBits.get();
+      if (committeeBits.getBitCount() != 1) {
+        return false;
       }
+      return committeeBits.isSet(maybeCommitteeIndex.get().intValue());
     }
   }
 }
