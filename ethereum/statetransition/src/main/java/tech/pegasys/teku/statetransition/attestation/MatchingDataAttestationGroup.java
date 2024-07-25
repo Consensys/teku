@@ -149,18 +149,11 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
   public Stream<ValidatableAttestation> stream(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
-    // Group Attestation type mismatch
-    if (requiresCommitteeBits != includedValidators.requiresCommitteeBits()) {
+    if (noMatchingAttestations(committeeIndex, requiresCommitteeBits)) {
       return Stream.empty();
+    } else {
+      return StreamSupport.stream(spliterator(committeeIndex), false);
     }
-    // Pre electra attestation and committee index not matching
-    if (committeeIndex.isPresent()
-        && !includedValidators.requiresCommitteeBits()
-        && !attestationData.getIndex().equals(committeeIndex.get())) {
-      return Stream.empty();
-    }
-    // Filter based on the committee index
-    return StreamSupport.stream(spliterator(committeeIndex), false);
   }
 
   public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
@@ -243,6 +236,18 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
     return committeeShufflingSeed.map(validSeeds::contains).orElse(false);
+  }
+
+  private boolean noMatchingAttestations(
+      Optional<UInt64> committeeIndex, boolean requiresCommitteeBits) {
+    return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
+        || noMatchingPreElectraAttestations(committeeIndex);
+  }
+
+  private boolean noMatchingPreElectraAttestations(Optional<UInt64> committeeIndex) {
+    return committeeIndex.isPresent()
+        && !includedValidators.requiresCommitteeBits()
+        && !attestationData.getIndex().equals(committeeIndex.get());
   }
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
