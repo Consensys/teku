@@ -270,21 +270,23 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
           .iterator();
     }
 
-    /*
-    If we have attestations with committeeBits (Electra) then, if maybeCommitteeIndex is specified, we will consider attestation related to that committee only
-     */
     private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
-      final Optional<SszBitvector> maybeCommitteeBits =
-          candidate.getAttestation().getCommitteeBits();
-      if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
+      final Attestation attestation = candidate.getAttestation();
+      final Optional<SszBitvector> maybeCommitteeBits = attestation.getCommitteeBits();
+      if (maybeCommitteeIndex.isEmpty()) {
         return true;
       }
-
-      final SszBitvector committeeBits = maybeCommitteeBits.get();
-      if (committeeBits.getBitCount() != 1) {
-        return false;
+      // Pre Electra attestation, filter based on the attestation data index
+      if (maybeCommitteeBits.isEmpty()) {
+        return attestation.getData().getIndex().equals(maybeCommitteeIndex.get());
+      } else {
+        // Post Electra attestation, filter on committee bits
+        final SszBitvector committeeBits = maybeCommitteeBits.get();
+        if (committeeBits.getBitCount() != 1) {
+          return false;
+        }
+        return committeeBits.isSet(maybeCommitteeIndex.get().intValue());
       }
-      return committeeBits.isSet(maybeCommitteeIndex.get().intValue());
     }
   }
 }
