@@ -24,7 +24,7 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class GetGenesisRequest extends AbstractTypeDefRequest {
 
-  public GetGenesisRequest(final OkHttpClient okHttpClient, final HttpUrl baseEndpoint) {
+  public GetGenesisRequest(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     super(baseEndpoint, okHttpClient);
   }
 

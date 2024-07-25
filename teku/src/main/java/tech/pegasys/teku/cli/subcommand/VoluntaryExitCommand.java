@@ -59,11 +59,14 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -75,6 +78,7 @@ import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 @CommandLine.Command(
     name = "voluntary-exit",
@@ -92,6 +96,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
   private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
+  private OkHttpValidatorMinimalTypeDefClient typeDefClient;
   private OkHttpValidatorRestApiClient apiClient;
   private Fork fork;
   private Bytes32 genesisRoot;
@@ -99,6 +104,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   private TekuConfiguration config;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private Spec spec;
+  private final TimeProvider timeProvider = new SystemTimeProvider();
 
   static final String WITHDRAWALS_PERMANENT_MESASGE =
       "These validators won't be able to be re-activated once this operation is complete.";
@@ -352,14 +358,12 @@ public class VoluntaryExitCommand implements Callable<Integer> {
         });
   }
 
-  private Optional<UInt64> getEpoch() {
-    return apiClient
-        .getBlockHeader("head")
-        .map(response -> spec.computeEpochAtSlot(response.data.header.message.slot));
-  }
-
-  private Optional<Bytes32> getGenesisRoot() {
-    return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
+  private UInt64 getEpochFromGenesisData(final GenesisData genesisData) {
+    final UInt64 genesisTime = genesisData.getGenesisTime();
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    final UInt64 slot =
+        spec.getGenesisSpec().miscHelpers().computeSlotAtTime(genesisTime, currentTime);
+    return spec.computeEpochAtSlot(slot);
   }
 
   private void initialise() {
@@ -380,19 +384,29 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
+    typeDefClient =
+        config
+            .validatorClient()
+            .getValidatorConfig()
+            .getPrimaryBeaconNodeApiEndpoint()
+            .map(RemoteSpecLoader::createTypeDefClient)
+            .orElseThrow();
+
     if (network == null) {
-      SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
-      spec = getSpec(List.of(apiClient.getBaseEndpoint()));
+      SUB_COMMAND_LOG.display(
+          " - Loading network settings from " + typeDefClient.getBaseEndpoint());
+      spec = getSpec(typeDefClient);
     } else {
       SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
       spec = SpecFactory.create(network);
     }
 
-    validateOrDefaultEpoch();
+    final Optional<GenesisData> maybeGenesisData = typeDefClient.getGenesis();
+    validateOrDefaultEpoch(maybeGenesisData);
     fork = spec.getForkSchedule().getFork(epoch);
 
     // get genesis time
-    final Optional<Bytes32> maybeRoot = getGenesisRoot();
+    final Optional<Bytes32> maybeRoot = maybeGenesisData.map(GenesisData::getGenesisValidatorsRoot);
     if (maybeRoot.isEmpty()) {
       throw new InvalidConfigurationException(
           "Unable to fetch genesis data, cannot generate an exit.");
@@ -450,13 +464,13 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     }
   }
 
-  private void validateOrDefaultEpoch() {
-    final Optional<UInt64> maybeEpoch = getEpoch();
+  private void validateOrDefaultEpoch(final Optional<GenesisData> maybeGenesisData) {
+    final Optional<UInt64> maybeEpoch = maybeGenesisData.map(this::getEpochFromGenesisData);
 
     if (epoch == null) {
       if (maybeEpoch.isEmpty()) {
         throw new InvalidConfigurationException(
-            "Could not calculate epoch from latest block header, please specify --epoch");
+            "Could not calculate epoch from genesis data, please specify --epoch");
       }
       epoch = maybeEpoch.orElseThrow();
     } else if (maybeEpoch.isPresent()

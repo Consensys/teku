@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -145,6 +146,30 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withDenebEpoch(final UInt64 denebForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-deneb-fork-epoch={}", denebForkEpoch);
+    configMap.put("Xnetwork-deneb-fork-epoch", denebForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.denebBuilder(
+                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withElectraEpoch(final UInt64 electraForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-electra-fork-epoch={}", electraForkEpoch);
+    configMap.put("Xnetwork-electra-fork-epoch", electraForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.electraBuilder(
+                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
+    return this;
+  }
+
   public TekuNodeConfigBuilder withTrustedSetupFromClasspath(final String trustedSetup)
       throws Exception {
     mustBe(NodeType.BEACON_NODE);
@@ -171,16 +196,19 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withDenebEpoch(final UInt64 denebForkEpoch) {
-
+  public TekuNodeConfigBuilder withTerminalBlockHash(final String terminalBlockHash) {
     mustBe(NodeType.BEACON_NODE);
-    LOG.debug("Xnetwork-deneb-fork-epoch={}", denebForkEpoch);
-    configMap.put("Xnetwork-deneb-fork-epoch", denebForkEpoch.toString());
+
+    LOG.debug("Xnetwork-terminal-block-hash-override={}", terminalBlockHash);
+    configMap.put("Xnetwork-terminal-block-hash-override", terminalBlockHash);
+
     specConfigModifier =
         specConfigModifier.andThen(
             specConfigBuilder ->
-                specConfigBuilder.denebBuilder(
-                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+                specConfigBuilder.bellatrixBuilder(
+                    bellatrixBuilder ->
+                        bellatrixBuilder.terminalBlockHash(
+                            Bytes32.fromHexString(terminalBlockHash))));
     return this;
   }
 
