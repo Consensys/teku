@@ -16,12 +16,14 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 import static tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot.getResponseType;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.http.Header;
 import java.util.List;
-import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetAttesterSlashingsV2 extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v2/beacon/pool/attester_slashings";
+  private final NodeDataProvider nodeDataProvider;
 
   public GetAttesterSlashingsV2(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
@@ -54,11 +57,16 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .build());
+    this.nodeDataProvider = provider;
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    throw new NotImplementedException("Not implemented");
+    request.header(Header.CACHE_CONTROL, CACHE_NONE);
+    ObjectAndMetaData<List<AttesterSlashing>> attesterSlashingsWithMetadaData =
+        nodeDataProvider.getAttesterSlashingsAndMetaData();
+    request.header(HEADER_CONSENSUS_VERSION, attesterSlashingsWithMetadaData.getMilestone().name());
+    request.respondOk(attesterSlashingsWithMetadaData);
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<AttesterSlashing>>>
