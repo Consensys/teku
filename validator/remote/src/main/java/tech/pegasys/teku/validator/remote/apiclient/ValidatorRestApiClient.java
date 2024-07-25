@@ -24,7 +24,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
@@ -43,8 +42,6 @@ public interface ValidatorRestApiClient {
   Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
 
   Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
-
-  Optional<PostDataFailureResponse> sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
 
   Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 

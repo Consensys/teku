@@ -41,8 +41,6 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
@@ -56,6 +54,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
@@ -67,6 +66,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -294,12 +294,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
   private void submitExitForValidator(final BLSPublicKey publicKey, final int validatorIndex) {
     try {
-      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
-          generateSignedExit(publicKey, validatorIndex);
-      final Optional<PostDataFailureResponse> response =
-          apiClient.sendVoluntaryExit(new SignedVoluntaryExit(exit));
+      final SignedVoluntaryExit exit = generateSignedExit(publicKey, validatorIndex);
+      final Optional<HttpErrorResponse> response = typeDefClient.sendVoluntaryExit(exit);
       if (response.isPresent()) {
-        SUB_COMMAND_LOG.error(response.get().message);
+        SUB_COMMAND_LOG.error(response.get().getMessage());
       } else {
         SUB_COMMAND_LOG.display(
             "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
@@ -312,7 +310,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     }
   }
 
-  private tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit generateSignedExit(
+  private SignedVoluntaryExit generateSignedExit(
       final BLSPublicKey publicKey, final int validatorIndex) {
     final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
     final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
@@ -322,14 +320,12 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .getSigner()
             .signVoluntaryExit(message, forkInfo)
             .join();
-    return new tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit(
-        message, signature);
+    return new SignedVoluntaryExit(message, signature);
   }
 
   private boolean storeExitForValidator(
       final BLSPublicKey blsPublicKey, final Integer validatorIndex) {
-    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
-        generateSignedExit(blsPublicKey, validatorIndex);
+    final SignedVoluntaryExit exit = generateSignedExit(blsPublicKey, validatorIndex);
     try {
       SUB_COMMAND_LOG.display("Writing signed exit for " + blsPublicKey.toAbbreviatedString());
       Files.writeString(
@@ -342,9 +338,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     }
   }
 
-  private String prettyExitMessage(
-      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit
-          signedVoluntaryExit)
+  private String prettyExitMessage(final SignedVoluntaryExit signedVoluntaryExit)
       throws JsonProcessingException {
     final PrettyPrintCommand.OutputFormat json = PrettyPrintCommand.OutputFormat.JSON;
     return JsonUtil.serialize(
