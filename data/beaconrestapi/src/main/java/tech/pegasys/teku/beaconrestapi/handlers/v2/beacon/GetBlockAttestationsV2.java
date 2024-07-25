@@ -39,8 +39,11 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetBlockAttestationsV2 extends RestApiEndpoint {
@@ -114,6 +117,20 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
   private static Predicate<List<Attestation>> phase0AttestationsPredicate() {
     // Before Electra attestations do not require committee bits
     return attestations -> attestations.isEmpty() || !attestations.get(0).requiresCommitteeBits();
+  }
+
+  private static Predicate<AttesterSlashing> electraAttesterSlashing(final Spec spec) {
+    return attesterSlashing ->
+        spec.atSlot(attesterSlashing.getAttestation1().getData().getSlot())
+            .getMilestone()
+            .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
+  }
+
+  private static Predicate<AttesterSlashing> phase0AttesterSlashing(final Spec spec) {
+    return attesterSlashing ->
+        !spec.atSlot(attesterSlashing.getAttestation1().getData().getSlot())
+            .getMilestone()
+            .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
   }
 
   private static Predicate<List<Attestation>> electraAttestationsPredicate() {
