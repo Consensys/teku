@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -38,11 +37,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -71,80 +67,6 @@ class OkHttpValidatorRestApiClientTest {
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
-  }
-
-  @Test
-  public void getGenesis_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.getGenesis();
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_GENESIS.getPath(emptyMap()));
-  }
-
-  @Test
-  public void getGenesis_WhenServerError_ThrowsRuntimeException() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(() -> apiClient.getGenesis())
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void getGenesis_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    assertThat(apiClient.getGenesis()).isEmpty();
-  }
-
-  @Test
-  public void getGenesis_WhenSuccess_ReturnsGenesisResponse() {
-    final GetGenesisResponse getGenesisResponse = schemaObjects.getGenesisResponse();
-
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_OK).setBody(asJson(getGenesisResponse)));
-
-    Optional<GetGenesisResponse> genesis = apiClient.getGenesis();
-
-    assertThat(genesis).isPresent();
-    assertThat(genesis.get()).usingRecursiveComparison().isEqualTo(getGenesisResponse);
-  }
-
-  @Test
-  void getValidators_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.getValidators(List.of("1", "0x1234"));
-
-    final RecordedRequest request = mockWebServer.takeRequest();
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
-    assertThat(request.getPath()).contains("?id=1,0x1234");
-  }
-
-  @Test
-  public void getValidators_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    assertThat(apiClient.getValidators(List.of("1"))).isEmpty();
-  }
-
-  @Test
-  public void getValidators_WhenSuccess_ReturnsResponse() {
-    final List<ValidatorResponse> expected =
-        List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
-    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(false, expected);
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
-
-    Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
-
-    assertThat(result).isPresent();
-    assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
   }
 
   @Test
@@ -433,31 +355,6 @@ class OkHttpValidatorRestApiClientTest {
     assertThatThrownBy(() -> apiClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  void shouldIncludeAuthorizationHeaderWhenBaseUrlIncludesCredentialsForGetRequest()
-      throws Exception {
-    final HttpUrl url =
-        mockWebServer.url("/").newBuilder().username("user").password("password").build();
-    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.getGenesis();
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    final String authorization = request.getHeader("Authorization");
-    // Base64 encoded version of credentials.
-    assertThat(authorization).isEqualTo("Basic dXNlcjpwYXNzd29yZA==");
-  }
-
-  @Test
-  void shouldThrowRateLimitedExceptionWhen429ResponseReceived() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(429));
-
-    assertThatThrownBy(() -> apiClient.getGenesis()).isInstanceOf(RateLimitedException.class);
   }
 
   @Test
