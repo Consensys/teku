@@ -19,16 +19,20 @@ import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSpecRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostStateValidatorsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostVoluntaryExitRequest;
 
 public class OkHttpValidatorMinimalTypeDefClient {
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
   private final GetGenesisRequest getGenesisRequest;
+  private final PostVoluntaryExitRequest postVoluntaryExitRequest;
 
   private final GetSpecRequest getSpecRequest;
   private final PostStateValidatorsRequest postStateValidatorsRequest;
@@ -40,6 +44,7 @@ public class OkHttpValidatorMinimalTypeDefClient {
     this.getSpecRequest = new GetSpecRequest(baseEndpoint, okHttpClient);
     this.getGenesisRequest = new GetGenesisRequest(baseEndpoint, okHttpClient);
     this.postStateValidatorsRequest = new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
+    this.postVoluntaryExitRequest = new PostVoluntaryExitRequest(baseEndpoint, okHttpClient);
   }
 
   public Optional<Map<String, String>> getSpec() {
@@ -66,5 +71,10 @@ public class OkHttpValidatorMinimalTypeDefClient {
     return postStateValidatorsRequest
         .postStateValidators(validatorIds)
         .map(ObjectAndMetaData::getData);
+  }
+
+  public void sendVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit)
+      throws BadRequestException {
+    postVoluntaryExitRequest.sendVoluntaryExit(signedVoluntaryExit);
   }
 }
