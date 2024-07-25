@@ -54,8 +54,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -295,15 +295,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   private void submitExitForValidator(final BLSPublicKey publicKey, final int validatorIndex) {
     try {
       final SignedVoluntaryExit exit = generateSignedExit(publicKey, validatorIndex);
-      final Optional<HttpErrorResponse> response = typeDefClient.sendVoluntaryExit(exit);
-      if (response.isPresent()) {
-        SUB_COMMAND_LOG.error(response.get().getMessage());
-      } else {
-        SUB_COMMAND_LOG.display(
-            "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
-      }
-
-    } catch (IllegalArgumentException ex) {
+      typeDefClient.sendVoluntaryExit(exit);
+      SUB_COMMAND_LOG.display(
+          "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
+    } catch (BadRequestException ex) {
       SUB_COMMAND_LOG.error(
           "Failed to submit exit for validator " + publicKey.toAbbreviatedString());
       SUB_COMMAND_LOG.error(ex.getMessage());

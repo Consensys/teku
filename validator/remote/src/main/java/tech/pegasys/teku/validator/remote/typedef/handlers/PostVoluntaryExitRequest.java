@@ -17,11 +17,11 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT;
 
 import java.util.Map;
-import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.validator.remote.apiclient.BeaconNodeApiErrorUtils;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class PostVoluntaryExitRequest extends AbstractTypeDefRequest {
@@ -29,16 +29,23 @@ public class PostVoluntaryExitRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<HttpErrorResponse> sendVoluntaryExit(final SignedVoluntaryExit voluntaryExit) {
+  public void sendVoluntaryExit(final SignedVoluntaryExit voluntaryExit)
+      throws BadRequestException {
     try {
-      return postJson(
+      postJson(
           SEND_SIGNED_VOLUNTARY_EXIT,
           Map.of(),
           voluntaryExit,
           SignedVoluntaryExit.SSZ_SCHEMA.getJsonTypeDefinition(),
-          new ResponseHandler<>());
+          new ResponseHandler<>()
+              .withHandler(
+                  SC_BAD_REQUEST,
+                  (request, response) -> {
+                    throw new IllegalArgumentException(
+                        BeaconNodeApiErrorUtils.getErrorMessage(response));
+                  }));
     } catch (final IllegalArgumentException e) {
-      return Optional.of(new HttpErrorResponse(SC_BAD_REQUEST, e.getMessage()));
+      throw new BadRequestException(e.getMessage());
     }
   }
 }

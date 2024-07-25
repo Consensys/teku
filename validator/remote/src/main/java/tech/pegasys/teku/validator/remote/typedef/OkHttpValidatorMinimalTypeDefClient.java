@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
@@ -62,8 +62,8 @@ public class OkHttpValidatorMinimalTypeDefClient {
                 new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 
-  public Optional<HttpErrorResponse> sendVoluntaryExit(
-      final SignedVoluntaryExit signedVoluntaryExit) {
-    return postVoluntaryExitRequest.sendVoluntaryExit(signedVoluntaryExit);
+  public void sendVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit)
+      throws BadRequestException {
+    postVoluntaryExitRequest.sendVoluntaryExit(signedVoluntaryExit);
   }
 }

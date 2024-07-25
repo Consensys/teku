@@ -15,18 +15,18 @@ package tech.pegasys.teku.validator.remote.typedef;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -51,8 +51,7 @@ class OkHttpValidatorMinimalTypeDefClientTest {
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
-    final Optional<HttpErrorResponse> maybeError = typeDefClient.sendVoluntaryExit(exit);
-    assertThat(maybeError).isEmpty();
+    typeDefClient.sendVoluntaryExit(exit);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -64,14 +63,15 @@ class OkHttpValidatorMinimalTypeDefClientTest {
   }
 
   @Test
-  public void sendVoluntaryExit_seesErrorMessage() throws Exception {
+  public void sendVoluntaryExit_seesErrorMessage() {
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(SC_BAD_REQUEST)
             .setBody("{\"code\": 400,\"message\": \"No\"}"));
 
-    final Optional<HttpErrorResponse> maybeError = typeDefClient.sendVoluntaryExit(exit);
-    assertThat(maybeError).isNotEmpty();
+    assertThatThrownBy(() -> typeDefClient.sendVoluntaryExit(exit))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageStartingWith("No");
   }
 }
