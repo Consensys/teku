@@ -455,6 +455,7 @@ jobs:
   publishDockerAmd64:
     executor: machine_executor_amd64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
