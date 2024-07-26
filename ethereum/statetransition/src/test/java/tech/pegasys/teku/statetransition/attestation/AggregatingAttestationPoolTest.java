@@ -522,7 +522,10 @@ class AggregatingAttestationPoolTest {
   }
 
   @TestTemplate
-  public void getAttestations_shouldReturnAttestationsForGivenCommitteeIndexOnly() {
+  public void getAttestations_shouldReturnAttestationsForGivenCommitteeIndexOnly_PreElectra() {
+    assumeThat(specMilestone).isLessThan(ELECTRA);
+    // Pre Electra the committee index filter is applied to the index set at the attestation data
+    // level
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
     final AttestationData attestationData2 =
         new AttestationData(
@@ -531,11 +534,25 @@ class AggregatingAttestationPoolTest {
             attestationData1.getBeaconBlockRoot(),
             attestationData1.getSource(),
             attestationData1.getTarget());
-    Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
     addAttestationFromValidators(attestationData2, 4, 5, 6);
     assertThat(
             aggregatingPool.getAttestations(
                 Optional.empty(), Optional.of(attestationData1.getIndex())))
+        .containsExactly(attestation1);
+  }
+
+  @TestTemplate
+  public void getAttestations_shouldReturnAttestationsForGivenCommitteeIndexOnly_PostElectra() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    // Post Electra the committee index filter is applied to the committee bits
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData2 = dataStructureUtil.randomAttestationData();
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
+    final Optional<UInt64> committeeIndexFilter = committeeIndex;
+    committeeIndex = Optional.of(committeeIndex.get().plus(1));
+    addAttestationFromValidators(attestationData2, 4, 5, 6);
+    assertThat(aggregatingPool.getAttestations(Optional.empty(), committeeIndexFilter))
         .containsExactly(attestation1);
   }
 
