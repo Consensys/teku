@@ -250,8 +250,7 @@ public class PeerSync {
   private PeerSyncResult handleFailedRequestToPeer(
       final Eth2Peer peer, final PeerStatus peerStatus, final Throwable err) {
     final Throwable rootException = Throwables.getRootCause(err);
-    if (rootException instanceof FailedBlockImportException) {
-      final FailedBlockImportException importException = (FailedBlockImportException) rootException;
+    if (rootException instanceof FailedBlockImportException importException) {
       final FailureReason reason = importException.getResult().getFailureReason();
       final SignedBeaconBlock block = importException.getBlock();
 

@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.ZeroLeafNode;
  * in the spec:
  * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
  */
+@SuppressWarnings("ClassInitializationDeadlock")
 public interface LeafNode extends TreeNode, LeafDataNode {
 
   int MAX_BYTE_SIZE = 32;

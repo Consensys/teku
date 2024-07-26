@@ -424,8 +424,8 @@ public class DasSamplerImpl
               if (slotTasks.isEmpty()) {
                 return;
               }
-              db.setFirstSamplerIncompleteSlot(slotTasks.get(slotTasks.size() - 1).slot())
-                  .thenPeek(__ -> prune(slotTasks.get(slotTasks.size() - 1).slot()))
+              db.setFirstSamplerIncompleteSlot(slotTasks.getLast().slot())
+                  .thenPeek(__ -> prune(slotTasks.getLast().slot()))
                   .ifExceptionGetsHereRaiseABug();
             });
   }

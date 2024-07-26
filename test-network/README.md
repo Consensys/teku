@@ -1,30 +1,30 @@
-Docker Testnet
+Kurtosis Testnet
 ==============
 
-This directory contains a docker-compose configuration to run a basic 4-node Teku network.
-The network uses the minimal spec and the mock-genesis protocol to generate a genesis state without 
-needing an ETH1 chain.  The 64 validators are spread across the four nodes.
+[Kurtosis](https://github.com/kurtosis-tech/ethereum-package) can be used to spin up a Docker-based 
+test network. A sample [network_params.yaml](./network_params.yaml) configuration file has been
+provided to run a basic 4-node Teku/Besu network with a mainnet preset and a total of 256 validators (64 per node).
 
+For exhaustive Kurtosis configuration options, please check the full YAML schema [here](https://github.com/kurtosis-tech/ethereum-package#configuration).
 
 How To Run
 ----------
 
-To start the network, run the `launch.sh` script in this directory.  
-To stop, simply ctrl-C to kill the docker instances and then optionally run `docker-compose down` to remove the stopped instances from docker.
+* Make sure Kurtosis is [installed](https://docs.kurtosis.com/install/).
+* Run `kurtosis run --enclave test-network github.com/kurtosis-tech/ethereum-package --args-file network_params.yaml`
+
+If you would like to use a locally built Teku image, first run `./gradlew distDocker` in the root
+directory and then use `cl_image: consensys/teku:develop` in the `network_params.yaml` file.
+
+To tear down the test network, you can simply run `kurtosis enclave rm -f test-network`.
+
+Monitoring/Debugging
+----------
+
+[Dora](https://github.com/ethpandaops/dora), [el_forkmon](https://github.com/ethereum/nodemonitor),
+Prometheus/Grafana and [rpc-snooper](https://github.com/ethpandaops/rpc-snooper) have been enabled
+to allow for an easier monitoring/debugging of the network/nodes.
 
 
-Ports and Access
-----------------
 
-Metrics are available via Grafana at http://localhost:3001/ username is `admin` and password is `pass`.
 
-Each node's REST APIs are exposed on ports 19601, 19602, 19603 and 19604 respectively.
-
-Add a `ports:` section to any of the nodes to expose additional ports and access services from that node.
-
-Persistent Data
----------------
-
-The teku nodes store data and logs in `data/node<X>/`. It is safe to delete the entire `data` directory to start from scratch.
-
-Grafana stores its data in `grafana/data` so changes made to dashboards are persisted across runs.

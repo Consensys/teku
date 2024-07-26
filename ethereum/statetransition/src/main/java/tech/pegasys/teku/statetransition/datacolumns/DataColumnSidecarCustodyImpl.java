@@ -190,8 +190,7 @@ public class DataColumnSidecarCustodyImpl
                           if (slotCustodies.isEmpty()) {
                             return;
                           }
-                          db.setFirstCustodyIncompleteSlot(
-                                  slotCustodies.get(slotCustodies.size() - 1).slot())
+                          db.setFirstCustodyIncompleteSlot(slotCustodies.getLast().slot())
                               .ifExceptionGetsHereRaiseABug();
                         }));
   }

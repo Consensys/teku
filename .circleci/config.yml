@@ -5,7 +5,7 @@ orbs:
 executors:
   small_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth: &docker-auth
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
           # Second reason we're doing this is so that forked PRs from external contributors works ie env vars aren't visible to forked PRs from within contexts
@@ -27,7 +27,7 @@ executors:
 
   medium_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth:
           <<: *docker-auth
     resource_class: medium
@@ -39,7 +39,7 @@ executors:
 
   medium_plus_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth:
           <<: *docker-auth
     resource_class: "medium+"
@@ -50,7 +50,7 @@ executors:
 
   large_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth:
           <<: *docker-auth
     resource_class: large
@@ -83,6 +83,21 @@ executors:
           <<: *docker-auth
 
 commands:
+  install_java_21:
+    description: "Install Java 21"
+    steps:
+      - run:
+          name: "Install Java 21"
+          command: |
+            sudo apt update
+            sudo apt install -y openjdk-21-jdk
+            if [ "$(uname -m)" = "aarch64" ]; then
+              ARCH="arm64"
+            else
+              ARCH="amd64"
+            fi
+            sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-$ARCH/bin/java
+            sudo update-alternatives --set javac /usr/lib/jvm/java-21-openjdk-$ARCH/bin/javac
   prepare:
     description: "Prepare"
     steps:
@@ -148,7 +163,7 @@ commands:
           name: "Publish Docker Images"
           command: |
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
-            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" uploadDocker
+            ./gradlew --no-daemon --parallel -Pbranch=${CIRCLE_BRANCH} -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> uploadDocker
 
   notify:
     description: "Notify Slack"
@@ -157,6 +172,12 @@ commands:
           mentions: "team-centaur"
           fail_only: true
           only_for_branches: 'master'
+
+parameters:
+  include_commit_hash_in_docker_tag:
+    type: boolean
+    default: false
+
 jobs:
   assemble:
     executor: large_executor
@@ -204,7 +225,7 @@ jobs:
           no_output_timeout: 20m
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
+            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
             cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
       - run:
           name: "Gather test artifacts"
@@ -325,6 +346,7 @@ jobs:
     parallelism: 5
     executor: machine_executor_amd64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
@@ -433,6 +455,7 @@ jobs:
   publishDockerAmd64:
     executor: machine_executor_amd64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
@@ -443,6 +466,7 @@ jobs:
   publishDockerArm64:
     executor: machine_executor_arm64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
@@ -458,7 +482,7 @@ jobs:
       - run:
           name: Create and publish docker manifest
           command: |
-            ./gradlew --no-daemon --parallel manifestDocker
+            ./gradlew --no-daemon --parallel -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> manifestDocker
       - notify
 
   extractAPISpec:
@@ -497,7 +521,7 @@ jobs:
           paths:
             - .openapidoc/spec/teku.json
 
-  # longish story here: we store the openapi json spec in the `gh-pages` branch of teku on Github 
+  # longish story here: we store the openapi json spec in the `gh-pages` branch of teku on Github
   # The reason we don't use GHA and instead use Circle to push to GHA is:
   # 1. We need assemble -> extractAPISpec -> publishAPISpec and this takes circa 10 mins to build in GHA,
   # 2. We publish artifacts (openapi, docker, binaries etc) only after ALL tests and we can't check for all the jobs passing to kick this one off
