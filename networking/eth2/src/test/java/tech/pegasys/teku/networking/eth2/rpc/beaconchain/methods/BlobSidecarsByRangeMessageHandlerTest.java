@@ -299,7 +299,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // we simulate that the canonical non-finalized chain only contains blobs from last
     // slotAndBlockRoot
     final SlotAndBlockRoot canonicalSlotAndBlockRoot =
-        allAvailableBlobs.get(allAvailableBlobs.size() - 1).getSlotAndBlockRoot();
+        allAvailableBlobs.getLast().getSlotAndBlockRoot();
 
     final List<BlobSidecar> expectedSent =
         allAvailableBlobs.stream()

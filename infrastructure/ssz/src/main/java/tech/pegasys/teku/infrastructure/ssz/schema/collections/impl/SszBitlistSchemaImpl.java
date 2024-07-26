@@ -138,7 +138,7 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
         writer.write(new byte[] {1});
         return size + 1;
       } else {
-        UnsafeBytes lastBytes = bytesList.get(bytesList.size() - 1);
+        UnsafeBytes lastBytes = bytesList.getLast();
         byte lastByte = lastBytes.bytes[lastBytes.offset + lastBytes.length - 1];
         byte lastByteWithBoundaryBit = (byte) (lastByte ^ (1 << bitIdx));
 

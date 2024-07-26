@@ -252,7 +252,7 @@ public class BlockImporterTest {
     tx.commit().join();
 
     // Known blocks should report as successfully imported
-    final BlockImportResult result = blockImporter.importBlock(blocks.get(blocks.size() - 1)).get();
+    final BlockImportResult result = blockImporter.importBlock(blocks.getLast()).get();
     assertSuccessfulResult(result, false);
   }
 

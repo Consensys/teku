@@ -313,8 +313,7 @@ class ForkChoiceTest {
   void onBlock_consensusValidationShouldNotResolveWhenEarlyFails() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final List<SignedBlockAndState> signedBlockAndStates = chainBuilder.generateBlocksUpToSlot(2);
-    final SignedBlockAndState wrongBlockAndState =
-        signedBlockAndStates.get(signedBlockAndStates.size() - 1);
+    final SignedBlockAndState wrongBlockAndState = signedBlockAndStates.getLast();
 
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(wrongBlockAndState.getSlot());
 
