@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.AssertionsForClassTypes;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
@@ -70,6 +71,15 @@ public class MetadataTestUtil {
         handler.getMetadata().getRequestBodyType();
     return requestContentTypeDefinition.deserialize(
         IOUtils.toInputStream(json, StandardCharsets.UTF_8));
+  }
+
+  public static Object getRequestBodyFromMetadata(
+      final RestApiEndpoint handler, final Map<String, String> headers, final String json)
+      throws IOException {
+    final RequestContentTypeDefinition<?> requestContentTypeDefinition =
+        handler.getMetadata().getRequestBodyType();
+    return requestContentTypeDefinition.deserialize(
+        IOUtils.toInputStream(json, StandardCharsets.UTF_8), headers);
   }
 
   private static byte[] toBytes(final Serializer func) throws JsonProcessingException {

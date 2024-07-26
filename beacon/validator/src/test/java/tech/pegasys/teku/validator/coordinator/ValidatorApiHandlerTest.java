@@ -805,6 +805,20 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void sendSignedAttestations_shouldAddAttestationToAttestationManager_V2() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
+        .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestationsV2(
+            spec.atSlot(epochStartSlot).getMilestone(), List.of(attestation));
+    assertThat(result).isCompletedWithValue(emptyList());
+
+    verify(attestationManager)
+        .addAttestation(ValidatableAttestation.from(spec, attestation), Optional.empty());
+  }
+
+  @Test
   void sendSignedAttestations_shouldAddToDutyMetricsAndPerformanceTrackerWhenNotInvalid() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
@@ -812,6 +826,21 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result).isCompletedWithValue(emptyList());
+
+    verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
+    verify(performanceTracker).saveProducedAttestation(attestation);
+  }
+
+  @Test
+  void sendSignedAttestations_shouldAddToDutyMetricsAndPerformanceTrackerWhenNotInvalidV2() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
+        .thenReturn(completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestationsV2(
+            spec.atSlot(epochStartSlot).getMilestone(), List.of(attestation));
     assertThat(result).isCompletedWithValue(emptyList());
 
     verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
@@ -833,6 +862,21 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  void sendSignedAttestations_shouldNotAddToDutyMetricsAndPerformanceTrackerWhenInvalid_V2() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
+        .thenReturn(completedFuture(InternalValidationResult.reject("Bad juju")));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestationsV2(
+            spec.atSlot(epochStartSlot).getMilestone(), List.of(attestation));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
+
+    verify(dutyMetrics, never()).onAttestationPublished(attestation.getData().getSlot());
+    verify(performanceTracker, never()).saveProducedAttestation(attestation);
+  }
+
+  @Test
   void sendSignedAttestations_shouldProcessMixOfValidAndInvalidAttestations() {
     final Attestation invalidAttestation = dataStructureUtil.randomAttestation();
     final Attestation validAttestation = dataStructureUtil.randomAttestation();
@@ -843,6 +887,27 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSignedAttestations(List.of(invalidAttestation, validAttestation));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
+
+    verify(dutyMetrics, never()).onAttestationPublished(invalidAttestation.getData().getSlot());
+    verify(dutyMetrics).onAttestationPublished(validAttestation.getData().getSlot());
+    verify(performanceTracker, never()).saveProducedAttestation(invalidAttestation);
+    verify(performanceTracker).saveProducedAttestation(validAttestation);
+  }
+
+  @Test
+  void sendSignedAttestations_shouldProcessMixOfValidAndInvalidAttestations_V2() {
+    final Attestation invalidAttestation = dataStructureUtil.randomAttestation();
+    final Attestation validAttestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(validatableAttestationOf(invalidAttestation), any()))
+        .thenReturn(completedFuture(InternalValidationResult.reject("Bad juju")));
+    when(attestationManager.addAttestation(validatableAttestationOf(validAttestation), any()))
+        .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestationsV2(
+            spec.atSlot(epochStartSlot).getMilestone(),
+            List.of(invalidAttestation, validAttestation));
     assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
 
     verify(dutyMetrics, never()).onAttestationPublished(invalidAttestation.getData().getSlot());

@@ -466,7 +466,12 @@ public class ValidatorClientService extends Service {
             spec,
             validatorDutyMetrics);
     final AttestationDutyFactory attestationDutyFactory =
-        new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
+        new AttestationDutyFactory(
+            spec,
+            forkProvider,
+            validatorApiChannel,
+            validatorDutyMetrics,
+            config.getValidatorConfig().isAttestationsV2Enabled());
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final boolean dvtSelectionsEndpointEnabled =
