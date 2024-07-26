@@ -43,8 +43,7 @@ class StreamingStateRegeneratorTest {
             .streamBlocksAndStates(genesis.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot())
             .collect(Collectors.toList());
 
-    final SignedBlockAndState lastBlockAndState =
-        newBlocksAndStates.get(newBlocksAndStates.size() - 1);
+    final SignedBlockAndState lastBlockAndState = newBlocksAndStates.getLast();
     final BeaconState result =
         StreamingStateRegenerator.regenerate(
             spec,

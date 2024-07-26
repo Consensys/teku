@@ -79,8 +79,7 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
     setupData();
 
     // PRE: we have a non-canonical block and a canonical block at the same slot
-    final SignedBeaconBlock canonical =
-        canonicalBlockAndStateList.get(canonicalBlockAndStateList.size() - 1).getBlock();
+    final SignedBeaconBlock canonical = canonicalBlockAndStateList.getLast().getBlock();
     final SignedBeaconBlock forked = nonCanonicalBlockAndStateList.get(1).getBlock();
     assertThat(forked.getSlot()).isEqualTo(canonical.getSlot());
     if (isFinalized) {
@@ -102,14 +101,11 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
     canonicalBlockAndStateList.addAll(createBlocksAtSlots(10));
     final ChainBuilder fork = chainBuilder.fork();
     nonCanonicalBlockAndStateList.add(fork.generateNextBlock());
-    chainUpdater.saveBlock(
-        nonCanonicalBlockAndStateList.get(nonCanonicalBlockAndStateList.size() - 1));
+    chainUpdater.saveBlock(nonCanonicalBlockAndStateList.getLast());
     nonCanonicalBlockAndStateList.add(fork.generateNextBlock());
-    chainUpdater.saveBlock(
-        nonCanonicalBlockAndStateList.get(nonCanonicalBlockAndStateList.size() - 1));
+    chainUpdater.saveBlock(nonCanonicalBlockAndStateList.getLast());
     canonicalBlockAndStateList.add(chainBuilder.generateNextBlock(1));
-    chainUpdater.updateBestBlock(
-        canonicalBlockAndStateList.get(canonicalBlockAndStateList.size() - 1));
+    chainUpdater.updateBestBlock(canonicalBlockAndStateList.getLast());
     chainUpdater.advanceChain(32);
   }
 

@@ -52,7 +52,7 @@ public enum SpecMilestone {
       throw new IllegalArgumentException("There is no milestone prior to Phase0");
     }
     final List<SpecMilestone> priorMilestones = getAllPriorMilestones(this);
-    return priorMilestones.get(priorMilestones.size() - 1);
+    return priorMilestones.getLast();
   }
 
   /**

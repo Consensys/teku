@@ -362,7 +362,7 @@ public class Eth2OutgoingRequestHandlerTest
     sendInitialPayload();
 
     timeProvider.advanceTimeByMillis(100);
-    final Bytes chunkBytes = chunks.get(0);
+    final Bytes chunkBytes = chunks.getFirst();
     deliverBytes(chunkBytes.slice(0, chunkBytes.size() - 1));
 
     asyncRequestRunner.executeQueuedActions();

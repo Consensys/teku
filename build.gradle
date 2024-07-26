@@ -143,8 +143,13 @@ allprojects {
     jar.preserveFileTimestamps = false
   }
 
-  sourceCompatibility = '21'
-  targetCompatibility = '21'
+  java {
+    sourceCompatibility = JavaVersion.VERSION_21
+  }
+
+  java {
+    targetCompatibility = JavaVersion.VERSION_21
+  }
 
   repositories {
     mavenLocal()
