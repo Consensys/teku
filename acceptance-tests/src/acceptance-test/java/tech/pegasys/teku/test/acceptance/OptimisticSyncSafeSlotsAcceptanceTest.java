@@ -77,7 +77,7 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldPassMergeOptimisticallyAndBeginFinalizationAfterSafeSlotsToImport() throws Exception {
-    tekuNode2.waitForNonDefaultExecutionPayload(10);
+    tekuNode2.waitForNonDefaultExecutionPayload();
     tekuNode2.waitForOptimisticBlock();
 
     // Now make execution node sync and clarify switch from optimistic sync back to the normal

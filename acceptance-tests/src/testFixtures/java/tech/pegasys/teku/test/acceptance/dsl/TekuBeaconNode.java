@@ -461,10 +461,6 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void waitForNonDefaultExecutionPayload() {
-    waitForNonDefaultExecutionPayload(5);
-  }
-
-  public void waitForNonDefaultExecutionPayload(final int timeoutInMinutes) {
     LOG.debug("Wait for a block containing a non default execution payload");
 
     waitFor(
@@ -473,7 +469,7 @@ public class TekuBeaconNode extends TekuNode {
           assertThat(block).isPresent();
           checkExecutionPayloadInBlock(block.get());
         },
-        timeoutInMinutes,
+        5,
         MINUTES);
   }
 
