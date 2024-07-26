@@ -17,10 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -28,18 +25,11 @@ import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 public interface ValidatorRestApiClient {
-
-  Optional<GetGenesisResponse> getGenesis();
-
-  Optional<List<ValidatorResponse>> getValidators(List<String> validatorIds);
-
-  Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
 
   Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 
@@ -54,8 +44,6 @@ public interface ValidatorRestApiClient {
 
   Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
-
-  void subscribeToSyncCommitteeSubnets(List<SyncCommitteeSubnetSubscription> subnetSubscriptions);
 
   void sendContributionAndProofs(
       final List<SignedContributionAndProof> signedContributionAndProofs);

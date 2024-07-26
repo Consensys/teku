@@ -131,6 +131,20 @@ public class NodeDataProvider {
     return new ArrayList<>(attesterSlashingPool.getAll());
   }
 
+  public ObjectAndMetaData<List<AttesterSlashing>> getAttesterSlashingsAndMetaData() {
+    final List<AttesterSlashing> attesterSlashings = new ArrayList<>(attesterSlashingPool.getAll());
+    final UInt64 slot = getSlot(attesterSlashings);
+    return new ObjectAndMetaData<>(
+        attesterSlashings, spec.atSlot(slot).getMilestone(), false, false, false);
+  }
+
+  private UInt64 getSlot(final List<AttesterSlashing> attesterSlashings) {
+    return attesterSlashings.stream()
+        .findFirst()
+        .map(attesterSlashing -> attesterSlashing.getAttestation1().getData().getSlot())
+        .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
+  }
+
   public List<ProposerSlashing> getProposerSlashings() {
     return new ArrayList<>(proposerSlashingPool.getAll());
   }
