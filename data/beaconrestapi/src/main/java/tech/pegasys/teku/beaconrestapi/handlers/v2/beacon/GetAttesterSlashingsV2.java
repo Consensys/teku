@@ -26,8 +26,6 @@ import io.javalin.http.Header;
 import java.util.List;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -77,15 +75,13 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
             .getSchemaDefinition(SpecMilestone.ELECTRA)
             .getAttesterSlashingSchema();
 
-    final SerializableOneOfTypeDefinition<List<AttesterSlashing>> oneOfTypeDefinition =
-        new SerializableOneOfTypeDefinitionBuilder<List<AttesterSlashing>>()
-            .withType(__ -> true, listOf(attesterSlashingSchema.getJsonTypeDefinition()))
-            .build();
-
     return SerializableTypeDefinition.<ObjectAndMetaData<List<AttesterSlashing>>>object()
         .name("GetPoolAttesterSlashingsV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
-        .withField("data", oneOfTypeDefinition, ObjectAndMetaData::getData)
+        .withField(
+            "data",
+            listOf(attesterSlashingSchema.getJsonTypeDefinition()),
+            ObjectAndMetaData::getData)
         .build();
   }
 }

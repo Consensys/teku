@@ -15,15 +15,10 @@
       ]
     },
     "data": {
-      "type": "object",
-      "oneOf": [
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/components/schemas/AttesterSlashing"
-          }
-        }
-      ]
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/AttesterSlashing"
+      }
     }
   }
 }
