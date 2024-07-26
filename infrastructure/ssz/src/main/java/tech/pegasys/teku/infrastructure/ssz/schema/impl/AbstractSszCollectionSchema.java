@@ -249,7 +249,7 @@ public abstract class AbstractSszCollectionSchema<
       if (childNodes.isEmpty()) {
         lastByte = Optional.empty();
       } else {
-        Bytes lastNodeData = childNodes.get(childNodes.size() - 1).getData();
+        Bytes lastNodeData = childNodes.getLast().getData();
         lastByte = Optional.of(lastNodeData.get(lastNodeData.size() - 1));
       }
       return new DeserializedData(

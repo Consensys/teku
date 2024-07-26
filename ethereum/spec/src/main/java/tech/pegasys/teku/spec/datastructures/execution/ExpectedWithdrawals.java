@@ -369,6 +369,6 @@ public class ExpectedWithdrawals {
   }
 
   private static UInt64 nextWithdrawalAfter(final List<Withdrawal> partialWithdrawals) {
-    return partialWithdrawals.get(partialWithdrawals.size() - 1).getIndex().increment();
+    return partialWithdrawals.getLast().getIndex().increment();
   }
 }

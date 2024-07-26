@@ -63,7 +63,7 @@ public class PerformanceTracker {
     }
 
     final UInt64 totalProcessingDuration =
-        events.get(events.size() - 1).getRight().minusMinZero(events.get(0).getRight());
+        events.getLast().getRight().minusMinZero(events.getFirst().getRight());
     totalDurationReporter.accept(totalProcessingDuration);
 
     if (isLateEvent) {

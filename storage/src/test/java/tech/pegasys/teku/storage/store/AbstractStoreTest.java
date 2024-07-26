@@ -130,7 +130,7 @@ public abstract class AbstractStoreTest {
 
     addBlocks(store, blocks);
 
-    chainProcessor.accept(store, blocks.get(blocks.size() - 1));
+    chainProcessor.accept(store, blocks.getLast());
   }
 
   protected void addBlock(final UpdatableStore store, final SignedBlockAndState block) {

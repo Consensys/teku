@@ -72,11 +72,11 @@ public class DepositsFromBlockEvent {
   }
 
   public UInt64 getFirstDepositIndex() {
-    return deposits.get(0).getMerkle_tree_index();
+    return deposits.getFirst().getMerkle_tree_index();
   }
 
   public UInt64 getLastDepositIndex() {
-    return deposits.get(deposits.size() - 1).getMerkle_tree_index();
+    return deposits.getLast().getMerkle_tree_index();
   }
 
   public UInt64 getBlockNumber() {
