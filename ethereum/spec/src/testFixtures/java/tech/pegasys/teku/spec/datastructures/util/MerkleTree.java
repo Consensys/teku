@@ -50,19 +50,18 @@ public class MerkleTree {
   }
 
   public void add(final Bytes32 leaf) {
-    if (!tree.get(0).isEmpty()
-        && tree.get(0).get(tree.get(0).size() - 1).equals(zeroHashes.get(0))) {
-      tree.get(0).remove(tree.get(0).size() - 1);
+    if (!tree.getFirst().isEmpty() && tree.getFirst().getLast().equals(zeroHashes.getFirst())) {
+      tree.getFirst().removeLast();
     }
-    int mutableStageSize = tree.get(0).size();
-    tree.get(0).add(leaf);
+    int mutableStageSize = tree.getFirst().size();
+    tree.getFirst().add(leaf);
     for (int depth = 0; depth <= treeDepth; depth++) {
       final List<Bytes32> stage = tree.get(depth);
       if (depth > 0) {
         // Remove elements that should be modified
         mutableStageSize /= 2;
         while (stage.size() != mutableStageSize) {
-          stage.remove(stage.size() - 1);
+          stage.removeLast();
         }
 
         final List<Bytes32> previousStage = tree.get(depth - 1);
@@ -79,15 +78,15 @@ public class MerkleTree {
   }
 
   public int getNumberOfLeaves() {
-    final int lastLeafIndex = tree.get(0).size() - 1;
-    if (tree.get(0).get(lastLeafIndex).equals(Bytes32.ZERO)) {
-      return tree.get(0).size() - 1;
+    final int lastLeafIndex = tree.getFirst().size() - 1;
+    if (tree.getFirst().get(lastLeafIndex).equals(Bytes32.ZERO)) {
+      return tree.getFirst().size() - 1;
     }
-    return tree.get(0).size();
+    return tree.getFirst().size();
   }
 
   public List<Bytes32> getProof(final Bytes32 value) {
-    final int index = tree.get(0).indexOf(value);
+    final int index = tree.getFirst().indexOf(value);
     if (index == -1) {
       throw new IllegalArgumentException("Leaf value is missing from the MerkleTree");
     }
@@ -122,7 +121,7 @@ public class MerkleTree {
 
   private Bytes32 calcViewBoundaryRoot(final int depth, final int viewLimit) {
     if (depth == 0) {
-      return zeroHashes.get(0);
+      return zeroHashes.getFirst();
     }
     final int deeperDepth = depth - 1;
     final Bytes32 deeperRoot = calcViewBoundaryRoot(deeperDepth, viewLimit);
@@ -142,7 +141,7 @@ public class MerkleTree {
    * @return proof (i.e. collection of siblings on the way to root for the given leaf)
    */
   public List<Bytes32> getProofWithViewBoundary(final Bytes32 value, final int viewLimit) {
-    return getProofWithViewBoundary(tree.get(0).indexOf(value), viewLimit);
+    return getProofWithViewBoundary(tree.getFirst().indexOf(value), viewLimit);
   }
 
   /**
@@ -193,7 +192,7 @@ public class MerkleTree {
   }
 
   public Bytes32 getRoot() {
-    return Hash.sha256(tree.get(treeDepth).get(0), calcMixInValue());
+    return Hash.sha256(tree.get(treeDepth).getFirst(), calcMixInValue());
   }
 
   @Override

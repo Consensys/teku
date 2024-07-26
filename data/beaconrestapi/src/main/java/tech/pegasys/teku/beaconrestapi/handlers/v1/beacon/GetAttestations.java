@@ -52,6 +52,7 @@ public class GetAttestations extends RestApiEndpoint {
             .description(
                 "Retrieves attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
+            .deprecated(true)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
             .response(SC_OK, "Request successful", getResponseType(spec))
@@ -70,7 +71,6 @@ public class GetAttestations extends RestApiEndpoint {
     request.respondOk(nodeDataProvider.getAttestations(slot, committeeIndex));
   }
 
-  // TODO EIP-7549 handle Electra attestations
   private static SerializableTypeDefinition<List<Attestation>> getResponseType(final Spec spec) {
     return SerializableTypeDefinition.<List<Attestation>>object()
         .name("GetPoolAttestationsResponse")

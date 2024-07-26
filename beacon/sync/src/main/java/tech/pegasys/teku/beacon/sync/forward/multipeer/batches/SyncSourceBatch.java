@@ -360,8 +360,8 @@ public class SyncSourceBatch implements Batch {
     if (blocks.isEmpty() || newBlocks.isEmpty()) {
       return true;
     }
-    final SignedBeaconBlock previousBlock = blocks.get(blocks.size() - 1);
-    final SignedBeaconBlock firstNewBlock = newBlocks.get(0);
+    final SignedBeaconBlock previousBlock = blocks.getLast();
+    final SignedBeaconBlock firstNewBlock = newBlocks.getFirst();
     if (!firstNewBlock.getParentRoot().equals(previousBlock.getRoot())) {
       LOG.debug(
           "Marking batch invalid because new blocks do not form a chain with previous blocks");
