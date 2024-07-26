@@ -1,5 +1,5 @@
 {
-  "title" : "IndexedAttestation",
+  "title" : "IndexedAttestationElectra",
   "type" : "object",
   "required" : [ "attesting_indices", "data", "signature" ],
   "properties" : {

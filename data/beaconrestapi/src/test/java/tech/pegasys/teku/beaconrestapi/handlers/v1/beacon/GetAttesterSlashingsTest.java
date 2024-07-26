@@ -36,7 +36,7 @@ class GetAttesterSlashingsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    setHandler(new GetAttesterSlashings(nodeDataProvider, spec));
+    setHandler(new GetAttesterSlashings(nodeDataProvider, schemaDefinitionCache));
   }
 
   @Test

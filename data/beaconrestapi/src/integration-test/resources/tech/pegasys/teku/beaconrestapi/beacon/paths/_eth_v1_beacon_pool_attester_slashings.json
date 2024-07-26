@@ -47,7 +47,7 @@
       "content" : {
         "application/json" : {
           "schema" : {
-            "$ref" : "#/components/schemas/AttesterSlashing"
+            "$ref" : "#/components/schemas/AttesterSlashingPhase0"
           }
         }
       }

@@ -44,8 +44,8 @@
     "description" : "Submits AttesterSlashing object to node's pool. Upon successful validation the node MUST broadcast it to network.",
     "parameters" : [ {
       "name" : "Eth-Consensus-Version",
-      "in" : "header",
       "required" : true,
+      "in" : "header",
       "schema" : {
         "type" : "string",
         "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
@@ -56,7 +56,7 @@
       "content" : {
         "application/json" : {
           "schema" : {
-            "$ref" : "#/components/schemas/AttesterSlashing"
+            "$ref" : "#/components/schemas/AttesterSlashingElectra"
           }
         }
       }

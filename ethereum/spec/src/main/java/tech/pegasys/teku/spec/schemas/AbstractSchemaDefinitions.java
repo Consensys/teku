@@ -36,9 +36,11 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   public AbstractSchemaDefinitions(final SpecConfig specConfig) {
     this.historicalBatchSchema = new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot());
     this.indexedAttestationSchema =
-        new IndexedAttestation.IndexedAttestationSchema(getMaxValidatorPerAttestation(specConfig));
+        new IndexedAttestation.IndexedAttestationSchema(
+            getMaxValidatorPerAttestation(specConfig), toVersionElectra().isPresent());
     this.attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
+        new AttesterSlashing.AttesterSlashingSchema(
+            indexedAttestationSchema, toVersionElectra().isPresent());
     this.beaconBlocksByRootRequestMessageSchema =
         new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(specConfig);
     this.attnetsENRFieldSchema = SszBitvectorSchema.create(specConfig.getAttestationSubnetCount());

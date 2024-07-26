@@ -27,7 +27,7 @@
     "attester_slashings" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/AttesterSlashing"
+        "$ref" : "#/components/schemas/AttesterSlashingPhase0"
       }
     },
     "attestations" : {
