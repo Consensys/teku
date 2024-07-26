@@ -36,13 +36,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
@@ -57,6 +54,7 @@ import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -67,6 +65,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -77,7 +76,6 @@ import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 @CommandLine.Command(
@@ -95,9 +93,7 @@ import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefC
 public class VoluntaryExitCommand implements Callable<Integer> {
 
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
-  private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   private OkHttpValidatorMinimalTypeDefClient typeDefClient;
-  private OkHttpValidatorRestApiClient apiClient;
   private Fork fork;
   private Bytes32 genesisRoot;
   private Map<BLSPublicKey, Validator> validatorsMap;
@@ -268,51 +264,38 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
         validatorsMap.keySet().stream().map(BLSPublicKey::toString).toList();
-    for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
-      final List<String> batch =
-          publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-      apiClient
-          .getValidators(batch)
-          .ifPresent(
-              validatorResponses ->
-                  validatorResponses.forEach(
-                      response ->
-                          validatorIndices.put(
-                              response.validator.pubkey.asBLSPublicKey(),
-                              response.index.intValue())));
+    typeDefClient
+        .postStateValidators(publicKeys)
+        .ifPresent(
+            validatorList ->
+                validatorList.forEach(
+                    validator ->
+                        validatorIndices.put(
+                            validator.getPublicKey(), validator.getIntegerIndex().intValue())));
 
-      batch.forEach(
-          key -> {
-            if (!validatorIndices.containsKey(
-                BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(key)))) {
-              SUB_COMMAND_LOG.error("Validator not found: " + key);
-            }
-          });
-    }
+    publicKeys.forEach(
+        key -> {
+          if (!validatorIndices.containsKey(BLSPublicKey.fromHexString(key))) {
+            SUB_COMMAND_LOG.error("Validator not found: " + key);
+          }
+        });
     return validatorIndices;
   }
 
   private void submitExitForValidator(final BLSPublicKey publicKey, final int validatorIndex) {
     try {
-      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
-          generateSignedExit(publicKey, validatorIndex);
-      final Optional<PostDataFailureResponse> response =
-          apiClient.sendVoluntaryExit(new SignedVoluntaryExit(exit));
-      if (response.isPresent()) {
-        SUB_COMMAND_LOG.error(response.get().message);
-      } else {
-        SUB_COMMAND_LOG.display(
-            "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
-      }
-
-    } catch (IllegalArgumentException ex) {
+      final SignedVoluntaryExit exit = generateSignedExit(publicKey, validatorIndex);
+      typeDefClient.sendVoluntaryExit(exit);
+      SUB_COMMAND_LOG.display(
+          "Exit for validator " + publicKey.toAbbreviatedString() + " submitted.");
+    } catch (BadRequestException ex) {
       SUB_COMMAND_LOG.error(
           "Failed to submit exit for validator " + publicKey.toAbbreviatedString());
       SUB_COMMAND_LOG.error(ex.getMessage());
     }
   }
 
-  private tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit generateSignedExit(
+  private SignedVoluntaryExit generateSignedExit(
       final BLSPublicKey publicKey, final int validatorIndex) {
     final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
     final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
@@ -322,14 +305,12 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .getSigner()
             .signVoluntaryExit(message, forkInfo)
             .join();
-    return new tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit(
-        message, signature);
+    return new SignedVoluntaryExit(message, signature);
   }
 
   private boolean storeExitForValidator(
       final BLSPublicKey blsPublicKey, final Integer validatorIndex) {
-    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit exit =
-        generateSignedExit(blsPublicKey, validatorIndex);
+    final SignedVoluntaryExit exit = generateSignedExit(blsPublicKey, validatorIndex);
     try {
       SUB_COMMAND_LOG.display("Writing signed exit for " + blsPublicKey.toAbbreviatedString());
       Files.writeString(
@@ -342,9 +323,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     }
   }
 
-  private String prettyExitMessage(
-      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit
-          signedVoluntaryExit)
+  private String prettyExitMessage(final SignedVoluntaryExit signedVoluntaryExit)
       throws JsonProcessingException {
     final PrettyPrintCommand.OutputFormat json = PrettyPrintCommand.OutputFormat.JSON;
     return JsonUtil.serialize(
@@ -375,14 +354,6 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary_exits", 8);
-
-    apiClient =
-        config
-            .validatorClient()
-            .getValidatorConfig()
-            .getPrimaryBeaconNodeApiEndpoint()
-            .map(RemoteSpecLoader::createApiClient)
-            .orElseThrow();
 
     typeDefClient =
         config

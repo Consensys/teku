@@ -24,7 +24,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PR
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_VALIDATOR_LIVENESS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
@@ -61,7 +60,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionR
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
@@ -128,16 +126,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(
         SEND_SIGNED_ATTESTATION,
         attestations,
-        ResponseHandler.createForEmptyOkAndContentInBadResponse(
-            jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public Optional<PostDataFailureResponse> sendVoluntaryExit(
-      final SignedVoluntaryExit voluntaryExit) {
-    return post(
-        SEND_SIGNED_VOLUNTARY_EXIT,
-        voluntaryExit,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
   }
