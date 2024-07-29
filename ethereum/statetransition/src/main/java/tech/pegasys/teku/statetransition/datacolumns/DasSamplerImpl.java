@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.Streams;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -311,7 +310,7 @@ public class DasSamplerImpl
               .thenCompose(
                   firstSlot ->
                       SafeFuture.allOf(
-                          getAncestorsInclusive(firstSlot, slot.minusMinZero(1), parentRoot)
+                          getAncestorsInclusive(firstSlot, parentRoot)
                               .map(
                                   slotAndBlockRoot ->
                                       scheduleSlotTaskIfNonZeroCommitments(
@@ -325,10 +324,7 @@ public class DasSamplerImpl
             slotSampled.thenCompose(
                 __ ->
                     SafeFuture.allOf(
-                        getAncestorsInclusive(
-                                maybeFirstAssigned.get().getSlot(),
-                                slot.minusMinZero(1),
-                                parentRoot)
+                        getAncestorsInclusive(maybeFirstAssigned.get().getSlot(), parentRoot)
                             .map(
                                 slotAndBlockRoot ->
                                     sampleTasks.getOrDefault(
@@ -336,17 +332,16 @@ public class DasSamplerImpl
       }
     }
 
-    return slotSampled.thenCompose(__ -> scheduleSlotTask(slot, blockRoot));
+    final SafeFuture<Void> thisSlotTask = scheduleSlotTask(slot, blockRoot);
+    return slotSampled.thenCompose(__ -> thisSlotTask);
   }
 
   private Stream<SlotAndBlockRoot> getAncestorsInclusive(
-      final UInt64 fromSlot, final UInt64 toSlot, final Bytes32 toSlotBlockRoot) {
-    final NavigableMap<UInt64, Bytes32> ancestorsExclusive =
-        recentChainData.getAncestorsOnFork(fromSlot, toSlotBlockRoot);
-    return Streams.concat(
-        Stream.of(new SlotAndBlockRoot(toSlot, toSlotBlockRoot)),
-        ancestorsExclusive.navigableKeySet().stream()
-            .map(aSlot -> new SlotAndBlockRoot(aSlot, ancestorsExclusive.get(aSlot))));
+      final UInt64 fromSlot, final Bytes32 toSlotBlockRoot) {
+    final NavigableMap<UInt64, Bytes32> ancestors =
+        recentChainData.getAncestorsOnFork(fromSlot.minusMinZero(1), toSlotBlockRoot);
+    return ancestors.navigableKeySet().stream()
+        .map(aSlot -> new SlotAndBlockRoot(aSlot, ancestors.get(aSlot)));
   }
 
   private synchronized SafeFuture<Void> scheduleSlotTaskIfNonZeroCommitments(
