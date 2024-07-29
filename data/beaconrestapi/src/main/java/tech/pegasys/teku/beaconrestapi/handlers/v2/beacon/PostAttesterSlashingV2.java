@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -70,7 +70,9 @@ public class PostAttesterSlashingV2 extends RestApiEndpoint {
   }
 
   public static void handleAttesterSlashingRequest(
-      final RestApiRequest request, final NodeDataProvider nodeDataProvider, final SchemaDefinitionCache schemaDefinitionCache)
+      final RestApiRequest request,
+      final NodeDataProvider nodeDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache)
       throws JsonProcessingException {
     final AttesterSlashing attesterSlashing = request.getRequestBody();
     final SafeFuture<InternalValidationResult> future =
@@ -89,15 +91,20 @@ public class PostAttesterSlashingV2 extends RestApiEndpoint {
                             "Invalid attester slashing, it will never pass validation so it's rejected."));
               } else {
                 request.header(
-                        HEADER_CONSENSUS_VERSION,
-                        Version.fromMilestone(getMilestoneFromAttesterSlashing(attesterSlashing, schemaDefinitionCache)).name());
+                    HEADER_CONSENSUS_VERSION,
+                    Version.fromMilestone(
+                            getMilestoneFromAttesterSlashing(
+                                attesterSlashing, schemaDefinitionCache))
+                        .name());
                 return AsyncApiResponse.respondWithCode(SC_OK);
               }
             }));
   }
 
-  private static SpecMilestone getMilestoneFromAttesterSlashing(final AttesterSlashing attesterSlashing, final SchemaDefinitionCache schemaDefinitionCache) {
-    return schemaDefinitionCache.milestoneAtSlot(attesterSlashing.getAttestation1().getData().getSlot());
+  private static SpecMilestone getMilestoneFromAttesterSlashing(
+      final AttesterSlashing attesterSlashing, final SchemaDefinitionCache schemaDefinitionCache) {
+    return schemaDefinitionCache.milestoneAtSlot(
+        attesterSlashing.getAttestation1().getData().getSlot());
   }
 
   private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(

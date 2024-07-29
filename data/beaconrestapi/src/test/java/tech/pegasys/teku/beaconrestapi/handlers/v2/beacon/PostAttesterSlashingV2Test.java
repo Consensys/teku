@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -35,7 +35,6 @@ import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
@@ -77,12 +76,13 @@ class PostAttesterSlashingV2Test extends AbstractMigratedBeaconHandlerTest {
     request.setRequestBody(slashing);
 
     when(nodeDataProvider.postAttesterSlashing(slashing))
-            .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseHeaders(ETH_CONSENSUS_VERSION_TYPE.getName())).isEqualTo(Version.fromMilestone(specMilestone).name());
+    assertThat(request.getResponseHeaders(ETH_CONSENSUS_VERSION_TYPE.getName()))
+        .isEqualTo(Version.fromMilestone(specMilestone).name());
   }
 
   @TestTemplate
