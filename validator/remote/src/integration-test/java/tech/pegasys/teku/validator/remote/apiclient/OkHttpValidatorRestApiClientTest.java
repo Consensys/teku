@@ -40,11 +40,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -177,33 +175,6 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(attestation).isPresent();
     assertThat(attestation.get()).usingRecursiveComparison().isEqualTo(expectedAttestation);
-  }
-
-  @Test
-  public void createSyncCommitteeContribution_WhenSuccess_ReturnsContribution() {
-    final SyncCommitteeContribution contribution =
-        schemaObjects.syncCommitteeContribution(UInt64.ONE);
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_OK)
-            .setBody(asJson(new GetSyncCommitteeContributionResponse(contribution))));
-
-    final Optional<SyncCommitteeContribution> response =
-        apiClient.createSyncCommitteeContribution(
-            contribution.slot,
-            contribution.subcommitteeIndex.intValue(),
-            contribution.beaconBlockRoot);
-
-    assertThat(response).isPresent();
-    assertThat(response.get()).usingRecursiveComparison().isEqualTo(contribution);
-  }
-
-  @Test
-  public void createSyncCommitteeContribution_WhenNotFound_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
-
-    assertThat(apiClient.createSyncCommitteeContribution(UInt64.ONE, 0, Bytes32.ZERO)).isEmpty();
   }
 
   @Test

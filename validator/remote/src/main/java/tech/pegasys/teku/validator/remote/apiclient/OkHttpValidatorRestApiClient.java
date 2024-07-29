@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.remote.apiclient;
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PREPARE_BEACON_PROPOSER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
@@ -47,13 +46,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -147,28 +144,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public void sendContributionAndProofs(
       final List<SignedContributionAndProof> signedContributionAndProofs) {
     post(SEND_CONTRIBUTION_AND_PROOF, signedContributionAndProofs, createHandler());
-  }
-
-  @Override
-  public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
-      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
-    final Map<String, String> pathParams = Map.of();
-    final Map<String, String> queryParams =
-        Map.of(
-            "slot",
-            slot.toString(),
-            "subcommittee_index",
-            Integer.toString(subcommitteeIndex),
-            "beacon_block_root",
-            beaconBlockRoot.toHexString());
-    return get(
-            GET_SYNC_COMMITTEE_CONTRIBUTION,
-            pathParams,
-            queryParams,
-            EMPTY_MAP,
-            createHandler(GetSyncCommitteeContributionResponse.class)
-                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
-        .map(response -> response.data);
   }
 
   @Override

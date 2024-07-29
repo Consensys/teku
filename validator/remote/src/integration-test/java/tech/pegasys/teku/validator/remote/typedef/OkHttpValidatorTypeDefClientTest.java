@@ -30,6 +30,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,6 +45,7 @@ import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -65,10 +68,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
@@ -97,9 +103,48 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
+  public void createSyncCommitteeContribution_whenSuccess_returnsContribution()
+      throws JsonProcessingException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
+    final SyncCommitteeContribution contribution =
+        dataStructureUtil.randomSyncCommitteeContribution();
+    final SyncCommitteeContributionSchema syncCommitteeContributionSchema =
+        SchemaDefinitionsAltair.required(spec.atSlot(contribution.getSlot()).getSchemaDefinitions())
+            .getSyncCommitteeContributionSchema();
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(
+                "{\"data\": "
+                    + serialize(
+                        contribution, syncCommitteeContributionSchema.getJsonTypeDefinition())
+                    + "}"));
+
+    final Optional<SyncCommitteeContribution> response =
+        okHttpValidatorTypeDefClient.createSyncCommitteeContribution(
+            contribution.getSlot(),
+            contribution.getSubcommitteeIndex().intValue(),
+            contribution.getBeaconBlockRoot());
+
+    assertThat(response).isPresent();
+    assertThat(response.get()).isEqualTo(contribution);
+  }
+
+  @TestTemplate
+  public void createSyncCommitteeContribution_whenNotFound_returnsEmpty() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    assertThat(
+            okHttpValidatorTypeDefClient.createSyncCommitteeContribution(
+                UInt64.ONE, 0, Bytes32.ZERO))
+        .isEmpty();
+  }
+
+  @TestTemplate
   void blockProductionFallbacksToNonBlindedFlowIfBlindedEndpointIsNotAvailable()
       throws JsonProcessingException, InterruptedException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     // simulating blinded endpoint returning 404 Not Found
     mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
