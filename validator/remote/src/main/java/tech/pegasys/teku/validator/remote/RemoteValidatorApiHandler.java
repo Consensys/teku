@@ -352,12 +352,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
     return sendRequest(
         () ->
-            apiClient
-                .createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot)
-                .map(
-                    contribution ->
-                        tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution
-                            .asInternalSyncCommitteeContribution(spec, contribution)));
+            typeDefClient.createSyncCommitteeContribution(
+                slot, subcommitteeIndex, beaconBlockRoot));
   }
 
   @Override

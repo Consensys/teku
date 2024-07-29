@@ -38,12 +38,14 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
@@ -74,6 +76,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest;
   private final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest;
   private final SendSubscribeToSyncCommitteeSubnetsRequest subscribeToSyncCommitteeSubnetsRequest;
+  private final CreateSyncCommitteeContributionRequest createSyncCommitteeContributionRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -101,6 +104,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SyncCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
     this.subscribeToSyncCommitteeSubnetsRequest =
         new SendSubscribeToSyncCommitteeSubnetsRequest(baseEndpoint, okHttpClient);
+    this.createSyncCommitteeContributionRequest =
+        new CreateSyncCommitteeContributionRequest(baseEndpoint, okHttpClient, spec);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -200,5 +205,16 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     LOG.debug("Subscribing to sync committee subnets {}", subscriptions);
     subscribeToSyncCommitteeSubnetsRequest.subscribeToSyncCommitteeSubnets(subscriptions);
+  }
+
+  public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    LOG.debug(
+        "Create Sync committee contribution for slot {}, subcommitteeIndex {}, root {}",
+        slot,
+        subcommitteeIndex,
+        beaconBlockRoot);
+    return createSyncCommitteeContributionRequest.getSyncCommitteeContribution(
+        slot, subcommitteeIndex, beaconBlockRoot);
   }
 }

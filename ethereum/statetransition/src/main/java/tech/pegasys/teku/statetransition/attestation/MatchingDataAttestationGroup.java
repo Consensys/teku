@@ -147,6 +147,14 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     return StreamSupport.stream(spliterator(committeeIndex), false);
   }
 
+  public Stream<ValidatableAttestation> stream(
+      final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
+    if (noMatchingAttestations(committeeIndex, requiresCommitteeBits)) {
+      return Stream.empty();
+    }
+    return StreamSupport.stream(spliterator(committeeIndex), false);
+  }
+
   public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
     return Spliterators.spliteratorUnknownSize(iterator(committeeIndex), 0);
   }
@@ -227,6 +235,18 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
     return committeeShufflingSeed.map(validSeeds::contains).orElse(false);
+  }
+
+  private boolean noMatchingAttestations(
+      final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
+    return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
+        || noMatchingPreElectraAttestations(committeeIndex);
+  }
+
+  private boolean noMatchingPreElectraAttestations(final Optional<UInt64> committeeIndex) {
+    return committeeIndex.isPresent()
+        && !includedValidators.requiresCommitteeBits()
+        && !attestationData.getIndex().equals(committeeIndex.get());
   }
 
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {

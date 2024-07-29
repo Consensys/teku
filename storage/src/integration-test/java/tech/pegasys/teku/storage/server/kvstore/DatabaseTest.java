@@ -2351,7 +2351,7 @@ public class DatabaseTest {
     }
 
     // Check that last block
-    final SignedBeaconBlock lastFinalizedBlock = finalizedBlocks.get(finalizedBlocks.size() - 1);
+    final SignedBeaconBlock lastFinalizedBlock = finalizedBlocks.getLast();
     for (int i = 0; i < 10; i++) {
       final UInt64 slot = lastFinalizedBlock.getSlot().plus(i);
       assertThat(database.getLatestFinalizedBlockAtSlot(slot))
@@ -2637,7 +2637,7 @@ public class DatabaseTest {
 
     final Map<UInt64, List<BlobSidecar>> blobSidecarsDb = new HashMap<>();
     try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
-        database.streamBlobSidecarKeys(slots.get(0), slots.get(slots.size() - 1))) {
+        database.streamBlobSidecarKeys(slots.getFirst(), slots.getLast())) {
 
       for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobSidecarsStream.iterator();
           iterator.hasNext(); ) {
