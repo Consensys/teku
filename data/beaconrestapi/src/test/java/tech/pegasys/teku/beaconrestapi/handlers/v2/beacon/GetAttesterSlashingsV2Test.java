@@ -31,16 +31,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -92,24 +89,11 @@ class GetAttesterSlashingsV2Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void metadata_shouldHandle200() throws Exception {
-    final SpecConfig specConfig = spec.forMilestone(specMilestone).getConfig();
-    final UInt64 maxValidatorsPerIndexedAttestation =
-        specMilestone.isGreaterThanOrEqualTo(ELECTRA)
-            ? UInt64.valueOf(
-                (long) specConfig.getMaxValidatorsPerCommittee()
-                    * specConfig.getMaxCommitteesPerSlot())
-            : UInt64.valueOf(specConfig.getMaxValidatorsPerCommittee());
-
-    final UInt64[] indicesArray =
-        IntStream.range(0, maxValidatorsPerIndexedAttestation.intValue())
-            .mapToObj(i -> dataStructureUtil.randomUInt64())
-            .toArray(UInt64[]::new);
-
     final ObjectAndMetaData<List<AttesterSlashing>> responseData =
         withMetaData(
             List.of(
-                dataStructureUtil.randomAttesterSlashing(indicesArray),
-                dataStructureUtil.randomAttesterSlashing(indicesArray)));
+                dataStructureUtil.randomAttesterSlashing(),
+                dataStructureUtil.randomAttesterSlashing()));
 
     final JsonNode data =
         JsonTestUtil.parseAsJsonNode(getResponseStringFromMetadata(handler, SC_OK, responseData));
