@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -44,16 +43,12 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
   private final NodeDataProvider nodeDataProvider;
 
   public GetAttesterSlashingsV2(
-      final DataProvider dataProvider,
-      final SchemaDefinitionCache schemaDefinitionCache,
-      final Spec spec) {
-    this(dataProvider.getNodeDataProvider(), schemaDefinitionCache, spec);
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getNodeDataProvider(), schemaDefinitionCache);
   }
 
   GetAttesterSlashingsV2(
-      final NodeDataProvider provider,
-      final SchemaDefinitionCache schemaDefinitionCache,
-      final Spec spec) {
+      final NodeDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getPoolAttesterSlashingsV2")
@@ -61,7 +56,7 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
             .description(
                 "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache, spec))
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .build());
     this.nodeDataProvider = provider;
   }
@@ -76,7 +71,7 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<AttesterSlashing>>>
-      getResponseType(final SchemaDefinitionCache schemaDefinitionCache, final Spec spec) {
+      getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
 
     final DeserializableTypeDefinition<AttesterSlashing> attesterSlashingPhase0Schema =
         schemaDefinitionCache
@@ -93,8 +88,11 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
     final SerializableOneOfTypeDefinition<List<AttesterSlashing>> oneOfTypeDefinition =
         new SerializableOneOfTypeDefinitionBuilder<List<AttesterSlashing>>()
             .withType(
-                electraAttesterSlashingsPredicate(spec), listOf(attesterSlashingElectraSchema))
-            .withType(phase0AttesterSlashingsPredicate(spec), listOf(attesterSlashingPhase0Schema))
+                electraAttesterSlashingsPredicate(schemaDefinitionCache),
+                listOf(attesterSlashingElectraSchema))
+            .withType(
+                phase0AttesterSlashingsPredicate(schemaDefinitionCache),
+                listOf(attesterSlashingPhase0Schema))
             .build();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<AttesterSlashing>>>object()
@@ -105,20 +103,20 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
   }
 
   private static Predicate<List<AttesterSlashing>> electraAttesterSlashingsPredicate(
-      final Spec spec) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     return attesterSlashings ->
         !attesterSlashings.isEmpty()
-            && spec.atSlot(attesterSlashings.get(0).getAttestation1().getData().getSlot())
-                .getMilestone()
+            && schemaDefinitionCache
+                .milestoneAtSlot(attesterSlashings.get(0).getAttestation1().getData().getSlot())
                 .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
   }
 
   private static Predicate<List<AttesterSlashing>> phase0AttesterSlashingsPredicate(
-      final Spec spec) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     return attesterSlashings ->
         attesterSlashings.isEmpty()
-            || !spec.atSlot(attesterSlashings.get(0).getAttestation1().getData().getSlot())
-                .getMilestone()
+            || !schemaDefinitionCache
+                .milestoneAtSlot(attesterSlashings.get(0).getAttestation1().getData().getSlot())
                 .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
   }
 }

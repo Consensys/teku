@@ -53,7 +53,7 @@ class GetAttesterSlashingsV2Test extends AbstractMigratedBeaconHandlerTest {
     spec = specContext.getSpec();
     dataStructureUtil = new DataStructureUtil(spec);
     specMilestone = specContext.getSpecMilestone();
-    setHandler(new GetAttesterSlashingsV2(nodeDataProvider, new SchemaDefinitionCache(spec), spec));
+    setHandler(new GetAttesterSlashingsV2(nodeDataProvider, new SchemaDefinitionCache(spec)));
   }
 
   @TestTemplate
