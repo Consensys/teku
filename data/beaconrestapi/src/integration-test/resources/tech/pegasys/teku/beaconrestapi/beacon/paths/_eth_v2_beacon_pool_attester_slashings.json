@@ -36,5 +36,56 @@
         }
       }
     }
+  },
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "submitPoolAttesterSlashingsV2",
+    "summary" : "Submit AttesterSlashing object to node's pool",
+    "description" : "Submits AttesterSlashing object to node's pool. Upon successful validation the node MUST broadcast it to network.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "in" : "header",
+      "required" : true,
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the attester slashing being submitted."
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/AttesterSlashing"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Success",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
   }
 }
