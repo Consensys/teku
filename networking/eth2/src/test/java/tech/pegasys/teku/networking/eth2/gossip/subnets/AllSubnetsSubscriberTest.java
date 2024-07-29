@@ -44,12 +44,12 @@ class AllSubnetsSubscriberTest {
     final Set<SubnetSubscription> actual = captor.getValue();
     // Should subscribe to all subnets with a far future unsubscription slot
     assertThat(actual).hasSize(spec.getNetworkingConfig().getAttestationSubnetCount());
-    assertThat(actual.stream().mapToInt(SubnetSubscription::getSubnetId))
+    assertThat(actual.stream().mapToInt(SubnetSubscription::subnetId))
         .containsExactlyInAnyOrderElementsOf(
             IntStream.range(0, spec.getNetworkingConfig().getAttestationSubnetCount())
                 .boxed()
                 .collect(toSet()));
-    assertThat(actual.stream().map(SubnetSubscription::getUnsubscriptionSlot))
+    assertThat(actual.stream().map(SubnetSubscription::unsubscriptionSlot))
         .containsOnly(UInt64.MAX_VALUE);
 
     stableSubnetSubscriber.onSlot(UInt64.ONE);

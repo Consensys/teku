@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -385,15 +384,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Void> subscribeToPersistentSubnets(
       final Set<SubnetSubscription> subnetSubscriptions) {
-    final Set<tech.pegasys.teku.api.schema.SubnetSubscription> schemaSubscriptions =
-        subnetSubscriptions.stream()
-            .map(
-                s ->
-                    new tech.pegasys.teku.api.schema.SubnetSubscription(
-                        s.getSubnetId(), s.getUnsubscriptionSlot()))
-            .collect(Collectors.toSet());
-
-    return sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions));
+    return sendRequest(() -> typeDefClient.subscribeToPersistentSubnets(subnetSubscriptions));
   }
 
   @Override
