@@ -488,10 +488,10 @@ public class Eth2NetworkConfiguration {
 
       checkArgument(
           asyncBeaconChainMaxThreads > 1,
-          "P2P Max threads must be >= 2 (Xnetwork-async-beaconchain-max-threads - default 5)");
+          "BeaconChain Max threads must be >= 2 (Xnetwork-async-beaconchain-max-threads - default 5)");
       checkArgument(
           asyncBeaconChainMaxThreads < 256,
-          "P2P Max threads must be <= 255 (Xnetwork-async-beaconchain-max-threads - default 5)");
+          "BeaconChain Max threads must be <= 255 (Xnetwork-async-beaconchain-max-threads - default 5)");
       checkArgument(
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) >= 2000,
           "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 10000)");
