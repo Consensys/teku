@@ -28,7 +28,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -42,7 +41,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -287,43 +285,6 @@ class OkHttpValidatorRestApiClientTest {
                     List.of(
                         new CommitteeSubscriptionRequest(
                             1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void subscribeToPersistentSubnets_MakesExpectedRequest() throws Exception {
-    final Set<SubnetSubscription> subnetSubscriptions = Set.of(schemaObjects.subnetSubscription());
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-
-    apiClient.subscribeToPersistentSubnets(subnetSubscriptions);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS.getPath(emptyMap()));
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-        .isEqualTo(asJson(subnetSubscriptions));
-  }
-
-  @Test
-  public void subscribeToPersistentSubnets_WhenBadRequest_ThrowsIllegalArgumentException() {
-    final Set<SubnetSubscription> subnetSubscriptions = Set.of(schemaObjects.subnetSubscription());
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-    assertThatThrownBy(() -> apiClient.subscribeToPersistentSubnets(subnetSubscriptions))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void subscribeToPersistentSubnets_WhenServerError_ThrowsRuntimeException() {
-    final Set<SubnetSubscription> subnetSubscriptions = Set.of(schemaObjects.subnetSubscription());
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(() -> apiClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
