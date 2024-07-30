@@ -87,7 +87,7 @@ public class GetAggregateAttestation extends RestApiEndpoint {
         spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
     return SerializableTypeDefinition.object(Attestation.class)
-        .name("GetAggregatedAttestationResponse")
+        .name("GetAggregateAttestationResponse")
         .withField(
             "data",
             dataSchema.castTypeToAttestationSchema().getJsonTypeDefinition(),
