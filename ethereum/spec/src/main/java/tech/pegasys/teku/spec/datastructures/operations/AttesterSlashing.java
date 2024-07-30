@@ -31,9 +31,10 @@ public class AttesterSlashing
       extends ContainerSchema2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
 
     public AttesterSlashingSchema(
-        final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema) {
+        final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema,
+        final boolean isElectra) {
       super(
-          "AttesterSlashing",
+          isElectra ? "AttesterSlashingElectra" : "AttesterSlashingPhase0",
           namedSchema("attestation_1", indexedAttestationSchema),
           namedSchema("attestation_2", indexedAttestationSchema));
     }

@@ -35,13 +35,15 @@ public class BeaconBlockBodySchemaPhase0Test {
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(indexAttestationSchemaA),
+            new AttesterSlashingSchema(
+                indexAttestationSchemaA, specConfig.toVersionElectra().isPresent()),
             specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(indexAttestationSchemaB),
+            new AttesterSlashingSchema(
+                indexAttestationSchemaB, specConfig.toVersionElectra().isPresent()),
             specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
 
@@ -59,13 +61,15 @@ public class BeaconBlockBodySchemaPhase0Test {
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(indexAttestationSchemaA),
+            new AttesterSlashingSchema(
+                indexAttestationSchemaA, specConfig.toVersionElectra().isPresent()),
             specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(indexAttestationSchemaB),
+            new AttesterSlashingSchema(
+                indexAttestationSchemaB, specConfig.toVersionElectra().isPresent()),
             specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0");
 

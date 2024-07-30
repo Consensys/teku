@@ -81,7 +81,6 @@ public class PostAttesterSlashing extends RestApiEndpoint {
 
   private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(
       final SchemaDefinitionCache schemaDefinitionCache) {
-
     return schemaDefinitionCache
         .getSchemaDefinition(SpecMilestone.PHASE0)
         .getAttesterSlashingSchema()

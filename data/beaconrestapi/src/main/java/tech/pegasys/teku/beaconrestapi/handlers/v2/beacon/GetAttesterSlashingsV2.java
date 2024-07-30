@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot.getResponseType;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -24,8 +23,12 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
 import java.util.List;
+import java.util.function.Predicate;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -70,18 +73,50 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
   private static SerializableTypeDefinition<ObjectAndMetaData<List<AttesterSlashing>>>
       getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
 
-    final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
+    final DeserializableTypeDefinition<AttesterSlashing> attesterSlashingPhase0Schema =
+        schemaDefinitionCache
+            .getSchemaDefinition(SpecMilestone.PHASE0)
+            .getAttesterSlashingSchema()
+            .getJsonTypeDefinition();
+
+    final DeserializableTypeDefinition<AttesterSlashing> attesterSlashingElectraSchema =
         schemaDefinitionCache
             .getSchemaDefinition(SpecMilestone.ELECTRA)
-            .getAttesterSlashingSchema();
+            .getAttesterSlashingSchema()
+            .getJsonTypeDefinition();
+
+    final SerializableOneOfTypeDefinition<List<AttesterSlashing>> oneOfTypeDefinition =
+        new SerializableOneOfTypeDefinitionBuilder<List<AttesterSlashing>>()
+            .withType(
+                electraAttesterSlashingsPredicate(schemaDefinitionCache),
+                listOf(attesterSlashingElectraSchema))
+            .withType(
+                phase0AttesterSlashingsPredicate(schemaDefinitionCache),
+                listOf(attesterSlashingPhase0Schema))
+            .build();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<AttesterSlashing>>>object()
         .name("GetPoolAttesterSlashingsV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
-        .withField(
-            "data",
-            listOf(attesterSlashingSchema.getJsonTypeDefinition()),
-            ObjectAndMetaData::getData)
+        .withField("data", oneOfTypeDefinition, ObjectAndMetaData::getData)
         .build();
+  }
+
+  private static Predicate<List<AttesterSlashing>> electraAttesterSlashingsPredicate(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return attesterSlashings ->
+        !attesterSlashings.isEmpty()
+            && schemaDefinitionCache
+                .milestoneAtSlot(attesterSlashings.get(0).getAttestation1().getData().getSlot())
+                .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
+  }
+
+  private static Predicate<List<AttesterSlashing>> phase0AttesterSlashingsPredicate(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return attesterSlashings ->
+        attesterSlashings.isEmpty()
+            || !schemaDefinitionCache
+                .milestoneAtSlot(attesterSlashings.get(0).getAttestation1().getData().getSlot())
+                .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
   }
 }

@@ -28,9 +28,10 @@ public class IndexedAttestation
   public static class IndexedAttestationSchema
       extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 
-    public IndexedAttestationSchema(final long maxValidatorsPerIndexedAttestation) {
+    public IndexedAttestationSchema(
+        final long maxValidatorsPerIndexedAttestation, final boolean isElectra) {
       super(
-          "IndexedAttestation",
+          isElectra ? "IndexedAttestationElectra" : "IndexedAttestationPhase0",
           namedSchema(
               "attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerIndexedAttestation)),
           namedSchema("data", AttestationData.SSZ_SCHEMA),

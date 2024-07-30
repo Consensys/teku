@@ -27,12 +27,14 @@ import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
@@ -86,15 +88,17 @@ class GetAttesterSlashingsV2Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @TestTemplate
-  void metadata_shouldHandle200() throws IOException {
+  void metadata_shouldHandle200() throws Exception {
     final ObjectAndMetaData<List<AttesterSlashing>> responseData =
         withMetaData(
             List.of(
                 dataStructureUtil.randomAttesterSlashing(),
                 dataStructureUtil.randomAttesterSlashing()));
 
-    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
-    final String expected = getExpectedResponseAsJson(specMilestone);
+    final JsonNode data =
+        JsonTestUtil.parseAsJsonNode(getResponseStringFromMetadata(handler, SC_OK, responseData));
+    final JsonNode expected =
+        JsonTestUtil.parseAsJsonNode(getExpectedResponseAsJson(specMilestone));
     assertThat(data).isEqualTo(expected);
   }
 
