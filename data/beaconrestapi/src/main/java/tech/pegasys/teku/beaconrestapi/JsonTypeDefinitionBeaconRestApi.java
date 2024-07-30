@@ -105,6 +105,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetAttestationsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetAttesterSlashingsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlockAttestationsV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttesterSlashingV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlindedBlockV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlockV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
@@ -242,6 +243,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetAttesterSlashings(dataProvider, spec))
             .endpoint(new GetAttesterSlashingsV2(dataProvider, schemaCache))
             .endpoint(new PostAttesterSlashing(dataProvider, schemaCache))
+            .endpoint(new PostAttesterSlashingV2(dataProvider, schemaCache))
             .endpoint(new GetProposerSlashings(dataProvider))
             .endpoint(new PostProposerSlashing(dataProvider))
             .endpoint(new GetVoluntaryExits(dataProvider))

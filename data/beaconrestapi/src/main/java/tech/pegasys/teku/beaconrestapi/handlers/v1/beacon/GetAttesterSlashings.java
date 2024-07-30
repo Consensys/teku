@@ -48,6 +48,7 @@ public class GetAttesterSlashings extends RestApiEndpoint {
             .description(
                 "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
+            .deprecated(true)
             .response(SC_OK, "Request successful", getResponseType(spec))
             .build());
     this.nodeDataProvider = provider;
