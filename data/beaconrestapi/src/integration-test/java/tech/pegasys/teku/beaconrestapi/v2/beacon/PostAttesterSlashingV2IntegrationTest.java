@@ -48,13 +48,13 @@ public class PostAttesterSlashingV2IntegrationTest
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
-    Response response = post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(""));
+    final Response response = post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(""));
     Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {
-    Response response =
+    final Response response =
         post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON("{\"foo\": \"bar\"}"));
     assertThat(response.code()).isEqualTo(400);
   }
@@ -68,7 +68,7 @@ public class PostAttesterSlashingV2IntegrationTest
 
     doThrow(new RuntimeException()).when(attesterSlashingPool).addLocal(slashing);
 
-    Response response =
+    final Response response =
         post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
     assertThat(response.code()).isEqualTo(500);
   }
@@ -83,7 +83,7 @@ public class PostAttesterSlashingV2IntegrationTest
     when(attesterSlashingPool.addLocal(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    Response response =
+    final Response response =
         post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
 
     verify(attesterSlashingPool).addLocal(slashing);
