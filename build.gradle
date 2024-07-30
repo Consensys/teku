@@ -143,8 +143,13 @@ allprojects {
     jar.preserveFileTimestamps = false
   }
 
-  sourceCompatibility = '17'
-  targetCompatibility = '17'
+  java {
+    sourceCompatibility = JavaVersion.VERSION_21
+  }
+
+  java {
+    targetCompatibility = JavaVersion.VERSION_21
+  }
 
   repositories {
     mavenLocal()
@@ -541,7 +546,7 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerImage = "consensys/teku"
-def dockerJdkVariants = [ "jdk21", "jdk17" ]
+def dockerJdkVariants = [ "jdk21" ]
 def dockerBuildDir = "build/docker-teku/"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]

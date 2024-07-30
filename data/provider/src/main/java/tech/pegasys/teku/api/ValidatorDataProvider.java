@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -246,6 +247,12 @@ public class ValidatorDataProvider {
     return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot, committeeIndex);
   }
 
+  public SafeFuture<Optional<ObjectAndMetaData<Attestation>>> createAggregateAndMetaData(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
+    return createAggregate(slot, attestationHashTreeRoot, Optional.of(committeeIndex))
+        .thenApply(maybeAttestation -> maybeAttestation.map(this::lookUpMetadata));
+  }
+
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     return validatorApiChannel.sendAggregateAndProofs(aggregateAndProofs);
@@ -341,5 +348,14 @@ public class ValidatorDataProvider {
     }
 
     return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
+  }
+
+  private ObjectAndMetaData<Attestation> lookUpMetadata(final Attestation attestation) {
+    return new ObjectAndMetaData<>(
+        attestation,
+        spec.atSlot(attestation.getData().getSlot()).getMilestone(),
+        false,
+        false,
+        false);
   }
 }

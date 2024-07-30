@@ -170,8 +170,8 @@ public class DepositFetcher {
     BigInteger from = fromBlock;
     // First process completed requests using iteration.
     // Avoid StackOverflowException when there is a long string of requests already completed.
-    while (!blockRequests.isEmpty() && blockRequests.get(0).isDone()) {
-      final EthBlock.Block block = blockRequests.remove(0).join();
+    while (!blockRequests.isEmpty() && blockRequests.getFirst().isDone()) {
+      final EthBlock.Block block = blockRequests.removeFirst().join();
 
       // Fetch any empty blocks between this deposit block and the previous one (or start of range)
       final BigInteger to = block.getNumber().subtract(BigInteger.ONE);

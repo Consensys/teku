@@ -16,30 +16,21 @@ package tech.pegasys.teku.validator.remote.apiclient;
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PREPARE_BEACON_PROPOSER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_VALIDATOR_LIVENESS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_SYNC_COMMITTEE_SUBNET;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -51,22 +42,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
-import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -90,54 +72,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<GetGenesisResponse> getGenesis() {
-    return get(GET_GENESIS, EMPTY_MAP, createHandler(GetGenesisResponse.class));
-  }
-
-  /**
-   * <a
-   * href="https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/getStateValidators">GET
-   * Get validators from state</a>
-   */
-  @Override
-  public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
-    final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("id", String.join(",", validatorIds));
-    return get(
-            GET_VALIDATORS,
-            EMPTY_MAP,
-            EMPTY_MAP,
-            queryParams,
-            createHandler(GetStateValidatorsResponse.class))
-        .map(response -> response.data);
-  }
-
-  @Override
-  public Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch) {
-    return get(
-        GET_PROPOSER_DUTIES,
-        Map.of("epoch", epoch.toString()),
-        EMPTY_MAP,
-        EMPTY_MAP,
-        createHandler(GetProposerDutiesResponse.class));
-  }
-
-  @Override
   public Optional<PostDataFailureResponse> sendSignedAttestations(
       final List<Attestation> attestations) {
     return post(
         SEND_SIGNED_ATTESTATION,
         attestations,
-        ResponseHandler.createForEmptyOkAndContentInBadResponse(
-            jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public Optional<PostDataFailureResponse> sendVoluntaryExit(
-      final SignedVoluntaryExit voluntaryExit) {
-    return post(
-        SEND_SIGNED_VOLUNTARY_EXIT,
-        voluntaryExit,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
   }
@@ -184,11 +123,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
-    post(SUBSCRIBE_TO_PERSISTENT_SUBNETS, subnetSubscriptions, createHandler());
-  }
-
-  @Override
   public Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return post(
@@ -199,37 +133,9 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void subscribeToSyncCommitteeSubnets(
-      final List<SyncCommitteeSubnetSubscription> subnetSubscriptions) {
-    post(SUBSCRIBE_TO_SYNC_COMMITTEE_SUBNET, subnetSubscriptions, createHandler());
-  }
-
-  @Override
   public void sendContributionAndProofs(
       final List<SignedContributionAndProof> signedContributionAndProofs) {
     post(SEND_CONTRIBUTION_AND_PROOF, signedContributionAndProofs, createHandler());
-  }
-
-  @Override
-  public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
-      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
-    final Map<String, String> pathParams = Map.of();
-    final Map<String, String> queryParams =
-        Map.of(
-            "slot",
-            slot.toString(),
-            "subcommittee_index",
-            Integer.toString(subcommitteeIndex),
-            "beacon_block_root",
-            beaconBlockRoot.toHexString());
-    return get(
-            GET_SYNC_COMMITTEE_CONTRIBUTION,
-            pathParams,
-            queryParams,
-            EMPTY_MAP,
-            createHandler(GetSyncCommitteeContributionResponse.class)
-                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
-        .map(response -> response.data);
   }
 
   @Override
@@ -256,14 +162,14 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return new ResponseHandler<>(jsonProvider, responseClass);
   }
 
-  public <T> Optional<T> get(
+  private <T> Optional<T> get(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> queryParams,
       final ResponseHandler<T> responseHandler) {
     return get(apiMethod, EMPTY_MAP, queryParams, EMPTY_MAP, responseHandler);
   }
 
-  public <T> Optional<T> get(
+  private <T> Optional<T> get(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
       final Map<String, String> queryParams,
@@ -283,10 +189,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
     final Request request = requestBuilder().url(httpUrlBuilder.build()).build();
     return executeCall(request, responseHandler);
-  }
-
-  public URI getBaseEndpoint() {
-    return baseEndpoint.uri();
   }
 
   private <T> Optional<T> post(

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -28,8 +29,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -37,7 +39,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -75,33 +76,30 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
 
     request.respondAsync(
         future.thenApply(
-            maybeObjectAndMetaData ->
-                maybeObjectAndMetaData
-                    .map(AsyncApiResponse::respondOk)
+            maybeAttestationsAndMetadata ->
+                maybeAttestationsAndMetadata
+                    .map(
+                        attestationsAndMetadata -> {
+                          request.header(
+                              HEADER_CONSENSUS_VERSION,
+                              Version.fromMilestone(attestationsAndMetadata.getMilestone()).name());
+                          return AsyncApiResponse.respondOk(attestationsAndMetadata);
+                        })
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
   @SuppressWarnings("unchecked")
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    final DeserializableTypeDefinition<Attestation> electraAttestationTypeDef =
-        (DeserializableTypeDefinition<Attestation>)
-            schemaDefinitionCache
-                .getSchemaDefinition(SpecMilestone.ELECTRA)
-                .getAttestationSchema()
-                .getJsonTypeDefinition();
-
-    final DeserializableTypeDefinition<Attestation> phase0AttestationTypeDef =
-        (DeserializableTypeDefinition<Attestation>)
-            schemaDefinitionCache
-                .getSchemaDefinition(SpecMilestone.PHASE0)
-                .getAttestationSchema()
-                .getJsonTypeDefinition();
 
     final SerializableOneOfTypeDefinition<List<Attestation>> oneOfTypeDefinition =
         new SerializableOneOfTypeDefinitionBuilder<List<Attestation>>()
-            .withType(electraAttestationsPredicate(), listOf(electraAttestationTypeDef))
-            .withType(phase0AttestationsPredicate(), listOf(phase0AttestationTypeDef))
+            .withType(
+                electraAttestationsPredicate(),
+                listOf(BeaconRestApiTypes.electraAttestationTypeDef(schemaDefinitionCache)))
+            .withType(
+                phase0AttestationsPredicate(),
+                listOf(BeaconRestApiTypes.phase0AttestationTypeDef(schemaDefinitionCache)))
             .build();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()

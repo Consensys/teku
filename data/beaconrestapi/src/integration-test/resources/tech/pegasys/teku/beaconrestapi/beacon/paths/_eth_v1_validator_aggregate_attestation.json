@@ -4,6 +4,7 @@
     "operationId" : "getAggregatedAttestation",
     "summary" : "Get aggregated attestation",
     "description" : "Aggregates all attestations matching given attestation data root and slot.",
+    "deprecated" : true,
     "parameters" : [ {
       "name" : "attestation_data_root",
       "required" : true,

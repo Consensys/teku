@@ -404,7 +404,7 @@ public class KvStoreDatabase implements Database {
       LOG.debug("No finalized blocks to prune up to {} slot", lastSlotToPrune);
       return lastSlotToPrune;
     }
-    final UInt64 lastPrunedBlockSlot = blocksToPrune.get(blocksToPrune.size() - 1).getKey();
+    final UInt64 lastPrunedBlockSlot = blocksToPrune.getLast().getKey();
     LOG.debug(
         "Pruning {} finalized blocks, last block slot is {}",
         blocksToPrune.size(),
@@ -477,8 +477,7 @@ public class KvStoreDatabase implements Database {
       return lastSlotToPrune;
     }
 
-    final UInt64 lastPrunedSlot =
-        slotsToPruneStateFor.get(slotsToPruneStateFor.size() - 1).getLeft();
+    final UInt64 lastPrunedSlot = slotsToPruneStateFor.getLast().getLeft();
 
     deleteFinalizedStatesForSlot(slotsToPruneStateFor);
 

@@ -22,6 +22,7 @@ import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBui
 import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutiesBuilder.ATTESTER_DUTIES_RESPONSE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutiesBuilder.SYNC_COMMITTEE_DUTIES_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
@@ -30,19 +31,24 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -65,10 +71,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
@@ -97,9 +107,48 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
+  public void createSyncCommitteeContribution_whenSuccess_returnsContribution()
+      throws JsonProcessingException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
+    final SyncCommitteeContribution contribution =
+        dataStructureUtil.randomSyncCommitteeContribution();
+    final SyncCommitteeContributionSchema syncCommitteeContributionSchema =
+        SchemaDefinitionsAltair.required(spec.atSlot(contribution.getSlot()).getSchemaDefinitions())
+            .getSyncCommitteeContributionSchema();
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(
+                "{\"data\": "
+                    + serialize(
+                        contribution, syncCommitteeContributionSchema.getJsonTypeDefinition())
+                    + "}"));
+
+    final Optional<SyncCommitteeContribution> response =
+        okHttpValidatorTypeDefClient.createSyncCommitteeContribution(
+            contribution.getSlot(),
+            contribution.getSubcommitteeIndex().intValue(),
+            contribution.getBeaconBlockRoot());
+
+    assertThat(response).isPresent();
+    assertThat(response.get()).isEqualTo(contribution);
+  }
+
+  @TestTemplate
+  public void createSyncCommitteeContribution_whenNotFound_returnsEmpty() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    assertThat(
+            okHttpValidatorTypeDefClient.createSyncCommitteeContribution(
+                UInt64.ONE, 0, Bytes32.ZERO))
+        .isEmpty();
+  }
+
+  @TestTemplate
   void blockProductionFallbacksToNonBlindedFlowIfBlindedEndpointIsNotAvailable()
       throws JsonProcessingException, InterruptedException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     // simulating blinded endpoint returning 404 Not Found
     mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
@@ -520,6 +569,54 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThat(recordedRequest.getBody().readUtf8())
         .isEqualTo(
             "[{\"validator_index\":\"0\",\"sync_committee_indices\":[\"1\"],\"until_epoch\":\"0\"}]");
+  }
+
+  @TestTemplate
+  public void subscribeToPersistentSubnets_MakesExpectedRequest() throws Exception {
+    final Set<SubnetSubscription> subnetSubscriptions =
+        Set.of(
+            new SubnetSubscription(
+                dataStructureUtil.randomPositiveInt(64), dataStructureUtil.randomSlot()));
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    okHttpValidatorTypeDefClient.subscribeToPersistentSubnets(subnetSubscriptions);
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS.getPath(emptyMap()));
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo("[{\"subnet_id\":\"35\",\"unsubscription_slot\":\"24752339414\"}]");
+  }
+
+  @TestTemplate
+  public void subscribeToPersistentSubnets_WhenBadRequest_ThrowsIllegalArgumentException() {
+    final Set<SubnetSubscription> subnetSubscriptions =
+        Set.of(
+            new SubnetSubscription(
+                dataStructureUtil.randomPositiveInt(64), dataStructureUtil.randomSlot()));
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(
+            () -> okHttpValidatorTypeDefClient.subscribeToPersistentSubnets(subnetSubscriptions))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @TestTemplate
+  public void subscribeToPersistentSubnets_WhenServerError_ThrowsRuntimeException() {
+    final Set<SubnetSubscription> subnetSubscriptions =
+        Set.of(
+            new SubnetSubscription(
+                dataStructureUtil.randomPositiveInt(64), dataStructureUtil.randomSlot()));
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+
+    assertThatThrownBy(
+            () -> okHttpValidatorTypeDefClient.subscribeToPersistentSubnets(subnetSubscriptions))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Server error from Beacon Node API");
   }
 
   private AttesterDuty randomAttesterDuty() {

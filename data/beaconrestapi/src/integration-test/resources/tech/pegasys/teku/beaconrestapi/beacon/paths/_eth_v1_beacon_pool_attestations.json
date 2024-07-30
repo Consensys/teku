@@ -4,6 +4,7 @@
     "operationId" : "getPoolAttestations",
     "summary" : "Get Attestations from operations pool",
     "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
+    "deprecated" : true,
     "parameters" : [ {
       "name" : "slot",
       "in" : "query",

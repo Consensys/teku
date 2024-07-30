@@ -378,7 +378,7 @@ public class SyncSourceBatchTest {
   /** Get the most recent sync source for a batch. */
   private StubSyncSource getSyncSource(final Batch batch) {
     final List<StubSyncSource> syncSources = this.syncSources.get(batch);
-    return syncSources.get(syncSources.size() - 1);
+    return syncSources.getLast();
   }
 
   @Test

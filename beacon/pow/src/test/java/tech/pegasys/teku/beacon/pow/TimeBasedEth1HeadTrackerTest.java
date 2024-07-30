@@ -326,7 +326,7 @@ class TimeBasedEth1HeadTrackerTest {
     }
 
     when(eth1Provider.getGuaranteedLatestEth1Block())
-        .thenReturn(SafeFuture.completedFuture(blocks.get(blocks.size() - 1)));
+        .thenReturn(SafeFuture.completedFuture(blocks.getLast()));
     return blocks;
   }
 }

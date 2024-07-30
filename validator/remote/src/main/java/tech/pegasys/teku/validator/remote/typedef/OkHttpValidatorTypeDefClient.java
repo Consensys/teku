@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -38,23 +40,26 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.PostStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSubscribeToSyncCommitteeSubnetsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SubscribeToPersistentSubnetsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SyncCommitteeSelectionsRequest;
 
 public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefClient {
@@ -68,7 +73,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final GetPeerCountRequest getPeerCountRequest;
   private final GetStateValidatorsRequest getStateValidatorsRequest;
   private final PostAttesterDutiesRequest postAttesterDutiesRequest;
-  private final PostStateValidatorsRequest postStateValidatorsRequest;
   private final PostSyncDutiesRequest postSyncDutiesRequest;
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
@@ -76,6 +80,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest;
   private final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest;
   private final SendSubscribeToSyncCommitteeSubnetsRequest subscribeToSyncCommitteeSubnetsRequest;
+  private final CreateSyncCommitteeContributionRequest createSyncCommitteeContributionRequest;
+  private final SubscribeToPersistentSubnetsRequest subscribeToPersistentSubnetsRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -89,7 +95,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
     this.getPeerCountRequest = new GetPeerCountRequest(baseEndpoint, okHttpClient);
     this.getStateValidatorsRequest = new GetStateValidatorsRequest(baseEndpoint, okHttpClient);
-    this.postStateValidatorsRequest = new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
     this.postSyncDutiesRequest = new PostSyncDutiesRequest(baseEndpoint, okHttpClient);
     this.postAttesterDutiesRequest = new PostAttesterDutiesRequest(baseEndpoint, okHttpClient);
     this.sendSignedBlockRequest =
@@ -104,6 +109,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SyncCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
     this.subscribeToSyncCommitteeSubnetsRequest =
         new SendSubscribeToSyncCommitteeSubnetsRequest(baseEndpoint, okHttpClient);
+    this.createSyncCommitteeContributionRequest =
+        new CreateSyncCommitteeContributionRequest(baseEndpoint, okHttpClient, spec);
+    this.subscribeToPersistentSubnetsRequest =
+        new SubscribeToPersistentSubnetsRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -121,12 +130,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public Optional<List<StateValidatorData>> getStateValidators(final List<String> validatorIds) {
     return getStateValidatorsRequest
         .getStateValidators(validatorIds)
-        .map(ObjectAndMetaData::getData);
-  }
-
-  public Optional<List<StateValidatorData>> postStateValidators(final List<String> validatorIds) {
-    return postStateValidatorsRequest
-        .postStateValidators(validatorIds)
         .map(ObjectAndMetaData::getData);
   }
 
@@ -209,5 +212,21 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     LOG.debug("Subscribing to sync committee subnets {}", subscriptions);
     subscribeToSyncCommitteeSubnetsRequest.subscribeToSyncCommitteeSubnets(subscriptions);
+  }
+
+  public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    LOG.debug(
+        "Create Sync committee contribution for slot {}, subcommitteeIndex {}, root {}",
+        slot,
+        subcommitteeIndex,
+        beaconBlockRoot);
+    return createSyncCommitteeContributionRequest.getSyncCommitteeContribution(
+        slot, subcommitteeIndex, beaconBlockRoot);
+  }
+
+  public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
+    subscribeToPersistentSubnetsRequest.subscribeToPersistentSubnets(
+        new ArrayList<>(subnetSubscriptions));
   }
 }
