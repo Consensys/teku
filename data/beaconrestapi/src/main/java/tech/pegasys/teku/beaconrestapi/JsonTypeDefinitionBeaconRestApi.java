@@ -241,7 +241,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostAttestation(dataProvider, schemaCache))
             .endpoint(new GetAttesterSlashings(dataProvider, spec))
             .endpoint(new GetAttesterSlashingsV2(dataProvider, schemaCache))
-            .endpoint(new PostAttesterSlashing(dataProvider, spec))
+            .endpoint(new PostAttesterSlashing(dataProvider, schemaCache))
             .endpoint(new GetProposerSlashings(dataProvider))
             .endpoint(new PostProposerSlashing(dataProvider))
             .endpoint(new GetVoluntaryExits(dataProvider))
