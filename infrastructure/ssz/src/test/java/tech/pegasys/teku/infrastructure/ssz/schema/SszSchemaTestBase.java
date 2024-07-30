@@ -60,7 +60,9 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
     SszData data = randomSsz.randomData(schema);
 
     if (data instanceof SszOptional<?> optionalData) {
-      assumeThat(optionalData.getValue()).describedAs("optional has a value").isPresent();
+      assumeThat(optionalData.getValue())
+          .describedAs("optional can't be empty to pass the test")
+          .isPresent();
     }
 
     Bytes ssz = data.sszSerialize();
