@@ -155,6 +155,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
         BeaconNodeRequestLabels.CREATE_ATTESTATION_METHOD);
   }
 
+  @Deprecated
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot,
@@ -162,6 +163,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final Optional<UInt64> committeeIndex) {
     return countOptionalDataRequest(
         delegate.createAggregate(slot, attestationHashTreeRoot, committeeIndex),
+        BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<Attestation>> createAggregateV2(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
+    return countOptionalDataRequest(
+        delegate.createAggregateV2(slot, attestationHashTreeRoot, committeeIndex),
         BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD);
   }
 

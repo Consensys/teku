@@ -496,6 +496,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
   }
 
+  @Deprecated
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot,
@@ -507,6 +508,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return SafeFuture.completedFuture(
         attestationPool
             .createAggregateFor(attestationHashTreeRoot, committeeIndex)
+            .filter(attestation -> attestation.getData().getSlot().equals(slot))
+            .map(ValidatableAttestation::getAttestation));
+  }
+
+  @Override
+  public SafeFuture<Optional<Attestation>> createAggregateV2(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    return SafeFuture.completedFuture(
+        attestationPool
+            .createAggregateFor(attestationHashTreeRoot, Optional.of(committeeIndex))
             .filter(attestation -> attestation.getData().getSlot().equals(slot))
             .map(ValidatableAttestation::getAttestation));
   }
