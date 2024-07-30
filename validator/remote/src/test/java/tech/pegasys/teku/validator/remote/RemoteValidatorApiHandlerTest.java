@@ -696,10 +696,8 @@ class RemoteValidatorApiHandlerTest {
     final UInt64 slot = ONE;
 
     final SubnetSubscription subnetSubscription = new SubnetSubscription(subnetId, slot);
-    final tech.pegasys.teku.api.schema.SubnetSubscription schemaSubnetSubscription =
-        new tech.pegasys.teku.api.schema.SubnetSubscription(subnetId, slot);
 
-    final ArgumentCaptor<Set<tech.pegasys.teku.api.schema.SubnetSubscription>> argumentCaptor =
+    final ArgumentCaptor<Set<SubnetSubscription>> argumentCaptor =
         ArgumentCaptor.forClass(Set.class);
 
     final SafeFuture<Void> result =
@@ -707,13 +705,11 @@ class RemoteValidatorApiHandlerTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompleted();
-    verify(apiClient).subscribeToPersistentSubnets(argumentCaptor.capture());
+    verify(typeDefClient).subscribeToPersistentSubnets(argumentCaptor.capture());
 
-    final Set<tech.pegasys.teku.api.schema.SubnetSubscription> request = argumentCaptor.getValue();
+    final Set<SubnetSubscription> request = argumentCaptor.getValue();
     assertThat(request).hasSize(1);
-    assertThat(request.stream().findFirst().orElseThrow())
-        .usingRecursiveComparison()
-        .isEqualTo(schemaSubnetSubscription);
+    assertThat(request.stream().findFirst().orElseThrow()).isEqualTo(subnetSubscription);
   }
 
   @Test

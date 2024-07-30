@@ -23,7 +23,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_VALIDATOR_LIVENESS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -32,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -49,7 +47,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationRespo
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
@@ -123,11 +120,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
                         request.isAggregator()))
             .toArray(BeaconCommitteeSubscriptionRequest[]::new);
     post(SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET, body, createHandler());
-  }
-
-  @Override
-  public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
-    post(SUBSCRIBE_TO_PERSISTENT_SUBNETS, subnetSubscriptions, createHandler());
   }
 
   @Override

@@ -15,13 +15,11 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
@@ -38,8 +36,6 @@ public interface ValidatorRestApiClient {
       List<SignedAggregateAndProof> signedAggregateAndProof);
 
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
-
-  void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);

@@ -38,7 +38,7 @@ public class PostAttesterSlashingTest extends AbstractMigratedBeaconHandlerTest 
 
   @BeforeEach
   void setup() {
-    setHandler(new PostAttesterSlashing(nodeDataProvider, spec));
+    setHandler(new PostAttesterSlashing(nodeDataProvider, schemaDefinitionCache));
   }
 
   @Test
