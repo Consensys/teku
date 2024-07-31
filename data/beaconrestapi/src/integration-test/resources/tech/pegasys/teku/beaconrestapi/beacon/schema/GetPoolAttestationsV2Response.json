@@ -1,0 +1,23 @@
+{
+  "title" : "GetPoolAttestationsV2Response",
+  "type" : "object",
+  "required" : [ "version", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
+    },
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "title" : "Attestation",
+        "type" : "object",
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/AttestationPhase0"
+        }, {
+          "$ref" : "#/components/schemas/AttestationElectra"
+        } ]
+      }
+    }
+  }
+}
