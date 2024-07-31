@@ -16,10 +16,10 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -29,9 +29,9 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
@@ -71,21 +71,6 @@ class PostAttesterSlashingV2Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @TestTemplate
-  void successfulResponseShouldContainVersionInTheHeader() throws Exception {
-    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    request.setRequestBody(slashing);
-
-    when(nodeDataProvider.postAttesterSlashing(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseHeaders(ETH_CONSENSUS_VERSION_TYPE.getName()))
-        .isEqualTo(Version.fromMilestone(specMilestone).name());
-  }
-
-  @TestTemplate
   void shouldReturnBadRequestIfAttesterSlashingIsInvalid() throws Exception {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     request.setRequestBody(slashing);
@@ -107,7 +92,10 @@ class PostAttesterSlashingV2Test extends AbstractMigratedBeaconHandlerTest {
             Resources.getResource(
                 PostAttesterSlashingV2Test.class, "postAttesterSlashingRequestBody.json"),
             UTF_8);
-    assertThat(getRequestBodyFromMetadata(handler, data)).isInstanceOf(AttesterSlashing.class);
+    assertThat(
+            getRequestBodyFromMetadata(
+                handler, Map.of(HEADER_CONSENSUS_VERSION, specMilestone.name()), data))
+        .isInstanceOf(AttesterSlashing.class);
   }
 
   @TestTemplate
