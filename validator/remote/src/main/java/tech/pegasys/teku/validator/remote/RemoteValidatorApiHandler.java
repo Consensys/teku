@@ -342,7 +342,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Void> subscribeToBeaconCommittee(
       final List<CommitteeSubscriptionRequest> requests) {
-    return sendRequest(() -> apiClient.subscribeToBeaconCommittee(requests));
+    return sendRequest(() -> typeDefClient.subscribeToBeaconCommittee(requests));
   }
 
   @Override

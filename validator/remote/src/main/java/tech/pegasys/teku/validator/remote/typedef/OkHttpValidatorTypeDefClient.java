@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsReq
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendContributionAndProofsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSubscribeToSyncCommitteeSubnetsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SubscribeToPersistentSubnetsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SyncCommitteeSelectionsRequest;
 
@@ -85,6 +87,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final CreateSyncCommitteeContributionRequest createSyncCommitteeContributionRequest;
   private final SubscribeToPersistentSubnetsRequest subscribeToPersistentSubnetsRequest;
   private final SendContributionAndProofsRequest sendContributionAndProofsRequest;
+  private final SubscribeToBeaconCommitteeRequest subscribeToBeaconCommitteeRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -118,6 +121,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SubscribeToPersistentSubnetsRequest(baseEndpoint, okHttpClient);
     this.sendContributionAndProofsRequest =
         new SendContributionAndProofsRequest(baseEndpoint, okHttpClient);
+    this.subscribeToBeaconCommitteeRequest =
+        new SubscribeToBeaconCommitteeRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -238,5 +243,9 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public void sendContributionAndProofs(
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
     sendContributionAndProofsRequest.submit(signedContributionAndProofs);
+  }
+
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> subscriptions) {
+    subscribeToBeaconCommitteeRequest.submit(subscriptions);
   }
 }

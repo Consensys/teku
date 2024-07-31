@@ -80,6 +80,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
@@ -89,6 +90,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsReq
 @TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
 class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
+  final String serverErrorFromApi = "Server error from Beacon Node API";
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClient;
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClientWithPreferredSsz;
   private RegisterValidatorsRequest sszRegisterValidatorsRequest;
@@ -325,7 +327,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(serverException.getMessage())
         .matches(
-            "Server error from Beacon Node API \\(url = (.*), status = 500, message = Internal server error\\)");
+            serverErrorFromApi
+                + " \\(url = (.*), status = 500, message = Internal server error\\)");
   }
 
   @TestTemplate
@@ -617,7 +620,76 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThatThrownBy(
             () -> okHttpValidatorTypeDefClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Server error from Beacon Node API");
+        .hasMessageContaining(serverErrorFromApi);
+  }
+
+  @TestTemplate
+  public void subscribeToBeaconCommitteeForAggregation_makesExpectedRequest() throws Exception {
+    final int committeeIndex1 = 1;
+    final int validatorIndex1 = 6;
+    final UInt64 committeesAtSlot1 = UInt64.valueOf(10);
+    final UInt64 slot1 = UInt64.valueOf(15);
+    final boolean aggregator1 = true;
+
+    final int committeeIndex2 = 2;
+    final int validatorIndex2 = 7;
+    final UInt64 committeesAtSlot2 = UInt64.valueOf(11);
+    final UInt64 slot2 = UInt64.valueOf(16);
+    final boolean aggregator2 = false;
+
+    final String expectedRequest =
+        "[{\"validator_index\":\"6\",\"committee_index\":\"1\",\"committees_at_slot\":\"10\",\"slot\":\"15\",\"is_aggregator\":true},"
+            + "{\"validator_index\":\"7\",\"committee_index\":\"2\",\"committees_at_slot\":\"11\",\"slot\":\"16\",\"is_aggregator\":false}]";
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    okHttpValidatorTypeDefClient.subscribeToBeaconCommittee(
+        List.of(
+            new CommitteeSubscriptionRequest(
+                validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
+            new CommitteeSubscriptionRequest(
+                validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)));
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET.getPath(emptyMap()));
+    assertThat(request.getBody().readUtf8()).isEqualTo(expectedRequest);
+  }
+
+  @TestTemplate
+  public void
+      subscribeToBeaconCommitteeForAggregation_whenBadRequest_throwsIllegalArgumentException() {
+    final int committeeIndex = 1;
+    final UInt64 aggregationSlot = UInt64.ONE;
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+
+    assertThatThrownBy(
+            () ->
+                okHttpValidatorTypeDefClient.subscribeToBeaconCommittee(
+                    List.of(
+                        new CommitteeSubscriptionRequest(
+                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @TestTemplate
+  public void subscribeToBeaconCommitteeForAggregation_whenServerError_throwsRuntimeException() {
+    final int committeeIndex = 1;
+    final UInt64 aggregationSlot = UInt64.ONE;
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+
+    assertThatThrownBy(
+            () ->
+                okHttpValidatorTypeDefClient.subscribeToBeaconCommittee(
+                    List.of(
+                        new CommitteeSubscriptionRequest(
+                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining(serverErrorFromApi);
   }
 
   @TestTemplate
