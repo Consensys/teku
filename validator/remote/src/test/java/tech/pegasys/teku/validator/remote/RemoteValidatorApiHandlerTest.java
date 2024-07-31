@@ -62,7 +62,6 @@ import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionP
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
-import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
