@@ -32,9 +32,6 @@ public class SendContributionAndProofsRequest extends AbstractTypeDefRequest {
   }
 
   public void submit(final Collection<SignedContributionAndProof> signedContributionAndProofs) {
-    if (signedContributionAndProofs.isEmpty()) {
-      return;
-    }
     final List<SignedContributionAndProof> requestData =
         new ArrayList<>(signedContributionAndProofs);
     postJson(
