@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionData;
 
 class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -43,9 +44,8 @@ class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHan
   @Test
   public void shouldReturnSuccessWhenSubscriptionToBeaconCommitteeIsSuccessful()
       throws JsonProcessingException {
-    final PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData data =
-        new PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData(
-            1, 1, UInt64.ONE, UInt64.ONE, false);
+    final CommitteeSubscriptionData data =
+        new CommitteeSubscriptionData(1, 1, UInt64.ONE, UInt64.ONE, false);
 
     request.setRequestBody(List.of(data));
 
@@ -61,10 +61,7 @@ class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHan
         "[{\"validator_index\":\"1\",\"committee_index\":\"1\",\"committees_at_slot\":\"1\","
             + "\"slot\":\"1\",\"is_aggregator\":true}]";
     assertThat(getRequestBodyFromMetadata(handler, data))
-        .isEqualTo(
-            List.of(
-                new PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData(
-                    1, 1, UInt64.ONE, UInt64.ONE, true)));
+        .isEqualTo(List.of(new CommitteeSubscriptionData(1, 1, UInt64.ONE, UInt64.ONE, true)));
   }
 
   @Test

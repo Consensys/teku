@@ -24,7 +24,6 @@ import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 public interface ValidatorRestApiClient {
 
@@ -34,8 +33,6 @@ public interface ValidatorRestApiClient {
 
   Optional<PostDataFailureResponse> sendAggregateAndProofs(
       List<SignedAggregateAndProof> signedAggregateAndProof);
-
-  void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
