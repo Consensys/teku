@@ -250,7 +250,7 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
   }
 
   private SszLengthBounds calcSszLengthBounds() {
-    return childSchema.getSszLengthBounds().addBytes(PREFIX_SIZE_BYTES).ceilToBytes();
+    return SszLengthBounds.ZERO.or(childSchema.getSszLengthBounds().addBytes(PREFIX_SIZE_BYTES));
   }
 
   @Override

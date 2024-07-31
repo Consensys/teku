@@ -25,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.RandomSszDataGenerator;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
+import tech.pegasys.teku.infrastructure.ssz.SszOptional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszCollectionSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SimpleSszReader;
@@ -46,24 +47,24 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
   @ParameterizedTest
   void sszDeserialize_tooLongSszShouldFailFastWithoutReadingWholeInput(
       final SszSchema<SszData> schema) {
-    if (schema instanceof SszOptionalSchema<?, ?>) {
-      // empty SszOptional couldn't pass this test
-      return;
-    }
     long maxSszLength = schema.getSszLengthBounds().getMaxBytes();
     // ignore too large and degenerative structs
     assumeThat(maxSszLength).isLessThan(32 * 1024 * 1024).isGreaterThan(0);
     // ignore lists using SszSuperNode as many validations are skipped
-    if (schema instanceof AbstractSszCollectionSchema) {
-      assumeThat(
-              ((AbstractSszCollectionSchema<?, ?>) schema)
-                  .getHints()
-                  .getHint(SszSuperNodeHint.class))
+    if (schema instanceof AbstractSszCollectionSchema<?, ?> collectionSchema) {
+      assumeThat(collectionSchema.getHints().getHint(SszSuperNodeHint.class))
           .describedAs("uses SszSuperNode")
           .isEmpty();
     }
 
     SszData data = randomSsz.randomData(schema);
+
+    if (data instanceof SszOptional<?> optionalData) {
+      assumeThat(optionalData.getValue())
+          .describedAs("optional can't be empty to pass the test")
+          .isPresent();
+    }
+
     Bytes ssz = data.sszSerialize();
 
     Bytes sszWithExtraData = Bytes.wrap(ssz, Bytes.random((int) (maxSszLength - ssz.size() + 1)));
