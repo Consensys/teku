@@ -693,6 +693,13 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
+  public void sendSignedContributionAndProof_emptyListIsNoop() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
+    okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of());
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
+  }
+
+  @TestTemplate
   public void sendSignedContributionAndProof_acceptsPopulatedList() throws InterruptedException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof();

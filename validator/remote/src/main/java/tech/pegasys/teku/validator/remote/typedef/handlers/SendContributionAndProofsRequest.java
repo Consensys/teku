@@ -22,16 +22,24 @@ import java.util.Collections;
 import java.util.List;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class SendContributionAndProofsRequest extends AbstractTypeDefRequest {
+  private static final Logger LOG = LogManager.getLogger();
+
   public SendContributionAndProofsRequest(
       final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     super(baseEndpoint, okHttpClient);
   }
 
   public void submit(final Collection<SignedContributionAndProof> signedContributionAndProofs) {
+    if (signedContributionAndProofs == null || signedContributionAndProofs.isEmpty()) {
+      LOG.warn("Submitted no contribution and proofs");
+      return;
+    }
     final List<SignedContributionAndProof> requestData =
         new ArrayList<>(signedContributionAndProofs);
     postJson(
