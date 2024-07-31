@@ -125,7 +125,6 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return dutiesProviderChannel.createAttestationData(slot, committeeIndex);
   }
 
-  @Deprecated
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot,
@@ -134,14 +133,6 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
         .createAggregate(slot, attestationHashTreeRoot, committeeIndex);
-  }
-
-  @Override
-  public SafeFuture<Optional<Attestation>> createAggregateV2(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
-    return attestationPublisherChannel
-        .orElse(dutiesProviderChannel)
-        .createAggregateV2(slot, attestationHashTreeRoot, committeeIndex);
   }
 
   @Override

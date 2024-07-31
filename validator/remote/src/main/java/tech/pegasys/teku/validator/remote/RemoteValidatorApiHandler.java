@@ -301,20 +301,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         .toList();
   }
 
-  @Deprecated
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
     return sendRequest(() -> typeDefClient.createAggregate(slot, attestationHashTreeRoot));
-  }
-
-  @Override
-  public SafeFuture<Optional<Attestation>> createAggregateV2(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
-    return sendRequest(
-        () -> typeDefClient.createAggregate(slot, attestationHashTreeRoot, committeeIndex));
   }
 
   @Override

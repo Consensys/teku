@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionP
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -639,6 +641,35 @@ class RemoteValidatorApiHandlerTest {
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
+  }
+
+  @Test
+  public void createAggregate_ShouldUseV1Api() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    final Bytes32 attHashTreeRoot = Bytes32.random();
+
+    ignoreFuture(apiHandler.createAggregate(slot, attHashTreeRoot, Optional.empty()));
+    asyncRunner.executeQueuedActions();
+
+    verify(typeDefClient, never()).createAggregate(any(), any(), any());
+    verify(apiClient).createAggregate(slot, attHashTreeRoot);
+  }
+
+  @Test
+  public void createAggregate_ShouldUseV2ApiPostElectra() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    final Bytes32 attHashTreeRoot = Bytes32.random();
+    final UInt64 committeeIndex = dataStructureUtil.randomUInt64();
+    final Spec electraSpec = TestSpecFactory.createMainnetElectra();
+
+    apiHandler =
+        new RemoteValidatorApiHandler(
+            endpoint, electraSpec, apiClient, typeDefClient, asyncRunner, true);
+    ignoreFuture(apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(committeeIndex)));
+    asyncRunner.executeQueuedActions();
+
+    verify(apiClient, never()).createAggregate(any(), any());
+    verify(typeDefClient).createAggregate(slot, attHashTreeRoot, committeeIndex);
   }
 
   @SuppressWarnings("unchecked")
