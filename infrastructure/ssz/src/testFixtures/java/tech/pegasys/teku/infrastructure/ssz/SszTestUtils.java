@@ -51,9 +51,11 @@ public class SszTestUtils {
   }
 
   private static void dumpBinaryTreeRec(
-      TreeNode node, String prefix, boolean printCommit, Consumer<String> linesConsumer) {
-    if (node instanceof LeafNode) {
-      LeafNode leafNode = (LeafNode) node;
+      final TreeNode node,
+      final String prefix,
+      final boolean printCommit,
+      final Consumer<String> linesConsumer) {
+    if (node instanceof LeafNode leafNode) {
       linesConsumer.accept(prefix + leafNode);
     } else {
       BranchNode branchNode = (BranchNode) node;

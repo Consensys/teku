@@ -41,7 +41,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
           IntStream.range(0, res.size() - 1)
               .mapToObj(i -> "  ".repeat(i) + res.get(i))
               .collect(Collectors.joining("\n"));
-      errMessage += " ERROR: " + res.get(res.size() - 1);
+      errMessage += " ERROR: " + res.getLast();
       failWithMessage(
           "Expected %s's to be equal by getter, but found differences:\n%s",
           expected.getClass().getSimpleName(), errMessage);
@@ -123,8 +123,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
               + ", actual: "
               + actual.getSchema());
     }
-    if (actual instanceof SszComposite) {
-      SszComposite<?> c1 = (SszComposite<?>) actual;
+    if (actual instanceof SszComposite<?> c1) {
       SszComposite<?> c2 = (SszComposite<?>) expected;
       if (c1.size() != c2.size()) {
         return List.of(
