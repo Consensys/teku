@@ -606,7 +606,7 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void createAggregate_ShouldUseV1Api() {
+  public void createAggregate_ShouldUseV1ApiPreElectra() {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
