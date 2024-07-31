@@ -22,7 +22,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_VALIDATOR_LIVENESS;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -41,7 +40,6 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
@@ -52,7 +50,6 @@ import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
@@ -104,22 +101,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         signedAggregateAndProof,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
-    final BeaconCommitteeSubscriptionRequest[] body =
-        requests.stream()
-            .map(
-                request ->
-                    new BeaconCommitteeSubscriptionRequest(
-                        String.valueOf(request.getValidatorIndex()),
-                        String.valueOf(request.getCommitteeIndex()),
-                        request.getCommitteesAtSlot(),
-                        request.getSlot(),
-                        request.isAggregator()))
-            .toArray(BeaconCommitteeSubscriptionRequest[]::new);
-    post(SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET, body, createHandler());
   }
 
   @Override

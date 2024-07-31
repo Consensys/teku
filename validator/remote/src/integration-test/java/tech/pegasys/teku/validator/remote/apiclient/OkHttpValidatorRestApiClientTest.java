@@ -43,7 +43,6 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 class OkHttpValidatorRestApiClientTest {
 
@@ -216,75 +215,6 @@ class OkHttpValidatorRestApiClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void subscribeToBeaconCommitteeForAggregation_MakesExpectedRequest() throws Exception {
-    final int committeeIndex1 = 1;
-    final int validatorIndex1 = 6;
-    final UInt64 committeesAtSlot1 = UInt64.valueOf(10);
-    final UInt64 slot1 = UInt64.valueOf(15);
-    final boolean aggregator1 = true;
-
-    final int committeeIndex2 = 2;
-    final int validatorIndex2 = 7;
-    final UInt64 committeesAtSlot2 = UInt64.valueOf(11);
-    final UInt64 slot2 = UInt64.valueOf(16);
-    final boolean aggregator2 = false;
-
-    final String expectedRequest =
-        "[{\"validator_index\":\"6\",\"committee_index\":\"1\",\"committees_at_slot\":\"10\",\"slot\":\"15\",\"is_aggregator\":true},"
-            + "{\"validator_index\":\"7\",\"committee_index\":\"2\",\"committees_at_slot\":\"11\",\"slot\":\"16\",\"is_aggregator\":false}]";
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-
-    apiClient.subscribeToBeaconCommittee(
-        List.of(
-            new CommitteeSubscriptionRequest(
-                validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
-            new CommitteeSubscriptionRequest(
-                validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)));
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET.getPath(emptyMap()));
-    assertThat(request.getBody().readUtf8()).isEqualTo(expectedRequest);
-  }
-
-  @Test
-  public void
-      subscribeToBeaconCommitteeForAggregation_WhenBadRequest_ThrowsIllegalArgumentException() {
-    final int committeeIndex = 1;
-    final UInt64 aggregationSlot = UInt64.ONE;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-
-    assertThatThrownBy(
-            () ->
-                apiClient.subscribeToBeaconCommittee(
-                    List.of(
-                        new CommitteeSubscriptionRequest(
-                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void subscribeToBeaconCommitteeForAggregation_WhenServerError_ThrowsRuntimeException() {
-    final int committeeIndex = 1;
-    final UInt64 aggregationSlot = UInt64.ONE;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(
-            () ->
-                apiClient.subscribeToBeaconCommittee(
-                    List.of(
-                        new CommitteeSubscriptionRequest(
-                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }

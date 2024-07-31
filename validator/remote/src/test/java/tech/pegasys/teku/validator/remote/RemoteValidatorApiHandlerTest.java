@@ -686,7 +686,7 @@ class RemoteValidatorApiHandlerTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompleted();
-    verify(apiClient).subscribeToBeaconCommittee(requests);
+    verify(typeDefClient).subscribeToBeaconCommittee(requests);
   }
 
   @Test
