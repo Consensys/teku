@@ -180,8 +180,7 @@ public class SszNodeTemplate {
       long gIndex, final TreeNode node, final BinaryVisitor<T> visitor) {
     if (node instanceof LeafNode) {
       return visitor.visitLeaf(gIndex, (LeafNode) node);
-    } else if (node instanceof BranchNode) {
-      BranchNode branchNode = (BranchNode) node;
+    } else if (node instanceof BranchNode branchNode) {
       return visitor.visitBranch(
           gIndex,
           branchNode,

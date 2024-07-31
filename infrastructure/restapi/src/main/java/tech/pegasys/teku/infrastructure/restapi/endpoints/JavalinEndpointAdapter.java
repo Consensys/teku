@@ -27,7 +27,8 @@ public class JavalinEndpointAdapter implements Handler {
 
   public static void addEndpoint(final Javalin app, final RestApiEndpoint endpoint) {
     final EndpointMetadata metadata = endpoint.getMetadata();
-    app.addHandler(metadata.getMethod(), metadata.getPath(), new JavalinEndpointAdapter(endpoint));
+    app.addHttpHandler(
+        metadata.getMethod(), metadata.getPath(), new JavalinEndpointAdapter(endpoint));
   }
 
   @Override

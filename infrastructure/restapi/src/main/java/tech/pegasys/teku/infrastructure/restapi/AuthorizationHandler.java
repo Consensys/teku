@@ -17,26 +17,23 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORI
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.security.AccessManager;
-import io.javalin.security.RouteRole;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
-public class AuthorizationManager implements AccessManager {
+public class AuthorizationHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
   private static final String BEARER_PREFIX = "Bearer ";
   private final String bearer;
 
-  public AuthorizationManager(final Path path) {
+  public AuthorizationHandler(final Path path) {
     bearer = readPasswordFile(path);
   }
 
@@ -88,13 +85,12 @@ public class AuthorizationManager implements AccessManager {
     LOG.debug(message);
     ctx.json("{\n  \"status\": 401, \n \"message\":\"Unauthorized\"\n}");
     ctx.status(SC_UNAUTHORIZED);
+    ctx.skipRemainingHandlers();
   }
 
   @Override
-  public void manage(final Handler handler, final Context ctx, final Set<? extends RouteRole> set)
-      throws Exception {
-    if (ctx.matchedPath().equals("/swagger-docs")) {
-      handler.handle(ctx);
+  public void handle(final Context ctx) throws Exception {
+    if (ctx.path().startsWith("/swagger-") || ctx.path().startsWith("/webjars")) {
       return;
     }
 
@@ -108,11 +104,9 @@ public class AuthorizationManager implements AccessManager {
       unauthorized(ctx, "API Reject - authorization bearer missing from request header");
       return;
     }
+
     if (!auth.substring(BEARER_PREFIX.length()).equals(bearer)) {
       unauthorized(ctx, "API Reject - Unauthorized");
-      return;
     }
-
-    handler.handle(ctx);
   }
 }

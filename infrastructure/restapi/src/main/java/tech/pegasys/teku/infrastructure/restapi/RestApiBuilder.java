@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import io.javalin.Javalin;
+import io.javalin.compression.CompressionStrategy;
 import io.javalin.config.JavalinConfig;
 import io.javalin.plugin.bundled.CorsPluginConfig;
 import io.javalin.util.JavalinLogger;
@@ -131,14 +132,16 @@ public class RestApiBuilder {
             config -> {
               config.http.defaultContentType = "application/json";
               config.showJavalinBanner = false;
-              config.compression.gzipOnly();
+              config.startupWatcherEnabled = false;
               // Work around a bug in Javalin where it decides whether to compress on each call to
               // write which could result in a mix of compressed and uncompressed content
               // and means it doesn't evaluate the length of the response correctly.
-              config.pvt.compressionStrategy.setMinSizeForCompression(0);
+              CompressionStrategy strategy = CompressionStrategy.GZIP;
+              strategy.setDefaultMinSizeForCompression(0);
+              config.http.customCompression(strategy);
               configureCors(config);
               swaggerBuilder.configureUI(config);
-              config.jetty.server(this::createJettyServer);
+              config.jetty.modifyServer(this::modifyJettyServer);
             });
 
     if (!hostAllowlist.isEmpty()) {
@@ -182,16 +185,15 @@ public class RestApiBuilder {
   private void configureCors(final JavalinConfig config) {
     if (!corsAllowedOrigins.isEmpty()) {
       if (corsAllowedOrigins.contains("*")) {
-        config.plugins.enableCors(cors -> cors.add(CorsPluginConfig::anyHost));
+        config.bundledPlugins.enableCors(cors -> cors.addRule(CorsPluginConfig.CorsRule::anyHost));
       } else {
-        config.plugins.enableCors(
-            cors -> corsAllowedOrigins.forEach(origin -> cors.add(it -> it.allowHost(origin))));
+        config.bundledPlugins.enableCors(
+            cors -> corsAllowedOrigins.forEach(origin -> cors.addRule(it -> it.allowHost(origin))));
       }
     }
   }
 
-  private Server createJettyServer() {
-    final Server server = new Server();
+  private void modifyJettyServer(final Server server) {
     final ServerConnector connector;
     if (maybeKeystorePath.isPresent()) {
       connector = new ServerConnector(server, getSslContextFactory());
@@ -201,7 +203,6 @@ public class RestApiBuilder {
     connector.setPort(port);
     connector.setHost(listenAddress);
     server.setConnectors(new Connector[] {connector});
-
     maxUrlLength.ifPresent(
         maxLength -> {
           LOG.debug("Setting Max URL length to {}", maxLength);
@@ -215,7 +216,6 @@ public class RestApiBuilder {
           }
         });
     JavalinLogger.startupInfo = false;
-    return server;
   }
 
   private SslContextFactory.Server getSslContextFactory() {

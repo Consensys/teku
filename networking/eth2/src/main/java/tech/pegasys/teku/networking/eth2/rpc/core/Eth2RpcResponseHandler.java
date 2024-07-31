@@ -76,6 +76,7 @@ public class Eth2RpcResponseHandler<TResponse, TExpectedResult>
     return new Eth2RpcResponseHandler<>(responseHandler, completed, resultFuture);
   }
 
+  @SuppressWarnings("VoidUsed")
   private static SafeFuture<Void> applyError(
       SafeFuture<Void> future, AtomicReference<InvalidRpcResponseException> errorCapture) {
     return future.thenApply(
