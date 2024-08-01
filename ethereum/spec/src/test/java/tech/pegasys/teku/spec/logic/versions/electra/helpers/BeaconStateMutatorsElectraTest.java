@@ -56,21 +56,6 @@ class BeaconStateMutatorsElectraTest {
             specConfig, miscHelpersElectra, stateAccessorsElectra, schemaDefinitionsElectra);
   }
 
-  //  @Test
-  //  public void exitChurn() {
-  //    final UInt64 minActivationBalance = specConfig.getMinActivationBalance();
-  //    final long excessBalance = 1L;
-  //    final BeaconStateElectra preState =
-  //            BeaconStateElectra.required(
-  //                    new BeaconStateTestBuilder(dataStructureUtil).slot(32)
-  //                            .build());
-  //    final UInt64 exitEpoch =
-  // stateMutatorsElectra.computeExitEpochAndUpdateChurn(preState.createWritableCopy(),
-  // UInt64.THIRTY_TWO_ETH.times(64));
-  //    assertThat(exitEpoch).isGreaterThan(ONE);
-  //
-  //  }
-
   @Test
   public void queueExcessActiveBalance_withExcessBalance_ShouldCreatePendingBalanceDeposit() {
     final UInt64 minActivationBalance = specConfig.getMinActivationBalance();
