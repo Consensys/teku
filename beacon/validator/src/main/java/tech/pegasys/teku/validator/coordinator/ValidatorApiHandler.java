@@ -519,7 +519,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     attestation,
                     spec.atSlot(attestation.getData().getSlot()).getMilestone(),
                     false,
-                    true,
+                    false,
                     false)));
   }
 

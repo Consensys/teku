@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetAggregateAttestationTest extends AbstractMigratedBeaconHandlerTest {
@@ -52,7 +53,11 @@ class GetAggregateAttestationTest extends AbstractMigratedBeaconHandlerTest {
     Attestation attestation = dataStructureUtil.randomAttestation();
     when(validatorDataProvider.createAggregate(
             eq(UInt64.valueOf(1)), eq(attestationDataRoot), eq(Optional.empty())))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new ObjectAndMetaData<>(
+                        attestation, spec.getGenesisSpec().getMilestone(), false, false, false))));
 
     handler.handleRequest(request);
 
