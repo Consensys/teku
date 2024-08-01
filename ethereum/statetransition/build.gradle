@@ -24,7 +24,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':storage')
   implementation project(':storage:api')
-  implementation project(':validator:api')
 
   implementation 'org.apache.tuweni:tuweni-units'
 

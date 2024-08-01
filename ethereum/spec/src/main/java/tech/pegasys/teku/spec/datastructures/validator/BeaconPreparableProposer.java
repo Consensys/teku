@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.spec.datastructures.validator;
 
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.google.common.base.MoreObjects;
@@ -22,6 +21,15 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public record BeaconPreparableProposer(UInt64 validatorIndex, Eth1Address feeRecipient) {
+
+  private static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
+      DeserializableTypeDefinition.string(Eth1Address.class)
+          .formatter(Eth1Address::toHexString)
+          .parser(Eth1Address::fromHexString)
+          .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
+          .description("Hex encoded deposit contract address with 0x prefix")
+          .format("byte")
+          .build();
 
   public static final DeserializableTypeDefinition<BeaconPreparableProposer> SSZ_DATA =
       DeserializableTypeDefinition.object(

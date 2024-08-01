@@ -13,15 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
@@ -32,32 +29,10 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 
 public class PostPrepareBeaconProposer extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
-
-  @VisibleForTesting
-  public static final DeserializableTypeDefinition<BeaconPreparableProposer>
-      BEACON_PREPARABLE_PROPOSER_TYPE =
-          DeserializableTypeDefinition.object(
-                  BeaconPreparableProposer.class, BeaconPreparableProposer.Builder.class)
-              .name("BeaconPreparableProposer")
-              .finisher(BeaconPreparableProposer.Builder::build)
-              .initializer(BeaconPreparableProposer::builder)
-              .description(
-                  "The fee recipient that should be used by an associated validator index.")
-              .withField(
-                  "validator_index",
-                  UINT64_TYPE,
-                  BeaconPreparableProposer::validatorIndex,
-                  BeaconPreparableProposer.Builder::validatorIndex)
-              .withField(
-                  "fee_recipient",
-                  ETH1ADDRESS_TYPE,
-                  BeaconPreparableProposer::feeRecipient,
-                  BeaconPreparableProposer.Builder::feeRecipient)
-              .build();
 
   private final ValidatorDataProvider validatorDataProvider;
   private final boolean isProposerDefaultFeeRecipientDefined;

@@ -22,7 +22,7 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class PrepareBeaconProposersRequest extends AbstractTypeDefRequest {
