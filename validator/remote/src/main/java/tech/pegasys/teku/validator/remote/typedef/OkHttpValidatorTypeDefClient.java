@@ -298,11 +298,4 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient());
     return sendSignedAttestationsRequest.submit(attestations);
   }
-
-  public Optional<Attestation> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
-    GetAggregateAttestationRequest getAggregateAttestationRequest =
-        new GetAggregateAttestationRequest(getBaseEndpoint(), getOkHttpClient(), spec, slot);
-    return getAggregateAttestationRequest.createAggregate(attestationHashTreeRoot, committeeIndex);
-  }
 }

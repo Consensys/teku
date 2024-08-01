@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
@@ -71,14 +72,16 @@ public class GetAggregateAttestation extends RestApiEndpoint {
     final Bytes32 beaconBlockRoot = request.getQueryParameter(ATTESTATION_DATA_ROOT_PARAMETER);
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
 
-    final SafeFuture<Optional<Attestation>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<Attestation>>> future =
         provider.createAggregate(slot, beaconBlockRoot, Optional.empty());
 
     request.respondAsync(
         future.thenApply(
-            maybeAttestation ->
-                maybeAttestation
-                    .map(AsyncApiResponse::respondOk)
+            maybeAttestationAndMetaData ->
+                maybeAttestationAndMetaData
+                    .map(
+                        attestationObjectAndMetaData ->
+                            AsyncApiResponse.respondOk(attestationObjectAndMetaData.getData()))
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
