@@ -46,6 +46,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
   private DataStructureUtil dataStructureUtil;
   private SpecMilestone specMilestone;
+  private SerializableTypeDefinition<List<Attestation>> attestationsListTypeDef;
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -53,6 +54,12 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     specMilestone = specContext.getSpecMilestone();
     startRestAPIAtGenesis(specMilestone);
     dataStructureUtil = specContext.getDataStructureUtil();
+    attestationsListTypeDef =
+        SerializableTypeDefinition.listOf(
+            spec.getGenesisSchemaDefinitions()
+                .getAttestationSchema()
+                .castTypeToAttestationSchema()
+                .getJsonTypeDefinition());
   }
 
   @TestTemplate
@@ -66,14 +73,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final Response response =
         post(
             PostAttestationsV2.ROUTE,
-            JsonUtil.serialize(
-                attestations,
-                SerializableTypeDefinition.listOf(
-                    spec.atSlot(UInt64.ONE)
-                        .getSchemaDefinitions()
-                        .getAttestationSchema()
-                        .castTypeToAttestationSchema()
-                        .getJsonTypeDefinition())),
+            JsonUtil.serialize(attestations, attestationsListTypeDef),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
 
@@ -100,14 +100,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final Response response =
         post(
             PostAttestationsV2.ROUTE,
-            JsonUtil.serialize(
-                attestations,
-                SerializableTypeDefinition.listOf(
-                    spec.atSlot(UInt64.ONE)
-                        .getSchemaDefinitions()
-                        .getAttestationSchema()
-                        .castTypeToAttestationSchema()
-                        .getJsonTypeDefinition())),
+            JsonUtil.serialize(attestations, attestationsListTypeDef),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
 
@@ -136,16 +129,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
 
     final Response response =
-        post(
-            PostAttestationsV2.ROUTE,
-            JsonUtil.serialize(
-                attestations,
-                SerializableTypeDefinition.listOf(
-                    spec.atSlot(UInt64.ONE)
-                        .getSchemaDefinitions()
-                        .getAttestationSchema()
-                        .castTypeToAttestationSchema()
-                        .getJsonTypeDefinition())));
+        post(PostAttestationsV2.ROUTE, JsonUtil.serialize(attestations, attestationsListTypeDef));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
 
@@ -165,14 +149,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final Response response =
         post(
             PostAttestationsV2.ROUTE,
-            JsonUtil.serialize(
-                attestations,
-                SerializableTypeDefinition.listOf(
-                    spec.atSlot(UInt64.ONE)
-                        .getSchemaDefinitions()
-                        .getAttestationSchema()
-                        .castTypeToAttestationSchema()
-                        .getJsonTypeDefinition())),
+            JsonUtil.serialize(attestations, attestationsListTypeDef),
             Collections.emptyMap(),
             Optional.of("NonExistingMileStone"));
 
