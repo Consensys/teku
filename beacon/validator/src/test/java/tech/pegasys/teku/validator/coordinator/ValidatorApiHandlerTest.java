@@ -717,17 +717,18 @@ class ValidatorApiHandlerTest {
   @Test
   public void createAggregate_shouldReturnAggregateFromAttestationPool() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
+    final Attestation aggregate = dataStructureUtil.randomAttestation();
     when(attestationPool.createAggregateFor(
             eq(attestationData.hashTreeRoot()), eq(Optional.empty())))
-        .thenReturn(aggregate.map(attestation -> ValidatableAttestation.from(spec, attestation)));
+        .thenReturn(Optional.of(ValidatableAttestation.from(spec, aggregate)));
 
     assertThat(
             validatorApiHandler.createAggregate(
-                aggregate.get().getData().getSlot(),
-                attestationData.hashTreeRoot(),
-                Optional.empty()))
-        .isCompletedWithValue(aggregate);
+                aggregate.getData().getSlot(), attestationData.hashTreeRoot(), Optional.empty()))
+        .isCompletedWithValue(
+            Optional.of(
+                new ObjectAndMetaData<>(
+                    aggregate, spec.getGenesisSpec().getMilestone(), false, false, false)));
   }
 
   @Test
