@@ -240,7 +240,7 @@ public class ValidatorDataProvider {
     return Optional.of(message);
   }
 
-  public SafeFuture<Optional<Attestation>> createAggregate(
+  public SafeFuture<Optional<ObjectAndMetaData<Attestation>>> createAggregate(
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
@@ -249,8 +249,7 @@ public class ValidatorDataProvider {
 
   public SafeFuture<Optional<ObjectAndMetaData<Attestation>>> createAggregateAndMetaData(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
-    return createAggregate(slot, attestationHashTreeRoot, Optional.of(committeeIndex))
-        .thenApply(maybeAttestation -> maybeAttestation.map(this::lookUpMetadata));
+    return createAggregate(slot, attestationHashTreeRoot, Optional.of(committeeIndex));
   }
 
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
@@ -348,14 +347,5 @@ public class ValidatorDataProvider {
     }
 
     return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
-  }
-
-  private ObjectAndMetaData<Attestation> lookUpMetadata(final Attestation attestation) {
-    return new ObjectAndMetaData<>(
-        attestation,
-        spec.atSlot(attestation.getData().getSlot()).getMilestone(),
-        false,
-        false,
-        false);
   }
 }

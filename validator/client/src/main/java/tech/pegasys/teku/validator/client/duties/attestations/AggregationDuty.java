@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -136,10 +137,14 @@ public class AggregationDuty implements Duty {
     final SafeFuture<Optional<Attestation>> createAggregationFuture =
         validatorDutyMetrics.record(
             () ->
-                validatorApiChannel.createAggregate(
-                    slot,
-                    attestationData.hashTreeRoot(),
-                    Optional.of(aggregator.attestationCommitteeIndex)),
+                validatorApiChannel
+                    .createAggregate(
+                        slot,
+                        attestationData.hashTreeRoot(),
+                        Optional.of(aggregator.attestationCommitteeIndex))
+                    .thenApply(
+                        maybeAttestationAndMetaData ->
+                            maybeAttestationAndMetaData.map(ObjectAndMetaData::getData)),
             this,
             ValidatorDutyMetricsSteps.CREATE);
 
