@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostPrepareBeaconProposer.BEACON_PREPARABLE_PROPOSER_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -34,7 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class PostPrepareBeaconProposerTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -56,7 +55,7 @@ public class PostPrepareBeaconProposerTest extends AbstractDataBackedRestAPIInte
         post(
             PostPrepareBeaconProposer.ROUTE,
             JsonUtil.serialize(
-                request, DeserializableTypeDefinition.listOf(BEACON_PREPARABLE_PROPOSER_TYPE)))) {
+                request, DeserializableTypeDefinition.listOf(BeaconPreparableProposer.SSZ_DATA)))) {
 
       assertThat(response.code()).isEqualTo(SC_OK);
     }

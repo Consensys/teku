@@ -21,7 +21,6 @@ import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ValidatorRestApiClient {
@@ -36,7 +35,7 @@ public interface ValidatorRestApiClient {
   Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
 
-  void prepareBeaconProposer(final List<BeaconPreparableProposer> beaconPreparableProposers);
+  //  void prepareBeaconProposer(final List<BeaconPreparableProposer> beaconPreparableProposers);
 
   Optional<PostValidatorLivenessResponse> sendValidatorsLiveness(
       UInt64 epoch, List<UInt64> validatorsIndices);

@@ -65,7 +65,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -361,14 +361,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     return sendRequest(
-        () ->
-            apiClient.prepareBeaconProposer(
-                beaconPreparableProposers.stream()
-                    .map(
-                        proposer ->
-                            new tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer(
-                                proposer.getValidatorIndex(), proposer.getFeeRecipient()))
-                    .toList()));
+        () -> typeDefClient.prepareBeaconProposer(new ArrayList<>(beaconPreparableProposers)));
   }
 
   @Override
