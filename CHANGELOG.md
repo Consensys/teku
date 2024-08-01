@@ -12,6 +12,7 @@
 - Java 21+ is required to be installed to run Teku. Refer to https://docs.teku.consensys.io/get-started/install for the updated instructions.
 
 ### Additions and Improvements
+- Add support for dual-stack (IPv4/IPv6) for discovery and p2p. Refer to https://docs.teku.consensys.io/development/how-to/find-and-connect/configure-ipv6 for more details.
 - Added a state pruner that can limit the number of finalized states stored when running an archive node.
 - Updated bootnodes for Sepolia network.
 - Implemented [GetBlockAttestationV2](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/getBlockAttestationsV2) (adding support for Electra attestations)
