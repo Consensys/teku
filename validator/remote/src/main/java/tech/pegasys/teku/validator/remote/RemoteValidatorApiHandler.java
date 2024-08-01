@@ -38,7 +38,6 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
@@ -295,36 +294,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Void> sendSignedContributionAndProofs(
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
-    final List<tech.pegasys.teku.api.schema.altair.SignedContributionAndProof>
-        signedContributionsRestSchema =
-            signedContributionAndProofs.stream().map(this::asSignedContributionAndProofs).toList();
-    return sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema));
-  }
-
-  private tech.pegasys.teku.api.schema.altair.SignedContributionAndProof
-      asSignedContributionAndProofs(final SignedContributionAndProof signedContributionAndProof) {
-    return new tech.pegasys.teku.api.schema.altair.SignedContributionAndProof(
-        asContributionAndProof(signedContributionAndProof.getMessage()),
-        new tech.pegasys.teku.api.schema.BLSSignature(signedContributionAndProof.getSignature()));
-  }
-
-  private ContributionAndProof asContributionAndProof(
-      final tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof
-          message) {
-    return new ContributionAndProof(
-        message.getAggregatorIndex(),
-        new tech.pegasys.teku.api.schema.BLSSignature(message.getSelectionProof()),
-        asSyncCommitteeContribution(message.getContribution()));
-  }
-
-  private tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution asSyncCommitteeContribution(
-      final SyncCommitteeContribution contribution) {
-    return new tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution(
-        contribution.getSlot(),
-        contribution.getBeaconBlockRoot(),
-        contribution.getSubcommitteeIndex(),
-        contribution.getAggregationBits().sszSerialize(),
-        new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
+    return sendRequest(() -> typeDefClient.sendContributionAndProofs(signedContributionAndProofs));
   }
 
   private List<SubmitDataError> convertPostDataFailureResponseToSubmitDataErrors(

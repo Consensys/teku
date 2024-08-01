@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -575,7 +576,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void subscribeToPersistentSubnets_MakesExpectedRequest() throws Exception {
+  public void subscribeToPersistentSubnets_makesExpectedRequest() throws Exception {
     final Set<SubnetSubscription> subnetSubscriptions =
         Set.of(
             new SubnetSubscription(
@@ -595,7 +596,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void subscribeToPersistentSubnets_WhenBadRequest_ThrowsIllegalArgumentException() {
+  public void subscribeToPersistentSubnets_whenBadRequest_throwsIllegalArgumentException() {
     final Set<SubnetSubscription> subnetSubscriptions =
         Set.of(
             new SubnetSubscription(
@@ -608,7 +609,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void subscribeToPersistentSubnets_WhenServerError_ThrowsRuntimeException() {
+  public void subscribeToPersistentSubnets_whenServerError_throwsRuntimeException() {
     final Set<SubnetSubscription> subnetSubscriptions =
         Set.of(
             new SubnetSubscription(
@@ -689,6 +690,37 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                             1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining(serverErrorFromApi);
+  }
+
+  @TestTemplate
+  public void sendSignedContributionAndProof_emptyListIsNoop() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
+    okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of());
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
+  }
+
+  @TestTemplate
+  public void sendSignedContributionAndProof_acceptsPopulatedList() throws InterruptedException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
+    final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof();
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+    okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of(proof));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getRequestUrl().encodedPath())
+        .isEqualTo("/eth/v1/validator/contribution_and_proofs");
+    assertThat(request.getBody().readUtf8())
+        .contains("\"contribution\":{\"slot\":\"4666673844721362956\"");
+  }
+
+  @TestTemplate
+  public void sendSignedContributionAndProof_canRespondFailure() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
+    final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof();
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(() -> okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of(proof)))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   private AttesterDuty randomAttesterDuty() {

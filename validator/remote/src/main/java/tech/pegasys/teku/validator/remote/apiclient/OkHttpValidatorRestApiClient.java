@@ -17,7 +17,6 @@ import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PREPARE_BEACON_PROPOSER;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationRespo
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -111,12 +109,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         syncCommitteeMessages,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public void sendContributionAndProofs(
-      final List<SignedContributionAndProof> signedContributionAndProofs) {
-    post(SEND_CONTRIBUTION_AND_PROOF, signedContributionAndProofs, createHandler());
   }
 
   @Override
