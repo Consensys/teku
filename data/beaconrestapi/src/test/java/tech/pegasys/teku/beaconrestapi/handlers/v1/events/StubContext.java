@@ -144,4 +144,9 @@ public class StubContext implements Context {
 
   @Override
   public void writeJsonStream(@NotNull final Stream<?> stream) {}
+
+  @Override
+  public boolean strictContentTypes() {
+    return false;
+  }
 }
