@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 
 public class PostPrepareBeaconProposer extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
@@ -50,12 +50,12 @@ public class PostPrepareBeaconProposer extends RestApiEndpoint {
               .withField(
                   "validator_index",
                   UINT64_TYPE,
-                  BeaconPreparableProposer::getValidatorIndex,
+                  BeaconPreparableProposer::validatorIndex,
                   BeaconPreparableProposer.Builder::validatorIndex)
               .withField(
                   "fee_recipient",
                   ETH1ADDRESS_TYPE,
-                  BeaconPreparableProposer::getFeeRecipient,
+                  BeaconPreparableProposer::feeRecipient,
                   BeaconPreparableProposer.Builder::feeRecipient)
               .build();
 
@@ -97,7 +97,7 @@ public class PostPrepareBeaconProposer extends RestApiEndpoint {
                 + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
                 + "Also note that requests containing currently inactive or unknown validator indices will be accepted, as they may become active at a later epoch.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-        .requestBodyType(DeserializableTypeDefinition.listOf(BEACON_PREPARABLE_PROPOSER_TYPE))
+        .requestBodyType(DeserializableTypeDefinition.listOf(BeaconPreparableProposer.SSZ_DATA))
         .response(SC_OK, "Preparation information has been received.")
         .response(
             HttpStatusCodes.SC_ACCEPTED,

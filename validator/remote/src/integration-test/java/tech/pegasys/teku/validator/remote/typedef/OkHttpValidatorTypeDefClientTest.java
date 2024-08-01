@@ -723,6 +723,40 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         .isInstanceOf(IllegalArgumentException.class);
   }
 
+  @TestTemplate
+  public void prepareBeaconProposer_emptyListIsNoop() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    okHttpValidatorTypeDefClient.prepareBeaconProposer(List.of());
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
+  }
+
+  @TestTemplate
+  public void prepareBeaconProposer_canRespondFailure() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(
+            () ->
+                okHttpValidatorTypeDefClient.prepareBeaconProposer(
+                    List.of(dataStructureUtil.randomBeaconPreparableProposer())))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @TestTemplate
+  public void prepareBeaconProposer_acceptsPopulatedList() throws InterruptedException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+    okHttpValidatorTypeDefClient.prepareBeaconProposer(
+        List.of(dataStructureUtil.randomBeaconPreparableProposer()));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getRequestUrl().encodedPath())
+        .isEqualTo("/eth/v1/validator/prepare_beacon_proposer");
+    assertThat(request.getBody().readUtf8())
+        .isEqualTo(
+            "[{\"validator_index\":\"4666673844721362956\",\"fee_recipient\":\"0x367CbD40AC7318427aAdB97345a91FA2e965DAf3\"}]");
+  }
+
   private AttesterDuty randomAttesterDuty() {
     return new AttesterDuty(
         dataStructureUtil.randomPublicKey(),

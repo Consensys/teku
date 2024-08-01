@@ -34,13 +34,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 
 public class ProposersDataManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -145,8 +145,8 @@ public class ProposersDataManager implements SlotEventsChannel {
     preparedProposers.forEach(
         proposer ->
             preparedProposerInfoByValidatorIndex.put(
-                proposer.getValidatorIndex(),
-                new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient())));
+                proposer.validatorIndex(),
+                new PreparedProposerInfo(expirySlot, proposer.feeRecipient())));
   }
 
   private void updateValidatorRegistrationCache(
