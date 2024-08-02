@@ -84,16 +84,19 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final HttpUrl endpoint;
+  private final Spec spec;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
+      final Spec spec,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner,
       final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
+    this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
     this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
@@ -386,6 +389,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
     return new RemoteValidatorApiHandler(
-        endpoint, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
+        endpoint,spec, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }
