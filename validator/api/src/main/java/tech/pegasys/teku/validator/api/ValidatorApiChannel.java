@@ -108,7 +108,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Optional<Attestation>> createAggregate(
+        public SafeFuture<Optional<? extends Attestation>> createAggregate(
             UInt64 slot, Bytes32 attestationHashTreeRoot, Optional<UInt64> committeeIndex) {
           return SafeFuture.completedFuture(Optional.empty());
         }
@@ -231,7 +231,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(
+  SafeFuture<Optional<? extends Attestation>> createAggregate(
       UInt64 slot, Bytes32 attestationHashTreeRoot, Optional<UInt64> committeeIndex);
 
   SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(

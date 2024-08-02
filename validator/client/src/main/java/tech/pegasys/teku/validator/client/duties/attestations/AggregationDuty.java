@@ -133,7 +133,7 @@ public class AggregationDuty implements Duty {
 
     final AttestationData attestationData = maybeAttestation.get();
 
-    final SafeFuture<Optional<Attestation>> createAggregationFuture =
+    final SafeFuture<Optional<? extends Attestation>> createAggregationFuture =
         validatorDutyMetrics.record(
             () ->
                 validatorApiChannel.createAggregate(

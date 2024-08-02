@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -110,7 +111,7 @@ class RemoteValidatorApiHandlerTest {
   @BeforeEach
   public void beforeEach() {
     apiHandler =
-        new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner, true);
+        new RemoteValidatorApiHandler(endpoint, apiClient, typeDefClient, asyncRunner, true);
   }
 
   @Test
@@ -617,12 +618,12 @@ class RemoteValidatorApiHandlerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
-    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot))).thenReturn(Optional.empty());
+    doReturn(Optional.empty()).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
 
-    SafeFuture<Optional<Attestation>> future =
+    SafeFuture<Optional<? extends Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
-    assertThat(unwrapToOptional(future)).isEmpty();
+    assertThat(unwrapToOptionalExtended(future)).isEmpty();
   }
 
   @Test
@@ -631,16 +632,13 @@ class RemoteValidatorApiHandlerTest {
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot)))
-        .thenReturn(Optional.of(schemaAttestation));
+    doReturn(Optional.of(attestation)).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
 
-    SafeFuture<Optional<Attestation>> future =
+    SafeFuture<Optional<? extends Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
+    assertThatSszData((Attestation) unwrapToObject(future)).isEqualByAllMeansTo(attestation);
   }
 
   @SuppressWarnings("unchecked")
@@ -812,7 +810,28 @@ class RemoteValidatorApiHandlerTest {
     }
   }
 
+  private <T> Optional<? extends T> unwrapToOptionalExtended(
+      final SafeFuture<Optional<? extends T>> future) {
+    try {
+      asyncRunner.executeQueuedActions();
+      return Waiter.waitFor(future);
+    } catch (Exception e) {
+      fail("Error unwrapping optional from SafeFuture", e);
+      throw new RuntimeException(e);
+    }
+  }
+
   private <T> T unwrapToValue(final SafeFuture<Optional<T>> future) {
+    try {
+      asyncRunner.executeQueuedActions();
+      return Waiter.waitFor(future).orElseThrow();
+    } catch (Exception e) {
+      fail("Error unwrapping value from SafeFuture", e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Object unwrapToObject(final SafeFuture<Optional<? extends Attestation>> future) {
     try {
       asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future).orElseThrow();

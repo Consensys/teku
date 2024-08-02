@@ -126,7 +126,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(
+  public SafeFuture<Optional<? extends Attestation>> createAggregate(
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
