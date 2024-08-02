@@ -823,7 +823,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(SC_OK).setBody("{\"data\": " + body + "}"));
 
-    final Optional<? extends Attestation> attestation =
+    final Optional<Attestation> attestation =
         okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
 
     assertThat(attestation).isPresent();
