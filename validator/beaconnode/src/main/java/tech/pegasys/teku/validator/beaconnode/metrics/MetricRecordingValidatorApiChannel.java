@@ -196,21 +196,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
         BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD);
   }
 
-  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    try (final OperationTimer.TimingContext context =
-        startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName())) {
-      SafeFuture<List<SubmitDataError>> request = delegate.sendSignedAttestations(attestations);
-      request.always(context::stopTimer);
-      return countSendRequest(request, BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
-    }
-  }
-
-  @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-      final SpecMilestone specMilestone, final List<Attestation> attestations) {
     try (final OperationTimer.TimingContext context =
         startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName())) {
       SafeFuture<List<SubmitDataError>> request = delegate.sendSignedAttestations(attestations);

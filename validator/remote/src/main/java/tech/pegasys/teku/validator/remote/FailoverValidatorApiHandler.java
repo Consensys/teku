@@ -233,7 +233,6 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         failoversSendSubnetSubscriptions);
   }
 
-  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
@@ -241,12 +240,6 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         apiChannel -> apiChannel.sendSignedAttestations(attestations),
         BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
         failoversPublishSignedDuties);
-  }
-
-  @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-      final SpecMilestone specMilestone, final List<Attestation> attestations) {
-    return sendSignedAttestations(attestations);
   }
 
   @Override

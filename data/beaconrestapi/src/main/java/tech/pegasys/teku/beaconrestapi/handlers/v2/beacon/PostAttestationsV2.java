@@ -65,7 +65,7 @@ public class PostAttestationsV2 extends RestApiEndpoint {
     final List<Attestation> attestations = request.getRequestBody();
     final SpecMilestone specMilestone = request.getRequestHeader(ETH_CONSENSUS_VERSION_TYPE);
     final SafeFuture<List<SubmitDataError>> future =
-        validatorDataProvider.submitAttestationsV2(specMilestone, attestations);
+        validatorDataProvider.submitAttestations(attestations);
 
     request.respondAsync(
         future.thenApply(

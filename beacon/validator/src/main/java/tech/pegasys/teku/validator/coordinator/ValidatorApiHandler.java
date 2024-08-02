@@ -573,18 +573,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         () -> attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions));
   }
 
-  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
-  }
-
-  @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-      final SpecMilestone specMilestone, final List<Attestation> attestations) {
-    return sendSignedAttestations(attestations);
   }
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {

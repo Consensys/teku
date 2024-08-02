@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
@@ -219,22 +220,24 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(() -> typeDefClient.createAttestationData(slot, committeeIndex));
   }
 
-  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    return sendRequest(() -> typeDefClient.sendSignedAttestations(attestations));
-  }
+    if (attestations.isEmpty()) {
+      return SafeFuture.completedFuture(emptyList());
+    }
 
-  @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-      final SpecMilestone specMilestone, final List<Attestation> attestations) {
-    return sendRequest(
-        () ->
-            typeDefClient
-                .postSignedAttestations(attestations, specMilestone)
-                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
-                .orElse(emptyList()));
+    final SpecMilestone specMilestone = spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
+
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      return sendRequest(
+              () ->
+                      typeDefClient
+                              .postSignedAttestations(attestations, specMilestone)
+                              .orElse(emptyList()));
+
+    }
+    return sendRequest(() -> typeDefClient.sendSignedAttestations(attestations));
   }
 
   @Override
