@@ -795,19 +795,6 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedAttestations_shouldAddAttestationToAttestationManager_V2() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
-        .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
-    final SafeFuture<List<SubmitDataError>> result =
-        validatorApiHandler.sendSignedAttestations(List.of(attestation));
-    assertThat(result).isCompletedWithValue(emptyList());
-
-    verify(attestationManager)
-        .addAttestation(ValidatableAttestation.from(spec, attestation), Optional.empty());
-  }
-
-  @Test
   void sendSignedAttestations_shouldAddToDutyMetricsAndPerformanceTrackerWhenNotInvalid() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
