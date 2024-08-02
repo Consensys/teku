@@ -55,10 +55,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -86,6 +88,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final HttpUrl endpoint;
+  private final Spec spec;
   private final ValidatorRestApiClient apiClient;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
@@ -93,11 +96,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
+      final Spec spec,
       final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner,
       final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
+    this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
@@ -306,7 +311,20 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
-    return sendRequest(() -> typeDefClient.createAggregate(slot, attestationHashTreeRoot));
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
+        && committeeIndex.isPresent()) {
+      return sendRequest(
+          () ->
+              typeDefClient
+                  .createAggregate(slot, attestationHashTreeRoot, committeeIndex.get())
+                  .map(ObjectAndMetaData::getData));
+    }
+
+    return sendRequest(
+        () ->
+            typeDefClient
+                .createAggregate(slot, attestationHashTreeRoot)
+                .map(attestation -> attestation.asInternalAttestation(spec)));
   }
 
   @Override

@@ -45,10 +45,8 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -80,19 +78,18 @@ class AggregationDutyTest {
       spy(ValidatorDutyMetrics.create(new StubMetricsSystem()));
 
   private Spec spec;
-  private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
   private AggregateAndProofSchema aggregateAndProofSchema;
   private SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private ForkInfo forkInfo;
   private Validator validator1;
   private Validator validator2;
+
   private AggregationDuty duty;
 
   @BeforeEach
   public void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
-    specMilestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
     aggregateAndProofSchema = spec.getGenesisSchemaDefinitions().getAggregateAndProofSchema();
     signedAggregateAndProofSchema =
@@ -145,7 +142,7 @@ class AggregationDutyTest {
             SLOT,
             attestationData.hashTreeRoot(),
             Optional.of(UInt64.valueOf(attestationCommitteeIndex))))
-        .thenReturn(completedFuture(Optional.of(addMetaData(aggregate))));
+        .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
         aggregateAndProofSchema.create(UInt64.valueOf(validatorIndex), aggregate, proof);
@@ -199,12 +196,12 @@ class AggregationDutyTest {
             SLOT,
             committee1AttestationData.hashTreeRoot(),
             Optional.of(UInt64.valueOf(validator1CommitteeIndex))))
-        .thenReturn(completedFuture(Optional.of(addMetaData(committee1Aggregate))));
+        .thenReturn(completedFuture(Optional.of(committee1Aggregate)));
     when(validatorApiChannel.createAggregate(
             SLOT,
             committee2AttestationData.hashTreeRoot(),
             Optional.of(UInt64.valueOf(validator2CommitteeIndex))))
-        .thenReturn(completedFuture(Optional.of(addMetaData(committee2Aggregate))));
+        .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
         aggregateAndProofSchema.create(
@@ -264,7 +261,7 @@ class AggregationDutyTest {
 
     when(validatorApiChannel.createAggregate(
             SLOT, attestationData.hashTreeRoot(), Optional.of(UInt64.valueOf(committeeIndex))))
-        .thenReturn(completedFuture(Optional.of(addMetaData(aggregate))));
+        .thenReturn(completedFuture(Optional.of(aggregate)));
     when(validatorApiChannel.sendAggregateAndProofs(anyList()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
@@ -382,9 +379,5 @@ class AggregationDutyTest {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
     safeJoin(result).report(TYPE, SLOT, validatorLogger);
-  }
-
-  private ObjectAndMetaData<Attestation> addMetaData(final Attestation aggregate) {
-    return new ObjectAndMetaData<>(aggregate, specMilestone, false, false, false);
   }
 }
