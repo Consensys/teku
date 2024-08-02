@@ -56,10 +56,10 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequestV2;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.GetAggregateAttestationRequestV2;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
@@ -299,11 +299,11 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return sendSignedAttestationsRequest.submit(attestations);
   }
 
-  public Optional<ObjectAndMetaData<Attestation>> createAggregate(
+  public Optional<ObjectAndMetaData<Attestation>> createAggregateV2(
           final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
-    GetAggregateAttestationRequestV2 getAggregateAttestationRequestV2 =
-            new GetAggregateAttestationRequestV2(getBaseEndpoint(), getOkHttpClient(), spec, slot);
-    return getAggregateAttestationRequestV2.createAggregate(
+    CreateAggregateAttestationRequestV2 createAggregateAttestationRequestV2 =
+            new CreateAggregateAttestationRequestV2(getBaseEndpoint(), getOkHttpClient(), spec, slot);
+    return createAggregateAttestationRequestV2.createAggregate(
             attestationHashTreeRoot, committeeIndex);
   }
 }
