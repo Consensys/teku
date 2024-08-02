@@ -35,10 +35,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -211,8 +209,7 @@ class MetricRecordingValidatorApiChannelTest {
         Arguments.of(
             Named.named("createAggregate", createAggregateMethod),
             BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD,
-            new ObjectAndMetaData<>(
-                dataStructureUtil.randomAttestation(), SpecMilestone.PHASE0, false, false, false)),
+            dataStructureUtil.randomAttestation()),
         requestDataTest(
             "createSyncCommitteeContribution",
             channel ->

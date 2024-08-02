@@ -64,7 +64,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -700,9 +699,7 @@ class FailoverValidatorApiHandlerTest {
             "createAggregate",
             apiChannel -> apiChannel.createAggregate(slot, randomBytes32, Optional.empty()),
             BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD,
-            Optional.of(
-                new ObjectAndMetaData<>(
-                    attestation, SPEC.atSlot(slot).getMilestone(), false, false, false))),
+            Optional.of(attestation)),
         getArguments(
             "createSyncCommitteeContribution",
             apiChannel -> apiChannel.createSyncCommitteeContribution(slot, 0, randomBytes32),
