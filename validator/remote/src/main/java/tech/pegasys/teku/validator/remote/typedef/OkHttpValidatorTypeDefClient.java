@@ -93,7 +93,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final SendContributionAndProofsRequest sendContributionAndProofsRequest;
   private final SubscribeToBeaconCommitteeRequest subscribeToBeaconCommitteeRequest;
   private final PrepareBeaconProposersRequest prepareBeaconProposersRequest;
-  private final CreateAggregateAttestationRequest createAggregateAttestationRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -131,8 +130,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SubscribeToBeaconCommitteeRequest(baseEndpoint, okHttpClient);
     this.prepareBeaconProposersRequest =
         new PrepareBeaconProposersRequest(baseEndpoint, okHttpClient);
-    this.createAggregateAttestationRequest =
-        new CreateAggregateAttestationRequest(baseEndpoint, okHttpClient, spec);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -264,8 +261,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     prepareBeaconProposersRequest.submit(beaconPreparableProposers);
   }
 
-  public Optional<? extends Attestation> createAggregate(
+  public Optional<Attestation> createAggregate(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
-    return createAggregateAttestationRequest.createAggregate(slot, attestationHashTreeRoot);
+    final CreateAggregateAttestationRequest createAggregateAttestationRequest =
+        new CreateAggregateAttestationRequest(getBaseEndpoint(), getOkHttpClient(), slot, spec);
+    return createAggregateAttestationRequest.createAggregate(attestationHashTreeRoot);
   }
 }

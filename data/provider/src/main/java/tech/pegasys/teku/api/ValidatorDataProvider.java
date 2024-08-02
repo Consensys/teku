@@ -240,7 +240,7 @@ public class ValidatorDataProvider {
     return Optional.of(message);
   }
 
-  public SafeFuture<Optional<? extends Attestation>> createAggregate(
+  public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
