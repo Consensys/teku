@@ -16,11 +16,13 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(
@@ -44,6 +47,24 @@ public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase 
   @BeforeEach
   void setupRequest() {
     request = new PostAttestationsRequest(spec, mockWebServer.url("/"), okHttpClient);
+  }
+
+  @TestTemplate
+  public void getAggregateAttestation_makesExpectedRequest() throws Exception {
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    request.postAttestations(attestations, specMilestone);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(Collections.emptyMap()));
+    assertThat(request.getRequestUrl().queryParameterNames()).isEqualTo(Collections.emptySet());
+    assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
   }
 
   @TestTemplate
