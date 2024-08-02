@@ -695,7 +695,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void createAggregate_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<Attestation>> result =
+    final SafeFuture<Optional<? extends Attestation>> result =
         validatorApiHandler.createAggregate(
             ONE, dataStructureUtil.randomAttestationData().hashTreeRoot(), Optional.empty());
 

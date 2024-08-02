@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
@@ -91,6 +93,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final SendContributionAndProofsRequest sendContributionAndProofsRequest;
   private final SubscribeToBeaconCommitteeRequest subscribeToBeaconCommitteeRequest;
   private final PrepareBeaconProposersRequest prepareBeaconProposersRequest;
+  private final CreateAggregateAttestationRequest createAggregateAttestationRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -128,6 +131,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SubscribeToBeaconCommitteeRequest(baseEndpoint, okHttpClient);
     this.prepareBeaconProposersRequest =
         new PrepareBeaconProposersRequest(baseEndpoint, okHttpClient);
+    this.createAggregateAttestationRequest =
+        new CreateAggregateAttestationRequest(baseEndpoint, okHttpClient, spec);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -257,5 +262,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public void prepareBeaconProposer(
       final List<BeaconPreparableProposer> beaconPreparableProposers) {
     prepareBeaconProposersRequest.submit(beaconPreparableProposers);
+  }
+
+  public Optional<? extends Attestation> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+    return createAggregateAttestationRequest.createAggregate(slot, attestationHashTreeRoot);
   }
 }

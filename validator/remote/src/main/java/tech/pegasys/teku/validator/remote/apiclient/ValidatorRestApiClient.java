@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -26,8 +25,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface ValidatorRestApiClient {
 
   Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
-
-  Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
   Optional<PostDataFailureResponse> sendAggregateAndProofs(
       List<SignedAggregateAndProof> signedAggregateAndProof);
