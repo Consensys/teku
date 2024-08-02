@@ -36,13 +36,16 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
     this.spec = spec;
   }
 
-  public Optional<? extends Attestation> createAggregate(
+  public Optional<Attestation> createAggregate(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     final Map<String, String> queryParams =
         Map.of(
             "slot", slot.toString(), "attestation_data_root", attestationHashTreeRoot.toString());
-    final AttestationSchema<? extends Attestation> attestationSchema =
-        spec.atSlot(slot).getSchemaDefinitions().getAttestationSchema();
+    final AttestationSchema<Attestation> attestationSchema =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .getAttestationSchema()
+            .castTypeToAttestationSchema();
 
     return get(
         GET_AGGREGATE, queryParams, new ResponseHandler<>(withDataWrapper(attestationSchema)));

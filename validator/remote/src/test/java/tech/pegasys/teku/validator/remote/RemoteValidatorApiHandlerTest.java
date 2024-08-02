@@ -620,10 +620,10 @@ class RemoteValidatorApiHandlerTest {
 
     doReturn(Optional.empty()).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
 
-    SafeFuture<Optional<? extends Attestation>> future =
+    SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
-    assertThat(unwrapToOptionalExtended(future)).isEmpty();
+    assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
@@ -635,7 +635,7 @@ class RemoteValidatorApiHandlerTest {
 
     doReturn(Optional.of(attestation)).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
 
-    SafeFuture<Optional<? extends Attestation>> future =
+    SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThatSszData((Attestation) unwrapToObject(future)).isEqualByAllMeansTo(attestation);
@@ -810,17 +810,6 @@ class RemoteValidatorApiHandlerTest {
     }
   }
 
-  private <T> Optional<? extends T> unwrapToOptionalExtended(
-      final SafeFuture<Optional<? extends T>> future) {
-    try {
-      asyncRunner.executeQueuedActions();
-      return Waiter.waitFor(future);
-    } catch (Exception e) {
-      fail("Error unwrapping optional from SafeFuture", e);
-      throw new RuntimeException(e);
-    }
-  }
-
   private <T> T unwrapToValue(final SafeFuture<Optional<T>> future) {
     try {
       asyncRunner.executeQueuedActions();
@@ -831,7 +820,7 @@ class RemoteValidatorApiHandlerTest {
     }
   }
 
-  private Object unwrapToObject(final SafeFuture<Optional<? extends Attestation>> future) {
+  private Object unwrapToObject(final SafeFuture<Optional<Attestation>> future) {
     try {
       asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future).orElseThrow();

@@ -264,7 +264,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     prepareBeaconProposersRequest.submit(beaconPreparableProposers);
   }
 
-  public Optional<? extends Attestation> createAggregate(
+  public Optional<Attestation> createAggregate(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     return createAggregateAttestationRequest.createAggregate(slot, attestationHashTreeRoot);
   }
