@@ -166,21 +166,12 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
         .subscribeToPersistentSubnets(subnetSubscriptions);
   }
 
-  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
         .sendSignedAttestations(attestations);
-  }
-
-  @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-      final SpecMilestone specMilestone, final List<Attestation> attestations) {
-    return attestationPublisherChannel
-        .orElse(dutiesProviderChannel)
-        .sendSignedAttestationsV2(specMilestone, attestations);
   }
 
   @Override
