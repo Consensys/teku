@@ -113,7 +113,7 @@ class RemoteValidatorApiHandlerTest {
   @BeforeEach
   public void beforeEach() {
     apiHandler =
-        new RemoteValidatorApiHandler(endpoint, apiClient, typeDefClient, asyncRunner, true);
+        new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner, true);
   }
 
   @Test
@@ -652,7 +652,7 @@ class RemoteValidatorApiHandlerTest {
     asyncRunner.executeQueuedActions();
 
     verify(typeDefClient, never()).createAggregateV2(any(), any(), any());
-    verify(apiClient).createAggregate(slot, attHashTreeRoot);
+    verify(typeDefClient).createAggregate(slot, attHashTreeRoot);
   }
 
   @Test
@@ -668,7 +668,7 @@ class RemoteValidatorApiHandlerTest {
     ignoreFuture(apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(committeeIndex)));
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient, never()).createAggregate(any(), any());
+    verify(typeDefClient, never()).createAggregate(any(), any());
     verify(typeDefClient).createAggregateV2(slot, attHashTreeRoot, committeeIndex);
   }
 

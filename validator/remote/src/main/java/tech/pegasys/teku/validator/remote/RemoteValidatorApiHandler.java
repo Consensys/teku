@@ -323,8 +323,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(
         () ->
             typeDefClient
-                .createAggregate(slot, attestationHashTreeRoot)
-                .map(attestation -> attestation.asInternalAttestation(spec)));
+                .createAggregate(slot, attestationHashTreeRoot));
   }
 
   @Override
@@ -453,6 +452,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
     return new RemoteValidatorApiHandler(
-        endpoint, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
+        endpoint, spec, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }
