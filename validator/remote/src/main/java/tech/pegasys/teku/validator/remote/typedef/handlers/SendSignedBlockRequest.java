@@ -124,6 +124,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
             Map.of(
                 PARAM_BROADCAST_VALIDATION,
                 broadcastValidationLevel.name().toLowerCase(Locale.ROOT)),
+            emptyMap(),
             signedBlockContainer,
             typeDefinition,
             new ResponseHandler<>())
