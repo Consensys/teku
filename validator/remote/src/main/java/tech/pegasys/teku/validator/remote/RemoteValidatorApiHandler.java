@@ -233,15 +233,16 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       return SafeFuture.completedFuture(emptyList());
     }
 
-    final SpecMilestone specMilestone = spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
+    final SpecMilestone specMilestone =
+        spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
 
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       return sendRequest(
-              () ->
-                      typeDefClient
-                              .postSignedAttestations(attestations, specMilestone)
-                              .map(this::convertPostDataFailureResponseToSubmitDataErrors)
-                              .orElse(emptyList()));
+          () ->
+              typeDefClient
+                  .postSignedAttestations(attestations, specMilestone)
+                  .map(this::convertPostDataFailureResponseToSubmitDataErrors)
+                  .orElse(emptyList()));
     }
 
     final List<tech.pegasys.teku.api.schema.Attestation> schemaAttestations =
