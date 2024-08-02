@@ -226,10 +226,24 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(() -> typeDefClient.createAttestationData(slot, committeeIndex));
   }
 
-  @Deprecated
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
+    if (attestations.isEmpty()) {
+      return SafeFuture.completedFuture(emptyList());
+    }
+
+    final SpecMilestone specMilestone = spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
+
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      return sendRequest(
+              () ->
+                      typeDefClient
+                              .postSignedAttestations(attestations, specMilestone)
+                              .map(this::convertPostDataFailureResponseToSubmitDataErrors)
+                              .orElse(emptyList()));
+    }
+
     final List<tech.pegasys.teku.api.schema.Attestation> schemaAttestations =
         attestations.stream().map(tech.pegasys.teku.api.schema.Attestation::new).toList();
 
@@ -237,17 +251,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         () ->
             apiClient
                 .sendSignedAttestations(schemaAttestations)
-                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
-                .orElse(emptyList()));
-  }
-
-  @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-      final SpecMilestone specMilestone, final List<Attestation> attestations) {
-    return sendRequest(
-        () ->
-            typeDefClient
-                .postSignedAttestations(attestations, specMilestone)
                 .map(this::convertPostDataFailureResponseToSubmitDataErrors)
                 .orElse(emptyList()));
   }

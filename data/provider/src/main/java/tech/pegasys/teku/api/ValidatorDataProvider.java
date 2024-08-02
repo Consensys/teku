@@ -165,11 +165,6 @@ public class ValidatorDataProvider {
     return validatorApiChannel.sendSignedAttestations(attestations);
   }
 
-  public SafeFuture<List<SubmitDataError>> submitAttestationsV2(
-      final SpecMilestone specMilestone, final List<Attestation> attestations) {
-    return validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations);
-  }
-
   public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
       throws JsonProcessingException {
     final ObjectMapper mapper = jsonProvider.getObjectMapper();

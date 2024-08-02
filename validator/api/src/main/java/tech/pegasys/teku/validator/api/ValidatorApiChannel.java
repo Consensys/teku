@@ -145,12 +145,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-            SpecMilestone specMilestone, List<Attestation> attestations) {
-          return SafeFuture.completedFuture(List.of());
-        }
-
-        @Override
         public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
             List<SignedAggregateAndProof> aggregateAndProofs) {
           return SafeFuture.completedFuture(List.of());
@@ -252,9 +246,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Void> subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations);
-
-  SafeFuture<List<SubmitDataError>> sendSignedAttestationsV2(
-      SpecMilestone specMilestone, List<Attestation> attestations);
 
   SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       List<SignedAggregateAndProof> aggregateAndProofs);
