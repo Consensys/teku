@@ -20,12 +20,15 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
@@ -501,6 +504,38 @@ class RemoteValidatorApiHandlerTest {
         .usingRecursiveComparison()
         .isEqualTo(List.of(schemaAttestation));
     assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(UInt64.ZERO, "Bad")));
+  }
+
+  @Test
+  public void postAttestations_ShouldUseV1ApiPreElectra() {
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    ignoreFuture(apiHandler.sendSignedAttestations(attestations));
+    asyncRunner.executeQueuedActions();
+
+    verify(typeDefClient, never()).postSignedAttestations(anyList(), any());
+    verify(apiClient)
+        .sendSignedAttestations(
+            attestations.stream().map(tech.pegasys.teku.api.schema.Attestation::new).toList());
+  }
+
+  @Test
+  public void createAggregate_ShouldUseV2ApiPostElectra() {
+    final Spec electraSpec = TestSpecFactory.createMainnetElectra();
+
+    apiHandler =
+        new RemoteValidatorApiHandler(
+            endpoint, electraSpec, apiClient, typeDefClient, asyncRunner, true);
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    ignoreFuture(apiHandler.sendSignedAttestations(attestations));
+    asyncRunner.executeQueuedActions();
+
+    verify(apiClient, never()).createAggregate(any(), any());
+    verify(typeDefClient)
+        .postSignedAttestations(attestations, electraSpec.getGenesisSpec().getMilestone());
   }
 
   @Test
