@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -28,23 +30,61 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
-  private final Spec spec;
+  private final UInt64 slot;
+  final AttestationSchema<Attestation> attestationSchema;
+  private final ResponseHandler<GetAggregateAttestationResponse> responseHandler;
+
+  private final DeserializableTypeDefinition<GetAggregateAttestationResponse>
+      getAggregateAttestationTypeDef;
 
   public CreateAggregateAttestationRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final Spec spec) {
+      final HttpUrl baseEndpoint,
+      final OkHttpClient okHttpClient,
+      final UInt64 slot,
+      final Spec spec) {
     super(baseEndpoint, okHttpClient);
-    this.spec = spec;
+    this.slot = slot;
+    this.attestationSchema =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .getAttestationSchema()
+            .castTypeToAttestationSchema();
+    this.getAggregateAttestationTypeDef =
+        DeserializableTypeDefinition.object(GetAggregateAttestationResponse.class)
+            .initializer(GetAggregateAttestationResponse::new)
+            .withField(
+                "data",
+                attestationSchema.getJsonTypeDefinition(),
+                GetAggregateAttestationResponse::getData,
+                GetAggregateAttestationResponse::setData)
+            .build();
+
+    this.responseHandler = new ResponseHandler<>(getAggregateAttestationTypeDef);
   }
 
-  public Optional<? extends Attestation> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+  public Optional<Attestation> createAggregate(final Bytes32 attestationHashTreeRoot) {
     final Map<String, String> queryParams =
-        Map.of(
-            "slot", slot.toString(), "attestation_data_root", attestationHashTreeRoot.toString());
-    final AttestationSchema<? extends Attestation> attestationSchema =
-        spec.atSlot(slot).getSchemaDefinitions().getAttestationSchema();
+        Map.of(SLOT, slot.toString(), ATTESTATION_DATA_ROOT, attestationHashTreeRoot.toString());
+    return get(GET_AGGREGATE, queryParams, responseHandler)
+        .map(GetAggregateAttestationResponse::getData);
+  }
 
-    return get(
-        GET_AGGREGATE, queryParams, new ResponseHandler<>(withDataWrapper(attestationSchema)));
+  public static class GetAggregateAttestationResponse {
+
+    private Attestation data;
+
+    public GetAggregateAttestationResponse() {}
+
+    public GetAggregateAttestationResponse(final Attestation data) {
+      this.data = data;
+    }
+
+    public Attestation getData() {
+      return data;
+    }
+
+    public void setData(final Attestation data) {
+      this.data = data;
+    }
   }
 }

@@ -184,11 +184,10 @@ class MetricRecordingValidatorApiChannelTest {
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomUInt64());
     final UInt64 epoch = dataStructureUtil.randomEpoch();
-    final Function<ValidatorApiChannel, SafeFuture<Optional<? extends Attestation>>>
-        createAggregateMethod =
-            channel ->
-                channel.createAggregate(
-                    attestationData.getSlot(), attestationData.hashTreeRoot(), Optional.empty());
+    final Function<ValidatorApiChannel, SafeFuture<Optional<Attestation>>> createAggregateMethod =
+        channel ->
+            channel.createAggregate(
+                attestationData.getSlot(), attestationData.hashTreeRoot(), Optional.empty());
     return Stream.of(
         requestDataTest(
             "getGenesisData",
