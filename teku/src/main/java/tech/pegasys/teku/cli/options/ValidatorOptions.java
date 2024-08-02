@@ -139,10 +139,9 @@ public class ValidatorOptions {
   private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
   @Option(
-      names = {"--Xblock-v3-enabled"},
+      names = {"--block-v3-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable the Block V3 API for block production",
-      hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
