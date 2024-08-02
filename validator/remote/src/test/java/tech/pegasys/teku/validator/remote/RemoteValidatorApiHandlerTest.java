@@ -651,7 +651,7 @@ class RemoteValidatorApiHandlerTest {
     ignoreFuture(apiHandler.createAggregate(slot, attHashTreeRoot, Optional.empty()));
     asyncRunner.executeQueuedActions();
 
-    verify(typeDefClient, never()).createAggregate(any(), any(), any());
+    verify(typeDefClient, never()).createAggregateV2(any(), any(), any());
     verify(apiClient).createAggregate(slot, attHashTreeRoot);
   }
 
@@ -669,7 +669,7 @@ class RemoteValidatorApiHandlerTest {
     asyncRunner.executeQueuedActions();
 
     verify(apiClient, never()).createAggregate(any(), any());
-    verify(typeDefClient).createAggregate(slot, attHashTreeRoot, committeeIndex);
+    verify(typeDefClient).createAggregateV2(slot, attHashTreeRoot, committeeIndex);
   }
 
   @SuppressWarnings("unchecked")
