@@ -24,45 +24,40 @@ import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
-  private final UInt64 slot;
-  final AttestationSchema<Attestation> attestationSchema;
-  private final ResponseHandler<GetAggregateAttestationResponse> responseHandler;
-
-  private final DeserializableTypeDefinition<GetAggregateAttestationResponse>
-      getAggregateAttestationTypeDef;
+  private final SchemaDefinitionCache schemaDefinitionCache;
 
   public CreateAggregateAttestationRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
-      final UInt64 slot,
-      final Spec spec) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(baseEndpoint, okHttpClient);
-    this.slot = slot;
-    this.attestationSchema =
-        spec.atSlot(slot)
-            .getSchemaDefinitions()
-            .getAttestationSchema()
-            .castTypeToAttestationSchema();
-    this.getAggregateAttestationTypeDef =
-        DeserializableTypeDefinition.object(GetAggregateAttestationResponse.class)
-            .initializer(GetAggregateAttestationResponse::new)
-            .withField(
-                "data",
-                attestationSchema.getJsonTypeDefinition(),
-                GetAggregateAttestationResponse::getData,
-                GetAggregateAttestationResponse::setData)
-            .build();
-
-    this.responseHandler = new ResponseHandler<>(getAggregateAttestationTypeDef);
+    this.schemaDefinitionCache = schemaDefinitionCache;
   }
 
-  public Optional<Attestation> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public Optional<Attestation> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+
+    final AttestationSchema<Attestation> attestationSchema =
+        schemaDefinitionCache.atSlot(slot).getAttestationSchema().castTypeToAttestationSchema();
+    final DeserializableTypeDefinition<GetAggregateAttestationResponse>
+        getAggregateAttestationTypeDef =
+            DeserializableTypeDefinition.object(GetAggregateAttestationResponse.class)
+                .initializer(GetAggregateAttestationResponse::new)
+                .withField(
+                    "data",
+                    attestationSchema.getJsonTypeDefinition(),
+                    GetAggregateAttestationResponse::getData,
+                    GetAggregateAttestationResponse::setData)
+                .build();
+    final ResponseHandler<GetAggregateAttestationResponse> responseHandler =
+        new ResponseHandler<>(getAggregateAttestationTypeDef);
+
     final Map<String, String> queryParams =
         Map.of(SLOT, slot.toString(), ATTESTATION_DATA_ROOT, attestationHashTreeRoot.toString());
     return get(GET_AGGREGATE, queryParams, responseHandler)

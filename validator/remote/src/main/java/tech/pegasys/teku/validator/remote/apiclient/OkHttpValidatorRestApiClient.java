@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
-import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_VALIDATOR_LIVENESS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,11 +34,9 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
@@ -48,7 +45,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
-  private static final Map<String, String> EMPTY_MAP = emptyMap();
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
@@ -64,6 +60,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final List<Attestation> attestations) {
     return post(
         SEND_SIGNED_ATTESTATION,
+        Collections.emptyMap(),
         attestations,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
@@ -74,6 +71,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final List<SignedAggregateAndProof> signedAggregateAndProof) {
     return post(
         SEND_SIGNED_AGGREGATE_AND_PROOF,
+        Collections.emptyMap(),
         signedAggregateAndProof,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
@@ -84,23 +82,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return post(
         SEND_SYNC_COMMITTEE_MESSAGES,
+        Collections.emptyMap(),
         syncCommitteeMessages,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public Optional<PostValidatorLivenessResponse> sendValidatorsLiveness(
-      final UInt64 epoch, final List<UInt64> validatorsIndices) {
-    return post(
-        SEND_VALIDATOR_LIVENESS,
-        Map.of("epoch", epoch.toString()),
-        validatorsIndices,
-        createHandler(PostValidatorLivenessResponse.class));
-  }
-
-  private <T> ResponseHandler<T> createHandler(final Class<T> responseClass) {
-    return new ResponseHandler<>(jsonProvider, responseClass);
   }
 
   private <T> Optional<T> post(
@@ -108,7 +93,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final Map<String, String> urlParams,
       final Object requestBodyObj,
       final ResponseHandler<T> responseHandler) {
-    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    final HttpUrl.Builder httpUrlBuilder =
+        baseEndpoint.resolve(apiMethod.getPath(urlParams)).newBuilder();
     final String requestBody;
     try {
       requestBody = jsonProvider.objectToJSON(requestBodyObj);
@@ -133,18 +119,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
           Credentials.basic(baseEndpoint.encodedUsername(), baseEndpoint.encodedPassword()));
     }
     return builder;
-  }
-
-  private <T> Optional<T> post(
-      final ValidatorApiMethod apiMethod,
-      final Object requestBodyObj,
-      final ResponseHandler<T> responseHandler) {
-    return post(apiMethod, EMPTY_MAP, requestBodyObj, responseHandler);
-  }
-
-  private HttpUrl.Builder urlBuilder(
-      final ValidatorApiMethod apiMethod, final Map<String, String> urlParams) {
-    return baseEndpoint.resolve(apiMethod.getPath(urlParams)).newBuilder();
   }
 
   private <T> Optional<T> executeCall(

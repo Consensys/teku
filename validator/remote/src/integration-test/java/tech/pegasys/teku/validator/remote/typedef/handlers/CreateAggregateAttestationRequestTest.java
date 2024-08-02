@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
@@ -43,7 +44,8 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
   @BeforeEach
   void setupRequest() {
     createAggregateAttestationRequest =
-        new CreateAggregateAttestationRequest(mockWebServer.url("/"), okHttpClient, slot, spec);
+        new CreateAggregateAttestationRequest(
+            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec));
   }
 
   @TestTemplate
@@ -52,7 +54,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    createAggregateAttestationRequest.createAggregate(attestationHashTreeRoot);
+    createAggregateAttestationRequest.createAggregate(slot, attestationHashTreeRoot);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
@@ -76,7 +78,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
     final Optional<Attestation> maybeAttestation =
-        createAggregateAttestationRequest.createAggregate(attestation.hashTreeRoot());
+        createAggregateAttestationRequest.createAggregate(slot, attestation.hashTreeRoot());
 
     assertThat(maybeAttestation).isPresent();
     assertThat(maybeAttestation.get()).isEqualTo(getAggregateAttestationResponse.getData());

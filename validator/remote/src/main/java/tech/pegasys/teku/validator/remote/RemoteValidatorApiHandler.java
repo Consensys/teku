@@ -37,7 +37,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
@@ -366,11 +365,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       final List<UInt64> validatorIndices, final UInt64 epoch) {
-    return sendRequest(
-        () ->
-            apiClient
-                .sendValidatorsLiveness(epoch, validatorIndices)
-                .map(this::responseToValidatorsLivenessResult));
+    return sendRequest(() -> typeDefClient.sendValidatorsLiveness(epoch, validatorIndices));
   }
 
   @Override
@@ -383,16 +378,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
       final List<SyncCommitteeSelectionProof> requests) {
     return sendRequest(() -> typeDefClient.getSyncCommitteeSelectionProof(requests));
-  }
-
-  private List<ValidatorLivenessAtEpoch> responseToValidatorsLivenessResult(
-      final PostValidatorLivenessResponse response) {
-    return response.data.stream()
-        .map(
-            validatorLivenessAtEpoch ->
-                new ValidatorLivenessAtEpoch(
-                    validatorLivenessAtEpoch.index, validatorLivenessAtEpoch.isLive))
-        .toList();
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {
