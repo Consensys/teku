@@ -114,7 +114,7 @@ class RemoteValidatorApiHandlerTest {
   @BeforeEach
   public void beforeEach() {
     apiHandler =
-        new RemoteValidatorApiHandler(endpoint, apiClient, typeDefClient, asyncRunner, true);
+        new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner, true);
   }
 
   @Test
@@ -521,7 +521,7 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void createAggregate_ShouldUseV2ApiPostElectra() {
+  public void postAttestations_ShouldUseV2ApiPostElectra() {
     final Spec electraSpec = TestSpecFactory.createMainnetElectra();
 
     apiHandler =
@@ -533,7 +533,7 @@ class RemoteValidatorApiHandlerTest {
     ignoreFuture(apiHandler.sendSignedAttestations(attestations));
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient, never()).createAggregate(any(), any());
+    verify(apiClient, never()).sendSignedAttestations(any());
     verify(typeDefClient)
         .postSignedAttestations(attestations, electraSpec.getGenesisSpec().getMilestone());
   }
