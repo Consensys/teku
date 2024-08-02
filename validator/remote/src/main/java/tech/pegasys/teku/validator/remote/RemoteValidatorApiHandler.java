@@ -320,10 +320,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                   .map(ObjectAndMetaData::getData));
     }
 
-    return sendRequest(
-        () ->
-            typeDefClient
-                .createAggregate(slot, attestationHashTreeRoot));
+    return sendRequest(() -> typeDefClient.createAggregate(slot, attestationHashTreeRoot));
   }
 
   @Override

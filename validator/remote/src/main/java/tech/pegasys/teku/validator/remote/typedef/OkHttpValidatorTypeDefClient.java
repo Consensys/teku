@@ -263,17 +263,17 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   }
 
   public Optional<Attestation> createAggregate(
-          final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     final CreateAggregateAttestationRequest createAggregateAttestationRequest =
-            new CreateAggregateAttestationRequest(getBaseEndpoint(), getOkHttpClient(), slot, spec);
+        new CreateAggregateAttestationRequest(getBaseEndpoint(), getOkHttpClient(), slot, spec);
     return createAggregateAttestationRequest.createAggregate(attestationHashTreeRoot);
   }
 
   public Optional<ObjectAndMetaData<Attestation>> createAggregateV2(
-          final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
     CreateAggregateAttestationRequestV2 createAggregateAttestationRequestV2 =
-            new CreateAggregateAttestationRequestV2(getBaseEndpoint(), getOkHttpClient(), spec, slot);
+        new CreateAggregateAttestationRequestV2(getBaseEndpoint(), getOkHttpClient(), spec, slot);
     return createAggregateAttestationRequestV2.createAggregate(
-            attestationHashTreeRoot, committeeIndex);
+        attestationHashTreeRoot, committeeIndex);
   }
 }
