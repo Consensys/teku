@@ -43,10 +43,6 @@ public interface OpenApiTypeDefinition {
     return this == type;
   }
 
-  default boolean isEquivalentToDeserializableType(final SerializableTypeDefinition<?> type) {
-    return this == type;
-  }
-
   default void serializeOpenApiTypeOrReference(final JsonGenerator gen) throws IOException {
     if (getTypeName().isPresent()) {
       gen.writeStartObject();

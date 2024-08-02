@@ -31,6 +31,8 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -60,6 +62,15 @@ public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase 
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getBody().readUtf8())
+        .isEqualTo(
+            JsonUtil.serialize(
+                attestations,
+                SerializableTypeDefinition.listOf(
+                    spec.getGenesisSchemaDefinitions()
+                        .getAttestationSchema()
+                        .castTypeToAttestationSchema()
+                        .getJsonTypeDefinition())));
     assertThat(request.getPath())
         .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(Collections.emptyMap()));
     assertThat(request.getRequestUrl().queryParameterNames()).isEqualTo(Collections.emptySet());
