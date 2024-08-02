@@ -43,16 +43,16 @@ import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase
 @TestSpecContext(
     milestone = {PHASE0, ELECTRA},
     network = Eth2Network.MINIMAL)
-public class GetAggregateAttestationRequestTest extends AbstractTypeDefRequestTestBase {
+public class GetAggregateAttestationRequestV2Test extends AbstractTypeDefRequestTestBase {
 
-  private GetAggregateAttestationRequest getAggregateAttestationRequest;
+  private GetAggregateAttestationRequestV2 getAggregateAttestationRequestV2;
   private Buffer responseBodyBuffer;
   private final UInt64 slot = UInt64.ONE;
 
   @BeforeEach
   void setupRequest() {
-    getAggregateAttestationRequest =
-        new GetAggregateAttestationRequest(mockWebServer.url("/"), okHttpClient, spec, slot);
+    getAggregateAttestationRequestV2 =
+        new GetAggregateAttestationRequestV2(mockWebServer.url("/"), okHttpClient, spec, slot);
     responseBodyBuffer = new Buffer();
   }
 
@@ -69,7 +69,7 @@ public class GetAggregateAttestationRequestTest extends AbstractTypeDefRequestTe
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    getAggregateAttestationRequest.createAggregate(attestationHashTreeRoot, committeeIndex);
+    getAggregateAttestationRequestV2.createAggregate(attestationHashTreeRoot, committeeIndex);
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
@@ -85,9 +85,9 @@ public class GetAggregateAttestationRequestTest extends AbstractTypeDefRequestTe
   @TestTemplate
   public void shouldGetAggregateAttestation() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final GetAggregateAttestationRequest.GetAggregateAttestationResponse
+    final GetAggregateAttestationRequestV2.GetAggregateAttestationResponse
         getAggregateAttestationResponse =
-            new GetAggregateAttestationRequest.GetAggregateAttestationResponse(attestation);
+            new GetAggregateAttestationRequestV2.GetAggregateAttestationResponse(attestation);
 
     final String mockResponse = readExpectedJsonResource(specMilestone);
 
@@ -100,7 +100,8 @@ public class GetAggregateAttestationRequestTest extends AbstractTypeDefRequestTe
             : attestation.getData().getIndex();
 
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestationAndMetaData =
-        getAggregateAttestationRequest.createAggregate(attestation.hashTreeRoot(), committeeIndex);
+        getAggregateAttestationRequestV2.createAggregate(
+            attestation.hashTreeRoot(), committeeIndex);
     assertThat(maybeAttestationAndMetaData).isPresent();
     assertThat(maybeAttestationAndMetaData.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());

@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
-public class GetAggregateAttestationRequest extends AbstractTypeDefRequest {
+public class GetAggregateAttestationRequestV2 extends AbstractTypeDefRequest {
 
   final AttestationSchema<Attestation> attestationSchema;
   final UInt64 slot;
@@ -43,7 +43,7 @@ public class GetAggregateAttestationRequest extends AbstractTypeDefRequest {
   private final DeserializableTypeDefinition<GetAggregateAttestationResponse>
       getAggregateAttestationTypeDef;
 
-  public GetAggregateAttestationRequest(
+  public GetAggregateAttestationRequestV2(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
       final Spec spec,
