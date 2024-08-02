@@ -20,12 +20,15 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
@@ -66,6 +69,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -463,6 +467,35 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
+  }
+
+  @Test
+  public void postAttestations_ShouldUseV1ApiPreElectra() {
+    final List<Attestation> attestations =
+            List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    ignoreFuture(apiHandler.sendSignedAttestations(attestations));
+    asyncRunner.executeQueuedActions();
+
+    verify(typeDefClient, never()).postSignedAttestations(anyList(), any());
+    verify(typeDefClient)
+            .sendSignedAttestations(attestations);
+  }
+
+  @Test
+  public void createAggregate_ShouldUseV2ApiPostElectra() {
+    apiHandler =
+            new RemoteValidatorApiHandler(
+                    endpoint, typeDefClient, asyncRunner, true);
+    final List<Attestation> attestations =
+            List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    ignoreFuture(apiHandler.sendSignedAttestations(attestations));
+    asyncRunner.executeQueuedActions();
+
+    verify(typeDefClient, never()).createAggregate(any(), any());
+    verify(typeDefClient)
+            .postSignedAttestations(attestations, SpecMilestone.ELECTRA);
   }
 
   @Test
