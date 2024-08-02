@@ -810,8 +810,7 @@ class ValidatorApiHandlerTest {
     when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
         .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
     final SafeFuture<List<SubmitDataError>> result =
-        validatorApiHandler.sendSignedAttestationsV2(
-            spec.atSlot(epochStartSlot).getMilestone(), List.of(attestation));
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
     assertThat(result).isCompletedWithValue(emptyList());
 
     verify(attestationManager)
@@ -839,8 +838,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<List<SubmitDataError>> result =
-        validatorApiHandler.sendSignedAttestationsV2(
-            spec.atSlot(epochStartSlot).getMilestone(), List.of(attestation));
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
     assertThat(result).isCompletedWithValue(emptyList());
 
     verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
@@ -868,8 +866,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(InternalValidationResult.reject("Bad juju")));
 
     final SafeFuture<List<SubmitDataError>> result =
-        validatorApiHandler.sendSignedAttestationsV2(
-            spec.atSlot(epochStartSlot).getMilestone(), List.of(attestation));
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
     assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
 
     verify(dutyMetrics, never()).onAttestationPublished(attestation.getData().getSlot());
@@ -905,9 +902,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<List<SubmitDataError>> result =
-        validatorApiHandler.sendSignedAttestationsV2(
-            spec.atSlot(epochStartSlot).getMilestone(),
-            List.of(invalidAttestation, validAttestation));
+        validatorApiHandler.sendSignedAttestations(List.of(invalidAttestation, validAttestation));
     assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
 
     verify(dutyMetrics, never()).onAttestationPublished(invalidAttestation.getData().getSlot());

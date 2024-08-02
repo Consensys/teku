@@ -69,7 +69,7 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     request.setRequestBody(attestations);
     request.setRequestHeader(
         HEADER_CONSENSUS_VERSION, specMilestone.name().toLowerCase(Locale.ROOT));
-    when(validatorDataProvider.submitAttestationsV2(specMilestone, attestations))
+    when(validatorDataProvider.submitAttestations(attestations))
         .thenReturn(SafeFuture.completedFuture(List.of()));
 
     handler.handleRequest(request);
@@ -92,7 +92,7 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
         HEADER_CONSENSUS_VERSION, specMilestone.name().toLowerCase(Locale.ROOT));
     request.setRequestBody(attestations);
 
-    when(validatorDataProvider.submitAttestationsV2(specMilestone, attestations))
+    when(validatorDataProvider.submitAttestations(attestations))
         .thenReturn(SafeFuture.completedFuture(errors));
 
     handler.handleRequest(request);

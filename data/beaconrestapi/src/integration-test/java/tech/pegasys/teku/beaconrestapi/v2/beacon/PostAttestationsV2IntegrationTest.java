@@ -66,7 +66,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
 
-    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+    when(validatorApiChannel.sendSignedAttestations(attestations))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
@@ -93,7 +93,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
             dataStructureUtil.randomAttestation(),
             dataStructureUtil.randomAttestation());
 
-    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+    when(validatorApiChannel.sendSignedAttestations(attestations))
         .thenReturn(
             SafeFuture.completedFuture(List.of(firstSubmitDataError, secondSubmitDataError)));
 
@@ -125,7 +125,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
 
-    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+    when(validatorApiChannel.sendSignedAttestations(attestations))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
@@ -143,7 +143,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
 
-    when(validatorApiChannel.sendSignedAttestationsV2(specMilestone, attestations))
+    when(validatorApiChannel.sendSignedAttestations(attestations))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response =
