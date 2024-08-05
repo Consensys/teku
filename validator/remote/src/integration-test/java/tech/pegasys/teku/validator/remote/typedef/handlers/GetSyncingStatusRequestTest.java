@@ -31,7 +31,7 @@ public class GetSyncingStatusRequestTest extends AbstractTypeDefRequestTestBase 
 
   @BeforeEach
   void setupRequest() {
-    request = new GetSyncingStatusRequest(okHttpClient, mockWebServer.url("/"));
+    request = new GetSyncingStatusRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
