@@ -695,7 +695,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void createAggregate_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<? extends Attestation>> result =
+    final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createAggregate(
             ONE, dataStructureUtil.randomAttestationData().hashTreeRoot(), Optional.empty());
 
@@ -1285,7 +1285,7 @@ class ValidatorApiHandlerTest {
     return validatorLivenessAtEpochs.stream()
         .anyMatch(
             validatorLivenessAtEpoch ->
-                validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
+                validatorLivenessAtEpoch.index().equals(validatorIndex)
                     && validatorLivenessAtEpoch.isLive());
   }
 

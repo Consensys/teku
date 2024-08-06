@@ -156,11 +156,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<? extends Attestation>> createAggregate(
+  public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
-    return countOptionalExtendedDataRequest(
+    return countOptionalDataRequest(
         delegate.createAggregate(slot, attestationHashTreeRoot, committeeIndex),
         BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD);
   }
@@ -290,16 +290,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   private <T> SafeFuture<Optional<T>> countOptionalDataRequest(
       final SafeFuture<Optional<T>> request, final String requestName) {
-    return request
-        .catchAndRethrow(__ -> recordError(requestName))
-        .thenPeek(
-            result ->
-                result.ifPresentOrElse(
-                    __ -> recordSuccess(requestName), () -> recordDataUnavailable(requestName)));
-  }
-
-  private <T> SafeFuture<Optional<? extends T>> countOptionalExtendedDataRequest(
-      final SafeFuture<Optional<? extends T>> request, final String requestName) {
     return request
         .catchAndRethrow(__ -> recordError(requestName))
         .thenPeek(
