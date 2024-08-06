@@ -23,6 +23,6 @@
 - When `p2p-subscribe-all-subnets-enabled`, `p2p-peer-lower-bound` now defaults to 60 (previously 64), and `p2p-peer-upper-bound` now defaults to 80 (previously 100).
 - When `p2p-subscribe-all-subnets-enabled`,  (`Xnetwork-async-p2p-max-queue`, `Xnetwork-async-beaconchain-max-queue`, `Xp2p-batch-verify-signatures-queue-capacity`)  now default to 40_000 (previously 10_000)
 - When `p2p-subscribe-all-subnets-enabled`,  `Xvalidator-executor-max-queue-size`  now defaults to 60_000 (previously 40_000).
-- Enable [GetNewBlockV3](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/ValidatorRequiredApi/produceBlockV3) to default.  
+- Enable [GetNewBlockV3](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/ValidatorRequiredApi/produceBlockV3) by default.  
 
 ### Bug Fixes
