@@ -302,6 +302,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public boolean isBlsDisabled() {
+    return specConfig.isBlsDisabled();
+  }
+
+  @Override
   public long getDepositChainId() {
     return specConfig.getDepositChainId();
   }

@@ -41,6 +41,8 @@ public interface ReadOnlyForkChoiceStrategy {
 
   List<ProtoNodeData> getChainHeads(boolean includeNonViableHeads);
 
+  List<ProtoNodeData> getViableChainHeads();
+
   Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(Bytes32 head);
 
   List<ProtoNodeData> getBlockData();
