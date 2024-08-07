@@ -26,7 +26,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchemaTestBase;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchemaTest;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszProfileSchemaTest;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszStableContainerSchemaTest;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchemaTest;
 
 public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTestBase {
@@ -35,6 +37,8 @@ public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTest
 
   static Stream<SszSchema<?>> complexElementSchemas() {
     return Stream.of(
+            SszProfileSchemaTest.testContainerSchemas(),
+            SszStableContainerSchemaTest.testContainerSchemas(),
             SszContainerSchemaTest.testContainerSchemas(),
             SszUnionSchemaTest.testUnionSchemas(),
             Stream.of(
