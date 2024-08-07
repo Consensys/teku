@@ -21,16 +21,22 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Optional;
 import okhttp3.Response;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttesterSlashingV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -38,28 +44,35 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class PostAttesterSlashingV2IntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalElectra());
+  private DataStructureUtil dataStructureUtil;
+  private SpecMilestone specMilestone;
 
   @BeforeEach
-  public void setup() {
-    startRestAPIAtGenesis();
+  void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
+    startRestAPIAtGenesis(specMilestone);
+    dataStructureUtil = specContext.getDataStructureUtil();
   }
 
-  @Test
+  @TestTemplate
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
     final Response response = post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(""));
     Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
-  @Test
+  @TestTemplate
   public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {
     final Response response =
-        post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON("{\"foo\": \"bar\"}"));
+        post(
+            PostAttesterSlashingV2.ROUTE,
+            jsonProvider.objectToJSON("{\"foo\": \"bar\"}"),
+            Collections.emptyMap(),
+            Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
     assertThat(response.code()).isEqualTo(400);
   }
 
-  @Test
+  @TestTemplate
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
     final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
         dataStructureUtil.randomAttesterSlashing();
@@ -69,11 +82,15 @@ public class PostAttesterSlashingV2IntegrationTest
     doThrow(new RuntimeException()).when(attesterSlashingPool).addLocal(slashing);
 
     final Response response =
-        post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
+        post(
+            PostAttesterSlashingV2.ROUTE,
+            jsonProvider.objectToJSON(schemaSlashing),
+            Collections.emptyMap(),
+            Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
     assertThat(response.code()).isEqualTo(500);
   }
 
-  @Test
+  @TestTemplate
   public void shouldReturnSuccessWhenRequestBodyIsValid() throws Exception {
     final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
         dataStructureUtil.randomAttesterSlashing();
@@ -84,10 +101,56 @@ public class PostAttesterSlashingV2IntegrationTest
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final Response response =
-        post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
+        post(
+            PostAttesterSlashingV2.ROUTE,
+            jsonProvider.objectToJSON(schemaSlashing),
+            Collections.emptyMap(),
+            Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
 
     verify(attesterSlashingPool).addLocal(slashing);
 
     assertThat(response.code()).isEqualTo(200);
+  }
+
+  @TestTemplate
+  void shouldFailWhenMissingConsensusHeader() throws Exception {
+    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
+        dataStructureUtil.randomAttesterSlashing();
+
+    final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
+
+    final Response response =
+        post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
+
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+
+    final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
+    assertThat(resultAsJsonNode.get("message").asText())
+        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
+  }
+
+  @TestTemplate
+  void shouldFailWhenBadConsensusHeaderValue() throws Exception {
+
+    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
+        dataStructureUtil.randomAttesterSlashing();
+
+    final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
+
+    when(attesterSlashingPool.addLocal(slashing))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final Response response =
+        post(
+            PostAttesterSlashingV2.ROUTE,
+            jsonProvider.objectToJSON(schemaSlashing),
+            Collections.emptyMap(),
+            Optional.of("NonExistingMileStone"));
+
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+
+    final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
+    assertThat(resultAsJsonNode.get("message").asText())
+        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
   }
 }

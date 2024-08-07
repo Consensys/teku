@@ -56,7 +56,12 @@
       "content" : {
         "application/json" : {
           "schema" : {
-            "$ref" : "#/components/schemas/AttesterSlashingElectra"
+            "type" : "object",
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/AttesterSlashingElectra"
+            }, {
+              "$ref" : "#/components/schemas/AttesterSlashingPhase0"
+            } ]
           }
         }
       }
