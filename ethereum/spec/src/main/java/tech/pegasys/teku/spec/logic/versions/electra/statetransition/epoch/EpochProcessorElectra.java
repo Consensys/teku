@@ -261,7 +261,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     int nextPendingBalanceConsolidation = 0;
     final SszList<PendingConsolidation> pendingConsolidations =
         stateElectra.getPendingConsolidations();
-    final UInt64 currentEpoch = stateAccessorsElectra.getCurrentEpoch(state).plus(1L);
+    final UInt64 nextEpoch = stateAccessorsElectra.getCurrentEpoch(state).plus(1L);
 
     for (final PendingConsolidation pendingConsolidation : pendingConsolidations) {
       final Validator sourceValidator =
@@ -270,7 +270,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         nextPendingBalanceConsolidation++;
         continue;
       }
-      if (sourceValidator.getWithdrawableEpoch().isGreaterThan(currentEpoch)) {
+      if (sourceValidator.getWithdrawableEpoch().isGreaterThan(nextEpoch)) {
         break;
       }
 
