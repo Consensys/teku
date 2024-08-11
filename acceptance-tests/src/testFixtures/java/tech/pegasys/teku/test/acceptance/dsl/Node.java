@@ -88,10 +88,11 @@ public abstract class Node {
         getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
     this.container =
         new NodeContainer(dockerImage)
-            .withImagePullPolicy(
-                dockerImage.endsWith(TekuDockerVersion.LOCAL_BUILD.getVersion())
-                    ? PullPolicy.defaultPolicy()
-                    : PullPolicy.ageBased(Duration.ofMinutes(5)))
+            .withImagePullPolicy(PullPolicy.defaultPolicy())
+//            .withImagePullPolicy(
+//                dockerImage.endsWith(TekuDockerVersion.LOCAL_BUILD.getVersion())
+//                    ? PullPolicy.defaultPolicy()
+//                    : PullPolicy.ageBased(Duration.ofMinutes(5)))
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
