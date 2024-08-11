@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
@@ -721,6 +722,112 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
     assertThatThrownBy(() -> okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of(proof)))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @TestTemplate
+  public void prepareBeaconProposer_emptyListIsNoop() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    okHttpValidatorTypeDefClient.prepareBeaconProposer(List.of());
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
+  }
+
+  @TestTemplate
+  public void prepareBeaconProposer_canRespondFailure() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(
+            () ->
+                okHttpValidatorTypeDefClient.prepareBeaconProposer(
+                    List.of(dataStructureUtil.randomBeaconPreparableProposer())))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @TestTemplate
+  public void prepareBeaconProposer_acceptsPopulatedList() throws InterruptedException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+    okHttpValidatorTypeDefClient.prepareBeaconProposer(
+        List.of(dataStructureUtil.randomBeaconPreparableProposer()));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getRequestUrl().encodedPath())
+        .isEqualTo("/eth/v1/validator/prepare_beacon_proposer");
+    assertThat(request.getBody().readUtf8())
+        .isEqualTo(
+            "[{\"validator_index\":\"4666673844721362956\",\"fee_recipient\":\"0x367CbD40AC7318427aAdB97345a91FA2e965DAf3\"}]");
+  }
+
+  @TestTemplate
+  public void createAggregate_makesExpectedRequest() throws Exception {
+    final UInt64 slot = UInt64.valueOf(323);
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    okHttpValidatorTypeDefClient.createAggregate(slot, attestationHashTreeRoot);
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE.getPath(emptyMap()));
+    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
+    assertThat(request.getRequestUrl().queryParameter("attestation_data_root"))
+        .isEqualTo(attestationHashTreeRoot.toHexString());
+  }
+
+  @TestTemplate
+  public void createAggregate_whenBadParameters_throwsIllegalArgumentException() {
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+
+    assertThatThrownBy(
+            () -> okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @TestTemplate
+  public void createAggregate_whenNotFound_returnsEmpty() {
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    assertThat(okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
+        .isEmpty();
+  }
+
+  @TestTemplate
+  public void createAggregate_whenServerError_throwsRuntimeException() {
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+
+    assertThatThrownBy(
+            () -> okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Server error from Beacon Node API");
+  }
+
+  @TestTemplate
+  public void createAggregate_WhenSuccess_ReturnsAttestation() throws JsonProcessingException {
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+    final Attestation expectedAttestation = dataStructureUtil.randomAttestation();
+    final String body =
+        serialize(
+            expectedAttestation,
+            spec.getGenesisSchemaDefinitions()
+                .getAttestationSchema()
+                .castTypeToAttestationSchema()
+                .getJsonTypeDefinition());
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_OK).setBody("{\"data\": " + body + "}"));
+
+    final Optional<Attestation> attestation =
+        okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
+
+    assertThat(attestation).isPresent();
+    assertThat(attestation.get()).isEqualTo(expectedAttestation);
   }
 
   private AttesterDuty randomAttesterDuty() {

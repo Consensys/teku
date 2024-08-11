@@ -20,25 +20,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -107,71 +102,6 @@ class OkHttpValidatorRestApiClientTest {
     assertThatThrownBy(() -> apiClient.sendSignedAttestations(List.of(attestation)))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void createAggregate_MakesExpectedRequest() throws Exception {
-    final UInt64 slot = UInt64.valueOf(323);
-    final Bytes32 attestationHashTreeRoot = Bytes32.random();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.createAggregate(slot, attestationHashTreeRoot);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE.getPath(emptyMap()));
-    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
-    assertThat(request.getRequestUrl().queryParameter("attestation_data_root"))
-        .isEqualTo(attestationHashTreeRoot.toHexString());
-  }
-
-  @Test
-  public void createAggregate_WhenBadParameters_ThrowsIllegalArgumentException() {
-    final Bytes32 attestationHashTreeRoot = Bytes32.random();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-
-    assertThatThrownBy(() -> apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void createAggregate_WhenNotFound_ReturnsEmpty() {
-    final Bytes32 attestationHashTreeRoot = Bytes32.random();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
-
-    assertThat(apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot)).isEmpty();
-  }
-
-  @Test
-  public void createAggregate_WhenServerError_ThrowsRuntimeException() {
-    final Bytes32 attestationHashTreeRoot = Bytes32.random();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(() -> apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void createAggregate_WhenSuccess_ReturnsAttestation() {
-    final Bytes32 attestationHashTreeRoot = Bytes32.random();
-    final Attestation expectedAttestation = schemaObjects.attestation();
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_OK)
-            .setBody(asJson(new GetAggregatedAttestationResponse(expectedAttestation))));
-
-    final Optional<Attestation> attestation =
-        apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
-
-    assertThat(attestation).isPresent();
-    assertThat(attestation.get()).usingRecursiveComparison().isEqualTo(expectedAttestation);
   }
 
   @Test

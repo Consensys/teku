@@ -1285,7 +1285,7 @@ class ValidatorApiHandlerTest {
     return validatorLivenessAtEpochs.stream()
         .anyMatch(
             validatorLivenessAtEpoch ->
-                validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
+                validatorLivenessAtEpoch.index().equals(validatorIndex)
                     && validatorLivenessAtEpoch.isLive());
   }
 
