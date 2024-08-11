@@ -48,7 +48,7 @@ public class OkHttpValidatorMinimalTypeDefClient {
   }
 
   public Optional<Map<String, String>> getSpec() {
-    return getSpecRequest.getSpec();
+    return getSpecRequest.submit();
   }
 
   public OkHttpClient getOkHttpClient() {
@@ -61,20 +61,18 @@ public class OkHttpValidatorMinimalTypeDefClient {
 
   public Optional<GenesisData> getGenesis() {
     return getGenesisRequest
-        .getGenesisData()
+        .submit()
         .map(
             response ->
                 new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 
   public Optional<List<StateValidatorData>> postStateValidators(final List<String> validatorIds) {
-    return postStateValidatorsRequest
-        .postStateValidators(validatorIds)
-        .map(ObjectAndMetaData::getData);
+    return postStateValidatorsRequest.submit(validatorIds).map(ObjectAndMetaData::getData);
   }
 
   public void sendVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit)
       throws BadRequestException {
-    postVoluntaryExitRequest.sendVoluntaryExit(signedVoluntaryExit);
+    postVoluntaryExitRequest.submit(signedVoluntaryExit);
   }
 }

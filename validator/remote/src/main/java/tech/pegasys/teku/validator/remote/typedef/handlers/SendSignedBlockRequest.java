@@ -57,7 +57,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
     this.preferSszBlockEncoding = new AtomicBoolean(preferSszBlockEncoding);
   }
 
-  public SendSignedBlockResult sendSignedBlock(
+  public SendSignedBlockResult submit(
       final SignedBlockContainer signedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     final boolean blinded = signedBlockContainer.isBlinded();

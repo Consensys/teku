@@ -13,62 +13,56 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
-import com.google.common.io.Resources;
-import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(network = Eth2Network.MINIMAL)
-public class GetGenesisRequestTest extends AbstractTypeDefRequestTestBase {
-
-  private GetGenesisRequest getGenesisRequest;
+public class PostStateValidatorsRequestTest extends AbstractTypeDefRequestTestBase {
+  private PostStateValidatorsRequest request;
 
   @BeforeEach
   public void setupRequest() {
-    getGenesisRequest = new GetGenesisRequest(mockWebServer.url("/"), okHttpClient);
+    request = new PostStateValidatorsRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
-  void shouldHandleSuccessfulResponse() throws IOException {
-    final String mockResponse =
-        Resources.toString(
-            Resources.getResource(GetGenesisRequestTest.class, "getGenesisRequest_200.json"),
-            UTF_8);
+  void canHandleResponse() {
+    final String mockResponse = readResource("responses/state_validators_response.json");
+
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
-    final Optional<GetGenesisApiData> response = getGenesisRequest.submit();
+    final Optional<ObjectAndMetaData<List<StateValidatorData>>> response =
+        request.submit(List.of("1"));
     assertThat(response).isPresent();
-    assertThat(response.get().getGenesisTime()).isEqualTo(UInt64.valueOf(1590832934));
+    assertThat(response.get().getData().getFirst().getIndex()).isEqualTo(UInt64.ONE);
   }
 
   @TestTemplate
-  void shouldHandleNotFoundResponse() {
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_NOT_FOUND)
-            .setBody("{\"code\": 404, \"message\": \"Not Ready\"}"));
-    final Optional<GetGenesisApiData> response = getGenesisRequest.submit();
-    assertThat(response).isEmpty();
+  void handle404() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    assertThatThrownBy(() -> request.submit(List.of("1")))
+        .isInstanceOf(PostStateValidatorsNotExistingException.class);
   }
 
   @TestTemplate
-  void shouldHandleErrorResponse() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    assertThatThrownBy(() -> getGenesisRequest.submit())
-        .isInstanceOf(RemoteServiceNotAvailableException.class);
+  void handle400() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(() -> request.submit(List.of("1")))
+        .isInstanceOf(PostStateValidatorsNotExistingException.class);
   }
 }

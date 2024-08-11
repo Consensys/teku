@@ -54,7 +54,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    createAggregateAttestationRequest.createAggregate(slot, attestationHashTreeRoot);
+    createAggregateAttestationRequest.submit(slot, attestationHashTreeRoot);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
@@ -78,7 +78,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
     final Optional<Attestation> maybeAttestation =
-        createAggregateAttestationRequest.createAggregate(slot, attestation.hashTreeRoot());
+        createAggregateAttestationRequest.submit(slot, attestation.hashTreeRoot());
 
     assertThat(maybeAttestation).isPresent();
     assertThat(maybeAttestation.get()).isEqualTo(getAggregateAttestationResponse.getData());

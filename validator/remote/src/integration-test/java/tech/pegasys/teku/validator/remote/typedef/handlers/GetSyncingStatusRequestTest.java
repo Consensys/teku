@@ -35,12 +35,12 @@ public class GetSyncingStatusRequestTest extends AbstractTypeDefRequestTestBase 
   }
 
   @TestTemplate
-  public void getSyncingStatus_setsElOfflineToEmptyIfFieldDoesNotExist() {
+  public void setsElOfflineToEmptyIfFieldDoesNotExist() {
     final String mockResponse = readResource("responses/syncing_no_el_offline.json");
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
-    final SyncingStatus syncingStatus = request.getSyncingStatus();
+    final SyncingStatus syncingStatus = request.submit();
 
     assertThat(syncingStatus.isElOffline()).isNotNull().isEmpty();
   }

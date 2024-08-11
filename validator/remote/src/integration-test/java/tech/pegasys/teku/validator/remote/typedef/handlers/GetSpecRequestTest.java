@@ -16,38 +16,31 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import java.util.Map;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(network = Eth2Network.MINIMAL)
-public class GetPeerCountRequestTest extends AbstractTypeDefRequestTestBase {
-
-  private GetPeerCountRequest getPeerCountRequest;
+public class GetSpecRequestTest extends AbstractTypeDefRequestTestBase {
+  private GetSpecRequest request;
 
   @BeforeEach
   public void setupRequest() {
-    getPeerCountRequest = new GetPeerCountRequest(mockWebServer.url("/"), okHttpClient);
+    request = new GetSpecRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
-  public void correctResponseDeserialization() {
-    final String mockResponse = readResource("responses/get_peer_count.json");
+  void successfulRequest() {
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_OK).setBody("{ \"data\":{\"a\":\"b\"}}"));
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
-
-    final Optional<PeerCount> maybePeerCount = getPeerCountRequest.submit();
-    assertThat(maybePeerCount).isPresent();
-
-    final PeerCount peerCount = maybePeerCount.get();
-    assertThat(peerCount.getConnected().longValue()).isEqualTo(56);
-    assertThat(peerCount.getDisconnected().longValue()).isEqualTo(12);
-    assertThat(peerCount.getConnecting().longValue()).isEqualTo(0);
-    assertThat(peerCount.getDisconnecting().longValue()).isEqualTo(0);
+    final Optional<Map<String, String>> response = request.submit();
+    assertThat(response).isPresent();
+    assertThat(response.get().size()).isGreaterThan(0);
   }
 }

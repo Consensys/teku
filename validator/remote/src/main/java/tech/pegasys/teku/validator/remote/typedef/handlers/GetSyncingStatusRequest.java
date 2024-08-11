@@ -27,7 +27,7 @@ public class GetSyncingStatusRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public SyncingStatus getSyncingStatus() {
+  public SyncingStatus submit() {
     return get(
             GET_SYNCING_STATUS,
             new ResponseHandler<>(ValidatorRequiredApiTypes.SYNCING_STATUS_RESPONSE))

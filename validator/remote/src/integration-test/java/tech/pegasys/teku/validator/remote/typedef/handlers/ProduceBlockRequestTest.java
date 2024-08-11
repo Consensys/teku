@@ -82,7 +82,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -134,7 +134,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -165,7 +165,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
         .hasValue(blockResponse.getData());
@@ -195,7 +195,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -221,7 +221,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -251,7 +251,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -270,8 +270,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
     // no optional parameters
-    assertThatThrownBy(
-        () -> request.createUnsignedBlock(signature, Optional.empty(), Optional.empty()));
+    assertThatThrownBy(() -> request.submit(signature, Optional.empty(), Optional.empty()));
 
     recordedRequest = mockWebServer.takeRequest();
 
@@ -286,8 +285,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     // with all parameters
     assertThatThrownBy(
         () ->
-            request.createUnsignedBlock(
-                signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))));
+            request.submit(signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))));
 
     recordedRequest = mockWebServer.takeRequest();
 
