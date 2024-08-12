@@ -262,6 +262,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
       case ELECTRA -> BeaconBlockBodyElectra.class;
+      case EIP7732 -> throw new UnsupportedOperationException("TODO");
     };
   }
 }

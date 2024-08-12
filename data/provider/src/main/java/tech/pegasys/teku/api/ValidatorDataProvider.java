@@ -178,6 +178,7 @@ public class ValidatorDataProvider {
       case CAPELLA -> mapper.treeToValue(jsonNode, SignedBeaconBlockCapella.class);
       case DENEB -> mapper.treeToValue(jsonNode, SignedBeaconBlockDeneb.class);
       case ELECTRA -> mapper.treeToValue(jsonNode, SignedBeaconBlockElectra.class);
+      case EIP7732 -> throw new UnsupportedOperationException("TODO");
     };
   }
 
@@ -194,6 +195,7 @@ public class ValidatorDataProvider {
       case CAPELLA -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockCapella.class);
       case DENEB -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockDeneb.class);
       case ELECTRA -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockElectra.class);
+      case EIP7732 -> throw new UnsupportedOperationException("TODO");
     };
   }
 
