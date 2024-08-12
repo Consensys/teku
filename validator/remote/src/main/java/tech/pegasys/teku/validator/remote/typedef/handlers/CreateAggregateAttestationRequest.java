@@ -40,8 +40,7 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
     this.schemaDefinitionCache = schemaDefinitionCache;
   }
 
-  public Optional<Attestation> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+  public Optional<Attestation> submit(final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
 
     final AttestationSchema<Attestation> attestationSchema =
         schemaDefinitionCache.atSlot(slot).getAttestationSchema().castTypeToAttestationSchema();

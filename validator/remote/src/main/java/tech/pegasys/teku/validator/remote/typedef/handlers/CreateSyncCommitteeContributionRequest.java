@@ -39,7 +39,7 @@ public class CreateSyncCommitteeContributionRequest extends AbstractTypeDefReque
     this.spec = spec;
   }
 
-  public Optional<SyncCommitteeContribution> getSyncCommitteeContribution(
+  public Optional<SyncCommitteeContribution> submit(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
     if (spec.atSlot(slot).getMilestone().equals(SpecMilestone.PHASE0)) {
       return Optional.empty();

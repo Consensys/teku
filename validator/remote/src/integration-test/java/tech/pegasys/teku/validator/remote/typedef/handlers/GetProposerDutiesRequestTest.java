@@ -15,49 +15,64 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
-@TestSpecContext(network = Eth2Network.MINIMAL)
-public class GetPeerCountRequestTest extends AbstractTypeDefRequestTestBase {
-
-  private GetPeerCountRequest request;
+@TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
+public class GetProposerDutiesRequestTest extends AbstractTypeDefRequestTestBase {
+  private GetProposerDutiesRequest request;
 
   @BeforeEach
   public void setupRequest() {
-    request = new GetPeerCountRequest(mockWebServer.url("/"), okHttpClient);
+    request = new GetProposerDutiesRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
-  public void correctResponseDeserialization() {
-    final String mockResponse = readResource("responses/get_peer_count.json");
+  void canDeserializeResponse() {
+    final String mockResponse = readResource("responses/get_proposer_duties_response.json");
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
-    final Optional<PeerCount> maybePeerCount = request.submit();
-    assertThat(maybePeerCount).isPresent();
+    final Optional<ProposerDuties> response = request.submit(UInt64.ZERO);
+    assertThat(response).isPresent();
+    assertThat(response.get().getDuties().size()).isEqualTo(1);
+    assertThat(response.get().getDuties().getFirst().getValidatorIndex()).isEqualTo(1);
+  }
 
-    final PeerCount peerCount = maybePeerCount.get();
-    assertThat(peerCount.getConnected().longValue()).isEqualTo(56);
-    assertThat(peerCount.getDisconnected().longValue()).isEqualTo(12);
-    assertThat(peerCount.getConnecting().longValue()).isEqualTo(0);
-    assertThat(peerCount.getDisconnecting().longValue()).isEqualTo(0);
+  @TestTemplate
+  void handle503() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_SERVICE_UNAVAILABLE));
+    assertThatThrownBy(() -> request.submit(UInt64.ZERO))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 
   @TestTemplate
   void handle500() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    assertThatThrownBy(() -> request.submit())
+    assertThatThrownBy(() -> request.submit(UInt64.ZERO))
         .isInstanceOf(RemoteServiceNotAvailableException.class);
+  }
+
+  @TestTemplate
+  void handle400() {
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_BAD_REQUEST)
+            .setBody("{\"code\": 400, \"message\": \"Bad Request\"}"));
+    assertThatThrownBy(() -> request.submit(UInt64.ZERO))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }

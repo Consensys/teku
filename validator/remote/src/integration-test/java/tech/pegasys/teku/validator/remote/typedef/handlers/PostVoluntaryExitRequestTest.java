@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -22,36 +23,41 @@ import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
+import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(network = Eth2Network.MINIMAL)
-public class GetSyncingStatusRequestTest extends AbstractTypeDefRequestTestBase {
-
-  private GetSyncingStatusRequest request;
+public class PostVoluntaryExitRequestTest extends AbstractTypeDefRequestTestBase {
+  private PostVoluntaryExitRequest request;
 
   @BeforeEach
-  void setupRequest() {
-    request = new GetSyncingStatusRequest(mockWebServer.url("/"), okHttpClient);
+  public void setupRequest() {
+    request = new PostVoluntaryExitRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
-  public void setsElOfflineToEmptyIfFieldDoesNotExist() {
-    final String mockResponse = readResource("responses/syncing_no_el_offline.json");
+  void handle200() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+    final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    assertThatNoException().isThrownBy(() -> request.submit(exit));
+  }
 
-    final SyncingStatus syncingStatus = request.submit();
-
-    assertThat(syncingStatus.isElOffline()).isNotNull().isEmpty();
+  @TestTemplate
+  void handle400() {
+    final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(() -> request.submit(exit)).isInstanceOf(BadRequestException.class);
   }
 
   @TestTemplate
   void handle500() {
+    final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    assertThatThrownBy(() -> request.submit())
+    assertThatThrownBy(() -> request.submit(exit))
         .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }

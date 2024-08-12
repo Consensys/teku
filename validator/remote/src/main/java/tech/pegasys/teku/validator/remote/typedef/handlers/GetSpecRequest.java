@@ -28,7 +28,7 @@ public class GetSpecRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<Map<String, String>> getSpec() {
+  public Optional<Map<String, String>> submit() {
     return get(GET_CONFIG_SPEC, Map.of(), Map.of(), new ResponseHandler<>(GET_SPEC_RESPONSE_TYPE));
   }
 }

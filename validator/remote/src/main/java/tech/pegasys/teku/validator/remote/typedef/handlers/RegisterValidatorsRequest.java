@@ -44,8 +44,7 @@ public class RegisterValidatorsRequest extends AbstractTypeDefRequest {
     this.preferSszEncoding = new AtomicBoolean(preferSszEncoding);
   }
 
-  public void registerValidators(
-      final SszList<SignedValidatorRegistration> validatorRegistrations) {
+  public void submit(final SszList<SignedValidatorRegistration> validatorRegistrations) {
     if (preferSszEncoding.get()) {
       sendValidatorRegistrationsAsSszOrFallback(validatorRegistrations);
     } else {
