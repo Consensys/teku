@@ -32,7 +32,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -1646,7 +1645,7 @@ public final class DataStructureUtil {
   }
 
   public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
-    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(Collectors.toList());
+    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(toList());
   }
 
   public SszList<Deposit> randomSszDeposits(final int num) {
@@ -1858,6 +1857,7 @@ public final class DataStructureUtil {
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
+      case EIP7732 -> throw new UnsupportedOperationException("TODO");
     };
   }
 

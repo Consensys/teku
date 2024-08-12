@@ -319,6 +319,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               debugDataDumper);
+      case EIP7732 -> throw new UnsupportedOperationException("TODO");
     };
   }
 
