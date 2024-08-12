@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -28,6 +29,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -114,5 +116,30 @@ public class SyncCommitteeSelectionsRequestTest extends AbstractTypeDefRequestTe
         .subcommitteeIndex(dataStructureUtil.randomPositiveInt())
         .selectionProof(dataStructureUtil.randomSignature().toBytesCompressed().toHexString())
         .build();
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(() -> request.submit(entries))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
+  }
+
+  @TestTemplate
+  void handle503() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_SERVICE_UNAVAILABLE));
+    assertThat(request.submit(entries)).isEmpty();
+  }
+
+  @TestTemplate
+  void handle501() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_IMPLEMENTED));
+    assertThat(request.submit(entries)).isEmpty();
+  }
+
+  @TestTemplate
+  void handle400() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(() -> request.submit(entries)).isInstanceOf(IllegalArgumentException.class);
   }
 }

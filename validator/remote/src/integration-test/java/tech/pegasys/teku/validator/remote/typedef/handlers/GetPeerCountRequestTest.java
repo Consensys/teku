@@ -14,12 +14,15 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -28,11 +31,11 @@ import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase
 @TestSpecContext(network = Eth2Network.MINIMAL)
 public class GetPeerCountRequestTest extends AbstractTypeDefRequestTestBase {
 
-  private GetPeerCountRequest getPeerCountRequest;
+  private GetPeerCountRequest request;
 
   @BeforeEach
   public void setupRequest() {
-    getPeerCountRequest = new GetPeerCountRequest(mockWebServer.url("/"), okHttpClient);
+    request = new GetPeerCountRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
@@ -41,7 +44,7 @@ public class GetPeerCountRequestTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
-    final Optional<PeerCount> maybePeerCount = getPeerCountRequest.submit();
+    final Optional<PeerCount> maybePeerCount = request.submit();
     assertThat(maybePeerCount).isPresent();
 
     final PeerCount peerCount = maybePeerCount.get();
@@ -49,5 +52,12 @@ public class GetPeerCountRequestTest extends AbstractTypeDefRequestTestBase {
     assertThat(peerCount.getDisconnected().longValue()).isEqualTo(12);
     assertThat(peerCount.getConnecting().longValue()).isEqualTo(0);
     assertThat(peerCount.getDisconnecting().longValue()).isEqualTo(0);
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(() -> request.submit())
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }

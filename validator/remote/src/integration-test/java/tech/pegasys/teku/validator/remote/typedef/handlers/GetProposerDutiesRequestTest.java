@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
@@ -54,6 +55,13 @@ public class GetProposerDutiesRequestTest extends AbstractTypeDefRequestTestBase
   @TestTemplate
   void handle503() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_SERVICE_UNAVAILABLE));
+    assertThatThrownBy(() -> request.submit(UInt64.ZERO))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
     assertThatThrownBy(() -> request.submit(UInt64.ZERO))
         .isInstanceOf(RemoteServiceNotAvailableException.class);
   }

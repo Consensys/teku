@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
@@ -35,6 +36,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -296,6 +298,18 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
         .isEqualTo("0x0000000000000000000000000000000000000000000000000000000000000000");
     assertThat(recordedRequest.getRequestUrl().queryParameter("builder_boost_factor"))
         .isEqualTo("48");
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(
+            () ->
+                request.submit(
+                    BLSSignature.empty(),
+                    Optional.of(Bytes32.ZERO),
+                    Optional.of(UInt64.valueOf(48))))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 
   private String readExpectedJsonResource(

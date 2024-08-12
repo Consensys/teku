@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.util.List;
@@ -23,6 +25,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -34,18 +37,17 @@ import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase
 @TestSpecContext(milestone = SpecMilestone.PHASE0, network = Eth2Network.MINIMAL)
 public class SendValidatorLivenessRequestTest extends AbstractTypeDefRequestTestBase {
 
-  private SendValidatorLivenessRequest sendValidatorLivenessRequest;
+  private SendValidatorLivenessRequest request;
 
   @BeforeEach
   void setupRequest() {
-    sendValidatorLivenessRequest =
-        new SendValidatorLivenessRequest(mockWebServer.url("/"), okHttpClient);
+    request = new SendValidatorLivenessRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
   public void sendValidatorLiveness_makesExpectedRequest() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-    sendValidatorLivenessRequest.submit(UInt64.ONE, List.of(UInt64.valueOf(1)));
+    request.submit(UInt64.ONE, List.of(UInt64.valueOf(1)));
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -60,7 +62,7 @@ public class SendValidatorLivenessRequestTest extends AbstractTypeDefRequestTest
             .setResponseCode(SC_OK)
             .setBody("{\"data\":[{\"index\":\"1\",\"is_live\":false}]}"));
     final Optional<List<ValidatorLivenessAtEpoch>> result =
-        sendValidatorLivenessRequest.submit(UInt64.ONE, List.of(UInt64.valueOf(1)));
+        request.submit(UInt64.ONE, List.of(UInt64.valueOf(1)));
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -69,5 +71,12 @@ public class SendValidatorLivenessRequestTest extends AbstractTypeDefRequestTest
 
     assertThat(result).isPresent();
     assertThat(result.get()).containsExactly(new ValidatorLivenessAtEpoch(UInt64.ONE, false));
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(() -> request.submit(UInt64.ONE, List.of(UInt64.valueOf(1))))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }

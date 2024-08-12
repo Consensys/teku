@@ -16,11 +16,13 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -47,10 +49,15 @@ public class PostVoluntaryExitRequestTest extends AbstractTypeDefRequestTestBase
   @TestTemplate
   void handle400() {
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_BAD_REQUEST)
-            .setBody("{\"code\": 400, \"message\": \"Bad Request\"}"));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
     assertThatThrownBy(() -> request.submit(exit)).isInstanceOf(BadRequestException.class);
+  }
+
+  @TestTemplate
+  void handle500() {
+    final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(() -> request.submit(exit))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }
