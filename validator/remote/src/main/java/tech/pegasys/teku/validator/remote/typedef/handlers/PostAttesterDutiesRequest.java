@@ -32,7 +32,7 @@ public class PostAttesterDutiesRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<AttesterDuties> postAttesterDuties(
+  public Optional<AttesterDuties> submit(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return postJson(
         GET_ATTESTATION_DUTIES,

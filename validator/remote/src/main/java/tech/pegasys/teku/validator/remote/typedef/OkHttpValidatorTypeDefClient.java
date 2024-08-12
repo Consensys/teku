@@ -95,41 +95,39 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public SyncingStatus getSyncingStatus() {
     final GetSyncingStatusRequest getSyncingStatusRequest =
         new GetSyncingStatusRequest(getBaseEndpoint(), getOkHttpClient());
-    return getSyncingStatusRequest.getSyncingStatus();
+    return getSyncingStatusRequest.submit();
   }
 
   public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
     final GetProposerDutiesRequest getProposerDutiesRequest =
         new GetProposerDutiesRequest(getBaseEndpoint(), getOkHttpClient());
-    return getProposerDutiesRequest.getProposerDuties(epoch);
+    return getProposerDutiesRequest.submit(epoch);
   }
 
   public Optional<PeerCount> getPeerCount() {
     final GetPeerCountRequest getPeerCountRequest =
         new GetPeerCountRequest(getBaseEndpoint(), getOkHttpClient());
-    return getPeerCountRequest.getPeerCount();
+    return getPeerCountRequest.submit();
   }
 
   public Optional<List<StateValidatorData>> getStateValidators(final List<String> validatorIds) {
     final GetStateValidatorsRequest getStateValidatorsRequest =
         new GetStateValidatorsRequest(getBaseEndpoint(), getOkHttpClient());
-    return getStateValidatorsRequest
-        .getStateValidators(validatorIds)
-        .map(ObjectAndMetaData::getData);
+    return getStateValidatorsRequest.submit(validatorIds).map(ObjectAndMetaData::getData);
   }
 
   public Optional<SyncCommitteeDuties> postSyncDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     final PostSyncDutiesRequest postSyncDutiesRequest =
         new PostSyncDutiesRequest(getBaseEndpoint(), getOkHttpClient());
-    return postSyncDutiesRequest.postSyncDuties(epoch, validatorIndices);
+    return postSyncDutiesRequest.submit(epoch, validatorIndices);
   }
 
   public Optional<AttesterDuties> postAttesterDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     final PostAttesterDutiesRequest postAttesterDutiesRequest =
         new PostAttesterDutiesRequest(getBaseEndpoint(), getOkHttpClient());
-    return postAttesterDutiesRequest.postAttesterDuties(epoch, validatorIndices);
+    return postAttesterDutiesRequest.submit(epoch, validatorIndices);
   }
 
   public SendSignedBlockResult sendSignedBlock(
@@ -138,7 +136,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final SendSignedBlockRequest sendSignedBlockRequest =
         new SendSignedBlockRequest(
             spec, getBaseEndpoint(), getOkHttpClient(), preferSszBlockEncoding);
-    return sendSignedBlockRequest.sendSignedBlock(blockContainer, broadcastValidationLevel);
+    return sendSignedBlockRequest.submit(blockContainer, broadcastValidationLevel);
   }
 
   @Deprecated
@@ -151,7 +149,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new CreateBlockRequest(
             getBaseEndpoint(), getOkHttpClient(), spec, slot, blinded, preferSszBlockEncoding);
     try {
-      return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+      return createBlockRequest.submit(randaoReveal, graffiti);
     } catch (final BlindedBlockEndpointNotAvailableException ex) {
       LOG.warn(
           "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
@@ -169,8 +167,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new ProduceBlockRequest(
             getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
     try {
-      return produceBlockRequest.createUnsignedBlock(
-          randaoReveal, graffiti, requestedBuilderBoostFactor);
+      return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
     } catch (final BlockProductionV3FailedException ex) {
       LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
 
@@ -184,7 +181,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     final RegisterValidatorsRequest registerValidatorsRequest =
         new RegisterValidatorsRequest(getBaseEndpoint(), getOkHttpClient(), false);
-    registerValidatorsRequest.registerValidators(validatorRegistrations);
+    registerValidatorsRequest.submit(validatorRegistrations);
   }
 
   public Optional<AttestationData> createAttestationData(
@@ -192,7 +189,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final CreateAttestationDataRequest createAttestationDataRequest =
         new CreateAttestationDataRequest(getBaseEndpoint(), getOkHttpClient());
-    return createAttestationDataRequest.createAttestationData(slot, committeeIndex);
+    return createAttestationDataRequest.submit(slot, committeeIndex);
   }
 
   public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(
@@ -200,7 +197,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest =
         new BeaconCommitteeSelectionsRequest(getBaseEndpoint(), getOkHttpClient());
-    return beaconCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+    return beaconCommitteeSelectionsRequest.submit(validatorsPartialProofs);
   }
 
   public Optional<List<SyncCommitteeSelectionProof>> getSyncCommitteeSelectionProof(
@@ -208,7 +205,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest =
         new SyncCommitteeSelectionsRequest(getBaseEndpoint(), getOkHttpClient());
-    return syncCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+    return syncCommitteeSelectionsRequest.submit(validatorsPartialProofs);
   }
 
   public void subscribeToSyncCommitteeSubnets(
@@ -217,7 +214,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final SendSubscribeToSyncCommitteeSubnetsRequest subscribeToSyncCommitteeSubnetsRequest =
         new SendSubscribeToSyncCommitteeSubnetsRequest(getBaseEndpoint(), getOkHttpClient());
-    subscribeToSyncCommitteeSubnetsRequest.subscribeToSyncCommitteeSubnets(subscriptions);
+    subscribeToSyncCommitteeSubnetsRequest.submit(subscriptions);
   }
 
   public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
@@ -230,15 +227,13 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final CreateSyncCommitteeContributionRequest createSyncCommitteeContributionRequest =
         new CreateSyncCommitteeContributionRequest(getBaseEndpoint(), getOkHttpClient(), spec);
-    return createSyncCommitteeContributionRequest.getSyncCommitteeContribution(
-        slot, subcommitteeIndex, beaconBlockRoot);
+    return createSyncCommitteeContributionRequest.submit(slot, subcommitteeIndex, beaconBlockRoot);
   }
 
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
     final SubscribeToPersistentSubnetsRequest subscribeToPersistentSubnetsRequest =
         new SubscribeToPersistentSubnetsRequest(getBaseEndpoint(), getOkHttpClient());
-    subscribeToPersistentSubnetsRequest.subscribeToPersistentSubnets(
-        new ArrayList<>(subnetSubscriptions));
+    subscribeToPersistentSubnetsRequest.submit(new ArrayList<>(subnetSubscriptions));
   }
 
   public void sendContributionAndProofs(
@@ -267,7 +262,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final CreateAggregateAttestationRequest createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
             getBaseEndpoint(), getOkHttpClient(), schemaDefinitionCache);
-    return createAggregateAttestationRequest.createAggregate(slot, attestationHashTreeRoot);
+    return createAggregateAttestationRequest.submit(slot, attestationHashTreeRoot);
   }
 
   public Optional<List<ValidatorLivenessAtEpoch>> sendValidatorsLiveness(

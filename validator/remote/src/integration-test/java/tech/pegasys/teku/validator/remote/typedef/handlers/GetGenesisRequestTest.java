@@ -50,7 +50,7 @@ public class GetGenesisRequestTest extends AbstractTypeDefRequestTestBase {
             Resources.getResource(GetGenesisRequestTest.class, "getGenesisRequest_200.json"),
             UTF_8);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
-    final Optional<GetGenesisApiData> response = getGenesisRequest.getGenesisData();
+    final Optional<GetGenesisApiData> response = getGenesisRequest.submit();
     assertThat(response).isPresent();
     assertThat(response.get().getGenesisTime()).isEqualTo(UInt64.valueOf(1590832934));
   }
@@ -61,14 +61,14 @@ public class GetGenesisRequestTest extends AbstractTypeDefRequestTestBase {
         new MockResponse()
             .setResponseCode(SC_NOT_FOUND)
             .setBody("{\"code\": 404, \"message\": \"Not Ready\"}"));
-    final Optional<GetGenesisApiData> response = getGenesisRequest.getGenesisData();
+    final Optional<GetGenesisApiData> response = getGenesisRequest.submit();
     assertThat(response).isEmpty();
   }
 
   @TestTemplate
   void shouldHandleErrorResponse() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    assertThatThrownBy(() -> getGenesisRequest.getGenesisData())
+    assertThatThrownBy(() -> getGenesisRequest.submit())
         .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }

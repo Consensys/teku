@@ -46,13 +46,13 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_makesExpectedRequest() throws Exception {
+  public void makesExpectedRequest() throws Exception {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    request.createAttestationData(slot, committeeIndex);
+    request.submit(slot, committeeIndex);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -65,32 +65,31 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_whenBadRequest_throwsIllegalArgumentException() {
+  public void whenBadRequest_throwsIllegalArgumentException() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> request.createAttestationData(slot, committeeIndex))
+    assertThatThrownBy(() -> request.submit(slot, committeeIndex))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @TestTemplate
-  public void createAttestationData_whenInvalidResponse_throwsError() {
+  public void whenInvalidResponse_throwsError() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     // An unexpected response is returned, such as 403-forbidden
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_FORBIDDEN));
 
-    assertThatThrownBy(() -> request.createAttestationData(slot, committeeIndex))
+    assertThatThrownBy(() -> request.submit(slot, committeeIndex))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
 
   @TestTemplate
-  public void createAttestationData_whenSuccessWithNonData_returnsAttestationData()
-      throws Exception {
+  public void dataCanBeRead() throws Exception {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
     final AttestationData expectedAttestationData = dataStructureUtil.randomAttestationData();
@@ -98,7 +97,7 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
         new MockResponse()
             .setResponseCode(SC_OK)
             .setBody(serializeSszObjectToJsonWithDataWrapper(expectedAttestationData)));
-    Optional<AttestationData> attestationData = request.createAttestationData(slot, committeeIndex);
+    Optional<AttestationData> attestationData = request.submit(slot, committeeIndex);
     assertThat(attestationData).isPresent();
 
     assertThat(attestationData.get()).isEqualTo(expectedAttestationData);

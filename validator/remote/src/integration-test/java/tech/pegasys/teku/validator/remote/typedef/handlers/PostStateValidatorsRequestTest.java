@@ -15,49 +15,63 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import java.util.List;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(network = Eth2Network.MINIMAL)
-public class GetPeerCountRequestTest extends AbstractTypeDefRequestTestBase {
-
-  private GetPeerCountRequest request;
+public class PostStateValidatorsRequestTest extends AbstractTypeDefRequestTestBase {
+  private PostStateValidatorsRequest request;
 
   @BeforeEach
   public void setupRequest() {
-    request = new GetPeerCountRequest(mockWebServer.url("/"), okHttpClient);
+    request = new PostStateValidatorsRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
-  public void correctResponseDeserialization() {
-    final String mockResponse = readResource("responses/get_peer_count.json");
+  void canHandleResponse() {
+    final String mockResponse = readResource("responses/state_validators_response.json");
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    final Optional<ObjectAndMetaData<List<StateValidatorData>>> response =
+        request.submit(List.of("1"));
+    assertThat(response).isPresent();
+    assertThat(response.get().getData().getFirst().getIndex()).isEqualTo(UInt64.ONE);
+  }
 
-    final Optional<PeerCount> maybePeerCount = request.submit();
-    assertThat(maybePeerCount).isPresent();
+  @TestTemplate
+  void handle404() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    assertThatThrownBy(() -> request.submit(List.of("1")))
+        .isInstanceOf(PostStateValidatorsNotExistingException.class);
+  }
 
-    final PeerCount peerCount = maybePeerCount.get();
-    assertThat(peerCount.getConnected().longValue()).isEqualTo(56);
-    assertThat(peerCount.getDisconnected().longValue()).isEqualTo(12);
-    assertThat(peerCount.getConnecting().longValue()).isEqualTo(0);
-    assertThat(peerCount.getDisconnecting().longValue()).isEqualTo(0);
+  @TestTemplate
+  void handle400() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(() -> request.submit(List.of("1")))
+        .isInstanceOf(PostStateValidatorsNotExistingException.class);
   }
 
   @TestTemplate
   void handle500() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    assertThatThrownBy(() -> request.submit())
+    assertThatThrownBy(() -> request.submit(List.of("1")))
         .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }

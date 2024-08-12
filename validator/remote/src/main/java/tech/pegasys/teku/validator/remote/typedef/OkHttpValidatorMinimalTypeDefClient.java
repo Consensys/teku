@@ -31,24 +31,16 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.PostVoluntaryExitRequ
 public class OkHttpValidatorMinimalTypeDefClient {
   private final OkHttpClient okHttpClient;
   private final HttpUrl baseEndpoint;
-  private final GetGenesisRequest getGenesisRequest;
-  private final PostVoluntaryExitRequest postVoluntaryExitRequest;
-
-  private final GetSpecRequest getSpecRequest;
-  private final PostStateValidatorsRequest postStateValidatorsRequest;
 
   public OkHttpValidatorMinimalTypeDefClient(
       final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.okHttpClient = okHttpClient;
     this.baseEndpoint = baseEndpoint;
-    this.getSpecRequest = new GetSpecRequest(baseEndpoint, okHttpClient);
-    this.getGenesisRequest = new GetGenesisRequest(baseEndpoint, okHttpClient);
-    this.postStateValidatorsRequest = new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
-    this.postVoluntaryExitRequest = new PostVoluntaryExitRequest(baseEndpoint, okHttpClient);
   }
 
   public Optional<Map<String, String>> getSpec() {
-    return getSpecRequest.getSpec();
+    final GetSpecRequest request = new GetSpecRequest(baseEndpoint, okHttpClient);
+    return request.submit();
   }
 
   public OkHttpClient getOkHttpClient() {
@@ -60,21 +52,24 @@ public class OkHttpValidatorMinimalTypeDefClient {
   }
 
   public Optional<GenesisData> getGenesis() {
-    return getGenesisRequest
-        .getGenesisData()
+    final GetGenesisRequest request = new GetGenesisRequest(baseEndpoint, okHttpClient);
+    return request
+        .submit()
         .map(
             response ->
                 new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 
   public Optional<List<StateValidatorData>> postStateValidators(final List<String> validatorIds) {
-    return postStateValidatorsRequest
-        .postStateValidators(validatorIds)
-        .map(ObjectAndMetaData::getData);
+    final PostStateValidatorsRequest request =
+        new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
+    return request.submit(validatorIds).map(ObjectAndMetaData::getData);
   }
 
   public void sendVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit)
       throws BadRequestException {
-    postVoluntaryExitRequest.sendVoluntaryExit(signedVoluntaryExit);
+    final PostVoluntaryExitRequest request =
+        new PostVoluntaryExitRequest(baseEndpoint, okHttpClient);
+    request.submit(signedVoluntaryExit);
   }
 }

@@ -26,7 +26,7 @@ public class GetPeerCountRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<PeerCount> getPeerCount() {
+  public Optional<PeerCount> submit() {
     return get(
         ValidatorApiMethod.GET_PEER_COUNT, new ResponseHandler<>(PeerCountBuilder.PEER_COUNT_TYPE));
   }

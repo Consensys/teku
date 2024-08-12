@@ -30,7 +30,7 @@ public class GetProposerDutiesRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
+  public Optional<ProposerDuties> submit(final UInt64 epoch) {
     return get(
         GET_PROPOSER_DUTIES,
         Map.of(EPOCH, epoch.toString()),

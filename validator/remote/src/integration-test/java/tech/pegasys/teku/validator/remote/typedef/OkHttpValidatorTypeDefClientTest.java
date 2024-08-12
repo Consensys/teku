@@ -92,7 +92,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsReq
 class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
   final String serverErrorFromApi = "Server error from Beacon Node API";
-  private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClient;
+  private OkHttpValidatorTypeDefClient typeDefClient;
   private OkHttpValidatorTypeDefClient okHttpValidatorTypeDefClientWithPreferredSsz;
   private RegisterValidatorsRequest sszRegisterValidatorsRequest;
 
@@ -100,7 +100,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   @Override
   public void beforeEach(final SpecContext specContext) throws Exception {
     super.beforeEach(specContext);
-    okHttpValidatorTypeDefClient =
+    typeDefClient =
         new OkHttpValidatorTypeDefClient(
             okHttpClient, mockWebServer.url("/"), specContext.getSpec(), false);
     okHttpValidatorTypeDefClientWithPreferredSsz =
@@ -130,7 +130,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                     + "}"));
 
     final Optional<SyncCommitteeContribution> response =
-        okHttpValidatorTypeDefClient.createSyncCommitteeContribution(
+        typeDefClient.createSyncCommitteeContribution(
             contribution.getSlot(),
             contribution.getSubcommitteeIndex().intValue(),
             contribution.getBeaconBlockRoot());
@@ -143,9 +143,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   public void createSyncCommitteeContribution_whenNotFound_returnsEmpty() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
-    assertThat(
-            okHttpValidatorTypeDefClient.createSyncCommitteeContribution(
-                UInt64.ONE, 0, Bytes32.ZERO))
+    assertThat(typeDefClient.createSyncCommitteeContribution(UInt64.ONE, 0, Bytes32.ZERO))
         .isEmpty();
   }
 
@@ -174,7 +172,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                     + "\"}"));
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        okHttpValidatorTypeDefClient.createUnsignedBlock(
+        typeDefClient.createUnsignedBlock(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -219,8 +217,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
 
     final SendSignedBlockResult result =
-        okHttpValidatorTypeDefClient.sendSignedBlock(
-            signedBeaconBlock, BroadcastValidationLevel.GOSSIP);
+        typeDefClient.sendSignedBlock(signedBeaconBlock, BroadcastValidationLevel.GOSSIP);
 
     assertThat(result.isPublished()).isTrue();
 
@@ -254,7 +251,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                     + "  }\n"
                     + "}"));
 
-    final SyncingStatus result = okHttpValidatorTypeDefClient.getSyncingStatus();
+    final SyncingStatus result = typeDefClient.getSyncingStatus();
 
     assertThat(result)
         .satisfies(
@@ -271,8 +268,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(500));
 
     Assertions.assertThrows(
-        RemoteServiceNotAvailableException.class,
-        () -> okHttpValidatorTypeDefClient.getSyncingStatus());
+        RemoteServiceNotAvailableException.class, () -> typeDefClient.getSyncingStatus());
   }
 
   @TestTemplate
@@ -288,7 +284,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             validatorRegistrations,
             ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition());
 
-    okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations);
+    typeDefClient.registerValidators(validatorRegistrations);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
@@ -310,7 +306,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final IllegalArgumentException badRequestException =
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations));
+            () -> typeDefClient.registerValidators(validatorRegistrations));
 
     assertThat(badRequestException.getMessage())
         .matches(
@@ -324,7 +320,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final RemoteServiceNotAvailableException serverException =
         Assertions.assertThrows(
             RemoteServiceNotAvailableException.class,
-            () -> okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations));
+            () -> typeDefClient.registerValidators(validatorRegistrations));
 
     assertThat(serverException.getMessage())
         .matches(
@@ -340,7 +336,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
-    sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
+    sszRegisterValidatorsRequest.submit(validatorRegistrations);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
@@ -365,7 +361,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
-    sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
+    sszRegisterValidatorsRequest.submit(validatorRegistrations);
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
 
@@ -373,7 +369,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     verifyRegisterValidatorsPostRequest(mockWebServer.takeRequest(), JSON_CONTENT_TYPE);
 
     // subsequent requests default immediately to json
-    sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
+    sszRegisterValidatorsRequest.submit(validatorRegistrations);
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(3);
 
@@ -398,7 +394,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                     + "\"}"));
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        okHttpValidatorTypeDefClient.createUnsignedBlock(
+        typeDefClient.createUnsignedBlock(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -419,7 +415,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   void postValidators_makesExpectedRequest() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    okHttpValidatorTypeDefClient.postStateValidators(List.of("1", "0x1234"));
+    typeDefClient.postStateValidators(List.of("1", "0x1234"));
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -432,7 +428,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   void getStateValidators_makesExpectedRequest() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    okHttpValidatorTypeDefClient.getStateValidators(List.of("1", "0x1234"));
+    typeDefClient.getStateValidators(List.of("1", "0x1234"));
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
@@ -447,7 +443,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   public void postValidators_whenNoContent_returnsEmpty() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    assertThat(okHttpValidatorTypeDefClient.postStateValidators(List.of("1"))).isEmpty();
+    assertThat(typeDefClient.postStateValidators(List.of("1"))).isEmpty();
   }
 
   @TestTemplate
@@ -461,7 +457,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
   private void checkThrowsExceptionForCode(final int responseCode) {
     mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
-    assertThatThrownBy(() -> okHttpValidatorTypeDefClient.postStateValidators(List.of("1")))
+    assertThatThrownBy(() -> typeDefClient.postStateValidators(List.of("1")))
         .isInstanceOf(PostStateValidatorsNotExistingException.class);
   }
 
@@ -476,7 +472,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
     Optional<List<StateValidatorData>> result =
-        okHttpValidatorTypeDefClient.postStateValidators(List.of("1", "2"));
+        typeDefClient.postStateValidators(List.of("1", "2"));
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(expected);
@@ -517,8 +513,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final UInt64 epoch = ONE;
     final IntList validatorIndices = IntList.of(1, 2);
-    Optional<SyncCommitteeDuties> result =
-        okHttpValidatorTypeDefClient.postSyncDuties(epoch, validatorIndices);
+    Optional<SyncCommitteeDuties> result = typeDefClient.postSyncDuties(epoch, validatorIndices);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/sync/" + epoch);
@@ -543,8 +538,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final UInt64 epoch = ONE;
     final IntList validatorIndices = IntList.of(1, 2);
-    Optional<AttesterDuties> result =
-        okHttpValidatorTypeDefClient.postAttesterDuties(epoch, validatorIndices);
+    Optional<AttesterDuties> result = typeDefClient.postAttesterDuties(epoch, validatorIndices);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/attester/" + epoch);
@@ -565,7 +559,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final Collection<SyncCommitteeSubnetSubscription> subscriptions =
         List.of(new SyncCommitteeSubnetSubscription(0, IntSet.of(1), UInt64.ZERO));
 
-    okHttpValidatorTypeDefClient.subscribeToSyncCommitteeSubnets(subscriptions);
+    typeDefClient.subscribeToSyncCommitteeSubnets(subscriptions);
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getPath())
         .isEqualTo("/eth/v1/validator/sync_committee_subscriptions");
@@ -585,7 +579,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
-    okHttpValidatorTypeDefClient.subscribeToPersistentSubnets(subnetSubscriptions);
+    typeDefClient.subscribeToPersistentSubnets(subnetSubscriptions);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -604,8 +598,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                 dataStructureUtil.randomPositiveInt(64), dataStructureUtil.randomSlot()));
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-    assertThatThrownBy(
-            () -> okHttpValidatorTypeDefClient.subscribeToPersistentSubnets(subnetSubscriptions))
+    assertThatThrownBy(() -> typeDefClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -618,8 +611,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
-    assertThatThrownBy(
-            () -> okHttpValidatorTypeDefClient.subscribeToPersistentSubnets(subnetSubscriptions))
+    assertThatThrownBy(() -> typeDefClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining(serverErrorFromApi);
   }
@@ -644,7 +636,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
-    okHttpValidatorTypeDefClient.subscribeToBeaconCommittee(
+    typeDefClient.subscribeToBeaconCommittee(
         List.of(
             new CommitteeSubscriptionRequest(
                 validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
@@ -669,7 +661,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThatThrownBy(
             () ->
-                okHttpValidatorTypeDefClient.subscribeToBeaconCommittee(
+                typeDefClient.subscribeToBeaconCommittee(
                     List.of(
                         new CommitteeSubscriptionRequest(
                             1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
@@ -685,7 +677,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThatThrownBy(
             () ->
-                okHttpValidatorTypeDefClient.subscribeToBeaconCommittee(
+                typeDefClient.subscribeToBeaconCommittee(
                     List.of(
                         new CommitteeSubscriptionRequest(
                             1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
@@ -696,7 +688,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   @TestTemplate
   public void sendSignedContributionAndProof_emptyListIsNoop() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
-    okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of());
+    typeDefClient.sendContributionAndProofs(List.of());
     assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
   }
 
@@ -705,7 +697,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof();
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-    okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of(proof));
+    typeDefClient.sendContributionAndProofs(List.of(proof));
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -720,14 +712,14 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ALTAIR);
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof();
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-    assertThatThrownBy(() -> okHttpValidatorTypeDefClient.sendContributionAndProofs(List.of(proof)))
+    assertThatThrownBy(() -> typeDefClient.sendContributionAndProofs(List.of(proof)))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @TestTemplate
   public void prepareBeaconProposer_emptyListIsNoop() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
-    okHttpValidatorTypeDefClient.prepareBeaconProposer(List.of());
+    typeDefClient.prepareBeaconProposer(List.of());
     assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
   }
 
@@ -737,7 +729,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
     assertThatThrownBy(
             () ->
-                okHttpValidatorTypeDefClient.prepareBeaconProposer(
+                typeDefClient.prepareBeaconProposer(
                     List.of(dataStructureUtil.randomBeaconPreparableProposer())))
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -746,7 +738,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   public void prepareBeaconProposer_acceptsPopulatedList() throws InterruptedException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-    okHttpValidatorTypeDefClient.prepareBeaconProposer(
+    typeDefClient.prepareBeaconProposer(
         List.of(dataStructureUtil.randomBeaconPreparableProposer()));
 
     final RecordedRequest request = mockWebServer.takeRequest();
@@ -765,7 +757,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    okHttpValidatorTypeDefClient.createAggregate(slot, attestationHashTreeRoot);
+    typeDefClient.createAggregate(slot, attestationHashTreeRoot);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -782,8 +774,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(
-            () -> okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
+    assertThatThrownBy(() -> typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -793,8 +784,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
-    assertThat(okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
-        .isEmpty();
+    assertThat(typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot)).isEmpty();
   }
 
   @TestTemplate
@@ -803,8 +793,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
-    assertThatThrownBy(
-            () -> okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
+    assertThatThrownBy(() -> typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Server error from Beacon Node API");
   }
@@ -824,7 +813,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         new MockResponse().setResponseCode(SC_OK).setBody("{\"data\": " + body + "}"));
 
     final Optional<Attestation> attestation =
-        okHttpValidatorTypeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
+        typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
 
     assertThat(attestation).isPresent();
     assertThat(attestation.get()).isEqualTo(expectedAttestation);
