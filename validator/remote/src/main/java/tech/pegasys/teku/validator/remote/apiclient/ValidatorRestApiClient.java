@@ -18,7 +18,6 @@ import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 
 public interface ValidatorRestApiClient {
 
@@ -26,7 +25,4 @@ public interface ValidatorRestApiClient {
 
   Optional<PostDataFailureResponse> sendAggregateAndProofs(
       List<SignedAggregateAndProof> signedAggregateAndProof);
-
-  Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
-      List<SyncCommitteeMessage> syncCommitteeMessages);
 }

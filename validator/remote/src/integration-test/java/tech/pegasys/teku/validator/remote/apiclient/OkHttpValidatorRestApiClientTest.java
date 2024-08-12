@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -147,28 +146,6 @@ class OkHttpValidatorRestApiClientTest {
     assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  void sendSyncCommitteeMessages_shouldReturnEmptyWhenResponseIsOk() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-
-    assertThat(apiClient.sendSyncCommitteeMessages(emptyList())).isEmpty();
-  }
-
-  @Test
-  void sendSyncCommitteeMessages_shouldReturnErrorsFromBadResponse() {
-    final PostDataFailureResponse response =
-        new PostDataFailureResponse(
-            SC_BAD_REQUEST, "Computer said no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
-
-    assertThat(apiClient.sendSyncCommitteeMessages(emptyList()))
-        .isPresent()
-        .get()
-        .usingRecursiveComparison()
-        .isEqualTo(response);
   }
 
   private String asJson(final Object object) {
