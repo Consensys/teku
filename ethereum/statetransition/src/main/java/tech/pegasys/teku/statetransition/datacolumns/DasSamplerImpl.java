@@ -112,8 +112,6 @@ public class DasSamplerImpl
 
   private synchronized void onRequestComplete(PendingRequest request, DataColumnSidecar response) {
     onNewValidatedDataColumnSidecar(response);
-    pendingRequests.remove(request.columnId);
-    syncedColumnCount.incrementAndGet();
     fillUpIfNeeded();
   }
 
@@ -216,6 +214,20 @@ public class DasSamplerImpl
           onMaybeNewValidatedIdentifier(
               dataColumnSidecar.getSlot(),
               DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
+      newIdentifiers.forEach(
+          newIdentifier -> {
+            final Optional<PendingRequest> maybeRequest =
+                Optional.ofNullable(
+                    pendingRequests.remove(
+                        new ColumnSlotAndIdentifier(dataColumnSidecar.getSlot(), newIdentifier)));
+            maybeRequest.ifPresent(
+                pendingRequest -> {
+                  if (!pendingRequest.columnPromise().isDone()) {
+                    pendingRequest.columnPromise().cancel(true);
+                  }
+                  syncedColumnCount.incrementAndGet();
+                });
+          });
 
       // IF we've collected 50%, everything from this slot is available
       final Set<DataColumnIdentifier> thisSlotDataColumnIdentifiers =
