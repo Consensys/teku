@@ -28,7 +28,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -49,8 +48,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -75,21 +72,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
-import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 class RemoteValidatorApiHandlerTest {
@@ -99,8 +92,6 @@ class RemoteValidatorApiHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  private final ValidatorRestApiClient apiClient = mock(ValidatorRestApiClient.class);
-
   private final OkHttpValidatorTypeDefClient typeDefClient =
       mock(OkHttpValidatorTypeDefClient.class);
 
@@ -108,8 +99,7 @@ class RemoteValidatorApiHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler =
-        new RemoteValidatorApiHandler(endpoint, apiClient, typeDefClient, asyncRunner, true);
+    apiHandler = new RemoteValidatorApiHandler(endpoint, typeDefClient, asyncRunner, true);
   }
 
   @Test
@@ -475,33 +465,6 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedAttestation_InvokeApiWithCorrectRequest() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-
-    final PostDataFailureResponse failureResponse =
-        new PostDataFailureResponse(
-            SC_BAD_REQUEST, "Oh no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
-    when(apiClient.sendSignedAttestations(any())).thenReturn(Optional.of(failureResponse));
-
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
-
-    @SuppressWarnings("unchecked")
-    ArgumentCaptor<List<tech.pegasys.teku.api.schema.Attestation>> argumentCaptor =
-        ArgumentCaptor.forClass(List.class);
-
-    final SafeFuture<List<SubmitDataError>> result =
-        apiHandler.sendSignedAttestations(List.of(attestation));
-    asyncRunner.executeQueuedActions();
-
-    verify(apiClient).sendSignedAttestations(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue())
-        .usingRecursiveComparison()
-        .isEqualTo(List.of(schemaAttestation));
-    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(UInt64.ZERO, "Bad")));
-  }
-
-  @Test
   public void createUnsignedBlock_WhenNoneFound_ReturnsEmpty() {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
 
@@ -637,33 +600,6 @@ class RemoteValidatorApiHandlerTest {
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void sendsAggregateAndProof_InvokeApiWithCorrectRequest() {
-    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
-    final BLSSignature signature = dataStructureUtil.randomSignature();
-    final SignedAggregateAndProof signedAggregateAndProof =
-        spec.getGenesisSchemaDefinitions()
-            .getSignedAggregateAndProofSchema()
-            .create(aggregateAndProof, signature);
-
-    tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggAndProof =
-        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
-
-    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> argumentCaptor =
-        ArgumentCaptor.forClass(List.class);
-
-    final SafeFuture<List<SubmitDataError>> result =
-        apiHandler.sendAggregateAndProofs(List.of(signedAggregateAndProof));
-    asyncRunner.executeQueuedActions();
-
-    verify(apiClient).sendAggregateAndProofs(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue())
-        .usingRecursiveComparison()
-        .isEqualTo(List.of(schemaSignedAggAndProof));
-    assertThat(result).isCompletedWithValue(emptyList());
   }
 
   @Test
