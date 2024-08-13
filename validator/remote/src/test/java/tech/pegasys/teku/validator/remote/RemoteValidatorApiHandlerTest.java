@@ -523,12 +523,12 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContainerAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
-            eq(false)))
+            eq(Optional.empty())))
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+            ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
@@ -554,7 +554,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.empty(), Optional.of(ONE));
+            ONE, blsSignature, graffiti, Optional.of(ONE));
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
@@ -575,12 +575,12 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContentsAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
-            eq(false)))
+            eq(Optional.empty())))
         .thenReturn(Optional.of(blockContentsAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+            ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContentsAndMetaData);

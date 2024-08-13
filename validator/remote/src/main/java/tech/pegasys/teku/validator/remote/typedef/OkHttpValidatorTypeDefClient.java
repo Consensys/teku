@@ -139,25 +139,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return sendSignedBlockRequest.submit(blockContainer, broadcastValidationLevel);
   }
 
-  @Deprecated
-  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
-      final UInt64 slot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> graffiti,
-      final boolean blinded) {
-    final CreateBlockRequest createBlockRequest =
-        new CreateBlockRequest(
-            getBaseEndpoint(), getOkHttpClient(), spec, slot, blinded, preferSszBlockEncoding);
-    try {
-      return createBlockRequest.submit(randaoReveal, graffiti);
-    } catch (final BlindedBlockEndpointNotAvailableException ex) {
-      LOG.warn(
-          "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
-          getBaseEndpoint());
-      return createUnsignedBlock(slot, randaoReveal, graffiti, false);
-    }
-  }
-
   public Optional<BlockContainerAndMetaData> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
@@ -169,11 +150,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     try {
       return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
     } catch (final BlockProductionV3FailedException ex) {
-      LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
-
-      // Falling back to V2, we have to request a blinded block to be able to support both local and
-      // builder flow.
-      return createUnsignedBlock(slot, randaoReveal, graffiti, true);
+      LOG.warn("Produce Block V3 request failed at slot {}.", slot);
+        return Optional.empty();
     }
   }
 

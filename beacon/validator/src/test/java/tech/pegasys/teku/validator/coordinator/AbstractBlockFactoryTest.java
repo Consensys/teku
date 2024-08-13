@@ -237,7 +237,6 @@ public abstract class AbstractBlockFactoryTest {
                 newSlot,
                 randaoReveal,
                 Optional.empty(),
-                Optional.of(blinded),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP));
 

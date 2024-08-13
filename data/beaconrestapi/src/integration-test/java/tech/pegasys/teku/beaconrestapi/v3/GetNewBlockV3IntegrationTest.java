@@ -77,7 +77,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+            eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(
@@ -101,7 +101,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+            eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(
@@ -124,7 +124,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+            eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(
@@ -149,7 +149,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+            eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(
@@ -173,7 +173,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+            eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(
@@ -197,7 +197,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+            eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(
@@ -218,7 +218,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+            eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);

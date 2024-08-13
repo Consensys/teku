@@ -256,7 +256,6 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -302,7 +301,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 randaoReveal,
                 Optional.of(defaultGraffiti),
-                Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -391,7 +389,6 @@ class BlockOperationSelectorFactoryTest {
                 randaoReveal,
                 Optional.of(defaultGraffiti),
                 Optional.empty(),
-                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -422,7 +419,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -443,7 +439,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(true),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -471,7 +466,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -503,7 +497,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(true),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -534,7 +527,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -566,7 +558,6 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -596,7 +587,6 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
-                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -638,7 +628,6 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
-                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -704,7 +693,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -745,8 +733,7 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(true),
-                Optional.empty(),
+                Optional.of(UInt64.ONE),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -979,7 +966,6 @@ class BlockOperationSelectorFactoryTest {
                     blockSlotState,
                     dataStructureUtil.randomSignature(),
                     Optional.empty(),
-                    Optional.of(false),
                     Optional.empty(),
                     BlockProductionPerformance.NOOP)
                 .apply(bodyBuilder))

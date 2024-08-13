@@ -97,19 +97,6 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  @Deprecated // This method is used within the blockV1 and blockV2 flow. It will be deprecated in
-  // the future.
-  public SafeFuture<Optional<BlockContainerAndMetaData>> getUnsignedBeaconBlockAtSlot(
-      final UInt64 slot,
-      final BLSSignature randao,
-      final Optional<Bytes32> graffiti,
-      final boolean isBlinded,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
-    checkBlockProducingParameters(slot, randao);
-    return validatorApiChannel.createUnsignedBlock(
-        slot, randao, graffiti, Optional.of(isBlinded), requestedBuilderBoostFactor);
-  }
-
   public SafeFuture<Optional<BlockContainerAndMetaData>> produceBlock(
       final UInt64 slot,
       final BLSSignature randao,
@@ -117,7 +104,7 @@ public class ValidatorDataProvider {
       final Optional<UInt64> requestedBuilderBoostFactor) {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel.createUnsignedBlock(
-        slot, randao, graffiti, Optional.empty(), requestedBuilderBoostFactor);
+        slot, randao, graffiti, requestedBuilderBoostFactor);
   }
 
   private void checkBlockProducingParameters(final UInt64 slot, final BLSSignature randao) {

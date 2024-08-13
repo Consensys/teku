@@ -176,7 +176,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),
             Optional.empty(),
-            true);
+            Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
         .hasValue(blockContainer);
@@ -186,7 +186,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final RecordedRequest firstRequest = mockWebServer.takeRequest();
     assertThat(firstRequest.getPath()).startsWith("/eth/v1/validator/blinded_blocks");
     final RecordedRequest secondRequest = mockWebServer.takeRequest();
-    assertThat(secondRequest.getPath()).startsWith("/eth/v2/validator/blocks");
+    assertThat(secondRequest.getPath()).startsWith("/eth/v3/validator/blocks");
   }
 
   @TestTemplate

@@ -500,7 +500,6 @@ class ValidatorApiHandlerTest {
             ONE,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
@@ -521,7 +520,6 @@ class ValidatorApiHandlerTest {
             newSlot,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
@@ -544,7 +542,6 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
@@ -554,7 +551,7 @@ class ValidatorApiHandlerTest {
     // we still want to check that all parameters are passed down the line to the block factory
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE));
+            newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
 
     verify(blockFactory)
         .createUnsignedBlock(
@@ -562,7 +559,6 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP);
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
@@ -915,14 +911,13 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
     assertThat(
             validatorApiHandler.createUnsignedBlock(
-                newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE)))
+                newSlot, randaoReveal, Optional.empty(), Optional.of(ONE)))
         .isCompleted();
 
     final SignedBeaconBlock block =
