@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
@@ -53,6 +54,9 @@ public class RecoveringSidecarRetrieverTest {
       SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
   final MiscHelpersEip7594 miscHelpers =
       MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
+  final SchemaDefinitionsEip7594 schemaDefinitions =
+      SchemaDefinitionsEip7594.required(
+          spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions());
   final int columnCount = config.getNumberOfColumns();
   final KZG kzg = KZG.getInstance(false);
 
@@ -82,6 +86,7 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             kzg,
             miscHelpers,
+            schemaDefinitions,
             blockResolver,
             db,
             stubAsyncRunner,

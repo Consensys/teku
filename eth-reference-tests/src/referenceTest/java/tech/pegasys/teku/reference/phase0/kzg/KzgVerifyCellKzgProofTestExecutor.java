@@ -39,7 +39,7 @@ public class KzgVerifyCellKzgProofTestExecutor extends KzgTestExecutor {
               data.getInput().getCommitment(),
               new KZGCellWithColumnId(
                   data.getInput().getCell(),
-                  new KZGCellID(UInt64.valueOf(data.getInput().getCellId()))),
+                  new KZGCellID(UInt64.valueOf(data.getInput().getCellIndex()))),
               data.getInput().getProof());
     } catch (final RuntimeException ex) {
       actualVerificationResult = null;
@@ -66,8 +66,8 @@ public class KzgVerifyCellKzgProofTestExecutor extends KzgTestExecutor {
       @JsonProperty(value = "commitment", required = true)
       private String commitment;
 
-      @JsonProperty(value = "cell_id", required = true)
-      private Integer cellId;
+      @JsonProperty(value = "cell_index", required = true)
+      private Integer cellIndex;
 
       @JsonProperty(value = "cell", required = true)
       private String cell;
@@ -79,8 +79,8 @@ public class KzgVerifyCellKzgProofTestExecutor extends KzgTestExecutor {
         return KZGCommitment.fromHexString(commitment);
       }
 
-      public Integer getCellId() {
-        return cellId;
+      public Integer getCellIndex() {
+        return cellIndex;
       }
 
       public KZGCell getCell() {

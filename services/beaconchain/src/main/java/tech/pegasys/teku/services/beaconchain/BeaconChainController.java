@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -707,11 +708,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             Duration.ofSeconds(1));
     MiscHelpersEip7594 miscHelpersEip7594 =
         MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
+    SchemaDefinitionsEip7594 schemaDefinitionsEip7594 =
+        SchemaDefinitionsEip7594.required(
+            spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions());
     RecoveringSidecarRetriever recoveringSidecarRetriever =
         new RecoveringSidecarRetriever(
             sidecarRetriever,
             kzg,
             miscHelpersEip7594,
+            schemaDefinitionsEip7594,
             canonicalBlockResolver,
             sidecarDB,
             operationPoolAsyncRunner,

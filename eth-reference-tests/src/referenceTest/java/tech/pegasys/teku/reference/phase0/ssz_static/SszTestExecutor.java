@@ -195,7 +195,10 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsEip7594.required(schemas).getDataColumnSidecarSchema()))
-
+          .put(
+              "ssz_static/MatrixEntry",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsEip7594.required(schemas).getMatrixEntrySchema()))
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
               "ssz_static/AttestationData", new SszTestExecutor<>(__ -> AttestationData.SSZ_SCHEMA))

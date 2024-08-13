@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
@@ -78,6 +79,7 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
   private final CellSchema cellSchema;
   private final DataColumnSchema dataColumnSchema;
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
+  private final MatrixEntrySchema matrixEntrySchema;
   private final DataColumnSidecarsByRootRequestMessageSchema
       dataColumnSidecarsByRootRequestMessageSchema;
   private final DataColumnSidecarsByRangeRequestMessage
@@ -137,6 +139,7 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
     this.dataColumnSidecarSchema =
         DataColumnSidecarSchema.create(
             SignedBeaconBlockHeader.SSZ_SCHEMA, dataColumnSchema, specConfig);
+    this.matrixEntrySchema = MatrixEntrySchema.create(cellSchema);
     this.dataColumnSidecarsByRootRequestMessageSchema =
         new DataColumnSidecarsByRootRequestMessageSchema(specConfig);
     this.dataColumnSidecarsByRangeRequestMessageSchema =
@@ -264,16 +267,20 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
     return Optional.of(this);
   }
 
-  public DataColumnSidecarSchema getDataColumnSidecarSchema() {
-    return dataColumnSidecarSchema;
+  public CellSchema getCellSchema() {
+    return cellSchema;
   }
 
   public DataColumnSchema getDataColumnSchema() {
     return dataColumnSchema;
   }
 
-  public CellSchema getCellSchema() {
-    return cellSchema;
+  public DataColumnSidecarSchema getDataColumnSidecarSchema() {
+    return dataColumnSidecarSchema;
+  }
+
+  public MatrixEntrySchema getMatrixEntrySchema() {
+    return matrixEntrySchema;
   }
 
   public DataColumnSidecarsByRootRequestMessageSchema

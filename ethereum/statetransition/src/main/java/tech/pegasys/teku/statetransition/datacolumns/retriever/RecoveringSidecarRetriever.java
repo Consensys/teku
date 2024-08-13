@@ -30,15 +30,13 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCell;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
-import tech.pegasys.teku.kzg.KZGCellID;
-import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDB;
@@ -49,6 +47,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final DataColumnSidecarRetriever delegate;
   private final KZG kzg;
   private final MiscHelpersEip7594 specHelpers;
+  private final SchemaDefinitionsEip7594 schemaDefinitions;
   private final CanonicalBlockResolver blockResolver;
   private final DataColumnSidecarDB sidecarDB;
   private final AsyncRunner asyncRunner;
@@ -62,6 +61,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       DataColumnSidecarRetriever delegate,
       KZG kzg,
       MiscHelpersEip7594 specHelpers,
+      SchemaDefinitionsEip7594 schemaDefinitionsEip7594,
       CanonicalBlockResolver blockResolver,
       DataColumnSidecarDB sidecarDB,
       AsyncRunner asyncRunner,
@@ -70,6 +70,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.delegate = delegate;
     this.kzg = kzg;
     this.specHelpers = specHelpers;
+    this.schemaDefinitions = schemaDefinitionsEip7594;
     this.blockResolver = blockResolver;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
@@ -248,28 +249,30 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     private void recover() {
-      List<List<KZGCellWithColumnId>> columnBlobCells =
+      List<List<MatrixEntry>> columnBlobEntries =
           existingSidecarsByColIdx.values().stream()
               .map(
                   sideCar ->
-                      sideCar.getDataColumn().stream()
-                          .map(
-                              cell ->
-                                  new KZGCellWithColumnId(
-                                      new KZGCell(cell.getBytes()),
-                                      new KZGCellID(sideCar.getIndex())))
+                      IntStream.range(0, sideCar.getDataColumn().size())
+                          .mapToObj(
+                              rowIndex ->
+                                  schemaDefinitions
+                                      .getMatrixEntrySchema()
+                                      .create(
+                                          sideCar.getDataColumn().get(rowIndex),
+                                          sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
+                                          sideCar.getIndex(),
+                                          UInt64.valueOf(rowIndex)))
                           .toList())
               .toList();
-      List<List<KZGCellWithColumnId>> blobColumnCells = transpose(columnBlobCells);
-      List<List<KZGCellAndProof>> kzgCellsAndProofs =
-          blobColumnCells.stream().parallel().map(kzg::recoverCellsAndProofs).toList();
+      List<List<MatrixEntry>> blobColumnEntries = transpose(columnBlobEntries);
+      List<List<MatrixEntry>> extendedMatrix = specHelpers.recoverMatrix(blobColumnEntries, kzg);
       DataColumnSidecar anyExistingSidecar =
           existingSidecarsByColIdx.values().stream().findFirst().orElseThrow();
       SignedBeaconBlockHeader signedBeaconBlockHeader =
           anyExistingSidecar.getSignedBeaconBlockHeader();
       List<DataColumnSidecar> recoveredSidecars =
-          specHelpers.constructDataColumnSidecars(
-              block, signedBeaconBlockHeader, kzgCellsAndProofs);
+          specHelpers.constructDataColumnSidecars(block, signedBeaconBlockHeader, extendedMatrix);
       Map<UInt64, DataColumnSidecar> recoveredSidecarsAsMap =
           recoveredSidecars.stream()
               .collect(Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, i -> i));

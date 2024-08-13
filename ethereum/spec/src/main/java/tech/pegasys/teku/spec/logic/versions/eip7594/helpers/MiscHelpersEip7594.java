@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.eip7594.helpers;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,15 +33,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
+import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.Cell;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumn;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -192,14 +194,42 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     return constructDataColumnSidecars(
         signedBeaconBlock.getMessage(),
         signedBeaconBlock.asHeader(),
-        blobs.stream().map(blob -> kzg.computeCellsAndProofs(blob.getBytes())).toList());
+        computeExtendedMatrix(blobs, kzg));
+  }
+
+  /**
+   * Return the full ``ExtendedMatrix``.
+   *
+   * <p>This helper demonstrates the relationship between blobs and ``ExtendedMatrix``.
+   *
+   * <p>>The data structure for storing cells is implementation-dependent.
+   */
+  public List<List<MatrixEntry>> computeExtendedMatrix(final List<Blob> blobs, final KZG kzg) {
+    final List<List<MatrixEntry>> extendedMatrix = new ArrayList<>();
+    for (int blobIndex = 0; blobIndex < blobs.size(); ++blobIndex) {
+      final List<MatrixEntry> row = new ArrayList<>();
+      final List<KZGCellAndProof> kzgCellAndProofs =
+          kzg.computeCellsAndProofs(blobs.get(blobIndex).getBytes());
+      for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
+        row.add(
+            schemaDefinitions
+                .getMatrixEntrySchema()
+                .create(
+                    kzgCellAndProofs.get(cellIndex).cell(),
+                    kzgCellAndProofs.get(cellIndex).proof(),
+                    blobIndex,
+                    cellIndex));
+      }
+      extendedMatrix.add(row);
+    }
+    return extendedMatrix;
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final BeaconBlock beaconBlock,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
-      final List<List<KZGCellAndProof>> blobsCellsAndProofs) {
-    if (blobsCellsAndProofs.isEmpty()) {
+      final List<List<MatrixEntry>> extendedMatrix) {
+    if (extendedMatrix.isEmpty()) {
       return Collections.emptyList();
     }
     final BeaconBlockBodyEip7594 beaconBlockBody =
@@ -208,30 +238,24 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     final List<Bytes32> kzgCommitmentsInclusionProof =
         computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
 
-    final CellSchema cellSchema = schemaDefinitions.getCellSchema();
     final DataColumnSchema dataColumnSchema = schemaDefinitions.getDataColumnSchema();
     final DataColumnSidecarSchema dataColumnSidecarSchema =
         schemaDefinitions.getDataColumnSidecarSchema();
     final SszListSchema<SszKZGProof, ?> kzgProofsSchema =
         dataColumnSidecarSchema.getKzgProofsSchema();
 
-    int columnCount = blobsCellsAndProofs.get(0).size();
+    int columnCount = extendedMatrix.get(0).size();
 
     return IntStream.range(0, columnCount)
         .mapToObj(
             cellID -> {
-              List<KZGCellAndProof> columnData =
-                  blobsCellsAndProofs.stream().map(row -> row.get(cellID)).toList();
-              List<Cell> columnCells =
-                  columnData.stream()
-                      .map(KZGCellAndProof::cell)
-                      .map(KZGCell::bytes)
-                      .map(cellSchema::create)
-                      .toList();
+              List<MatrixEntry> columnData =
+                  extendedMatrix.stream().map(row -> row.get(cellID)).toList();
+              List<Cell> columnCells = columnData.stream().map(MatrixEntry::getCell).toList();
 
               SszList<SszKZGProof> columnProofs =
                   columnData.stream()
-                      .map(KZGCellAndProof::proof)
+                      .map(MatrixEntry::getKzgProof)
                       .map(SszKZGProof::new)
                       .collect(kzgProofsSchema.collector());
               final DataColumn dataColumn = dataColumnSchema.create(columnCells);
@@ -243,6 +267,45 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
                   columnProofs,
                   signedBeaconBlockHeader,
                   kzgCommitmentsInclusionProof);
+            })
+        .toList();
+  }
+
+  /**
+   * Return the recovered extended matrix.
+   *
+   * <p>This helper demonstrates how to apply ``recover_cells_and_kzg_proofs``.
+   *
+   * <p>The data structure for storing cells is implementation-dependent.
+   */
+  public List<List<MatrixEntry>> recoverMatrix(
+      final List<List<MatrixEntry>> partialMatrix, final KZG kzg) {
+    return IntStream.range(0, partialMatrix.size())
+        .parallel()
+        .mapToObj(
+            blobIndex -> {
+              final List<KZGCellWithColumnId> cellWithColumnIds =
+                  partialMatrix.get(blobIndex).stream()
+                      .filter(entry -> entry.getRowIndex().intValue() == blobIndex)
+                      .map(
+                          entry ->
+                              new KZGCellWithColumnId(
+                                  new KZGCell(entry.getCell().getBytes()),
+                                  new KZGCellID(entry.getColumnIndex())))
+                      .toList();
+              final List<KZGCellAndProof> kzgCellAndProofs =
+                  kzg.recoverCellsAndProofs(cellWithColumnIds);
+              return IntStream.range(0, kzgCellAndProofs.size())
+                  .mapToObj(
+                      kzgCellAndProofIndex ->
+                          schemaDefinitions
+                              .getMatrixEntrySchema()
+                              .create(
+                                  kzgCellAndProofs.get(kzgCellAndProofIndex).cell(),
+                                  kzgCellAndProofs.get(kzgCellAndProofIndex).proof(),
+                                  kzgCellAndProofIndex,
+                                  blobIndex))
+                  .toList();
             })
         .toList();
   }

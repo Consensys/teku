@@ -43,4 +43,9 @@ task generateReferenceTestClasses(type: JavaExec) {
   systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)
 }
 
-compileReferenceTestJava.dependsOn(generateReferenceTestClasses)
+compileReferenceTestJava {
+  dependsOn generateReferenceTestClasses
+  // Fork worker to compile tests and avoid OoM errors during compilation
+  options.fork = true
+  options.forkOptions.memoryMaximumSize = "2048m"
+}
