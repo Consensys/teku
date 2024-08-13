@@ -18,7 +18,6 @@ import static tech.pegasys.teku.validator.remote.typedef.FailureListResponse.get
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -36,12 +35,11 @@ public class SendSyncCommitteeRequest extends AbstractTypeDefRequest {
     if (syncCommitteeMessages.isEmpty()) {
       return Collections.emptyList();
     }
-    final Map<String, String> foo = Collections.emptyMap();
     final DeserializableTypeDefinition<SyncCommitteeMessage> jsonTypeDefinition =
         syncCommitteeMessages.getFirst().getSchema().getJsonTypeDefinition();
     return postJson(
             ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES,
-            foo,
+            Collections.emptyMap(),
             syncCommitteeMessages,
             listOf(jsonTypeDefinition),
             getFailureListResponseResponseHandler())
