@@ -49,6 +49,7 @@ import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager.Builder;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
@@ -309,7 +310,7 @@ public class Eth2P2PNetworkFactory {
                 .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
                 .build();
 
-        final GossipForkManager.Builder gossipForkManagerBuilder =
+        final Builder gossipForkManagerBuilder =
             GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
 
         spec.getEnabledMilestones().stream()
@@ -455,6 +456,7 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
+        case EIP7732 -> throw new UnsupportedOperationException("TODO");
       };
     }
 
