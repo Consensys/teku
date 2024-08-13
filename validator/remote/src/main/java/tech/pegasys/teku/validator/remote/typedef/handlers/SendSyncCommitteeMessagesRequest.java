@@ -26,8 +26,9 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.FailureListResponse;
 
-public class SendSyncCommitteeRequest extends AbstractTypeDefRequest {
-  public SendSyncCommitteeRequest(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+public class SendSyncCommitteeMessagesRequest extends AbstractTypeDefRequest {
+  public SendSyncCommitteeMessagesRequest(
+      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     super(baseEndpoint, okHttpClient);
   }
 
