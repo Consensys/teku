@@ -269,22 +269,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
-    return sendRequest(
-        () ->
-            apiClient
-                .sendSyncCommitteeMessages(
-                    syncCommitteeMessages.stream()
-                        .map(
-                            signature ->
-                                new tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage(
-                                    signature.getSlot(),
-                                    signature.getBeaconBlockRoot(),
-                                    signature.getValidatorIndex(),
-                                    new tech.pegasys.teku.api.schema.BLSSignature(
-                                        signature.getSignature())))
-                        .toList())
-                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
-                .orElse(emptyList()));
+    return sendRequest(() -> typeDefClient.sendSyncCommitteeMessages(syncCommitteeMessages));
   }
 
   @Override

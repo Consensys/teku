@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -36,7 +35,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
@@ -73,17 +71,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         SEND_SIGNED_AGGREGATE_AND_PROOF,
         Collections.emptyMap(),
         signedAggregateAndProof,
-        ResponseHandler.createForEmptyOkAndContentInBadResponse(
-            jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
-      final List<SyncCommitteeMessage> syncCommitteeMessages) {
-    return post(
-        SEND_SYNC_COMMITTEE_MESSAGES,
-        Collections.emptyMap(),
-        syncCommitteeMessages,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
   }
