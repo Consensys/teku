@@ -226,12 +226,12 @@ public class BlockOperationSelectorFactory {
 
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
-      if (shouldTryBuilderFlow) {
-        bodyBuilder.executionPayloadHeader(
-            schemaDefinitions.getExecutionPayloadHeaderSchema().getHeaderOfDefaultPayload());
-      } else {
-        bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
-      }
+
+      bodyBuilder.executionPayloadHeader(
+          schemaDefinitions.getExecutionPayloadHeaderSchema().getHeaderOfDefaultPayload());
+
+      bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
+
       return SafeFuture.COMPLETE;
     }
 
@@ -245,7 +245,7 @@ public class BlockOperationSelectorFactory {
 
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        setPayloadOrPayloadHeader(bodyBuilder, schemaDefinitions, executionPayloadResult),
+        setPayloadOrPayloadHeader(bodyBuilder, executionPayloadResult),
         setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
   }
 
@@ -261,7 +261,6 @@ public class BlockOperationSelectorFactory {
 
   private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final SchemaDefinitionsBellatrix schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
 
     if (executionPayloadResult.isFromLocalFlow()) {
