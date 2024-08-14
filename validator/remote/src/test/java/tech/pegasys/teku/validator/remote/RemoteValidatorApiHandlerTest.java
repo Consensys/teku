@@ -20,16 +20,12 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
@@ -104,7 +100,7 @@ class RemoteValidatorApiHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler = new RemoteValidatorApiHandler(endpoint, spec, typeDefClient, asyncRunner, true);
+    apiHandler = new RemoteValidatorApiHandler(endpoint, typeDefClient, asyncRunner, true);
   }
 
   @Test
@@ -467,46 +463,6 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
-  }
-
-  @Test
-  public void postAttestations_ShouldReturnEmptyListImmediately_WhenEmptyList() {
-    final Spec mockedSpec = mock(Spec.class);
-    apiHandler =
-        new RemoteValidatorApiHandler(endpoint, mockedSpec, typeDefClient, asyncRunner, true);
-    ignoreFuture(apiHandler.sendSignedAttestations(Collections.emptyList()));
-    asyncRunner.executeQueuedActions();
-
-    verifyNoInteractions(mockedSpec);
-    verifyNoInteractions(typeDefClient);
-  }
-
-  @Test
-  public void postAttestations_ShouldUseV1ApiPreElectra() {
-    final List<Attestation> attestations =
-        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-
-    ignoreFuture(apiHandler.sendSignedAttestations(attestations));
-    asyncRunner.executeQueuedActions();
-
-    verify(typeDefClient, never()).postSignedAttestations(anyList(), any());
-    verify(typeDefClient).sendSignedAttestations(attestations);
-  }
-
-  @Test
-  public void postAttestations_ShouldUseV2ApiPostElectra() {
-    final Spec electraSpec = TestSpecFactory.createMainnetElectra();
-    apiHandler =
-        new RemoteValidatorApiHandler(endpoint, electraSpec, typeDefClient, asyncRunner, true);
-    final List<Attestation> attestations =
-        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-
-    ignoreFuture(apiHandler.sendSignedAttestations(attestations));
-    asyncRunner.executeQueuedActions();
-
-    verify(typeDefClient, never()).createAggregate(any(), any());
-    verify(typeDefClient)
-        .postSignedAttestations(attestations, electraSpec.getGenesisSpec().getMilestone());
   }
 
   @Test

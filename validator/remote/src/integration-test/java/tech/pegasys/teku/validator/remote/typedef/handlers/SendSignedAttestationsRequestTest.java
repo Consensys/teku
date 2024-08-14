@@ -88,6 +88,12 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
   }
 
   @TestTemplate
+  void shouldNoTMakeRequestIfEmptyAttestationsList() {
+    request.submit(Collections.emptyList());
+    assertThat(mockWebServer.getRequestCount()).isZero();
+  }
+
+  @TestTemplate
   void handle500() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
     assertThatThrownBy(() -> request.submit(attestations))
