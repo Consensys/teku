@@ -110,7 +110,7 @@ public class DasSamplerImpl
     this(spec, db, recentChainData, myDataColumnSampleCount, retriever, 10 * 1024, 2 * 1024);
   }
 
-  private synchronized void onRequestComplete(PendingRequest request, DataColumnSidecar response) {
+  private synchronized void onRequestComplete(DataColumnSidecar response) {
     onNewValidatedDataColumnSidecar(response);
     fillUpIfNeeded();
   }
@@ -176,8 +176,7 @@ public class DasSamplerImpl
     final SafeFuture<DataColumnSidecar> promise = retriever.retrieve(missingColumn);
     final PendingRequest request = new PendingRequest(missingColumn, promise);
     pendingRequests.put(missingColumn, request);
-    promise.finish(
-        response -> onRequestComplete(request, response), err -> onRequestException(request, err));
+    promise.finish(this::onRequestComplete, err -> onRequestException(request, err));
   }
 
   @Override
