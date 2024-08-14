@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.typedef;
 
 import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
@@ -39,7 +39,7 @@ public class AbstractTypeDefRequestTestBase {
   protected static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
   protected static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
 
-  protected static final JsonProvider JSON_PROVIDER = new JsonProvider();
+  protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   protected DataStructureUtil dataStructureUtil;
   protected SchemaDefinitions schemaDefinitions;
