@@ -102,13 +102,15 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.beaconStateSchema = BeaconStateSchemaEip7732.create(specConfig);
     this.executionPayloadHeaderSchemaElectra =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
+    this.payloadAttestationSchema = new PayloadAttestationSchema(specConfig.getPtcSize());
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaEip7732Impl.create(
             specConfig,
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
-            getBlobKzgCommitmentsSchema(),
             maxValidatorsPerAttestation,
+            executionPayloadHeaderSchemaElectra,
+            payloadAttestationSchema,
             "BeaconBlockBodyEip7732");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
@@ -145,7 +147,6 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
 
-    this.payloadAttestationSchema = new PayloadAttestationSchema(specConfig.getPtcSize());
     this.indexedPayloadAttestationSchema =
         new IndexedPayloadAttestationSchema(specConfig.getPtcSize());
     this.signedExecutionPayloadHeaderSchema =

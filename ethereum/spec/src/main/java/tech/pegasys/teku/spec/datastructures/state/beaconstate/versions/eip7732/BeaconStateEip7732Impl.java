@@ -61,6 +61,6 @@ public class BeaconStateEip7732Impl extends AbstractBeaconState<MutableBeaconSta
 
   @Override
   protected void describeCustomFields(final MoreObjects.ToStringHelper stringBuilder) {
-    BeaconStateEip7732.describeCustomElectraFields(stringBuilder, this);
+    BeaconStateEip7732.describeCustomEip7732Fields(stringBuilder, this);
   }
 }

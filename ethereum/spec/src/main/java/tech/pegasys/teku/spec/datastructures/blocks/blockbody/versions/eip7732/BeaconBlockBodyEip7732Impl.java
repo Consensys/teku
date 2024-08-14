@@ -24,20 +24,19 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class BeaconBlockBodyElectraImpl
+public class BeaconBlockBodyEip7732Impl
     extends Container12<
-        BeaconBlockBodyElectraImpl,
+        BeaconBlockBodyEip7732Impl,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -47,12 +46,12 @@ public class BeaconBlockBodyElectraImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadElectraImpl,
         SszList<SignedBlsToExecutionChange>,
-        SszList<SszKZGCommitment>>
+        SignedExecutionPayloadHeader,
+        SszList<PayloadAttestation>>
     implements BeaconBlockBodyEip7732 {
 
-  BeaconBlockBodyElectraImpl(
+  BeaconBlockBodyEip7732Impl(
       final BeaconBlockBodySchemaEip7732Impl type,
       final SszSignature randaoReveal,
       final Eth1Data eth1Data,
@@ -63,9 +62,9 @@ public class BeaconBlockBodyElectraImpl
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> voluntaryExits,
       final SyncAggregate syncAggregate,
-      final ExecutionPayloadElectraImpl executionPayload,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
-      final SszList<SszKZGCommitment> blobKzgCommitments) {
+      final SignedExecutionPayloadHeader signedExecutionPayloadHeader,
+      final SszList<PayloadAttestation> payloadAttestations) {
     super(
         type,
         randaoReveal,
@@ -77,26 +76,26 @@ public class BeaconBlockBodyElectraImpl
         deposits,
         voluntaryExits,
         syncAggregate,
-        executionPayload,
         blsToExecutionChanges,
-        blobKzgCommitments);
+        signedExecutionPayloadHeader,
+        payloadAttestations);
   }
 
-  BeaconBlockBodyElectraImpl(final BeaconBlockBodySchemaEip7732Impl type) {
+  BeaconBlockBodyEip7732Impl(final BeaconBlockBodySchemaEip7732Impl type) {
     super(type);
   }
 
-  BeaconBlockBodyElectraImpl(
+  BeaconBlockBodyEip7732Impl(
       final BeaconBlockBodySchemaEip7732Impl type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public static BeaconBlockBodyElectraImpl required(final BeaconBlockBody body) {
+  public static BeaconBlockBodyEip7732Impl required(final BeaconBlockBody body) {
     checkArgument(
-        body instanceof BeaconBlockBodyElectraImpl,
-        "Expected Electra block body but got %s",
+        body instanceof BeaconBlockBodyEip7732Impl,
+        "Expected Eip7732 block body but got %s",
         body.getClass());
-    return (BeaconBlockBodyElectraImpl) body;
+    return (BeaconBlockBodyEip7732Impl) body;
   }
 
   @Override
@@ -155,17 +154,17 @@ public class BeaconBlockBodyElectraImpl
   }
 
   @Override
-  public ExecutionPayloadElectra getExecutionPayload() {
+  public SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
     return getField9();
   }
 
   @Override
-  public SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
+  public SignedExecutionPayloadHeader getSignedExecutionPayloadHeader() {
     return getField10();
   }
 
   @Override
-  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
+  public SszList<PayloadAttestation> getPayloadAttestations() {
     return getField11();
   }
 

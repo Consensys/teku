@@ -23,21 +23,23 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
@@ -49,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class BeaconBlockBodySchemaEip7732Impl
     extends ContainerSchema12<
-        BeaconBlockBodyElectraImpl,
+        BeaconBlockBodyEip7732Impl,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -59,10 +61,10 @@ public class BeaconBlockBodySchemaEip7732Impl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadElectraImpl,
         SszList<SignedBlsToExecutionChange>,
-        SszList<SszKZGCommitment>>
-    implements BeaconBlockBodySchemaEip7732<BeaconBlockBodyElectraImpl> {
+        SignedExecutionPayloadHeader,
+        SszList<PayloadAttestation>>
+    implements BeaconBlockBodySchemaEip7732<BeaconBlockBodyEip7732Impl> {
 
   protected BeaconBlockBodySchemaEip7732Impl(
       final String containerName,
@@ -75,9 +77,9 @@ public class BeaconBlockBodySchemaEip7732Impl
       final NamedSchema<SszList<Deposit>> depositsSchema,
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       final NamedSchema<SyncAggregate> syncAggregateSchema,
-      final NamedSchema<ExecutionPayloadElectraImpl> executionPayloadSchema,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final NamedSchema<SignedExecutionPayloadHeader> signedExecutionPayloadHeader,
+      final NamedSchema<SszList<PayloadAttestation>> payloadAttestations) {
     super(
         containerName,
         randaoRevealSchema,
@@ -89,17 +91,18 @@ public class BeaconBlockBodySchemaEip7732Impl
         depositsSchema,
         voluntaryExitsSchema,
         syncAggregateSchema,
-        executionPayloadSchema,
         blsToExecutionChange,
-        blobKzgCommitments);
+        signedExecutionPayloadHeader,
+        payloadAttestations);
   }
 
   public static BeaconBlockBodySchemaEip7732Impl create(
-      final SpecConfigElectra specConfig,
+      final SpecConfigEip7732 specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
-      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
       final long maxValidatorsPerAttestation,
+      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema,
+      final PayloadAttestationSchema payloadAttestationSchema,
       final String containerName) {
     return new BeaconBlockBodySchemaEip7732Impl(
         containerName,
@@ -132,12 +135,16 @@ public class BeaconBlockBodySchemaEip7732Impl
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchemaElectra(specConfig)),
-        namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
                 blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())),
-        namedSchema(BlockBodyFields.BLOB_KZG_COMMITMENTS, blobKzgCommitmentsSchema));
+        namedSchema(
+            BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER,
+            new SignedExecutionPayloadHeaderSchema(executionPayloadHeaderSchema)),
+        namedSchema(
+            BlockBodyFields.PAYLOAD_ATTESTATIONS,
+            SszListSchema.create(
+                payloadAttestationSchema, specConfig.getMaxPayloadAttestations())));
   }
 
   @Override
@@ -149,7 +156,7 @@ public class BeaconBlockBodySchemaEip7732Impl
 
   @Override
   public BeaconBlockBody createEmpty() {
-    return new BeaconBlockBodyElectraImpl(this);
+    return new BeaconBlockBodyEip7732Impl(this);
   }
 
   @SuppressWarnings("unchecked")
@@ -192,14 +199,13 @@ public class BeaconBlockBodySchemaEip7732Impl
   }
 
   @Override
-  public BeaconBlockBodyElectraImpl createFromBackingNode(final TreeNode node) {
-    return new BeaconBlockBodyElectraImpl(this, node);
+  public BeaconBlockBodyEip7732Impl createFromBackingNode(final TreeNode node) {
+    return new BeaconBlockBodyEip7732Impl(this, node);
   }
 
   @Override
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return (ExecutionPayloadSchema<?>)
-        getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD));
+    throw new UnsupportedOperationException("ExecutionPayload removed in Eip7732");
   }
 
   @SuppressWarnings("unchecked")
@@ -209,18 +215,17 @@ public class BeaconBlockBodySchemaEip7732Impl
         getChildSchema(getFieldIndex(BlockBodyFields.BLS_TO_EXECUTION_CHANGES));
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
-    return (SszListSchema<SszKZGCommitment, ?>)
-        getChildSchema(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
+    throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
   }
 
   @Override
   public long getBlobKzgCommitmentsGeneralizedIndex() {
-    return getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
+    throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
   }
 
+  // TODO: not sure what to do here
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return GIndexUtil.gIdxComposeAll(

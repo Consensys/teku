@@ -48,7 +48,7 @@ public class MutableBeaconStateEip7732Impl
 
   @Override
   protected void addCustomFields(final MoreObjects.ToStringHelper stringBuilder) {
-    BeaconStateEip7732.describeCustomElectraFields(stringBuilder, this);
+    BeaconStateEip7732.describeCustomEip7732Fields(stringBuilder, this);
   }
 
   @Override

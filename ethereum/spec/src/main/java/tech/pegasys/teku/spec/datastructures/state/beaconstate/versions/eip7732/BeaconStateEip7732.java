@@ -13,28 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732;
 
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.CONSOLIDATION_BALANCE_TO_CONSUME;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_BALANCE_TO_CONSUME;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_EXIT_EPOCH;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXIT_BALANCE_TO_CONSUME;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_BALANCE_DEPOSITS;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_CONSOLIDATIONS;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_BLOCK_HASH;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_FULL_SLOT;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_WITHDRAWALS_ROOT;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public interface BeaconStateEip7732 extends BeaconStateElectra {
   static BeaconStateEip7732 required(final BeaconState state) {
@@ -46,27 +36,12 @@ public interface BeaconStateEip7732 extends BeaconStateElectra {
                     "Expected an Eip7732 state but got: " + state.getClass().getSimpleName()));
   }
 
-  private static <T extends SszData> void addItems(
-      final MoreObjects.ToStringHelper stringBuilder,
-      final String keyPrefix,
-      final SszList<T> items) {
-    for (int i = 0; i < items.size(); i++) {
-      stringBuilder.add(keyPrefix + "[" + i + "]", items.get(i));
-    }
-  }
-
-  static void describeCustomElectraFields(
+  static void describeCustomEip7732Fields(
       final MoreObjects.ToStringHelper stringBuilder, final BeaconStateEip7732 state) {
-    BeaconStateDeneb.describeCustomDenebFields(stringBuilder, state);
-    stringBuilder.add("deposit_requests_start_index", state.getDepositRequestsStartIndex());
-    stringBuilder.add("deposit_balance_to_consume", state.getDepositBalanceToConsume());
-    stringBuilder.add("exit_balance_to_consume", state.getExitBalanceToConsume());
-    stringBuilder.add("earliest_exit_epoch", state.getEarliestExitEpoch());
-    stringBuilder.add("consolidation_balance_to_consume", state.getConsolidationBalanceToConsume());
-    stringBuilder.add("earliest_consolidation_epoch", state.getEarliestConsolidationEpoch());
-    addItems(stringBuilder, "pending_balance_deposits", state.getPendingBalanceDeposits());
-    addItems(stringBuilder, "pending_partial_withdrawals", state.getPendingPartialWithdrawals());
-    addItems(stringBuilder, "pending_consolidations", state.getPendingConsolidations());
+    BeaconStateElectra.describeCustomElectraFields(stringBuilder, state);
+    stringBuilder.add("latest_block_hash", state.getLatestBlockHash());
+    stringBuilder.add("latest_full_slot", state.getLatestFullSlot());
+    stringBuilder.add("latest_withdrawals_root", state.getLatestWithdrawalsRoot());
   }
 
   @Override
@@ -85,57 +60,18 @@ public interface BeaconStateEip7732 extends BeaconStateElectra {
     return Optional.of(this);
   }
 
-  @Override
-  default UInt64 getDepositRequestsStartIndex() {
-    final int index = getSchema().getFieldIndex(DEPOSIT_REQUESTS_START_INDEX);
+  default Bytes32 getLatestBlockHash() {
+    final int index = getSchema().getFieldIndex(LATEST_BLOCK_HASH);
+    return ((SszBytes32) get(index)).get();
+  }
+
+  default UInt64 getLatestFullSlot() {
+    final int index = getSchema().getFieldIndex(LATEST_FULL_SLOT);
     return ((SszUInt64) get(index)).get();
   }
 
-  @Override
-  default UInt64 getDepositBalanceToConsume() {
-    final int index = getSchema().getFieldIndex(DEPOSIT_BALANCE_TO_CONSUME);
-    return ((SszUInt64) get(index)).get();
-  }
-
-  @Override
-  default UInt64 getExitBalanceToConsume() {
-    final int index = getSchema().getFieldIndex(EXIT_BALANCE_TO_CONSUME);
-    return ((SszUInt64) get(index)).get();
-  }
-
-  @Override
-  default UInt64 getEarliestExitEpoch() {
-    final int index = getSchema().getFieldIndex(EARLIEST_EXIT_EPOCH);
-    return ((SszUInt64) get(index)).get();
-  }
-
-  @Override
-  default UInt64 getConsolidationBalanceToConsume() {
-    final int index = getSchema().getFieldIndex(CONSOLIDATION_BALANCE_TO_CONSUME);
-    return ((SszUInt64) get(index)).get();
-  }
-
-  @Override
-  default UInt64 getEarliestConsolidationEpoch() {
-    final int index = getSchema().getFieldIndex(EARLIEST_CONSOLIDATION_EPOCH);
-    return ((SszUInt64) get(index)).get();
-  }
-
-  @Override
-  default SszList<PendingBalanceDeposit> getPendingBalanceDeposits() {
-    final int index = getSchema().getFieldIndex(PENDING_BALANCE_DEPOSITS);
-    return getAny(index);
-  }
-
-  @Override
-  default SszList<PendingPartialWithdrawal> getPendingPartialWithdrawals() {
-    final int index = getSchema().getFieldIndex(PENDING_PARTIAL_WITHDRAWALS);
-    return getAny(index);
-  }
-
-  @Override
-  default SszList<PendingConsolidation> getPendingConsolidations() {
-    final int index = getSchema().getFieldIndex(PENDING_CONSOLIDATIONS);
-    return getAny(index);
+  default Bytes32 getLatestWithdrawalsRoot() {
+    final int index = getSchema().getFieldIndex(LATEST_WITHDRAWALS_ROOT);
+    return ((SszBytes32) get(index)).get();
   }
 }
