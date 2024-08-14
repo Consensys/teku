@@ -290,16 +290,7 @@ public class BlockOperationSelectorFactory {
                         // from the builder bid
                         .map(BuilderBid::getHeader)
                         // from the local fallback
-                        .orElseGet(
-                            () -> {
-                              final ExecutionPayload executionPayload =
-                                  builderBidOrFallbackData
-                                      .getFallbackDataRequired()
-                                      .getExecutionPayload();
-                              return schemaDefinitions
-                                  .getExecutionPayloadHeaderSchema()
-                                  .createFromExecutionPayload(executionPayload);
-                            });
+                        .orElseThrow();
                 bodyBuilder.executionPayloadHeader(executionPayloadHeader);
               }
             });
