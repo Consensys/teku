@@ -218,8 +218,7 @@ public class BlockOperationSelectorFactory {
               blockSlotState.getSlot()));
     }
 
-    // if requestedBlinded has been specified, we strictly follow it, otherwise we should run
-    // Builder flow (blinded) only if we have a validator registration
+    // We should run Builder flow (blinded) only if we have a validator registration
     final boolean shouldTryBuilderFlow =
                 executionPayloadContext
                     .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
