@@ -25,7 +25,7 @@ public interface BeaconBlockBodySchemaEip7732<T extends BeaconBlockBodyEip7732>
   static BeaconBlockBodySchemaEip7732<?> required(final BeaconBlockBodySchema<?> schema) {
     checkArgument(
         schema instanceof BeaconBlockBodySchemaEip7732,
-        "Expected a BeaconBlockBodySchemaElectra but was %s",
+        "Expected a BeaconBlockBodySchemaEip7732 but was %s",
         schema.getClass());
     return (BeaconBlockBodySchemaEip7732<?>) schema;
   }

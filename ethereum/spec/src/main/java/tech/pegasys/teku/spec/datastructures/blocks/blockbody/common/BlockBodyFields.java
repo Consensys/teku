@@ -30,7 +30,8 @@ public enum BlockBodyFields implements SszFieldName {
   EXECUTION_PAYLOAD_HEADER,
   BLS_TO_EXECUTION_CHANGES,
   BLOB_KZG_COMMITMENTS,
-  CONSOLIDATIONS;
+  SIGNED_EXECUTION_PAYLOAD_HEADER,
+  PAYLOAD_ATTESTATIONS;
 
   private final String sszFieldName;
 

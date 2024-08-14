@@ -18,6 +18,15 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.b
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.HISTORICAL_SUMMARIES_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_VALIDATOR_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.CONSOLIDATION_BALANCE_TO_CONSUME_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.DEPOSIT_BALANCE_TO_CONSUME_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.DEPOSIT_REQUESTS_START_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.EARLIEST_CONSOLIDATION_EPOCH_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.EARLIEST_EXIT_EPOCH_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.EXIT_BALANCE_TO_CONSUME_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.PENDING_BALANCE_DEPOSITS_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.PENDING_CONSOLIDATIONS_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.PENDING_PARTIAL_WITHDRAWALS_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -30,7 +39,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -44,19 +53,13 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 
 public class BeaconStateSchemaEip7732
     extends AbstractBeaconStateSchema<BeaconStateEip7732, MutableBeaconStateEip7732> {
-  public static final int DEPOSIT_REQUESTS_START_INDEX = 28;
-  public static final int DEPOSIT_BALANCE_TO_CONSUME_INDEX = 29;
-  public static final int EXIT_BALANCE_TO_CONSUME_INDEX = 30;
-  public static final int EARLIEST_EXIT_EPOCH_INDEX = 31;
-  public static final int CONSOLIDATION_BALANCE_TO_CONSUME_INDEX = 32;
-  public static final int EARLIEST_CONSOLIDATION_EPOCH_INDEX = 33;
-  public static final int PENDING_BALANCE_DEPOSITS_INDEX = 34;
-  public static final int PENDING_PARTIAL_WITHDRAWALS_INDEX = 35;
-  public static final int PENDING_CONSOLIDATIONS_INDEX = 36;
+  public static final int LATEST_BLOCK_HASH_INDEX = 37;
+  public static final int LATEST_FULL_SLOT_INDEX = 38;
+  public static final int LATEST_WITHDRAWALS_ROOT_INDEX = 39;
 
   @VisibleForTesting
   BeaconStateSchemaEip7732(final SpecConfig specConfig) {
-    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig);
+    super("BeaconStateEip7732", getUniqueFields(specConfig), specConfig);
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
@@ -66,14 +69,16 @@ public class BeaconStateSchemaEip7732
         new PendingBalanceDeposit.PendingBalanceDepositSchema();
     final PendingPartialWithdrawal.PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
-    final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
+    final SpecConfigEip7732 specConfigEip7732 = SpecConfigEip7732.required(specConfig);
     final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
         new PendingConsolidation.PendingConsolidationSchema();
+    // Bellatrix
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaElectra(specConfigElectra));
+            () -> new ExecutionPayloadHeaderSchemaElectra(specConfigEip7732));
+    // Capella
     final SszField nextWithdrawalIndexField =
         new SszField(
             NEXT_WITHDRAWAL_INDEX,
@@ -84,7 +89,6 @@ public class BeaconStateSchemaEip7732
             NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-
     final SszField historicalSummariesField =
         new SszField(
             HISTORICAL_SUMMARIES_INDEX,
@@ -92,6 +96,7 @@ public class BeaconStateSchemaEip7732
             () ->
                 SszListSchema.create(
                     historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
+    // Electra
     final SszField depositRequestsStartIndexField =
         new SszField(
             DEPOSIT_REQUESTS_START_INDEX,
@@ -129,7 +134,7 @@ public class BeaconStateSchemaEip7732
             () ->
                 SszListSchema.create(
                     pendingBalanceDepositSchema,
-                    specConfigElectra.getPendingBalanceDepositsLimit()));
+                    specConfigEip7732.getPendingBalanceDepositsLimit()));
     final SszField pendingPartialWithdrawalsField =
         new SszField(
             PENDING_PARTIAL_WITHDRAWALS_INDEX,
@@ -137,14 +142,30 @@ public class BeaconStateSchemaEip7732
             () ->
                 SszListSchema.create(
                     pendingPartialWithdrawalSchema,
-                    specConfigElectra.getPendingPartialWithdrawalsLimit()));
+                    specConfigEip7732.getPendingPartialWithdrawalsLimit()));
     final SszField pendingConsolidationsField =
         new SszField(
             PENDING_CONSOLIDATIONS_INDEX,
             BeaconStateFields.PENDING_CONSOLIDATIONS,
             () ->
                 SszListSchema.create(
-                    pendingConsolidationSchema, specConfigElectra.getPendingConsolidationsLimit()));
+                    pendingConsolidationSchema, specConfigEip7732.getPendingConsolidationsLimit()));
+    // New
+    final SszField latestBlockHashField =
+        new SszField(
+            LATEST_BLOCK_HASH_INDEX,
+            BeaconStateFields.LATEST_BLOCK_HASH,
+            () -> SszPrimitiveSchemas.BYTES32_SCHEMA);
+    final SszField latestFullSlotField =
+        new SszField(
+            LATEST_FULL_SLOT_INDEX,
+            BeaconStateFields.LATEST_FULL_SLOT,
+            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+    final SszField latestWithdrawalsRootField =
+        new SszField(
+            LATEST_WITHDRAWALS_ROOT_INDEX,
+            BeaconStateFields.LATEST_WITHDRAWALS_ROOT,
+            () -> SszPrimitiveSchemas.BYTES32_SCHEMA);
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(
@@ -160,7 +181,10 @@ public class BeaconStateSchemaEip7732
                 earliestConsolidationEpochField,
                 pendingBalanceDepositsField,
                 pendingPartialWithdrawalsField,
-                pendingConsolidationsField))
+                pendingConsolidationsField,
+                latestBlockHashField,
+                latestFullSlotField,
+                latestWithdrawalsRootField))
         .toList();
   }
 
@@ -203,7 +227,7 @@ public class BeaconStateSchemaEip7732
   public static BeaconStateSchemaEip7732 required(final BeaconStateSchema<?, ?> schema) {
     checkArgument(
         schema instanceof BeaconStateSchemaEip7732,
-        "Expected a BeaconStateSchemaElectra but was %s",
+        "Expected a BeaconStateSchemaEip7732 but was %s",
         schema.getClass());
     return (BeaconStateSchemaEip7732) schema;
   }
