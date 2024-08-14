@@ -24,9 +24,9 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderBuilderDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderBuilderElectra;
 
-public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeaderBuilderDeneb {
+public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeaderBuilderElectra {
   private ExecutionPayloadHeaderSchemaEip7732 schema;
 
   protected Bytes32 parentBlockHash;
