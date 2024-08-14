@@ -1192,8 +1192,6 @@ class BlockOperationSelectorFactoryTest {
     protected ExecutionPayload executionPayload;
     protected ExecutionPayloadHeader executionPayloadHeader;
     protected SszList<SszKZGCommitment> blobKzgCommitments;
-    protected SignedExecutionPayloadHeader signedExecutionPayloadHeader;
-    protected SszList<PayloadAttestation> payloadAttestations;
 
     public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
       this.supportsKzgCommitments = supportsKzgCommitments;
@@ -1303,14 +1301,12 @@ class BlockOperationSelectorFactoryTest {
     @Override
     public BeaconBlockBodyBuilder signedExecutionPayloadHeader(
         final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
-      this.signedExecutionPayloadHeader = signedExecutionPayloadHeader;
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder payloadAttestations(
         final SszList<PayloadAttestation> payloadAttestations) {
-      this.payloadAttestations = payloadAttestations;
       return this;
     }
 
