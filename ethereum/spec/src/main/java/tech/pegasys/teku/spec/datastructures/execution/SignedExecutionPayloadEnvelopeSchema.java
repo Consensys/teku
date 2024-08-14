@@ -15,30 +15,29 @@ package tech.pegasys.teku.spec.datastructures.execution;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedExecutionPayloadHeaderSchema
-    extends ContainerSchema2<SignedExecutionPayloadHeader, ExecutionPayloadHeader, SszSignature> {
+public class SignedExecutionPayloadEnvelopeSchema
+    extends ContainerSchema2<
+        SignedExecutionPayloadEnvelope, ExecutionPayloadEnvelope, SszSignature> {
 
-  public SignedExecutionPayloadHeaderSchema(
-      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema) {
+  public SignedExecutionPayloadEnvelopeSchema(
+      final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema) {
     super(
-        "SignedExecutionPayloadHeader",
-        namedSchema(
-            "message", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
+        "SignedExecutionPayloadEnvelope",
+        namedSchema("message", executionPayloadEnvelopeSchema),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
-  public SignedExecutionPayloadHeader create(
-      final ExecutionPayloadHeader message, final BLSSignature signature) {
-    return new SignedExecutionPayloadHeader(this, message, signature);
+  public SignedExecutionPayloadEnvelope create(
+      final ExecutionPayloadEnvelope message, final BLSSignature signature) {
+    return new SignedExecutionPayloadEnvelope(this, message, signature);
   }
 
   @Override
-  public SignedExecutionPayloadHeader createFromBackingNode(final TreeNode node) {
-    return new SignedExecutionPayloadHeader(this, node);
+  public SignedExecutionPayloadEnvelope createFromBackingNode(final TreeNode node) {
+    return new SignedExecutionPayloadEnvelope(this, node);
   }
 }
