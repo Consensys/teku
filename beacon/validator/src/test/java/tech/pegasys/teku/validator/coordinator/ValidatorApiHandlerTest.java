@@ -497,10 +497,7 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
-            ONE,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(ONE));
+            ONE, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -517,10 +514,7 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(ONE));
+            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
