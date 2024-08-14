@@ -118,8 +118,8 @@ public class ValidatorDataProviderTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
             () ->
-                provider.getUnsignedBeaconBlockAtSlot(
-                    null, null, Optional.empty(), false, Optional.empty()));
+                provider.produceBlock(
+                    null, null, Optional.empty(),  Optional.empty()));
   }
 
   @TestTemplate
@@ -127,8 +127,8 @@ public class ValidatorDataProviderTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
             () ->
-                provider.getUnsignedBeaconBlockAtSlot(
-                    ONE, null, Optional.empty(), false, Optional.empty()));
+                provider.produceBlock(
+                    ONE, null, Optional.empty(), Optional.empty()));
   }
 
   @TestTemplate
@@ -138,8 +138,8 @@ public class ValidatorDataProviderTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
             () ->
-                provider.getUnsignedBeaconBlockAtSlot(
-                    ZERO, signatureInternal, Optional.empty(), false, Optional.empty()));
+                provider.produceBlock(
+                    ZERO, signatureInternal, Optional.empty(), Optional.empty()));
   }
 
   @TestTemplate
@@ -149,11 +149,10 @@ public class ValidatorDataProviderTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
             () ->
-                provider.getUnsignedBeaconBlockAtSlot(
+                provider.produceBlock(
                     UInt64.valueOf(10L),
                     signatureInternal,
                     Optional.empty(),
-                    false,
                     Optional.empty()));
   }
 
@@ -162,16 +161,16 @@ public class ValidatorDataProviderTest {
     assumeThat(specMilestone).isLessThan(SpecMilestone.DENEB);
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(), Optional.of(false), Optional.empty()))
+            ONE, signatureInternal, Optional.empty(), Optional.empty()))
         .thenReturn(completedFuture(Optional.of(blockContainerAndMetaDataInternal)));
 
     SafeFuture<? extends Optional<BlockContainerAndMetaData>> data =
-        provider.getUnsignedBeaconBlockAtSlot(
-            ONE, signatureInternal, Optional.empty(), false, Optional.empty());
+        provider.produceBlock(
+            ONE, signatureInternal, Optional.empty(),Optional.empty());
 
     verify(validatorApiChannel)
         .createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(), Optional.of(false), Optional.empty());
+            ONE, signatureInternal, Optional.empty(),Optional.empty());
 
     assertThat(data).isCompleted();
 
@@ -221,7 +220,7 @@ public class ValidatorDataProviderTest {
         .thenReturn(completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
 
     when(validatorApiChannel.createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(), Optional.empty(), Optional.of(ONE)))
+            ONE, signatureInternal, Optional.empty(), Optional.of(ONE)))
         .thenReturn(completedFuture(Optional.of(blockContainerAndMetaDataInternal)));
 
     SafeFuture<? extends Optional<? extends BlockContainerAndMetaData>> data =
@@ -229,7 +228,7 @@ public class ValidatorDataProviderTest {
 
     verify(validatorApiChannel)
         .createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(), Optional.empty(), Optional.of(ONE));
+            ONE, signatureInternal, Optional.empty(), Optional.of(ONE));
 
     assertThat(data).isCompleted();
 
