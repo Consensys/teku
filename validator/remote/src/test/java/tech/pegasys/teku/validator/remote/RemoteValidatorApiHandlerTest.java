@@ -470,7 +470,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            ONE, blsSignature, Optional.of(Bytes32.random()), Optional.of(false), Optional.empty());
+            ONE, blsSignature, Optional.of(Bytes32.random()), Optional.empty());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
