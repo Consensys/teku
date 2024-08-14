@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
@@ -52,7 +53,8 @@ public class CreateAggregateAttestationRequestV2Test extends AbstractTypeDefRequ
   @BeforeEach
   void setupRequest() {
     createAggregateAttestationRequestV2 =
-        new CreateAggregateAttestationRequestV2(mockWebServer.url("/"), okHttpClient, spec, slot);
+        new CreateAggregateAttestationRequestV2(
+            mockWebServer.url("/"), okHttpClient, slot, new SchemaDefinitionCache(spec));
     responseBodyBuffer = new Buffer();
   }
 
@@ -69,7 +71,7 @@ public class CreateAggregateAttestationRequestV2Test extends AbstractTypeDefRequ
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    createAggregateAttestationRequestV2.createAggregate(attestationHashTreeRoot, committeeIndex);
+    createAggregateAttestationRequestV2.submit(attestationHashTreeRoot, committeeIndex);
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
@@ -100,8 +102,7 @@ public class CreateAggregateAttestationRequestV2Test extends AbstractTypeDefRequ
             : attestation.getData().getIndex();
 
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestationAndMetaData =
-        createAggregateAttestationRequestV2.createAggregate(
-            attestation.hashTreeRoot(), committeeIndex);
+        createAggregateAttestationRequestV2.submit(attestation.hashTreeRoot(), committeeIndex);
     assertThat(maybeAttestationAndMetaData).isPresent();
     assertThat(maybeAttestationAndMetaData.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());

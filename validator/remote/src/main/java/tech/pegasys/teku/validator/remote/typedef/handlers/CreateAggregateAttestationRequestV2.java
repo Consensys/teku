@@ -26,60 +26,57 @@ import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateAggregateAttestationRequestV2 extends AbstractTypeDefRequest {
 
-  final AttestationSchema<Attestation> attestationSchema;
-  final UInt64 slot;
-
-  private final ResponseHandler<GetAggregateAttestationResponse> responseHandler;
-
-  private final DeserializableTypeDefinition<GetAggregateAttestationResponse>
-      getAggregateAttestationTypeDef;
+  private final SchemaDefinitionCache schemaDefinitionCache;
+  private final UInt64 slot;
 
   public CreateAggregateAttestationRequestV2(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
-      final Spec spec,
-      final UInt64 slot) {
+      final UInt64 slot,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
-    this.attestationSchema =
-        spec.atSlot(slot)
-            .getSchemaDefinitions()
-            .getAttestationSchema()
-            .castTypeToAttestationSchema();
-    this.getAggregateAttestationTypeDef =
-        DeserializableTypeDefinition.object(GetAggregateAttestationResponse.class)
-            .initializer(GetAggregateAttestationResponse::new)
-            .withField(
-                "version",
-                DeserializableTypeDefinition.enumOf(SpecMilestone.class),
-                GetAggregateAttestationResponse::getSpecMilestone,
-                GetAggregateAttestationResponse::setSpecMilestone)
-            .withField(
-                "data",
-                attestationSchema.getJsonTypeDefinition(),
-                GetAggregateAttestationResponse::getData,
-                GetAggregateAttestationResponse::setData)
-            .build();
-
-    this.responseHandler = new ResponseHandler<>(getAggregateAttestationTypeDef);
+    this.schemaDefinitionCache = schemaDefinitionCache;
   }
 
-  public Optional<ObjectAndMetaData<Attestation>> createAggregate(
+  public Optional<ObjectAndMetaData<Attestation>> submit(
       final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put(SLOT, slot.toString());
     queryParams.put(ATTESTATION_DATA_ROOT, attestationHashTreeRoot.toHexString());
     queryParams.put(COMMITTEE_INDEX, committeeIndex.toString());
-    return get(GET_AGGREGATE_V2, queryParams, this.responseHandler)
+
+    final AttestationSchema<Attestation> attestationSchema =
+        schemaDefinitionCache.atSlot(slot).getAttestationSchema().castTypeToAttestationSchema();
+    final DeserializableTypeDefinition<GetAggregateAttestationResponse>
+        getAggregateAttestationTypeDef =
+            DeserializableTypeDefinition.object(GetAggregateAttestationResponse.class)
+                .initializer(GetAggregateAttestationResponse::new)
+                .withField(
+                    "version",
+                    DeserializableTypeDefinition.enumOf(SpecMilestone.class),
+                    GetAggregateAttestationResponse::getSpecMilestone,
+                    GetAggregateAttestationResponse::setSpecMilestone)
+                .withField(
+                    "data",
+                    attestationSchema.getJsonTypeDefinition(),
+                    GetAggregateAttestationResponse::getData,
+                    GetAggregateAttestationResponse::setData)
+                .build();
+
+    final ResponseHandler<GetAggregateAttestationResponse> responseHandler =
+        new ResponseHandler<>(getAggregateAttestationTypeDef);
+
+    return get(GET_AGGREGATE_V2, queryParams, responseHandler)
         .map(
             getAggregateAttestationResponse ->
                 new ObjectAndMetaData<>(

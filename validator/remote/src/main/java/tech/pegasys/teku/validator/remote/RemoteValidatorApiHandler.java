@@ -273,12 +273,14 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
+    // Use attestation v2 api post Electra only. This logic can be removed once we reach the Electra
+    // milestone
     if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
         && committeeIndex.isPresent()) {
       return sendRequest(
           () ->
               typeDefClient
-                  .createAggregateV2(slot, attestationHashTreeRoot, committeeIndex.get())
+                  .createAggregate(slot, attestationHashTreeRoot, committeeIndex.get())
                   .map(ObjectAndMetaData::getData));
     }
 

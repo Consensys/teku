@@ -74,7 +74,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -613,7 +612,7 @@ class RemoteValidatorApiHandlerTest {
     ignoreFuture(apiHandler.createAggregate(slot, attHashTreeRoot, Optional.empty()));
     asyncRunner.executeQueuedActions();
 
-    verify(typeDefClient, never()).createAggregateV2(any(), any(), any());
+    verify(typeDefClient, never()).createAggregate(any(), any(), any());
     verify(typeDefClient).createAggregate(slot, attHashTreeRoot);
   }
 
@@ -625,13 +624,12 @@ class RemoteValidatorApiHandlerTest {
     final Spec electraSpec = TestSpecFactory.createMainnetElectra();
 
     apiHandler =
-            new RemoteValidatorApiHandler(
-                    endpoint, electraSpec, typeDefClient, asyncRunner, true);
+        new RemoteValidatorApiHandler(endpoint, electraSpec, typeDefClient, asyncRunner, true);
     ignoreFuture(apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(committeeIndex)));
     asyncRunner.executeQueuedActions();
 
     verify(typeDefClient, never()).createAggregate(any(), any());
-    verify(typeDefClient).createAggregateV2(slot, attHashTreeRoot, committeeIndex);
+    verify(typeDefClient).createAggregate(slot, attHashTreeRoot, committeeIndex);
   }
 
   @Test
