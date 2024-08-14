@@ -134,6 +134,23 @@ public abstract class AbstractTypeDefRequest {
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
       final Map<String, String> queryParams,
+      final TObject requestBodyObj,
+      final SerializableTypeDefinition<TObject> objectTypeDefinition,
+      final ResponseHandler<T> responseHandler) {
+    return postJson(
+        apiMethod,
+        urlParams,
+        queryParams,
+        emptyMap(),
+        requestBodyObj,
+        objectTypeDefinition,
+        responseHandler);
+  }
+
+  protected <T, TObject> Optional<T> postJson(
+      final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final Map<String, String> queryParams,
       final Map<String, String> headers,
       final TObject requestBodyObj,
       final SerializableTypeDefinition<TObject> objectTypeDefinition,

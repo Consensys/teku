@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
@@ -226,19 +225,10 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
           final List<Attestation> attestations) {
-    if (attestations.isEmpty()) {
-      return SafeFuture.completedFuture(emptyList());
-    }
-
-    final SpecMilestone specMilestone = spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
-
+    final SpecMilestone specMilestone =
+            spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      return sendRequest(
-              () ->
-                      typeDefClient
-                              .postSignedAttestations(attestations, specMilestone)
-                              .orElse(emptyList()));
-
+      return sendRequest(() -> typeDefClient.postSignedAttestations(attestations, specMilestone));
     }
     return sendRequest(() -> typeDefClient.sendSignedAttestations(attestations));
   }
@@ -389,6 +379,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
     return new RemoteValidatorApiHandler(
-        endpoint,spec, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
+        endpoint, spec, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }
