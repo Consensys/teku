@@ -69,7 +69,6 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -472,23 +471,20 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void postAttestations_ShouldUseV1ApiPreElectra() {
     final List<Attestation> attestations =
-            List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
 
     ignoreFuture(apiHandler.sendSignedAttestations(attestations));
     asyncRunner.executeQueuedActions();
 
     verify(typeDefClient, never()).postSignedAttestations(anyList(), any());
-    verify(typeDefClient)
-            .sendSignedAttestations(attestations);
+    verify(typeDefClient).sendSignedAttestations(attestations);
   }
 
   @Test
   public void postAttestations_ShouldUseV2ApiPostElectra() {
     final Spec electraSpec = TestSpecFactory.createMainnetElectra();
-
     apiHandler =
-        new RemoteValidatorApiHandler(
-            endpoint, electraSpec, typeDefClient, asyncRunner, true);
+        new RemoteValidatorApiHandler(endpoint, electraSpec, typeDefClient, asyncRunner, true);
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
 
@@ -498,22 +494,6 @@ class RemoteValidatorApiHandlerTest {
     verify(typeDefClient, never()).createAggregate(any(), any());
     verify(typeDefClient)
         .postSignedAttestations(attestations, electraSpec.getGenesisSpec().getMilestone());
-  }
-
-  @Test
-  public void createAggregate_ShouldUseV2ApiPostElectra() {
-    apiHandler =
-            new RemoteValidatorApiHandler(
-                    endpoint, spec, typeDefClient, asyncRunner, true);
-    final List<Attestation> attestations =
-            List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-
-    ignoreFuture(apiHandler.sendSignedAttestations(attestations));
-    asyncRunner.executeQueuedActions();
-
-    verify(typeDefClient, never()).createAggregate(any(), any());
-    verify(typeDefClient)
-            .postSignedAttestations(attestations, SpecMilestone.ELECTRA);
   }
 
   @Test
