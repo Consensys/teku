@@ -36,7 +36,6 @@ import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscr
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -63,7 +62,6 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttestationsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PrepareBeaconProposersRequest;
@@ -282,7 +280,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
   public List<SubmitDataError> sendSignedAttestations(final List<Attestation> attestations) {
     final SendSignedAttestationsRequest sendSignedAttestationsRequest =
-        new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient());
+        new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient(), spec);
     return sendSignedAttestationsRequest.submit(attestations);
   }
 }

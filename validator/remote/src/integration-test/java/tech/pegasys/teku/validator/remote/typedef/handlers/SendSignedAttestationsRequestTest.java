@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Collections;
 import java.util.List;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -45,7 +46,7 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
 
   @BeforeEach
   public void setup() {
-    this.request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient);
+    this.request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, spec);
     this.attestations = List.of(dataStructureUtil.randomAttestation());
   }
 
@@ -67,6 +68,12 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     assertThat(recordedRequest.getPath())
         .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
+  }
+
+  @TestTemplate
+  void shouldNoTMakeRequestIfEmptyAttestationsList() {
+    request.submit(Collections.emptyList());
+    assertThat(mockWebServer.getRequestCount()).isZero();
   }
 
   @TestTemplate
