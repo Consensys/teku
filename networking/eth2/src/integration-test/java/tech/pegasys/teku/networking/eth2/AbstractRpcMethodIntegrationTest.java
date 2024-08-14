@@ -85,6 +85,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithElectraForkEpoch(nextSpecEpoch));
       }
       case ELECTRA -> throw new RuntimeException("Base spec is already latest supported milestone");
+      case EIP7732 -> throw new UnsupportedOperationException("TODO");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
