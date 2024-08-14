@@ -25,16 +25,19 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.api.SubmitDataError;
+import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(
@@ -47,7 +50,7 @@ public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase 
 
   @BeforeEach
   void setupRequest() {
-    request = new PostAttestationsRequest(spec, mockWebServer.url("/"), okHttpClient);
+    request = new PostAttestationsRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
@@ -56,8 +59,7 @@ public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase 
 
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    final Optional<PostDataFailureResponse> response =
-        request.postAttestations(attestations, specMilestone);
+    final List<SubmitDataError> response = request.submit(attestations, specMilestone);
     assertThat(response).isEmpty();
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -71,7 +73,7 @@ public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase 
 
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    assertThatThrownBy(() -> request.postAttestations(attestations, specMilestone))
+    assertThatThrownBy(() -> request.submit(attestations, specMilestone))
         .isInstanceOf(IllegalArgumentException.class);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
