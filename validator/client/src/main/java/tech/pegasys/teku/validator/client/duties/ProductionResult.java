@@ -95,21 +95,21 @@ public class ProductionResult<T> {
 
   private static <T> void replaceResult(
       final List<ProductionResult<T>> sentResults, final SubmitDataError error) {
-    if (error.getIndex().isGreaterThanOrEqualTo(sentResults.size())) {
+    if (error.index().isGreaterThanOrEqualTo(sentResults.size())) {
       LOG.error(
           "Beacon node reported an error at index {} with message '{}' but only {} messages were sent",
-          error.getIndex(),
-          error.getMessage(),
+          error.index(),
+          error.message(),
           sentResults.size());
       return;
     }
-    final int index = error.getIndex().intValue();
+    final int index = error.index().intValue();
     final ProductionResult<T> originalResult = sentResults.get(index);
     sentResults.set(
         index,
         ProductionResult.failure(
             originalResult.getValidatorPublicKeys(),
-            new RestApiReportedException(error.getMessage())));
+            new RestApiReportedException(error.message())));
   }
 
   private static <T> DutyResult combineResults(final List<ProductionResult<T>> results) {
