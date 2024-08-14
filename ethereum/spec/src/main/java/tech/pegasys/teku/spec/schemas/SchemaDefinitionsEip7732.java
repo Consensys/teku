@@ -36,12 +36,17 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -74,6 +79,12 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
+
+  private final PayloadAttestationSchema payloadAttestationSchema;
+  private final IndexedPayloadAttestationSchema indexedPayloadAttestationSchema;
+  private final SignedExecutionPayloadHeaderSchema signedExecutionPayloadHeaderSchema;
+  private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
+  private final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema;
 
   public SchemaDefinitionsEip7732(final SpecConfigEip7732 specConfig) {
     super(specConfig);
@@ -133,6 +144,17 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
             "BlobsBundleEip7732", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
+
+    this.payloadAttestationSchema = new PayloadAttestationSchema(specConfig.getPtcSize());
+    this.indexedPayloadAttestationSchema =
+        new IndexedPayloadAttestationSchema(specConfig.getPtcSize());
+    this.signedExecutionPayloadHeaderSchema =
+        new SignedExecutionPayloadHeaderSchema(executionPayloadHeaderSchemaElectra);
+    this.executionPayloadEnvelopeSchema =
+        new ExecutionPayloadEnvelopeSchema(
+            executionPayloadSchemaElectra, getBlobKzgCommitmentsSchema());
+    this.signedExecutionPayloadEnvelopeSchema =
+        new SignedExecutionPayloadEnvelopeSchema(executionPayloadEnvelopeSchema);
   }
 
   public static SchemaDefinitionsEip7732 required(final SchemaDefinitions schemaDefinitions) {
@@ -263,6 +285,26 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   @Override
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
     return executionPayloadAndBlobsBundleSchema;
+  }
+
+  public PayloadAttestationSchema getPayloadAttestationSchema() {
+    return payloadAttestationSchema;
+  }
+
+  public IndexedPayloadAttestationSchema getIndexedPayloadAttestationSchema() {
+    return indexedPayloadAttestationSchema;
+  }
+
+  public SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema() {
+    return signedExecutionPayloadHeaderSchema;
+  }
+
+  public ExecutionPayloadEnvelopeSchema getExecutionPayloadEnvelopeSchema() {
+    return executionPayloadEnvelopeSchema;
+  }
+
+  public SignedExecutionPayloadEnvelopeSchema getSignedExecutionPayloadEnvelopeSchema() {
+    return signedExecutionPayloadEnvelopeSchema;
   }
 
   @Override
