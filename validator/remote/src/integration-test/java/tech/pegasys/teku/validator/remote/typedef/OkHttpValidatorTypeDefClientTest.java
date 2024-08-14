@@ -148,48 +148,6 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  void blockProductionFallbacksToNonBlindedFlowIfBlindedEndpointIsNotAvailable()
-      throws JsonProcessingException, InterruptedException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
-    // simulating blinded endpoint returning 404 Not Found
-    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
-
-    final BlockContainer blockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      blockContainer = dataStructureUtil.randomBlockContents(ONE);
-    } else {
-      blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
-    }
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(200)
-            .setBody(
-                "{\"data\": "
-                    + serializeBlockContainer(blockContainer)
-                    + ", \"version\": \""
-                    + specMilestone
-                    + "\"}"));
-
-    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        typeDefClient.createUnsignedBlock(
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.empty());
-
-    assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
-        .hasValue(blockContainer);
-
-    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
-
-    final RecordedRequest firstRequest = mockWebServer.takeRequest();
-    assertThat(firstRequest.getPath()).startsWith("/eth/v1/validator/blinded_blocks");
-    final RecordedRequest secondRequest = mockWebServer.takeRequest();
-    assertThat(secondRequest.getPath()).startsWith("/eth/v3/validator/blocks");
-  }
-
-  @TestTemplate
   void publishesBlindedBlockSszEncoded() throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
@@ -374,41 +332,6 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThat(mockWebServer.getRequestCount()).isEqualTo(3);
 
     verifyRegisterValidatorsPostRequest(mockWebServer.takeRequest(), JSON_CONTENT_TYPE);
-  }
-
-  @TestTemplate
-  void blockV3ShouldFallbacksToBlockV2WhenNotFound()
-      throws JsonProcessingException, InterruptedException {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
-
-    final BlockContainer blockContainer = dataStructureUtil.randomBlindedBeaconBlock();
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(200)
-            .setBody(
-                "{\"data\": "
-                    + serializeBlockContainer(blockContainer)
-                    + ", \"version\": \""
-                    + specMilestone
-                    + "\"}"));
-
-    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        typeDefClient.createUnsignedBlock(
-            dataStructureUtil.randomUInt64(),
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.empty());
-
-    assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
-        .hasValue(blockContainer);
-
-    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
-
-    final RecordedRequest firstRequest = mockWebServer.takeRequest();
-    assertThat(firstRequest.getPath()).startsWith("/eth/v3/validator/blocks");
-    final RecordedRequest secondRequest = mockWebServer.takeRequest();
-    assertThat(secondRequest.getPath()).startsWith("/eth/v1/validator/blinded_blocks");
   }
 
   @TestTemplate
