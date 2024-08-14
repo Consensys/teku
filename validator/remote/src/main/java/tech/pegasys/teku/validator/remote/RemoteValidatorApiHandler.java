@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
@@ -225,6 +226,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
           final List<Attestation> attestations) {
+    // Use attestation v2 api post Electra only. This logic can be removed once we reach the Electra
+    // milestone
+    if (attestations.isEmpty()) {
+      return SafeFuture.completedFuture(emptyList());
+    }
     final SpecMilestone specMilestone =
             spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {

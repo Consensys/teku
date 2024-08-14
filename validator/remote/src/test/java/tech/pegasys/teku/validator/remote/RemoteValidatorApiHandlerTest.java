@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -466,6 +467,18 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
+  }
+
+  @Test
+  public void postAttestations_ShouldReturnEmptyListImmediately_WhenEmptyList() {
+    final Spec mockedSpec = mock(Spec.class);
+    apiHandler =
+        new RemoteValidatorApiHandler(endpoint, mockedSpec, typeDefClient, asyncRunner, true);
+    ignoreFuture(apiHandler.sendSignedAttestations(Collections.emptyList()));
+    asyncRunner.executeQueuedActions();
+
+    verifyNoInteractions(mockedSpec);
+    verifyNoInteractions(typeDefClient);
   }
 
   @Test
