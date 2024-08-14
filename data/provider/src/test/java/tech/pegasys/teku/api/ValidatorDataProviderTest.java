@@ -116,19 +116,13 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getUnsignedBeaconBlockAtSlot_throwsWithoutSlotDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(
-            () ->
-                provider.produceBlock(
-                    null, null, Optional.empty(),  Optional.empty()));
+        .isThrownBy(() -> provider.produceBlock(null, null, Optional.empty(), Optional.empty()));
   }
 
   @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldThrowWithoutRandaoDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(
-            () ->
-                provider.produceBlock(
-                    ONE, null, Optional.empty(), Optional.empty()));
+        .isThrownBy(() -> provider.produceBlock(ONE, null, Optional.empty(), Optional.empty()));
   }
 
   @TestTemplate
@@ -138,8 +132,7 @@ public class ValidatorDataProviderTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
             () ->
-                provider.produceBlock(
-                    ZERO, signatureInternal, Optional.empty(), Optional.empty()));
+                provider.produceBlock(ZERO, signatureInternal, Optional.empty(), Optional.empty()));
   }
 
   @TestTemplate
@@ -150,10 +143,7 @@ public class ValidatorDataProviderTest {
         .isThrownBy(
             () ->
                 provider.produceBlock(
-                    UInt64.valueOf(10L),
-                    signatureInternal,
-                    Optional.empty(),
-                    Optional.empty()));
+                    UInt64.valueOf(10L), signatureInternal, Optional.empty(), Optional.empty()));
   }
 
   @TestTemplate
@@ -165,12 +155,10 @@ public class ValidatorDataProviderTest {
         .thenReturn(completedFuture(Optional.of(blockContainerAndMetaDataInternal)));
 
     SafeFuture<? extends Optional<BlockContainerAndMetaData>> data =
-        provider.produceBlock(
-            ONE, signatureInternal, Optional.empty(),Optional.empty());
+        provider.produceBlock(ONE, signatureInternal, Optional.empty(), Optional.empty());
 
     verify(validatorApiChannel)
-        .createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(),Optional.empty());
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), Optional.empty());
 
     assertThat(data).isCompleted();
 
@@ -227,8 +215,7 @@ public class ValidatorDataProviderTest {
         provider.produceBlock(ONE, signatureInternal, Optional.empty(), Optional.of(ONE));
 
     verify(validatorApiChannel)
-        .createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(), Optional.of(ONE));
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), Optional.of(ONE));
 
     assertThat(data).isCompleted();
 
