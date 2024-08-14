@@ -485,9 +485,11 @@ class BlockOperationSelectorFactoryTest {
     final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
 
     final ExecutionPayloadContext executionPayloadContextWithValidatorRegistration =
-            dataStructureUtil.randomPayloadExecutionContext(false,true);
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContextWithValidatorRegistration)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(executionPayloadContextWithValidatorRegistration)));
 
     prepareBlockProductionWithPayloadHeader(
         randomExecutionPayloadHeader,
@@ -723,9 +725,11 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomBlobKzgCommitments();
 
     final ExecutionPayloadContext executionPayloadContextWithValidatorRegistration =
-        dataStructureUtil.randomPayloadExecutionContext(false,true);
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContextWithValidatorRegistration)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(executionPayloadContextWithValidatorRegistration)));
 
     prepareBlindedBlockAndBlobsProduction(
         randomExecutionPayloadHeader,
