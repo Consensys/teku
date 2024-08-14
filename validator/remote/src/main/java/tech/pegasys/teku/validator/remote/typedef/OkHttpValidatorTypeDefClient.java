@@ -277,11 +277,4 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient(), spec);
     return sendSignedAttestationsRequest.submit(attestations);
   }
-
-  public List<SubmitDataError> postSignedAttestations(
-      final List<Attestation> attestations, final SpecMilestone specMilestone) {
-    final PostAttestationsRequest postAttestationsRequest =
-        new PostAttestationsRequest(getBaseEndpoint(), getOkHttpClient());
-    return postAttestationsRequest.submit(attestations, specMilestone);
-  }
 }

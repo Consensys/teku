@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
@@ -59,22 +60,8 @@ public class PostAttestationsRequestTest extends AbstractTypeDefRequestTestBase 
 
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    final List<SubmitDataError> response = request.submit(attestations, specMilestone);
+    final List<SubmitDataError> response = request.submit(attestations);
     assertThat(response).isEmpty();
-
-    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
-    assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
-  }
-
-  @TestTemplate
-  public void shouldHandleBadRequest() throws InterruptedException {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-
-    final List<Attestation> attestations =
-        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    assertThatThrownBy(() -> request.submit(attestations, specMilestone))
-        .isInstanceOf(IllegalArgumentException.class);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
