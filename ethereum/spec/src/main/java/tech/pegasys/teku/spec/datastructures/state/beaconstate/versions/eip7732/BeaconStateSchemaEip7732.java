@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -210,8 +211,8 @@ public class BeaconStateSchemaEip7732
         getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
   }
 
-  public ExecutionPayloadHeaderSchemaElectra getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaElectra)
+  public ExecutionPayloadHeaderSchemaEip7732 getLastExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaEip7732)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
   }
 

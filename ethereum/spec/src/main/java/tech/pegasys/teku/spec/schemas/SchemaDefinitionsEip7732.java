@@ -41,8 +41,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderSchemaEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
@@ -61,8 +61,8 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   private final BeaconStateSchemaEip7732 beaconStateSchema;
 
-  private final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra;
-  private final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchemaElectra;
+  private final ExecutionPayloadSchemaEip7732 executionPayloadSchemaEip7732;
+  private final ExecutionPayloadHeaderSchemaEip7732 executionPayloadHeaderSchemaEip7732;
 
   private final BeaconBlockBodySchemaEip7732Impl beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaElectraImpl blindedBeaconBlockBodySchema;
@@ -97,10 +97,10 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
-    this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
+    this.executionPayloadSchemaEip7732 = new ExecutionPayloadSchemaEip7732(specConfig);
 
     this.beaconStateSchema = BeaconStateSchemaEip7732.create(specConfig);
-    this.executionPayloadHeaderSchemaElectra =
+    this.executionPayloadHeaderSchemaEip7732 =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.payloadAttestationSchema = new PayloadAttestationSchema(specConfig.getPtcSize());
     this.beaconBlockBodySchema =
@@ -109,7 +109,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             maxValidatorsPerAttestation,
-            executionPayloadHeaderSchemaElectra,
+            executionPayloadHeaderSchemaEip7732,
             payloadAttestationSchema,
             "BeaconBlockBodyEip7732");
     this.blindedBeaconBlockBodySchema =
@@ -130,7 +130,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.builderBidSchemaElectra =
         new BuilderBidSchemaDeneb(
             "BuilderBidEip7732",
-            executionPayloadHeaderSchemaElectra,
+            executionPayloadHeaderSchemaEip7732,
             getBlobKzgCommitmentsSchema());
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidEip7732", builderBidSchemaElectra);
@@ -145,15 +145,15 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
         new BlobsBundleSchema(
             "BlobsBundleEip7732", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaEip7732, blobsBundleSchema);
 
     this.indexedPayloadAttestationSchema =
         new IndexedPayloadAttestationSchema(specConfig.getPtcSize());
     this.signedExecutionPayloadHeaderSchema =
-        new SignedExecutionPayloadHeaderSchema(executionPayloadHeaderSchemaElectra);
+        new SignedExecutionPayloadHeaderSchema(executionPayloadHeaderSchemaEip7732);
     this.executionPayloadEnvelopeSchema =
         new ExecutionPayloadEnvelopeSchema(
-            executionPayloadSchemaElectra, getBlobKzgCommitmentsSchema());
+            executionPayloadSchemaEip7732, getBlobKzgCommitmentsSchema());
     this.signedExecutionPayloadEnvelopeSchema =
         new SignedExecutionPayloadEnvelopeSchema(executionPayloadEnvelopeSchema);
   }
@@ -240,12 +240,12 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   @Override
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return executionPayloadSchemaElectra;
+    return executionPayloadSchemaEip7732;
   }
 
   @Override
   public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return executionPayloadHeaderSchemaElectra;
+    return executionPayloadHeaderSchemaEip7732;
   }
 
   @Override
