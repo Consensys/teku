@@ -164,8 +164,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> request =
         apiChannel ->
             apiChannel
-                .createUnsignedBlock(
-                    slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
+                .createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
                 .thenPeek(
                     blockContainerAndMetaData -> {
                       if (!failoverDelegates.isEmpty()

@@ -141,8 +141,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     return countOptionalDataRequest(
-        delegate.createUnsignedBlock(
-            slot, randaoReveal, graffiti, requestedBuilderBoostFactor),
+        delegate.createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 

@@ -114,8 +114,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
       final Optional<UInt64> requestedBuilderBoostFactor) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .createUnsignedBlock(
-            slot, randaoReveal, graffiti, requestedBuilderBoostFactor);
+        .createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
   @Override

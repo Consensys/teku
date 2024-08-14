@@ -220,9 +220,9 @@ public class BlockOperationSelectorFactory {
 
     // We should run Builder flow (blinded) only if we have a validator registration
     final boolean shouldTryBuilderFlow =
-                executionPayloadContext
-                    .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
-                    .orElse(false);
+        executionPayloadContext
+            .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
+            .orElse(false);
 
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
@@ -245,8 +245,7 @@ public class BlockOperationSelectorFactory {
 
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        setPayloadOrPayloadHeader(
-            bodyBuilder, schemaDefinitions, executionPayloadResult),
+        setPayloadOrPayloadHeader(bodyBuilder, schemaDefinitions, executionPayloadResult),
         setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
   }
 
