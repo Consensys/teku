@@ -67,9 +67,10 @@ class EventSourceHandlerTest {
             false,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
-        false);
-    handler.onMessage(EventType.head.name(), new MessageEvent(
-            JsonUtil.serialize(event,HeadEvent.TYPE_DEFINITION)));
+            false);
+    handler.onMessage(
+        EventType.head.name(),
+        new MessageEvent(JsonUtil.serialize(event, HeadEvent.TYPE_DEFINITION)));
 
     verify(validatorTimingChannel)
         .onHeadUpdate(
@@ -125,11 +126,10 @@ class EventSourceHandlerTest {
             false,
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32(),
-                false);
+            false);
     // Head message with a reorg type
-    final MessageEvent messageEvent =  new MessageEvent(
-            JsonUtil.serialize(event,HeadEvent.TYPE_DEFINITION));
-    handler.onMessage(EventType.head.name(),messageEvent);
+    final MessageEvent messageEvent =
+        new MessageEvent(JsonUtil.serialize(event, HeadEvent.TYPE_DEFINITION));
     assertDoesNotThrow(() -> handler.onMessage(EventType.chain_reorg.name(), messageEvent));
     verifyNoInteractions(validatorTimingChannel);
   }
@@ -159,12 +159,11 @@ class EventSourceHandlerTest {
             false,
             previousDutyDependentRoot,
             currentDutyDependentRoot,
-                false);
+            false);
 
-    final MessageEvent messageEvent =  new MessageEvent(
-            JsonUtil.serialize(event,HeadEvent.TYPE_DEFINITION));
-    onTimeHandler.onMessage(
-        EventType.head.name(), messageEvent);
+    final MessageEvent messageEvent =
+        new MessageEvent(JsonUtil.serialize(event, HeadEvent.TYPE_DEFINITION));
+    onTimeHandler.onMessage(EventType.head.name(), messageEvent);
 
     verify(validatorTimingChannel)
         .onHeadUpdate(
