@@ -20,8 +20,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.DataColumnSidecarTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -84,17 +84,15 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final String topicName = GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId);
-    return new Eth2TopicHandler<>(
+    return DataColumnSidecarTopicHandler.createHandler(
         recentChainData,
         asyncRunner,
         processor,
         gossipEncoding,
-        forkInfo.getForkDigest(spec),
+        forkInfo,
         topicName,
-        new OperationMilestoneValidator<>(
-            spec, forkInfo.getFork(), message -> spec.computeEpochAtSlot(message.getSlot())),
         dataColumnSidecarSchema,
-        spec.getNetworkingConfig());
+        subnetId);
   }
 
   private int computeSubnetForSidecar(final DataColumnSidecar sidecar) {

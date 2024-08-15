@@ -33,13 +33,14 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
 
   @Override
   public SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
-      DataColumnSidecar sidecar, Optional<UInt64> arrivalTimestamp) {
+      DataColumnSidecar dataColumnSidecar, Optional<UInt64> arrivalTimestamp) {
     return validator
-        .validate(sidecar)
+        .validate(dataColumnSidecar)
         .thenPeek(
             res -> {
               if (res.isAccept()) {
-                validDataColumnSidecarsSubscribers.forEach(l -> l.onNewValidSidecar(sidecar));
+                validDataColumnSidecarsSubscribers.forEach(
+                    listener -> listener.onNewValidSidecar(dataColumnSidecar));
               }
             });
   }

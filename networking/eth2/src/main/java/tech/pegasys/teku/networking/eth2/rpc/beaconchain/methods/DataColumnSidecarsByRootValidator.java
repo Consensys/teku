@@ -18,22 +18,13 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColu
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
-public class DataColumnSidecarsByRootValidator {
-
-  private static final Logger LOG = LogManager.getLogger();
-
-  protected final Peer peer;
-  protected final Spec spec;
-  protected final KZG kzg;
-
+public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecarValidator {
   private final Set<DataColumnIdentifier> expectedDataColumnIdentifiers;
 
   public DataColumnSidecarsByRootValidator(
@@ -41,9 +32,7 @@ public class DataColumnSidecarsByRootValidator {
       final Spec spec,
       final KZG kzg,
       final List<DataColumnIdentifier> expectedDataColumnIdentifiers) {
-    this.peer = peer;
-    this.spec = spec;
-    this.kzg = kzg;
+    super(peer, spec, kzg);
     this.expectedDataColumnIdentifiers = ConcurrentHashMap.newKeySet();
     this.expectedDataColumnIdentifiers.addAll(expectedDataColumnIdentifiers);
   }
@@ -57,25 +46,5 @@ public class DataColumnSidecarsByRootValidator {
     }
 
     verifyKzgProof(dataColumnSidecar);
-  }
-
-  private void verifyKzgProof(final DataColumnSidecar dataColumnSidecar) {
-    if (!verifyDataColumnSidecarKzgProof(dataColumnSidecar)) {
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-    }
-  }
-
-  private boolean verifyDataColumnSidecarKzgProof(final DataColumnSidecar dataColumnSidecar) {
-    try {
-      return spec.atSlot(dataColumnSidecar.getSlot())
-          .miscHelpers()
-          .verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar);
-    } catch (final Exception ex) {
-      LOG.debug(
-          "KZG verification failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());
-      throw new DataColumnSidecarsResponseInvalidResponseException(
-          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED, ex);
-    }
   }
 }

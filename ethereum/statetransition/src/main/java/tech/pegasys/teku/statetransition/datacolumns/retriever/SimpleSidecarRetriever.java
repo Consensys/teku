@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
-import tech.pegasys.teku.statetransition.validation.DataColumnSidecarValidator;
 
 // TODO improve thread-safety: external calls are better to do outside of the synchronize block to
 // prevent potential dead locks
@@ -62,7 +61,6 @@ public class SimpleSidecarRetriever
       DataColumnPeerSearcher peerSearcher,
       DasPeerCustodyCountSupplier custodyCountSupplier,
       DataColumnReqResp reqResp,
-      DataColumnSidecarValidator validator,
       AsyncRunner asyncRunner,
       Duration roundPeriod) {
     this.spec = spec;
@@ -70,7 +68,7 @@ public class SimpleSidecarRetriever
     this.custodyCountSupplier = custodyCountSupplier;
     this.asyncRunner = asyncRunner;
     this.roundPeriod = roundPeriod;
-    this.reqResp = new ValidatingDataColumnReqResp(peerManager, reqResp, validator);
+    this.reqResp = new DataColumnReqRespImpl(peerManager, reqResp);
     peerManager.addPeerListener(this);
     this.maxRequestCount =
         SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig())

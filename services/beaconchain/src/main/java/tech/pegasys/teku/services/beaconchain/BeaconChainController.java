@@ -185,7 +185,6 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
-import tech.pegasys.teku.statetransition.validation.DataColumnSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -626,10 +625,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDataColumnSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
-      DataColumnSidecarValidator dataColumnSidecarValidator = DataColumnSidecarValidator.create();
-      DataColumnSidecarGossipValidator gossipValidator =
-          DataColumnSidecarGossipValidator.create(dataColumnSidecarValidator);
-      dataColumnSidecarManager = new DataColumnSidecarManagerImpl(gossipValidator);
+      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator =
+          DataColumnSidecarGossipValidator.create(
+              spec,
+              invalidBlockRoots,
+              gossipValidationHelper,
+              MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers()),
+              kzg);
+      dataColumnSidecarManager = new DataColumnSidecarManagerImpl(dataColumnSidecarGossipValidator);
       eventChannels.subscribe(
           DataColumnSidecarGossipChannel.class,
           dataColumnSidecarManager::onDataColumnSidecarPublish);
@@ -694,8 +697,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     // TODO NOOP peer searcher should work for interop but needs to be implemented
     DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
-    // TODO
-    DataColumnSidecarValidator dataColumnSidecarValidator = DataColumnSidecarValidator.NOOP;
     DataColumnSidecarRetriever sidecarRetriever =
         new SimpleSidecarRetriever(
             spec,
@@ -703,7 +704,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dataColumnPeerSearcher,
             custodyCountSupplier,
             dasRpc,
-            dataColumnSidecarValidator,
             operationPoolAsyncRunner,
             Duration.ofSeconds(1));
     MiscHelpersEip7594 miscHelpersEip7594 =
