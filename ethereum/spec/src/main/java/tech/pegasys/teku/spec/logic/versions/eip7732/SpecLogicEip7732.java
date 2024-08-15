@@ -36,16 +36,17 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellat
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.eip7732.forktransition.Eip7732StateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7332;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.util.AttestationUtilEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.AttestationDataValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
 public class SpecLogicEip7732 extends AbstractSpecLogic {
@@ -70,7 +71,7 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
-      final ElectraStateUpgrade stateUpgrade) {
+      final Eip7732StateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -97,11 +98,11 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
       final SchemaDefinitionsEip7732 schemaDefinitions,
       final TimeProvider timeProvider) {
     // Helpers
-    final PredicatesElectra predicates = new PredicatesElectra(config);
-    final MiscHelpersElectra miscHelpers =
-        new MiscHelpersElectra(config, predicates, schemaDefinitions);
-    final BeaconStateAccessorsElectra beaconStateAccessors =
-        new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
+    final PredicatesEip7732 predicates = new PredicatesEip7732(config);
+    final MiscHelpersEip7332 miscHelpers =
+        new MiscHelpersEip7332(config, predicates, schemaDefinitions);
+    final BeaconStateAccessorsEip7732 beaconStateAccessors =
+        new BeaconStateAccessorsEip7732(config, predicates, miscHelpers, schemaDefinitions);
     final BeaconStateMutatorsElectra beaconStateMutators =
         new BeaconStateMutatorsElectra(
             config, miscHelpers, beaconStateAccessors, schemaDefinitions);
@@ -117,7 +118,7 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtilElectra(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+        new AttestationUtilEip7732(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorElectra(config, miscHelpers, beaconStateAccessors);
     final VoluntaryExitValidatorElectra voluntaryExitValidatorElectra =
@@ -176,8 +177,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
     // State upgrade
-    final ElectraStateUpgrade stateUpgrade =
-        new ElectraStateUpgrade(
+    final Eip7732StateUpgrade stateUpgrade =
+        new Eip7732StateUpgrade(
             config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
 
     return new SpecLogicEip7732(

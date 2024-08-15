@@ -41,6 +41,11 @@ public class IndexedPayloadAttestationSchema
     return new IndexedPayloadAttestation(this, attestingIndices, data, signature);
   }
 
+  @SuppressWarnings("unchecked")
+  public SszUInt64ListSchema<SszUInt64List> getAttestingIndicesSchema() {
+    return (SszUInt64ListSchema<SszUInt64List>) getChildSchema(getFieldIndex("attesting_indices"));
+  }
+
   @Override
   public IndexedPayloadAttestation createFromBackingNode(final TreeNode node) {
     return new IndexedPayloadAttestation(this, node);
