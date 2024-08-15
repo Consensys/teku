@@ -15,9 +15,18 @@ package tech.pegasys.teku.spec.logic.versions.eip7732.util;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -46,5 +55,46 @@ public class AttestationUtilEip7732 extends AttestationUtilElectra {
         .filter(i -> !ptc.contains(i))
         .boxed()
         .collect(Collectors.toCollection(IntArrayList::new));
+  }
+
+  /**
+   * Check if ``indexed_payload_attestation`` is not empty, has sorted and unique indices and has a
+   * valid aggregate signature.
+   */
+  public boolean isValidIndexedPayloadAttestation(
+      final BeaconState state, final IndexedPayloadAttestation indexedPayloadAttestation) {
+    // Verify the data is valid
+    if (indexedPayloadAttestation.getData().getPayloadStatus()
+        >= PayloadStatus.PAYLOAD_INVALID_STATUS) {
+      return false;
+    }
+
+    final SszUInt64List indices = indexedPayloadAttestation.getAttestingIndices();
+
+    // Verify indices are sorted and unique
+    if (indices.isEmpty()
+        || !indices
+            .asListUnboxed()
+            .equals(indices.asListUnboxed().stream().sorted().distinct().toList())) {
+      return false;
+    }
+
+    // Verify aggregate signature
+    final List<BLSPublicKey> publicKeys =
+        indices.stream()
+            .map(idx -> state.getValidators().get(idx.get().intValue()).getPublicKey())
+            .toList();
+
+    final Bytes32 domain =
+        beaconStateAccessors.getDomain(
+            state.getForkInfo(),
+            Domain.PTC_ATTESTER,
+            miscHelpers.computeEpochAtSlot(state.getSlot()));
+
+    final Bytes signingRoot =
+        miscHelpers.computeSigningRoot(indexedPayloadAttestation.getData(), domain);
+
+    return BLS.fastAggregateVerify(
+        publicKeys, signingRoot, indexedPayloadAttestation.getSignature());
   }
 }

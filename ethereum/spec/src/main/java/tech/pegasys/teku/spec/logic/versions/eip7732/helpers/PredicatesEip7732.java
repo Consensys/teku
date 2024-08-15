@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.helpers;
 
-import java.util.List;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
@@ -38,38 +34,6 @@ public class PredicatesEip7732 extends PredicatesElectra {
                 new IllegalArgumentException(
                     "Expected Eip7332 predicates but got "
                         + predicates.getClass().getSimpleName()));
-  }
-
-  /**
-   * Check if ``indexed_payload_attestation`` is not empty, has sorted and unique indices and has a
-   * valid aggregate signature.
-   */
-  public boolean isValidIndexedPayloadAttestation(
-      final BeaconState state, final IndexedPayloadAttestation indexedPayloadAttestation) {
-    // Verify the data is valid
-    if (indexedPayloadAttestation.getData().getPayloadStatus() >= 3) {
-      return false;
-    }
-
-    final SszUInt64List indices = indexedPayloadAttestation.getAttestingIndices();
-
-    // Verify indices are sorted and unique
-    if (indices.isEmpty()
-        || !indices
-            .asListUnboxed()
-            .equals(indices.asListUnboxed().stream().sorted().distinct().toList())) {
-      return false;
-    }
-
-    @SuppressWarnings("unused")
-    // Verify aggregate signature
-    final List<BLSPublicKey> publicKeys =
-        indices.stream()
-            .map(idx -> state.getValidators().get(idx.get().intValue()).getPublicKey())
-            .toList();
-
-    // TODO: verify signature
-    return true;
   }
 
   /**
