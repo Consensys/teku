@@ -65,7 +65,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -765,14 +764,5 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     } catch (JsonProcessingException ex) {
       Assertions.fail(ex);
     }
-  }
-
-  private String serializeBlockContainer(final BlockContainer blockContainer)
-      throws JsonProcessingException {
-    return serialize(
-        blockContainer,
-        blockContainer.isBlinded()
-            ? schemaDefinitions.getBlindedBlockContainerSchema().getJsonTypeDefinition()
-            : schemaDefinitions.getBlockContainerSchema().getJsonTypeDefinition());
   }
 }
