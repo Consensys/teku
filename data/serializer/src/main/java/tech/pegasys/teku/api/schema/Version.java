@@ -31,7 +31,8 @@ public enum Version {
       case BELLATRIX -> bellatrix;
       case CAPELLA -> capella;
       case DENEB -> deneb;
-      case EIP7594 -> eip7594;
+      // FIXME: hack for devnet
+      case EIP7594 -> deneb;
     };
   }
 }
