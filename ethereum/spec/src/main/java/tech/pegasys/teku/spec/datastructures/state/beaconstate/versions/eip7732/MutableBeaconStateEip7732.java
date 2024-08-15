@@ -45,7 +45,7 @@ public interface MutableBeaconStateEip7732 extends MutableBeaconStateElectra, Be
     set(fieldIndex, SszBytes32.of(latestBlockHash));
   }
 
-  default void setLatestBlockHash(final UInt64 latestFullSlot) {
+  default void setLatestFullSlot(final UInt64 latestFullSlot) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.LATEST_FULL_SLOT);
     set(fieldIndex, SszUInt64.of(latestFullSlot));
   }
