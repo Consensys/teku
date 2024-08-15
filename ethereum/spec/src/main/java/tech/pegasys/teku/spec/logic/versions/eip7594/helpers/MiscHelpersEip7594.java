@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.eip7594.helpers;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,6 +59,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 
 public class MiscHelpersEip7594 extends MiscHelpersDeneb {
+  private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersEip7594 required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -308,6 +311,75 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
                   .toList();
             })
         .toList();
+  }
+
+  /**
+   * Return the sample count if allowing failures.
+   *
+   * <p>This helper demonstrates how to calculate the number of columns to query per slot when
+   * allowing given number of failures, assuming uniform random selection without replacement.
+   * Nested functions are direct replacements of Python library functions math.comb and
+   * scipy.stats.hypergeom.cdf, with the same signatures.
+   */
+  public UInt64 getExtendedSampleCount(final UInt64 allowedFailures) {
+    if (allowedFailures.isGreaterThan(specConfigEip7594.getNumberOfColumns() / 2)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Allowed failures (%s) should be less than half of columns number (%s)",
+              allowedFailures, specConfigEip7594.getNumberOfColumns()));
+    }
+    final UInt64 worstCaseMissing = UInt64.valueOf(specConfigEip7594.getNumberOfColumns() / 2 + 1);
+    final double falsePositiveThreshold =
+        hypergeomCdf(
+            UInt64.ZERO,
+            UInt64.valueOf(specConfigEip7594.getNumberOfColumns()),
+            worstCaseMissing,
+            UInt64.valueOf(specConfigEip7594.getSamplesPerSlot()));
+    UInt64 sampleCount = UInt64.valueOf(specConfigEip7594.getSamplesPerSlot());
+    for (;
+        sampleCount.isLessThanOrEqualTo(specConfigEip7594.getNumberOfColumns());
+        sampleCount = sampleCount.increment()) {
+      if (hypergeomCdf(
+              allowedFailures,
+              UInt64.valueOf(specConfigEip7594.getNumberOfColumns()),
+              worstCaseMissing,
+              sampleCount)
+          <= falsePositiveThreshold) {
+        break;
+      }
+    }
+    return sampleCount;
+  }
+
+  private UInt256 mathComb(final UInt64 n, final UInt64 k) {
+    if (n.isGreaterThanOrEqualTo(k)) {
+      UInt256 r = UInt256.ONE;
+      for (UInt64 i = UInt64.ZERO;
+          i.isLessThan(k.isGreaterThan(n.minus(k)) ? n.minus(k) : k);
+          i = i.plus(1)) {
+        r = r.multiply(n.minus(i).longValue()).divide(i.plus(1).longValue());
+      }
+      return r;
+    } else {
+      return UInt256.ZERO;
+    }
+  }
+
+  @SuppressWarnings("JavaCase")
+  private double hypergeomCdf(final UInt64 k, final UInt64 M, final UInt64 n, final UInt64 N) {
+    return Stream.iterate(UInt64.ZERO, i -> i.isLessThanOrEqualTo(k), UInt64::increment)
+        .mapToDouble(
+            i ->
+                N.isLessThan(i)
+                    ? 0d
+                    : new BigDecimal(
+                            mathComb(n, i)
+                                .multiply(mathComb(M.minus(n), N.minus(i)))
+                                .toBigInteger(),
+                            BIGDECIMAL_PRECISION)
+                        .divide(new BigDecimal(mathComb(M, N).toBigInteger()), BIGDECIMAL_PRECISION)
+                        .doubleValue())
+        .sum();
   }
 
   @Override
