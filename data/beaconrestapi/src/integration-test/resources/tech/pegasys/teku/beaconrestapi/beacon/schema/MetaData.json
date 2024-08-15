@@ -20,6 +20,12 @@
       "pattern" : "^0x[a-fA-F0-9]{2,}$",
       "description" : "Bitvector representing the node's persistent sync committee subnet subscriptions.",
       "format" : "bytes"
+    },
+    "custody_subnet_count" : {
+      "type" : "string",
+      "description" : "PeerDAS custody subnet count.",
+      "example" : "1",
+      "format" : "uint64"
     }
   }
 }

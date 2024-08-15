@@ -58,7 +58,7 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     final MetadataMessage metadataMessage =
         spec.getGenesisSchemaDefinitions()
             .getMetadataMessageSchema()
-            .create(seqnr, List.of(1, 11, 15), Collections.emptyList());
+            .create(seqnr, List.of(1, 11, 15), Collections.emptyList(), Optional.empty());
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
@@ -83,7 +83,32 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     final MetadataMessage metadataMessage =
         spec.getGenesisSchemaDefinitions()
             .getMetadataMessageSchema()
-            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3));
+            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3), Optional.empty());
+
+    when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
+
+    final Response response = get();
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final IdentityResponse identityResponse =
+        jsonProvider.jsonToObject(response.body().string(), IdentityResponse.class);
+    assertThat(identityResponse.data)
+        .isEqualTo(
+            new Identity(
+                node1.toBase58(),
+                enr,
+                List.of(address),
+                List.of(discoveryAddress),
+                new Metadata(metadataMessage)));
+  }
+
+  @Test
+  public void shouldReturnNetworkIdentityEip7594() throws Exception {
+    startRestAPIAtGenesis(SpecMilestone.EIP7594);
+
+    final MetadataMessage metadataMessage =
+        spec.getGenesisSchemaDefinitions()
+            .getMetadataMessageSchema()
+            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3), Optional.of(UInt64.valueOf(4)));
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 

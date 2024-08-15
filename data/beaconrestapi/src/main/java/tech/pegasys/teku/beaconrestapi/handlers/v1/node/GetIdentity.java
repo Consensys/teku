@@ -139,6 +139,10 @@ public class GetIdentity extends RestApiEndpoint {
                 .withDescription(
                     "Bitvector representing the node's persistent sync committee subnet subscriptions."),
             MetadataMessage::getOptionalSyncnets)
+        .withOptionalField(
+            "custody_subnet_count",
+            UINT64_TYPE.withDescription("PeerDAS custody subnet count."),
+            MetadataMessage::getOptionalCustodySubnetCount)
         .build();
   }
 

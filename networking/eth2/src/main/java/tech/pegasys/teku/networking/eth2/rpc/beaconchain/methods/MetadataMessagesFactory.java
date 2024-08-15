@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
@@ -25,6 +26,7 @@ public class MetadataMessagesFactory {
   private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
   private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
   private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
+  private Optional<UInt64> custodySubnetCount = Optional.empty();
 
   public synchronized void updateAttestationSubnetIds(Iterable<Integer> attestationSubnetIds) {
     this.attestationSubnetIds = attestationSubnetIds;
@@ -36,12 +38,18 @@ public class MetadataMessagesFactory {
     handleUpdate();
   }
 
+  public synchronized void updateCustodySubnetCount(UInt64 custodySubnetCount) {
+    this.custodySubnetCount = Optional.of(custodySubnetCount);
+    handleUpdate();
+  }
+
   private void handleUpdate() {
     seqNumberGenerator.incrementAndGet();
   }
 
   public synchronized MetadataMessage createMetadataMessage(MetadataMessageSchema<?> schema) {
-    return schema.create(getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds);
+    return schema.create(
+        getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds, custodySubnetCount);
   }
 
   public PingMessage createPingMessage() {

@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair;
+package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.eip7594;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -25,37 +25,43 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 
-public class MetadataMessageSchemaAltair
-    extends ContainerSchema3<MetadataMessageAltair, SszUInt64, SszBitvector, SszBitvector>
-    implements MetadataMessageSchema<MetadataMessageAltair> {
-  public MetadataMessageSchemaAltair(final NetworkingSpecConfig networkingSpecConfig) {
+public class MetadataMessageSchemaEip7594
+    extends ContainerSchema4<
+        MetadataMessageEip7594, SszUInt64, SszBitvector, SszBitvector, SszUInt64>
+    implements MetadataMessageSchema<MetadataMessageEip7594> {
+  public MetadataMessageSchemaEip7594(final NetworkingSpecConfig networkingSpecConfig) {
     super(
         "MetadataMessage",
         namedSchema("seq_number", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(
             "attnets", SszBitvectorSchema.create(networkingSpecConfig.getAttestationSubnetCount())),
         namedSchema(
-            "syncnets", SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)));
+            "syncnets", SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)),
+        namedSchema("custody_subnet_count", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   @Override
-  public MetadataMessageAltair create(
+  public MetadataMessageEip7594 create(
       final UInt64 seqNumber,
       final Iterable<Integer> attnets,
       final Iterable<Integer> syncnets,
       final Optional<UInt64> custodySubnetCount) {
-    return new MetadataMessageAltair(
-        this, seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
+    return new MetadataMessageEip7594(
+        this,
+        seqNumber,
+        getAttnestSchema().ofBits(attnets),
+        getSyncnetsSchema().ofBits(syncnets),
+        custodySubnetCount.orElse(UInt64.ZERO));
   }
 
   @Override
-  public MetadataMessageAltair createDefault() {
-    return new MetadataMessageAltair(this);
+  public MetadataMessageEip7594 createDefault() {
+    return new MetadataMessageEip7594(this);
   }
 
   @Override
-  public MetadataMessageAltair createFromBackingNode(final TreeNode node) {
-    return new MetadataMessageAltair(this, node);
+  public MetadataMessageEip7594 createFromBackingNode(final TreeNode node) {
+    return new MetadataMessageEip7594(this, node);
   }
 
   private SszBitvectorSchema<SszBitvector> getAttnestSchema() {

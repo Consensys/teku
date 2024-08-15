@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -123,9 +124,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int peerRequestLimit,
       final Spec spec,
       final KZG kzg,
-      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
+      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
+      final Optional<UInt64> custodySubnetCount) {
 
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+
+    custodySubnetCount.ifPresent(metadataMessagesFactory::updateCustodySubnetCount);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(

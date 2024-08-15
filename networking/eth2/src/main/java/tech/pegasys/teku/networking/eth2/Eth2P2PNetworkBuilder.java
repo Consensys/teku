@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
@@ -168,6 +169,14 @@ public class Eth2P2PNetworkBuilder {
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }
+
+    final Optional<UInt64> dasTotalCustodySubnetCount =
+        spec.isMilestoneSupported(SpecMilestone.EIP7594)
+            ? Optional.of(
+                UInt64.valueOf(
+                    config.getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594))))
+            : Optional.empty();
+
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -187,7 +196,8 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRequestLimit(),
             spec,
             kzg,
-            discoveryNodeIdExtractor);
+            discoveryNodeIdExtractor,
+            dasTotalCustodySubnetCount);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
@@ -199,11 +209,6 @@ public class Eth2P2PNetworkBuilder {
         buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
-
-    final int dasTotalCustodySubnetCount =
-        spec.isMilestoneSupported(SpecMilestone.EIP7594)
-            ? config.getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594))
-            : 0;
 
     return new ActiveEth2P2PNetwork(
         config.getSpec(),
@@ -219,7 +224,7 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
-        dasTotalCustodySubnetCount,
+        dasTotalCustodySubnetCount.orElse(UInt64.ZERO).intValue(),
         config.isAllTopicsFilterEnabled());
   }
 

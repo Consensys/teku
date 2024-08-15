@@ -48,6 +48,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip7594.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7594.ExecutionPayloadSchemaEip7594;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.eip7594.MetadataMessageSchemaEip7594;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7594.BeaconStateEip7594;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7594.BeaconStateSchemaEip7594;
@@ -85,6 +87,7 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
   private final DataColumnSidecarsByRangeRequestMessage
           .DataColumnSidecarsByRangeRequestMessageSchema
       dataColumnSidecarsByRangeRequestMessageSchema;
+  private final MetadataMessageSchemaEip7594 metadataMessageSchema;
 
   public SchemaDefinitionsEip7594(final SpecConfigEip7594 specConfig) {
     super(specConfig);
@@ -145,6 +148,8 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
     this.dataColumnSidecarsByRangeRequestMessageSchema =
         new DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema(
             specConfig);
+
+    this.metadataMessageSchema = new MetadataMessageSchemaEip7594(specConfig);
   }
 
   public static SchemaDefinitionsEip7594 required(final SchemaDefinitions schemaDefinitions) {
@@ -260,6 +265,11 @@ public class SchemaDefinitionsEip7594 extends SchemaDefinitionsDeneb {
   @Override
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
     return executionPayloadAndBlobsBundleSchema;
+  }
+
+  @Override
+  public MetadataMessageSchema<?> getMetadataMessageSchema() {
+    return metadataMessageSchema;
   }
 
   @Override
