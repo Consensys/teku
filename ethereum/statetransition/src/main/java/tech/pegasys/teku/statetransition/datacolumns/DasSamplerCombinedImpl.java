@@ -32,6 +32,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,8 +54,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-// TODO: reuse codebase of DasSamplerImpl
-public class DasLossySamplerImpl
+public class DasSamplerCombinedImpl
     implements DataAvailabilitySampler, FinalizedCheckpointChannel, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
@@ -71,6 +71,7 @@ public class DasLossySamplerImpl
   private final Spec spec;
   private final DataColumnSidecarDB db;
   private final RecentChainData recentChainData;
+  private final boolean isLossy;
 
   private final UInt64 eip7594StartEpoch;
   private final Random rnd;
@@ -82,20 +83,22 @@ public class DasLossySamplerImpl
 
   private UInt64 currentSlot = null;
 
-  public DasLossySamplerImpl(
+  public DasSamplerCombinedImpl(
       final Spec spec,
       final DataColumnSidecarDB db,
       final RecentChainData recentChainData,
       final DataColumnSidecarRetriever retriever,
       final AsyncRunner asyncRunner,
       final int maxPendingColumnRequests,
-      final int minPendingColumnRequests) {
+      final int minPendingColumnRequests,
+      final boolean isLossy) {
     checkNotNull(spec);
     checkNotNull(db);
 
     this.spec = spec;
     this.db = db;
     this.recentChainData = recentChainData;
+    this.isLossy = isLossy;
     this.eip7594StartEpoch = spec.getForkSchedule().getFork(SpecMilestone.EIP7594).getEpoch();
     this.rnd = new Random();
 
@@ -105,16 +108,17 @@ public class DasLossySamplerImpl
     this.minPendingColumnRequests = minPendingColumnRequests;
   }
 
-  public DasLossySamplerImpl(
+  public DasSamplerCombinedImpl(
       final Spec spec,
       final DataColumnSidecarDB db,
       final RecentChainData recentChainData,
       final DataColumnSidecarRetriever retriever,
-      final AsyncRunner asyncRunner) {
-    this(spec, db, recentChainData, retriever, asyncRunner, 10 * 1024, 2 * 1024);
+      final AsyncRunner asyncRunner,
+      final boolean isLossy) {
+    this(spec, db, recentChainData, retriever, asyncRunner, 10 * 1024, 2 * 1024, isLossy);
   }
 
-  private synchronized void onRequestComplete(PendingRequest request, DataColumnSidecar response) {
+  private synchronized void onRequestComplete(DataColumnSidecar response) {
     onNewValidatedDataColumnSidecar(response);
     fillUpIfNeeded();
   }
@@ -138,11 +142,13 @@ public class DasLossySamplerImpl
       UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot) {
     final SafeFuture<Void> dataAvailabilityCheckFuture = addSlotTask(slot, blockRoot, parentRoot);
     fillUpIfNeeded();
-    asyncRunner
-        .runAfterDelay(
-            () -> updateSlotSamplingAssignment(new SlotAndBlockRoot(slot, blockRoot)),
-            SAMPLING_EXTENSION_INTERVAL)
-        .ifExceptionGetsHereRaiseABug();
+    if (isLossy) {
+      asyncRunner
+          .runAfterDelay(
+              () -> updateSlotSamplingAssignment(new SlotAndBlockRoot(slot, blockRoot)),
+              SAMPLING_EXTENSION_INTERVAL)
+          .ifExceptionGetsHereRaiseABug();
+    }
 
     return dataAvailabilityCheckFuture;
   }
@@ -188,8 +194,7 @@ public class DasLossySamplerImpl
     final SafeFuture<DataColumnSidecar> promise = retriever.retrieve(missingColumn);
     final PendingRequest request = new PendingRequest(missingColumn, promise);
     pendingRequests.put(missingColumn, request);
-    promise.finish(
-        response -> onRequestComplete(request, response), err -> onRequestException(request, err));
+    promise.finish(this::onRequestComplete, err -> onRequestException(request, err));
   }
 
   @Override
@@ -242,6 +247,22 @@ public class DasLossySamplerImpl
                   syncedColumnCount.incrementAndGet();
                 });
           });
+
+      // IF we've collected 50%, everything from this slot is available
+      final Set<DataColumnIdentifier> thisSlotDataColumnIdentifiers =
+          collectedSamples.get(dataColumnSidecar.getSlotAndBlockRoot());
+      final int columnsCount =
+          SpecConfigEip7594.required(spec.atSlot(dataColumnSidecar.getSlot()).getConfig())
+              .getNumberOfColumns();
+      if (thisSlotDataColumnIdentifiers.size() * 2 >= columnsCount
+          && thisSlotDataColumnIdentifiers.size() != columnsCount) {
+        IntStream.range(0, columnsCount)
+            .mapToObj(
+                index ->
+                    new DataColumnIdentifier(
+                        dataColumnSidecar.getBlockRoot(), UInt64.valueOf(index)))
+            .forEach(identifier -> syncedColumnCount.incrementAndGet());
+      }
 
       // Check if the slot is completed and if it's just completed
       if (isSlotSamplingCompleted(dataColumnSidecar.getSlotAndBlockRoot())
