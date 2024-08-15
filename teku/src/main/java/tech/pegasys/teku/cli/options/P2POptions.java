@@ -334,6 +334,17 @@ public class P2POptions {
       hidden = true)
   private int dasExtraCustodySubnetCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT;
 
+  @Option(
+      names = {"--Xdas-lossy-sampler-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enables Lossy DAS Sampler, which increases number of required samples while allows non-zero column failures",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean dasLossySamplerEnabled = P2PConfig.DEFAULT_DAS_LOSSY_SAMPLER_ENABLED;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -370,7 +381,8 @@ public class P2POptions {
                     .peerRateLimit(peerRateLimit)
                     .allTopicsFilterEnabled(allTopicsFilterEnabled)
                     .peerRequestLimit(peerRequestLimit)
-                    .dasExtraCustodySubnetCount(dasExtraCustodySubnetCount))
+                    .dasExtraCustodySubnetCount(dasExtraCustodySubnetCount)
+                    .dasLossySamplerEnabled(dasLossySamplerEnabled))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {

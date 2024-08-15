@@ -143,6 +143,7 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasLongPollCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DasLossySamplerImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
@@ -729,19 +730,36 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final int myDataColumnSampleCount =
         Math.min(configEip7594.getSamplesPerSlot(), configEip7594.getNumberOfColumns());
     if (myDataColumnSampleCount != 0) {
-      final DasSamplerImpl dasSamplerImpl =
-          new DasSamplerImpl(
-              spec,
-              sidecarDB,
-              recentChainData,
-              myDataColumnSampleCount,
-              recoveringSidecarRetriever);
-      eventChannels.subscribe(SlotEventsChannel.class, dasSamplerImpl);
-      eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSamplerImpl);
-      dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-          dasSamplerImpl::onNewValidatedDataColumnSidecar);
-      this.dataAvailabilitySampler = dasSamplerImpl;
-      LOG.info("DAS Sampler initialized with {} columns to sample", myDataColumnSampleCount);
+      if (beaconConfig.p2pConfig().isDasLossySamplerEnabled()) {
+        // We don't need recovering for Lossy Sampler
+        // the only issue - we will not gossip failed columns in case we reach half of columns
+        // failures,
+        // but it's not straightforward to sync lossy logic with recovering, so it's postponed
+        final DasLossySamplerImpl dasLossySampler =
+            new DasLossySamplerImpl(
+                spec, sidecarDB, recentChainData, sidecarRetriever, beaconAsyncRunner);
+        eventChannels.subscribe(SlotEventsChannel.class, dasLossySampler);
+        eventChannels.subscribe(FinalizedCheckpointChannel.class, dasLossySampler);
+        dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+            dasLossySampler::onNewValidatedDataColumnSidecar);
+        this.dataAvailabilitySampler = dasLossySampler;
+        LOG.info(
+            "DAS Lossy Sampler initialized with {} columns to sample", myDataColumnSampleCount);
+      } else {
+        final DasSamplerImpl dasSamplerImpl =
+            new DasSamplerImpl(
+                spec,
+                sidecarDB,
+                recentChainData,
+                myDataColumnSampleCount,
+                recoveringSidecarRetriever);
+        eventChannels.subscribe(SlotEventsChannel.class, dasSamplerImpl);
+        eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSamplerImpl);
+        dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+            dasSamplerImpl::onNewValidatedDataColumnSidecar);
+        this.dataAvailabilitySampler = dasSamplerImpl;
+        LOG.info("DAS Sampler initialized with {} columns to sample", myDataColumnSampleCount);
+      }
     } else {
       this.dataAvailabilitySampler = DataAvailabilitySampler.NOOP;
       LOG.info("DAS Sampler is not initialized, no columns to sample");
