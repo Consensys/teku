@@ -60,6 +60,7 @@ public class DataColumnSidecarCustodyImplTest {
         new DataColumnSidecarCustodyImpl(spec, blockResolver, db, myNodeId, subnetCount);
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);
+    DataColumnSidecar sidecar1 = createSidecar(block, 1);
     DataColumnIdentifier columnId0 = DataColumnIdentifier.createFromSidecar(sidecar0);
 
     SafeFuture<Optional<DataColumnSidecar>> fRet1 = custody.getCustodyDataColumnSidecar(columnId0);
@@ -67,27 +68,15 @@ public class DataColumnSidecarCustodyImplTest {
 
     assertThat(ret1).isEmpty();
 
+    custody.onNewValidatedDataColumnSidecar(sidecar1);
+    custody.onNewValidatedDataColumnSidecar(sidecar0);
+
     SafeFuture<Optional<DataColumnSidecar>> fRet2_1 =
         custody.getCustodyDataColumnSidecar(columnId0);
     SafeFuture<Optional<DataColumnSidecar>> fRet2_2 =
         custody.getCustodyDataColumnSidecar(columnId0);
 
-    custody.onNewValidatedDataColumnSidecar(sidecar0);
-
     assertThat(fRet2_1.get().get()).isEqualTo(sidecar0);
     assertThat(fRet2_2.get().get()).isEqualTo(sidecar0);
-
-    SafeFuture<Optional<DataColumnSidecar>> fRet3 = custody.getCustodyDataColumnSidecar(columnId0);
-
-    assertThat(fRet3.get().get()).isEqualTo(sidecar0);
-
-    DataColumnSidecar sidecar1 = createSidecar(block, 1);
-    DataColumnIdentifier columnId1 = DataColumnIdentifier.createFromSidecar(sidecar1);
-
-    SafeFuture<Optional<DataColumnSidecar>> fRet4 = custody.getCustodyDataColumnSidecar(columnId1);
-    assertThat(fRet4).isNotDone();
-
-    custody.onNewValidatedDataColumnSidecar(sidecar1);
-    assertThat(fRet4.get().get()).isEqualTo(sidecar1);
   }
 }

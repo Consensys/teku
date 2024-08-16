@@ -35,7 +35,7 @@ public class TestPeer {
 
   private final Map<DataColumnIdentifier, DataColumnSidecar> availableSidecars = new HashMap<>();
   private final List<Request> requests = new ArrayList<>();
-  private int currentRequestLimit = 0;
+  private int currentRequestLimit = 1000;
 
   public TestPeer(AsyncRunner asyncRunner, UInt256 nodeId, Duration latency) {
     this.asyncRunner = asyncRunner;
@@ -90,7 +90,8 @@ public class TestPeer {
     return currentRequestLimit;
   }
 
-  public void setCurrentRequestLimit(int currentRequestLimit) {
+  public TestPeer currentRequestLimit(int currentRequestLimit) {
     this.currentRequestLimit = currentRequestLimit;
+    return this;
   }
 }
