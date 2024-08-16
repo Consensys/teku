@@ -21,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
-import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
@@ -32,7 +31,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -42,19 +40,19 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(
-    milestone = {PHASE0, ELECTRA},
+    milestone = {ELECTRA},
     network = Eth2Network.MINIMAL)
-public class CreateAggregateAttestationRequestV2Test extends AbstractTypeDefRequestTestBase {
+public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDefRequestTestBase {
 
-  private CreateAggregateAttestationRequestV2 createAggregateAttestationRequestV2;
+  private CreateAggregateAttestationRequest createAggregateAttestationRequest;
   private Buffer responseBodyBuffer;
   private final UInt64 slot = UInt64.ONE;
 
   @BeforeEach
   void setupRequest() {
-    createAggregateAttestationRequestV2 =
-        new CreateAggregateAttestationRequestV2(
-            mockWebServer.url("/"), okHttpClient, slot, new SchemaDefinitionCache(spec));
+    createAggregateAttestationRequest =
+        new CreateAggregateAttestationRequest(
+            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec), spec);
     responseBodyBuffer = new Buffer();
   }
 
@@ -71,7 +69,8 @@ public class CreateAggregateAttestationRequestV2Test extends AbstractTypeDefRequ
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    createAggregateAttestationRequestV2.submit(attestationHashTreeRoot, committeeIndex);
+    createAggregateAttestationRequest.submit(
+        slot, attestationHashTreeRoot, Optional.of(committeeIndex));
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
@@ -87,11 +86,13 @@ public class CreateAggregateAttestationRequestV2Test extends AbstractTypeDefRequ
   @TestTemplate
   public void shouldGetAggregateAttestation() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final CreateAggregateAttestationRequestV2.GetAggregateAttestationResponse
+    final CreateAggregateAttestationRequest.GetAggregateAttestationResponseV2
         getAggregateAttestationResponse =
-            new CreateAggregateAttestationRequestV2.GetAggregateAttestationResponse(attestation);
+            new CreateAggregateAttestationRequest.GetAggregateAttestationResponseV2(attestation);
 
-    final String mockResponse = readExpectedJsonResource(specMilestone);
+    final String mockResponse =
+        readResource(
+            "responses/create_aggregate_attestation_responses/createAggregateAttestationResponseElectra.json");
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
@@ -102,15 +103,11 @@ public class CreateAggregateAttestationRequestV2Test extends AbstractTypeDefRequ
             : attestation.getData().getIndex();
 
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestationAndMetaData =
-        createAggregateAttestationRequestV2.submit(attestation.hashTreeRoot(), committeeIndex);
+        createAggregateAttestationRequest.submit(
+            slot, attestation.hashTreeRoot(), Optional.of(committeeIndex));
     assertThat(maybeAttestationAndMetaData).isPresent();
     assertThat(maybeAttestationAndMetaData.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());
     assertThat(maybeAttestationAndMetaData.get().getMilestone()).isEqualTo(specMilestone);
-  }
-
-  private String readExpectedJsonResource(final SpecMilestone specMilestone) {
-    final String fileName = String.format("getAggregateAttestation%s.json", specMilestone.name());
-    return readResource("responses/get_aggregate_attestation_responses/" + fileName);
   }
 }

@@ -56,7 +56,6 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequestV2;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
@@ -264,20 +263,14 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     prepareBeaconProposersRequest.submit(beaconPreparableProposers);
   }
 
-  public Optional<Attestation> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+  public Optional<ObjectAndMetaData<Attestation>> createAggregate(
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     final CreateAggregateAttestationRequest createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
-            getBaseEndpoint(), getOkHttpClient(), schemaDefinitionCache);
-    return createAggregateAttestationRequest.submit(slot, attestationHashTreeRoot);
-  }
-
-  public Optional<ObjectAndMetaData<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
-    CreateAggregateAttestationRequestV2 createAggregateAttestationRequestV2 =
-        new CreateAggregateAttestationRequestV2(
-            getBaseEndpoint(), getOkHttpClient(), slot, schemaDefinitionCache);
-    return createAggregateAttestationRequestV2.submit(attestationHashTreeRoot, committeeIndex);
+            getBaseEndpoint(), getOkHttpClient(), schemaDefinitionCache, spec);
+    return createAggregateAttestationRequest.submit(slot, attestationHashTreeRoot, committeeIndex);
   }
 
   public Optional<List<ValidatorLivenessAtEpoch>> sendValidatorsLiveness(

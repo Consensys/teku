@@ -52,7 +52,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -83,19 +82,16 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final HttpUrl endpoint;
-  private final Spec spec;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
-      final Spec spec,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner,
       final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
-    this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
     this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
@@ -273,18 +269,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
-    // Use attestation v2 api post Electra only. This logic can be removed once we reach the Electra
-    // milestone
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-        && committeeIndex.isPresent()) {
-      return sendRequest(
-          () ->
-              typeDefClient
-                  .createAggregate(slot, attestationHashTreeRoot, committeeIndex.get())
-                  .map(ObjectAndMetaData::getData));
-    }
-
-    return sendRequest(() -> typeDefClient.createAggregate(slot, attestationHashTreeRoot));
+    return sendRequest(
+        () ->
+            typeDefClient
+                .createAggregate(slot, attestationHashTreeRoot, committeeIndex)
+                .map(ObjectAndMetaData::getData));
   }
 
   @Override
@@ -389,6 +378,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
     return new RemoteValidatorApiHandler(
-        endpoint, spec, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
+        endpoint, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }
