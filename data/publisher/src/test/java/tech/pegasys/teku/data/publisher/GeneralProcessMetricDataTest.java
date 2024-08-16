@@ -19,12 +19,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
 public class GeneralProcessMetricDataTest {
 
-  private final JsonProvider jsonProvider = new JsonProvider();
+  private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {
@@ -36,8 +35,7 @@ public class GeneralProcessMetricDataTest {
             .build();
     final GeneralProcessMetricData process =
         new GeneralProcessMetricData(10L, processField, source);
-    final String data = jsonProvider.objectToJSON(process);
-    final ObjectMapper mapper = jsonProvider.getObjectMapper();
+    final String data = mapper.writeValueAsString(process);
     final JsonNode node = mapper.readTree(data);
     assertThat(node.size()).isEqualTo(10);
     assertThat(node.get("client_build").asInt()).isEqualTo(0);
