@@ -101,7 +101,7 @@ class LocalSlashingProtectorTest {
     final Optional<ValidatorSigningRecord> existingRecord =
         Optional.of(
             new ValidatorSigningRecord(
-                GENESIS_VALIDATORS_ROOT,
+                Optional.of(GENESIS_VALIDATORS_ROOT),
                 ATTESTATION_TEST_BLOCK_SLOT,
                 UInt64.valueOf(4),
                 UInt64.valueOf(6)));
@@ -150,7 +150,7 @@ class LocalSlashingProtectorTest {
 
     final ValidatorSigningRecord updatedRecord =
         new ValidatorSigningRecord(
-            GENESIS_VALIDATORS_ROOT,
+            Optional.of(GENESIS_VALIDATORS_ROOT),
             lastSignedAttestation.isPresent() ? ATTESTATION_TEST_BLOCK_SLOT : UInt64.ZERO,
             sourceEpoch,
             targetEpoch);
@@ -186,7 +186,7 @@ class LocalSlashingProtectorTest {
         lastSignedBlockSlot.isPresent()
             ? blockTestSigningRecord(newBlockSlot)
             : new ValidatorSigningRecord(
-                    GENESIS_VALIDATORS_ROOT,
+                    Optional.of(GENESIS_VALIDATORS_ROOT),
                     newBlockSlot,
                     ValidatorSigningRecord.NEVER_SIGNED,
                     ValidatorSigningRecord.NEVER_SIGNED)
@@ -196,7 +196,10 @@ class LocalSlashingProtectorTest {
 
   private Bytes blockTestSigningRecord(final UInt64 blockSlot) {
     return new ValidatorSigningRecord(
-            GENESIS_VALIDATORS_ROOT, blockSlot, BLOCK_TEST_SOURCE_EPOCH, BLOCK_TEST_TARGET_EPOCH)
+            Optional.of(GENESIS_VALIDATORS_ROOT),
+            blockSlot,
+            BLOCK_TEST_SOURCE_EPOCH,
+            BLOCK_TEST_TARGET_EPOCH)
         .toBytes();
   }
 

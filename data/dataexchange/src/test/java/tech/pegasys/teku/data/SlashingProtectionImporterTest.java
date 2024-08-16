@@ -51,7 +51,7 @@ public class SlashingProtectionImporterTest {
   public void shouldFailWithParseError(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final String errorString = loadAndGetErrorText("minimal_invalidKey.json", tempDir);
-    assertThat(errorString).startsWith("Failed to load data");
+    assertThat(errorString).startsWith("Json does not appear valid.");
   }
 
   @Test
@@ -73,7 +73,7 @@ public class SlashingProtectionImporterTest {
   public void shouldFailIfMetadataNotPresent(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final String errorString = loadAndGetErrorText("signedBlock.json", tempDir);
-    assertThat(errorString).contains("does not appear to have metadata");
+    assertThat(errorString).contains("required fields: (metadata");
   }
 
   @Test
@@ -157,10 +157,7 @@ public class SlashingProtectionImporterTest {
     assertThat(importedRecord)
         .isEqualTo(
             new ValidatorSigningRecord(
-                initialRecord.getGenesisValidatorsRoot(),
-                repairedSlot,
-                repairedEpoch,
-                repairedEpoch));
+                initialRecord.genesisValidatorsRoot(), repairedSlot, repairedEpoch, repairedEpoch));
   }
 
   @Test
