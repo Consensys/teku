@@ -218,12 +218,6 @@ public class BlockOperationSelectorFactory {
               blockSlotState.getSlot()));
     }
 
-    // We should run Builder flow (blinded) only if we have a validator registration
-    final boolean shouldTryBuilderFlow =
-        executionPayloadContext
-            .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
-            .orElse(false);
-
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
 
@@ -234,6 +228,12 @@ public class BlockOperationSelectorFactory {
 
       return SafeFuture.COMPLETE;
     }
+
+    // We should run Builder flow (blinded) only if we have a validator registration
+    final boolean shouldTryBuilderFlow =
+        executionPayloadContext
+            .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
+            .orElse(false);
 
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockProduction(
