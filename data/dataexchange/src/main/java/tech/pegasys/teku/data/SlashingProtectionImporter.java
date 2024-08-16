@@ -159,7 +159,7 @@ public class SlashingProtectionImporter {
 
   private Optional<String> updateLocalRecord(
       final SigningHistory signingHistory, final Consumer<String> statusConsumer) {
-    String validatorString =
+    final String validatorString =
         signingHistory
             .pubkey()
             .toBytesCompressed()
@@ -168,7 +168,7 @@ public class SlashingProtectionImporter {
     final String hexValidatorPubkey = signingHistory.pubkey().toHexString();
 
     statusConsumer.accept("Importing " + validatorString);
-    Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
+    final Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
       try {

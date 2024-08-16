@@ -112,7 +112,7 @@ public class SlashingProtectionInterchangeTestExecutor implements TestExecutor {
       final String data =
           JsonUtil.serialize(
               interchange, SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
-      Files.write(importFile, data.getBytes());
+      Files.writeString(importFile, data);
       final Optional<String> initialiseError = importer.initialise(importFile.toFile());
       assertThat(initialiseError).isEmpty();
       // cleanup

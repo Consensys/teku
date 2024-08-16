@@ -53,7 +53,7 @@ public class SlashingProtectionExporter {
 
   // returns a map of errors and the associated keys.
   public Map<BLSPublicKey, String> initialise(final Consumer<String> infoLogger) {
-    File slashingProtectionRecords = slashProtectionPath.toFile();
+    final File slashingProtectionRecords = slashProtectionPath.toFile();
     final Map<BLSPublicKey, String> importErrors = new HashMap<>();
     for (File currentFile : slashingProtectionRecords.listFiles()) {
       final Optional<String> maybeError = readSlashProtectionFile(currentFile, infoLogger);
@@ -76,7 +76,7 @@ public class SlashingProtectionExporter {
       if (maybeRecord.isEmpty()) {
         return Optional.of("Failed to read from file " + file.getName());
       }
-      ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
+      final ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
 
       if (validatorSigningRecord.genesisValidatorsRoot().isPresent()) {
         if (genesisValidatorsRoot.isEmpty()) {

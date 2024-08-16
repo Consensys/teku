@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record HeadEvent(
+record HeadEvent(
     UInt64 slot,
     Bytes32 block,
     Bytes32 state,
@@ -30,7 +30,7 @@ public record HeadEvent(
     Bytes32 currentDutyDependentRoot,
     Boolean executionOptimistic) {
 
-  public static final DeserializableTypeDefinition<HeadEvent> TYPE_DEFINITION =
+  static final DeserializableTypeDefinition<HeadEvent> TYPE_DEFINITION =
       DeserializableTypeDefinition.object(HeadEvent.class, HeadEventBuilder.class)
           .initializer(HeadEventBuilder::new)
           .finisher(HeadEventBuilder::build)

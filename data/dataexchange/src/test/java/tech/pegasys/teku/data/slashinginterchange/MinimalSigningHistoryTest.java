@@ -48,7 +48,7 @@ public class MinimalSigningHistoryTest {
     assertThat(parsed.metadata())
         .isEqualTo(new Metadata(Optional.empty(), INTERCHANGE_VERSION, GENESIS_ROOT));
 
-    List<SigningHistory> minimalSigningHistoryList = parsed.data();
+    final List<SigningHistory> minimalSigningHistoryList = parsed.data();
 
     final SigningHistory element =
         SigningHistory.createSigningHistory(

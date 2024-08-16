@@ -60,7 +60,7 @@ public class SlashingProtectionRepairer {
 
   private void initialise(final Path slashProtectionPath) {
     this.slashingProtectionPath = slashProtectionPath;
-    File slashingProtectionRecords = slashProtectionPath.toFile();
+    final File slashingProtectionRecords = slashProtectionPath.toFile();
     Arrays.stream(slashingProtectionRecords.listFiles())
         .filter(file -> file.isFile() && file.getName().endsWith(".yml"))
         .forEach(this::readSlashProtectionFile);
@@ -98,7 +98,8 @@ public class SlashingProtectionRepairer {
     try {
       return BLSPublicKey.fromHexString(value);
     } catch (IllegalArgumentException e) {
-      throw new PublicKeyException("Public key " + value + " is invalid: " + e.getMessage(), e);
+      throw new PublicKeyException(
+          String.format("Public key %s is invalid: %s", value, e.getMessage()), e);
     }
   }
 
