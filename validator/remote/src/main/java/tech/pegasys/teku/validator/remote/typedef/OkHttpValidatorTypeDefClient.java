@@ -152,12 +152,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(
             getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
-    try {
-      return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
-    } catch (final BlockProductionV3FailedException ex) {
-      LOG.warn("Produce Block V3 request failed at slot {}.", slot);
-      return Optional.empty();
-    }
+    return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
   public void registerValidators(
