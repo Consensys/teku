@@ -33,8 +33,7 @@ public class SendSubscribeToSyncCommitteeSubnetsRequest extends AbstractTypeDefR
     super(baseEndpoint, okHttpClient);
   }
 
-  public void subscribeToSyncCommitteeSubnets(
-      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+  public void submit(final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     final List<PostSyncCommitteeData> requestData =
         subscriptions.stream().map(PostSyncCommitteeData::new).toList();
     postJson(

@@ -87,7 +87,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetBlockRewards;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetSyncCommitteeRewards;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
@@ -105,13 +104,13 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetAttestationsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetAttesterSlashingsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlockAttestationsV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttestationsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttesterSlashingV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlindedBlockV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlockV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetAggregateAttestationV2;
-import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v3.validator.GetNewBlockV3;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -240,6 +239,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetAttestations(dataProvider, spec))
             .endpoint(new GetAttestationsV2(dataProvider, schemaCache))
             .endpoint(new PostAttestation(dataProvider, schemaCache))
+            .endpoint(new PostAttestationsV2(dataProvider, schemaCache))
             .endpoint(new GetAttesterSlashings(dataProvider, schemaCache))
             .endpoint(new GetAttesterSlashingsV2(dataProvider, schemaCache))
             .endpoint(new PostAttesterSlashing(dataProvider, schemaCache))
@@ -275,8 +275,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             // Validator Handlers
             .endpoint(new PostAttesterDuties(dataProvider))
             .endpoint(new GetProposerDuties(dataProvider))
-            .endpoint(new GetNewBlock(dataProvider, spec, schemaCache))
-            .endpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache))
             .endpoint(new GetNewBlockV3(dataProvider, schemaCache))
             .endpoint(new GetAttestationData(dataProvider))
             .endpoint(new GetAggregateAttestation(dataProvider, spec))

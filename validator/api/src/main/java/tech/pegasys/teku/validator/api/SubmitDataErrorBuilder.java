@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
+package tech.pegasys.teku.validator.api;
 
-import tech.pegasys.teku.beaconrestapi.AbstractGetNewBlockTest;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetNewBlindedBlockTest extends AbstractGetNewBlockTest {
+public class SubmitDataErrorBuilder {
+  private String message;
+  private UInt64 index;
 
-  @Override
-  public RestApiEndpoint getHandler() {
-    return new GetNewBlindedBlock(validatorDataProvider, spec, schemaDefinitionCache);
+  public SubmitDataErrorBuilder index(final UInt64 index) {
+    this.index = index;
+    return this;
   }
 
-  @Override
-  public boolean isBlindedBlocks() {
-    return true;
+  public SubmitDataErrorBuilder message(final String message) {
+    this.message = message;
+    return this;
+  }
+
+  public SubmitDataError build() {
+    return new SubmitDataError(index, message);
   }
 }

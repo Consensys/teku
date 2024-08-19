@@ -99,7 +99,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
             : responseHandler;
   }
 
-  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> submit(
       final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("randao_reveal", randaoReveal.toString());

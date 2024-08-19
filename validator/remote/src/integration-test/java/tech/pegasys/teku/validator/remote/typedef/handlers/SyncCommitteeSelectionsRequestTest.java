@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -28,6 +29,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -63,7 +65,7 @@ public class SyncCommitteeSelectionsRequestTest extends AbstractTypeDefRequestTe
                 "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505")
             .build();
 
-    final Optional<List<SyncCommitteeSelectionProof>> response = request.getSelectionProof(entries);
+    final Optional<List<SyncCommitteeSelectionProof>> response = request.submit(entries);
     assertThat(response).isPresent().contains(List.of(expectedSyncCommitteeSelectionProof));
   }
 
@@ -72,7 +74,7 @@ public class SyncCommitteeSelectionsRequestTest extends AbstractTypeDefRequestTe
     final String mockResponse = readResource("responses/sync_committee_selections.json");
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
-    request.getSelectionProof(entries);
+    request.submit(entries);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -90,22 +92,21 @@ public class SyncCommitteeSelectionsRequestTest extends AbstractTypeDefRequestTe
   public void handlingBadRequest() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> request.getSelectionProof(entries))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> request.submit(entries)).isInstanceOf(IllegalArgumentException.class);
   }
 
   @TestTemplate
   public void handlingNotImplemented() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_IMPLEMENTED));
 
-    assertThat(request.getSelectionProof(entries)).isEmpty();
+    assertThat(request.submit(entries)).isEmpty();
   }
 
   @TestTemplate
   public void handlingSyncing() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_SERVICE_UNAVAILABLE));
 
-    assertThat(request.getSelectionProof(entries)).isEmpty();
+    assertThat(request.submit(entries)).isEmpty();
   }
 
   private SyncCommitteeSelectionProof createSyncCommitteeSelectionProof() {
@@ -115,5 +116,30 @@ public class SyncCommitteeSelectionsRequestTest extends AbstractTypeDefRequestTe
         .subcommitteeIndex(dataStructureUtil.randomPositiveInt())
         .selectionProof(dataStructureUtil.randomSignature().toBytesCompressed().toHexString())
         .build();
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(() -> request.submit(entries))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
+  }
+
+  @TestTemplate
+  void handle503() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_SERVICE_UNAVAILABLE));
+    assertThat(request.submit(entries)).isEmpty();
+  }
+
+  @TestTemplate
+  void handle501() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_IMPLEMENTED));
+    assertThat(request.submit(entries)).isEmpty();
+  }
+
+  @TestTemplate
+  void handle400() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    assertThatThrownBy(() -> request.submit(entries)).isInstanceOf(IllegalArgumentException.class);
   }
 }

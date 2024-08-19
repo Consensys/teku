@@ -11,47 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.validator;
+
+import static tech.pegasys.teku.ethereum.execution.types.Eth1Address.ETH1ADDRESS_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.google.common.base.MoreObjects;
-import java.util.Objects;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BeaconPreparableProposer {
-  private final UInt64 validatorIndex;
-  private final Eth1Address feeRecipient;
+public record BeaconPreparableProposer(UInt64 validatorIndex, Eth1Address feeRecipient) {
 
-  public BeaconPreparableProposer(final UInt64 validatorIndex, final Eth1Address feeRecipient) {
-    this.validatorIndex = validatorIndex;
-    this.feeRecipient = feeRecipient;
-  }
-
-  public UInt64 getValidatorIndex() {
-    return validatorIndex;
-  }
-
-  public Eth1Address getFeeRecipient() {
-    return feeRecipient;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final BeaconPreparableProposer that = (BeaconPreparableProposer) o;
-    return Objects.equals(validatorIndex, that.validatorIndex)
-        && Objects.equals(feeRecipient, that.feeRecipient);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(validatorIndex, feeRecipient);
-  }
+  public static final DeserializableTypeDefinition<BeaconPreparableProposer> SSZ_DATA =
+      DeserializableTypeDefinition.object(
+              BeaconPreparableProposer.class, BeaconPreparableProposer.Builder.class)
+          .name("BeaconPreparableProposer")
+          .finisher(BeaconPreparableProposer.Builder::build)
+          .initializer(BeaconPreparableProposer::builder)
+          .description("The fee recipient that should be used by an associated validator index.")
+          .withField(
+              "validator_index",
+              UINT64_TYPE,
+              BeaconPreparableProposer::validatorIndex,
+              BeaconPreparableProposer.Builder::validatorIndex)
+          .withField(
+              "fee_recipient",
+              ETH1ADDRESS_TYPE,
+              BeaconPreparableProposer::feeRecipient,
+              BeaconPreparableProposer.Builder::feeRecipient)
+          .build();
 
   @Override
   public String toString() {

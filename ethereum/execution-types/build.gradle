@@ -1,7 +1,7 @@
 dependencies {
     implementation project(':infrastructure:bytes')
     implementation project(':infrastructure:crypto')
-
+    implementation project(':infrastructure:json')
 
     testFixturesApi project(':infrastructure:jackson')
     testImplementation project(':ethereum:json-types')

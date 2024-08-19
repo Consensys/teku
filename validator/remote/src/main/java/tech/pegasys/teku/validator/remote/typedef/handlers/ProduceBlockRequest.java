@@ -107,7 +107,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
                 });
   }
 
-  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> submit(
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {

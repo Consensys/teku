@@ -21,8 +21,17 @@ import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class Eth1Address extends Bytes20 {
+  public static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
+      DeserializableTypeDefinition.string(Eth1Address.class)
+          .formatter(Eth1Address::toHexString)
+          .parser(Eth1Address::fromHexString)
+          .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
+          .description("Hex encoded deposit contract address with 0x prefix")
+          .format("byte")
+          .build();
   private static final String ZERO_ADDRESS_STRING = "0x0000000000000000000000000000000000000000";
   private static final int HEX_ADDRESS_STRING_LENGTH = ZERO_ADDRESS_STRING.length();
 

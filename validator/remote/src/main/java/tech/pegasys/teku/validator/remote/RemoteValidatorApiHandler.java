@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
@@ -35,10 +34,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
@@ -66,17 +62,15 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
-import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
@@ -87,22 +81,16 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final HttpUrl endpoint;
-  private final Spec spec;
-  private final ValidatorRestApiClient apiClient;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
-      final Spec spec,
-      final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner,
       final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
-    this.spec = spec;
-    this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
     this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
@@ -232,15 +220,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    final List<tech.pegasys.teku.api.schema.Attestation> schemaAttestations =
-        attestations.stream().map(tech.pegasys.teku.api.schema.Attestation::new).toList();
-
-    return sendRequest(
-        () ->
-            apiClient
-                .sendSignedAttestations(schemaAttestations)
-                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
-                .orElse(emptyList()));
+    return sendRequest(() -> typeDefClient.sendSignedAttestations(attestations));
   }
 
   @Override
@@ -274,64 +254,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
-    return sendRequest(
-        () ->
-            apiClient
-                .sendSyncCommitteeMessages(
-                    syncCommitteeMessages.stream()
-                        .map(
-                            signature ->
-                                new tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage(
-                                    signature.getSlot(),
-                                    signature.getBeaconBlockRoot(),
-                                    signature.getValidatorIndex(),
-                                    new tech.pegasys.teku.api.schema.BLSSignature(
-                                        signature.getSignature())))
-                        .toList())
-                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
-                .orElse(emptyList()));
+    return sendRequest(() -> typeDefClient.sendSyncCommitteeMessages(syncCommitteeMessages));
   }
 
   @Override
   public SafeFuture<Void> sendSignedContributionAndProofs(
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
-    final List<tech.pegasys.teku.api.schema.altair.SignedContributionAndProof>
-        signedContributionsRestSchema =
-            signedContributionAndProofs.stream().map(this::asSignedContributionAndProofs).toList();
-    return sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema));
-  }
-
-  private tech.pegasys.teku.api.schema.altair.SignedContributionAndProof
-      asSignedContributionAndProofs(final SignedContributionAndProof signedContributionAndProof) {
-    return new tech.pegasys.teku.api.schema.altair.SignedContributionAndProof(
-        asContributionAndProof(signedContributionAndProof.getMessage()),
-        new tech.pegasys.teku.api.schema.BLSSignature(signedContributionAndProof.getSignature()));
-  }
-
-  private ContributionAndProof asContributionAndProof(
-      final tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof
-          message) {
-    return new ContributionAndProof(
-        message.getAggregatorIndex(),
-        new tech.pegasys.teku.api.schema.BLSSignature(message.getSelectionProof()),
-        asSyncCommitteeContribution(message.getContribution()));
-  }
-
-  private tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution asSyncCommitteeContribution(
-      final SyncCommitteeContribution contribution) {
-    return new tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution(
-        contribution.getSlot(),
-        contribution.getBeaconBlockRoot(),
-        contribution.getSubcommitteeIndex(),
-        contribution.getAggregationBits().sszSerialize(),
-        new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
-  }
-
-  private List<SubmitDataError> convertPostDataFailureResponseToSubmitDataErrors(
-      final PostDataFailureResponse postDataFailureResponse) {
-    return postDataFailureResponse.failures.stream()
-        .map(i -> new SubmitDataError(i.index, i.message))
-        .toList();
+    return sendRequest(() -> typeDefClient.sendContributionAndProofs(signedContributionAndProofs));
   }
 
   @Override
@@ -339,11 +268,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex) {
-    return sendRequest(
-        () ->
-            apiClient
-                .createAggregate(slot, attestationHashTreeRoot)
-                .map(attestation -> attestation.asInternalAttestation(spec)));
+    return sendRequest(() -> typeDefClient.createAggregate(slot, attestationHashTreeRoot));
   }
 
   @Override
@@ -358,15 +283,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
-    return sendRequest(
-        () ->
-            apiClient
-                .sendAggregateAndProofs(
-                    aggregateAndProofs.stream()
-                        .map(tech.pegasys.teku.api.schema.SignedAggregateAndProof::new)
-                        .toList())
-                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
-                .orElse(emptyList()));
+    return sendRequest(() -> typeDefClient.sendAggregateAndProofs(aggregateAndProofs));
   }
 
   @Override
@@ -391,14 +308,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<Void> prepareBeaconProposer(
       final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
     return sendRequest(
-        () ->
-            apiClient.prepareBeaconProposer(
-                beaconPreparableProposers.stream()
-                    .map(
-                        proposer ->
-                            new tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer(
-                                proposer.getValidatorIndex(), proposer.getFeeRecipient()))
-                    .toList()));
+        () -> typeDefClient.prepareBeaconProposer(new ArrayList<>(beaconPreparableProposers)));
   }
 
   @Override
@@ -410,11 +320,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       final List<UInt64> validatorIndices, final UInt64 epoch) {
-    return sendRequest(
-        () ->
-            apiClient
-                .sendValidatorsLiveness(epoch, validatorIndices)
-                .map(this::responseToValidatorsLivenessResult));
+    return sendRequest(() -> typeDefClient.sendValidatorsLiveness(epoch, validatorIndices));
   }
 
   @Override
@@ -427,16 +333,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
       final List<SyncCommitteeSelectionProof> requests) {
     return sendRequest(() -> typeDefClient.getSyncCommitteeSelectionProof(requests));
-  }
-
-  private List<ValidatorLivenessAtEpoch> responseToValidatorsLivenessResult(
-      final PostValidatorLivenessResponse response) {
-    return response.data.stream()
-        .map(
-            validatorLivenessAtEpoch ->
-                new ValidatorLivenessAtEpoch(
-                    validatorLivenessAtEpoch.index, validatorLivenessAtEpoch.isLive))
-        .toList();
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {
@@ -474,11 +370,9 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final boolean preferSszBlockEncoding,
       final boolean usePostValidatorsEndpoint,
       final AsyncRunner asyncRunner) {
-    final OkHttpValidatorRestApiClient apiClient =
-        new OkHttpValidatorRestApiClient(endpoint, httpClient);
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
     return new RemoteValidatorApiHandler(
-        endpoint, spec, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
+        endpoint, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }

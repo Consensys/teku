@@ -21,13 +21,13 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -48,11 +48,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
@@ -76,21 +72,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
-import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 class RemoteValidatorApiHandlerTest {
@@ -100,8 +92,6 @@ class RemoteValidatorApiHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  private final ValidatorRestApiClient apiClient = mock(ValidatorRestApiClient.class);
-
   private final OkHttpValidatorTypeDefClient typeDefClient =
       mock(OkHttpValidatorTypeDefClient.class);
 
@@ -109,8 +99,7 @@ class RemoteValidatorApiHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler =
-        new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner, true);
+    apiHandler = new RemoteValidatorApiHandler(endpoint, typeDefClient, asyncRunner, true);
   }
 
   @Test
@@ -476,33 +465,6 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedAttestation_InvokeApiWithCorrectRequest() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-
-    final PostDataFailureResponse failureResponse =
-        new PostDataFailureResponse(
-            SC_BAD_REQUEST, "Oh no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
-    when(apiClient.sendSignedAttestations(any())).thenReturn(Optional.of(failureResponse));
-
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
-
-    @SuppressWarnings("unchecked")
-    ArgumentCaptor<List<tech.pegasys.teku.api.schema.Attestation>> argumentCaptor =
-        ArgumentCaptor.forClass(List.class);
-
-    final SafeFuture<List<SubmitDataError>> result =
-        apiHandler.sendSignedAttestations(List.of(attestation));
-    asyncRunner.executeQueuedActions();
-
-    verify(apiClient).sendSignedAttestations(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue())
-        .usingRecursiveComparison()
-        .isEqualTo(List.of(schemaAttestation));
-    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(UInt64.ZERO, "Bad")));
-  }
-
-  @Test
   public void createUnsignedBlock_WhenNoneFound_ReturnsEmpty() {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
 
@@ -617,7 +579,7 @@ class RemoteValidatorApiHandlerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
-    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot))).thenReturn(Optional.empty());
+    doReturn(Optional.empty()).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
 
     SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
@@ -631,43 +593,13 @@ class RemoteValidatorApiHandlerTest {
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot)))
-        .thenReturn(Optional.of(schemaAttestation));
+    doReturn(Optional.of(attestation)).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
 
     SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void sendsAggregateAndProof_InvokeApiWithCorrectRequest() {
-    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
-    final BLSSignature signature = dataStructureUtil.randomSignature();
-    final SignedAggregateAndProof signedAggregateAndProof =
-        spec.getGenesisSchemaDefinitions()
-            .getSignedAggregateAndProofSchema()
-            .create(aggregateAndProof, signature);
-
-    tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggAndProof =
-        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
-
-    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> argumentCaptor =
-        ArgumentCaptor.forClass(List.class);
-
-    final SafeFuture<List<SubmitDataError>> result =
-        apiHandler.sendAggregateAndProofs(List.of(signedAggregateAndProof));
-    asyncRunner.executeQueuedActions();
-
-    verify(apiClient).sendAggregateAndProofs(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue())
-        .usingRecursiveComparison()
-        .isEqualTo(List.of(schemaSignedAggAndProof));
-    assertThat(result).isCompletedWithValue(emptyList());
   }
 
   @Test
@@ -729,7 +661,7 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void registerValidators_InvokeApiWithCorrectRequest() {
+  public void registerValidators_invokeApiWithCorrectRequest() {
     final SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
@@ -741,7 +673,7 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void checkValidatorsDoppelganger_InvokeApiWithCorrectRequest()
+  public void checkValidatorsDoppelganger_invokeApiWithCorrectRequest()
       throws ExecutionException, InterruptedException {
     final List<UInt64> validatorIndices =
         List.of(
@@ -755,7 +687,7 @@ class RemoteValidatorApiHandlerTest {
 
     assertThat(result).isCompleted();
     assertThat(result.get()).isEmpty();
-    verify(apiClient).sendValidatorsLiveness(epoch, validatorIndices);
+    verify(typeDefClient).sendValidatorsLiveness(epoch, validatorIndices);
   }
 
   @Test
@@ -769,15 +701,13 @@ class RemoteValidatorApiHandlerTest {
 
     List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
 
-    List<ValidatorLiveness> validatorLivenesses =
+    List<ValidatorLivenessAtEpoch> validatorLivenesses =
         List.of(
-            new ValidatorLiveness(firstIndex, false),
-            new ValidatorLiveness(secondIndex, true),
-            new ValidatorLiveness(thirdIndex, true));
-    PostValidatorLivenessResponse postValidatorLivenessResponse =
-        new PostValidatorLivenessResponse(validatorLivenesses);
-    when(apiClient.sendValidatorsLiveness(any(), any()))
-        .thenReturn(Optional.of(postValidatorLivenessResponse));
+            new ValidatorLivenessAtEpoch(firstIndex, false),
+            new ValidatorLivenessAtEpoch(secondIndex, true),
+            new ValidatorLivenessAtEpoch(thirdIndex, true));
+    when(typeDefClient.sendValidatorsLiveness(any(), any()))
+        .thenReturn(Optional.of(validatorLivenesses));
 
     final SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> result =
         apiHandler.getValidatorsLiveness(validatorIndices, epoch);
@@ -789,7 +719,7 @@ class RemoteValidatorApiHandlerTest {
     assertThat(validatorIsLive(validatorLivenessAtEpochesResult, firstIndex)).isFalse();
     assertThat(validatorIsLive(validatorLivenessAtEpochesResult, secondIndex)).isTrue();
     assertThat(validatorIsLive(validatorLivenessAtEpochesResult, thirdIndex)).isTrue();
-    verify(apiClient).sendValidatorsLiveness(epoch, validatorIndices);
+    verify(typeDefClient).sendValidatorsLiveness(epoch, validatorIndices);
   }
 
   private boolean validatorIsLive(
@@ -798,7 +728,7 @@ class RemoteValidatorApiHandlerTest {
     return validatorLivenessAtEpoches.stream()
         .anyMatch(
             validatorLivenessAtEpoch ->
-                validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
+                validatorLivenessAtEpoch.index().equals(validatorIndex)
                     && validatorLivenessAtEpoch.isLive());
   }
 

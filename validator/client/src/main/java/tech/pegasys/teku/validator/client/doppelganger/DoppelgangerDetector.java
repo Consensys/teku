@@ -313,7 +313,7 @@ public class DoppelgangerDetector {
         doppelgangers.forEach(
             doppelganger ->
                 detectedDoppelgangers.putIfAbsent(
-                    doppelganger.getRight().getIndex(), doppelganger.getLeft()));
+                    doppelganger.getRight().index(), doppelganger.getLeft()));
         if (allKeysAreActive()) {
           statusLog.doppelgangerDetectionEnd(
               mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()),
@@ -327,7 +327,7 @@ public class DoppelgangerDetector {
     private Map<UInt64, String> mapLivenessAtEpochToIndicesByPubKeyStrings(
         final List<Pair<BLSPublicKey, ValidatorLivenessAtEpoch>> doppelgangers) {
       return doppelgangers.stream()
-          .collect(Collectors.toMap(e -> e.getRight().getIndex(), e -> e.getLeft().toString()));
+          .collect(Collectors.toMap(e -> e.getRight().index(), e -> e.getLeft().toString()));
     }
 
     private Stream<String> mapToAbbreviatedKeys(final Set<BLSPublicKey> pubKeys) {
@@ -344,7 +344,7 @@ public class DoppelgangerDetector {
                       .filter(
                           validatorLivenessAtEpoch ->
                               validatorPubKeysByIndices.containsValue(
-                                      validatorLivenessAtEpoch.getIndex())
+                                      validatorLivenessAtEpoch.index())
                                   && validatorLivenessAtEpoch.isLive())
                       .map(
                           validatorLivenessAtEpoch ->
@@ -352,8 +352,7 @@ public class DoppelgangerDetector {
                                   validatorPubKeysByIndices.entrySet().stream()
                                       .filter(
                                           e ->
-                                              e.getValue()
-                                                  .equals(validatorLivenessAtEpoch.getIndex()))
+                                              e.getValue().equals(validatorLivenessAtEpoch.index()))
                                       .findFirst()
                                       .get()
                                       .getKey(),
