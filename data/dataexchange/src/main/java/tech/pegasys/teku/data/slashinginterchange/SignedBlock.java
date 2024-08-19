@@ -42,11 +42,6 @@ public record SignedBlock(UInt64 slot, Optional<Bytes32> signingRoot) {
         .toString();
   }
 
-  @Override
-  public UInt64 slot() {
-    return slot;
-  }
-
   static class SignedBlockBuilder {
     UInt64 slot;
     Optional<Bytes32> signingRoot = Optional.empty();

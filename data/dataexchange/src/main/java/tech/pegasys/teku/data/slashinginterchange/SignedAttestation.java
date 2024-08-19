@@ -49,16 +49,6 @@ public record SignedAttestation(
   }
 
   @Override
-  public UInt64 sourceEpoch() {
-    return sourceEpoch;
-  }
-
-  @Override
-  public UInt64 targetEpoch() {
-    return targetEpoch;
-  }
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("sourceEpoch", sourceEpoch)
