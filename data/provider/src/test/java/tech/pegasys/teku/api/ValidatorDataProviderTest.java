@@ -33,7 +33,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.List;
@@ -52,12 +51,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
-import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.electra.SignedBeaconBlockElectra;
-import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -67,7 +60,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -91,11 +83,9 @@ public class ValidatorDataProviderTest {
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<List<Attestation>> args = ArgumentCaptor.forClass(List.class);
 
-  private final JsonProvider jsonProvider = new JsonProvider();
   private Spec spec;
   private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
-  private SchemaObjectProvider schemaProvider;
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -107,7 +97,6 @@ public class ValidatorDataProviderTest {
   public void setup(final SpecContext specContext) {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
-    schemaProvider = new SchemaObjectProvider(spec);
     provider = new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
     blockContainerAndMetaDataInternal = dataStructureUtil.randomBlockContainerAndMetaData(123);
     specMilestone = specContext.getSpecMilestone();
@@ -271,71 +260,6 @@ public class ValidatorDataProviderTest {
         provider.createAttestationDataAtSlot(ZERO, 0);
     verify(validatorApiChannel).createAttestationData(ZERO, 0);
     assertThat(result).isCompletedWithValue(Optional.empty());
-  }
-
-  @TestTemplate
-  void parseBlock_shouldParseBlocks() throws JsonProcessingException {
-    final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
-        schemaProvider.getSignedBeaconBlock(internalSignedBlock);
-    final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
-
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
-        provider.parseBlock(jsonProvider, signedBlockJson);
-
-    assertThat(parsedBlock).isEqualTo(signedBlock);
-    assertThat(parsedBlock).isInstanceOf(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
-  }
-
-  @TestTemplate
-  void parseBlock_shouldParseBlindedBlocks() throws JsonProcessingException {
-    final SignedBeaconBlock internalSignedBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(ONE);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
-        schemaProvider.getSignedBlindedBeaconBlock(internalSignedBlock);
-    final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
-
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
-        provider.parseBlindedBlock(jsonProvider, signedBlockJson);
-
-    assertThat(parsedBlock).isEqualTo(signedBlock);
-    assertThat(parsedBlock).isInstanceOf(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
-  }
-
-  @TestTemplate
-  void parseBlock_shouldParseMilestoneSpecificBlocks(final SpecContext specContext)
-      throws JsonProcessingException {
-    final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
-        schemaProvider.getSignedBeaconBlock(internalSignedBlock);
-    final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
-
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
-        provider.parseBlock(jsonProvider, signedBlockJson);
-
-    assertThat(parsedBlock).isEqualTo(signedBlock);
-    switch (specContext.getSpecMilestone()) {
-      case PHASE0:
-        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockPhase0.class);
-        break;
-      case ALTAIR:
-        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
-        break;
-      case BELLATRIX:
-        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockBellatrix.class);
-        break;
-      case CAPELLA:
-        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockCapella.class);
-        break;
-      case DENEB:
-        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockDeneb.class);
-        break;
-      case ELECTRA:
-        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockElectra.class);
-        break;
-      default:
-        throw new RuntimeException("notImplemented");
-    }
   }
 
   @TestTemplate

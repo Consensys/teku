@@ -17,24 +17,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class MetadataTest {
   private final String jsonData;
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private final ObjectMapper mapper = jsonProvider.getObjectMapper();
   final Bytes32 root =
       Bytes32.fromHexString("0x6e2c5d8a89dfe121a92c8812bea69fe9f84ae48f63aafe34ef7e18c7eac9af70");
 
   final Metadata expectedMetadata =
-      new Metadata(INTERCHANGE_VERSION, Bytes32.fromHexString("0x123456"));
+      new Metadata(
+          Optional.empty(), INTERCHANGE_VERSION, Optional.of(Bytes32.fromHexString("0x123456")));
 
   public MetadataTest() throws IOException {
     jsonData = Resources.toString(Resources.getResource("metadata.json"), StandardCharsets.UTF_8);
@@ -42,48 +40,50 @@ public class MetadataTest {
 
   @Test
   public void shouldSerializeMinimalFormat() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(INTERCHANGE_VERSION, root);
-    assertThat(jsonProvider.objectToPrettyJSON(metadata)).isEqualToNormalizingNewlines(jsonData);
+    final Metadata metadata =
+        new Metadata(Optional.empty(), INTERCHANGE_VERSION, Optional.of(root));
+    assertThat(JsonUtil.prettySerialize(metadata, Metadata.getJsonTypeDefinition()))
+        .isEqualToNormalizingNewlines(jsonData);
   }
 
   @Test
   public void shouldSerializeWithoutRoot() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(INTERCHANGE_VERSION, null);
-    assertThat(jsonProvider.objectToPrettyJSON(metadata))
+    final Metadata metadata = new Metadata(Optional.empty(), INTERCHANGE_VERSION, Optional.empty());
+    assertThat(JsonUtil.prettySerialize(metadata, Metadata.getJsonTypeDefinition()))
         .isEqualToIgnoringWhitespace("{\"interchange_format_version\":\"5\"}");
   }
 
   @Test
   public void shouldSerializeCompleteFormat() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(INTERCHANGE_VERSION, root);
-    assertThat(jsonProvider.objectToPrettyJSON(metadata)).isEqualToNormalizingNewlines(jsonData);
+    final Metadata metadata =
+        new Metadata(Optional.empty(), INTERCHANGE_VERSION, Optional.of(root));
+    assertThat(JsonUtil.prettySerialize(metadata, Metadata.getJsonTypeDefinition()))
+        .isEqualToNormalizingNewlines(jsonData);
   }
 
   @Test
   public void shouldDeserialize() throws JsonProcessingException {
-    final Metadata metadata = jsonProvider.jsonToObject(jsonData, Metadata.class);
-    assertThat(metadata.interchangeFormatVersion).isEqualTo(INTERCHANGE_VERSION);
-    assertThat(metadata.genesisValidatorsRoot).isEqualTo(root);
+    final Metadata metadata = JsonUtil.parse(jsonData, Metadata.getJsonTypeDefinition());
+    assertThat(metadata.interchangeFormatVersion()).isEqualTo(INTERCHANGE_VERSION);
+    assertThat(metadata.genesisValidatorsRoot()).contains(root);
   }
 
   @Test
   public void shouldReadMetadataFromCompleteJson() throws IOException {
     final String completeJson =
         Resources.toString(Resources.getResource("format1_complete.json"), StandardCharsets.UTF_8);
+    final SlashingProtectionInterchangeFormat format =
+        JsonUtil.parse(completeJson, SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
 
-    JsonNode metadataJson = mapper.readTree(completeJson).get("metadata");
-    Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
-
-    assertThat(metadata).isEqualTo(expectedMetadata);
+    assertThat(format.metadata()).isEqualTo(expectedMetadata);
   }
 
   @Test
   public void shouldReadMetadataFromJson() throws IOException {
     final String minimalJson =
         Resources.toString(Resources.getResource("format2_minimal.json"), StandardCharsets.UTF_8);
-
-    JsonNode metadataJson = mapper.readTree(minimalJson).get("metadata");
-    Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
-    assertThat(metadata).isEqualTo(expectedMetadata);
+    final SlashingProtectionInterchangeFormat format =
+        JsonUtil.parse(minimalJson, SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
+    assertThat(format.metadata()).isEqualTo(expectedMetadata);
   }
 }

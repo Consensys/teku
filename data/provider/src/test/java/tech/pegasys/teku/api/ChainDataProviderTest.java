@@ -56,7 +56,6 @@ import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -77,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -154,26 +154,6 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  public void getBeaconState_shouldReturnEmptyWhenRootNotFound() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
-    SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
-        provider.getSchemaBeaconState(data.randomBytes32().toHexString());
-    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
-  }
-
-  @Test
-  public void getBeaconState_shouldFindHeadState() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
-    SafeFuture<Optional<ObjectAndMetaData<BeaconState>>> future =
-        provider.getSchemaBeaconState("head");
-    final Optional<ObjectAndMetaData<BeaconState>> maybeState = safeJoin(future);
-    assertThat(maybeState.orElseThrow().getData().asInternalBeaconState(spec).hashTreeRoot())
-        .isEqualTo(beaconStateInternal.hashTreeRoot());
-  }
-
-  @Test
   public void getBlockAndMetaDataByBlockId_shouldGetHeadBlock()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
@@ -224,8 +204,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   @Test
   public void filteredValidatorsList_shouldFilterByValidatorIndex() {
 
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState(1024);
+    final BeaconState internalState = data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
     List<Integer> indices =
@@ -237,8 +216,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
   @Test
   public void filteredValidatorsList_shouldFilterByValidatorPubkey() {
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState(1024);
+    final BeaconState internalState = data.randomBeaconState(1024);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
     final Bytes48 key = internalState.getValidators().get(12).getPubkeyBytes();
@@ -255,8 +233,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
   @Test
   public void filteredValidatorsList_shouldFilterByValidatorStatus() {
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState(11);
+    final BeaconState internalState = data.randomBeaconState(11);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
 
@@ -288,8 +265,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
   @Test
   public void getCommitteesFromState_shouldNotRequireFilters() {
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState(64);
+    final BeaconState internalState = data.randomBeaconState(64);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
 
@@ -303,8 +279,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
   @Test
   public void getCommitteesFromState_shouldFilterOnSlot() {
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState(64);
+    final BeaconState internalState = data.randomBeaconState(64);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
 
@@ -512,8 +487,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   @Test
   public void getLightClientBootstrap_shouldGetBootstrap() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        getHeadState();
+    final BeaconState internalState = getHeadState();
 
     BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
 
@@ -533,8 +507,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   @Test
   public void getLightClientBootstrap_shouldReturnEmptyWhenBlockNotFound() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        getHeadState();
+    final BeaconState internalState = getHeadState();
 
     BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
 
@@ -550,8 +523,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   public void getLightClientBootstrap_shouldReturnEmptyBeforeAltair() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState();
+    final BeaconState internalState = data.randomBeaconState();
 
     BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
 
@@ -567,8 +539,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   public void getValidatorBalancesFromState_shouldGetBalances() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        data.randomBeaconState(1024);
+    final BeaconState internalState = data.randomBeaconState(1024);
     assertThat(provider.getValidatorBalancesFromState(internalState, emptyList())).hasSize(1024);
 
     assertThat(
@@ -766,8 +737,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   @MethodSource("getRandaoIndexCases")
   void getRandaoIndex(
       final int stateSlot, final int queryEpoch, final Optional<Bytes32> maybeRandao) {
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(UInt64.valueOf(stateSlot));
+    final BeaconState state = data.randomBeaconState(UInt64.valueOf(stateSlot));
     final UInt64 epoch = UInt64.valueOf(queryEpoch);
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
@@ -799,7 +769,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     return args.stream();
   }
 
-  private tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState getHeadState() {
+  private BeaconState getHeadState() {
     return safeJoin(mockCombinedChainDataClient.getChainHead().orElseThrow().getState());
   }
 }

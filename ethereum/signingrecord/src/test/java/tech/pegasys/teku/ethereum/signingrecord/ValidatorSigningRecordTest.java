@@ -42,7 +42,7 @@ class ValidatorSigningRecordTest {
     assertThat(record)
         .isEqualTo(
             new ValidatorSigningRecord(
-                null, UInt64.valueOf(11), UInt64.valueOf(12), UInt64.valueOf(13)));
+                Optional.empty(), UInt64.valueOf(11), UInt64.valueOf(12), UInt64.valueOf(13)));
   }
 
   @Test
@@ -52,7 +52,8 @@ class ValidatorSigningRecordTest {
     Bytes yamlByteData = Bytes.wrap(yamlData.getBytes(UTF_8));
 
     ValidatorSigningRecord record = ValidatorSigningRecord.fromBytes(yamlByteData);
-    assertThat(record).isEqualTo(new ValidatorSigningRecord(null, UInt64.valueOf(11), null, null));
+    assertThat(record)
+        .isEqualTo(new ValidatorSigningRecord(Optional.empty(), UInt64.valueOf(11), null, null));
   }
 
   @Test
@@ -63,7 +64,10 @@ class ValidatorSigningRecordTest {
     assertThat(record)
         .isEqualTo(
             new ValidatorSigningRecord(
-                GENESIS_VALIDATORS_ROOT, UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+                Optional.of(GENESIS_VALIDATORS_ROOT),
+                UInt64.valueOf(1),
+                UInt64.valueOf(2),
+                UInt64.valueOf(3)));
   }
 
   @Test
@@ -72,13 +76,17 @@ class ValidatorSigningRecordTest {
     final Bytes yamlByteData = Bytes.of(yamlData.getBytes(UTF_8));
     ValidatorSigningRecord record =
         new ValidatorSigningRecord(
-            GENESIS_VALIDATORS_ROOT, UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3));
+            Optional.of(GENESIS_VALIDATORS_ROOT),
+            UInt64.valueOf(1),
+            UInt64.valueOf(2),
+            UInt64.valueOf(3));
     assertThat(record.toBytes()).isEqualTo(yamlByteData);
   }
 
   @Test
   void shouldRoundTripDefaultValuesToBytes() {
-    final ValidatorSigningRecord record = new ValidatorSigningRecord(GENESIS_VALIDATORS_ROOT);
+    final ValidatorSigningRecord record =
+        ValidatorSigningRecord.emptySigningRecord(GENESIS_VALIDATORS_ROOT);
     final Bytes bytes = record.toBytes();
     final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
     assertThat(result).isEqualTo(record);
@@ -88,7 +96,10 @@ class ValidatorSigningRecordTest {
   void shouldRoundTripToBytes() {
     final ValidatorSigningRecord record =
         new ValidatorSigningRecord(
-            GENESIS_VALIDATORS_ROOT, UInt64.valueOf(10), UInt64.valueOf(20), UInt64.valueOf(30));
+            Optional.of(GENESIS_VALIDATORS_ROOT),
+            UInt64.valueOf(10),
+            UInt64.valueOf(20),
+            UInt64.valueOf(30));
     final Bytes bytes = record.toBytes();
     final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
     assertThat(result).isEqualTo(record);
@@ -107,15 +118,18 @@ class ValidatorSigningRecordTest {
   static List<Arguments> blockCases() {
     final ValidatorSigningRecord startingRecord =
         new ValidatorSigningRecord(
-            GENESIS_VALIDATORS_ROOT, UInt64.valueOf(3), UInt64.valueOf(6), UInt64.valueOf(7));
+            Optional.of(GENESIS_VALIDATORS_ROOT),
+            UInt64.valueOf(3),
+            UInt64.valueOf(6),
+            UInt64.valueOf(7));
     return List.of(
         Arguments.of(
             "noExistingRecord",
-            new ValidatorSigningRecord(GENESIS_VALIDATORS_ROOT),
+            ValidatorSigningRecord.emptySigningRecord(GENESIS_VALIDATORS_ROOT),
             ONE,
             Optional.of(
                 new ValidatorSigningRecord(
-                    GENESIS_VALIDATORS_ROOT,
+                    Optional.of(GENESIS_VALIDATORS_ROOT),
                     ONE,
                     ValidatorSigningRecord.NEVER_SIGNED,
                     ValidatorSigningRecord.NEVER_SIGNED))),
@@ -139,13 +153,13 @@ class ValidatorSigningRecordTest {
   static List<Arguments> attestationCases() {
     final ValidatorSigningRecord startingRecord =
         new ValidatorSigningRecord(
-            GENESIS_VALIDATORS_ROOT, ONE, UInt64.valueOf(4), UInt64.valueOf(6));
+            Optional.of(GENESIS_VALIDATORS_ROOT), ONE, UInt64.valueOf(4), UInt64.valueOf(6));
     return List.of(
         // No record
         attestationArguments(
             "NEVER_SIGNED",
             "NEVER_SIGNED",
-            new ValidatorSigningRecord(GENESIS_VALIDATORS_ROOT),
+            ValidatorSigningRecord.emptySigningRecord(GENESIS_VALIDATORS_ROOT),
             1,
             2,
             allowed(0, 1, 2)),
@@ -168,7 +182,7 @@ class ValidatorSigningRecordTest {
       final int blockSlot, final int sourceEpoch, final int targetEpoch) {
     return Optional.of(
         new ValidatorSigningRecord(
-            GENESIS_VALIDATORS_ROOT,
+            Optional.of(GENESIS_VALIDATORS_ROOT),
             UInt64.valueOf(blockSlot),
             UInt64.valueOf(sourceEpoch),
             UInt64.valueOf(targetEpoch)));

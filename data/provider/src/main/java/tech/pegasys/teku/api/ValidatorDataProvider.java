@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
@@ -27,16 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
-import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.electra.SignedBeaconBlockElectra;
-import tech.pegasys.teku.api.schema.electra.SignedBlindedBeaconBlockElectra;
-import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -45,7 +30,6 @@ import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscr
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -163,38 +147,6 @@ public class ValidatorDataProvider {
   public SafeFuture<List<SubmitDataError>> submitAttestations(
       final List<Attestation> attestations) {
     return validatorApiChannel.sendSignedAttestations(attestations);
-  }
-
-  public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
-      throws JsonProcessingException {
-    final ObjectMapper mapper = jsonProvider.getObjectMapper();
-    final JsonNode jsonNode = mapper.readTree(jsonBlock);
-    final UInt64 slot = mapper.treeToValue(jsonNode.findValue("slot"), UInt64.class);
-    checkNotNull(slot, "Slot was not found in json block");
-    return switch (spec.atSlot(slot).getMilestone()) {
-      case PHASE0 -> mapper.treeToValue(jsonNode, SignedBeaconBlockPhase0.class);
-      case ALTAIR -> mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
-      case BELLATRIX -> mapper.treeToValue(jsonNode, SignedBeaconBlockBellatrix.class);
-      case CAPELLA -> mapper.treeToValue(jsonNode, SignedBeaconBlockCapella.class);
-      case DENEB -> mapper.treeToValue(jsonNode, SignedBeaconBlockDeneb.class);
-      case ELECTRA -> mapper.treeToValue(jsonNode, SignedBeaconBlockElectra.class);
-    };
-  }
-
-  public SignedBeaconBlock parseBlindedBlock(
-      final JsonProvider jsonProvider, final String jsonBlock) throws JsonProcessingException {
-    final ObjectMapper mapper = jsonProvider.getObjectMapper();
-    final JsonNode jsonNode = mapper.readTree(jsonBlock);
-    final UInt64 slot = mapper.treeToValue(jsonNode.findValue("slot"), UInt64.class);
-    checkNotNull(slot, "Slot was not found in json block");
-    return switch (spec.atSlot(slot).getMilestone()) {
-      case PHASE0 -> mapper.treeToValue(jsonNode, SignedBeaconBlockPhase0.class);
-      case ALTAIR -> mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
-      case BELLATRIX -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockBellatrix.class);
-      case CAPELLA -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockCapella.class);
-      case DENEB -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockDeneb.class);
-      case ELECTRA -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockElectra.class);
-    };
   }
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(

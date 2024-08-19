@@ -153,7 +153,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   private Function<ValidatorSigningRecord, Boolean> createOutdatedSigningRecordClassifier(
       final UInt64 currentSlot) {
     return signingRecord -> {
-      final UInt64 attestationTargetEpoch = signingRecord.getAttestationTargetEpoch();
+      final UInt64 attestationTargetEpoch = signingRecord.attestationTargetEpoch();
       return spec.computeEpochAtSlot(currentSlot)
           .minusMinZero(
               Objects.equals(attestationTargetEpoch, NEVER_SIGNED)
