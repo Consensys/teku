@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIde
 public class DataColumnReqRespImpl implements DataColumnReqResp {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
-  // TODO: supress until real ban is commented out
+  // TODO: suppress until real ban is commented out
   @SuppressWarnings("unused")
   private final DataColumnPeerManager peerManager;
 
