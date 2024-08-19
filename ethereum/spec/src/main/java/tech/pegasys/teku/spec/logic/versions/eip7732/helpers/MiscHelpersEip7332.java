@@ -14,22 +14,30 @@
 package tech.pegasys.teku.spec.logic.versions.eip7732.helpers;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class MiscHelpersEip7332 extends MiscHelpersElectra {
+  private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
+
   public MiscHelpersEip7332(
       final SpecConfigEip7732 specConfig,
       final PredicatesEip7732 predicates,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitionsEip7732 schemaDefinitions) {
     super(
         SpecConfigElectra.required(specConfig),
         predicates,
         SchemaDefinitionsElectra.required(schemaDefinitions));
+    this.executionPayloadEnvelopeSchema = schemaDefinitions.getExecutionPayloadEnvelopeSchema();
   }
 
   public static MiscHelpersEip7332 required(final MiscHelpers miscHelpers) {
@@ -45,6 +53,29 @@ public class MiscHelpersEip7332 extends MiscHelpersElectra {
   public byte removeFlag(final byte participationFlags, final int flagIndex) {
     final byte flag = (byte) (1 << flagIndex);
     return (byte) (participationFlags & ~flag);
+  }
+
+  @Override
+  public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
+    final long blobKzgCommitmentsRootGeneralizedIndex =
+        BeaconBlockBodySchemaEip7732.required(beaconBlockBodySchema)
+            .getBlobKzgCommitmentsRootGeneralizedIndex();
+    final long commitmentGeneralizedIndex =
+        executionPayloadEnvelopeSchema
+            .getBlobKzgCommitmentsSchema()
+            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
+    return (int)
+        GIndexUtil.gIdxCompose(blobKzgCommitmentsRootGeneralizedIndex, commitmentGeneralizedIndex);
+  }
+
+  @Override
+  public boolean verifyBlobSidecarMerkleProof(final BlobSidecar blobSidecar) {
+    return predicates.isValidMerkleBranch(
+        blobSidecar.getSszKZGCommitment().hashTreeRoot(),
+        blobSidecar.getKzgCommitmentInclusionProof(),
+        SpecConfigEip7732.required(specConfig).getKzgCommitmentInclusionProofDepthEip7732(),
+        getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
+        blobSidecar.getBlockBodyRoot());
   }
 
   @Override

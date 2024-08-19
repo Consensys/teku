@@ -37,6 +37,10 @@ public class SignedExecutionPayloadHeaderSchema
     return new SignedExecutionPayloadHeader(this, message, signature);
   }
 
+  public ExecutionPayloadHeaderSchema<?> getMessageSchema() {
+    return (ExecutionPayloadHeaderSchema<?>) getChildSchema(getFieldIndex("message"));
+  }
+
   @Override
   public SignedExecutionPayloadHeader createFromBackingNode(final TreeNode node) {
     return new SignedExecutionPayloadHeader(this, node);
