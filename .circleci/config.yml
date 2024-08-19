@@ -237,7 +237,7 @@ jobs:
           path: build/test-results
 
   spotless:
-    executor: small_executor
+    executor: medium_executor
     steps:
       - prepare
       - run:
