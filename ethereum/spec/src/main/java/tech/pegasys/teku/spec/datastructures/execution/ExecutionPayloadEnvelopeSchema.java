@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -64,6 +65,12 @@ public class ExecutionPayloadEnvelopeSchema
         blobKzgCommitments,
         payloadWithheld,
         stateRoot);
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
+    return (SszListSchema<SszKZGCommitment, ?>)
+        getChildSchema(getFieldIndex("blob_kzg_commitments"));
   }
 
   @Override

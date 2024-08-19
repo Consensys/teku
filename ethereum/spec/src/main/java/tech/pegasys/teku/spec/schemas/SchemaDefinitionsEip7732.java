@@ -17,9 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
@@ -75,6 +77,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   private final BuilderBidSchema<?> builderBidSchemaElectra;
   private final SignedBuilderBidSchema signedBuilderBidSchemaElectra;
 
+  private final BlobSidecarSchema blobSidecarSchema;
   private final BlockContentsSchema blockContentsSchema;
   private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
@@ -135,6 +138,11 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidEip7732", builderBidSchemaElectra);
 
+    this.blobSidecarSchema =
+        BlobSidecarSchema.create(
+            SignedBeaconBlockHeader.SSZ_SCHEMA,
+            getBlobSchema(),
+            specConfig.getKzgCommitmentInclusionProofDepthEip7732());
     this.blockContentsSchema =
         BlockContentsSchema.create(
             specConfig, beaconBlockSchema, getBlobSchema(), "BlockContentsEip7732");
@@ -170,6 +178,11 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   @Override
   public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
     return signedAggregateAndProofSchema;
+  }
+
+  @Override
+  public BlobSidecarSchema getBlobSidecarSchema() {
+    return blobSidecarSchema;
   }
 
   @Override

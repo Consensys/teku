@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
@@ -231,5 +232,18 @@ public class BeaconBlockBodySchemaEip7732Impl
     return GIndexUtil.gIdxComposeAll(
         getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)),
         getExecutionPayloadSchema().getBlindedNodeGeneralizedIndices());
+  }
+
+  @Override
+  public long getBlobKzgCommitmentsRootGeneralizedIndex() {
+    return getSignedExecutionPayloadHeaderSchema()
+        .getMessageSchema()
+        .getChildGeneralizedIndex(getFieldIndex(ExecutionPayloadFields.BLOB_KZG_COMMITMENTS_ROOT));
+  }
+
+  @Override
+  public SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema() {
+    return (SignedExecutionPayloadHeaderSchema)
+        getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER));
   }
 }
