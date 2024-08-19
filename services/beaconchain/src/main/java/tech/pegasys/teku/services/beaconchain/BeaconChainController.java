@@ -1110,6 +1110,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
+            // TODO: add to pool and validate
+            .gossipedExecutionPayload(
+                (executionPayload, arrivalTimestamp) ->
+                    SafeFuture.failedFuture(new UnsupportedOperationException("TODO")))
+            .gossipedPayloadAttestationProcessor(
+                (payloadAttestation, arrivalTimestamp) ->
+                    SafeFuture.failedFuture(new UnsupportedOperationException("TODO")))
+            .gossipedExecutionPayloadHeaderProcessor(
+                (executionPayloadHeader, arrivalTimestamp) ->
+                    SafeFuture.failedFuture(new UnsupportedOperationException("TODO")))
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)
