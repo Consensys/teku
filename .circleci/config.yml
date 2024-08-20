@@ -243,7 +243,17 @@ jobs:
       - run:
           name: Spotless
           command: |
-            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck checkModuleDependencies
+            ./gradlew --no-daemon --parallel spotlessCheck
+      - notify
+
+  moduleChecks:
+    executor: small_executor
+    steps:
+      - prepare
+      - run:
+          name: Module Checks
+          command: |
+            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions checkModuleDependencies
       - notify
 
   dockerScan:
@@ -562,12 +572,17 @@ workflows:
           filters:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
+      - moduleChecks:
+          filters:
+            tags:
+              <<: *filters-release-tags
       - spotless:
           filters:
             tags:
               <<: *filters-release-tags
       - windowsBuild:
           requires:
+            - moduleChecks
             - spotless
           filters:
             tags:
@@ -630,6 +645,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -649,6 +665,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -668,6 +685,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -700,6 +718,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
   nightly:
