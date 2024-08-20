@@ -38,11 +38,11 @@
         "content" : { }
       },
       "400" : {
-        "description" : "Errors with one or more attestations",
+        "description": "Invalid request syntax.",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/ErrorListBadRequest"
+              "$ref": "#/components/schemas/HttpErrorResponse"
             }
           }
         }
