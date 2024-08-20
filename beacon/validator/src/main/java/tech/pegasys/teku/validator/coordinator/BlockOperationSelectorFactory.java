@@ -220,12 +220,7 @@ public class BlockOperationSelectorFactory {
 
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
-
-      bodyBuilder.executionPayloadHeader(
-          schemaDefinitions.getExecutionPayloadHeaderSchema().getHeaderOfDefaultPayload());
-
       bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
-
       return SafeFuture.COMPLETE;
     }
 
