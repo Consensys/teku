@@ -1,7 +1,6 @@
 dependencies {
   implementation project(':beacon:pow')
   implementation project(':beacon:validator')
-  implementation project(':data:serializer')
   implementation project(':data:publisher')
   implementation project(':data:beaconrestapi')
   implementation project(':ethereum:signingrecord')
