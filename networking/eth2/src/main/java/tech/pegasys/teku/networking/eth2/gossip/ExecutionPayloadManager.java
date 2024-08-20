@@ -47,7 +47,7 @@ public class ExecutionPayloadManager extends AbstractGossipManager<SignedExecuti
         SchemaDefinitionsEip7732.required(
                 spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
             .getSignedExecutionPayloadEnvelopeSchema(),
-        // TODO: not sure here, we don't have the slot
+        // EIP7332 TODO: not sure here, we don't have the slot
         executionPayloadEnvelope -> forkInfo.getFork().getEpoch(),
         spec.getNetworkingConfig(),
         debugDataDumper);

@@ -49,7 +49,7 @@ public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeader
 
   @Override
   protected void validate() {
-    // TODO: hacky skip validation
+    // EIP7332 TODO: hacky skip validation
     // super.validate();
     checkNotNull(parentBlockHash, "parentBlockHash must be specified");
     checkNotNull(parentBlockRoot, "parentBlockRoot must be specified");

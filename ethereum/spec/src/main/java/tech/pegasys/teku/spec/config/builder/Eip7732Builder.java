@@ -34,6 +34,7 @@ public class Eip7732Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
   private Integer ptcSize;
   private Integer maxPayloadAttestations;
   private Integer kzgCommitmentInclusionProofDepthEip7732;
+  private Integer maxRequestPayloads;
 
   Eip7732Builder() {}
 
@@ -45,7 +46,8 @@ public class Eip7732Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
         eip7732ForkEpoch,
         ptcSize,
         maxPayloadAttestations,
-        kzgCommitmentInclusionProofDepthEip7732);
+        kzgCommitmentInclusionProofDepthEip7732,
+        maxRequestPayloads);
   }
 
   public Eip7732Builder eip7732ForkEpoch(final UInt64 eip7732ForkEpoch) {
@@ -79,6 +81,12 @@ public class Eip7732Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
     return this;
   }
 
+  public Eip7732Builder maxRequestPayloads(final Integer maxRequestPayloads) {
+    checkNotNull(maxRequestPayloads);
+    this.maxRequestPayloads = maxRequestPayloads;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (eip7732ForkEpoch == null) {
@@ -104,6 +112,7 @@ public class Eip7732Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
     constants.put("maxPayloadAttestations", maxPayloadAttestations);
     constants.put(
         "kzgCommitmentInclusionProofDepthEip7732", kzgCommitmentInclusionProofDepthEip7732);
+    constants.put("maxRequestPayloads", maxRequestPayloads);
 
     return constants;
   }

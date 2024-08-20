@@ -1857,7 +1857,7 @@ public final class DataStructureUtil {
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
-      case EIP7732 -> throw new UnsupportedOperationException("TODO");
+      case EIP7732 -> throw new UnsupportedOperationException("EIP7332 TODO");
     };
   }
 

@@ -30,8 +30,7 @@ public class ExecutionPayloadEnvelopesByRootRequestMessage extends SszListImpl<S
       extends AbstractSszListSchema<SszBytes32, ExecutionPayloadEnvelopesByRootRequestMessage> {
 
     public ExecutionPayloadEnvelopesByRootRequestMessageSchema(final SpecConfigEip7732 specConfig) {
-      // TODO: change
-      super(SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxRequestBlocks());
+      super(SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxRequestPayloads());
     }
 
     @Override
