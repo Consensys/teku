@@ -27,6 +27,7 @@ public class SpecConfigEip7732Impl extends DelegatingSpecConfigElectra
   private final int ptcSize;
   private final int maxPayloadAttestations;
   private final int kzgCommitmentInclusionProofDepthEip7732;
+  private final int maxRequestPayloads;
 
   public SpecConfigEip7732Impl(
       final SpecConfigElectra specConfig,
@@ -34,13 +35,15 @@ public class SpecConfigEip7732Impl extends DelegatingSpecConfigElectra
       final UInt64 eip7732ForkEpoch,
       final int ptcSize,
       final int maxPayloadAttestations,
-      final int kzgCommitmentInclusionProofDepthEip7732) {
+      final int kzgCommitmentInclusionProofDepthEip7732,
+      final int maxRequestPayloads) {
     super(specConfig);
     this.eip7732ForkVersion = eip7732ForkVersion;
     this.eip7732ForkEpoch = eip7732ForkEpoch;
     this.ptcSize = ptcSize;
     this.maxPayloadAttestations = maxPayloadAttestations;
     this.kzgCommitmentInclusionProofDepthEip7732 = kzgCommitmentInclusionProofDepthEip7732;
+    this.maxRequestPayloads = maxRequestPayloads;
   }
 
   @Override
@@ -69,6 +72,11 @@ public class SpecConfigEip7732Impl extends DelegatingSpecConfigElectra
   }
 
   @Override
+  public int getMaxRequestPayloads() {
+    return maxRequestPayloads;
+  }
+
+  @Override
   public Optional<SpecConfigEip7732> toVersionEip7732() {
     return Optional.of(this);
   }
@@ -87,7 +95,8 @@ public class SpecConfigEip7732Impl extends DelegatingSpecConfigElectra
         && Objects.equals(eip7732ForkEpoch, that.eip7732ForkEpoch)
         && ptcSize == that.ptcSize
         && maxPayloadAttestations == that.maxPayloadAttestations
-        && kzgCommitmentInclusionProofDepthEip7732 == that.kzgCommitmentInclusionProofDepthEip7732;
+        && kzgCommitmentInclusionProofDepthEip7732 == that.kzgCommitmentInclusionProofDepthEip7732
+        && maxRequestPayloads == that.maxRequestPayloads;
   }
 
   @Override
@@ -98,6 +107,7 @@ public class SpecConfigEip7732Impl extends DelegatingSpecConfigElectra
         eip7732ForkEpoch,
         ptcSize,
         maxPayloadAttestations,
-        kzgCommitmentInclusionProofDepthEip7732);
+        kzgCommitmentInclusionProofDepthEip7732,
+        maxRequestPayloads);
   }
 }

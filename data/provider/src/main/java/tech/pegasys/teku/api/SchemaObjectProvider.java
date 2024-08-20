@@ -130,7 +130,7 @@ public class SchemaObjectProvider {
               block.getParentRoot(),
               block.getStateRoot(),
               getBlindedBlockBodyElectra(block.getBody()));
-      case EIP7732 -> throw new UnsupportedOperationException("TODO");
+      case EIP7732 -> throw new UnsupportedOperationException("EIP7332 TODO");
     };
   }
 
@@ -180,7 +180,7 @@ public class SchemaObjectProvider {
               block.getParentRoot(),
               block.getStateRoot(),
               getBeaconBlockBodyElectra(block.getBody()));
-      case EIP7732 -> throw new UnsupportedOperationException("TODO");
+      case EIP7732 -> throw new UnsupportedOperationException("EIP7332 TODO");
     };
   }
 
@@ -257,7 +257,7 @@ public class SchemaObjectProvider {
       case CAPELLA -> new BeaconStateCapella(state);
       case DENEB -> new BeaconStateDeneb(state);
       case ELECTRA -> new BeaconStateElectra(state);
-      case EIP7732 -> throw new UnsupportedOperationException("TODO");
+      case EIP7732 -> throw new UnsupportedOperationException("EIP7332 TODO");
     };
   }
 }

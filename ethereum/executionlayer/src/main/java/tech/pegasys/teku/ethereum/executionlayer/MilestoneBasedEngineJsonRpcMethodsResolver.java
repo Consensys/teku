@@ -76,7 +76,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                   methodsByMilestone.put(milestone, electraSupportedMethods());
                   break;
                 case EIP7732:
-                  // TODO: implement
+                  // EIP7332 TODO: implement
                   break;
               }
             });

@@ -118,7 +118,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
             executionPayloadHeaderSchemaEip7732,
             payloadAttestationSchema,
             "BeaconBlockBodyEip7732");
-    // TODO: this schema needs changing
+    // EIP7332 TODO: this schema needs changing
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
             specConfig,

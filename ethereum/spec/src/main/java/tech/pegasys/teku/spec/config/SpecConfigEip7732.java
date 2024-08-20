@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SpecConfigEip7732 extends SpecConfigElectra {
+public interface SpecConfigEip7732 extends SpecConfigElectra, NetworkingSpecConfigEip7732 {
 
   static SpecConfigEip7732 required(final SpecConfig specConfig) {
     return specConfig
