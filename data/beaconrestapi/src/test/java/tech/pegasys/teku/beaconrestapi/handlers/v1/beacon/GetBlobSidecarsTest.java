@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -64,6 +66,8 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(((BlobSidecarsAndMetaData) request.getResponseBody()).getData())
         .isEqualTo(blobSidecars);
+    assertThat(request.getResponseHeaders(ETH_CONSENSUS_VERSION_TYPE.getName()))
+        .isEqualTo(Version.fromMilestone(SpecMilestone.DENEB).name());
   }
 
   @Test
@@ -91,5 +95,6 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
         Resources.toString(
             Resources.getResource(GetBlobSidecarsTest.class, "getBlobSidecars.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
+
   }
 }
