@@ -19,6 +19,7 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -81,12 +83,17 @@ public class GetBlobSidecars extends RestApiEndpoint {
     final List<UInt64> indices = request.getQueryParameterList(BLOB_INDICES_PARAMETER);
     final SafeFuture<Optional<BlobSidecarsAndMetaData>> future =
         chainDataProvider.getBlobSidecars(request.getPathParameter(PARAMETER_BLOCK_ID), indices);
-
     request.respondAsync(
         future.thenApply(
-            blobSidecars ->
-                blobSidecars
-                    .map(AsyncApiResponse::respondOk)
+            maybeBlobSidecars ->
+                maybeBlobSidecars
+                    .map(
+                        blobSidecarsAndMetaData -> {
+                          request.header(
+                              HEADER_CONSENSUS_VERSION,
+                              Version.fromMilestone(blobSidecarsAndMetaData.getMilestone()).name());
+                          return AsyncApiResponse.respondOk(blobSidecarsAndMetaData);
+                        })
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
