@@ -15,15 +15,17 @@ package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
@@ -34,18 +36,22 @@ public class GetBlockHeaderIntegrationTest extends AbstractDataBackedRestAPIInte
   }
 
   @Test
-  public void shouldGetBlockHeader() throws IOException {
+  public void shouldGetBlockHeader() throws Exception {
     final List<SignedBlockAndState> created = createBlocksAtSlots(10);
     final Response response = get("head");
 
-    final GetBlockHeaderResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetBlockHeaderResponse.class);
-    final BlockHeader data = body.data;
-    assertThat(data).isEqualTo(new BlockHeader(created.get(0).getBlock(), true));
+    final JsonNode responseAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
+
+    final SignedBeaconBlockHeader signedBeaconBlockHeader =
+        JsonUtil.parse(
+            responseAsJsonNode.get("data").get("header").toString(),
+            SignedBeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition());
+
+    assertThat(signedBeaconBlockHeader).isEqualTo(created.get(0).getBlock().asHeader());
   }
 
   @Test
-  public void shouldGetNonCanonicalBlockHeader() throws IOException {
+  public void shouldGetNonCanonicalBlockHeader() throws Exception {
     createBlocksAtSlots(10);
     final ChainBuilder fork = chainBuilder.fork();
     SignedBlockAndState forked = fork.generateNextBlock();
@@ -55,10 +61,9 @@ public class GetBlockHeaderIntegrationTest extends AbstractDataBackedRestAPIInte
 
     final Response response = get(forked.getRoot().toHexString());
 
-    final GetBlockHeaderResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetBlockHeaderResponse.class);
+    final JsonNode responseAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
 
-    assertThat(body.data.canonical).isFalse();
+    assertThat(responseAsJsonNode.get("data").get("canonical").asBoolean()).isFalse();
   }
 
   public Response get(final String blockIdString) throws IOException {

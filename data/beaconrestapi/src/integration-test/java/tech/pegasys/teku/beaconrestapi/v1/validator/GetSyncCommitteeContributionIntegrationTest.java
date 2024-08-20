@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.util.Map;
@@ -31,11 +32,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
@@ -77,7 +79,7 @@ public class GetSyncCommitteeContributionIntegrationTest
   }
 
   @Test
-  void shouldReturnResultIfCreatedSuccessfully() throws IOException {
+  void shouldReturnResultIfCreatedSuccessfully() throws Exception {
     final SafeFuture<Optional<SyncCommitteeContribution>> future =
         SafeFuture.completedFuture(
             Optional.of(
@@ -89,11 +91,17 @@ public class GetSyncCommitteeContributionIntegrationTest
         .thenReturn(future);
     final Response response = get(ONE, 1, blockRoot);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetSyncCommitteeContributionResponse r =
-        jsonProvider.jsonToObject(
-            response.body().string(), GetSyncCommitteeContributionResponse.class);
-    assertThat(r.data.slot).isEqualTo(ONE);
-    assertThat(r.data.beaconBlockRoot).isEqualTo(blockRoot);
+    final JsonNode responseAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
+    final SyncCommitteeContribution r =
+        JsonUtil.parse(
+            responseAsJsonNode.get("data").toString(),
+            spec.getGenesisSchemaDefinitions()
+                .toVersionAltair()
+                .get()
+                .getSyncCommitteeContributionSchema()
+                .getJsonTypeDefinition());
+    assertThat(r.getSlot()).isEqualTo(ONE);
+    assertThat(r.getBeaconBlockRoot()).isEqualTo(blockRoot);
   }
 
   public Response get(final UInt64 slot, final Integer subcommitteeIndex, final Bytes32 blockRoot)
