@@ -32,9 +32,9 @@ public class AggregateAndProof
       extends ContainerSchema3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
 
     public AggregateAndProofSchema(
-        final AttestationSchema<? extends Attestation> attestationSchema) {
+        final AttestationSchema<? extends Attestation> attestationSchema, final boolean isElectra) {
       super(
-          "AggregateAndProof",
+          isElectra ? "AggregateAndProofElectra" : "AggregateAndProofPhase0",
           namedSchema("aggregator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("aggregate", SszSchema.as(Attestation.class, attestationSchema)),
           namedSchema("selection_proof", SszSignatureSchema.INSTANCE));

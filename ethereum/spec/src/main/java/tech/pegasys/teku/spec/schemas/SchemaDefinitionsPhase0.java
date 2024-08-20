@@ -46,8 +46,9 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
     super(specConfig);
     this.attestationSchema = new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
-    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
-    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
+    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema, false);
+    this.signedAggregateAndProofSchema =
+        new SignedAggregateAndProofSchema(aggregateAndProofSchema, false);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(

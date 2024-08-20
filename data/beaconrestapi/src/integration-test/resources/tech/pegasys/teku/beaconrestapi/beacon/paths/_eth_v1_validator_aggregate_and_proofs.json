@@ -4,13 +4,14 @@
     "operationId" : "publishAggregateAndProofs",
     "summary" : "Publish multiple aggregate and proofs",
     "description" : "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
+    "deprecated" : true,
     "requestBody" : {
       "content" : {
         "application/json" : {
           "schema" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/SignedAggregateAndProof"
+              "$ref" : "#/components/schemas/SignedAggregateAndProofPhase0"
             }
           }
         }
