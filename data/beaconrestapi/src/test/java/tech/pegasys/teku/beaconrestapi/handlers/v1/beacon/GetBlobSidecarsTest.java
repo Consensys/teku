@@ -95,6 +95,5 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
         Resources.toString(
             Resources.getResource(GetBlobSidecarsTest.class, "getBlobSidecars.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
-
   }
 }

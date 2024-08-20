@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOB_INDICES_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -87,13 +86,14 @@ public class GetBlobSidecars extends RestApiEndpoint {
     request.respondAsync(
         future.thenApply(
             maybeBlobSidecars ->
-                    maybeBlobSidecars
-                    .map(blobSidecarsAndMetaData -> {
-                        request.header(
-                            HEADER_CONSENSUS_VERSION,
-                            Version.fromMilestone(blobSidecarsAndMetaData.getMilestone()).name());
-                        return AsyncApiResponse.respondOk(blobSidecarsAndMetaData);
-                    })
+                maybeBlobSidecars
+                    .map(
+                        blobSidecarsAndMetaData -> {
+                          request.header(
+                              HEADER_CONSENSUS_VERSION,
+                              Version.fromMilestone(blobSidecarsAndMetaData.getMilestone()).name());
+                          return AsyncApiResponse.respondOk(blobSidecarsAndMetaData);
+                        })
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
