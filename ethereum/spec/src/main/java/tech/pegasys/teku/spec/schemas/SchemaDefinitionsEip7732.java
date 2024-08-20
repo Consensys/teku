@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnv
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadSchemaEip7732;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
@@ -88,6 +89,8 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   private final SignedExecutionPayloadHeaderSchema signedExecutionPayloadHeaderSchema;
   private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
   private final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema;
+  private final ExecutionPayloadEnvelopesByRootRequestMessageSchema
+      executionPayloadEnvelopesByRootRequestMessageSchema;
 
   public SchemaDefinitionsEip7732(final SpecConfigEip7732 specConfig) {
     super(specConfig);
@@ -115,6 +118,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
             executionPayloadHeaderSchemaEip7732,
             payloadAttestationSchema,
             "BeaconBlockBodyEip7732");
+    // TODO: this schema needs changing
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
             specConfig,
@@ -164,6 +168,8 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
             executionPayloadSchemaEip7732, getBlobKzgCommitmentsSchema());
     this.signedExecutionPayloadEnvelopeSchema =
         new SignedExecutionPayloadEnvelopeSchema(executionPayloadEnvelopeSchema);
+    this.executionPayloadEnvelopesByRootRequestMessageSchema =
+        new ExecutionPayloadEnvelopesByRootRequestMessageSchema(specConfig);
   }
 
   public static SchemaDefinitionsEip7732 required(final SchemaDefinitions schemaDefinitions) {
@@ -319,6 +325,11 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   public SignedExecutionPayloadEnvelopeSchema getSignedExecutionPayloadEnvelopeSchema() {
     return signedExecutionPayloadEnvelopeSchema;
+  }
+
+  public ExecutionPayloadEnvelopesByRootRequestMessageSchema
+      getExecutionPayloadEnvelopesByRootRequestMessageSchema() {
+    return executionPayloadEnvelopesByRootRequestMessageSchema;
   }
 
   @Override
