@@ -88,10 +88,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final MetadataMessagesFactory metadataMessagesFactory;
   private final PeerChainValidator peerChainValidator;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
-  private volatile Optional<UInt64> remoteMetadataSeqNumber = Optional.empty();
-  private volatile Optional<SszBitvector> remoteAttSubnets = Optional.empty();
+  private volatile Optional<MetadataMessage> remoteMetadata = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private final Subscribers<PeerStatusSubscriber> statusSubscribers = Subscribers.create(true);
+  private final Subscribers<PeerMetadataUpdateSubscriber> metadataSubscribers =
+      Subscribers.create(true);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger unansweredPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
@@ -196,8 +197,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public void updateMetadataSeqNumber(final UInt64 seqNumber) {
-    Optional<UInt64> curValue = this.remoteMetadataSeqNumber;
-    remoteMetadataSeqNumber = Optional.of(seqNumber);
+    Optional<UInt64> curValue = this.remoteMetadata.map(MetadataMessage::getSeqNumber);
     if (curValue.isEmpty() || seqNumber.compareTo(curValue.get()) > 0) {
       requestMetadata()
           .finish(
@@ -206,8 +206,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   private void updateMetadata(final MetadataMessage metadataMessage) {
-    remoteMetadataSeqNumber = Optional.of(metadataMessage.getSeqNumber());
-    remoteAttSubnets = Optional.of(metadataMessage.getAttnets());
+    this.remoteMetadata = Optional.ofNullable(metadataMessage);
+    metadataSubscribers.forEach(s -> s.onPeerMetadataUpdate(this, metadataMessage));
   }
 
   @Override
@@ -222,13 +222,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public void subscribeMetadataUpdates(PeerMetadataUpdateSubscriber subscriber) {
+    metadataSubscribers.subscribe(subscriber);
+    remoteMetadata.ifPresent(metadata -> subscriber.onPeerMetadataUpdate(this, metadata));
+  }
+
+  @Override
   public PeerStatus getStatus() {
     return remoteStatus.orElseThrow();
   }
 
   @Override
   public Optional<SszBitvector> getRemoteAttestationSubnets() {
-    return remoteAttSubnets;
+    return remoteMetadata.map(MetadataMessage::getAttnets);
   }
 
   @Override

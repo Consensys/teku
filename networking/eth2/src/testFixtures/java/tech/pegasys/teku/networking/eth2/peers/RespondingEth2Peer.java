@@ -162,6 +162,9 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public void subscribeMetadataUpdates(PeerMetadataUpdateSubscriber subscriber) {}
+
+  @Override
   public PeerStatus getStatus() {
     return status;
   }
