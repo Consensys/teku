@@ -74,6 +74,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -93,14 +94,16 @@ public class ChainDataProvider {
       final Spec spec,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
-      final RewardCalculator rewardCalculator) {
+      final RewardCalculator rewardCalculator,
+      final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider) {
     this(
         spec,
         recentChainData,
         combinedChainDataClient,
         new BlockSelectorFactory(spec, combinedChainDataClient),
         new StateSelectorFactory(spec, combinedChainDataClient),
-        new BlobSidecarSelectorFactory(combinedChainDataClient),
+        new BlobSidecarSelectorFactory(
+            spec, combinedChainDataClient, blobSidecarReconstructionProvider),
         rewardCalculator);
   }
 

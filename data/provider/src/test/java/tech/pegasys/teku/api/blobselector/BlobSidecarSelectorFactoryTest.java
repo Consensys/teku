@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -55,7 +56,7 @@ public class BlobSidecarSelectorFactoryTest {
   private final List<BlobSidecar> blobSidecars = data.randomBlobSidecars(3);
 
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory =
-      new BlobSidecarSelectorFactory(client);
+      new BlobSidecarSelectorFactory(spec, client, mock(BlobSidecarReconstructionProvider.class));
 
   @Test
   public void headSelector_shouldGetHeadBlobSidecars()
@@ -219,5 +220,51 @@ public class BlobSidecarSelectorFactoryTest {
     } else {
       verify(client, never()).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
     }
+  }
+
+  @Test
+  public void shouldForwardRequestsToReconstructionProviderAfterEip7594()
+      throws InterruptedException, ExecutionException {
+    final BlobSidecarReconstructionProvider blobSidecarReconstructionProviderMock =
+        mock(BlobSidecarReconstructionProvider.class);
+    final BlobSidecarSelectorFactory blobSidecarSelectorFactoryEip7594 =
+        new BlobSidecarSelectorFactory(
+            TestSpecFactory.createMinimalEip7594(), client, blobSidecarReconstructionProviderMock);
+
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
+
+    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
+    when(blobSidecarReconstructionProviderMock.reconstructBlobSidecars(
+            blockAndState.getSlotAndBlockRoot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<List<BlobSidecar>> result =
+        blobSidecarSelectorFactoryEip7594.headSelector().getBlobSidecars(indices).get();
+    assertThat(result).hasValue(blobSidecars);
+    verify(blobSidecarReconstructionProviderMock)
+        .reconstructBlobSidecars(any(SlotAndBlockRoot.class), anyList());
+  }
+
+  @Test
+  public void shouldForwardSlotSelectorRequestsToReconstructionProviderAfterEip7594()
+      throws InterruptedException, ExecutionException {
+    final BlobSidecarReconstructionProvider blobSidecarReconstructionProviderMock =
+        mock(BlobSidecarReconstructionProvider.class);
+    final BlobSidecarSelectorFactory blobSidecarSelectorFactoryEip7594 =
+        new BlobSidecarSelectorFactory(
+            TestSpecFactory.createMinimalEip7594(), client, blobSidecarReconstructionProviderMock);
+
+    when(client.isFinalized(block.getSlot())).thenReturn(true);
+    when(blobSidecarReconstructionProviderMock.reconstructBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<List<BlobSidecar>> result =
+        blobSidecarSelectorFactoryEip7594
+            .slotSelector(block.getSlot())
+            .getBlobSidecars(indices)
+            .get();
+    assertThat(result).hasValue(blobSidecars);
+    verify(blobSidecarReconstructionProviderMock)
+        .reconstructBlobSidecars(any(UInt64.class), anyList());
   }
 }
