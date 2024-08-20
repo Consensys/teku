@@ -19,11 +19,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
 public class BeaconNodeMetricDataTest {
-  private final JsonProvider jsonProvider = new JsonProvider();
+  private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
   void shouldSerialize() throws JsonProcessingException {
@@ -35,8 +34,7 @@ public class BeaconNodeMetricDataTest {
             .isEth2Synced(true)
             .build();
     final BeaconNodeMetricData process = new BeaconNodeMetricData(10L, source);
-    final String data = jsonProvider.objectToJSON(process);
-    final ObjectMapper mapper = jsonProvider.getObjectMapper();
+    final String data = mapper.writeValueAsString(process);
     final JsonNode node = mapper.readTree(data);
     assertThat(node.size()).isEqualTo(20);
     assertThat(node.get("process").asText()).isEqualTo("beaconnode");

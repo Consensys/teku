@@ -36,7 +36,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.nio.charset.StandardCharsets;
@@ -759,8 +758,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
   private void assertJsonEquals(final String actual, final String expected) {
     try {
-      final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
-      assertThat(objectMapper.readTree(actual)).isEqualTo(objectMapper.readTree(expected));
+      assertThat(OBJECT_MAPPER.readTree(actual)).isEqualTo(OBJECT_MAPPER.readTree(expected));
     } catch (JsonProcessingException ex) {
       Assertions.fail(ex);
     }
