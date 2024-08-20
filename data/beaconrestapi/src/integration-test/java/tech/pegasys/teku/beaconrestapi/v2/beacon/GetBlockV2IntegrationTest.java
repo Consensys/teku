@@ -26,72 +26,57 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
-import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 
 public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
-  public void shouldGetBlock() throws Exception {
+  public void shouldGetBlock() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
     final List<SignedBlockAndState> created = createBlocksAtSlots(10);
     final Response response = get("head");
-    final JsonNode responseAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
-    assertThat(responseAsJsonNode.get("version").asText()).isEqualTo(Version.phase0.name());
-    final SignedBeaconBlock signedBlock =
-        JsonUtil.parse(
-            responseAsJsonNode.get("data").toString(),
-            spec.getGenesisSchemaDefinitions()
-                .getSignedBeaconBlockSchema()
-                .getJsonTypeDefinition());
-    assertThat(signedBlock.getBeaconBlock().get().getBody()).isInstanceOf(BeaconBlockBody.class);
+
+    final GetBlockResponseV2 body =
+        jsonProvider.jsonToObject(response.body().string(), GetBlockResponseV2.class);
+
+    assertThat(body.getVersion()).isEqualTo(Version.phase0);
+    assertThat(body.data).isInstanceOf(SignedBeaconBlockPhase0.class);
+    final SignedBeaconBlockPhase0 data = (SignedBeaconBlockPhase0) body.getData();
     final SignedBlockAndState block = created.get(0);
-    assertThat(signedBlock).isEqualTo(block.getBlock());
+    assertThat(data).isEqualTo(SignedBeaconBlock.create(block.getBlock()));
+
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
   }
 
   @Test
-  public void shouldGetAltairBlock() throws Exception {
+  public void shouldGetAltairBlock() throws IOException {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final List<SignedBlockAndState> created = createBlocksAtSlots(10);
     final Response response = get("head");
-    final JsonNode responseAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
-    assertThat(responseAsJsonNode.get("version").asText()).isEqualTo(Version.altair.name());
-    final SignedBeaconBlock signedBlock =
-        JsonUtil.parse(
-            responseAsJsonNode.get("data").toString(),
-            spec.getGenesisSchemaDefinitions()
-                .toVersionAltair()
-                .get()
-                .getSignedBeaconBlockSchema()
-                .getJsonTypeDefinition());
-    assertThat(signedBlock.getBeaconBlock().get().getBody())
-        .isInstanceOf(BeaconBlockBodyAltair.class);
 
-    assertThat(signedBlock.getSignature().toString())
+    final GetBlockResponseV2 body =
+        jsonProvider.jsonToObject(response.body().string(), GetBlockResponseV2.class);
+
+    assertThat(body.getVersion()).isEqualTo(Version.altair);
+    assertThat(body.getData()).isInstanceOf(SignedBeaconBlockAltair.class);
+    final SignedBeaconBlockAltair data = (SignedBeaconBlockAltair) body.getData();
+    assertThat(data.signature.toHexString())
         .isEqualTo(created.get(0).getBlock().getSignature().toString());
-    assertThat(signedBlock.getRoot().toHexString())
+    assertThat(data.getMessage().asInternalBeaconBlock(spec).getRoot().toHexString())
         .isEqualTo(created.get(0).getBlock().getMessage().getRoot().toHexString());
-    assertThat(
-            signedBlock
-                .getBeaconBlock()
-                .get()
-                .getBody()
-                .getOptionalSyncAggregate()
-                .get()
-                .getSyncCommitteeBits()
-                .getBitCount())
-        .isZero();
+    assertThat(data.getMessage().getBody().syncAggregate.syncCommitteeBits)
+        .isEqualTo(Bytes.fromHexString("0x00000000"));
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }
 
