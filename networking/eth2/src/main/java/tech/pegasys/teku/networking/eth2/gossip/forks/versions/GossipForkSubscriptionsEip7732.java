@@ -15,6 +15,9 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadHeaderManager;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadManager;
+import tech.pegasys.teku.networking.eth2.gossip.PayloadAttestationManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -32,10 +35,19 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElectra {
+
+  private final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
+  private final OperationProcessor<PayloadAttestation> payloadAttestationProcessor;
+  private final OperationProcessor<SignedExecutionPayloadHeader> executionPayloadHeaderProcessor;
+
+  private ExecutionPayloadManager executionPayloadManager;
+  private PayloadAttestationManager payloadAttestationManager;
+  private ExecutionPayloadHeaderManager executionPayloadHeaderManager;
 
   public GossipForkSubscriptionsEip7732(
       final Fork fork,
@@ -81,5 +93,73 @@ public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElect
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor,
         debugDataDumper);
+    this.executionPayloadProcessor = executionPayloadProcessor;
+    this.payloadAttestationProcessor = payloadAttestationProcessor;
+    this.executionPayloadHeaderProcessor = executionPayloadHeaderProcessor;
+  }
+
+  @Override
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addGossipManagers(forkInfo);
+    addExecutionPayloadManager(forkInfo);
+    addPayloadAttestationManager(forkInfo);
+    addExecutionPayloadHeaderManager(forkInfo);
+  }
+
+  void addExecutionPayloadManager(final ForkInfo forkInfo) {
+    executionPayloadManager =
+        new ExecutionPayloadManager(
+            recentChainData,
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            executionPayloadProcessor,
+            debugDataDumper);
+    addGossipManager(executionPayloadManager);
+  }
+
+  void addPayloadAttestationManager(final ForkInfo forkInfo) {
+    payloadAttestationManager =
+        new PayloadAttestationManager(
+            recentChainData,
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            payloadAttestationProcessor,
+            debugDataDumper);
+    addGossipManager(payloadAttestationManager);
+  }
+
+  void addExecutionPayloadHeaderManager(final ForkInfo forkInfo) {
+    executionPayloadHeaderManager =
+        new ExecutionPayloadHeaderManager(
+            recentChainData,
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            executionPayloadHeaderProcessor,
+            debugDataDumper);
+    addGossipManager(executionPayloadHeaderManager);
+  }
+
+  @Override
+  public void publishExecutionPayloadMessage(final SignedExecutionPayloadEnvelope message) {
+    executionPayloadManager.publishExecutionPayload(message);
+  }
+
+  @Override
+  public void publishPayloadAttestation(final PayloadAttestation payloadAttestation) {
+    payloadAttestationManager.publishAttestationPayload(payloadAttestation);
+  }
+
+  @Override
+  public void publishExecutionPayloadHeaderMessage(final SignedExecutionPayloadHeader message) {
+    executionPayloadHeaderManager.publishExecutionPayloadHeader(message);
   }
 }
