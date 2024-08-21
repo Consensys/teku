@@ -54,7 +54,7 @@ public class SendSignedAttestationsRequestElectraTest extends AbstractTypeDefReq
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    request.submit(attestations);
+    request.submit(attestations, spec);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -80,7 +80,7 @@ public class SendSignedAttestationsRequestElectraTest extends AbstractTypeDefReq
 
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    final List<SubmitDataError> response = request.submit(attestations);
+    final List<SubmitDataError> response = request.submit(attestations, spec);
     assertThat(response).isEmpty();
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
