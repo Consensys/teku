@@ -51,7 +51,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
   enum SlashingEventType {
     PROPOSER_SLASHING,
-    ATTESTER_SLASHING;
+    ATTESTER_SLASHING
   }
 
   static Stream<Arguments> getSlashingEventTypes() {
