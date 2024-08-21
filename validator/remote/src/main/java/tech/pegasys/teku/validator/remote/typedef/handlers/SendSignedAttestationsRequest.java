@@ -34,15 +34,13 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.FailureListResponse;
 
 public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
-  final Spec spec;
 
   public SendSignedAttestationsRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final Spec spec) {
+      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     super(baseEndpoint, okHttpClient);
-    this.spec = spec;
   }
 
-  public List<SubmitDataError> submit(final List<Attestation> attestations) {
+  public List<SubmitDataError> submit(final List<Attestation> attestations, final Spec spec) {
     if (attestations.isEmpty()) {
       return Collections.emptyList();
     }
