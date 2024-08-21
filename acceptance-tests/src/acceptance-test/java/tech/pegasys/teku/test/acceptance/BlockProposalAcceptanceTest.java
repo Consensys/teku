@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
@@ -77,15 +78,14 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
 
     beaconNode.waitForBlockSatisfying(
         block -> {
-          assertThat(
-                  block
-                      .getMessage()
-                      .getBody()
-                      .getOptionalExecutionPayload()
-                      .orElseThrow()
-                      .getFeeRecipient()
-                      .toHexString()
-                      .toLowerCase(Locale.ROOT))
+          final Bytes20 feeRecipient =
+              block
+                  .getMessage()
+                  .getBody()
+                  .getOptionalExecutionPayload()
+                  .orElseThrow()
+                  .getFeeRecipient();
+          assertThat(feeRecipient.toHexString().toLowerCase(Locale.ROOT))
               .isEqualTo(defaultFeeRecipient.toLowerCase(Locale.ROOT));
           final Bytes32 graffiti = block.getMessage().getBody().getGraffiti();
           final String graffitiMessage =
