@@ -50,14 +50,14 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
 
   @BeforeEach
   public void setup() {
-    this.request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, spec);
+    this.request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient);
     this.attestations = List.of(dataStructureUtil.randomAttestation());
   }
 
   @TestTemplate
   void handle200() throws InterruptedException, JsonProcessingException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-    final List<SubmitDataError> response = request.submit(attestations);
+    final List<SubmitDataError> response = request.submit(attestations, spec);
     assertThat(response).isEmpty();
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     final List<Attestation> data =
@@ -89,14 +89,14 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
 
   @TestTemplate
   void shouldNoTMakeRequestIfEmptyAttestationsList() {
-    request.submit(Collections.emptyList());
+    request.submit(Collections.emptyList(), spec);
     assertThat(mockWebServer.getRequestCount()).isZero();
   }
 
   @TestTemplate
   void handle500() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    assertThatThrownBy(() -> request.submit(attestations))
+    assertThatThrownBy(() -> request.submit(attestations, spec))
         .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 
@@ -107,7 +107,7 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
             .setResponseCode(SC_BAD_REQUEST)
             .setBody(
                 "{\"code\": 400,\"message\": \"z\",\"failures\": [{\"index\": 3,\"message\": \"a\"}]}"));
-    final List<SubmitDataError> response = request.submit(attestations);
+    final List<SubmitDataError> response = request.submit(attestations, spec);
     assertThat(response).containsExactly(new SubmitDataError(UInt64.valueOf(3), "a"));
   }
 }

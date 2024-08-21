@@ -44,7 +44,7 @@ public class SendSignedAttestationsRequestElectraTest extends AbstractTypeDefReq
 
   @BeforeEach
   void setupRequest() {
-    request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, spec);
+    request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
