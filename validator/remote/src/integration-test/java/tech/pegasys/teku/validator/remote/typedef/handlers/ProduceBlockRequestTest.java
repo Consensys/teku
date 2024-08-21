@@ -272,7 +272,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
     // no optional parameters
-    assertThatThrownBy(() -> request.submit(signature, Optional.empty(), Optional.empty()));
+    assertThat(request.submit(signature, Optional.empty(), Optional.empty())).isEmpty();
 
     recordedRequest = mockWebServer.takeRequest();
 
@@ -285,9 +285,9 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
     // with all parameters
-    assertThatThrownBy(
-        () ->
-            request.submit(signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))));
+    assertThat(
+            request.submit(signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))))
+        .isEmpty();
 
     recordedRequest = mockWebServer.takeRequest();
 

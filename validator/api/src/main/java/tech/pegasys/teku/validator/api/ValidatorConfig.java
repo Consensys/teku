@@ -46,7 +46,6 @@ public class ValidatorConfig {
       List.of(URI.create("http://127.0.0.1:" + DEFAULT_REST_API_PORT));
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
   public static final boolean DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED = true;
-  public static final boolean DEFAULT_BLOCK_V3_ENABLED = true;
   public static final boolean DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED = true;
@@ -98,7 +97,6 @@ public class ValidatorConfig {
   private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final boolean failoversPublishSignedDutiesEnabled;
-  private final boolean blockV3Enabled;
   private final boolean exitWhenNoValidatorKeysEnabled;
   private final boolean shutdownWhenValidatorSlashedEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
@@ -141,7 +139,6 @@ public class ValidatorConfig {
       final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final boolean failoversPublishSignedDutiesEnabled,
-      final boolean blockV3Enabled,
       final boolean exitWhenNoValidatorKeysEnabled,
       final boolean shutdownWhenValidatorSlashedEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
@@ -184,7 +181,6 @@ public class ValidatorConfig {
     this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
-    this.blockV3Enabled = blockV3Enabled;
     this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
     this.shutdownWhenValidatorSlashedEnabled = shutdownWhenValidatorSlashedEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
@@ -325,10 +321,6 @@ public class ValidatorConfig {
     return failoversPublishSignedDutiesEnabled;
   }
 
-  public boolean isBlockV3Enabled() {
-    return blockV3Enabled;
-  }
-
   public boolean isExitWhenNoValidatorKeysEnabled() {
     return exitWhenNoValidatorKeysEnabled;
   }
@@ -408,7 +400,6 @@ public class ValidatorConfig {
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
     private boolean failoversPublishSignedDutiesEnabled =
         DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
-    private boolean blockV3Enabled = DEFAULT_BLOCK_V3_ENABLED;
     private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
     private boolean shutdownWhenValidatorSlashedEnabled =
         DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
@@ -609,11 +600,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder blockV3enabled(final boolean useBlockV3) {
-      this.blockV3Enabled = useBlockV3;
-      return this;
-    }
-
     public Builder exitWhenNoValidatorKeysEnabled(final boolean exitWhenNoValidatorKeysEnabled) {
       this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
       return this;
@@ -715,7 +701,6 @@ public class ValidatorConfig {
           doppelgangerDetectionEnabled,
           failoversSendSubnetSubscriptionsEnabled,
           failoversPublishSignedDutiesEnabled,
-          blockV3Enabled,
           exitWhenNoValidatorKeysEnabled,
           shutdownWhenValidatorSlashedEnabled,
           builderRegistrationDefaultGasLimit,
