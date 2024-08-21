@@ -31,7 +31,6 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttestationsV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -162,6 +161,6 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
         .isEqualTo(
             String.format(
                 "Invalid value for (%s) header: %s",
-                RestApiConstants.HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
+                HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
   }
 }

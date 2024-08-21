@@ -19,7 +19,11 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -33,34 +37,20 @@ public class MilestoneDependentTypesUtilTest {
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
 
-  @Test
-  void headerSelector_UsesConsensusVersionPhase0() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("milestones")
+  void headerSelector_UsesConsensusVersionPhase0(final SpecMilestone targetMilestone) {
     final DeserializableTypeDefinition<?> typeDefinition =
         MilestoneDependentTypesUtil.headerBasedSelector(
-            Map.of(HEADER_CONSENSUS_VERSION, SpecMilestone.PHASE0.toString()),
+            Map.of(HEADER_CONSENSUS_VERSION, targetMilestone.toString()),
             cache,
             SchemaDefinitions::getAttestationSchema);
-    assertThat(typeDefinition.getTypeName()).contains("AttestationPhase0");
-  }
-
-  @Test
-  void headerSelector_UsesConsensusVersionDeneb() {
-    final DeserializableTypeDefinition<?> typeDefinition =
-        MilestoneDependentTypesUtil.headerBasedSelector(
-            Map.of(HEADER_CONSENSUS_VERSION, SpecMilestone.DENEB.toString()),
-            cache,
-            SchemaDefinitions::getAttestationSchema);
-    assertThat(typeDefinition.getTypeName()).contains("AttestationPhase0");
-  }
-
-  @Test
-  void headerSelector_UsesConsensusVersionElectra() {
-    final DeserializableTypeDefinition<?> typeDefinition =
-        MilestoneDependentTypesUtil.headerBasedSelector(
-            Map.of(HEADER_CONSENSUS_VERSION, SpecMilestone.ELECTRA.toString()),
-            cache,
-            SchemaDefinitions::getAttestationSchema);
-    assertThat(typeDefinition.getTypeName()).contains("AttestationElectra");
+    assertThat(typeDefinition.getTypeName())
+        .contains(
+            spec.forMilestone(targetMilestone)
+                .getSchemaDefinitions()
+                .getAttestationSchema()
+                .getContainerName());
   }
 
   @Test
@@ -83,5 +73,12 @@ public class MilestoneDependentTypesUtilTest {
                     Collections.emptyMap(), cache, SchemaDefinitions::getAttestationSchema))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Missing required header value for (Eth-Consensus-Version)");
+  }
+
+  private static Stream<Arguments> milestones() {
+    return Stream.of(
+        Arguments.of(SpecMilestone.PHASE0),
+        Arguments.of(SpecMilestone.DENEB),
+        Arguments.of(SpecMilestone.ELECTRA));
   }
 }
