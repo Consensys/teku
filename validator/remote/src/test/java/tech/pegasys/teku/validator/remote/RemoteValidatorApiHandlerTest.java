@@ -470,7 +470,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            ONE, blsSignature, Optional.of(Bytes32.random()), Optional.of(false), Optional.empty());
+            ONE, blsSignature, Optional.of(Bytes32.random()), Optional.empty());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -486,12 +486,11 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContainerAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
-            eq(false)))
+            eq(Optional.empty())))
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
-        apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+        apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
@@ -516,8 +515,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
-        apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.empty(), Optional.of(ONE));
+        apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.of(ONE));
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
@@ -538,12 +536,11 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContentsAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
-            eq(false)))
+            eq(Optional.empty())))
         .thenReturn(Optional.of(blockContentsAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
-        apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+        apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContentsAndMetaData);

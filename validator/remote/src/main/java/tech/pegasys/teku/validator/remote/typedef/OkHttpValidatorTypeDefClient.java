@@ -57,7 +57,6 @@ import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
@@ -145,25 +144,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return sendSignedBlockRequest.submit(blockContainer, broadcastValidationLevel);
   }
 
-  @Deprecated
-  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
-      final UInt64 slot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> graffiti,
-      final boolean blinded) {
-    final CreateBlockRequest createBlockRequest =
-        new CreateBlockRequest(
-            getBaseEndpoint(), getOkHttpClient(), spec, slot, blinded, preferSszBlockEncoding);
-    try {
-      return createBlockRequest.submit(randaoReveal, graffiti);
-    } catch (final BlindedBlockEndpointNotAvailableException ex) {
-      LOG.warn(
-          "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
-          getBaseEndpoint());
-      return createUnsignedBlock(slot, randaoReveal, graffiti, false);
-    }
-  }
-
   public Optional<BlockContainerAndMetaData> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
@@ -172,15 +152,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(
             getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
-    try {
-      return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
-    } catch (final BlockProductionV3FailedException ex) {
-      LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
-
-      // Falling back to V2, we have to request a blinded block to be able to support both local and
-      // builder flow.
-      return createUnsignedBlock(slot, randaoReveal, graffiti, true);
-    }
+    return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
   public void registerValidators(
