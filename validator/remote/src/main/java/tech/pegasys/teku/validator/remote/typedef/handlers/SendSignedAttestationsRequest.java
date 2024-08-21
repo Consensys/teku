@@ -53,6 +53,10 @@ public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       return submitPostElectra(attestations, specMilestone);
     }
+    return submitPreElectra(attestations);
+  }
+
+  private List<SubmitDataError> submitPreElectra(List<Attestation> attestations) {
     return postJson(
             ValidatorApiMethod.SEND_SIGNED_ATTESTATION,
             Collections.emptyMap(),
