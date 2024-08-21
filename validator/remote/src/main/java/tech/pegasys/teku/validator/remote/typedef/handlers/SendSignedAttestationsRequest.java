@@ -54,7 +54,7 @@ public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
     return submitPreElectra(attestations);
   }
 
-  private List<SubmitDataError> submitPreElectra(List<Attestation> attestations) {
+  private List<SubmitDataError> submitPreElectra(final List<Attestation> attestations) {
     return postJson(
             ValidatorApiMethod.SEND_SIGNED_ATTESTATION,
             Collections.emptyMap(),
