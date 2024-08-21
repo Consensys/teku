@@ -105,9 +105,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.attestationSchema =
         new AttestationElectraSchema(
             maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot());
-    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema, true);
-    this.signedAggregateAndProofSchema =
-        new SignedAggregateAndProofSchema(aggregateAndProofSchema, true);
+    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
+    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
     this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
 

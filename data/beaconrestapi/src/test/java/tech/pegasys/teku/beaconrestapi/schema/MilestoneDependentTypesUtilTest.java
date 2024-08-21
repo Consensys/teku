@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
+import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -71,6 +72,16 @@ public class MilestoneDependentTypesUtilTest {
                     cache,
                     SchemaDefinitions::getAttestationSchema))
         .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("header value was unexpected");
+        .hasMessageContaining("Invalid value for (Eth-Consensus-Version) header: invalid");
+  }
+
+  @Test
+  void headerSelector_errorsWhenMissing() {
+    assertThatThrownBy(
+            () ->
+                MilestoneDependentTypesUtil.headerBasedSelector(
+                    Collections.emptyMap(), cache, SchemaDefinitions::getAttestationSchema))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Missing required header value for (Eth-Consensus-Version)");
   }
 }

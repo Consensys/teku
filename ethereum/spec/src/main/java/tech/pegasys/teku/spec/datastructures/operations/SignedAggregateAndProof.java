@@ -27,10 +27,11 @@ public class SignedAggregateAndProof
   public static class SignedAggregateAndProofSchema
       extends ContainerSchema2<SignedAggregateAndProof, AggregateAndProof, SszSignature> {
 
-    public SignedAggregateAndProofSchema(
-        final AggregateAndProofSchema aggregateAndProofSchema, final boolean isElectra) {
+    public SignedAggregateAndProofSchema(final AggregateAndProofSchema aggregateAndProofSchema) {
       super(
-          isElectra ? "SignedAggregateAndProofElectra" : "SignedAggregateAndProofPhase0",
+          aggregateAndProofSchema.getAttestationSchema().requiresCommitteeBits()
+              ? "SignedAggregateAndProofElectra"
+              : "SignedAggregateAndProofPhase0",
           namedSchema("message", aggregateAndProofSchema),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }

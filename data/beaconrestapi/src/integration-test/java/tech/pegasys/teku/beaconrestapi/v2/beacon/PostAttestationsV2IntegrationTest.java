@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttestationsV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -135,7 +137,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
+        .isEqualTo("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION);
   }
 
   @TestTemplate
@@ -145,18 +147,21 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-
+    final String badConsensusHeaderValue = "NonExistingMileStone";
     final Response response =
         post(
             PostAttestationsV2.ROUTE,
             JsonUtil.serialize(attestations, attestationsListTypeDef),
             Collections.emptyMap(),
-            Optional.of("NonExistingMileStone"));
+            Optional.of(badConsensusHeaderValue));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
+        .isEqualTo(
+            String.format(
+                "Invalid value for (%s) header: %s",
+                RestApiConstants.HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
   }
 }

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
@@ -66,7 +67,7 @@ public class PostAggregateAndProofsV2IntegrationTest
   }
 
   @TestTemplate
-  void shouldPostAggregateAndProofs_NoErrors() throws Exception {
+  void shouldPostAggregateAndProofs() throws Exception {
     when(validatorApiChannel.sendAggregateAndProofs(anyList()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
@@ -87,7 +88,7 @@ public class PostAggregateAndProofsV2IntegrationTest
   }
 
   @TestTemplate
-  void shouldReturnErros() throws Exception {
+  void shouldReturnBadRequestWhenInvalidAggregateAndProofs() throws Exception {
     final SubmitDataError firstSubmitDataError =
         new SubmitDataError(UInt64.ZERO, "Bad aggregate and proofs");
     when(validatorApiChannel.sendAggregateAndProofs(anyList()))
@@ -127,7 +128,8 @@ public class PostAggregateAndProofsV2IntegrationTest
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
+        .isEqualTo(
+            String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
   }
 
   @TestTemplate
@@ -139,18 +141,21 @@ public class PostAggregateAndProofsV2IntegrationTest
         List.of(
             dataStructureUtil.randomSignedAggregateAndProof(),
             dataStructureUtil.randomSignedAggregateAndProof());
-
+    final String badConsensusHeaderValue = "NonExistingMileStone";
     final Response response =
         post(
             PostAggregateAndProofsV2.ROUTE,
             JsonUtil.serialize(aggregateAndProofs, aggregateAndProofsListTypeDef),
             Collections.emptyMap(),
-            Optional.of("NonExistingMileStone"));
+            Optional.of(badConsensusHeaderValue));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
+        .isEqualTo(
+            String.format(
+                "Invalid value for (%s) header: %s",
+                HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
   }
 }
