@@ -37,22 +37,20 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
   private final SchemaDefinitionCache schemaDefinitionCache;
-  private final Spec spec;
 
   public CreateAggregateAttestationRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
-      final SchemaDefinitionCache schemaDefinitionCache,
-      final Spec spec) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(baseEndpoint, okHttpClient);
     this.schemaDefinitionCache = schemaDefinitionCache;
-    this.spec = spec;
   }
 
   public Optional<ObjectAndMetaData<Attestation>> submit(
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
-      final Optional<UInt64> committeeIndex) {
+      final Optional<UInt64> committeeIndex,
+      final Spec spec) {
     final AttestationSchema<Attestation> attestationSchema =
         schemaDefinitionCache.atSlot(slot).getAttestationSchema().castTypeToAttestationSchema();
 

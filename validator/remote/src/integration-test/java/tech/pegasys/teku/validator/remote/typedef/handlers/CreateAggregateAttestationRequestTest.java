@@ -51,7 +51,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
   void setupRequest() {
     request =
         new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec), spec);
+            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec));
   }
 
   @TestTemplate
@@ -60,7 +60,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    request.submit(slot, attestationHashTreeRoot, Optional.empty());
+    request.submit(slot, attestationHashTreeRoot, Optional.empty(), spec);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
@@ -84,7 +84,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestation =
-        request.submit(slot, attestation.hashTreeRoot(), Optional.empty());
+        request.submit(slot, attestation.hashTreeRoot(), Optional.empty(), spec);
 
     assertThat(maybeAttestation).isPresent();
     assertThat(maybeAttestation.get().getData())
@@ -99,7 +99,8 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
                 request.submit(
                     dataStructureUtil.randomSlot(),
                     dataStructureUtil.randomBytes32(),
-                    Optional.empty()))
+                    Optional.empty(),
+                    spec))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -110,7 +111,8 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
             request.submit(
                 dataStructureUtil.randomSlot(),
                 dataStructureUtil.randomBytes32(),
-                Optional.empty()))
+                Optional.empty(),
+                spec))
         .isEmpty();
   }
 
@@ -122,7 +124,8 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
                 request.submit(
                     dataStructureUtil.randomSlot(),
                     dataStructureUtil.randomBytes32(),
-                    Optional.empty()))
+                    Optional.empty(),
+                    spec))
         .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }

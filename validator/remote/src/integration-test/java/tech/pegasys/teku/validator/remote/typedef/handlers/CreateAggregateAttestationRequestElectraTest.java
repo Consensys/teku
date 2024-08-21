@@ -52,7 +52,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
   void setupRequest() {
     createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec), spec);
+            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec));
     responseBodyBuffer = new Buffer();
   }
 
@@ -70,7 +70,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     createAggregateAttestationRequest.submit(
-        slot, attestationHashTreeRoot, Optional.of(committeeIndex));
+        slot, attestationHashTreeRoot, Optional.of(committeeIndex), spec);
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
@@ -104,7 +104,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
 
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestationAndMetaData =
         createAggregateAttestationRequest.submit(
-            slot, attestation.hashTreeRoot(), Optional.of(committeeIndex));
+            slot, attestation.hashTreeRoot(), Optional.of(committeeIndex), spec);
     assertThat(maybeAttestationAndMetaData).isPresent();
     assertThat(maybeAttestationAndMetaData.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());
