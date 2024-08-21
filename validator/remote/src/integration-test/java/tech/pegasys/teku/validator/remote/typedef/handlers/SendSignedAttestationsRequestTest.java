@@ -19,10 +19,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +41,9 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
-@TestSpecContext(milestone = SpecMilestone.CAPELLA, network = Eth2Network.MINIMAL)
+@TestSpecContext(
+    milestone = {SpecMilestone.CAPELLA, SpecMilestone.ELECTRA},
+    network = Eth2Network.MINIMAL)
 public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTestBase {
   private SendSignedAttestationsRequest request;
   private List<Attestation> attestations;
@@ -66,8 +70,15 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
                     .getJsonTypeDefinition()));
     assertThat(data).isEqualTo(attestations);
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-    assertThat(recordedRequest.getPath())
-        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      assertThat(recordedRequest.getRequestUrl().queryParameterNames())
+          .isEqualTo(Collections.emptySet());
+      assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
+          .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    } else {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
+    }
   }
 
   @TestTemplate
