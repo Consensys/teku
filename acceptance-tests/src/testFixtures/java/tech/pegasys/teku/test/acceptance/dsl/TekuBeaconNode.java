@@ -356,7 +356,7 @@ public class TekuBeaconNode extends TekuNode {
     return OBJECT_MAPPER.readTree(syncingData).get("data");
   }
 
-  private boolean fetchSyncStatusElOffline() throws IOException {
+  private boolean getStatusElOffline() throws IOException {
     try {
       return fetchSyncingStatus().get("el_offline").asBoolean();
     } catch (JsonProcessingException e) {
@@ -364,7 +364,7 @@ public class TekuBeaconNode extends TekuNode {
     }
   }
 
-  private boolean fetchSyncStatusIsSyncing() throws IOException {
+  private boolean getStatusIsSyncing() throws IOException {
     try {
       return fetchSyncingStatus().get("is_syncing").asBoolean();
     } catch (JsonProcessingException e) {
@@ -763,14 +763,14 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void expectNodeNotSyncing() throws IOException {
-    assertThat(fetchSyncStatusIsSyncing()).isFalse();
+    assertThat(getStatusIsSyncing()).isFalse();
   }
 
   public void expectElOffline() throws IOException {
-    assertThat(fetchSyncStatusElOffline()).isTrue();
+    assertThat(getStatusElOffline()).isTrue();
   }
 
   public void expectElOnline() throws IOException {
-    assertThat(fetchSyncStatusElOffline()).isFalse();
+    assertThat(getStatusElOffline()).isFalse();
   }
 }
