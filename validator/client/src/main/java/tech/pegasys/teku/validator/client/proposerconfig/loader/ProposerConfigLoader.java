@@ -14,23 +14,40 @@
 package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
 import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes48KeyDeserializer;
+import tech.pegasys.teku.provider.BLSPublicKeyDeserializer;
+import tech.pegasys.teku.provider.BLSPublicKeySerializer;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 
 public class ProposerConfigLoader {
   final ObjectMapper objectMapper;
 
   public ProposerConfigLoader() {
-    this(new JsonProvider().getObjectMapper());
+    this(new ObjectMapper());
+    addTekuMappers();
+  }
+
+  private void addTekuMappers() {
+    SimpleModule module =
+        new SimpleModule("ProposerConfigLoader", new Version(1, 0, 0, null, null, null));
+    module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
+    module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
+    module.addKeyDeserializer(Bytes48.class, new Bytes48KeyDeserializer());
+
+    objectMapper.registerModule(module);
   }
 
   public ProposerConfigLoader(final ObjectMapper objectMapper) {

@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -470,7 +471,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            ONE, blsSignature, Optional.of(Bytes32.random()), Optional.of(false), Optional.empty());
+            ONE, blsSignature, Optional.of(Bytes32.random()), Optional.empty());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -486,12 +487,11 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContainerAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
-            eq(false)))
+            eq(Optional.empty())))
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
-        apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+        apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
@@ -516,8 +516,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(blockContainerAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
-        apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.empty(), Optional.of(ONE));
+        apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.of(ONE));
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
@@ -538,12 +537,11 @@ class RemoteValidatorApiHandlerTest {
             eq(blockContentsAndMetaData.blockContainer().getSlot()),
             eq(blsSignature),
             eq(graffiti),
-            eq(false)))
+            eq(Optional.empty())))
         .thenReturn(Optional.of(blockContentsAndMetaData));
 
     SafeFuture<Optional<BlockContainerAndMetaData>> future =
-        apiHandler.createUnsignedBlock(
-            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+        apiHandler.createUnsignedBlock(ONE, blsSignature, graffiti, Optional.empty());
 
     final BlockContainerAndMetaData resultValue = unwrapToValue(future);
     assertThat(resultValue).isEqualTo(blockContentsAndMetaData);
@@ -579,7 +577,9 @@ class RemoteValidatorApiHandlerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
-    doReturn(Optional.empty()).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
+    doReturn(Optional.empty())
+        .when(typeDefClient)
+        .createAggregate(slot, attHashTreeRoot, Optional.empty());
 
     SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
@@ -593,8 +593,12 @@ class RemoteValidatorApiHandlerTest {
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
     final Attestation attestation = dataStructureUtil.randomAttestation();
+    final ObjectAndMetaData<Attestation> attestationAndMetaData =
+        new ObjectAndMetaData<>(attestation, spec.atSlot(slot).getMilestone(), false, true, true);
 
-    doReturn(Optional.of(attestation)).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
+    doReturn(Optional.of(attestationAndMetaData))
+        .when(typeDefClient)
+        .createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));

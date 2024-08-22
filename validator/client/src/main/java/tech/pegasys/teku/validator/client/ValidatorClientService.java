@@ -458,13 +458,7 @@ public class ValidatorClientService extends Service {
     final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            config.getValidatorConfig().isBlindedBeaconBlocksEnabled(),
-            config.getValidatorConfig().isBlockV3Enabled(),
-            spec,
-            validatorDutyMetrics);
+            forkProvider, validatorApiChannel, blockContainerSigner, spec, validatorDutyMetrics);
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
