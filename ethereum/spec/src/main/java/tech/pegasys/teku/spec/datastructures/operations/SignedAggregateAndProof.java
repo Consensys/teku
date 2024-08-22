@@ -29,7 +29,9 @@ public class SignedAggregateAndProof
 
     public SignedAggregateAndProofSchema(final AggregateAndProofSchema aggregateAndProofSchema) {
       super(
-          "SignedAggregateAndProof",
+          aggregateAndProofSchema.getAttestationSchema().requiresCommitteeBits()
+              ? "SignedAggregateAndProofElectra"
+              : "SignedAggregateAndProofPhase0",
           namedSchema("message", aggregateAndProofSchema),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }

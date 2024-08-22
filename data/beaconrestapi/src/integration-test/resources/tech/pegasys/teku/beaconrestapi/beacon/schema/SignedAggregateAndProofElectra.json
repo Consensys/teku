@@ -1,10 +1,10 @@
 {
-  "title" : "SignedAggregateAndProof",
+  "title" : "SignedAggregateAndProofElectra",
   "type" : "object",
   "required" : [ "message", "signature" ],
   "properties" : {
     "message" : {
-      "$ref" : "#/components/schemas/AggregateAndProof"
+      "$ref" : "#/components/schemas/AggregateAndProofElectra"
     },
     "signature" : {
       "type" : "string",

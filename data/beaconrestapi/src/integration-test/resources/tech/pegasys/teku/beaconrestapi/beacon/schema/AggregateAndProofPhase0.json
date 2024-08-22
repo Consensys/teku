@@ -1,5 +1,5 @@
 {
-  "title" : "AggregateAndProof",
+  "title" : "AggregateAndProofPhase0",
   "type" : "object",
   "required" : [ "aggregator_index", "aggregate", "selection_proof" ],
   "properties" : {
@@ -10,7 +10,7 @@
       "format" : "uint64"
     },
     "aggregate" : {
-      "$ref" : "#/components/schemas/AttestationElectra"
+      "$ref" : "#/components/schemas/AttestationPhase0"
     },
     "selection_proof" : {
       "type" : "string",

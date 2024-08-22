@@ -100,6 +100,10 @@ public class MilestoneDependentTypesUtil {
       final Map<String, String> headers,
       final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    if (!headers.containsKey(HEADER_CONSENSUS_VERSION)) {
+      throw new BadRequestException(
+          String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
+    }
     try {
       final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
       return getSchema
@@ -107,7 +111,9 @@ public class MilestoneDependentTypesUtil {
           .getJsonTypeDefinition();
     } catch (Exception e) {
       throw new BadRequestException(
-          String.format("(%s) header value was unexpected", HEADER_CONSENSUS_VERSION));
+          String.format(
+              "Invalid value for (%s) header: %s",
+              HEADER_CONSENSUS_VERSION, headers.get(HEADER_CONSENSUS_VERSION)));
     }
   }
 
