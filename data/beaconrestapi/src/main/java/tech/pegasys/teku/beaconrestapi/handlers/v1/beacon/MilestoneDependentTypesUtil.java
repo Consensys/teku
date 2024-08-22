@@ -79,21 +79,16 @@ public class MilestoneDependentTypesUtil {
     return builder.build();
   }
 
-  public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
-      final String json,
-      final SchemaDefinitionCache schemaDefinitionCache,
-      final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
-    final Optional<UInt64> slot =
-        // SignedBeaconBlock
-        getSlot(json, "message", "slot")
-            // SignedBlockContents
-            .or(() -> getSlot(json, "signed_block", "message", "slot"));
-    final SpecMilestone milestone =
-        schemaDefinitionCache.milestoneAtSlot(
-            slot.orElseThrow(() -> new BadRequestException("Could not locate slot in JSON data")));
-    return getSchema
-        .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
-        .getJsonTypeDefinition();
+  public static <T extends SszData>
+      DeserializableTypeDefinition<? extends T> headerBasedSelectorWithSlotFallback(
+          final Map<String, String> headers,
+          final String json,
+          final SchemaDefinitionCache schemaDefinitionCache,
+          final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    if (headers.containsKey(HEADER_CONSENSUS_VERSION)) {
+      return headerBasedSelector(headers, schemaDefinitionCache, getSchema);
+    }
+    return slotBasedSelector(json, schemaDefinitionCache, getSchema);
   }
 
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> headerBasedSelector(
@@ -115,6 +110,23 @@ public class MilestoneDependentTypesUtil {
               "Invalid value for (%s) header: %s",
               HEADER_CONSENSUS_VERSION, headers.get(HEADER_CONSENSUS_VERSION)));
     }
+  }
+
+  private static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
+      final String json,
+      final SchemaDefinitionCache schemaDefinitionCache,
+      final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    final Optional<UInt64> slot =
+        // SignedBeaconBlock
+        getSlot(json, "message", "slot")
+            // SignedBlockContents
+            .or(() -> getSlot(json, "signed_block", "message", "slot"));
+    final SpecMilestone milestone =
+        schemaDefinitionCache.milestoneAtSlot(
+            slot.orElseThrow(() -> new BadRequestException("Could not locate slot in JSON data")));
+    return getSchema
+        .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+        .getJsonTypeDefinition();
   }
 
   private static Optional<UInt64> getSlot(final String json, final String... path) {

@@ -34,7 +34,6 @@ import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttesterSlashingV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -156,6 +155,6 @@ public class PostAttesterSlashingV2IntegrationTest
         .isEqualTo(
             String.format(
                 "Invalid value for (%s) header: %s",
-                RestApiConstants.HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
+                HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
   }
 }
