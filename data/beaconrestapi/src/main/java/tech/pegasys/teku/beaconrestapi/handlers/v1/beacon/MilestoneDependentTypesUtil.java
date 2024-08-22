@@ -118,9 +118,7 @@ public class MilestoneDependentTypesUtil {
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
     final Optional<UInt64> slot =
         // SignedBeaconBlock
-        getSlot(json, "message", "slot")
-            // SignedBlockContents
-            .or(() -> getSlot(json, "signed_block", "message", "slot"));
+        getSlot(json, "message", "slot");
     final SpecMilestone milestone =
         schemaDefinitionCache.milestoneAtSlot(
             slot.orElseThrow(() -> new BadRequestException("Could not locate slot in JSON data")));
