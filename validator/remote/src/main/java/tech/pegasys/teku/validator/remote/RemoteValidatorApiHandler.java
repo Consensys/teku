@@ -225,19 +225,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor) {
-    if (requestedBlinded.isPresent()) {
-      return sendRequest(
-          () ->
-              typeDefClient.createUnsignedBlock(
-                  slot, randaoReveal, graffiti, requestedBlinded.get()));
-    }
     return sendRequest(
         () ->
             typeDefClient.createUnsignedBlock(

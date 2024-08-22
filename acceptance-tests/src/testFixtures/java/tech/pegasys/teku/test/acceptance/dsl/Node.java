@@ -57,6 +57,7 @@ public abstract class Node {
   private static final Logger LOG = LogManager.getLogger();
   public static final String TEKU_DOCKER_IMAGE_NAME = "consensys/teku";
   protected static final JsonProvider JSON_PROVIDER = new JsonProvider();
+  protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   protected final SimpleHttpClient httpClient = new SimpleHttpClient();
   protected static final int REST_API_PORT = 9051;
   protected static final int METRICS_PORT = 8008;

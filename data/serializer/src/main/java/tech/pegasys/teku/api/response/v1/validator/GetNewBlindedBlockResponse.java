@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.response.v1.validator;
 
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlindedBlock;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetNewBlindedBlockResponse {
   public final Version version;
@@ -24,10 +23,5 @@ public class GetNewBlindedBlockResponse {
   public GetNewBlindedBlockResponse(final Version version, final UnsignedBlindedBlock data) {
     this.version = version;
     this.data = data;
-  }
-
-  public GetNewBlindedBlockResponse(
-      final SpecMilestone milestone, final UnsignedBlindedBlock data) {
-    this(Version.fromMilestone(milestone), data);
   }
 }

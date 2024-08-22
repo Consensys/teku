@@ -90,6 +90,8 @@ public class JsonProvider {
     module.addSerializer(byte[].class, new ByteArraySerializer());
     module.addDeserializer(byte[].class, new ByteArrayDeserializer());
 
+    module.addSerializer(KZGCommitment.class, new KZGCommitmentSerializer());
+    module.addDeserializer(KZGCommitment.class, new KZGCommitmentDeserializer());
     module.addDeserializer(
         GetNewBlockResponse.class, new GetNewBlockResponseV1Deserializer(objectMapper));
 
@@ -99,9 +101,6 @@ public class JsonProvider {
         GetStateResponseV2.class, new GetStateResponseV2Deserializer(objectMapper));
     module.addDeserializer(
         GetNewBlindedBlockResponse.class, new GetNewBlindedBlockResponseDeserializer(objectMapper));
-
-    module.addSerializer(KZGCommitment.class, new KZGCommitmentSerializer());
-    module.addDeserializer(KZGCommitment.class, new KZGCommitmentDeserializer());
 
     module.addSerializer(KZGProof.class, new KZGProofSerializer());
     module.addDeserializer(KZGProof.class, new KZGProofDeserializer());

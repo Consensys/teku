@@ -44,7 +44,6 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     return super.createUnsignedBlock(
@@ -52,7 +51,6 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
             proposalSlot,
             randaoReveal,
             optionalGraffiti,
-            requestedBlinded,
             requestedBuilderBoostFactor,
             blockProductionPerformance)
         .thenCompose(

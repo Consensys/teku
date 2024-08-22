@@ -23,8 +23,6 @@ public enum ValidatorApiMethod {
   GET_GENESIS("eth/v1/beacon/genesis"),
   GET_VALIDATORS("eth/v1/beacon/states/head/validators"),
   GET_DUTIES("validator/duties"),
-  GET_UNSIGNED_BLOCK_V2("eth/v2/validator/blocks/:slot"),
-  GET_UNSIGNED_BLINDED_BLOCK("eth/v1/validator/blinded_blocks/:slot"),
   GET_UNSIGNED_BLOCK_V3("eth/v3/validator/blocks/:slot"),
   SEND_SIGNED_BLOCK("eth/v1/beacon/blocks"),
   SEND_SIGNED_BLOCK_V2("eth/v2/beacon/blocks"),

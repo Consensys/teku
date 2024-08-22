@@ -19,13 +19,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 
 public class SignedAttestationTest {
-  private final JsonProvider jsonProvider = new JsonProvider();
   final UInt64 target = UInt64.valueOf(1024);
   final UInt64 source = UInt64.valueOf(2048);
   final Bytes32 signingRoot =
@@ -37,25 +37,37 @@ public class SignedAttestationTest {
 
   @Test
   public void shouldCreate() {
-    final SignedAttestation signedAttestation = new SignedAttestation(source, target, signingRoot);
-    assertThat(signedAttestation.sourceEpoch).isEqualTo(source);
-    assertThat(signedAttestation.targetEpoch).isEqualTo(target);
-    assertThat(signedAttestation.signingRoot).isEqualTo(signingRoot);
+    final SignedAttestation signedAttestation =
+        new SignedAttestation(source, target, Optional.of(signingRoot));
+    assertThat(signedAttestation.sourceEpoch()).isEqualTo(source);
+    assertThat(signedAttestation.targetEpoch()).isEqualTo(target);
+    assertThat(signedAttestation.signingRoot()).contains(signingRoot);
+  }
+
+  @Test
+  public void shouldCreateWithoutSigningRoot() {
+    final SignedAttestation signedAttestation =
+        new SignedAttestation(source, target, Optional.empty());
+    assertThat(signedAttestation.sourceEpoch()).isEqualTo(source);
+    assertThat(signedAttestation.targetEpoch()).isEqualTo(target);
+    assertThat(signedAttestation.signingRoot()).isEmpty();
   }
 
   @Test
   public void shouldSerialize() throws JsonProcessingException {
-    final SignedAttestation signedAttestation = new SignedAttestation(source, target, signingRoot);
-    String str = jsonProvider.objectToPrettyJSON(signedAttestation);
+    final SignedAttestation signedAttestation =
+        new SignedAttestation(source, target, Optional.of(signingRoot));
+    String str =
+        JsonUtil.prettySerialize(signedAttestation, SignedAttestation.getJsonTypeDefinition());
     assertThat(str).isEqualToNormalizingNewlines(jsonData);
   }
 
   @Test
   public void shouldDeserialize() throws JsonProcessingException {
     final SignedAttestation signedAttestation =
-        jsonProvider.jsonToObject(jsonData, SignedAttestation.class);
-    assertThat(signedAttestation.sourceEpoch).isEqualTo(source);
-    assertThat(signedAttestation.targetEpoch).isEqualTo(target);
-    assertThat(signedAttestation.signingRoot).isEqualTo(signingRoot);
+        JsonUtil.parse(jsonData, SignedAttestation.getJsonTypeDefinition());
+    assertThat(signedAttestation.sourceEpoch()).isEqualTo(source);
+    assertThat(signedAttestation.targetEpoch()).isEqualTo(target);
+    assertThat(signedAttestation.signingRoot()).contains(signingRoot);
   }
 }
