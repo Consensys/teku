@@ -609,10 +609,13 @@ public class TekuBeaconNode extends TekuNode {
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+      final UInt64 slot = UInt64.valueOf(jsonNode.get("data").get("message").get("slot").asText());
       final DeserializableTypeDefinition<SignedBeaconBlock> jsonTypeDefinition =
           SharedApiTypes.withDataWrapper(
               "block",
-              spec.getGenesisSchemaDefinitions()
+              spec.atSlot(slot)
+                  .getSchemaDefinitions()
                   .getSignedBeaconBlockSchema()
                   .getJsonTypeDefinition());
       return Optional.of(JsonUtil.parse(result, jsonTypeDefinition));
