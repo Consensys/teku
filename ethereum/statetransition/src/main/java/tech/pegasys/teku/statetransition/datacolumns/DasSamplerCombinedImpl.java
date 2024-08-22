@@ -27,6 +27,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
@@ -536,12 +537,11 @@ public class DasSamplerCombinedImpl
             .stream()
             .sorted()
             .toList());
-    final Set<SlotAndBlockRoot> collectedSampleSlotsToPrune =
+    final SortedMap<SlotAndBlockRoot, Set<DataColumnIdentifier>> collectedSampleSlotsToPrune =
         collectedSamples
             .subMap(
-                SlotAndBlockRoot.createLow(UInt64.ZERO), SlotAndBlockRoot.createLow(slotExclusive))
-            .keySet();
-    collectedSampleSlotsToPrune.forEach(collectedSamples::remove);
+                SlotAndBlockRoot.createLow(UInt64.ZERO), SlotAndBlockRoot.createLow(slotExclusive));
+    collectedSampleSlotsToPrune.clear();
     final Set<SlotAndBlockRoot> assignedSamplesSlotsToPrune =
         assignedSamplings
             .subMap(
@@ -549,12 +549,12 @@ public class DasSamplerCombinedImpl
             .keySet();
     assignedSamplesSlotsToPrune.forEach(
         slotAndBlockRoot -> {
-          assignedSamplings.remove(slotAndBlockRoot);
           SafeFuture<Void> future = sampleTasks.remove(slotAndBlockRoot);
           if (future != null) {
             future.cancel(true);
           }
         });
+    assignedSamplesSlotsToPrune.clear();
   }
 
   private synchronized List<SlotColumnsTask> retrievePotentiallyIncompleteSlotSamples(

@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -36,9 +36,10 @@ public class DasCustodySync implements SlotEventsChannel {
   private final int maxPendingColumnRequests;
   private final int minPendingColumnRequests;
 
-  private final Map<ColumnSlotAndIdentifier, PendingRequest> pendingRequests = new HashMap<>();
+  private final Map<ColumnSlotAndIdentifier, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
   private boolean started = false;
   private boolean coolDownTillNextSlot = false;
+  private volatile boolean fillingUp = false;
   private final AtomicLong syncedColumnCount = new AtomicLong();
 
   public DasCustodySync(
@@ -81,12 +82,13 @@ public class DasCustodySync implements SlotEventsChannel {
   }
 
   private void fillUpIfNeeded() {
-    if (started && pendingRequests.size() <= minPendingColumnRequests && !coolDownTillNextSlot) {
+    if (started && pendingRequests.size() <= minPendingColumnRequests && !coolDownTillNextSlot && !fillingUp) {
       fillUp();
     }
   }
 
   private void fillUp() {
+    fillingUp = true;
     int newRequestCount = maxPendingColumnRequests - pendingRequests.size();
     final SafeFuture<Set<ColumnSlotAndIdentifier>> missingColumnsToRequestFuture =
         custody
@@ -124,6 +126,7 @@ public class DasCustodySync implements SlotEventsChannel {
                     missingSlots);
               }
             })
+        .whenComplete((__, ___) -> fillingUp = false)
         .ifExceptionGetsHereRaiseABug();
   }
 
