@@ -269,9 +269,14 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final Optional<UInt64> committeeIndex) {
     final CreateAggregateAttestationRequest createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
-            getBaseEndpoint(), getOkHttpClient(), schemaDefinitionCache);
-    return createAggregateAttestationRequest.submit(
-        slot, attestationHashTreeRoot, committeeIndex, spec);
+            getBaseEndpoint(),
+            getOkHttpClient(),
+            schemaDefinitionCache,
+            slot,
+            attestationHashTreeRoot,
+            committeeIndex,
+            spec);
+    return createAggregateAttestationRequest.submit();
   }
 
   public Optional<List<ValidatorLivenessAtEpoch>> sendValidatorsLiveness(

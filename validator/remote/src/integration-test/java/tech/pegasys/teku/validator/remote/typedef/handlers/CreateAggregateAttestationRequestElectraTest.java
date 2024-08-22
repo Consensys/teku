@@ -25,9 +25,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
-import okio.Buffer;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -45,22 +43,10 @@ import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase
 public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDefRequestTestBase {
 
   private CreateAggregateAttestationRequest createAggregateAttestationRequest;
-  private Buffer responseBodyBuffer;
   private final UInt64 slot = UInt64.ONE;
 
   @BeforeEach
-  void setupRequest() {
-    createAggregateAttestationRequest =
-        new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"), okHttpClient, new SchemaDefinitionCache(spec));
-    responseBodyBuffer = new Buffer();
-  }
-
-  @AfterEach
-  void reset() {
-    responseBodyBuffer.clear();
-    responseBodyBuffer.close();
-  }
+  void setupRequest() {}
 
   @TestTemplate
   public void getAggregateAttestation_makesExpectedRequest() throws Exception {
@@ -69,8 +55,17 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    createAggregateAttestationRequest.submit(
-        slot, attestationHashTreeRoot, Optional.of(committeeIndex), spec);
+    createAggregateAttestationRequest =
+        new CreateAggregateAttestationRequest(
+            mockWebServer.url("/"),
+            okHttpClient,
+            new SchemaDefinitionCache(spec),
+            slot,
+            attestationHashTreeRoot,
+            Optional.of(committeeIndex),
+            spec);
+
+    createAggregateAttestationRequest.submit();
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
@@ -102,9 +97,18 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
                 attestation.getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow())
             : attestation.getData().getIndex();
 
+    createAggregateAttestationRequest =
+        new CreateAggregateAttestationRequest(
+            mockWebServer.url("/"),
+            okHttpClient,
+            new SchemaDefinitionCache(spec),
+            slot,
+            attestation.hashTreeRoot(),
+            Optional.of(committeeIndex),
+            spec);
+
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestationAndMetaData =
-        createAggregateAttestationRequest.submit(
-            slot, attestation.hashTreeRoot(), Optional.of(committeeIndex), spec);
+        createAggregateAttestationRequest.submit();
     assertThat(maybeAttestationAndMetaData).isPresent();
     assertThat(maybeAttestationAndMetaData.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());

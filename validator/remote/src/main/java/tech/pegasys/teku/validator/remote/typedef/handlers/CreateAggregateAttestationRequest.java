@@ -37,24 +37,30 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
   private final SchemaDefinitionCache schemaDefinitionCache;
+  private final SpecMilestone specMilestone;
+  private final UInt64 slot;
+  final Bytes32 attestationHashTreeRoot;
+  final Optional<UInt64> committeeIndex;
 
   public CreateAggregateAttestationRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    super(baseEndpoint, okHttpClient);
-    this.schemaDefinitionCache = schemaDefinitionCache;
-  }
-
-  public Optional<ObjectAndMetaData<Attestation>> submit(
+      final SchemaDefinitionCache schemaDefinitionCache,
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex,
       final Spec spec) {
+    super(baseEndpoint, okHttpClient);
+    this.schemaDefinitionCache = schemaDefinitionCache;
+    this.specMilestone = spec.atSlot(slot).getMilestone();
+    this.slot = slot;
+    this.attestationHashTreeRoot = attestationHashTreeRoot;
+    this.committeeIndex = committeeIndex;
+  }
+
+  public Optional<ObjectAndMetaData<Attestation>> submit() {
     final AttestationSchema<Attestation> attestationSchema =
         schemaDefinitionCache.atSlot(slot).getAttestationSchema().castTypeToAttestationSchema();
-
-    final SpecMilestone specMilestone = spec.atSlot(slot).getMilestone();
 
     // Use attestation v2 api post Electra only. This logic can be removed once we reach the Electra
     // milestone
