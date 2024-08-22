@@ -32,13 +32,16 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.FailureListResponse;
 
 public class SendAggregateAndProofsRequest extends AbstractTypeDefRequest {
+
+  private final Spec spec;
+
   public SendAggregateAndProofsRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final Spec spec) {
     super(baseEndpoint, okHttpClient);
+    this.spec = spec;
   }
 
-  public List<SubmitDataError> submit(
-      final List<SignedAggregateAndProof> aggregateAndProofs, final Spec spec) {
+  public List<SubmitDataError> submit(final List<SignedAggregateAndProof> aggregateAndProofs) {
     if (aggregateAndProofs.isEmpty()) {
       return Collections.emptyList();
     }

@@ -49,14 +49,14 @@ public class SendAggregatesAndProofsRequestTest extends AbstractTypeDefRequestTe
 
   @BeforeEach
   public void setup() {
-    this.request = new SendAggregateAndProofsRequest(mockWebServer.url("/"), okHttpClient);
+    this.request = new SendAggregateAndProofsRequest(mockWebServer.url("/"), okHttpClient, spec);
     this.aggregateAndProofs = List.of(dataStructureUtil.randomSignedAggregateAndProof());
   }
 
   @TestTemplate
   void handle200() throws InterruptedException, JsonProcessingException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
-    final List<SubmitDataError> response = request.submit(aggregateAndProofs, spec);
+    final List<SubmitDataError> response = request.submit(aggregateAndProofs);
     assertThat(response).isEmpty();
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     final List<SignedAggregateAndProof> data =
@@ -82,7 +82,7 @@ public class SendAggregatesAndProofsRequestTest extends AbstractTypeDefRequestTe
   @TestTemplate
   void handle500() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    assertThatThrownBy(() -> request.submit(aggregateAndProofs, spec))
+    assertThatThrownBy(() -> request.submit(aggregateAndProofs))
         .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 
@@ -93,7 +93,7 @@ public class SendAggregatesAndProofsRequestTest extends AbstractTypeDefRequestTe
             .setResponseCode(SC_BAD_REQUEST)
             .setBody(
                 "{\"code\": 400,\"message\": \"z\",\"failures\": [{\"index\": 3,\"message\": \"a\"}]}"));
-    final List<SubmitDataError> response = request.submit(aggregateAndProofs, spec);
+    final List<SubmitDataError> response = request.submit(aggregateAndProofs);
     assertThat(response).containsExactly(new SubmitDataError(UInt64.valueOf(3), "a"));
   }
 }
