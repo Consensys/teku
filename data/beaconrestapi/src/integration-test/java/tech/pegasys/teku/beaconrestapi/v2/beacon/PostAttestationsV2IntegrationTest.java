@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -48,8 +49,11 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
   private SerializableTypeDefinition<List<Attestation>> attestationsListTypeDef;
 
   @BeforeEach
-  void setup() {
+  void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
     startRestAPIAtGenesis(specMilestone);
+    dataStructureUtil = specContext.getDataStructureUtil();
     attestationsListTypeDef =
         SerializableTypeDefinition.listOf(
             spec.getGenesisSchemaDefinitions()
