@@ -11,14 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.v2.beacon;
+package tech.pegasys.teku.beaconrestapi.v2.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
@@ -29,7 +32,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttestationsV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.PostAggregateAndProofsV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -38,16 +41,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
-@TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.ELECTRA})
-public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
+public class PostAggregateAndProofsV2IntegrationTest
+    extends AbstractDataBackedRestAPIIntegrationTest {
 
   private DataStructureUtil dataStructureUtil;
   private SpecMilestone specMilestone;
-  private SerializableTypeDefinition<List<Attestation>> attestationsListTypeDef;
+  private SerializableTypeDefinition<List<SignedAggregateAndProof>> aggregateAndProofsListTypeDef;
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -55,26 +59,27 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     specMilestone = specContext.getSpecMilestone();
     startRestAPIAtGenesis(specMilestone);
     dataStructureUtil = specContext.getDataStructureUtil();
-    attestationsListTypeDef =
+    aggregateAndProofsListTypeDef =
         SerializableTypeDefinition.listOf(
             spec.getGenesisSchemaDefinitions()
-                .getAttestationSchema()
-                .castTypeToAttestationSchema()
+                .getSignedAggregateAndProofSchema()
                 .getJsonTypeDefinition());
   }
 
   @TestTemplate
-  void shouldPostAttestations_NoErrors() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
+  void shouldPostAggregateAndProofs() throws Exception {
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
-    final List<Attestation> attestations =
-        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(
+            dataStructureUtil.randomSignedAggregateAndProof(),
+            dataStructureUtil.randomSignedAggregateAndProof());
 
     final Response response =
         post(
-            PostAttestationsV2.ROUTE,
-            JsonUtil.serialize(attestations, attestationsListTypeDef),
+            PostAggregateAndProofsV2.ROUTE,
+            JsonUtil.serialize(aggregateAndProofs, aggregateAndProofsListTypeDef),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
 
@@ -83,74 +88,64 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
   }
 
   @TestTemplate
-  void shouldPartiallyPostAttestations_ReturnsErrors() throws Exception {
+  void shouldReturnBadRequestWhenInvalidAggregateAndProofs() throws Exception {
     final SubmitDataError firstSubmitDataError =
-        new SubmitDataError(UInt64.ZERO, "Bad attestation");
-    final SubmitDataError secondSubmitDataError =
-        new SubmitDataError(UInt64.ONE, "Very bad attestation");
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(
-            SafeFuture.completedFuture(List.of(firstSubmitDataError, secondSubmitDataError)));
-
-    final List<Attestation> attestations =
+        new SubmitDataError(UInt64.ZERO, "Bad aggregate and proofs");
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(List.of(firstSubmitDataError)));
+    final List<SignedAggregateAndProof> aggregateAndProofs =
         List.of(
-            dataStructureUtil.randomAttestation(),
-            dataStructureUtil.randomAttestation(),
-            dataStructureUtil.randomAttestation());
-
+            dataStructureUtil.randomSignedAggregateAndProof(),
+            dataStructureUtil.randomSignedAggregateAndProof());
     final Response response =
         post(
-            PostAttestationsV2.ROUTE,
-            JsonUtil.serialize(attestations, attestationsListTypeDef),
+            PostAggregateAndProofsV2.ROUTE,
+            JsonUtil.serialize(aggregateAndProofs, aggregateAndProofsListTypeDef),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
-
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
 
-    assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("Some items failed to publish, refer to errors for details");
-    assertThat(resultAsJsonNode.get("failures").size()).isEqualTo(2);
-    assertThat(resultAsJsonNode.get("failures").get(0).get("index").asText())
-        .isEqualTo(firstSubmitDataError.index().toString());
-    assertThat(resultAsJsonNode.get("failures").get(0).get("message").asText())
-        .isEqualTo(firstSubmitDataError.message());
-    assertThat(resultAsJsonNode.get("failures").get(1).get("index").asText())
-        .isEqualTo(secondSubmitDataError.index().toString());
-    assertThat(resultAsJsonNode.get("failures").get(1).get("message").asText())
-        .isEqualTo(secondSubmitDataError.message());
+    final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
+    assertThat(resultAsJsonNode.get("message").asText()).isEqualTo(PARTIAL_PUBLISH_FAILURE_MESSAGE);
   }
 
   @TestTemplate
   void shouldFailWhenMissingConsensusHeader() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
-    final List<Attestation> attestations =
-        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(
+            dataStructureUtil.randomSignedAggregateAndProof(),
+            dataStructureUtil.randomSignedAggregateAndProof());
 
     final Response response =
-        post(PostAttestationsV2.ROUTE, JsonUtil.serialize(attestations, attestationsListTypeDef));
+        post(
+            PostAggregateAndProofsV2.ROUTE,
+            JsonUtil.serialize(aggregateAndProofs, aggregateAndProofsListTypeDef));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION);
+        .isEqualTo(
+            String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
   }
 
   @TestTemplate
   void shouldFailWhenBadConsensusHeaderValue() throws Exception {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
-    final List<Attestation> attestations =
-        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(
+            dataStructureUtil.randomSignedAggregateAndProof(),
+            dataStructureUtil.randomSignedAggregateAndProof());
     final String badConsensusHeaderValue = "NonExistingMileStone";
     final Response response =
         post(
-            PostAttestationsV2.ROUTE,
-            JsonUtil.serialize(attestations, attestationsListTypeDef),
+            PostAggregateAndProofsV2.ROUTE,
+            JsonUtil.serialize(aggregateAndProofs, aggregateAndProofsListTypeDef),
             Collections.emptyMap(),
             Optional.of(badConsensusHeaderValue));
 
