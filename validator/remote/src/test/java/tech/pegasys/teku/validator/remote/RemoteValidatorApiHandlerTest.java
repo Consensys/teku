@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -576,7 +577,9 @@ class RemoteValidatorApiHandlerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
-    doReturn(Optional.empty()).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
+    doReturn(Optional.empty())
+        .when(typeDefClient)
+        .createAggregate(slot, attHashTreeRoot, Optional.empty());
 
     SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
@@ -590,8 +593,12 @@ class RemoteValidatorApiHandlerTest {
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
     final Attestation attestation = dataStructureUtil.randomAttestation();
+    final ObjectAndMetaData<Attestation> attestationAndMetaData =
+        new ObjectAndMetaData<>(attestation, spec.atSlot(slot).getMilestone(), false, true, true);
 
-    doReturn(Optional.of(attestation)).when(typeDefClient).createAggregate(slot, attHashTreeRoot);
+    doReturn(Optional.of(attestationAndMetaData))
+        .when(typeDefClient)
+        .createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
 
     SafeFuture<Optional<Attestation>> future =
         apiHandler.createAggregate(slot, attHashTreeRoot, Optional.of(ONE));
