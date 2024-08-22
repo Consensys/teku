@@ -155,12 +155,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
-  public Optional<PostDataFailureResponse> postSignedAttestations(
-          final List<Attestation> attestations, final SpecMilestone specMilestone) {
-    final PostAttestationsRequest postAttestationsRequest = new PostAttestationsRequest(spec, getBaseEndpoint(), getOkHttpClient());
-    return postAttestationsRequest.postAttestations(attestations, specMilestone);
-  }
-
   public void registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     final RegisterValidatorsRequest registerValidatorsRequest =
@@ -280,7 +274,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
   public List<SubmitDataError> sendSignedAttestations(final List<Attestation> attestations) {
     final SendSignedAttestationsRequest sendSignedAttestationsRequest =
-        new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient());
-    return sendSignedAttestationsRequest.submit(attestations, spec);
+        new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient(), spec);
+    return sendSignedAttestationsRequest.submit(attestations);
   }
 }
