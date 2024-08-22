@@ -35,12 +35,15 @@ import tech.pegasys.teku.validator.remote.typedef.FailureListResponse;
 
 public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
 
+  private final Spec spec;
+
   public SendSignedAttestationsRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final Spec spec) {
     super(baseEndpoint, okHttpClient);
+    this.spec = spec;
   }
 
-  public List<SubmitDataError> submit(final List<Attestation> attestations, final Spec spec) {
+  public List<SubmitDataError> submit(final List<Attestation> attestations) {
     if (attestations.isEmpty()) {
       return Collections.emptyList();
     }
@@ -59,7 +62,7 @@ public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
             ValidatorApiMethod.SEND_SIGNED_ATTESTATION,
             Collections.emptyMap(),
             attestations,
-            listOf(getJsonTypeDefinition(attestations)),
+            listOf(getTypeDefinition(attestations)),
             getFailureListResponseResponseHandler())
         .map(FailureListResponse::failures)
         .orElse(Collections.emptyList());
@@ -80,7 +83,7 @@ public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
   }
 
   @SuppressWarnings("unchecked")
-  private DeserializableTypeDefinition<Attestation> getJsonTypeDefinition(
+  private DeserializableTypeDefinition<Attestation> getTypeDefinition(
       final List<Attestation> attestations) {
     return (DeserializableTypeDefinition<Attestation>)
         attestations.getFirst().getSchema().getJsonTypeDefinition();
