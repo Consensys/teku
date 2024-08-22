@@ -62,7 +62,7 @@ public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
             ValidatorApiMethod.SEND_SIGNED_ATTESTATION,
             Collections.emptyMap(),
             attestations,
-            listOf(getTypeDefinition(attestations)),
+            listOf(getJsonTypeDefinition(attestations)),
             getFailureListResponseResponseHandler())
         .map(FailureListResponse::failures)
         .orElse(Collections.emptyList());
@@ -83,7 +83,7 @@ public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
   }
 
   @SuppressWarnings("unchecked")
-  private DeserializableTypeDefinition<Attestation> getTypeDefinition(
+  private DeserializableTypeDefinition<Attestation> getJsonTypeDefinition(
       final List<Attestation> attestations) {
     return (DeserializableTypeDefinition<Attestation>)
         attestations.getFirst().getSchema().getJsonTypeDefinition();
