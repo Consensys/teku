@@ -676,7 +676,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    typeDefClient.createAggregate(slot, attestationHashTreeRoot);
+    typeDefClient.createAggregate(slot, attestationHashTreeRoot, Optional.empty());
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -693,7 +693,10 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
+    assertThatThrownBy(
+            () ->
+                typeDefClient.createAggregate(
+                    UInt64.ONE, attestationHashTreeRoot, Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -703,7 +706,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
-    assertThat(typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot)).isEmpty();
+    assertThat(typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot, Optional.empty()))
+        .isEmpty();
   }
 
   @TestTemplate
@@ -712,7 +716,10 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
-    assertThatThrownBy(() -> typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
+    assertThatThrownBy(
+            () ->
+                typeDefClient.createAggregate(
+                    UInt64.ONE, attestationHashTreeRoot, Optional.empty()))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Server error from Beacon Node API");
   }
@@ -731,11 +738,11 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(SC_OK).setBody("{\"data\": " + body + "}"));
 
-    final Optional<Attestation> attestation =
-        typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
+    final Optional<ObjectAndMetaData<Attestation>> attestation =
+        typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot, Optional.empty());
 
     assertThat(attestation).isPresent();
-    assertThat(attestation.get()).isEqualTo(expectedAttestation);
+    assertThat(attestation.get().getData()).isEqualTo(expectedAttestation);
   }
 
   private AttesterDuty randomAttesterDuty() {

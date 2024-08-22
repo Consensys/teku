@@ -235,12 +235,20 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     prepareBeaconProposersRequest.submit(beaconPreparableProposers);
   }
 
-  public Optional<Attestation> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+  public Optional<ObjectAndMetaData<Attestation>> createAggregate(
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     final CreateAggregateAttestationRequest createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
-            getBaseEndpoint(), getOkHttpClient(), schemaDefinitionCache);
-    return createAggregateAttestationRequest.submit(slot, attestationHashTreeRoot);
+            getBaseEndpoint(),
+            getOkHttpClient(),
+            schemaDefinitionCache,
+            slot,
+            attestationHashTreeRoot,
+            committeeIndex,
+            spec);
+    return createAggregateAttestationRequest.submit();
   }
 
   public Optional<List<ValidatorLivenessAtEpoch>> sendValidatorsLiveness(

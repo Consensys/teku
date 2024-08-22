@@ -13,25 +13,22 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
-import java.util.Collections;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -40,114 +37,81 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
-@TestSpecContext(milestone = SpecMilestone.PHASE0, network = Eth2Network.MINIMAL)
-public class CreateAggregateAttestationRequestTest extends AbstractTypeDefRequestTestBase {
+@TestSpecContext(
+    milestone = {ELECTRA},
+    network = Eth2Network.MINIMAL)
+public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDefRequestTestBase {
 
-  private CreateAggregateAttestationRequest request;
+  private CreateAggregateAttestationRequest createAggregateAttestationRequest;
   private final UInt64 slot = UInt64.ONE;
+
+  @BeforeEach
+  void setupRequest() {}
 
   @TestTemplate
   public void getAggregateAttestation_makesExpectedRequest() throws Exception {
+    final UInt64 committeeIndex = dataStructureUtil.randomUInt64();
     final Bytes32 attestationHashTreeRoot = dataStructureUtil.randomBytes32();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    request =
+    createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
             mockWebServer.url("/"),
             okHttpClient,
             new SchemaDefinitionCache(spec),
             slot,
             attestationHashTreeRoot,
-            Optional.empty(),
+            Optional.of(committeeIndex),
             spec);
 
-    request.submit();
+    createAggregateAttestationRequest.submit();
 
     final RecordedRequest request = mockWebServer.takeRequest();
+
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_AGGREGATE.getPath(Collections.emptyMap()));
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE_V2.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter(SLOT)).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter(ATTESTATION_DATA_ROOT))
         .isEqualTo(attestationHashTreeRoot.toHexString());
+    assertThat(request.getRequestUrl().queryParameter(COMMITTEE_INDEX))
+        .isEqualTo(committeeIndex.toString());
   }
 
   @TestTemplate
   public void shouldGetAggregateAttestation() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final CreateAggregateAttestationRequest.GetAggregateAttestationResponse
+    final CreateAggregateAttestationRequest.GetAggregateAttestationResponseV2
         getAggregateAttestationResponse =
-            new CreateAggregateAttestationRequest.GetAggregateAttestationResponse(attestation);
+            new CreateAggregateAttestationRequest.GetAggregateAttestationResponseV2(attestation);
+
     final String mockResponse =
         readResource(
-            "responses/create_aggregate_attestation_responses/createAggregateAttestationResponse.json");
+            "responses/create_aggregate_attestation_responses/createAggregateAttestationResponseElectra.json");
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
-    request =
+    final UInt64 committeeIndex =
+        specMilestone.isGreaterThanOrEqualTo(ELECTRA)
+            ? UInt64.valueOf(
+                attestation.getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow())
+            : attestation.getData().getIndex();
+
+    createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
             mockWebServer.url("/"),
             okHttpClient,
             new SchemaDefinitionCache(spec),
             slot,
             attestation.hashTreeRoot(),
-            Optional.empty(),
+            Optional.of(committeeIndex),
             spec);
 
-    final Optional<ObjectAndMetaData<Attestation>> maybeAttestation = request.submit();
-
-    assertThat(maybeAttestation).isPresent();
-    assertThat(maybeAttestation.get().getData())
+    final Optional<ObjectAndMetaData<Attestation>> maybeAttestationAndMetaData =
+        createAggregateAttestationRequest.submit();
+    assertThat(maybeAttestationAndMetaData).isPresent();
+    assertThat(maybeAttestationAndMetaData.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());
-  }
-
-  @TestTemplate
-  void handle400() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-    request =
-        new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"),
-            okHttpClient,
-            new SchemaDefinitionCache(spec),
-            dataStructureUtil.randomSlot(),
-            dataStructureUtil.randomBytes32(),
-            Optional.empty(),
-            spec);
-
-    assertThatThrownBy(() -> request.submit()).isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @TestTemplate
-  void handle404() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
-    request =
-        new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"),
-            okHttpClient,
-            new SchemaDefinitionCache(spec),
-            dataStructureUtil.randomSlot(),
-            dataStructureUtil.randomBytes32(),
-            Optional.empty(),
-            spec);
-
-    assertThat(request.submit()).isEmpty();
-  }
-
-  @TestTemplate
-  void handle500() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-    request =
-        new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"),
-            okHttpClient,
-            new SchemaDefinitionCache(spec),
-            dataStructureUtil.randomSlot(),
-            dataStructureUtil.randomBytes32(),
-            Optional.empty(),
-            spec);
-
-    assertThatThrownBy(() -> request.submit())
-        .isInstanceOf(RemoteServiceNotAvailableException.class);
+    assertThat(maybeAttestationAndMetaData.get().getMilestone()).isEqualTo(specMilestone);
   }
 }
