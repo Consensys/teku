@@ -46,7 +46,6 @@ public class ValidatorKeysApi {
   public static final String VOLUNTARY_EXIT_URL = "/eth/v1/validator/{pubkey}/voluntary_exit";
 
   private final ObjectMapper objectMapper = new ObjectMapper();
-  //  private final JsonProvider jsonProvider = new JsonProvider();
   private final SimpleHttpClient httpClient;
   private final Supplier<URI> validatorUri;
   private final Supplier<String> apiPasswordSupplier;
