@@ -83,7 +83,7 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
                 .initializer(GetAggregateAttestationResponseV2::new)
                 .withField(
                     "version",
-                    DeserializableTypeDefinition.enumOf(SpecMilestone.class),
+                    DeserializableTypeDefinition.enumOf(SpecMilestone.class).build(),
                     GetAggregateAttestationResponseV2::getSpecMilestone,
                     GetAggregateAttestationResponseV2::setSpecMilestone)
                 .withField(

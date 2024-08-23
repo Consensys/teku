@@ -71,7 +71,7 @@ public class GetForkChoice extends RestApiEndpoint {
               .withField("weight", UINT64_TYPE, ProtoNodeData::getWeight)
               .withField(
                   "validity",
-                  DeserializableTypeDefinition.enumOf(ProtoNodeValidationStatus.class),
+                  DeserializableTypeDefinition.enumOf(ProtoNodeValidationStatus.class).build(),
                   ProtoNodeData::getValidationStatus)
               .withField(
                   "execution_block_hash",
