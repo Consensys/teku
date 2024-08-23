@@ -538,9 +538,8 @@ public class DasSamplerCombinedImpl
             .sorted()
             .toList());
     final SortedMap<SlotAndBlockRoot, Set<DataColumnIdentifier>> collectedSampleSlotsToPrune =
-        collectedSamples
-            .subMap(
-                SlotAndBlockRoot.createLow(UInt64.ZERO), SlotAndBlockRoot.createLow(slotExclusive));
+        collectedSamples.subMap(
+            SlotAndBlockRoot.createLow(UInt64.ZERO), SlotAndBlockRoot.createLow(slotExclusive));
     collectedSampleSlotsToPrune.clear();
     final Set<SlotAndBlockRoot> assignedSamplesSlotsToPrune =
         assignedSamplings

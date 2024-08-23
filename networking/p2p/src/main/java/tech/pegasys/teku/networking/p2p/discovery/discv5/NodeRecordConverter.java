@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CU
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.function.Function;
@@ -79,7 +78,15 @@ public class NodeRecordConverter {
         parseField(
             nodeRecord,
             DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD,
-            bytes -> new BigInteger(bytes.toArray()).intValue());
+            bytes -> {
+              if (bytes.size() != 1) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Expected exactly one byte for %s field",
+                        DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD));
+              }
+              return bytes.get(0) & 0xFF;
+            });
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),

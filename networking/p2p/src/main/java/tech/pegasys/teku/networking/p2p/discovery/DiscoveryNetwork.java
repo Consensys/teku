@@ -139,8 +139,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void setDASTotalCustodySubnetCount(int count) {
-    discoveryService.updateCustomENRField(
-        DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, Bytes.wrap(BigInteger.valueOf(count).toByteArray()));
+    discoveryService.updateCustomENRField(DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, Bytes.of(count));
   }
 
   public void setPreGenesisForkInfo() {

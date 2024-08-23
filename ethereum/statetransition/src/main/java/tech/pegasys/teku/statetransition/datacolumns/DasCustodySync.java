@@ -36,7 +36,8 @@ public class DasCustodySync implements SlotEventsChannel {
   private final int maxPendingColumnRequests;
   private final int minPendingColumnRequests;
 
-  private final Map<ColumnSlotAndIdentifier, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
+  private final Map<ColumnSlotAndIdentifier, PendingRequest> pendingRequests =
+      new ConcurrentHashMap<>();
   private boolean started = false;
   private boolean coolDownTillNextSlot = false;
   private volatile boolean fillingUp = false;
@@ -82,7 +83,10 @@ public class DasCustodySync implements SlotEventsChannel {
   }
 
   private void fillUpIfNeeded() {
-    if (started && pendingRequests.size() <= minPendingColumnRequests && !coolDownTillNextSlot && !fillingUp) {
+    if (started
+        && pendingRequests.size() <= minPendingColumnRequests
+        && !coolDownTillNextSlot
+        && !fillingUp) {
       fillUp();
     }
   }
