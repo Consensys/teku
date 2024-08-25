@@ -61,4 +61,14 @@ public class PostBlockTest extends AbstractPostBlockTest {
                 Optional.of(ContentTypes.OCTET_STREAM));
     assertThat(result).isEqualTo(data);
   }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

@@ -103,4 +103,16 @@ public class PostBlindedBlockV2Test extends PostBlindedBlockTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
   }
+
+  @Test
+  // @TestTemplate ?
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  // @TestTemplate ?
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

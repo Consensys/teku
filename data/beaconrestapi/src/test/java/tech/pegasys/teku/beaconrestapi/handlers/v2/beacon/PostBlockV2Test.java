@@ -101,4 +101,16 @@ public class PostBlockV2Test extends PostBlockTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
   }
+
+  @Test
+  // @TestTemplate ?
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  // @TestTemplate ?
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

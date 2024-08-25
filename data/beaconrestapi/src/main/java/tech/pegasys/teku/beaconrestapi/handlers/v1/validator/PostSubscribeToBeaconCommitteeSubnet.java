@@ -53,6 +53,7 @@ public class PostSubscribeToBeaconCommitteeSubnet extends RestApiEndpoint {
                 HttpStatusCodes.SC_OK,
                 "Slot signature is valid and beacon node has prepared the attestation subnet. Note that, there is no guarantee the node will find peers for the subnet")
             .withServiceUnavailableResponse()
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

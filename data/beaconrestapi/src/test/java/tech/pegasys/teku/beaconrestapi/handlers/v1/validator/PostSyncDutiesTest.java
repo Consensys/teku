@@ -103,4 +103,14 @@ public class PostSyncDutiesTest extends AbstractMigratedBeaconHandlerTest {
             Resources.getResource(PostSyncDutiesTest.class, "postSyncDuties.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

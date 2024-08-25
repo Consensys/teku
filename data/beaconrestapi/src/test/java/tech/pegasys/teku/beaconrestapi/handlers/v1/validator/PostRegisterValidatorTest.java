@@ -56,4 +56,14 @@ public class PostRegisterValidatorTest extends AbstractMigratedBeaconHandlerTest
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

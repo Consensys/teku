@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutiesBuilder.ATTESTER_DUTIES_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+// should be deleted?
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
@@ -78,6 +79,7 @@ public class PostAttesterDuties extends RestApiEndpoint {
   }
 
   @Override
+  // should be deleted?
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       request.respondError(

@@ -73,6 +73,7 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
             .response(
                 HttpStatusCodes.SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

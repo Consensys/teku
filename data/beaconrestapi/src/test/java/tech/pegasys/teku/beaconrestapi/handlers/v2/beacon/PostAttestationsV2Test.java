@@ -137,4 +137,16 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
         String.format("postAttestationRequestBody%s.json", specMilestone.name());
     return Resources.toString(Resources.getResource(PostAttestationsV2Test.class, fileName), UTF_8);
   }
+
+  @Test
+  // @TestTemplate ?
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  // @TestTemplate ?
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

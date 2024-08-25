@@ -155,6 +155,16 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
     assertThat(attestation.requiresCommitteeBits()).isTrue();
   }
 
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
+
   private <T extends Attestation> T parseAttestationFromResponse(
       final String data, final AttestationSchema<T> schema) throws JsonProcessingException {
     return JsonUtil.parse(

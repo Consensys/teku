@@ -142,4 +142,16 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     assertThat(request.getResponseBody().toString()).contains("Unable to produce a block");
   }
+
+  @Test
+  // @TestTemplate?
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  // @TestTemplate?
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

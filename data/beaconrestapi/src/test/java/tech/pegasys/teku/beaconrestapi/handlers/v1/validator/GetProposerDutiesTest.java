@@ -105,4 +105,14 @@ public class GetProposerDutiesTest extends AbstractMigratedBeaconHandlerTest {
             Resources.getResource(GetProposerDutiesTest.class, "getProposerDuties.json"), UTF_8);
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }

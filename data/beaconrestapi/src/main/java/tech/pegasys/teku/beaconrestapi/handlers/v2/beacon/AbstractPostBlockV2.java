@@ -41,6 +41,7 @@ public abstract class AbstractPostBlockV2 extends RestApiEndpoint {
 
   protected AsyncApiResponse processSendSignedBlockResult(final SendSignedBlockResult result) {
     return result
+        .withChainDataResponses() // ? no metadata
         .getRejectionReason()
         .map(
             rejectionReason -> {

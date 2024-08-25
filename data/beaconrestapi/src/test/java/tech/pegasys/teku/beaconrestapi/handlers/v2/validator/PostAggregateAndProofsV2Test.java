@@ -140,4 +140,16 @@ public class PostAggregateAndProofsV2Test extends AbstractMigratedBeaconHandlerT
     return Resources.toString(
         Resources.getResource(PostAggregateAndProofsV2Test.class, fileName), UTF_8);
   }
+
+  @Test
+  // @TestTemplate?
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  // @TestTemplate?
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
 }
