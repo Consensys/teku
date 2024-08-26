@@ -78,7 +78,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
                 GetBlockResponse::setData)
             .withField(
                 "version",
-                DeserializableTypeDefinition.enumOf(SpecMilestone.class),
+                DeserializableTypeDefinition.enumOf(SpecMilestone.class).build(),
                 GetBlockResponse::getSpecMilestone,
                 GetBlockResponse::setSpecMilestone)
             .build();
