@@ -184,11 +184,15 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
       return false;
     }
     final EnumTypeDefinition<?> that = (EnumTypeDefinition<?>) o;
-    return Objects.equals(itemType, that.itemType);
+    return Objects.equals(itemType, that.itemType)
+        && Objects.equals(example, that.example)
+        && Objects.equals(description, that.description)
+        && Objects.equals(format, that.format)
+        && Objects.equals(excludedEnumerations, that.excludedEnumerations);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(itemType);
+    return Objects.hash(itemType, example, description, format, excludedEnumerations);
   }
 }
