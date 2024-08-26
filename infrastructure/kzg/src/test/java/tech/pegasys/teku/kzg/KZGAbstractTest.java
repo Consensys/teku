@@ -312,17 +312,17 @@ public abstract class KZGAbstractTest {
 
     for (int i = 0; i < cellAndProofs.size(); i++) {
       assertThat(
-              kzg.verifyCellProof(
-                  kzgCommitment,
-                  KZGCellWithColumnId.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
-                  cellAndProofs.get(i).proof()))
+              kzg.verifyCellProofBatch(
+                  List.of(kzgCommitment),
+                  List.of(KZGCellWithIds.fromCellAndIndices(cellAndProofs.get(i).cell(), 0, i)),
+                  List.of(cellAndProofs.get(i).proof())))
           .isTrue();
       var invalidProof = cellAndProofs.get((i + 1) % cellAndProofs.size()).proof();
       assertThat(
-              kzg.verifyCellProof(
-                  kzgCommitment,
-                  KZGCellWithColumnId.fromCellAndColumn(cellAndProofs.get(i).cell(), i),
-                  invalidProof))
+              kzg.verifyCellProofBatch(
+                  List.of(kzgCommitment),
+                  List.of(KZGCellWithIds.fromCellAndIndices(cellAndProofs.get(i).cell(), 0, i)),
+                  List.of(invalidProof)))
           .isFalse();
     }
   }

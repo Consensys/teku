@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
+import tech.pegasys.teku.kzg.KZGCellWithIds;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.Cell;
@@ -156,18 +158,22 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
       return false;
     }
 
-    return IntStream.range(0, dataColumnSidecar.getSszKZGProofs().size())
-        .mapToObj(
-            index ->
-                kzg.verifyCellProof(
-                    dataColumnSidecar.getSszKZGCommitments().get(index).getKZGCommitment(),
-                    KZGCellWithColumnId.fromCellAndColumn(
-                        new KZGCell(dataColumnSidecar.getDataColumn().get(index).getBytes()),
-                        dataColumnSidecar.getIndex().intValue()),
-                    dataColumnSidecar.getSszKZGProofs().get(index).getKZGProof()))
-        .filter(verificationResult -> !verificationResult)
-        .findFirst()
-        .orElse(true);
+    final List<KZGCellWithIds> cellWithIds =
+        IntStream.range(0, dataColumnSidecar.getDataColumn().size())
+            .mapToObj(
+                rowIndex ->
+                    KZGCellWithIds.fromCellAndIndices(
+                        new KZGCell(dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
+                        rowIndex,
+                        dataColumnSidecar.getIndex().intValue()))
+            .collect(Collectors.toList());
+
+    return kzg.verifyCellProofBatch(
+        dataColumnSidecar.getSszKZGCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList(),
+        cellWithIds,
+        dataColumnSidecar.getSszKZGProofs().stream().map(SszKZGProof::getKZGProof).toList());
   }
 
   @Override

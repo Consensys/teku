@@ -107,12 +107,6 @@ final class RustWithCKZG implements KZG {
   }
 
   @Override
-  public boolean verifyCellProof(
-      KZGCommitment commitment, KZGCellWithColumnId cellWithColumnId, KZGProof proof) {
-    return rustKzgDelegeate.verifyCellProof(commitment, cellWithColumnId, proof);
-  }
-
-  @Override
   public boolean verifyCellProofBatch(
       List<KZGCommitment> commitments,
       List<KZGCellWithIds> cellWithIdsList,

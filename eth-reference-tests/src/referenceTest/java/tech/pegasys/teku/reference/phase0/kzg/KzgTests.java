@@ -35,7 +35,6 @@ public class KzgTests {
           // DataColumnSidecar EIP-7594 utils
           .put("kzg/compute_cells_and_kzg_proofs", new KzgComputeCellsAndKzgProofsTestExecutor())
           .put("kzg/recover_cells_and_kzg_proofs", new KzgRecoverCellsAndKzgProofsTestExecutor())
-          .put("kzg/verify_cell_kzg_proof", new KzgVerifyCellKzgProofTestExecutor())
           .put("kzg/verify_cell_kzg_proof_batch", new KzgVerifyCellKzgProofBatchTestExecutor())
           .build();
 }

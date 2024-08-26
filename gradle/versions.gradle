@@ -34,7 +34,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p:1.1.1-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.12'
-    dependency 'tech.pegasys:jc-kzg-4844:das-test'
+    dependency 'io.consensys.protocols:jc-kzg-4844:2.0.0'
     dependency 'io.github.crate-crypto:peerdas-kzg:0.0.9'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'

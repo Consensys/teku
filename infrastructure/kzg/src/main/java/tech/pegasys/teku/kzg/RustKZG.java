@@ -112,16 +112,6 @@ final class RustKZG implements KZG {
   }
 
   @Override
-  public boolean verifyCellProof(
-      KZGCommitment commitment, KZGCellWithColumnId cellWithColumnId, KZGProof proof) {
-    return library.verifyCellKZGProof(
-        commitment.toArrayUnsafe(),
-        cellWithColumnId.columnId().id().longValue(),
-        cellWithColumnId.cell().bytes().toArrayUnsafe(),
-        proof.toArrayUnsafe());
-  }
-
-  @Override
   public boolean verifyCellProofBatch(
       List<KZGCommitment> commitments,
       List<KZGCellWithIds> cellWithIdsList,
