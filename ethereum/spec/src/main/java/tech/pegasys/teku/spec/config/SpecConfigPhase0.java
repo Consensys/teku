@@ -122,6 +122,8 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final UInt64 maxPerEpochActivationExitChurnLimit;
 
+  private final boolean blsDisabled;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -191,7 +193,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgMaxEpochsSinceFinalization,
       final int reorgHeadWeightThreshold,
       final int reorgParentWeightThreshold,
-      final UInt64 maxPerEpochActivationExitChurnLimit) {
+      final UInt64 maxPerEpochActivationExitChurnLimit,
+      final boolean blsDisabled) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -262,6 +265,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
     this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
+    this.blsDisabled = blsDisabled;
   }
 
   @Override
@@ -537,6 +541,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getReorgParentWeightThreshold() {
     return reorgParentWeightThreshold;
+  }
+
+  @Override
+  public boolean isBlsDisabled() {
+    return blsDisabled;
   }
 
   @Override

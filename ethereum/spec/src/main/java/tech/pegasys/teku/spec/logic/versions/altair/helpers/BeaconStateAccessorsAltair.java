@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -159,7 +160,17 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             .intStream()
             .mapToObj(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
             .toList();
-    final BLSPublicKey aggregatePubkey = BLSPublicKey.aggregate(pubkeys);
+    final BLSPublicKey aggregatePubkey;
+    // Copy the previous aggregatePubkey if BLS is disabled
+    if (altairConfig.isBlsDisabled()) {
+      aggregatePubkey =
+          BeaconStateAltair.required(state)
+              .getNextSyncCommittee()
+              .getAggregatePubkey()
+              .getBLSPublicKey();
+    } else {
+      aggregatePubkey = BLSPublicKey.aggregate(pubkeys);
+    }
 
     return state
         .getBeaconStateSchema()

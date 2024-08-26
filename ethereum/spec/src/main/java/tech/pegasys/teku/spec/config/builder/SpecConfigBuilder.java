@@ -138,6 +138,9 @@ public class SpecConfigBuilder {
           .appendBuilder(new DenebBuilder())
           .appendBuilder(new ElectraBuilder());
 
+  // Allows to handle spec tests with BLS disabled
+  private Boolean blsDisabled = Boolean.FALSE;
+
   public SpecConfig build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
@@ -216,7 +219,8 @@ public class SpecConfigBuilder {
             reorgMaxEpochsSinceFinalization,
             reorgHeadWeightThreshold,
             reorgParentWeightThreshold,
-            maxPerEpochActivationExitChurnLimit);
+            maxPerEpochActivationExitChurnLimit,
+            blsDisabled);
 
     return builderChain.build(config);
   }
@@ -738,6 +742,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder electraBuilder(final Consumer<ElectraBuilder> consumer) {
     builderChain.withBuilder(ElectraBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder blsDisabled(final Boolean blsDisabled) {
+    this.blsDisabled = blsDisabled;
     return this;
   }
 }
