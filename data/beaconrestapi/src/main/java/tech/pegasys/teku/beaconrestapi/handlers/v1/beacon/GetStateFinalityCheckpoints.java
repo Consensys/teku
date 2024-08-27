@@ -68,8 +68,9 @@ public class GetStateFinalityCheckpoints extends AbstractGetSimpleDataFromState 
                 "Returns finality checkpoints for state with given 'state_id'. In case finality is not yet achieved, checkpoint should return epoch 0 and ZERO_HASH as root.")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_STATE_ID)
-            .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .withNotFoundResponse()
+            // .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            // .withNotFoundResponse()
+            .withChainDataResponses()
             .build(),
         chainDataProvider);
   }
