@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT8_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.string;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_CACHE;
@@ -140,9 +141,12 @@ public class GetIdentity extends RestApiEndpoint {
                     "Bitvector representing the node's persistent sync committee subnet subscriptions."),
             MetadataMessage::getOptionalSyncnets)
         .withOptionalField(
-            "custody_subnet_count",
-            UINT64_TYPE.withDescription("PeerDAS custody subnet count."),
-            MetadataMessage::getOptionalCustodySubnetCount)
+            "csc",
+            UINT8_TYPE.withDescription("PeerDAS custody subnet count."),
+            metadataMessage ->
+                metadataMessage
+                    .getOptionalCustodySubnetCount()
+                    .map(custodySubnetCount -> (byte) custodySubnetCount.intValue()))
         .build();
   }
 

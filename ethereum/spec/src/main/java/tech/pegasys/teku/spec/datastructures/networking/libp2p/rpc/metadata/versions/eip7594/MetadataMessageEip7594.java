@@ -16,13 +16,14 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.ver
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class MetadataMessageEip7594
-    extends Container4<MetadataMessageEip7594, SszUInt64, SszBitvector, SszBitvector, SszUInt64>
+    extends Container4<MetadataMessageEip7594, SszUInt64, SszBitvector, SszBitvector, SszByte>
     implements MetadataMessage {
 
   MetadataMessageEip7594(final MetadataMessageSchemaEip7594 schema) {
@@ -39,7 +40,12 @@ public class MetadataMessageEip7594
       final SszBitvector attNets,
       final SszBitvector syncNets,
       final UInt64 custodySubnetCount) {
-    super(schema, SszUInt64.of(seqNumber), attNets, syncNets, SszUInt64.of(custodySubnetCount));
+    super(
+        schema,
+        SszUInt64.of(seqNumber),
+        attNets,
+        syncNets,
+        SszByte.asUInt8(custodySubnetCount.intValue()));
   }
 
   @Override
@@ -57,7 +63,7 @@ public class MetadataMessageEip7594
   }
 
   public UInt64 getCustodySubnetCount() {
-    return getField3().get();
+    return UInt64.valueOf(getField3().get() & 0xFF);
   }
 
   @Override

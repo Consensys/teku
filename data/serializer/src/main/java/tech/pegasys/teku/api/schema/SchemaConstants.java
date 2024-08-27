@@ -23,6 +23,7 @@ public class SchemaConstants {
   public static final String DESCRIPTION_EXECUTION_ADDRESS =
       "An address on the execution (Ethereum 1) network.";
 
+  public static final String PATTERN_UINT8 = "^0-9+$";
   public static final String PATTERN_UINT64 = "^0-9+$";
   public static final String PATTERN_PUBKEY = "^0x[a-fA-F0-9]{96}$";
   public static final String PATTERN_BYTES4 = "^0x[a-fA-F0-9]{8}$";
