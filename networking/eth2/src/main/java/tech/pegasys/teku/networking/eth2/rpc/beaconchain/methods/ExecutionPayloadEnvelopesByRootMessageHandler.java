@@ -91,10 +91,10 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
         message.size(),
         message);
 
-    // EIP7332 TODO: implement
+    // EIP7732 TODO: implement
   }
 
-  // EIP7332 TODO: implement
+  // EIP7732 TODO: implement
   private UInt64 getMaxRequestPayloads() {
     return UInt64.ZERO;
   }

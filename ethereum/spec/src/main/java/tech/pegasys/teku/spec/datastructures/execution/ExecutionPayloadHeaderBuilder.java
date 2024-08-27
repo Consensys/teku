@@ -71,7 +71,7 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder slot(Supplier<UInt64> slotSupplier);
 
-  ExecutionPayloadHeaderBuilder value(Supplier<UInt256> valueSupplier);
+  ExecutionPayloadHeaderBuilder value(Supplier<UInt64> valueSupplier);
 
   ExecutionPayloadHeaderBuilder blobKzgCommitmentsRoot(
       Supplier<Bytes32> blobKzgCommitmentsRootSupplier);

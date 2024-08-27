@@ -19,9 +19,20 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectra;
 
 public interface ExecutionPayloadHeaderEip7732 extends ExecutionPayloadHeaderElectra {
+
+  static ExecutionPayloadHeaderEip7732 required(final ExecutionPayloadHeader payload) {
+    return payload
+        .toVersionEip7732()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected Eip7732 execution payload header but got "
+                        + payload.getClass().getSimpleName()));
+  }
 
   Bytes32 getParentBlockHash();
 
@@ -31,7 +42,7 @@ public interface ExecutionPayloadHeaderEip7732 extends ExecutionPayloadHeaderEle
 
   UInt64 getSlot();
 
-  UInt256 getValue();
+  UInt64 getValue();
 
   Bytes32 getBlobKzgCommitmentsRoot();
 

@@ -449,8 +449,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
+          processDepositRequests(state, body.getOptionalExecutionPayload());
           processWithdrawalRequests(
               state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
+          processConsolidationRequests(state, body.getOptionalExecutionPayload());
         });
   }
 
@@ -900,12 +902,16 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  protected void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final Optional<ExecutionPayload> executionPayload,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+  @Override
+  public void processExecutionPayloadHeader(final MutableBeaconState state, final BeaconBlock block)
       throws BlockProcessingException {
-    // No WithdrawalRequests until Electra
+    // No processExecutionPayloadHeader until EIP-7732
+  }
+
+  protected void processDepositRequests(
+      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+      throws BlockProcessingException {
+    // No DepositRequests until Electra
   }
 
   @Override
@@ -915,6 +921,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     // No DepositRequests until Electra
   }
 
+  protected void processWithdrawalRequests(
+      final MutableBeaconState state,
+      final Optional<ExecutionPayload> executionPayload,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    // No WithdrawalRequests until Electra
+  }
+
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
@@ -922,6 +936,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     // No WithdrawalRequests until Electra
+  }
+
+  protected void processConsolidationRequests(
+      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+      throws BlockProcessingException {
+    // No Consolidations until Electra
   }
 
   @Override

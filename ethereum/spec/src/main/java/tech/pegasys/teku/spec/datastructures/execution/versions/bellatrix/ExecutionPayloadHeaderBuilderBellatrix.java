@@ -193,7 +193,7 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder value(final Supplier<UInt256> valueSupplier) {
+  public ExecutionPayloadHeaderBuilder value(final Supplier<UInt64> valueSupplier) {
     return this;
   }
 

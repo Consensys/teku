@@ -21,15 +21,16 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class MiscHelpersEip7332 extends MiscHelpersElectra {
+public class MiscHelpersEip7732 extends MiscHelpersElectra {
   private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
 
-  public MiscHelpersEip7332(
+  public MiscHelpersEip7732(
       final SpecConfigEip7732 specConfig,
       final PredicatesEip7732 predicates,
       final SchemaDefinitionsEip7732 schemaDefinitions) {
@@ -40,19 +41,25 @@ public class MiscHelpersEip7332 extends MiscHelpersElectra {
     this.executionPayloadEnvelopeSchema = schemaDefinitions.getExecutionPayloadEnvelopeSchema();
   }
 
-  public static MiscHelpersEip7332 required(final MiscHelpers miscHelpers) {
+  public static MiscHelpersEip7732 required(final MiscHelpers miscHelpers) {
     return miscHelpers
-        .toVersionEip7332()
+        .toVersionEip7732()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Eip7332 misc helpers but got: "
+                    "Expected Eip7732 misc helpers but got: "
                         + miscHelpers.getClass().getSimpleName()));
   }
 
   public byte removeFlag(final byte participationFlags, final int flagIndex) {
     final byte flag = (byte) (1 << flagIndex);
     return (byte) (participationFlags & ~flag);
+  }
+
+  // EIP7732 TODO
+  @Override
+  public boolean isMergeTransitionComplete(final BeaconState genericState) {
+    return super.isMergeTransitionComplete(genericState);
   }
 
   @Override
@@ -79,7 +86,7 @@ public class MiscHelpersEip7332 extends MiscHelpersElectra {
   }
 
   @Override
-  public Optional<MiscHelpersEip7332> toVersionEip7332() {
+  public Optional<MiscHelpersEip7732> toVersionEip7732() {
     return Optional.of(this);
   }
 }

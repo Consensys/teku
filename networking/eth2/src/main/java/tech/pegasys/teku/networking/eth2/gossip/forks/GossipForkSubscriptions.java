@@ -75,14 +75,14 @@ public interface GossipForkSubscriptions {
   default void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {}
 
   default void publishExecutionPayloadMessage(final SignedExecutionPayloadEnvelope message) {
-    // since EIP-7332
+    // since EIP-7732
   }
 
   default void publishPayloadAttestation(final PayloadAttestation payloadAttestation) {
-    // since EIP-7332
+    // since EIP-7732
   }
 
   default void publishExecutionPayloadHeaderMessage(final SignedExecutionPayloadHeader message) {
-    // since EIP-7332
+    // since EIP-7732
   }
 }

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import java.util.Comparator;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
@@ -93,7 +92,7 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
                                   .gasLimit(UInt64.ZERO)
                                   .builderIndex(() -> UInt64.ZERO)
                                   .slot(() -> UInt64.ZERO)
-                                  .value(() -> UInt256.ZERO)
+                                  .value(() -> UInt64.ZERO)
                                   .blobKzgCommitmentsRoot(() -> Bytes32.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);

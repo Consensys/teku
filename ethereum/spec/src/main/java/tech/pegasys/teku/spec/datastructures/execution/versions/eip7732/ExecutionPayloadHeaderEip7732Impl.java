@@ -14,11 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.eip7732;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container8;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema8;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,7 +31,7 @@ public class ExecutionPayloadHeaderEip7732Impl
         SszUInt64,
         SszUInt64,
         SszUInt64,
-        SszUInt256,
+        SszUInt64,
         SszBytes32>
     implements ExecutionPayloadHeaderEip7732 {
 
@@ -46,7 +44,7 @@ public class ExecutionPayloadHeaderEip7732Impl
               SszUInt64,
               SszUInt64,
               SszUInt64,
-              SszUInt256,
+              SszUInt64,
               SszBytes32>
           schema,
       final TreeNode backingTree) {
@@ -61,7 +59,7 @@ public class ExecutionPayloadHeaderEip7732Impl
       final SszUInt64 gasLimit,
       final SszUInt64 builderIndex,
       final SszUInt64 slot,
-      final SszUInt256 value,
+      final SszUInt64 value,
       final SszBytes32 blobKzgCommitmentsRoot) {
     super(
         schema,
@@ -106,7 +104,7 @@ public class ExecutionPayloadHeaderEip7732Impl
   }
 
   @Override
-  public UInt256 getValue() {
+  public UInt64 getValue() {
     return getField6().get();
   }
 

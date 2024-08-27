@@ -39,6 +39,11 @@ public interface BeaconBlockBodyEip7732 extends BeaconBlockBodyElectra {
   SszList<PayloadAttestation> getPayloadAttestations();
 
   @Override
+  default Optional<SszList<PayloadAttestation>> getOptionalPayloadAttestations() {
+    return Optional.of(getPayloadAttestations());
+  }
+
+  @Override
   default ExecutionPayloadElectra getExecutionPayload() {
     throw new UnsupportedOperationException("ExecutionPayload removed in Eip7732");
   }

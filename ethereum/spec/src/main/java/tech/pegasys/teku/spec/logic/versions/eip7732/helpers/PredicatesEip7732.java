@@ -28,11 +28,11 @@ public class PredicatesEip7732 extends PredicatesElectra {
 
   public static PredicatesEip7732 required(final Predicates predicates) {
     return predicates
-        .toVersionEip7332()
+        .toVersionEip7732()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Eip7332 predicates but got "
+                    "Expected Eip7732 predicates but got "
                         + predicates.getClass().getSimpleName()));
   }
 

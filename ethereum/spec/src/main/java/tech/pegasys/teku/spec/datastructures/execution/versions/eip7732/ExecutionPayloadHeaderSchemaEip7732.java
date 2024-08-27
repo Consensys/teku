@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema8;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -47,7 +46,7 @@ public class ExecutionPayloadHeaderSchemaEip7732
         SszUInt64,
         SszUInt64,
         SszUInt64,
-        SszUInt256,
+        SszUInt64,
         SszBytes32>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderEip7732Impl> {
 
@@ -63,7 +62,7 @@ public class ExecutionPayloadHeaderSchemaEip7732
         namedSchema(GAS_LIMIT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BUILDER_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(SLOT, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(VALUE, SszPrimitiveSchemas.UINT256_SCHEMA),
+        namedSchema(VALUE, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BLOB_KZG_COMMITMENTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
     final ExecutionPayloadEip7732Impl defaultExecutionPayload =
@@ -114,7 +113,7 @@ public class ExecutionPayloadHeaderSchemaEip7732
         SszUInt64.of(payload.getGasLimit()),
         SszUInt64.of(UInt64.ZERO),
         SszUInt64.of(UInt64.ZERO),
-        SszUInt256.ZERO,
+        SszUInt64.of(UInt64.ZERO),
         SszBytes32.of(Bytes32.ZERO));
   }
 }
