@@ -34,7 +34,9 @@ public class AggregateAndProof
     public AggregateAndProofSchema(
         final AttestationSchema<? extends Attestation> attestationSchema) {
       super(
-          "AggregateAndProof",
+          attestationSchema.requiresCommitteeBits()
+              ? "AggregateAndProofElectra"
+              : "AggregateAndProofPhase0",
           namedSchema("aggregator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("aggregate", SszSchema.as(Attestation.class, attestationSchema)),
           namedSchema("selection_proof", SszSignatureSchema.INSTANCE));

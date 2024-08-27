@@ -19,6 +19,7 @@ dependencies {
   testFixturesImplementation project(':infrastructure:metrics')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':teku')
+  testFixturesImplementation project(':ethereum:json-types')
 
   testFixturesImplementation project(':infrastructure:crypto')
   testFixturesImplementation project(':infrastructure:time')

@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collections;
@@ -111,13 +112,13 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
         .isEqualTo("Some items failed to publish, refer to errors for details");
     assertThat(resultAsJsonNode.get("failures").size()).isEqualTo(2);
     assertThat(resultAsJsonNode.get("failures").get(0).get("index").asText())
-        .isEqualTo(firstSubmitDataError.getIndex().toString());
+        .isEqualTo(firstSubmitDataError.index().toString());
     assertThat(resultAsJsonNode.get("failures").get(0).get("message").asText())
-        .isEqualTo(firstSubmitDataError.getMessage());
+        .isEqualTo(firstSubmitDataError.message());
     assertThat(resultAsJsonNode.get("failures").get(1).get("index").asText())
-        .isEqualTo(secondSubmitDataError.getIndex().toString());
+        .isEqualTo(secondSubmitDataError.index().toString());
     assertThat(resultAsJsonNode.get("failures").get(1).get("message").asText())
-        .isEqualTo(secondSubmitDataError.getMessage());
+        .isEqualTo(secondSubmitDataError.message());
   }
 
   @TestTemplate
@@ -135,7 +136,7 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
+        .isEqualTo("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION);
   }
 
   @TestTemplate
@@ -145,18 +146,21 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
 
     final List<Attestation> attestations =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-
+    final String badConsensusHeaderValue = "NonExistingMileStone";
     final Response response =
         post(
             PostAttestationsV2.ROUTE,
             JsonUtil.serialize(attestations, attestationsListTypeDef),
             Collections.emptyMap(),
-            Optional.of("NonExistingMileStone"));
+            Optional.of(badConsensusHeaderValue));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     assertThat(resultAsJsonNode.get("message").asText())
-        .isEqualTo("(Eth-Consensus-Version) header value was unexpected");
+        .isEqualTo(
+            String.format(
+                "Invalid value for (%s) header: %s",
+                HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
   }
 }

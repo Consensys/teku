@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.google.common.io.Resources;
@@ -131,10 +130,6 @@ public class BesuNode extends Node {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
   }
 
-  public String getInternalEngineWebsocketsRpcUrl() {
-    return "ws://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
-  }
-
   private String getInternalP2pUrl(final String nodeId) {
     return "enode://" + nodeId + "@" + getInternalIpAddress() + ":" + P2P_PORT;
   }
@@ -149,15 +144,9 @@ public class BesuNode extends Node {
   private String fetchEnodeUrl() throws Exception {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
-        httpClient.post(baseUri, "", JSON_PROVIDER.objectToJSON(new Request("admin_nodeInfo")));
-    final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
-    final JavaType nodeInfoResponseType =
-        objectMapper
-            .getTypeFactory()
-            .constructParametricType(Response.class, NodeInfoResponse.class);
-    final Response<NodeInfoResponse> nodeInfoResponse =
-        objectMapper.readValue(response, nodeInfoResponseType);
-    return getInternalP2pUrl(nodeInfoResponse.result.id);
+        httpClient.post(
+            baseUri, "", OBJECT_MAPPER.writeValueAsString(new Request("admin_nodeInfo")));
+    return getInternalP2pUrl(OBJECT_MAPPER.readTree(response).get("result").get("id").asText());
   }
 
   public Boolean addPeer(final BesuNode node) throws Exception {
@@ -165,13 +154,8 @@ public class BesuNode extends Node {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
         httpClient.post(
-            baseUri, "", JSON_PROVIDER.objectToJSON(new Request("admin_addPeer", enode)));
-    final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
-    final JavaType removePeerResponseType =
-        objectMapper.getTypeFactory().constructParametricType(Response.class, Boolean.class);
-    final Response<Boolean> removePeerResponse =
-        objectMapper.readValue(response, removePeerResponseType);
-    return removePeerResponse.result;
+            baseUri, "", OBJECT_MAPPER.writeValueAsString(new Request("admin_addPeer", enode)));
+    return OBJECT_MAPPER.readTree(response).get("result").asBoolean();
   }
 
   public String getRichBenefactorKey() {
@@ -203,16 +187,6 @@ public class BesuNode extends Node {
       this.params = params;
       this.id = ID_COUNTER.incrementAndGet();
     }
-  }
-
-  private static class Response<T> {
-
-    public T result;
-  }
-
-  private static class NodeInfoResponse {
-
-    public String id;
   }
 
   public static class Config {

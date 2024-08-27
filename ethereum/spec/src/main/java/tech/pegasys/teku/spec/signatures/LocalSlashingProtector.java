@@ -94,7 +94,7 @@ public class LocalSlashingProtector implements SlashingProtector {
     return record.orElseGet(
         () -> {
           final ValidatorSigningRecord newRecord =
-              new ValidatorSigningRecord(genesisValidatorsRoot);
+              ValidatorSigningRecord.emptySigningRecord(genesisValidatorsRoot);
           signingRecords.put(validator, newRecord);
           return newRecord;
         });

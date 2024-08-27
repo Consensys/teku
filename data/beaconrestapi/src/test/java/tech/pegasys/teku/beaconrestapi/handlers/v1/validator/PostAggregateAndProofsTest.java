@@ -32,14 +32,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAggregateAndProofsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    setHandler(
-        new PostAggregateAndProofs(validatorDataProvider, spec.getGenesisSchemaDefinitions()));
+    setHandler(new PostAggregateAndProofs(validatorDataProvider, new SchemaDefinitionCache(spec)));
   }
 
   @Test

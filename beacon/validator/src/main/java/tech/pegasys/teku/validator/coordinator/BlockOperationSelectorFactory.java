@@ -115,7 +115,6 @@ public class BlockOperationSelectorFactory {
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
 
@@ -190,7 +189,6 @@ public class BlockOperationSelectorFactory {
                         setExecutionData(
                             executionPayloadContext,
                             bodyBuilder,
-                            requestedBlinded,
                             requestedBuilderBoostFactor,
                             SchemaDefinitionsBellatrix.required(schemaDefinitions),
                             blockSlotState,
@@ -208,7 +206,6 @@ public class BlockOperationSelectorFactory {
   private SafeFuture<Void> setExecutionData(
       final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconBlockBodyBuilder bodyBuilder,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final SchemaDefinitionsBellatrix schemaDefinitions,
       final BeaconState blockSlotState,
@@ -221,25 +218,17 @@ public class BlockOperationSelectorFactory {
               blockSlotState.getSlot()));
     }
 
-    // if requestedBlinded has been specified, we strictly follow it, otherwise we should run
-    // Builder flow (blinded) only if we have a validator registration
-    final boolean shouldTryBuilderFlow =
-        requestedBlinded.orElseGet(
-            () ->
-                executionPayloadContext
-                    .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
-                    .orElse(false));
-
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
-      if (shouldTryBuilderFlow) {
-        bodyBuilder.executionPayloadHeader(
-            schemaDefinitions.getExecutionPayloadHeaderSchema().getHeaderOfDefaultPayload());
-      } else {
-        bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
-      }
+      bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
       return SafeFuture.COMPLETE;
     }
+
+    // We should run Builder flow (blinded) only if we have a validator registration
+    final boolean shouldTryBuilderFlow =
+        executionPayloadContext
+            .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
+            .orElse(false);
 
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockProduction(
@@ -251,8 +240,7 @@ public class BlockOperationSelectorFactory {
 
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        setPayloadOrPayloadHeader(
-            bodyBuilder, schemaDefinitions, requestedBlinded, executionPayloadResult),
+        setPayloadOrPayloadHeader(bodyBuilder, executionPayloadResult),
         setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
   }
 
@@ -268,8 +256,6 @@ public class BlockOperationSelectorFactory {
 
   private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final SchemaDefinitionsBellatrix schemaDefinitions,
-      final Optional<Boolean> requestedBlinded,
       final ExecutionPayloadResult executionPayloadResult) {
 
     if (executionPayloadResult.isFromLocalFlow()) {
@@ -287,8 +273,7 @@ public class BlockOperationSelectorFactory {
             builderBidOrFallbackData -> {
               // we should try to return unblinded content only if no explicit "blindness" has been
               // requested and builder flow fallbacks to local
-              if (requestedBlinded.isEmpty()
-                  && builderBidOrFallbackData.getFallbackData().isPresent()) {
+              if (builderBidOrFallbackData.getFallbackData().isPresent()) {
                 bodyBuilder.executionPayload(
                     builderBidOrFallbackData.getFallbackDataRequired().getExecutionPayload());
               } else {
@@ -298,16 +283,7 @@ public class BlockOperationSelectorFactory {
                         // from the builder bid
                         .map(BuilderBid::getHeader)
                         // from the local fallback
-                        .orElseGet(
-                            () -> {
-                              final ExecutionPayload executionPayload =
-                                  builderBidOrFallbackData
-                                      .getFallbackDataRequired()
-                                      .getExecutionPayload();
-                              return schemaDefinitions
-                                  .getExecutionPayloadHeaderSchema()
-                                  .createFromExecutionPayload(executionPayload);
-                            });
+                        .orElseThrow();
                 bodyBuilder.executionPayloadHeader(executionPayloadHeader);
               }
             });

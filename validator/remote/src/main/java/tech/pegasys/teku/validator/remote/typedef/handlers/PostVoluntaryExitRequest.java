@@ -29,8 +29,7 @@ public class PostVoluntaryExitRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public void sendVoluntaryExit(final SignedVoluntaryExit voluntaryExit)
-      throws BadRequestException {
+  public void submit(final SignedVoluntaryExit voluntaryExit) throws BadRequestException {
     try {
       postJson(
           SEND_SIGNED_VOLUNTARY_EXIT,

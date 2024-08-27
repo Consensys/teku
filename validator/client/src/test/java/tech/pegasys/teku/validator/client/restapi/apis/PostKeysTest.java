@@ -92,6 +92,6 @@ public class PostKeysTest {
 
     assertThatThrownBy(() -> endpoint.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
-        .hasMessageStartingWith("Import data does not appear to have metadata");
+        .hasMessageStartingWith("Failed to load data. required fields:");
   }
 }

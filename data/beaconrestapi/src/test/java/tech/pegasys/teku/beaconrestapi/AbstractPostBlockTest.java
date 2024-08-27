@@ -28,11 +28,12 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -79,8 +80,9 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
 
   @Test
   void shouldReturnBadRequestIfArgumentNotSignedBeaconBlock() throws Exception {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(3);
     final String notASignedBlock =
-        jsonProvider.objectToJSON(new BeaconBlockPhase0(dataStructureUtil.randomBeaconBlock(3)));
+        JsonUtil.serialize(block, block.getSchema().getJsonTypeDefinition());
 
     assertThatThrownBy(
             () ->

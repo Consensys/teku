@@ -62,8 +62,7 @@ public class BeaconCommitteeSelectionsRequestTest extends AbstractTypeDefRequest
                 "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505")
             .build();
 
-    final Optional<List<BeaconCommitteeSelectionProof>> response =
-        request.getSelectionProof(entries);
+    final Optional<List<BeaconCommitteeSelectionProof>> response = request.submit(entries);
     assertThat(response).isPresent().contains(List.of(expectedBeaconCommitteeSelectionProof));
   }
 
@@ -72,7 +71,7 @@ public class BeaconCommitteeSelectionsRequestTest extends AbstractTypeDefRequest
     final String mockResponse = readResource("responses/beacon_committee_selections.json");
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
-    request.getSelectionProof(entries);
+    request.submit(entries);
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
@@ -90,22 +89,21 @@ public class BeaconCommitteeSelectionsRequestTest extends AbstractTypeDefRequest
   public void handlingBadRequest() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> request.getSelectionProof(entries))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> request.submit(entries)).isInstanceOf(IllegalArgumentException.class);
   }
 
   @TestTemplate
   public void handlingNotImplemented() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_IMPLEMENTED));
 
-    assertThat(request.getSelectionProof(entries)).isEmpty();
+    assertThat(request.submit(entries)).isEmpty();
   }
 
   @TestTemplate
   public void handlingSyncing() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_SERVICE_UNAVAILABLE));
 
-    assertThat(request.getSelectionProof(entries)).isEmpty();
+    assertThat(request.submit(entries)).isEmpty();
   }
 
   private BeaconCommitteeSelectionProof createBeaconCommitteeSelectionProof() {

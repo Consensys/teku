@@ -30,7 +30,7 @@ public class SubscribeToPersistentSubnetsRequest extends AbstractTypeDefRequest 
     super(baseEndpoint, okHttpClient);
   }
 
-  public void subscribeToPersistentSubnets(final List<SubnetSubscription> subnetSubscriptions) {
+  public void submit(final List<SubnetSubscription> subnetSubscriptions) {
     postJson(
         SUBSCRIBE_TO_PERSISTENT_SUBNETS,
         Collections.emptyMap(),

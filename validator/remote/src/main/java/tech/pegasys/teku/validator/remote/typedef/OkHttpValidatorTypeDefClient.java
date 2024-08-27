@@ -42,19 +42,21 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
@@ -65,9 +67,12 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest
 import tech.pegasys.teku.validator.remote.typedef.handlers.PrepareBeaconProposersRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SendAggregateAndProofsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendContributionAndProofsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedAttestationsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSubscribeToSyncCommitteeSubnetsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SendSyncCommitteeMessagesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendValidatorLivenessRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SubscribeToPersistentSubnetsRequest;
@@ -95,41 +100,39 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public SyncingStatus getSyncingStatus() {
     final GetSyncingStatusRequest getSyncingStatusRequest =
         new GetSyncingStatusRequest(getBaseEndpoint(), getOkHttpClient());
-    return getSyncingStatusRequest.getSyncingStatus();
+    return getSyncingStatusRequest.submit();
   }
 
   public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
     final GetProposerDutiesRequest getProposerDutiesRequest =
         new GetProposerDutiesRequest(getBaseEndpoint(), getOkHttpClient());
-    return getProposerDutiesRequest.getProposerDuties(epoch);
+    return getProposerDutiesRequest.submit(epoch);
   }
 
   public Optional<PeerCount> getPeerCount() {
     final GetPeerCountRequest getPeerCountRequest =
         new GetPeerCountRequest(getBaseEndpoint(), getOkHttpClient());
-    return getPeerCountRequest.getPeerCount();
+    return getPeerCountRequest.submit();
   }
 
   public Optional<List<StateValidatorData>> getStateValidators(final List<String> validatorIds) {
     final GetStateValidatorsRequest getStateValidatorsRequest =
         new GetStateValidatorsRequest(getBaseEndpoint(), getOkHttpClient());
-    return getStateValidatorsRequest
-        .getStateValidators(validatorIds)
-        .map(ObjectAndMetaData::getData);
+    return getStateValidatorsRequest.submit(validatorIds).map(ObjectAndMetaData::getData);
   }
 
   public Optional<SyncCommitteeDuties> postSyncDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     final PostSyncDutiesRequest postSyncDutiesRequest =
         new PostSyncDutiesRequest(getBaseEndpoint(), getOkHttpClient());
-    return postSyncDutiesRequest.postSyncDuties(epoch, validatorIndices);
+    return postSyncDutiesRequest.submit(epoch, validatorIndices);
   }
 
   public Optional<AttesterDuties> postAttesterDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     final PostAttesterDutiesRequest postAttesterDutiesRequest =
         new PostAttesterDutiesRequest(getBaseEndpoint(), getOkHttpClient());
-    return postAttesterDutiesRequest.postAttesterDuties(epoch, validatorIndices);
+    return postAttesterDutiesRequest.submit(epoch, validatorIndices);
   }
 
   public SendSignedBlockResult sendSignedBlock(
@@ -138,26 +141,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final SendSignedBlockRequest sendSignedBlockRequest =
         new SendSignedBlockRequest(
             spec, getBaseEndpoint(), getOkHttpClient(), preferSszBlockEncoding);
-    return sendSignedBlockRequest.sendSignedBlock(blockContainer, broadcastValidationLevel);
-  }
-
-  @Deprecated
-  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
-      final UInt64 slot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> graffiti,
-      final boolean blinded) {
-    final CreateBlockRequest createBlockRequest =
-        new CreateBlockRequest(
-            getBaseEndpoint(), getOkHttpClient(), spec, slot, blinded, preferSszBlockEncoding);
-    try {
-      return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
-    } catch (final BlindedBlockEndpointNotAvailableException ex) {
-      LOG.warn(
-          "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
-          getBaseEndpoint());
-      return createUnsignedBlock(slot, randaoReveal, graffiti, false);
-    }
+    return sendSignedBlockRequest.submit(blockContainer, broadcastValidationLevel);
   }
 
   public Optional<BlockContainerAndMetaData> createUnsignedBlock(
@@ -168,23 +152,14 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(
             getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
-    try {
-      return produceBlockRequest.createUnsignedBlock(
-          randaoReveal, graffiti, requestedBuilderBoostFactor);
-    } catch (final BlockProductionV3FailedException ex) {
-      LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
-
-      // Falling back to V2, we have to request a blinded block to be able to support both local and
-      // builder flow.
-      return createUnsignedBlock(slot, randaoReveal, graffiti, true);
-    }
+    return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
   public void registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
     final RegisterValidatorsRequest registerValidatorsRequest =
         new RegisterValidatorsRequest(getBaseEndpoint(), getOkHttpClient(), false);
-    registerValidatorsRequest.registerValidators(validatorRegistrations);
+    registerValidatorsRequest.submit(validatorRegistrations);
   }
 
   public Optional<AttestationData> createAttestationData(
@@ -192,7 +167,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final CreateAttestationDataRequest createAttestationDataRequest =
         new CreateAttestationDataRequest(getBaseEndpoint(), getOkHttpClient());
-    return createAttestationDataRequest.createAttestationData(slot, committeeIndex);
+    return createAttestationDataRequest.submit(slot, committeeIndex);
   }
 
   public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(
@@ -200,7 +175,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest =
         new BeaconCommitteeSelectionsRequest(getBaseEndpoint(), getOkHttpClient());
-    return beaconCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+    return beaconCommitteeSelectionsRequest.submit(validatorsPartialProofs);
   }
 
   public Optional<List<SyncCommitteeSelectionProof>> getSyncCommitteeSelectionProof(
@@ -208,7 +183,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest =
         new SyncCommitteeSelectionsRequest(getBaseEndpoint(), getOkHttpClient());
-    return syncCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+    return syncCommitteeSelectionsRequest.submit(validatorsPartialProofs);
   }
 
   public void subscribeToSyncCommitteeSubnets(
@@ -217,7 +192,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final SendSubscribeToSyncCommitteeSubnetsRequest subscribeToSyncCommitteeSubnetsRequest =
         new SendSubscribeToSyncCommitteeSubnetsRequest(getBaseEndpoint(), getOkHttpClient());
-    subscribeToSyncCommitteeSubnetsRequest.subscribeToSyncCommitteeSubnets(subscriptions);
+    subscribeToSyncCommitteeSubnetsRequest.submit(subscriptions);
   }
 
   public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
@@ -230,15 +205,13 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
     final CreateSyncCommitteeContributionRequest createSyncCommitteeContributionRequest =
         new CreateSyncCommitteeContributionRequest(getBaseEndpoint(), getOkHttpClient(), spec);
-    return createSyncCommitteeContributionRequest.getSyncCommitteeContribution(
-        slot, subcommitteeIndex, beaconBlockRoot);
+    return createSyncCommitteeContributionRequest.submit(slot, subcommitteeIndex, beaconBlockRoot);
   }
 
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
     final SubscribeToPersistentSubnetsRequest subscribeToPersistentSubnetsRequest =
         new SubscribeToPersistentSubnetsRequest(getBaseEndpoint(), getOkHttpClient());
-    subscribeToPersistentSubnetsRequest.subscribeToPersistentSubnets(
-        new ArrayList<>(subnetSubscriptions));
+    subscribeToPersistentSubnetsRequest.submit(new ArrayList<>(subnetSubscriptions));
   }
 
   public void sendContributionAndProofs(
@@ -262,12 +235,20 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     prepareBeaconProposersRequest.submit(beaconPreparableProposers);
   }
 
-  public Optional<Attestation> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+  public Optional<ObjectAndMetaData<Attestation>> createAggregate(
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     final CreateAggregateAttestationRequest createAggregateAttestationRequest =
         new CreateAggregateAttestationRequest(
-            getBaseEndpoint(), getOkHttpClient(), schemaDefinitionCache);
-    return createAggregateAttestationRequest.createAggregate(slot, attestationHashTreeRoot);
+            getBaseEndpoint(),
+            getOkHttpClient(),
+            schemaDefinitionCache,
+            slot,
+            attestationHashTreeRoot,
+            committeeIndex,
+            spec);
+    return createAggregateAttestationRequest.submit();
   }
 
   public Optional<List<ValidatorLivenessAtEpoch>> sendValidatorsLiveness(
@@ -275,5 +256,25 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     final SendValidatorLivenessRequest sendValidatorLivenessRequest =
         new SendValidatorLivenessRequest(getBaseEndpoint(), getOkHttpClient());
     return sendValidatorLivenessRequest.submit(epoch, validatorIndices);
+  }
+
+  public List<SubmitDataError> sendSyncCommitteeMessages(
+      final List<SyncCommitteeMessage> syncCommitteeMessages) {
+    final SendSyncCommitteeMessagesRequest sendSyncCommitteeMessagesRequest =
+        new SendSyncCommitteeMessagesRequest(getBaseEndpoint(), getOkHttpClient());
+    return sendSyncCommitteeMessagesRequest.submit(syncCommitteeMessages);
+  }
+
+  public List<SubmitDataError> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
+    final SendAggregateAndProofsRequest sendAggregateAndProofsRequest =
+        new SendAggregateAndProofsRequest(getBaseEndpoint(), getOkHttpClient());
+    return sendAggregateAndProofsRequest.submit(aggregateAndProofs);
+  }
+
+  public List<SubmitDataError> sendSignedAttestations(final List<Attestation> attestations) {
+    final SendSignedAttestationsRequest sendSignedAttestationsRequest =
+        new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient());
+    return sendSignedAttestationsRequest.submit(attestations);
   }
 }

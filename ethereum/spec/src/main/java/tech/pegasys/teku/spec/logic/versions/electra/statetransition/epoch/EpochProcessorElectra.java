@@ -188,6 +188,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
   @Override
   public void processPendingBalanceDeposits(final MutableBeaconState state) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+    final UInt64 nextEpoch = stateAccessorsElectra.getCurrentEpoch(state).plus(1L);
     final UInt64 availableForProcessing =
         stateElectra
             .getDepositBalanceToConsume()
@@ -204,9 +205,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
       if (validator.getExitEpoch().isLessThan(FAR_FUTURE_EPOCH)) {
         // Validator is exiting, postpone the deposit until after withdrawable epoch
-        if (stateAccessorsElectra
-            .getCurrentEpoch(state)
-            .isLessThanOrEqualTo(validator.getWithdrawableEpoch())) {
+        if (nextEpoch.isLessThanOrEqualTo(validator.getWithdrawableEpoch())) {
           depositsToPostpone.add(deposit);
         } else {
           // Deposited balance will never become active. Increase balance but do not consume churn
@@ -258,12 +257,11 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
   /** process_pending_consolidations */
   @Override
   public void processPendingConsolidations(final MutableBeaconState state) {
-
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
     int nextPendingBalanceConsolidation = 0;
     final SszList<PendingConsolidation> pendingConsolidations =
         stateElectra.getPendingConsolidations();
-    final UInt64 currentEpoch = stateAccessorsElectra.getCurrentEpoch(state);
+    final UInt64 nextEpoch = stateAccessorsElectra.getCurrentEpoch(state).plus(1L);
 
     for (final PendingConsolidation pendingConsolidation : pendingConsolidations) {
       final Validator sourceValidator =
@@ -272,7 +270,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         nextPendingBalanceConsolidation++;
         continue;
       }
-      if (sourceValidator.getWithdrawableEpoch().isGreaterThan(currentEpoch)) {
+      if (sourceValidator.getWithdrawableEpoch().isGreaterThan(nextEpoch)) {
         break;
       }
 
