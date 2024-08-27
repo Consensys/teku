@@ -1110,16 +1110,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
-            // EIP7332 TODO: add to pool and validate
+            // EIP7732 TODO: add to pool and validate
             .gossipedExecutionPayload(
                 (executionPayload, arrivalTimestamp) ->
-                    SafeFuture.failedFuture(new UnsupportedOperationException("EIP7332 TODO")))
+                    SafeFuture.failedFuture(new UnsupportedOperationException("EIP7732 TODO")))
             .gossipedPayloadAttestationProcessor(
                 (payloadAttestation, arrivalTimestamp) ->
-                    SafeFuture.failedFuture(new UnsupportedOperationException("EIP7332 TODO")))
+                    SafeFuture.failedFuture(new UnsupportedOperationException("EIP7732 TODO")))
             .gossipedExecutionPayloadHeaderProcessor(
                 (executionPayloadHeader, arrivalTimestamp) ->
-                    SafeFuture.failedFuture(new UnsupportedOperationException("EIP7332 TODO")))
+                    SafeFuture.failedFuture(new UnsupportedOperationException("EIP7732 TODO")))
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)

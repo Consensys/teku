@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -85,6 +86,10 @@ public interface BeaconBlockBody extends SszContainer {
   }
 
   default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+    return Optional.empty();
+  }
+
+  default Optional<SszList<PayloadAttestation>> getOptionalPayloadAttestations() {
     return Optional.empty();
   }
 

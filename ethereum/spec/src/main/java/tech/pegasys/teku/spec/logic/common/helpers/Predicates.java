@@ -177,7 +177,7 @@ public class Predicates {
     return Optional.empty();
   }
 
-  public Optional<PredicatesEip7732> toVersionEip7332() {
+  public Optional<PredicatesEip7732> toVersionEip7732() {
     return Optional.empty();
   }
 }

@@ -36,9 +36,10 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellat
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.eip7732.block.BlockProcessorEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.forktransition.Eip7732StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
-import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7332;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.util.AttestationUtilEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
@@ -99,8 +100,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
       final TimeProvider timeProvider) {
     // Helpers
     final PredicatesEip7732 predicates = new PredicatesEip7732(config);
-    final MiscHelpersEip7332 miscHelpers =
-        new MiscHelpersEip7332(config, predicates, schemaDefinitions);
+    final MiscHelpersEip7732 miscHelpers =
+        new MiscHelpersEip7732(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsEip7732 beaconStateAccessors =
         new BeaconStateAccessorsEip7732(config, predicates, miscHelpers, schemaDefinitions);
     final BeaconStateMutatorsElectra beaconStateMutators =
@@ -117,7 +118,7 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
-    final AttestationUtil attestationUtil =
+    final AttestationUtilEip7732 attestationUtil =
         new AttestationUtilEip7732(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorElectra(config, miscHelpers, beaconStateAccessors);
@@ -154,8 +155,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
-    final BlockProcessorElectra blockProcessor =
-        new BlockProcessorElectra(
+    final BlockProcessorEip7732 blockProcessor =
+        new BlockProcessorEip7732(
             config,
             predicates,
             miscHelpers,

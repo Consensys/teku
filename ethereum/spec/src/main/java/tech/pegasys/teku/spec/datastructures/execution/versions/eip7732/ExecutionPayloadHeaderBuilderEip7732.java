@@ -17,9 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -33,7 +31,7 @@ public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeader
   protected Bytes32 parentBlockRoot;
   protected UInt64 builderIndex;
   protected UInt64 slot;
-  protected UInt256 value;
+  protected UInt64 value;
   protected Bytes32 blobKzgCommitmentsRoot;
 
   public ExecutionPayloadHeaderBuilderEip7732 schema(
@@ -49,7 +47,7 @@ public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeader
 
   @Override
   protected void validate() {
-    // EIP7332 TODO: hacky skip validation
+    // EIP7732 TODO: hacky skip validation
     // super.validate();
     checkNotNull(parentBlockHash, "parentBlockHash must be specified");
     checkNotNull(parentBlockRoot, "parentBlockRoot must be specified");
@@ -86,7 +84,7 @@ public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeader
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder value(final Supplier<UInt256> valueSupplier) {
+  public ExecutionPayloadHeaderBuilder value(final Supplier<UInt64> valueSupplier) {
     this.value = valueSupplier.get();
     return this;
   }
@@ -109,7 +107,7 @@ public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeader
         SszUInt64.of(gasLimit),
         SszUInt64.of(builderIndex),
         SszUInt64.of(slot),
-        SszUInt256.of(value),
+        SszUInt64.of(value),
         SszBytes32.of(blobKzgCommitmentsRoot));
   }
 }

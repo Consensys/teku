@@ -93,7 +93,7 @@ public class StateUpgradeTransitionTest {
             afterBeaconStateClass = BeaconStateElectra.class;
             yield TestSpecFactory.createMinimalWithElectraForkEpoch(milestoneTransitionEpoch);
           }
-          case EIP7732 -> throw new UnsupportedOperationException("EIP7332 TODO");
+          case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
         };
 
     genesis = createGenesis(spec);

@@ -53,7 +53,7 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
 
   ForkDigestPayloadContext<SignedExecutionPayloadEnvelope> EXECUTION_PAYLOAD_ENVELOPE =
       new ForkDigestPayloadContext<>() {
-        // EIP7332 TODO: not sure here
+        // EIP7732 TODO: not sure here
         @Override
         public UInt64 getSlotFromPayload(final SignedExecutionPayloadEnvelope responsePayload) {
           return UInt64.ZERO;
