@@ -84,4 +84,5 @@ class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
             Resources.getResource(GetAttestationsTest.class, "getAttestations.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
+  
 }
