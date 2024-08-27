@@ -318,8 +318,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
       case WITHDRAWAL_REQUEST -> processWithdrawalRequest(testDefinition, state, processor);
       case CONSOLIDATION_REQUEST -> processConsolidation(testDefinition, state, processor);
-      default -> throw new UnsupportedOperationException(
-          "Operation " + operation + " not implemented in OperationTestExecutor");
+      default ->
+          throw new UnsupportedOperationException(
+              "Operation " + operation + " not implemented in OperationTestExecutor");
     }
   }
 
@@ -431,7 +432,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         checkValidationForBlockInclusion(
             blsToExecutionChangeValidator, state, blsToExecutionChange, expectInclusion);
       }
-        // Not yet testing inclusion rules
+      // Not yet testing inclusion rules
       case PROCESS_BLOCK_HEADER,
           DEPOSIT,
           ATTESTATION,

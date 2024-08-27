@@ -178,11 +178,12 @@ public class BlockGossipValidator {
       final EquivocationCheckResult equivocationCheckResult) {
     return switch (equivocationCheckResult) {
       case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
-      case EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER -> ignore(
-          IGNORE_EQUIVOCATION_DETECTED, "Equivocating block detected. It will be dropped.");
-      case BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER -> ignore(
-          IGNORE_ALREADY_SEEN,
-          "Block is not the first with valid signature for its slot. It will be dropped.");
+      case EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER ->
+          ignore(IGNORE_EQUIVOCATION_DETECTED, "Equivocating block detected. It will be dropped.");
+      case BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER ->
+          ignore(
+              IGNORE_ALREADY_SEEN,
+              "Block is not the first with valid signature for its slot. It will be dropped.");
     };
   }
 

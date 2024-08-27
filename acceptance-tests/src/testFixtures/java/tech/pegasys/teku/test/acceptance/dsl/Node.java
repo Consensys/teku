@@ -44,7 +44,6 @@ import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.MetricLabelsCondition;
 import tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.MetricNameCondition;
 import tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.MetricValuesCondition;
@@ -56,7 +55,6 @@ public abstract class Node {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final String TEKU_DOCKER_IMAGE_NAME = "consensys/teku";
-  protected static final JsonProvider JSON_PROVIDER = new JsonProvider();
   protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   protected final SimpleHttpClient httpClient = new SimpleHttpClient();
   protected static final int REST_API_PORT = 9051;

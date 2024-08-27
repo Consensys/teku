@@ -242,26 +242,29 @@ public class MuxFirewallTest {
   private Object createNewStreamFrame(final MuxType muxType, final long id) {
     return switch (muxType) {
       case MPLEX -> new MplexFrame(createMplexId(id), MplexFlag.NewStream, Unpooled.EMPTY_BUFFER);
-      case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.ACK), 0, Unpooled.EMPTY_BUFFER);
+      case YAMUX ->
+          new YamuxFrame(
+              createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.ACK), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
   private Object createCloseInitiatorFrame(final MuxType muxType, final long id) {
     return switch (muxType) {
-      case MPLEX -> new MplexFrame(
-          createMplexId(id), MplexFlag.CloseInitiator, Unpooled.EMPTY_BUFFER);
-      case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.FIN), 0, Unpooled.EMPTY_BUFFER);
+      case MPLEX ->
+          new MplexFrame(createMplexId(id), MplexFlag.CloseInitiator, Unpooled.EMPTY_BUFFER);
+      case YAMUX ->
+          new YamuxFrame(
+              createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.FIN), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
   private Object createCloseReceiverFrame(final MuxType muxType, final long id) {
     return switch (muxType) {
-      case MPLEX -> new MplexFrame(
-          createMplexId(id), MplexFlag.CloseReceiver, Unpooled.EMPTY_BUFFER);
-      case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.FIN), 0, Unpooled.EMPTY_BUFFER);
+      case MPLEX ->
+          new MplexFrame(createMplexId(id), MplexFlag.CloseReceiver, Unpooled.EMPTY_BUFFER);
+      case YAMUX ->
+          new YamuxFrame(
+              createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.FIN), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
@@ -269,30 +272,33 @@ public class MuxFirewallTest {
     final ByteBuf slicedByteBuf = data1K.slice();
     return switch (muxType) {
       case MPLEX -> new MplexFrame(createMplexId(id), MplexFlag.MessageReceiver, slicedByteBuf);
-      case YAMUX -> new YamuxFrame(
-          createYamuxId(id),
-          YamuxType.DATA,
-          Set.of(),
-          slicedByteBuf.readableBytes(),
-          slicedByteBuf);
+      case YAMUX ->
+          new YamuxFrame(
+              createYamuxId(id),
+              YamuxType.DATA,
+              Set.of(),
+              slicedByteBuf.readableBytes(),
+              slicedByteBuf);
     };
   }
 
   private Object createResetInitiatorFrame(final MuxType muxType, final long id) {
     return switch (muxType) {
-      case MPLEX -> new MplexFrame(
-          createMplexId(id), MplexFlag.ResetInitiator, Unpooled.EMPTY_BUFFER);
-      case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.RST), 0, Unpooled.EMPTY_BUFFER);
+      case MPLEX ->
+          new MplexFrame(createMplexId(id), MplexFlag.ResetInitiator, Unpooled.EMPTY_BUFFER);
+      case YAMUX ->
+          new YamuxFrame(
+              createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.RST), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
   private Object createResetReceiverFrame(final MuxType muxType, final long id) {
     return switch (muxType) {
-      case MPLEX -> new MplexFrame(
-          createMplexId(id), MplexFlag.ResetReceiver, Unpooled.EMPTY_BUFFER);
-      case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.RST), 0, Unpooled.EMPTY_BUFFER);
+      case MPLEX ->
+          new MplexFrame(createMplexId(id), MplexFlag.ResetReceiver, Unpooled.EMPTY_BUFFER);
+      case YAMUX ->
+          new YamuxFrame(
+              createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.RST), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 

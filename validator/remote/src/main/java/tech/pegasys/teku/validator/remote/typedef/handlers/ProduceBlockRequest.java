@@ -207,7 +207,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             ProduceBlockResponse::setData)
         .withField(
             "version",
-            DeserializableTypeDefinition.enumOf(SpecMilestone.class),
+            DeserializableTypeDefinition.enumOf(SpecMilestone.class).build(),
             ProduceBlockResponse::getSpecMilestone,
             ProduceBlockResponse::setSpecMilestone)
         .build();

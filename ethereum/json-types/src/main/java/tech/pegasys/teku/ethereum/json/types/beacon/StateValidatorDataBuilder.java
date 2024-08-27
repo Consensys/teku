@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 
 public class StateValidatorDataBuilder {
   private static final DeserializableTypeDefinition<ValidatorStatus> STATUS_TYPE =
-      DeserializableTypeDefinition.enumOf(ValidatorStatus.class);
+      DeserializableTypeDefinition.enumOf(ValidatorStatus.class).build();
 
   public static final DeserializableTypeDefinition<StateValidatorData> STATE_VALIDATOR_DATA_TYPE =
       DeserializableTypeDefinition.object(StateValidatorData.class, StateValidatorDataBuilder.class)
