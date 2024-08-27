@@ -18,62 +18,101 @@ import java.net.URL;
 import java.util.Map;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
 
-  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
-
+  private static final String NETWORK_NAME = "swift";
+  public static final Eth1Address WITHDRAWAL_ADDRESS =
+      Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void foo() throws Exception {
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final int genesisTime = currentTime.plus(1).intValue(); // magic node startup time
+  @Disabled("Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)")
+  void upgradeFromDeneb() throws Exception {
+    final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
+    final int genesisTime =
+        currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
 
-    BesuNode primaryEL =
-        createBesuNode(
-            BesuDockerVersion.STABLE,
-            config ->
-                config
-                    .withMergeSupport()
-                    .withGenesisFile("besu/pragueGenesis.json")
-                    .withP2pEnabled(true)
-                    .withJwtTokenAuthorization(JWT_FILE));
-    primaryEL.start();
+    final BesuNode besuNode = createBesuNode(genesisTime);
+    besuNode.start();
 
-    TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            beaconNodeConfigWithForks(genesisTime, primaryEL)
-                .withStartupTargetPeerCount(0)
-                .build());
+    final ValidatorKeystores validatorKeys =
+        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
 
-    primaryNode.start();
-//    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
+    final InitialStateData initialStateData =
+        createGenesisGenerator()
+            .network(NETWORK_NAME)
+            .withGenesisTime(genesisTime)
+            .genesisDelaySeconds(0)
+            .withAltairEpoch(UInt64.ZERO)
+            .withBellatrixEpoch(UInt64.ZERO)
+            .withCapellaEpoch(UInt64.ZERO)
+            .withDenebEpoch(UInt64.ZERO)
+            .withElectraEpoch(UInt64.ONE)
+            .withTotalTerminalDifficulty(0)
+            .genesisExecutionPayloadHeaderSource(besuNode::createGenesisExecutionPayload)
+            .validatorKeys(validatorKeys)
+            .generate();
 
-    primaryEL.waitForExit(1_000_000);
+    final TekuBeaconNode tekuNode =
+        createTekuBeaconNode(beaconNode(genesisTime, besuNode, initialStateData, validatorKeys));
+    tekuNode.start();
+
+    tekuNode.waitForMilestone(SpecMilestone.ELECTRA);
+    tekuNode.waitForNewBlock();
   }
 
-  private static TekuNodeConfigBuilder beaconNodeConfigWithForks(
-      final int genesisTime, final BesuNode besuNode) throws Exception {
+  private BesuNode createBesuNode(final int genesisTime) {
+    final int pragueTime =
+        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Prague on first slot
+    final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(pragueTime));
+
+    return createBesuNode(
+        BesuDockerVersion.STABLE,
+        config ->
+            config
+                .withMergeSupport()
+                .withGenesisFile("besu/pragueGenesis.json")
+                .withP2pEnabled(true)
+                .withJwtTokenAuthorization(JWT_FILE),
+        genesisOverrides);
+  }
+
+  private static TekuNodeConfig beaconNode(
+      final int genesisTime,
+      final BesuNode besuNode,
+      final InitialStateData initialStateData,
+      final ValidatorKeystores validatorKeys)
+      throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
-        .withNetwork("minimal")
+        .withInitialState(initialStateData)
+        .withNetwork(NETWORK_NAME)
         .withAltairEpoch(UInt64.ZERO)
         .withBellatrixEpoch(UInt64.ZERO)
         .withCapellaEpoch(UInt64.ZERO)
         .withDenebEpoch(UInt64.ZERO)
-        .withElectraEpoch(UInt64.ZERO)
+        .withElectraEpoch(UInt64.ONE)
         .withTotalTerminalDifficulty(0)
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
         .withJwtSecretFile(JWT_FILE)
-        .withRealNetwork();
+        .withTrustedSetupFromClasspath("mainnet-trusted-setup.txt")
+        .withReadOnlyKeystorePath(validatorKeys)
+        .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
+        .withStartupTargetPeerCount(0)
+        .withRealNetwork()
+        .build();
   }
 }

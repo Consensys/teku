@@ -14,13 +14,10 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.google.common.io.Resources;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -34,14 +31,12 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MergedGenesisTestBuilder;
@@ -257,7 +252,6 @@ public class BesuNode extends Node {
     }
 
     public BesuNode.Config withJwtTokenAuthorization(final URL jwtFile) {
-      //TODO-lucas do we need to keep it disabled by default?
       configMap.put("engine-jwt-disabled", Boolean.FALSE);
       configMap.put("engine-jwt-secret", JWT_SECRET_FILE_PATH);
       this.maybeJwtFile = Optional.of(jwtFile);
