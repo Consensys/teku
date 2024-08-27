@@ -108,9 +108,8 @@ public enum SpecMilestone {
     return switch (milestone) {
       case PHASE0 -> Optional.of(specConfig.getGenesisForkVersion());
       case ALTAIR -> specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkVersion);
-      case BELLATRIX -> specConfig
-          .toVersionBellatrix()
-          .map(SpecConfigBellatrix::getBellatrixForkVersion);
+      case BELLATRIX ->
+          specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkVersion);
       case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
       case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkVersion);
       case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkVersion);
@@ -120,13 +119,12 @@ public enum SpecMilestone {
   static Optional<UInt64> getForkEpoch(final SpecConfig specConfig, final SpecMilestone milestone) {
     return switch (milestone) {
       case PHASE0 ->
-      // Phase0 can only ever start at epoch 0 - no non-zero slot is valid. However, another fork
-      // may also be configured to start at epoch 0, effectively overriding phase0
-      Optional.of(UInt64.ZERO);
+          // Phase0 can only ever start at epoch 0 - no non-zero slot is valid. However, another
+          // fork may also be configured to start at epoch 0, effectively overriding phase0
+          Optional.of(UInt64.ZERO);
       case ALTAIR -> specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch);
-      case BELLATRIX -> specConfig
-          .toVersionBellatrix()
-          .map(SpecConfigBellatrix::getBellatrixForkEpoch);
+      case BELLATRIX ->
+          specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkEpoch);
       case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
       case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch);
       case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkEpoch);

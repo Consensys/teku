@@ -86,28 +86,31 @@ public class Web3jClientBuilder {
     checkNotNull(timeout);
     requireNonNull(endpoint.getScheme(), () -> prepareInvalidSchemeMessage(endpoint));
     return switch (endpoint.getScheme()) {
-      case "http", "https" -> new Web3jHttpClient(
-          EVENT_LOG,
-          endpoint,
-          timeProvider,
-          timeout,
-          jwtConfigOpt,
-          executionClientEventsPublisher,
-          nonCriticalMethods);
-      case "ws", "wss" -> new Web3jWebsocketClient(
-          EVENT_LOG,
-          endpoint,
-          timeProvider,
-          jwtConfigOpt,
-          executionClientEventsPublisher,
-          nonCriticalMethods);
-      case "file" -> new Web3jIpcClient(
-          EVENT_LOG,
-          endpoint,
-          timeProvider,
-          jwtConfigOpt,
-          executionClientEventsPublisher,
-          nonCriticalMethods);
+      case "http", "https" ->
+          new Web3jHttpClient(
+              EVENT_LOG,
+              endpoint,
+              timeProvider,
+              timeout,
+              jwtConfigOpt,
+              executionClientEventsPublisher,
+              nonCriticalMethods);
+      case "ws", "wss" ->
+          new Web3jWebsocketClient(
+              EVENT_LOG,
+              endpoint,
+              timeProvider,
+              jwtConfigOpt,
+              executionClientEventsPublisher,
+              nonCriticalMethods);
+      case "file" ->
+          new Web3jIpcClient(
+              EVENT_LOG,
+              endpoint,
+              timeProvider,
+              jwtConfigOpt,
+              executionClientEventsPublisher,
+              nonCriticalMethods);
       default -> throw new InvalidConfigurationException(prepareInvalidSchemeMessage(endpoint));
     };
   }

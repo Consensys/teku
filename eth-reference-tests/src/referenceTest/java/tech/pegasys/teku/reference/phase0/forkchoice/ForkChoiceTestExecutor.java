@@ -404,8 +404,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     for (String checkType : checks.keySet()) {
       try {
         switch (checkType) {
-          case "genesis_time" -> assertThat(recentChainData.getGenesisTime())
-              .isEqualTo(getUInt64(checks, checkType));
+          case "genesis_time" ->
+              assertThat(recentChainData.getGenesisTime()).isEqualTo(getUInt64(checks, checkType));
 
           case "head" -> {
             final Map<String, Object> expectedHead = get(checks, checkType);
@@ -431,13 +431,15 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 .isEqualTo(expectedJustifiedRoot);
           }
 
-          case "justified_checkpoint" -> assertCheckpoint(
-              "justified checkpoint", store.getJustifiedCheckpoint(), get(checks, checkType));
+          case "justified_checkpoint" ->
+              assertCheckpoint(
+                  "justified checkpoint", store.getJustifiedCheckpoint(), get(checks, checkType));
 
-          case "best_justified_checkpoint" -> assertCheckpoint(
-              "best justified checkpoint",
-              store.getBestJustifiedCheckpoint(),
-              get(checks, checkType));
+          case "best_justified_checkpoint" ->
+              assertCheckpoint(
+                  "best justified checkpoint",
+                  store.getBestJustifiedCheckpoint(),
+                  get(checks, checkType));
 
           case "finalized_checkpoint_root" -> {
             final Bytes32 expectedFinalizedRoot = getBytes32(checks, checkType);
@@ -446,8 +448,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 .isEqualTo(expectedFinalizedRoot);
           }
 
-          case "finalized_checkpoint" -> assertCheckpoint(
-              "finalized checkpoint", store.getFinalizedCheckpoint(), get(checks, checkType));
+          case "finalized_checkpoint" ->
+              assertCheckpoint(
+                  "finalized checkpoint", store.getFinalizedCheckpoint(), get(checks, checkType));
 
           case "proposer_boost_root" -> {
             final Optional<Bytes32> boostedRoot = store.getProposerBoostRoot();
@@ -483,8 +486,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             assertThat(expectedValidatorIsConnected).isTrue();
           }
 
-          default -> throw new UnsupportedOperationException(
-              "Unsupported check type: " + checkType);
+          default ->
+              throw new UnsupportedOperationException("Unsupported check type: " + checkType);
         }
       } catch (final AssertionError failure) {
         failures.add(failure);
