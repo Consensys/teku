@@ -13,22 +13,25 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.helpers;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class MiscHelpersEip7732 extends MiscHelpersElectra {
-  private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
+  private final SchemaDefinitionsEip7732 schemaDefinitions;
 
   public MiscHelpersEip7732(
       final SpecConfigEip7732 specConfig,
@@ -38,7 +41,7 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
         SpecConfigElectra.required(specConfig),
         predicates,
         SchemaDefinitionsElectra.required(schemaDefinitions));
-    this.executionPayloadEnvelopeSchema = schemaDefinitions.getExecutionPayloadEnvelopeSchema();
+    this.schemaDefinitions = schemaDefinitions;
   }
 
   public static MiscHelpersEip7732 required(final MiscHelpers miscHelpers) {
@@ -56,10 +59,31 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
     return (byte) (participationFlags & ~flag);
   }
 
-  // EIP7732 TODO
+  // add the blob kzg commitments root for an empty list
   @Override
   public boolean isMergeTransitionComplete(final BeaconState genericState) {
-    return super.isMergeTransitionComplete(genericState);
+    final ExecutionPayloadHeader header =
+        schemaDefinitions
+            .getExecutionPayloadHeaderSchema()
+            .createExecutionPayloadHeader(
+                builder ->
+                    builder
+                        .parentBlockHash(() -> Bytes32.ZERO)
+                        .parentBlockRoot(() -> Bytes32.ZERO)
+                        .blockHash(Bytes32.ZERO)
+                        .gasLimit(UInt64.ZERO)
+                        .builderIndex(() -> UInt64.ZERO)
+                        .slot(() -> UInt64.ZERO)
+                        .value(() -> UInt64.ZERO)
+                        .blobKzgCommitmentsRoot(
+                            () ->
+                                schemaDefinitions
+                                    .getBlobKzgCommitmentsSchema()
+                                    .createFromElements(List.of())
+                                    .hashTreeRoot()));
+    return !BeaconStateEip7732.required(genericState)
+        .getLatestExecutionPayloadHeader()
+        .equals(header);
   }
 
   @Override
@@ -68,7 +92,8 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
         BeaconBlockBodySchemaEip7732.required(beaconBlockBodySchema)
             .getBlobKzgCommitmentsRootGeneralizedIndex();
     final long commitmentGeneralizedIndex =
-        executionPayloadEnvelopeSchema
+        schemaDefinitions
+            .getExecutionPayloadEnvelopeSchema()
             .getBlobKzgCommitmentsSchema()
             .getChildGeneralizedIndex(blobSidecarIndex.longValue());
     return (int)
