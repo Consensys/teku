@@ -12,6 +12,6 @@
 - Removed the deprecated [GetBlindedBlock](https://ethereum.github.io/beacon-APIs/#/ValidatorRequiredApi/produceBlindedBlock)
 - Removed the deprecated [GetBlockV2](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Validator/produceBlockV2)
 - Implemented [PostAggregateAndProofsV2](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Validator/publishAggregateAndProofsV2) (adding support for Electra)
-- Added support for [Ephemery Testnet](https://github.com/ephemery-testnet/ephemery-resources) `--network=ephemery`
+- Added support for [Ephemery Testnet](https://github.com/ephemery.dev) `--network=ephemery`
 
 ### Bug Fixes
