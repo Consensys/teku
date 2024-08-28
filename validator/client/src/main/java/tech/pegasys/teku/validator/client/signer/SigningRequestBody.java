@@ -49,7 +49,7 @@ public record SigningRequestBody(Bytes signingRoot, SignType type, Map<String, O
       final SchemaDefinitions schemaDefinitions) {
     return SerializableTypeDefinition.object(SigningRequestBody.class)
         .withField("signingRoot", BYTES_TYPE, SigningRequestBody::signingRoot)
-        .withField("type", enumOf(SignType.class), SigningRequestBody::type)
+        .withField("type", enumOf(SignType.class).build(), SigningRequestBody::type)
         .withOptionalField(
             SignType.VOLUNTARY_EXIT.getName(),
             VoluntaryExit.SSZ_SCHEMA.getJsonTypeDefinition(),
