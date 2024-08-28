@@ -28,10 +28,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.BloomFilter;
 import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
@@ -153,30 +155,35 @@ public class RocksDbInstanceFactory {
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
-      final KvStoreConfiguration configuration, final Cache cache) {
+          final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
-        .setCompressionType(configuration.getCompressionType())
-        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setTableFormatConfig(createBlockBasedTableConfig(cache));
+            .setCompressionType(CompressionType.LZ4_COMPRESSION)
+            .setTtl(0)
+            .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+            .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
-      final Collection<KvStoreColumn<?, ?>> columns,
-      final Collection<Bytes> deletedColumns,
-      final ColumnFamilyOptions columnFamilyOptions) {
+          final Collection<KvStoreColumn<?, ?>> columns,
+          final Collection<Bytes> deletedColumns,
+          final ColumnFamilyOptions columnFamilyOptions) {
     final List<ColumnFamilyDescriptor> columnDescriptors =
-        Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
-            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
-            .collect(Collectors.toCollection(ArrayList::new));
+            Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
+                    .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
+                    .collect(Collectors.toCollection(ArrayList::new));
     columnDescriptors.add(
-        new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
+            new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
     return Collections.unmodifiableList(columnDescriptors);
   }
 
   private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {
     return new BlockBasedTableConfig()
-        .setBlockCache(cache)
-        .setCacheIndexAndFilterBlocks(true)
-        .setFormatVersion(4); // Use the latest format version (only applies to new tables)
+            .setFormatVersion(5)
+            .setBlockCache(cache)
+            .setFilterPolicy(new BloomFilter(10, false))
+            .setPartitionFilters(true)
+            .setOptimizeFiltersForMemory(true)
+            .setCacheIndexAndFilterBlocks(true)
+            .setBlockSize(32768);
   }
 }
