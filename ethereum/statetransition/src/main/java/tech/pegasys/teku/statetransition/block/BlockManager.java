@@ -146,16 +146,17 @@ public class BlockManager extends Service
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT, SAVE_FOR_FUTURE -> doImportBlock(
-                    block,
-                    blockImportPerformance,
-                    BlockBroadcastValidator.NOOP,
-                    Optional.of(RemoteOrigin.GOSSIP))
-                .finish(err -> LOG.error("Failed to process received block.", err));
+            case ACCEPT, SAVE_FOR_FUTURE ->
+                doImportBlock(
+                        block,
+                        blockImportPerformance,
+                        BlockBroadcastValidator.NOOP,
+                        Optional.of(RemoteOrigin.GOSSIP))
+                    .finish(err -> LOG.error("Failed to process received block.", err));
 
-              // block failed gossip validation, let's drop it from the pool, so it won't be served
-              // via RPC anymore. This should not be done on ignore result (i.e. duplicate blocks
-              // could cause an unwanted drop)
+            // block failed gossip validation, let's drop it from the pool, so it won't be served
+            // via RPC anymore. This should not be done on ignore result (i.e. duplicate blocks
+            // could cause an unwanted drop)
             case REJECT -> blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
             case IGNORE -> {}
           }
@@ -307,7 +308,7 @@ public class BlockManager extends Service
                         "Unable to import block {} due to failed broadcast validation",
                         block.toLogString());
                     break;
-                    // let's avoid default: so we don't forget to explicitly handle new cases
+                  // let's avoid default: so we don't forget to explicitly handle new cases
                   case DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
                       FAILED_STATE_TRANSITION,
                       FAILED_WEAK_SUBJECTIVITY_CHECKS,

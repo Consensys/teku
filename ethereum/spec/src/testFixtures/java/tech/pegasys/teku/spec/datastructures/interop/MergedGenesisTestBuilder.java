@@ -63,6 +63,8 @@ public class MergedGenesisTestBuilder {
                 .stateRoot(header.getStateRoot())
                 .feeRecipient(new Bytes20(header.getCoinbase()))
                 .parentHash(header.getParentHash())
+                .blobGasUsed(() -> UInt64.ZERO)
+                .excessBlobGas(() -> UInt64.ZERO)
                 .withdrawalsRoot(
                     () ->
                         headerSchema

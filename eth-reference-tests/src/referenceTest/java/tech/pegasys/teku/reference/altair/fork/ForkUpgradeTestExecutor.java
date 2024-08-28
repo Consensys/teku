@@ -52,11 +52,12 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
           case CAPELLA -> BeaconStateSchemaBellatrix.create(spec.getConfig());
           case DENEB -> BeaconStateSchemaCapella.create(spec.getConfig());
           case ELECTRA -> BeaconStateSchemaDeneb.create(spec.getConfig());
-          default -> throw new IllegalStateException(
-              "Unhandled fork upgrade for test "
-                  + testDefinition.getDisplayName()
-                  + ": "
-                  + milestone);
+          default ->
+              throw new IllegalStateException(
+                  "Unhandled fork upgrade for test "
+                      + testDefinition.getDisplayName()
+                      + ": "
+                      + milestone);
         };
     final BeaconState preState =
         TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", fromMilestoneSchema);

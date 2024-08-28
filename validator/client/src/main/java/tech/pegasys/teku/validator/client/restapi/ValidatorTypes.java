@@ -52,7 +52,7 @@ public class ValidatorTypes {
   public static final SerializableTypeDefinition<PostKeyResult> POST_KEY_RESULT =
       SerializableTypeDefinition.<PostKeyResult>object()
           .name("PostKeyResult")
-          .withField("status", enumOf(ImportStatus.class), PostKeyResult::getImportStatus)
+          .withField("status", enumOf(ImportStatus.class).build(), PostKeyResult::getImportStatus)
           .withOptionalField("message", STRING_TYPE, PostKeyResult::getMessage)
           .build();
 
@@ -184,7 +184,7 @@ public class ValidatorTypes {
   public static final SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
       SerializableTypeDefinition.object(DeleteKeyResult.class)
           .name("DeleteKeyResult")
-          .withField("status", enumOf(DeletionStatus.class), DeleteKeyResult::getStatus)
+          .withField("status", enumOf(DeletionStatus.class).build(), DeleteKeyResult::getStatus)
           .withOptionalField("message", STRING_TYPE, DeleteKeyResult::getMessage)
           .build();
 

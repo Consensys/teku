@@ -40,10 +40,10 @@ public class GetPeers extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/peers";
 
   private static final DeserializableTypeDefinition<State> STATE_TYPE =
-      DeserializableTypeDefinition.enumOf(State.class);
+      DeserializableTypeDefinition.enumOf(State.class).build();
 
   private static final DeserializableTypeDefinition<Direction> DIRECTION_TYPE =
-      DeserializableTypeDefinition.enumOf(Direction.class);
+      DeserializableTypeDefinition.enumOf(Direction.class).build();
 
   static final SerializableTypeDefinition<Eth2Peer> PEER_DATA_TYPE =
       SerializableTypeDefinition.object(Eth2Peer.class)
