@@ -909,17 +909,17 @@ public class Eth2NetworkConfiguration {
 
     private Builder applyEphemeryNetworkDefaults() {
       return applyTestnetDefaults()
-              .constants(EPHEMERY.configName())
-              .startupTimeoutSeconds(120)
-              .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
-              .eth1DepositContractDeployBlock(0)
-              .defaultInitialStateFromUrl(
-                      "https://checkpoint-sync.ephemery.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
-              .customGenesisState(
-                      "https://github.com/ephemery-testnet/ephemery-genesis/releases/latest/download/genesis.ssz")
-              .discoveryBootnodes(
-                      // TEKU bootnode
-                      "enr:-Iq4QNMYHuJGbnXyBj6FPS2UkOQ-hnxT-mIdNMMr7evR9UYtLemaluorL6J10RoUG1V4iTPTEbl3huijSNs5_ssBWFiGAYhBNHOzgmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQNULnJBzD8Sakd9EufSXhM4rQTIkhKBBTmWVJUtLCp8KoN1ZHCCIyk");
+          .constants(EPHEMERY.configName())
+          .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
+          .eth1DepositContractDeployBlock(0)
+          .defaultInitialStateFromUrl(
+              "https://checkpoint-sync.ephemery.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
+          .customGenesisState(
+              "https://github.com/ephemery-testnet/ephemery-genesis/releases/latest/download/genesis.ssz")
+          .discoveryBootnodes(
+              // TEKU bootnode
+              "enr:-Iq4QNMYHuJGbnXyBj6FPS2UkOQ-hnxT-mIdNMMr7evR9UYtLemaluorL6J10RoUG1V4iTPTEbl3huijSNs5_ssBWFiGAYhBNHOzgmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQNULnJBzD8Sakd9EufSXhM4rQTIkhKBBTmWVJUtLCp8KoN1ZHCCIyk");
     }
 
     private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {

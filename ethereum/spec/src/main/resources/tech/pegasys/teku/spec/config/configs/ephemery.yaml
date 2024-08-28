@@ -1,6 +1,6 @@
 # Extends the mainnet preset
 PRESET_BASE: 'mainnet'
-CONFIG_NAME: ephemery # needs to exist because of Prysm. Otherwise it conflicts with mainnet genesis
+CONFIG_NAME: ephemery
 
 # Genesis
 # ---------------------------------------------------------------
