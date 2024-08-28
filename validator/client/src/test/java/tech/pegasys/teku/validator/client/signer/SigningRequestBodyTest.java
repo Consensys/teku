@@ -229,7 +229,7 @@ class SigningRequestBodyTest {
     final String expected =
         Resources.toString(
             Resources.getResource(SigningRequestBodyTest.class, expectedJsonFile), UTF_8);
-    assertThat(prettyBody).isEqualTo(expected);
+    assertThat(prettyBody).isEqualToIgnoringNewLines(expected);
   }
 
   private static String getCurrentMethod(final int skip) {

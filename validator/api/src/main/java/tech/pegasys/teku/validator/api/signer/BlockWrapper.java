@@ -30,10 +30,7 @@ public record BlockWrapper(
         .initializer(Builder::new)
         .finisher(Builder::build)
         .withField(
-            "version",
-            enumOf(SpecMilestone.class).build(),
-            BlockWrapper::milestone,
-            Builder::milestone)
+            "version", enumOf(SpecMilestone.class), BlockWrapper::milestone, Builder::milestone)
         .withOptionalField(
             SignType.BLOCK.getName(),
             schemaDefinitions.getBeaconBlockSchema().getJsonTypeDefinition(),
