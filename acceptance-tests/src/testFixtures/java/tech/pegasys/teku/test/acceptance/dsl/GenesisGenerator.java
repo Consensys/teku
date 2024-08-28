@@ -40,10 +40,16 @@ public class GenesisGenerator {
   private Optional<Function<Spec, ExecutionPayloadHeader>> genesisExecutionPayloadHeaderSource =
       Optional.empty();
   private int genesisDelaySeconds = 10;
+  private Optional<Integer> genesisTime = Optional.empty();
   private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
   public GenesisGenerator network(final String network) {
     this.network = network;
+    return this;
+  }
+
+  public GenesisGenerator withGenesisTime(final Integer genesisTime) {
+    this.genesisTime = Optional.of(genesisTime);
     return this;
   }
 
@@ -71,6 +77,24 @@ public class GenesisGenerator {
             specConfigBuilder ->
                 specConfigBuilder.capellaBuilder(
                     capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+    return this;
+  }
+
+  public GenesisGenerator withDenebEpoch(final UInt64 denebForkEpoch) {
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.denebBuilder(
+                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+    return this;
+  }
+
+  public GenesisGenerator withElectraEpoch(final UInt64 electraForkEpoch) {
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.electraBuilder(
+                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
     return this;
   }
 
@@ -111,7 +135,10 @@ public class GenesisGenerator {
     final GenesisStateBuilder genesisBuilder = new GenesisStateBuilder();
     genesisBuilder
         .spec(spec)
-        .genesisTime(timeProvider.getTimeInSeconds().plus(genesisDelaySeconds));
+        .genesisTime(
+            genesisTime
+                .map(UInt64::valueOf)
+                .orElse(timeProvider.getTimeInSeconds().plus(genesisDelaySeconds)));
     validatorKeys
         .getValidatorKeys()
         .forEach(
