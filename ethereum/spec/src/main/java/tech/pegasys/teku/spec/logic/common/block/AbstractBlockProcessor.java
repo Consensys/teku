@@ -916,8 +916,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final SszList<DepositRequest> depositRequests) {
     // No DepositRequests until Electra
   }
 

@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.Opera
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.eip7732.block.BlockProcessorEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.execution.ExecutionPayloadProcessorEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.forktransition.Eip7732StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
@@ -53,6 +55,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 public class SpecLogicEip7732 extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
+  private final ExecutionPayloadProcessor executionPayloadProcessor;
 
   private SpecLogicEip7732(
       final Predicates predicates,
@@ -72,7 +75,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
-      final Eip7732StateUpgrade stateUpgrade) {
+      final Eip7732StateUpgrade stateUpgrade,
+      final ExecutionPayloadProcessorEip7732 executionPayloadProcessor) {
     super(
         predicates,
         miscHelpers,
@@ -92,6 +96,7 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
+    this.executionPayloadProcessor = executionPayloadProcessor;
   }
 
   public static SpecLogicEip7732 create(
@@ -182,6 +187,26 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
         new Eip7732StateUpgrade(
             config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
 
+    // Execution payload processing
+    // EIP7732 TODO: dirty way to leverage Electra operations
+    final BlockProcessorElectra blockProcessorElectra =
+        new BlockProcessorElectra(
+            config,
+            predicates,
+            miscHelpers,
+            syncCommitteeUtil,
+            beaconStateAccessors,
+            beaconStateMutators,
+            operationSignatureVerifier,
+            beaconStateUtil,
+            attestationUtil,
+            validatorsUtil,
+            operationValidator,
+            schemaDefinitions);
+    final ExecutionPayloadProcessorEip7732 executionPayloadProcessor =
+        new ExecutionPayloadProcessorEip7732(
+            config, miscHelpers, beaconStateAccessors, beaconStateMutators, blockProcessorElectra);
+
     return new SpecLogicEip7732(
         predicates,
         miscHelpers,
@@ -200,7 +225,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
         blindBlockUtil,
         syncCommitteeUtil,
         lightClientUtil,
-        stateUpgrade);
+        stateUpgrade,
+        executionPayloadProcessor);
   }
 
   @Override
@@ -216,5 +242,10 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
+    return Optional.of(executionPayloadProcessor);
   }
 }

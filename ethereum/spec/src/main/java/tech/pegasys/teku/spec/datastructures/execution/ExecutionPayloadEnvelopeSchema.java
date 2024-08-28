@@ -52,7 +52,7 @@ public class ExecutionPayloadEnvelopeSchema
 
   public ExecutionPayloadEnvelope create(
       final ExecutionPayload payload,
-      final UInt64 validatorIndex,
+      final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
       final SszList<SszKZGCommitment> blobKzgCommitments,
       final boolean payloadWithheld,
@@ -60,7 +60,7 @@ public class ExecutionPayloadEnvelopeSchema
     return new ExecutionPayloadEnvelope(
         this,
         payload,
-        validatorIndex,
+        builderIndex,
         beaconBlockRoot,
         blobKzgCommitments,
         payloadWithheld,
