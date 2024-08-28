@@ -23,8 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class EnumTypeDefinitionTest {
-  DeserializableTypeDefinition<YesNo> definition =
-      DeserializableTypeDefinition.enumOf(YesNo.class).build();
+  DeserializableTypeDefinition<YesNo> definition = DeserializableTypeDefinition.enumOf(YesNo.class);
 
   @Test
   void shouldSerializeEnum() throws Exception {
@@ -40,7 +39,7 @@ public class EnumTypeDefinitionTest {
   @Test
   void excludedShouldThrowExceptionSerialize() throws JsonProcessingException {
     DeserializableTypeDefinition<YesNo> definition =
-        DeserializableTypeDefinition.enumOf(YesNo.class, Objects::toString)
+        new EnumTypeDefinition.EnumTypeBuilder<>(YesNo.class, Objects::toString)
             .excludedEnumerations(Set.of(YesNo.YES))
             .build();
     assertThatThrownBy(() -> JsonUtil.serialize(YesNo.YES, definition))
@@ -51,7 +50,7 @@ public class EnumTypeDefinitionTest {
   @Test
   void excludedShouldThrowExceptionDeserialize() throws JsonProcessingException {
     DeserializableTypeDefinition<YesNo> definition =
-        DeserializableTypeDefinition.enumOf(YesNo.class, Objects::toString)
+        new EnumTypeDefinition.EnumTypeBuilder<>(YesNo.class, Objects::toString)
             .excludedEnumerations(Set.of(YesNo.YES))
             .build();
     assertThatThrownBy(() -> JsonUtil.parse("\"yes\"", definition))

@@ -27,19 +27,13 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
-/**
- * The test is based on `shanghaiTime` in Besu EL genesis config as the only option to start
- * Shanghai on Besu. There is a bit of magic on assumption of node starting time, which should be
- * eliminated when there will be an option `shanghaiBlock`. When it's available, please, upgrade the
- * test to use it instead of time.
- */
 public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
 
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  @Disabled("Switch to shanghaiBlock Besu genesis when it's available and enable")
+  @Disabled("Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)")
   void shouldUpgradeToCapella() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
