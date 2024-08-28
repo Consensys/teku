@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 
 public class ExecutionPayloadHeaderEip7732Impl
     extends Container8<
@@ -119,8 +118,8 @@ public class ExecutionPayloadHeaderEip7732Impl
   }
 
   @Override
-  public ExecutionPayloadHeaderSchemaElectra getSchema() {
-    return (ExecutionPayloadHeaderSchemaElectra) super.getSchema();
+  public ExecutionPayloadHeaderSchemaEip7732 getSchema() {
+    return (ExecutionPayloadHeaderSchemaEip7732) super.getSchema();
   }
 
   @Override

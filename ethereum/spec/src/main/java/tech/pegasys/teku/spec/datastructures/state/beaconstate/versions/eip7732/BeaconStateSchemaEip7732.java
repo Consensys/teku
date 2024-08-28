@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderSchemaEip7732;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
@@ -78,7 +77,7 @@ public class BeaconStateSchemaEip7732
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaElectra(specConfigEip7732));
+            () -> new ExecutionPayloadHeaderSchemaEip7732(specConfigEip7732));
     // Capella
     final SszField nextWithdrawalIndexField =
         new SszField(
