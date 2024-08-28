@@ -1,0 +1,16 @@
+{
+  "signingRoot" : "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464",
+  "type" : "VOLUNTARY_EXIT",
+  "voluntary_exit" : {
+    "epoch" : "4669978815449698508",
+    "validator_index" : "4665021361504678828"
+  },
+  "fork_info" : {
+    "fork" : {
+      "previous_version" : "0x103ac940",
+      "current_version" : "0x6fdfab40",
+      "epoch" : "4658411424342975020"
+    },
+    "genesis_validators_root" : "0x499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379"
+  }
+}

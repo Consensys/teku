@@ -19,10 +19,11 @@ done
 
 TEMP=`mktemp -d`
 
-function cleanup() {
-    rm -rf "${TEMP}"
-}
-trap cleanup EXIT
+# function cleanup() {
+    # rm -rf "${TEMP}"
+# }
+# trap cleanup EXIT
+echo "TEMP: ${TEMP}"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 

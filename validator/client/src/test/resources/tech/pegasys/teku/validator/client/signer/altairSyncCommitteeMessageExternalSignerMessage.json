@@ -1,0 +1,16 @@
+{
+  "signingRoot" : "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464",
+  "type" : "SYNC_COMMITTEE_MESSAGE",
+  "fork_info" : {
+    "fork" : {
+      "previous_version" : "0x103ac940",
+      "current_version" : "0x6fdfab40",
+      "epoch" : "4658411424342975020"
+    },
+    "genesis_validators_root" : "0x499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379"
+  },
+  "sync_committee_message" : {
+    "slot" : "31724849254",
+    "beacon_block_root" : "0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef"
+  }
+}
