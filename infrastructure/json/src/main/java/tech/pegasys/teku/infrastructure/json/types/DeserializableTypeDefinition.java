@@ -58,14 +58,9 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
     return new DeserializableMapTypeDefinition<>(keyType, valueType, mapConstructor);
   }
 
-  static <TObject extends Enum<TObject>> EnumTypeDefinition.EnumTypeBuilder<TObject> enumOf(
+  static <TObject extends Enum<TObject>> EnumTypeDefinition<TObject> enumOf(
       final Class<TObject> itemType) {
-    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType);
-  }
-
-  static <TObject extends Enum<TObject>> EnumTypeDefinition.EnumTypeBuilder<TObject> enumOf(
-      final Class<TObject> itemType, final Function<TObject, String> serializer) {
-    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType, serializer);
+    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType).build();
   }
 
   static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject, TObject> object(
