@@ -36,7 +36,7 @@ public class ExecutionPayloadEnvelope
   ExecutionPayloadEnvelope(
       final ExecutionPayloadEnvelopeSchema schema,
       final ExecutionPayload payload,
-      final UInt64 validatorIndex,
+      final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
       final SszList<SszKZGCommitment> blobKzgCommitments,
       final boolean payloadWithheld,
@@ -44,7 +44,7 @@ public class ExecutionPayloadEnvelope
     super(
         schema,
         payload,
-        SszUInt64.of(validatorIndex),
+        SszUInt64.of(builderIndex),
         SszBytes32.of(beaconBlockRoot),
         blobKzgCommitments,
         SszBit.of(payloadWithheld),
@@ -59,7 +59,7 @@ public class ExecutionPayloadEnvelope
     return getField0();
   }
 
-  public UInt64 getValidatorIndex() {
+  public UInt64 getBuilderIndex() {
     return getField1().get();
   }
 

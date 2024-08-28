@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
@@ -213,6 +214,11 @@ public class SpecLogicElectra extends AbstractSpecLogic {
 
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
     return Optional.empty();
   }
 }

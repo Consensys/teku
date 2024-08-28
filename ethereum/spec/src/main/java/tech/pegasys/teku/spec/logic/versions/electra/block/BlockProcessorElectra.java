@@ -333,8 +333,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   */
   @Override
   public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final SszList<DepositRequest> depositRequests) {
     final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     for (DepositRequest depositRequest : depositRequests) {
       // process_deposit_request
