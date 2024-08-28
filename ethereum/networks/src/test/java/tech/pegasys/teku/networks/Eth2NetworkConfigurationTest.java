@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
@@ -31,162 +32,165 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfigurationTest {
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getDefinedNetworks")
-  @SuppressWarnings("deprecation")
-  public void build_shouldBuildKnownNetworks(
-      final Eth2Network network, final NetworkDefinition networkDefinition) {
-    final Eth2NetworkConfiguration networkConfig =
-        Eth2NetworkConfiguration.builder(network).build();
-    final Eth2NetworkConfiguration.Builder networkConfigBuilder =
-        Eth2NetworkConfiguration.builder();
-    networkDefinition.configure(networkConfigBuilder);
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("getDefinedNetworks")
+    @SuppressWarnings("deprecation")
+    public void build_shouldBuildKnownNetworks(
+            final Eth2Network network, final NetworkDefinition networkDefinition) {
+        final Eth2NetworkConfiguration networkConfig =
+                Eth2NetworkConfiguration.builder(network).build();
+        final Eth2NetworkConfiguration.Builder networkConfigBuilder =
+                Eth2NetworkConfiguration.builder();
+        networkDefinition.configure(networkConfigBuilder);
 
-    assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
-    assertThat(networkConfigBuilder.build()).isEqualTo(networkConfig);
-    assertThat(networkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void builder_usingConstantsUrl() {
-    final URL url =
-        getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
-    final Eth2NetworkConfiguration config =
-        Eth2NetworkConfiguration.builder(url.toString()).build();
-    assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void constants_usingConstantsUrl() {
-    final URL url =
-        getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
-    final Eth2NetworkConfiguration config =
-        Eth2NetworkConfiguration.builder().constants(url.toString()).build();
-    assertThat(config.getConstants()).isEqualTo(url.toString());
-    assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
-  }
-
-  @Test
-  public void applyNetworkDefaults_shouldOverwritePreviouslySetValues() {
-    List<Arguments> definedNetworks = getDefinedNetworks().toList();
-
-    for (Arguments networkA : definedNetworks) {
-      for (Arguments networkB : definedNetworks) {
-        final Eth2Network networkAName = ((Eth2Network) networkA.get()[0]);
-        final Eth2Network networkBName = ((Eth2Network) networkB.get()[0]);
-
-        final Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
-        builder.applyNetworkDefaults(networkAName);
-        builder.applyNetworkDefaults(networkBName);
-
-        assertThat(builder.build())
-            .isEqualTo(Eth2NetworkConfiguration.builder(networkBName).build());
-      }
+        assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
+        assertThat(networkConfigBuilder.build()).isEqualTo(networkConfig);
+        assertThat(networkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
     }
-  }
 
-  @Test
-  public void applyNamedNetworkDefaults_shouldOverwritePreviouslySetValues() {
-    List<Arguments> definedNetworks = getDefinedNetworks().toList();
-
-    for (Arguments networkA : definedNetworks) {
-      for (Arguments networkB : definedNetworks) {
-        final NetworkDefinition networkADef = ((NetworkDefinition) networkA.get()[1]);
-        final NetworkDefinition networkBDef = ((NetworkDefinition) networkB.get()[1]);
-
-        Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
-        networkADef.configure(builder);
-        networkBDef.configure(builder);
-
-        final Eth2Network networkBName = ((Eth2Network) networkB.get()[0]);
-        assertThat(builder.build())
-            .isEqualTo(Eth2NetworkConfiguration.builder(networkBName).build());
-      }
+    @Test
+    @SuppressWarnings("deprecation")
+    public void builder_usingConstantsUrl() {
+        final URL url =
+                getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
+        final Eth2NetworkConfiguration config =
+                Eth2NetworkConfiguration.builder(url.toString()).build();
+        assertThat(config.getConstants()).isEqualTo(url.toString());
+        assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
     }
-  }
 
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getDefinedNetworks")
-  public void bootnodesFromNetworkDefaults_CanBeParsed(
-      final Eth2Network network, final NetworkDefinition networkDefinition) {
-    final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
-    final Eth2NetworkConfiguration.Builder networkConfigBuilder =
-        Eth2NetworkConfiguration.builder();
-    networkDefinition.configure(networkConfigBuilder);
+    @Test
+    @SuppressWarnings("deprecation")
+    public void constants_usingConstantsUrl() {
+        final URL url =
+                getClass().getClassLoader().getResource("tech/pegasys/teku/networks/test-constants.yaml");
+        final Eth2NetworkConfiguration config =
+                Eth2NetworkConfiguration.builder().constants(url.toString()).build();
+        assertThat(config.getConstants()).isEqualTo(url.toString());
+        assertThat(config.getSpec().getGenesisSpecConfig().getMaxCommitteesPerSlot()).isEqualTo(4);
+    }
 
-    List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
+    @Test
+    public void applyNetworkDefaults_shouldOverwritePreviouslySetValues() {
+        List<Arguments> definedNetworks = getDefinedNetworks().toList();
 
-    assertThat(nodeRecords.stream().map(NodeRecord::asEnr))
-        .containsExactlyInAnyOrderElementsOf(config.getDiscoveryBootnodes());
-  }
+        for (Arguments networkA : definedNetworks) {
+            for (Arguments networkB : definedNetworks) {
+                final Eth2Network networkAName = ((Eth2Network) networkA.get()[0]);
+                final Eth2Network networkBName = ((Eth2Network) networkB.get()[0]);
 
-  @SuppressWarnings("Convert2MethodRef")
-  public static Stream<Arguments> getDefinedNetworks() {
-    return Stream.of(
-        Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
-        Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
-        Arguments.of(
-            Eth2Network.HOLESKY,
-            (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.HOLESKY)),
-        Arguments.of(
-            Eth2Network.SEPOLIA,
-            (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.SEPOLIA)),
-        Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
-        Arguments.of(
-            Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()),
-        Arguments.of(Eth2Network.GNOSIS, (NetworkDefinition) b -> b.applyGnosisNetworkDefaults()),
-        Arguments.of(Eth2Network.CHIADO, (NetworkDefinition) b -> b.applyChiadoNetworkDefaults()));
-  }
+                final Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
+                builder.applyNetworkDefaults(networkAName);
+                builder.applyNetworkDefaults(networkBName);
 
-  private List<NodeRecord> parseBootnodes(final List<String> bootnodes) {
-    final NodeRecordFactory nodeRecordFactory = NodeRecordFactory.DEFAULT;
+                assertThat(builder.build())
+                        .isEqualTo(Eth2NetworkConfiguration.builder(networkBName).build());
+            }
+        }
+    }
 
-    return bootnodes.stream()
-        .map(enr -> enr.startsWith("enr:") ? enr.substring("enr:".length()) : enr)
-        .map(nodeRecordFactory::fromBase64)
-        .collect(Collectors.toList());
-  }
+    @Test
+    public void applyNamedNetworkDefaults_shouldOverwritePreviouslySetValues() {
+        List<Arguments> definedNetworks = getDefinedNetworks().toList();
 
-  @FunctionalInterface
-  private interface NetworkDefinition {
-    Eth2NetworkConfiguration.Builder configure(Eth2NetworkConfiguration.Builder builder);
-  }
+        for (Arguments networkA : definedNetworks) {
+            for (Arguments networkB : definedNetworks) {
+                final NetworkDefinition networkADef = ((NetworkDefinition) networkA.get()[1]);
+                final NetworkDefinition networkBDef = ((NetworkDefinition) networkB.get()[1]);
 
-  @Test
-  public void shouldNotHaveCustomInitialStateFlagWhenUsingPreConfiguredNetworks() {
-    final Eth2NetworkConfiguration eth2NetworkConfig =
-        new Eth2NetworkConfiguration.Builder().applyNetworkDefaults(Eth2Network.MAINNET).build();
-    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
-  }
+                Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
+                networkADef.configure(builder);
+                networkBDef.configure(builder);
 
-  @Test
-  public void shouldHaveCustomInitialStateFlagSetWhenSpecifyingInitialState() {
-    final Eth2NetworkConfiguration eth2NetworkConfig =
-        new Eth2NetworkConfiguration.Builder()
-            .applyNetworkDefaults(Eth2Network.MAINNET)
-            .customInitialState("/foo/bar")
-            .build();
-    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().getInitialState()).hasValue("/foo/bar");
-    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isTrue();
-  }
+                final Eth2Network networkBName = ((Eth2Network) networkB.get()[0]);
+                assertThat(builder.build())
+                        .isEqualTo(Eth2NetworkConfiguration.builder(networkBName).build());
+            }
+        }
+    }
 
-  @Test
-  public void shouldSetInitialStateAndGenesisStateWhenUsingCheckpointSyncUrl() {
-    final String checkpointSyncUrl = "http://foo.com";
-    final Eth2NetworkConfiguration eth2NetworkConfig =
-        new Eth2NetworkConfiguration.Builder()
-            .applyNetworkDefaults(Eth2Network.MAINNET)
-            .checkpointSyncUrl(checkpointSyncUrl)
-            .build();
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("getDefinedNetworks")
+    public void bootnodesFromNetworkDefaults_CanBeParsed(
+            final Eth2Network network, final NetworkDefinition networkDefinition) {
+        final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
+        final Eth2NetworkConfiguration.Builder networkConfigBuilder =
+                Eth2NetworkConfiguration.builder();
+        networkDefinition.configure(networkConfigBuilder);
 
-    final StateBoostrapConfig networkBoostrapConfig = eth2NetworkConfig.getNetworkBoostrapConfig();
-    assertThat(networkBoostrapConfig.getInitialState())
-        .contains(checkpointSyncUrl + "/" + FINALIZED_STATE_URL_PATH);
-    assertThat(networkBoostrapConfig.getGenesisState())
-        .contains(checkpointSyncUrl + "/" + GENESIS_STATE_URL_PATH);
-    assertThat(networkBoostrapConfig.isUsingCustomInitialState()).isFalse();
-  }
+        List<NodeRecord> nodeRecords = parseBootnodes(config.getDiscoveryBootnodes());
+
+        assertThat(nodeRecords.stream().map(NodeRecord::asEnr))
+                .containsExactlyInAnyOrderElementsOf(config.getDiscoveryBootnodes());
+    }
+
+    @SuppressWarnings("Convert2MethodRef")
+    public static Stream<Arguments> getDefinedNetworks() {
+        return Stream.of(
+                Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
+                Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
+                Arguments.of(
+                        Eth2Network.HOLESKY,
+                        (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.HOLESKY)),
+                Arguments.of(
+                        Eth2Network.SEPOLIA,
+                        (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.SEPOLIA)),
+                Arguments.of(
+                        Eth2Network.EPHEMERY,
+                        (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.EPHEMERY)),
+                Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
+                Arguments.of(
+                        Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()),
+                Arguments.of(Eth2Network.GNOSIS, (NetworkDefinition) b -> b.applyGnosisNetworkDefaults()),
+                Arguments.of(Eth2Network.CHIADO, (NetworkDefinition) b -> b.applyChiadoNetworkDefaults()));
+    }
+
+    private List<NodeRecord> parseBootnodes(final List<String> bootnodes) {
+        final NodeRecordFactory nodeRecordFactory = NodeRecordFactory.DEFAULT;
+
+        return bootnodes.stream()
+                .map(enr -> enr.startsWith("enr:") ? enr.substring("enr:".length()) : enr)
+                .map(nodeRecordFactory::fromBase64)
+                .collect(Collectors.toList());
+    }
+
+    @FunctionalInterface
+    private interface NetworkDefinition {
+        Eth2NetworkConfiguration.Builder configure(Eth2NetworkConfiguration.Builder builder);
+    }
+
+    @Test
+    public void shouldNotHaveCustomInitialStateFlagWhenUsingPreConfiguredNetworks() {
+        final Eth2NetworkConfiguration eth2NetworkConfig =
+                new Eth2NetworkConfiguration.Builder().applyNetworkDefaults(Eth2Network.MAINNET).build();
+        assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
+    }
+
+    @Test
+    public void shouldHaveCustomInitialStateFlagSetWhenSpecifyingInitialState() {
+        final Eth2NetworkConfiguration eth2NetworkConfig =
+                new Eth2NetworkConfiguration.Builder()
+                        .applyNetworkDefaults(Eth2Network.MAINNET)
+                        .customInitialState("/foo/bar")
+                        .build();
+        assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().getInitialState()).hasValue("/foo/bar");
+        assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isTrue();
+    }
+
+    @Test
+    public void shouldSetInitialStateAndGenesisStateWhenUsingCheckpointSyncUrl() {
+        final String checkpointSyncUrl = "http://foo.com";
+        final Eth2NetworkConfiguration eth2NetworkConfig =
+                new Eth2NetworkConfiguration.Builder()
+                        .applyNetworkDefaults(Eth2Network.MAINNET)
+                        .checkpointSyncUrl(checkpointSyncUrl)
+                        .build();
+
+        final StateBoostrapConfig networkBoostrapConfig = eth2NetworkConfig.getNetworkBoostrapConfig();
+        assertThat(networkBoostrapConfig.getInitialState())
+                .contains(checkpointSyncUrl + "/" + FINALIZED_STATE_URL_PATH);
+        assertThat(networkBoostrapConfig.getGenesisState())
+                .contains(checkpointSyncUrl + "/" + GENESIS_STATE_URL_PATH);
+        assertThat(networkBoostrapConfig.isUsingCustomInitialState()).isFalse();
+    }
 }

@@ -49,7 +49,8 @@ public class DepositSnapshotFileLoader {
           Eth2Network.MAINNET, "mainnet.ssz",
           Eth2Network.SEPOLIA, "sepolia.ssz",
           Eth2Network.LUKSO, "lukso.ssz",
-          Eth2Network.HOLESKY, "holesky.ssz");
+          Eth2Network.HOLESKY, "holesky.ssz",
+          Eth2Network.EPHEMERY, "ephemery.ssz");
 
   private static final Logger LOG = LogManager.getLogger();
 

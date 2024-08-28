@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
+import static tech.pegasys.teku.spec.networks.Eth2Network.EPHEMERY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.HOLESKY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
@@ -720,6 +721,7 @@ public class Eth2NetworkConfiguration {
         case SEPOLIA -> applySepoliaNetworkDefaults();
         case LUKSO -> applyLuksoNetworkDefaults();
         case HOLESKY -> applyHoleskyNetworkDefaults();
+        case EPHEMERY -> applyEphemeryNetworkDefaults();
         case GNOSIS -> applyGnosisNetworkDefaults();
         case CHIADO -> applyChiadoNetworkDefaults();
         case SWIFT -> applySwiftNetworkDefaults();
@@ -903,6 +905,21 @@ public class Eth2NetworkConfiguration {
               "enr:-Le4QLoE1wFHSlGcm48a9ZESb_MRLqPPu6G0vHqu4MaUcQNDHS69tsy-zkN0K6pglyzX8m24mkb-LtBcbjAYdP1uxm4BhGV0aDKQabfZdAQBcAAAAQAAAAAAAIJpZIJ2NIJpcIQ5gR6Wg2lwNpAgAUHQBwEQAAAAAAAAADR-iXNlY3AyNTZrMaEDPMSNdcL92uNIyCsS177Z6KTXlbZakQqxv3aQcWawNXeDdWRwgiMohHVkcDaCI4I",
               // TEKU bootnode
               "enr:-LS4QG0uV4qvcpJ-HFDJRGBmnlD3TJo7yc4jwK8iP7iKaTlfQ5kZvIDspLMJhk7j9KapuL9yyHaZmwTEZqr10k9XumyCEcmHYXR0bmV0c4gAAAAABgAAAIRldGgykGm32XQEAXAAAAEAAAAAAACCaWSCdjSCaXCErK4j-YlzZWNwMjU2azGhAgfWRBEJlb7gAhXIB5ePmjj2b8io0UpEenq1Kl9cxStJg3RjcIIjKIN1ZHCCIyg");
+    }
+
+    private Builder applyEphemeryNetworkDefaults() {
+      return applyTestnetDefaults()
+              .constants(EPHEMERY.configName())
+              .startupTimeoutSeconds(120)
+              .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
+              .eth1DepositContractDeployBlock(0)
+              .defaultInitialStateFromUrl(
+                      "https://checkpoint-sync.ephemery.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
+              .customGenesisState(
+                      "https://github.com/ephemery-testnet/ephemery-genesis/releases/latest/download/genesis.ssz")
+              .discoveryBootnodes(
+                      // TEKU bootnode
+                      "enr:-Iq4QNMYHuJGbnXyBj6FPS2UkOQ-hnxT-mIdNMMr7evR9UYtLemaluorL6J10RoUG1V4iTPTEbl3huijSNs5_ssBWFiGAYhBNHOzgmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQNULnJBzD8Sakd9EufSXhM4rQTIkhKBBTmWVJUtLCp8KoN1ZHCCIyk");
     }
 
     private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {
