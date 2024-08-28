@@ -35,7 +35,6 @@ public enum ValidatorApiMethod {
   SEND_SYNC_COMMITTEE_MESSAGES("eth/v1/beacon/pool/sync_committees"),
   GET_AGGREGATE("eth/v1/validator/aggregate_attestation"),
   GET_AGGREGATE_V2("eth/v2/validator/aggregate_attestation"),
-  SEND_SIGNED_AGGREGATE_AND_PROOF("/eth/v1/validator/aggregate_and_proofs"),
   SEND_SIGNED_AGGREGATE_AND_PROOFS("/eth/v1/validator/aggregate_and_proofs"),
   SEND_SIGNED_AGGREGATE_AND_PROOFS_V2("/eth/v2/validator/aggregate_and_proofs"),
   SEND_CONTRIBUTION_AND_PROOF("eth/v1/validator/contribution_and_proofs"),
