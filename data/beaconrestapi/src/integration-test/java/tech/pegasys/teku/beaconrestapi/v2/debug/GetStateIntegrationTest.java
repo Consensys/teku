@@ -97,7 +97,7 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
         .finisher(Function.identity())
         .withField(
             "version",
-            DeserializableTypeDefinition.enumOf(SpecMilestone.class).build(),
+            DeserializableTypeDefinition.enumOf(SpecMilestone.class),
             ResponseData::getVersion,
             ResponseData::setVersion)
         .withField(
