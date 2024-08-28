@@ -268,7 +268,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public List<SubmitDataError> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     final SendAggregateAndProofsRequest sendAggregateAndProofsRequest =
-        new SendAggregateAndProofsRequest(getBaseEndpoint(), getOkHttpClient());
+        new SendAggregateAndProofsRequest(getBaseEndpoint(), getOkHttpClient(), spec);
     return sendAggregateAndProofsRequest.submit(aggregateAndProofs);
   }
 
