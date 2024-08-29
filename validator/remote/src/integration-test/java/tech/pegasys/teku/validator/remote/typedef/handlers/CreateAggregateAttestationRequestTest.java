@@ -123,7 +123,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
   }
 
   @TestTemplate
-  public void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled() throws Exception {
+  void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled() throws InterruptedException {
     final Bytes32 attestationHashTreeRoot = dataStructureUtil.randomBytes32();
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
     request =
@@ -141,5 +141,24 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
     assertThat(request.getMethod()).isEqualTo("GET");
     assertThat(request.getPath())
         .contains(ValidatorApiMethod.GET_AGGREGATE_V2.getPath(Collections.emptyMap()));
+  }
+
+  @TestTemplate
+  public void shouldThrowWhenCommitteeIndexIsMissingAndUseAttestationsV2ApisEnabled() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    request =
+        new CreateAggregateAttestationRequest(
+            mockWebServer.url("/"),
+            okHttpClient,
+            new SchemaDefinitionCache(spec),
+            slot,
+            attestation.hashTreeRoot(),
+            Optional.empty(),
+            true,
+            spec);
+    assertThatThrownBy(() -> request.submit())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Missing required parameter: committee index");
+    assertThat(mockWebServer.getRequestCount()).isZero();
   }
 }
