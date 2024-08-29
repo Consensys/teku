@@ -64,7 +64,10 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
 
     // Use attestation v2 api post Electra only. This logic can be removed once we reach the Electra
     // milestone
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA) && committeeIndex.isPresent()) {
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      if (committeeIndex.isEmpty()) {
+        throw new IllegalArgumentException("Missing required parameter: committee index");
+      }
       return submitPostElectra(
           slot, attestationHashTreeRoot, committeeIndex.get(), attestationSchema);
     }

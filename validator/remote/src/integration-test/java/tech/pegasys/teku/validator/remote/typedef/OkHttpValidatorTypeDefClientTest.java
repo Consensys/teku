@@ -33,6 +33,7 @@ import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -670,7 +671,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAggregate_makesExpectedRequest() throws Exception {
+  public void createAggregate_makesExpectedRequest_preElectra() throws Exception {
+    assumeThat(specMilestone).isLessThan(ELECTRA);
     final UInt64 slot = UInt64.valueOf(323);
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
@@ -688,6 +690,26 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
+  public void createAggregate_makesExpectedRequest_postElectra() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    final UInt64 slot = UInt64.valueOf(323);
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    typeDefClient.createAggregate(
+        slot, attestationHashTreeRoot, Optional.of(dataStructureUtil.randomUInt64()));
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE_V2.getPath(emptyMap()));
+    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
+    assertThat(request.getRequestUrl().queryParameter("attestation_data_root"))
+        .isEqualTo(attestationHashTreeRoot.toHexString());
+  }
+
+  @TestTemplate
   public void createAggregate_whenBadParameters_throwsIllegalArgumentException() {
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
@@ -696,7 +718,9 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThatThrownBy(
             () ->
                 typeDefClient.createAggregate(
-                    UInt64.ONE, attestationHashTreeRoot, Optional.empty()))
+                    UInt64.ONE,
+                    attestationHashTreeRoot,
+                    Optional.of(dataStructureUtil.randomUInt64())))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -706,7 +730,9 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
-    assertThat(typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot, Optional.empty()))
+    assertThat(
+            typeDefClient.createAggregate(
+                UInt64.ONE, attestationHashTreeRoot, Optional.of(dataStructureUtil.randomUInt64())))
         .isEmpty();
   }
 
@@ -719,13 +745,17 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThatThrownBy(
             () ->
                 typeDefClient.createAggregate(
-                    UInt64.ONE, attestationHashTreeRoot, Optional.empty()))
+                    UInt64.ONE,
+                    attestationHashTreeRoot,
+                    Optional.of(dataStructureUtil.randomUInt64())))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Server error from Beacon Node API");
   }
 
   @TestTemplate
-  public void createAggregate_WhenSuccess_ReturnsAttestation() throws JsonProcessingException {
+  public void createAggregate_whenSuccess_returnsAttestation_preElectra()
+      throws JsonProcessingException {
+    assumeThat(specMilestone).isLessThan(ELECTRA);
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
     final Attestation expectedAttestation = dataStructureUtil.randomAttestation();
     final String body =
@@ -743,6 +773,51 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(attestation).isPresent();
     assertThat(attestation.get().getData()).isEqualTo(expectedAttestation);
+  }
+
+  @TestTemplate
+  public void createAggregate_whenSuccess_returnsAttestation_postElectra()
+      throws JsonProcessingException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+    final Attestation expectedAttestation = dataStructureUtil.randomAttestation();
+    final String body =
+        serialize(
+            expectedAttestation,
+            spec.getGenesisSchemaDefinitions()
+                .getAttestationSchema()
+                .castTypeToAttestationSchema()
+                .getJsonTypeDefinition());
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(
+                "{ "
+                    + "\"version\": \""
+                    + specMilestone.name().toLowerCase(Locale.ROOT)
+                    + "\", "
+                    + "\"data\": "
+                    + body
+                    + " }"));
+
+    final Optional<ObjectAndMetaData<Attestation>> attestation =
+        typeDefClient.createAggregate(
+            UInt64.ONE, attestationHashTreeRoot, Optional.of(dataStructureUtil.randomUInt64()));
+
+    assertThat(attestation).isPresent();
+    assertThat(attestation.get().getData()).isEqualTo(expectedAttestation);
+  }
+
+  @TestTemplate
+  public void createAggregate_whenMissingCommitteeIndex_returnsEmpty_postElectra() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    assertThatThrownBy(
+            () ->
+                typeDefClient.createAggregate(
+                    UInt64.ONE, dataStructureUtil.randomBytes32(), Optional.empty()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Missing required parameter: committee index");
+    assertThat(mockWebServer.getRequestCount()).isZero();
   }
 
   private AttesterDuty randomAttesterDuty() {
