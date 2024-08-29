@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
@@ -113,5 +114,23 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
     assertThat(maybeAttestationAndMetaData.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());
     assertThat(maybeAttestationAndMetaData.get().getMilestone()).isEqualTo(specMilestone);
+  }
+
+  @TestTemplate
+  public void shouldThrowWhenCommitteeIndexIsMissing() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    createAggregateAttestationRequest =
+        new CreateAggregateAttestationRequest(
+            mockWebServer.url("/"),
+            okHttpClient,
+            new SchemaDefinitionCache(spec),
+            slot,
+            attestation.hashTreeRoot(),
+            Optional.empty(),
+            spec);
+    assertThatThrownBy(() -> createAggregateAttestationRequest.submit())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Missing required parameter: committee index");
+    assertThat(mockWebServer.getRequestCount()).isZero();
   }
 }

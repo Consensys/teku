@@ -730,7 +730,9 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
-    assertThat(typeDefClient.createAggregate(UInt64.ONE, attestationHashTreeRoot, Optional.empty()))
+    assertThat(
+            typeDefClient.createAggregate(
+                UInt64.ONE, attestationHashTreeRoot, Optional.of(dataStructureUtil.randomUInt64())))
         .isEmpty();
   }
 
@@ -809,10 +811,12 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   @TestTemplate
   public void createAggregate_whenMissingCommitteeIndex_returnsEmpty_postElectra() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
-    final Optional<ObjectAndMetaData<Attestation>> attestation =
-        typeDefClient.createAggregate(
-            UInt64.ONE, dataStructureUtil.randomBytes32(), Optional.empty());
-    assertThat(attestation).isEmpty();
+    assertThatThrownBy(
+            () ->
+                typeDefClient.createAggregate(
+                    UInt64.ONE, dataStructureUtil.randomBytes32(), Optional.empty()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Missing required parameter: committee index");
     assertThat(mockWebServer.getRequestCount()).isZero();
   }
 
