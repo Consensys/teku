@@ -151,7 +151,11 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final Optional<UInt64> requestedBuilderBoostFactor) {
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(
-            getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
+            getBaseEndpoint(),
+            getOkHttpClient(),
+            schemaDefinitionCache,
+            slot,
+            preferSszBlockEncoding);
     return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
