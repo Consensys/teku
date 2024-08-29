@@ -161,6 +161,7 @@ public class RocksDbInstanceFactory {
     return options;
   }
 
+  @SuppressWarnings("unused")
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
