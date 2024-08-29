@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
+  private static final Logger LOG = LogManager.getLogger();
   private final SchemaDefinitionCache schemaDefinitionCache;
   private final SpecMilestone specMilestone;
   private final UInt64 slot;
@@ -64,7 +67,11 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
 
     // Use attestation v2 api post Electra only. This logic can be removed once we reach the Electra
     // milestone
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA) && committeeIndex.isPresent()) {
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      if (committeeIndex.isEmpty()) {
+        LOG.warn("Missing committee index");
+        return Optional.empty();
+      }
       return submitPostElectra(
           slot, attestationHashTreeRoot, committeeIndex.get(), attestationSchema);
     }
