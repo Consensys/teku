@@ -69,7 +69,7 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
     // milestone
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       if (committeeIndex.isEmpty()) {
-        LOG.warn("Missing committee index");
+        LOG.warn("Missing required parameter: committee index");
         return Optional.empty();
       }
       return submitPostElectra(
