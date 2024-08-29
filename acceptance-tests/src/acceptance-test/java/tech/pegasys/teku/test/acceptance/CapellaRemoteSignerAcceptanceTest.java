@@ -87,8 +87,6 @@ public class CapellaRemoteSignerAcceptanceTest extends AcceptanceTestBase {
     tekuNode.waitForNextEpoch();
     tekuNode.waitForNewBlock();
     tekuNode.waitForFullSyncCommitteeAggregate();
-    // TODO to get aggregate gossip we'd need a second node, worth it?
-    // tekuNode.waitForAggregateGossipReceived();
   }
 
   private BesuNode createBesuNode(final int genesisTime) {
