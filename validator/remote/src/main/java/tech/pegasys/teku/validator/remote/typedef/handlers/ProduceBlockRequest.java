@@ -48,11 +48,11 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class ProduceBlockRequest extends AbstractTypeDefRequest {
@@ -70,15 +70,15 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   public ProduceBlockRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
-      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache,
       final UInt64 slot,
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
-    this.blockContainerSchema = spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
+    this.blockContainerSchema = schemaDefinitionCache.atSlot(slot).getBlockContainerSchema();
     this.blindedBlockContainerSchema =
-        spec.atSlot(slot).getSchemaDefinitions().getBlindedBlockContainerSchema();
+        schemaDefinitionCache.atSlot(slot).getBlindedBlockContainerSchema();
 
     final DeserializableTypeDefinition<ProduceBlockResponse> produceBlockResponseDefinition =
         buildDeserializableTypeDefinition(blockContainerSchema.getJsonTypeDefinition());

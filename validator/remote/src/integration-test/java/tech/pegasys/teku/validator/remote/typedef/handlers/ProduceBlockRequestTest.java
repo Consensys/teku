@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
@@ -56,7 +57,12 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   @BeforeEach
   void setupRequest() {
     request =
-        new ProduceBlockRequest(mockWebServer.url("/"), okHttpClient, spec, UInt64.ONE, false);
+        new ProduceBlockRequest(
+            mockWebServer.url("/"),
+            okHttpClient,
+            new SchemaDefinitionCache(spec),
+            UInt64.ONE,
+            false);
     responseBodyBuffer = new Buffer();
   }
 
