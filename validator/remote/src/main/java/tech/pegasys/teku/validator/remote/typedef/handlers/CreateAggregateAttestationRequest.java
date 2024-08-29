@@ -41,6 +41,7 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
   private final UInt64 slot;
   final Bytes32 attestationHashTreeRoot;
   final Optional<UInt64> committeeIndex;
+  final boolean attestationsV2ApisEnabled;
 
   public CreateAggregateAttestationRequest(
       final HttpUrl baseEndpoint,
@@ -49,6 +50,7 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
       final UInt64 slot,
       final Bytes32 attestationHashTreeRoot,
       final Optional<UInt64> committeeIndex,
+      final boolean attestationsV2ApisEnabled,
       final Spec spec) {
     super(baseEndpoint, okHttpClient);
     this.schemaDefinitionCache = schemaDefinitionCache;
@@ -56,6 +58,7 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
     this.slot = slot;
     this.attestationHashTreeRoot = attestationHashTreeRoot;
     this.committeeIndex = committeeIndex;
+    this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
   }
 
   public Optional<ObjectAndMetaData<Attestation>> submit() {
@@ -64,7 +67,7 @@ public class CreateAggregateAttestationRequest extends AbstractTypeDefRequest {
 
     // Use attestation v2 api post Electra only. This logic can be removed once we reach the Electra
     // milestone
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+    if (attestationsV2ApisEnabled || specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       if (committeeIndex.isEmpty()) {
         throw new IllegalArgumentException("Missing required parameter: committee index");
       }

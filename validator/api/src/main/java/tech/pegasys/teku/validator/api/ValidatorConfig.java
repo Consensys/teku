@@ -69,6 +69,7 @@ public class ValidatorConfig {
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
   public static final boolean DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
+  public static final boolean DEFAULT_ATTESTATIONS_V2_APIS_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -110,6 +111,7 @@ public class ValidatorConfig {
 
   private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
   private final boolean dvtSelectionsEndpointEnabled;
+  private final boolean attestationsV2ApisEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -149,7 +151,8 @@ public class ValidatorConfig {
       final int executorThreads,
       final Optional<String> sentryNodeConfigurationFile,
       final boolean isLocalSlashingProtectionSynchronizedModeEnabled,
-      final boolean dvtSelectionsEndpointEnabled) {
+      final boolean dvtSelectionsEndpointEnabled,
+      final boolean attestationsV2ApisEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -193,6 +196,7 @@ public class ValidatorConfig {
     this.isLocalSlashingProtectionSynchronizedModeEnabled =
         isLocalSlashingProtectionSynchronizedModeEnabled;
     this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
+    this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
 
     LOG.debug(
         "Executor queue - {} threads, max queue size {} ", executorThreads, executorMaxQueueSize);
@@ -362,6 +366,10 @@ public class ValidatorConfig {
     return dvtSelectionsEndpointEnabled;
   }
 
+  public boolean isAttestationsV2ApisEnabled() {
+    return attestationsV2ApisEnabled;
+  }
+
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -414,6 +422,7 @@ public class ValidatorConfig {
     private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
         DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
     private boolean dvtSelectionsEndpointEnabled = DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
+    private boolean attestationsV2ApisEnabled = DEFAULT_ATTESTATIONS_V2_APIS_ENABLED;
 
     private Builder() {}
 
@@ -667,6 +676,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder attestationsV2ApisEnabled(final boolean attestationsV2ApisEnabled) {
+      this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -711,7 +725,8 @@ public class ValidatorConfig {
           executorThreads,
           sentryNodeConfigurationFile,
           isLocalSlashingProtectionSynchronizedModeEnabled,
-          dvtSelectionsEndpointEnabled);
+          dvtSelectionsEndpointEnabled,
+          attestationsV2ApisEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

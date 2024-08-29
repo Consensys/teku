@@ -28,6 +28,7 @@ import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,14 +45,13 @@ import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase
 public class CreateAggregateAttestationRequestTest extends AbstractTypeDefRequestTestBase {
 
   private CreateAggregateAttestationRequest request;
-  private final UInt64 slot = UInt64.ONE;
+  private UInt64 slot;
+  private Bytes32 attestationHashTreeRoot;
 
-  @TestTemplate
-  public void getAggregateAttestation_makesExpectedRequest() throws Exception {
-    final Bytes32 attestationHashTreeRoot = dataStructureUtil.randomBytes32();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
+  @BeforeEach
+  public void setup() {
+    slot = dataStructureUtil.randomSlot();
+    attestationHashTreeRoot = dataStructureUtil.randomBytes32();
     request =
         new CreateAggregateAttestationRequest(
             mockWebServer.url("/"),
@@ -60,10 +60,14 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
             slot,
             attestationHashTreeRoot,
             Optional.empty(),
+            false,
             spec);
+  }
 
+  @TestTemplate
+  public void getAggregateAttestation_makesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
     request.submit();
-
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
     assertThat(request.getPath())
@@ -82,9 +86,7 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
     final String mockResponse =
         readResource(
             "responses/create_aggregate_attestation_responses/createAggregateAttestationResponse.json");
-
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
-
     request =
         new CreateAggregateAttestationRequest(
             mockWebServer.url("/"),
@@ -93,10 +95,9 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
             slot,
             attestation.hashTreeRoot(),
             Optional.empty(),
+            false,
             spec);
-
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestation = request.submit();
-
     assertThat(maybeAttestation).isPresent();
     assertThat(maybeAttestation.get().getData())
         .isEqualTo(getAggregateAttestationResponse.getData());
@@ -105,49 +106,40 @@ public class CreateAggregateAttestationRequestTest extends AbstractTypeDefReques
   @TestTemplate
   void handle400() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-    request =
-        new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"),
-            okHttpClient,
-            new SchemaDefinitionCache(spec),
-            dataStructureUtil.randomSlot(),
-            dataStructureUtil.randomBytes32(),
-            Optional.empty(),
-            spec);
-
     assertThatThrownBy(() -> request.submit()).isInstanceOf(IllegalArgumentException.class);
   }
 
   @TestTemplate
   void handle404() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
-    request =
-        new CreateAggregateAttestationRequest(
-            mockWebServer.url("/"),
-            okHttpClient,
-            new SchemaDefinitionCache(spec),
-            dataStructureUtil.randomSlot(),
-            dataStructureUtil.randomBytes32(),
-            Optional.empty(),
-            spec);
-
     assertThat(request.submit()).isEmpty();
   }
 
   @TestTemplate
   void handle500() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(() -> request.submit())
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
+  }
+
+  @TestTemplate
+  public void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled() throws Exception {
+    final Bytes32 attestationHashTreeRoot = dataStructureUtil.randomBytes32();
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
     request =
         new CreateAggregateAttestationRequest(
             mockWebServer.url("/"),
             okHttpClient,
             new SchemaDefinitionCache(spec),
-            dataStructureUtil.randomSlot(),
-            dataStructureUtil.randomBytes32(),
-            Optional.empty(),
+            slot,
+            attestationHashTreeRoot,
+            Optional.of(dataStructureUtil.randomUInt64()),
+            true,
             spec);
-
-    assertThatThrownBy(() -> request.submit())
-        .isInstanceOf(RemoteServiceNotAvailableException.class);
+    request.submit();
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_AGGREGATE_V2.getPath(Collections.emptyMap()));
   }
 }
