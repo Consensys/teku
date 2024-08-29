@@ -125,6 +125,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
             slot,
             attestation.hashTreeRoot(),
             Optional.empty(),
+            false,
             spec);
     assertThatThrownBy(() -> createAggregateAttestationRequest.submit())
         .isInstanceOf(IllegalArgumentException.class)
