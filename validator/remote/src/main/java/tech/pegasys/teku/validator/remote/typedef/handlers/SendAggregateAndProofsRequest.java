@@ -18,33 +18,74 @@ import static tech.pegasys.teku.validator.remote.typedef.FailureListResponse.get
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.FailureListResponse;
 
 public class SendAggregateAndProofsRequest extends AbstractTypeDefRequest {
+
+  private final Spec spec;
+
   public SendAggregateAndProofsRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final Spec spec) {
     super(baseEndpoint, okHttpClient);
+    this.spec = spec;
   }
 
   public List<SubmitDataError> submit(final List<SignedAggregateAndProof> aggregateAndProofs) {
     if (aggregateAndProofs.isEmpty()) {
       return Collections.emptyList();
     }
-    final DeserializableTypeDefinition<SignedAggregateAndProof> jsonTypeDefinition =
-        aggregateAndProofs.getFirst().getSchema().getJsonTypeDefinition();
+
+    final SpecMilestone specMilestone =
+        spec.atSlot(aggregateAndProofs.getFirst().getMessage().getAggregate().getData().getSlot())
+            .getMilestone();
+
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      return submitPostElectra(aggregateAndProofs, specMilestone);
+    }
+    return submitPreElectra(aggregateAndProofs);
+  }
+
+  private List<SubmitDataError> submitPreElectra(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
     return postJson(
-            ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF,
+            ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOFS,
             Collections.emptyMap(),
             aggregateAndProofs,
-            listOf(jsonTypeDefinition),
+            listOf(getTypeDefinition(aggregateAndProofs)),
             getFailureListResponseResponseHandler())
         .map(FailureListResponse::failures)
         .orElse(Collections.emptyList());
+  }
+
+  private List<SubmitDataError> submitPostElectra(
+      final List<SignedAggregateAndProof> aggregateAndProofs, final SpecMilestone specMilestone) {
+    return postJson(
+            ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOFS_V2,
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Map.of(
+                RestApiConstants.HEADER_CONSENSUS_VERSION,
+                specMilestone.name().toLowerCase(Locale.ROOT)),
+            aggregateAndProofs,
+            listOf(getTypeDefinition(aggregateAndProofs)),
+            getFailureListResponseResponseHandler())
+        .map(FailureListResponse::failures)
+        .orElse(Collections.emptyList());
+  }
+
+  private static DeserializableTypeDefinition<SignedAggregateAndProof> getTypeDefinition(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
+    return aggregateAndProofs.getFirst().getSchema().getJsonTypeDefinition();
   }
 }
