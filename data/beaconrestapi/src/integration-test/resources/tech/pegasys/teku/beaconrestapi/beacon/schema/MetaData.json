@@ -21,7 +21,7 @@
       "description" : "Bitvector representing the node's persistent sync committee subnet subscriptions.",
       "format" : "bytes"
     },
-    "csc" : {
+    "custody_subnet_count" : {
       "type" : "string",
       "description" : "PeerDAS custody subnet count.",
       "example" : "1",

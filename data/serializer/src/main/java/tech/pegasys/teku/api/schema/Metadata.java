@@ -57,7 +57,7 @@ public class Metadata {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public final String syncCommitteeSubscriptions;
 
-  @JsonProperty("csc")
+  @JsonProperty("custody_subnet_count")
   @Schema(
       type = "string",
       pattern = PATTERN_UINT8,
@@ -69,7 +69,7 @@ public class Metadata {
       @JsonProperty("seq_number") final String sequenceNumber,
       @JsonProperty("attnets") final String attestationSubnetSubscriptions,
       @JsonProperty("syncnets") final String syncCommitteeSubscriptions,
-      @JsonProperty("csc") final String custodySubnetCount) {
+      @JsonProperty("custody_subnet_count") final String custodySubnetCount) {
     this.sequenceNumber = sequenceNumber;
     this.attestationSubnetSubscriptions = attestationSubnetSubscriptions;
     this.syncCommitteeSubscriptions = syncCommitteeSubscriptions;

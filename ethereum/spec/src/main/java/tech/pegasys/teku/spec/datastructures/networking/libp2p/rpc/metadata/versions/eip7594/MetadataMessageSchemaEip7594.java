@@ -37,7 +37,7 @@ public class MetadataMessageSchemaEip7594
             "attnets", SszBitvectorSchema.create(networkingSpecConfig.getAttestationSubnetCount())),
         namedSchema(
             "syncnets", SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)),
-        namedSchema("csc", SszPrimitiveSchemas.UINT8_SCHEMA));
+        namedSchema("custody_subnet_count", SszPrimitiveSchemas.UINT8_SCHEMA));
   }
 
   @Override
