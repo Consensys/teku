@@ -49,7 +49,7 @@ public class AttesterDutiesGenerator {
 
   private List<AttesterDuty> createAttesterDuties(
       final BeaconState state, final UInt64 epoch, final IntCollection validatorIndices) {
-    final List<Optional<AttesterDuty>> maybeAttesterDutyList = new ArrayList<>();
+    final List<AttesterDuty> attesterDutyList = new ArrayList<>();
     final BeaconStateAccessors beaconStateAccessors = spec.atEpoch(epoch).beaconStateAccessors();
     final UInt64 committeeCountPerSlot =
         beaconStateAccessors.getCommitteeCountPerSlot(state, epoch);
@@ -59,12 +59,12 @@ public class AttesterDutiesGenerator {
       final CommitteeAssignment committeeAssignment =
           validatorIndexToCommitteeAssignmentMap.get(validatorIndex);
       if (committeeAssignment != null) {
-        maybeAttesterDutyList.add(
-            attesterDutyFromCommitteeAssignment(
-                committeeAssignment, validatorIndex, committeeCountPerSlot, state));
+        attesterDutyFromCommitteeAssignment(
+                committeeAssignment, validatorIndex, committeeCountPerSlot, state)
+            .ifPresent(attesterDutyList::add);
       }
     }
-    return maybeAttesterDutyList.stream().filter(Optional::isPresent).map(Optional::get).toList();
+    return attesterDutyList;
   }
 
   private Optional<AttesterDuty> attesterDutyFromCommitteeAssignment(
