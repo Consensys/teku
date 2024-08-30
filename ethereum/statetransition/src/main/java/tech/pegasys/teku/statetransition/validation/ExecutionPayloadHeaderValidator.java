@@ -157,8 +157,8 @@ public class ExecutionPayloadHeaderValidator {
                */
               if (!verifyBuilderSignature(builder.getPublicKey(), signedHeader, state)) {
                 return reject(
-                    "The builder signature is not valid for a builder with public key "
-                        + builder.getPublicKey());
+                    "The builder signature is not valid for a builder with public key %s",
+                    builder.getPublicKey());
               }
 
               // cache the valid header and the bid value

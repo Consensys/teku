@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.duties;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
+import tech.pegasys.teku.ethereum.json.types.validator.PayloadAttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.PayloadAttesterDuty;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -45,6 +48,20 @@ public class AttesterDutiesGenerator {
             : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
     final List<AttesterDuty> duties = createAttesterDuties(state, epoch, validatorIndices);
     return new AttesterDuties(isChainHeadOptimistic, dependentRoot, duties);
+  }
+
+  public PayloadAttesterDuties getPayloadAttesterDutiesFromIndicesAndState(
+      final BeaconState state,
+      final UInt64 epoch,
+      final IntCollection validatorIndices,
+      final boolean isChainHeadOptimistic) {
+    final Bytes32 dependentRoot =
+        epoch.isGreaterThan(spec.getCurrentEpoch(state))
+            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
+            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
+    final List<PayloadAttesterDuty> duties =
+        createPayloadAttesterDuties(state, epoch, validatorIndices);
+    return new PayloadAttesterDuties(isChainHeadOptimistic, dependentRoot, duties);
   }
 
   private List<AttesterDuty> createAttesterDuties(
@@ -83,5 +100,27 @@ public class AttesterDutiesGenerator {
                     committeeCountPerSlot.intValue(),
                     committeeAssignment.getCommittee().indexOf(validatorIndex),
                     committeeAssignment.getSlot()));
+  }
+
+  private List<PayloadAttesterDuty> createPayloadAttesterDuties(
+      final BeaconState state, final UInt64 epoch, final IntCollection validatorIndices) {
+    final List<PayloadAttesterDuty> payloadAttesterDutyList = new ArrayList<>();
+
+    final Int2ObjectMap<UInt64> validatorIndexToCommitteeAssignmentMap =
+        spec.getValidatorIndexToPctAssignmentMap(state, epoch);
+    for (final int validatorIndex : validatorIndices) {
+      final UInt64 slot = validatorIndexToCommitteeAssignmentMap.get(validatorIndex);
+      if (slot != null) {
+        payloadAttesterDutyFromCommitteeAssignment(slot, validatorIndex, state)
+            .ifPresent(payloadAttesterDutyList::add);
+      }
+    }
+    return payloadAttesterDutyList;
+  }
+
+  private Optional<PayloadAttesterDuty> payloadAttesterDutyFromCommitteeAssignment(
+      final UInt64 slot, final int validatorIndex, final BeaconState state) {
+    return spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex))
+        .map(publicKey -> new PayloadAttesterDuty(publicKey, validatorIndex, slot));
   }
 }

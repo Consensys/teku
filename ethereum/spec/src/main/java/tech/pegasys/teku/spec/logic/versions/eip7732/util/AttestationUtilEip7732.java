@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.util;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -50,11 +48,7 @@ public class AttestationUtilEip7732 extends AttestationUtilElectra {
     final IntList ptc =
         BeaconStateAccessorsEip7732.required(beaconStateAccessors)
             .getPtc(state, attestation.getData().getSlot());
-    return attestingIndices
-        .intStream()
-        .filter(i -> !ptc.contains(i))
-        .boxed()
-        .collect(Collectors.toCollection(IntArrayList::new));
+    return IntList.of(attestingIndices.intStream().filter(i -> !ptc.contains(i)).toArray());
   }
 
   /**
