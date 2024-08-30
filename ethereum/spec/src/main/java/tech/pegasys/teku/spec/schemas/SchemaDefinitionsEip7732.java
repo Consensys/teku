@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayl
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
@@ -91,6 +92,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   private final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema;
   private final ExecutionPayloadEnvelopesByRootRequestMessageSchema
       executionPayloadEnvelopesByRootRequestMessageSchema;
+  private final PayloadAttestationMessageSchema payloadAttestationMessageSchema;
 
   public SchemaDefinitionsEip7732(final SpecConfigEip7732 specConfig) {
     super(specConfig);
@@ -109,6 +111,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.executionPayloadHeaderSchemaEip7732 =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.payloadAttestationSchema = new PayloadAttestationSchema(specConfig.getPtcSize());
+    this.payloadAttestationMessageSchema = new PayloadAttestationMessageSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaEip7732Impl.create(
             specConfig,
@@ -330,6 +333,10 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   public ExecutionPayloadEnvelopesByRootRequestMessageSchema
       getExecutionPayloadEnvelopesByRootRequestMessageSchema() {
     return executionPayloadEnvelopesByRootRequestMessageSchema;
+  }
+
+  public PayloadAttestationMessageSchema getPayloadAttestationMessageSchema() {
+    return payloadAttestationMessageSchema;
   }
 
   @Override

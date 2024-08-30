@@ -93,7 +93,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           nextSlotStartTimeMillis,
           millisPerSlot,
           timelinessAttestationDueSlotTimeOffset,
-          this::onTimelinessAttestationDue);
+          this::onPayloadTimelinessAttestationDue);
       return;
     }
 
@@ -136,7 +136,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
             scheduleDuty(
                 millisPerSlot,
                 timelinessAttestationDueSlotTimeOffset,
-                this::onTimelinessAttestationDue);
+                this::onPayloadTimelinessAttestationDue);
           });
       return;
     }
@@ -221,7 +221,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     validatorTimingChannel.onAttestationAggregationDue(slot);
   }
 
-  private void onTimelinessAttestationDue(
+  private void onPayloadTimelinessAttestationDue(
       final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
     final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
     if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
@@ -230,7 +230,8 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           slot);
       return;
     }
-    LOG.info("EVENT *** onTimelinessAttestationDue");
+    LOG.info("EVENT *** onPayloadTimelinessAttestationDue");
+    validatorTimingChannel.onPayloadAttestationDue(slot);
   }
 
   private UInt64 getCurrentSlotForMillis(final UInt64 millis) {

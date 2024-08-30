@@ -885,11 +885,21 @@ public class Spec {
     return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
   }
 
+  public Optional<CommitteeAssignment> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
+  }
+
   public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
     return atEpoch(epoch)
         .getValidatorsUtil()
         .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPctAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPctAssignmentMap(state, epoch);
   }
 
   // Attestation helpers
