@@ -67,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -446,6 +447,13 @@ public class Spec {
     return atSlot(proof.getAggregate().getData().getSlot())
         .miscHelpers()
         .computeSigningRoot(proof, domain);
+  }
+
+  public Bytes computeSigningRoot(
+      final ExecutionPayloadHeader executionPayloadHeader, final Bytes32 domain) {
+    return atSlot(ExecutionPayloadHeaderEip7732.required(executionPayloadHeader).getSlot())
+        .miscHelpers()
+        .computeSigningRoot(executionPayloadHeader, domain);
   }
 
   public Bytes computeSigningRoot(final UInt64 slot, final Bytes32 domain) {
