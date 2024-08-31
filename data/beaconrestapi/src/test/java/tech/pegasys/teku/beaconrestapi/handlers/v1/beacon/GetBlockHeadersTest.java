@@ -80,14 +80,17 @@ class GetBlockHeadersTest extends AbstractMigratedBeaconHandlerWithChainDataProv
             Resources.getResource(GetBlockHeadersTest.class, "getBlockHeaders.json"), UTF_8);
     assertThat(data).isEqualTo(expected);
   }
+
   private BlockAndMetaData generateBlockHeaderData() {
     return new BlockAndMetaData(
         dataStructureUtil.randomSignedBeaconBlock(1), SpecMilestone.PHASE0, true, true, false);
   }
+
   @Test
   void metadata_shouldHandle204() {
     verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
+
   @Test
   void metadata_shouldHandle503() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);

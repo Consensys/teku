@@ -62,6 +62,7 @@ public class GetGlobalValidatorInclusion extends RestApiEndpoint {
                     .build())
             .withNotFoundResponse()
             .withServiceUnavailableResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

@@ -67,6 +67,7 @@ public class GetState extends RestApiEndpoint {
                 getResponseType(schemaDefinitionCache),
                 sszResponseType())
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

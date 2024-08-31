@@ -16,8 +16,8 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
@@ -104,10 +104,12 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainData
         .isEqualTo(
             "{\"execution_optimistic\":false,\"finalized\":false,\"data\":{\"previous_version\":\"0x103ac940\",\"current_version\":\"0x6fdfab40\",\"epoch\":\"4658411424342975020\"}}");
   }
+
   @Test
   void metadata_shouldHandle204() {
     verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
+
   @Test
   void metadata_shouldHandle503() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);

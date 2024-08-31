@@ -99,10 +99,12 @@ class GetStateSyncCommitteesTest extends AbstractMigratedBeaconHandlerWithChainD
         "{\"execution_optimistic\":false,\"finalized\":false,\"data\":{\"validators\":[\"2\",\"92\",\"37\"],\"validator_aggregates\":[[\"9\",\"89\"],[\"1\"]]}}";
     assertThat(data).isEqualTo(expected);
   }
+
   @Test
   void metadata_shouldHandle204() {
     verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
+
   @Test
   void metadata_shouldHandle503() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);

@@ -76,10 +76,12 @@ public class GetFinalizedBlockRootTest extends AbstractMigratedBeaconHandlerTest
             UTF_8);
     assertThat(data).isEqualTo(expected);
   }
+
   @Test
   void metadata_shouldHandle204() {
     verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
+
   @Test
   void metadata_shouldHandle503() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);

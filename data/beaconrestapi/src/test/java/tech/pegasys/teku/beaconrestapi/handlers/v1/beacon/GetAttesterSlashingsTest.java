@@ -86,5 +86,4 @@ class GetAttesterSlashingsTest extends AbstractMigratedBeaconHandlerTest {
             UTF_8);
     assertThat(data).isEqualTo(expected);
   }
-  
 }

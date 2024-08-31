@@ -51,6 +51,7 @@ public class PostStateValidatorBalances extends RestApiEndpoint {
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", GetStateValidatorBalances.RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

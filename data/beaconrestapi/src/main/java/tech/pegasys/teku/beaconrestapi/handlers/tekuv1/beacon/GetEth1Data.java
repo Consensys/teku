@@ -51,6 +51,7 @@ public class GetEth1Data extends RestApiEndpoint {
             .tags(TAG_TEKU)
             .response(SC_OK, "Request successful", ETH1DATA_RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = dataProvider.getChainDataProvider();
     this.eth1DataProvider = eth1DataProvider;
