@@ -27,7 +27,6 @@ import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -46,9 +45,6 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
   private CreateAggregateAttestationRequest createAggregateAttestationRequest;
   private final UInt64 slot = UInt64.ONE;
 
-  @BeforeEach
-  void setupRequest() {}
-
   @TestTemplate
   public void getAggregateAttestation_makesExpectedRequest() throws Exception {
     final UInt64 committeeIndex = dataStructureUtil.randomUInt64();
@@ -64,6 +60,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
             slot,
             attestationHashTreeRoot,
             Optional.of(committeeIndex),
+            false,
             spec);
 
     createAggregateAttestationRequest.submit();
@@ -106,6 +103,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
             slot,
             attestation.hashTreeRoot(),
             Optional.of(committeeIndex),
+            false,
             spec);
 
     final Optional<ObjectAndMetaData<Attestation>> maybeAttestationAndMetaData =
@@ -127,6 +125,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
             slot,
             attestation.hashTreeRoot(),
             Optional.empty(),
+            false,
             spec);
     assertThatThrownBy(() -> createAggregateAttestationRequest.submit())
         .isInstanceOf(IllegalArgumentException.class)

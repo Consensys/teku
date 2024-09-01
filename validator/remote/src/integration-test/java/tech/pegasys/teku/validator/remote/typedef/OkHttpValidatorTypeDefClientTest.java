@@ -99,10 +99,10 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     super.beforeEach(specContext);
     typeDefClient =
         new OkHttpValidatorTypeDefClient(
-            okHttpClient, mockWebServer.url("/"), specContext.getSpec(), false);
+            okHttpClient, mockWebServer.url("/"), specContext.getSpec(), false, false);
     okHttpValidatorTypeDefClientWithPreferredSsz =
         new OkHttpValidatorTypeDefClient(
-            okHttpClient, mockWebServer.url("/"), specContext.getSpec(), true);
+            okHttpClient, mockWebServer.url("/"), specContext.getSpec(), true, false);
     sszRegisterValidatorsRequest =
         new RegisterValidatorsRequest(mockWebServer.url("/"), okHttpClient, true);
   }

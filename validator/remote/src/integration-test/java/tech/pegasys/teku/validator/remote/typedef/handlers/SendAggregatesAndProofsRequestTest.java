@@ -49,7 +49,8 @@ public class SendAggregatesAndProofsRequestTest extends AbstractTypeDefRequestTe
 
   @BeforeEach
   public void setup() {
-    this.request = new SendAggregateAndProofsRequest(mockWebServer.url("/"), okHttpClient, spec);
+    this.request =
+        new SendAggregateAndProofsRequest(mockWebServer.url("/"), okHttpClient, false, spec);
     this.aggregateAndProofs = List.of(dataStructureUtil.randomSignedAggregateAndProof());
   }
 
@@ -95,5 +96,19 @@ public class SendAggregatesAndProofsRequestTest extends AbstractTypeDefRequestTe
                 "{\"code\": 400,\"message\": \"z\",\"failures\": [{\"index\": 3,\"message\": \"a\"}]}"));
     final List<SubmitDataError> response = request.submit(aggregateAndProofs);
     assertThat(response).containsExactly(new SubmitDataError(UInt64.valueOf(3), "a"));
+  }
+
+  @TestTemplate
+  void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled()
+      throws InterruptedException, JsonProcessingException {
+    this.request =
+        new SendAggregateAndProofsRequest(mockWebServer.url("/"), okHttpClient, true, spec);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+    final List<SubmitDataError> response = request.submit(aggregateAndProofs);
+    assertThat(response).isEmpty();
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOFS_V2.getPath(emptyMap()));
   }
 }
