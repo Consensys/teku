@@ -66,7 +66,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -102,6 +104,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class Spec {
@@ -455,6 +458,19 @@ public class Spec {
     return atSlot(ExecutionPayloadHeaderEip7732.required(executionPayloadHeader).getSlot())
         .miscHelpers()
         .computeSigningRoot(executionPayloadHeader, domain);
+  }
+
+  public Bytes computeSigningRoot(final ExecutionPayloadEnvelope envelope, final Bytes32 domain) {
+    return forMilestone(envelope.getPayload().getMilestone())
+        .miscHelpers()
+        .computeSigningRoot(envelope, domain);
+  }
+
+  public Bytes computeSigningRoot(
+      final PayloadAttestationData payloadAttestationData, final Bytes32 domain) {
+    return atSlot(payloadAttestationData.getSlot())
+        .miscHelpers()
+        .computeSigningRoot(payloadAttestationData, domain);
   }
 
   public Bytes computeSigningRoot(final UInt64 slot, final Bytes32 domain) {
@@ -863,6 +879,11 @@ public class Spec {
 
   public Int2IntMap getBeaconCommitteesSize(final BeaconState state, final UInt64 slot) {
     return atState(state).beaconStateAccessors().getBeaconCommitteesSize(state, slot);
+  }
+
+  public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    return BeaconStateAccessorsEip7732.required(atState(state).beaconStateAccessors())
+        .getPtc(state, slot);
   }
 
   public Optional<BLSPublicKey> getValidatorPubKey(

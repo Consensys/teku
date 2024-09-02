@@ -75,7 +75,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -111,7 +111,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedBlsToExecutionChange>
       gossipedSignedBlsToExecutionChangeProcessor;
   protected OperationProcessor<SignedExecutionPayloadEnvelope> gossipedExecutionPayloadProcessor;
-  protected OperationProcessor<PayloadAttestation> gossipedPayloadAttestationProcessor;
+  protected OperationProcessor<PayloadAttestationMessage> gossipedPayloadAttestationProcessor;
   protected OperationProcessor<SignedExecutionPayloadHeader>
       gossipedExecutionPayloadHeaderProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
@@ -577,7 +577,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedPayloadAttestationProcessor(
-      final OperationProcessor<PayloadAttestation> gossipedPayloadAttestationProcessor) {
+      final OperationProcessor<PayloadAttestationMessage> gossipedPayloadAttestationProcessor) {
     checkNotNull(gossipedPayloadAttestationProcessor);
     this.gossipedPayloadAttestationProcessor = gossipedPayloadAttestationProcessor;
     return this;

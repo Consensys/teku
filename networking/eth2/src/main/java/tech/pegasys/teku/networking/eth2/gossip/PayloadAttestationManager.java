@@ -19,13 +19,12 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class PayloadAttestationManager extends AbstractGossipManager<PayloadAttestation> {
+public class PayloadAttestationManager extends AbstractGossipManager<PayloadAttestationMessage> {
 
   public PayloadAttestationManager(
       final RecentChainData recentChainData,
@@ -34,7 +33,7 @@ public class PayloadAttestationManager extends AbstractGossipManager<PayloadAtte
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<PayloadAttestation> processor,
+      final OperationProcessor<PayloadAttestationMessage> processor,
       final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
@@ -44,15 +43,13 @@ public class PayloadAttestationManager extends AbstractGossipManager<PayloadAtte
         gossipEncoding,
         forkInfo,
         processor,
-        SchemaDefinitionsEip7732.required(
-                spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
-            .getPayloadAttestationSchema(),
+        PayloadAttestationMessage.SSZ_SCHEMA,
         payloadAttestation -> spec.computeEpochAtSlot(payloadAttestation.getData().getSlot()),
         spec.getNetworkingConfig(),
         debugDataDumper);
   }
 
-  public void publishAttestationPayload(final PayloadAttestation message) {
+  public void publishAttestationPayload(final PayloadAttestationMessage message) {
     publishMessage(message);
   }
 }

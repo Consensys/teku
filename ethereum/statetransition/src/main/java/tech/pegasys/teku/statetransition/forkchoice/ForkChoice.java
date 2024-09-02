@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -232,6 +234,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     executionLayer));
   }
 
+  /** Import an execution payload to the store. */
+  // EIP7732 TODO: implement
+  @SuppressWarnings("unused")
+  public SafeFuture<Void> onExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final ExecutionLayerChannel executionLayer) {
+    return SafeFuture.COMPLETE;
+  }
+
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidatableAttestation attestation) {
     return attestationStateSelector
@@ -266,6 +277,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               }
               return SafeFuture.failedFuture(error);
             });
+  }
+
+  // EIP7732 TODO: implement
+  @SuppressWarnings("unused")
+  public SafeFuture<Void> onPayloadAttestationMessage(
+      final PayloadAttestationMessage payloadAttestationMessage) {
+    return SafeFuture.COMPLETE;
   }
 
   public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {

@@ -49,6 +49,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -125,7 +126,8 @@ public class ValidatorApiHandlerIntegrationTest {
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager,
           new BlockProductionAndPublishingPerformanceFactory(
-              new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0));
+              new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
+          ReceivedBlockEventsChannel.NOOP);
 
   @BeforeEach
   public void setup() {
