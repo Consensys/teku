@@ -86,7 +86,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             spec,
             validatorConfig.isValidatorClientUseSszBlocksEnabled(),
             validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
-            asyncRunner);
+            asyncRunner,
+            validatorConfig.isAttestationsV2ApisEnabled());
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
             .map(
@@ -97,7 +98,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                         spec,
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
                         validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
-                        asyncRunner))
+                        asyncRunner,
+                        validatorConfig.isAttestationsV2ApisEnabled()))
             .toList();
 
     final EventChannels eventChannels = serviceConfig.getEventChannels();

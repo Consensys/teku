@@ -33,11 +33,16 @@ import tech.pegasys.teku.validator.remote.typedef.FailureListResponse;
 
 public class SendAggregateAndProofsRequest extends AbstractTypeDefRequest {
 
+  private final boolean attestationsV2ApisEnabled;
   private final Spec spec;
 
   public SendAggregateAndProofsRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final Spec spec) {
+      final HttpUrl baseEndpoint,
+      final OkHttpClient okHttpClient,
+      final boolean attestationsV2ApisEnabled,
+      final Spec spec) {
     super(baseEndpoint, okHttpClient);
+    this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
     this.spec = spec;
   }
 
@@ -50,7 +55,7 @@ public class SendAggregateAndProofsRequest extends AbstractTypeDefRequest {
         spec.atSlot(aggregateAndProofs.getFirst().getMessage().getAggregate().getData().getSlot())
             .getMilestone();
 
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+    if (attestationsV2ApisEnabled || specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       return submitPostElectra(aggregateAndProofs, specMilestone);
     }
     return submitPreElectra(aggregateAndProofs);
