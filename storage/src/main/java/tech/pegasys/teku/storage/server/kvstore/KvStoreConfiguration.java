@@ -45,7 +45,7 @@ public class KvStoreConfiguration {
 
   public static final int DEFAULT_LEVELDB_BLOCK_SIZE = 4096;
 
-  public static final int DEFAULT_LEVELDB_WRITE_BUFFER_SIZE = 4194304;
+  public static final int DEFAULT_LEVELDB_WRITE_BUFFER_SIZE = 4_194_304;
 
   public static final int DEFAULT_LEVELDB_MAX_OPEN_FILES = 1000;
 
@@ -67,7 +67,7 @@ public class KvStoreConfiguration {
   /** RocksDb Time to roll a log file (1 day = 3600 * 24 seconds) */
   public static final long TIME_TO_ROLL_LOG_FILE = 86_400L;
 
-  public static final long ROCKSDB_BLOCK_SIZE = 32768;
+  public static final long ROCKSDB_BLOCK_SIZE = 32_768;
 
   /* --------------- Safe to Change Properties ------------ */
 
