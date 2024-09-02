@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_U
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -60,7 +59,6 @@ public class PostBlock extends AbstractPostBlock {
   }
 
   @Override
-  // should be deleted ?
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (syncDataProvider.isSyncing()) {
       request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
@@ -115,8 +113,6 @@ public class PostBlock extends AbstractPostBlock {
             SC_ACCEPTED,
             "Block has been successfully broadcast, but failed validation and has not been imported.")
         .withBadRequestResponse(Optional.of("Unable to parse request body."))
-        // .response(
-        //     SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
         .withChainDataResponses()
         .build();
   }

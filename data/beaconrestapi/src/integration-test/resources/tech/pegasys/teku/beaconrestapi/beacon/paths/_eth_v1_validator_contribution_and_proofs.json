@@ -1,42 +1,59 @@
 {
-  "post" : {
-    "tags" : [ "Validator", "Validator Required Api" ],
-    "operationId" : "publishContributionAndProofs",
-    "summary" : "Publish multiple contribution and proofs",
-    "description" : "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.",
-    "requestBody" : {
-      "content" : {
-        "application/json" : {
-          "schema" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/SignedContributionAndProof"
+  "post": {
+    "tags": [
+      "Validator",
+      "Validator Required Api"
+    ],
+    "operationId": "publishContributionAndProofs",
+    "summary": "Publish multiple contribution and proofs",
+    "description": "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.",
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SignedContributionAndProof"
             }
           }
         }
       }
     },
-    "responses" : {
-      "200" : {
-        "description" : "Successful response",
-        "content" : { }
+    "responses": {
+      "200": {
+        "description": "Successful response",
+        "content": {}
       },
-      "400" : {
-        "description" : "The request could not be processed, check the response for more information.",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
+      "204": {
+        "description": "Data is unavailable because the chain has not yet reached genesis",
+        "content": {}
+      },
+      "400": {
+        "description": "The request could not be processed, check the response for more information.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "500" : {
-        "description" : "Internal server error",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503": {
+        "description": "Service unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
             }
           }
         }

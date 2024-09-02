@@ -17,9 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -122,6 +125,16 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
   }
 
   @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() {
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   void metadata_shouldHandle200_phase0Attestation() throws IOException {
     setHandler(
@@ -153,16 +166,6 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
         parseAttestationFromResponse(data, electraAttestationSchema);
 
     assertThat(attestation.requiresCommitteeBits()).isTrue();
-  }
-
-  @Test
-  void metadata_shouldHandle204() {
-    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
-  }
-
-  @Test
-  void metadata_shouldHandle503() {
-    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 
   private <T extends Attestation> T parseAttestationFromResponse(

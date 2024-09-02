@@ -19,7 +19,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
@@ -138,14 +140,12 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     return Resources.toString(Resources.getResource(PostAttestationsV2Test.class, fileName), UTF_8);
   }
 
-  @Test
-  // @TestTemplate ?
+  @TestTemplate
   void metadata_shouldHandle204() {
     verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
 
-  @Test
-  // @TestTemplate ?
+  @TestTemplate
   void metadata_shouldHandle503() {
     verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
