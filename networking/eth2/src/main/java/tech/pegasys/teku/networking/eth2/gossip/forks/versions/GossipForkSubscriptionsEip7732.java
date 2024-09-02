@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -42,7 +42,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElectra {
 
   private final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
-  private final OperationProcessor<PayloadAttestation> payloadAttestationProcessor;
+  private final OperationProcessor<PayloadAttestationMessage> payloadAttestationProcessor;
   private final OperationProcessor<SignedExecutionPayloadHeader> executionPayloadHeaderProcessor;
 
   private ExecutionPayloadManager executionPayloadManager;
@@ -71,7 +71,7 @@ public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElect
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor,
-      final OperationProcessor<PayloadAttestation> payloadAttestationProcessor,
+      final OperationProcessor<PayloadAttestationMessage> payloadAttestationProcessor,
       final OperationProcessor<SignedExecutionPayloadHeader> executionPayloadHeaderProcessor,
       final DebugDataDumper debugDataDumper) {
     super(
@@ -154,8 +154,8 @@ public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElect
   }
 
   @Override
-  public void publishPayloadAttestation(final PayloadAttestation payloadAttestation) {
-    payloadAttestationManager.publishAttestationPayload(payloadAttestation);
+  public void publishPayloadAttestation(final PayloadAttestationMessage payloadAttestationMessage) {
+    payloadAttestationManager.publishAttestationPayload(payloadAttestationMessage);
   }
 
   @Override

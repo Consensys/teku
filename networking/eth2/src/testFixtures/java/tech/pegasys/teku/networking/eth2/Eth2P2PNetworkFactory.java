@@ -91,7 +91,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnv
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -147,7 +147,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<SignedContributionAndProof> signedContributionAndProofProcessor;
     protected OperationProcessor<ValidatableSyncCommitteeMessage> syncCommitteeMessageProcessor;
     protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
-    protected OperationProcessor<PayloadAttestation> payloadAttestationProcessor;
+    protected OperationProcessor<PayloadAttestationMessage> payloadAttestationProcessor;
     protected OperationProcessor<SignedExecutionPayloadHeader> executionPayloadHeaderProcessor;
     protected OperationProcessor<SignedBlsToExecutionChange> signedBlsToExecutionChangeProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
@@ -714,7 +714,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedPayloadAttestationProcessor(
-        final OperationProcessor<PayloadAttestation> gossipedPayloadAttestationProcessor) {
+        final OperationProcessor<PayloadAttestationMessage> gossipedPayloadAttestationProcessor) {
       checkNotNull(gossipedPayloadAttestationProcessor);
       this.payloadAttestationProcessor = gossipedPayloadAttestationProcessor;
       return this;

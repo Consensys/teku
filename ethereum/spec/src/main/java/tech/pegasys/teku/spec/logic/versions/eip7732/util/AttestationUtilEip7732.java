@@ -13,16 +13,22 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.util;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.PayloadStatus;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -39,6 +45,27 @@ public class AttestationUtilEip7732 extends AttestationUtilElectra {
       final BeaconStateAccessors beaconStateAccessors,
       final MiscHelpers miscHelpers) {
     super(specConfig, schemaDefinitions, beaconStateAccessors, miscHelpers);
+  }
+
+  @Override
+  public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
+      final PayloadAttestationData payloadAttestationData,
+      final UInt64 genesisTime,
+      final UInt64 currentTimeMillis) {
+    final UInt64 slot = payloadAttestationData.getSlot();
+    final UInt64 minimumAllowedTime =
+        secondsToMillis(genesisTime.plus(slot.times(specConfig.getSecondsPerSlot())))
+            .minusMinZero(specConfig.getMaximumGossipClockDisparity());
+    final UInt64 lastAllowedTime =
+        secondsToMillis(genesisTime.plus(slot.plus(ONE).times(specConfig.getSecondsPerSlot())))
+            .plus(specConfig.getMaximumGossipClockDisparity());
+    if (currentTimeMillis.isGreaterThan(lastAllowedTime)) {
+      return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
+    }
+    if (currentTimeMillis.isLessThan(minimumAllowedTime)) {
+      return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
+    }
+    return Optional.empty();
   }
 
   /** get_attesting_indices is modified to ignore PTC votes */

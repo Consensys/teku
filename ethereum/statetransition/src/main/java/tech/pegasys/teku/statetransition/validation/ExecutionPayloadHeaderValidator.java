@@ -48,9 +48,8 @@ public class ExecutionPayloadHeaderValidator {
 
   private final Set<SlotAndBuilderIndex> receivedValidExecutionPayloadHeaderInfoSet =
       LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
-  // EIP7732 TODO: not sure here what is the best value
   private final Map<SlotAndParentBlockHash, UInt64> highestBidValue =
-      LimitedMap.createSynchronizedLRU(10);
+      LimitedMap.createSynchronizedLRU(32);
 
   public ExecutionPayloadHeaderValidator(
       final Spec spec,
@@ -121,6 +120,7 @@ public class ExecutionPayloadHeaderValidator {
                */
               if (header
                   .getValue()
+                  .plus(spec.atSlot(header.getSlot()).getConfig().getEjectionBalance())
                   .isGreaterThan(state.getBalances().get(builderIndex.intValue()).get())) {
                 return InternalValidationResult.IGNORE;
               }
