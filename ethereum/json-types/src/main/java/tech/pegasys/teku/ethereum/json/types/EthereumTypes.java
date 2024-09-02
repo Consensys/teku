@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.json.types;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumTypeHeaderDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -34,6 +36,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+
+import static java.util.Collections.emptyList;
 
 public class EthereumTypes {
 
@@ -85,6 +89,17 @@ public class EthereumTypes {
   public static final StringValueTypeDefinition<SpecMilestone> MILESTONE_TYPE =
       new EnumTypeDefinition<>(
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
+
+  public static final EnumTypeHeaderDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
+          new EnumTypeHeaderDefinition<>(
+                  SpecMilestone.class,
+                  milestone -> milestone.name().toLowerCase(Locale.ROOT),
+                  Optional.of("phase0"),
+                  Optional.of("Required in response so client can deserialize returned json or ssz data more effectively."),
+                  Optional.of("test"),
+                  Optional.of(Set.of()),
+                  Optional.of(true));
+
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {
