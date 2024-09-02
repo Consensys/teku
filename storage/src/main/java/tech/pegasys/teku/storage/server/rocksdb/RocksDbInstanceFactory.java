@@ -165,7 +165,7 @@ public class RocksDbInstanceFactory {
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
-        .setCompressionType(CompressionType.NO_COMPRESSION)
+        .setCompressionType(CompressionType.LZ4_COMPRESSION)
         .setTtl(0)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
