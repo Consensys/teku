@@ -96,6 +96,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -139,6 +140,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
+  private final PayloadAttestationManager payloadAttestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
@@ -166,6 +168,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
+      final PayloadAttestationManager payloadAttestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
       final ActiveValidatorTracker activeValidatorTracker,
       final DutyMetrics dutyMetrics,
@@ -189,6 +192,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
+    this.payloadAttestationManager = payloadAttestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.activeValidatorTracker = activeValidatorTracker;
     this.dutyMetrics = dutyMetrics;
@@ -520,13 +524,47 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
       final UInt64 slot) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedPayloadAttestations(
       final List<PayloadAttestationMessage> attestations) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
+    return SafeFuture.collectAll(attestations.stream().map(this::processPayloadAttestation))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  private SafeFuture<InternalValidationResult> processPayloadAttestation(
+      final PayloadAttestationMessage attestation) {
+    return payloadAttestationManager
+        .addPayloadAttestation(attestation, Optional.empty())
+        .thenPeek(
+            result -> {
+              if (!result.isReject()) {
+                // TODO update dutyMetrics and performanceTracker
+              } else {
+                VALIDATOR_LOGGER.producedInvalidPayloadAttestation(
+                    attestation.getData().getSlot(),
+                    result.getDescription().orElse("Unknown reason"));
+              }
+            })
+        .exceptionally(
+            error -> {
+              LOG.error(
+                  "Failed to send signed payload attestation for slot {}, block {}",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  error);
+              return InternalValidationResult.reject(
+                  "Failed to send signed payload attestation for slot %s, block %s: %s",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  getMessageOrSimpleName(error));
+            });
   }
 
   private AttestationData createAttestationData(

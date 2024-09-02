@@ -96,9 +96,7 @@ public abstract class NoOpSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signPayloadAttestationData(
-      final UInt64 slot,
-      final PayloadAttestationData payloadAttestationData,
-      final ForkInfo forkInfo) {
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }
 

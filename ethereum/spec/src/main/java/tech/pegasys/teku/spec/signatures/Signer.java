@@ -40,7 +40,7 @@ public interface Signer {
   SafeFuture<BLSSignature> signAttestationData(AttestationData attestationData, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signPayloadAttestationData(
-      UInt64 slot, PayloadAttestationData payloadAttestationData, ForkInfo forkInfo);
+      PayloadAttestationData payloadAttestationData, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signAggregationSlot(UInt64 slot, ForkInfo forkInfo);
 
