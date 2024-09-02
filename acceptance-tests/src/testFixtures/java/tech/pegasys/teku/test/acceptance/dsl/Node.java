@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -87,10 +86,7 @@ public abstract class Node {
         getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
     this.container =
         new NodeContainer(dockerImage)
-            .withImagePullPolicy(
-                dockerImage.endsWith(TekuDockerVersion.LOCAL_BUILD.getVersion())
-                    ? PullPolicy.defaultPolicy()
-                    : PullPolicy.ageBased(Duration.ofMinutes(5)))
+            .withImagePullPolicy(PullPolicy.defaultPolicy())
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));

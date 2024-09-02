@@ -214,12 +214,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   private void countDuplicateBlobSidecar(final RemoteOrigin origin) {
     switch (origin) {
-      case RPC -> poolStatsCounters
-          .labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE)
-          .inc();
-      case GOSSIP -> poolStatsCounters
-          .labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
-          .inc();
+      case RPC ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE).inc();
+      case GOSSIP ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE).inc();
     }
   }
 
@@ -459,9 +457,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         remoteOrigin -> {
           switch (remoteOrigin) {
             case RPC -> poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_SUBTYPE).inc();
-            case GOSSIP -> poolStatsCounters
-                .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_SUBTYPE)
-                .inc();
+            case GOSSIP ->
+                poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_SUBTYPE).inc();
           }
         });
   }
@@ -470,12 +467,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     maybeRemoteOrigin.ifPresent(
         remoteOrigin -> {
           switch (remoteOrigin) {
-            case RPC -> poolStatsCounters
-                .labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE)
-                .inc();
-            case GOSSIP -> poolStatsCounters
-                .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
-                .inc();
+            case RPC ->
+                poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE).inc();
+            case GOSSIP ->
+                poolStatsCounters
+                    .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
+                    .inc();
           }
         });
   }

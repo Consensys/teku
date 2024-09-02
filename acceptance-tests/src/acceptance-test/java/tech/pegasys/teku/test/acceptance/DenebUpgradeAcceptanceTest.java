@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,19 +26,12 @@ import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
-/**
- * The test is based on `shanghaiTime` and `cancunTime` in Besu EL genesis config as the only option
- * to start these forks on Besu. There is a bit of magic on assumption of node starting time, which
- * should be eliminated when there will be an options `shanghaiBlock` and `cancunBlock`. When it's
- * available, please, upgrade the test to use them instead of time and enable it.
- */
 public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
 
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  @Disabled("Switch Besu genesis to shanghaiBlock and cancunBlock when it's available and enable")
   void shouldUpgradeToDeneb() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
@@ -54,7 +46,8 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
 
     BesuNode primaryEL =
         createBesuNode(
-            BesuDockerVersion.STABLE,
+            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
+            BesuDockerVersion.DEVELOP,
             config ->
                 config
                     .withMergeSupport()
@@ -66,7 +59,8 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
 
     BesuNode secondaryEL =
         createBesuNode(
-            BesuDockerVersion.STABLE,
+            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
+            BesuDockerVersion.DEVELOP,
             config ->
                 config
                     .withMergeSupport()

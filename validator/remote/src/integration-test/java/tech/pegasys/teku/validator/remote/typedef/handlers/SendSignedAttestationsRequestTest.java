@@ -19,9 +19,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,14 +41,17 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
-@TestSpecContext(milestone = SpecMilestone.CAPELLA, network = Eth2Network.MINIMAL)
+@TestSpecContext(
+    milestone = {SpecMilestone.CAPELLA, SpecMilestone.ELECTRA},
+    network = Eth2Network.MINIMAL)
 public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTestBase {
   private SendSignedAttestationsRequest request;
   private List<Attestation> attestations;
 
   @BeforeEach
   public void setup() {
-    this.request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient);
+    this.request =
+        new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, false, spec);
     this.attestations = List.of(dataStructureUtil.randomAttestation());
   }
 
@@ -65,8 +71,23 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
                     .getJsonTypeDefinition()));
     assertThat(data).isEqualTo(attestations);
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-    assertThat(recordedRequest.getPath())
-        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(emptyMap()));
+      assertThat(recordedRequest.getRequestUrl().queryParameterNames())
+          .isEqualTo(Collections.emptySet());
+      assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
+          .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    } else {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
+    }
+  }
+
+  @TestTemplate
+  void shouldNoTMakeRequestIfEmptyAttestationsList() {
+    request.submit(Collections.emptyList());
+    assertThat(mockWebServer.getRequestCount()).isZero();
   }
 
   @TestTemplate
@@ -85,5 +106,19 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
                 "{\"code\": 400,\"message\": \"z\",\"failures\": [{\"index\": 3,\"message\": \"a\"}]}"));
     final List<SubmitDataError> response = request.submit(attestations);
     assertThat(response).containsExactly(new SubmitDataError(UInt64.valueOf(3), "a"));
+  }
+
+  @TestTemplate
+  void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled()
+      throws InterruptedException, JsonProcessingException {
+    this.request =
+        new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, true, spec);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+    final List<SubmitDataError> response = request.submit(attestations);
+    assertThat(response).isEmpty();
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(emptyMap()));
   }
 }

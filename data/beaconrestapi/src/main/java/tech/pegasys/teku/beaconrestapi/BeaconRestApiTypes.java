@@ -69,6 +69,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
@@ -232,15 +233,12 @@ public class BeaconRestApiTypes {
           CoreTypes.UINT64_TYPE.withDescription(
               "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."));
 
-  private static final StringValueTypeDefinition<BroadcastValidationParameter>
-      BROADCAST_VALIDATION_VALUE =
-          DeserializableTypeDefinition.string(BroadcastValidationParameter.class)
-              .formatter(BroadcastValidationParameter::toString)
-              .parser(BroadcastValidationParameter::valueOf)
-              .example("consensus_and_equivocation")
-              .description(PARAM_BROADCAST_VALIDATION_DESCRIPTION)
-              .format("string")
-              .build();
+  private static final EnumTypeDefinition<BroadcastValidationParameter> BROADCAST_VALIDATION_VALUE =
+      new EnumTypeDefinition.EnumTypeBuilder<>(BroadcastValidationParameter.class)
+          .example("consensus_and_equivocation")
+          .description(PARAM_BROADCAST_VALIDATION_DESCRIPTION)
+          .format("string")
+          .build();
 
   public static final ParameterMetadata<BroadcastValidationParameter>
       PARAMETER_BROADCAST_VALIDATION =
