@@ -154,7 +154,7 @@ public class PayloadAttestationDuty implements Duty {
     return validatorWithIndex
         .validator
         .getSigner()
-        .signPayloadAttestationData(attestationData, forkInfo)
+        .signPayloadAttestationData(slot, attestationData, forkInfo)
         .thenApply(
             signature ->
                 createSignedPayloadAttestation(attestationData, validatorWithIndex, signature))
