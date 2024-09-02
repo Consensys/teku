@@ -969,6 +969,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
+            payloadAttestationManager,
             attestationTopicSubscriber,
             activeValidatorTracker,
             DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec),

@@ -79,10 +79,8 @@ public class SlashingProtectedSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signPayloadAttestationData(
-      final UInt64 slot,
-      final PayloadAttestationData payloadAttestationData,
-      final ForkInfo forkInfo) {
-    return delegate.signPayloadAttestationData(slot, payloadAttestationData, forkInfo);
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
+    return delegate.signPayloadAttestationData(payloadAttestationData, forkInfo);
   }
 
   private Supplier<String> slashableBlockMessage(final BeaconBlock block) {

@@ -75,14 +75,12 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForPayloadAttestationData(
-      final UInt64 slot,
-      final PayloadAttestationData payloadAttestationData,
-      final ForkInfo forkInfo) {
-    final SpecVersion specVersion = spec.atSlot(slot);
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atSlot(payloadAttestationData.getSlot());
     final Bytes32 domain =
         spec.getDomain(
             Domain.BEACON_ATTESTER,
-            spec.computeEpochAtSlot(slot),
+            spec.computeEpochAtSlot(payloadAttestationData.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     return specVersion.miscHelpers().computeSigningRoot(payloadAttestationData, domain);

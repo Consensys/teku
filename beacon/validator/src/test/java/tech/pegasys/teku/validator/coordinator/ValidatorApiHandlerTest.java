@@ -119,6 +119,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -146,6 +147,8 @@ class ValidatorApiHandlerTest {
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
+  private final PayloadAttestationManager payloadAttestationManager =
+      mock(PayloadAttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
@@ -211,6 +214,7 @@ class ValidatorApiHandlerTest {
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
+            payloadAttestationManager,
             attestationTopicSubscriptions,
             activeValidatorTracker,
             dutyMetrics,
@@ -467,6 +471,7 @@ class ValidatorApiHandlerTest {
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
+            payloadAttestationManager,
             attestationTopicSubscriptions,
             activeValidatorTracker,
             dutyMetrics,
@@ -1368,6 +1373,7 @@ class ValidatorApiHandlerTest {
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
+            payloadAttestationManager,
             attestationTopicSubscriptions,
             activeValidatorTracker,
             dutyMetrics,
