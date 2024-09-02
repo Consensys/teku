@@ -1,122 +1,114 @@
 {
-  "get": {
-    "tags": [
-      "Beacon"
-    ],
-    "operationId": "getPoolAttestations",
-    "summary": "Get Attestations from operations pool",
-    "description": "Retrieves attestations known by the node but not necessarily incorporated into any block.",
-    "deprecated": true,
-    "parameters": [
-      {
-        "name": "slot",
-        "in": "query",
-        "schema": {
-          "type": "string",
-          "description": "`UInt64` Slot to query in the canonical chain.",
-          "example": "1",
-          "format": "uint64"
-        }
-      },
-      {
-        "name": "committee_index",
-        "in": "query",
-        "schema": {
-          "type": "string",
-          "description": "`uint64` Committee index to query.",
-          "example": "1",
-          "format": "uint64"
-        }
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getPoolAttestations",
+    "summary" : "Get Attestations from operations pool",
+    "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
+    "deprecated" : true,
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`UInt64` Slot to query in the canonical chain.",
+        "example" : "1",
+        "format" : "uint64"
       }
-    ],
-    "responses": {
-      "200": {
-        "description": "Request successful",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/GetPoolAttestationsResponse"
+    }, {
+      "name" : "committee_index",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Committee index to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetPoolAttestationsResponse"
             }
           }
         }
       },
-      "400": {
-        "description": "The request could not be processed, check the response for more information.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "500": {
-        "description": "Internal server error",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       }
     }
   },
-  "post": {
-    "tags": [
-      "Beacon",
-      "Validator Required Api"
-    ],
-    "operationId": "submitPoolAttestations",
-    "summary": "Submit Attestation objects to node",
-    "description": "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
-    "requestBody": {
-      "content": {
-        "application/json": {
-          "schema": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AttestationPhase0"
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "submitPoolAttestations",
+    "summary" : "Submit Attestation objects to node",
+    "description" : "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AttestationPhase0"
             }
           }
         }
       }
     },
-    "responses": {
-      "200": {
-        "description": "Attestations are stored in pool and broadcast on appropriate subnet",
-        "content": {}
+    "responses" : {
+      "200" : {
+        "description" : "Attestations are stored in pool and broadcast on appropriate subnet",
+        "content" : { }
       },
-      "204": {
-        "description": "Data is unavailable because the chain has not yet reached genesis",
-        "content": {}
-      },
-      "400": {
-        "description": "Errors with one or more attestations",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorListBadRequest"
+      "400" : {
+        "description" : "Errors with one or more attestations",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorListBadRequest"
             }
           }
         }
       },
-      "500": {
-        "description": "Internal server error",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "503": {
-        "description": "Service unavailable",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }

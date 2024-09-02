@@ -1,115 +1,96 @@
 {
-  "post": {
-    "tags": [
-      "Beacon",
-      "Validator Required Api"
-    ],
-    "operationId": "publishBlock",
-    "summary": "Publish a signed block",
-    "description": "Instructs the beacon node to broadcast a newly signed beacon block to the beacon network, to be included in the beacon chain. A success response (20x) indicates that the block passed gossip validation and was successfully broadcast onto the network. The beacon node is also expected to integrate the block into the state, but may broadcast it before doing so, so as to aid timely delivery of the block. Should the block fail full validation, a separate success response code (202) is used to indicate that the block was successfully broadcast but failed integration. After Deneb, this additionally instructs the beacon node to broadcast all given signed blobs.",
-    "parameters": [
-      {
-        "name": "Eth-Consensus-Version",
-        "in": "header",
-        "schema": {
-          "type": "string",
-          "enum": [
-            "phase0",
-            "altair",
-            "bellatrix",
-            "capella",
-            "deneb",
-            "electra"
-          ],
-          "description": "Version of the block being submitted, if using SSZ encoding."
-        }
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "publishBlock",
+    "summary" : "Publish a signed block",
+    "description" : "Instructs the beacon node to broadcast a newly signed beacon block to the beacon network, to be included in the beacon chain. A success response (20x) indicates that the block passed gossip validation and was successfully broadcast onto the network. The beacon node is also expected to integrate the block into the state, but may broadcast it before doing so, so as to aid timely delivery of the block. Should the block fail full validation, a separate success response code (202) is used to indicate that the block was successfully broadcast but failed integration. After Deneb, this additionally instructs the beacon node to broadcast all given signed blobs.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the block being submitted, if using SSZ encoding."
       }
-    ],
-    "requestBody": {
-      "content": {
-        "application/octet-stream": {
-          "schema": {
-            "type": "string",
-            "format": "binary"
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
           }
         },
-        "application/json": {
-          "schema": {
-            "title": "SignedBeaconBlock",
-            "type": "object",
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/SignedBeaconBlockPhase0"
-              },
-              {
-                "$ref": "#/components/schemas/SignedBeaconBlockAltair"
-              },
-              {
-                "$ref": "#/components/schemas/SignedBeaconBlockBellatrix"
-              },
-              {
-                "$ref": "#/components/schemas/SignedBeaconBlockCapella"
-              },
-              {
-                "$ref": "#/components/schemas/SignedBlockContentsDeneb"
-              },
-              {
-                "$ref": "#/components/schemas/SignedBlockContentsElectra"
-              }
-            ]
+        "application/json" : {
+          "schema" : {
+            "title" : "SignedBeaconBlock",
+            "type" : "object",
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
+            }, {
+              "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
+            }, {
+              "$ref" : "#/components/schemas/SignedBlockContentsElectra"
+            } ]
           }
         }
       }
     },
-    "responses": {
-      "415": {
-        "description": "Unsupported media-type supplied",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+    "responses" : {
+      "415" : {
+        "description" : "Unsupported media-type supplied",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "200": {
-        "description": "Block has been successfully broadcast, validated and imported.",
-        "content": {}
+      "200" : {
+        "description" : "Block has been successfully broadcast, validated and imported.",
+        "content" : { }
       },
-      "202": {
-        "description": "Block has been successfully broadcast, but failed validation and has not been imported.",
-        "content": {}
+      "202" : {
+        "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
+        "content" : { }
       },
-      "204": {
-        "description": "Data is unavailable because the chain has not yet reached genesis",
-        "content": {}
-      },
-      "400": {
-        "description": "Unable to parse request body.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "400" : {
+        "description" : "Unable to parse request body.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "503": {
-        "description": "Service unavailable",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "500": {
-        "description": "Internal server error",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }

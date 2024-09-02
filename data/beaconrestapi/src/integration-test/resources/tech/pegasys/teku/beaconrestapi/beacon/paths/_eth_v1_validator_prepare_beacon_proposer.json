@@ -1,63 +1,46 @@
 {
-  "post": {
-    "tags": [
-      "Validator",
-      "Validator Required Api"
-    ],
-    "operationId": "prepareBeaconProposer",
-    "summary": "Provide beacon node with proposals for the given validators.",
-    "description": "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\nNote that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\nAlso note that requests containing currently inactive or unknown validator indices will be accepted, as they may become active at a later epoch.",
-    "requestBody": {
-      "content": {
-        "application/json": {
-          "schema": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BeaconPreparableProposer"
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "prepareBeaconProposer",
+    "summary" : "Provide beacon node with proposals for the given validators.",
+    "description" : "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\nNote that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\nAlso note that requests containing currently inactive or unknown validator indices will be accepted, as they may become active at a later epoch.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BeaconPreparableProposer"
             }
           }
         }
       }
     },
-    "responses": {
-      "200": {
-        "description": "Preparation information has been received.",
-        "content": {}
+    "responses" : {
+      "200" : {
+        "description" : "Preparation information has been received.",
+        "content" : { }
       },
-      "202": {
-        "description": "Block has been successfully broadcast, but failed validation and has not been imported.",
-        "content": {}
+      "202" : {
+        "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
+        "content" : { }
       },
-      "204": {
-        "description": "Data is unavailable because the chain has not yet reached genesis",
-        "content": {}
-      },
-      "400": {
-        "description": "Invalid parameter supplied.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "400" : {
+        "description" : "Invalid parameter supplied.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "500": {
-        "description": "Internal server error",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
-            }
-          }
-        }
-      },
-      "503": {
-        "description": "Service unavailable",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
