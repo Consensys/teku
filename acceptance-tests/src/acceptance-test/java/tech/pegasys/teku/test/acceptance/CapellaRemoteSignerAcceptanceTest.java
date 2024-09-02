@@ -39,7 +39,7 @@ public class CapellaRemoteSignerAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void denebWithRemoteSigner() throws Exception {
+  void capellaWithRemoteSigner() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
