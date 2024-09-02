@@ -72,8 +72,10 @@ public class DeletableSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signPayloadAttestationData(
-      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
-    return sign(() -> delegate.signPayloadAttestationData(payloadAttestationData, forkInfo));
+      final UInt64 slot,
+      final PayloadAttestationData payloadAttestationData,
+      final ForkInfo forkInfo) {
+    return sign(() -> delegate.signPayloadAttestationData(slot, payloadAttestationData, forkInfo));
   }
 
   @Override

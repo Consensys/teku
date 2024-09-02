@@ -73,8 +73,12 @@ public class LocalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signPayloadAttestationData(
-      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
+      final UInt64 slot,
+      final PayloadAttestationData payloadAttestationData,
+      final ForkInfo forkInfo) {
+    return sign(
+        signingRootUtil.signingRootForPayloadAttestationData(
+            slot, payloadAttestationData, forkInfo));
   }
 
   @Override
