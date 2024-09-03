@@ -40,10 +40,11 @@ public class ExecutionPayloadManager {
     this.executionLayerChannel = executionLayerChannel;
   }
 
-  @SuppressWarnings("unused")
   public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
       final Optional<UInt64> arrivalTimestamp) {
+    arrivalTimestamp.ifPresent(
+        timestamp -> LOG.trace("Processing payload attestation at {}", timestamp));
     final SafeFuture<InternalValidationResult> validationResult =
         executionPayloadValidator.validate(signedExecutionPayloadEnvelope);
     validationResult.thenAccept(

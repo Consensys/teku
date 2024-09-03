@@ -83,17 +83,21 @@ public class PayloadAttestationValidator {
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
+    // The block being voted for (data.beacon_block_root) passes validation.
+    // It must pass validation to be in the store.
+    // If it's not in the store, it may not have been processed yet so save for future.
+    if (!recentChainData.containsBlock(data.getBeaconBlockRoot())) {
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
+
     return recentChainData
         .retrieveBlockState(data.getBeaconBlockRoot())
         .thenApply(
             maybeState -> {
-              /*
-               * [IGNORE] The message's block data.beacon_block_root has been seen (via both gossip and non-gossip sources) (a client MAY queue attestation for processing once the block is retrieved. Note a client might want to request payload after).
-               * [REJECT] The message's block data.beacon_block_root passes validation.
-               */
               if (maybeState.isEmpty()) {
-                return InternalValidationResult.reject(
-                    "Block with root %s hasn't been imported", data.getBeaconBlockRoot());
+                // We know the block is imported but now don't have a state to validate against
+                // Must have got pruned between checks
+                return InternalValidationResult.IGNORE;
               }
               final BeaconState state = maybeState.get();
               /*
