@@ -85,16 +85,19 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
   private final SchemaDefinitionCache schemaDefinitionCache;
+  private final boolean attestationsV2ApisEnabled;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
       final HttpUrl baseEndpoint,
       final Spec spec,
-      final boolean preferSszBlockEncoding) {
+      final boolean preferSszBlockEncoding,
+      final boolean attestationsV2ApisEnabled) {
     super(baseEndpoint, okHttpClient);
     this.spec = spec;
     schemaDefinitionCache = new SchemaDefinitionCache(spec);
     this.preferSszBlockEncoding = preferSszBlockEncoding;
+    this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -151,7 +154,11 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
       final Optional<UInt64> requestedBuilderBoostFactor) {
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(
-            getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
+            getBaseEndpoint(),
+            getOkHttpClient(),
+            schemaDefinitionCache,
+            slot,
+            preferSszBlockEncoding);
     return produceBlockRequest.submit(randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
@@ -247,6 +254,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
             slot,
             attestationHashTreeRoot,
             committeeIndex,
+            attestationsV2ApisEnabled,
             spec);
     return createAggregateAttestationRequest.submit();
   }
@@ -268,13 +276,15 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public List<SubmitDataError> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     final SendAggregateAndProofsRequest sendAggregateAndProofsRequest =
-        new SendAggregateAndProofsRequest(getBaseEndpoint(), getOkHttpClient(), spec);
+        new SendAggregateAndProofsRequest(
+            getBaseEndpoint(), getOkHttpClient(), attestationsV2ApisEnabled, spec);
     return sendAggregateAndProofsRequest.submit(aggregateAndProofs);
   }
 
   public List<SubmitDataError> sendSignedAttestations(final List<Attestation> attestations) {
     final SendSignedAttestationsRequest sendSignedAttestationsRequest =
-        new SendSignedAttestationsRequest(getBaseEndpoint(), getOkHttpClient(), spec);
+        new SendSignedAttestationsRequest(
+            getBaseEndpoint(), getOkHttpClient(), attestationsV2ApisEnabled, spec);
     return sendSignedAttestationsRequest.submit(attestations);
   }
 }
