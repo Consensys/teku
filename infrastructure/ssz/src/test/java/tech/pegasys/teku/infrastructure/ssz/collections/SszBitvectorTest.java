@@ -250,4 +250,14 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
         SszBitvectorImpl.fromBytes(bitvector.getSchema(), bytes, (int) size);
     SszDataAssert.assertThatSszData(result).isEqualByAllMeansTo(bitvector);
   }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void testFromHexString(final SszBitvector bitvector) {
+    final String hexString = bitvector.sszSerialize().toHexString();
+    final long size = bitvector.getSchema().getMaxLength();
+    final SszBitvector result =
+        SszBitvectorImpl.fromHexString(bitvector.getSchema(), hexString, (int) size);
+    SszDataAssert.assertThatSszData(result).isEqualByAllMeansTo(bitvector);
+  }
 }

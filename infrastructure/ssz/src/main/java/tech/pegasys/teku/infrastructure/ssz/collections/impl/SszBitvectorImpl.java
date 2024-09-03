@@ -40,6 +40,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
     return new SszBitvectorImpl(schema, BitvectorImpl.fromBytes(value, size));
   }
 
+  public static SszBitvector fromHexString(
+      final SszBitvectorSchema<?> schema, final String hexString, final int size) {
+    return fromBytes(schema, Bytes.fromHexString(hexString), size);
+  }
+
   private final BitvectorImpl value;
 
   public SszBitvectorImpl(final SszVectorSchema<SszBit, ?> schema, final TreeNode backingNode) {
