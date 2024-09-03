@@ -279,13 +279,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  // EIP7732 TODO: implement
-  @SuppressWarnings("unused")
-  public SafeFuture<Void> onPayloadAttestationMessage(
-      final PayloadAttestationMessage payloadAttestationMessage) {
-    return SafeFuture.COMPLETE;
-  }
-
   public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
     onForkChoiceThread(
             () -> {
@@ -299,6 +292,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             })
         .ifExceptionGetsHereRaiseABug();
   }
+
+  // EIP7732 TODO: implement
+  @SuppressWarnings("unused")
+  public SafeFuture<AttestationProcessingResult> onPayloadAttestationMessage(
+      final PayloadAttestationMessage payloadAttestationMessage) {
+    return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
+  }
+
+  // EIP7732 TODO: implement
+  @SuppressWarnings("unused")
+  public void applyPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {}
 
   public void onAttesterSlashing(
       final AttesterSlashing slashing,

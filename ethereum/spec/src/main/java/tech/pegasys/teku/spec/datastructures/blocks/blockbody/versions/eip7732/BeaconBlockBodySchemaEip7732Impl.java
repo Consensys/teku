@@ -246,4 +246,11 @@ public class BeaconBlockBodySchemaEip7732Impl
     return (SignedExecutionPayloadHeaderSchema)
         getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER));
   }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
+    return (SszListSchema<PayloadAttestation, ?>)
+        getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
+  }
 }

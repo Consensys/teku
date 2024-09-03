@@ -36,10 +36,11 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHea
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-@SuppressWarnings("unused")
-public class ExecutionPayloadHeaderValidator {
+public class ExecutionPayloadHeaderValidator
+    implements OperationValidator<SignedExecutionPayloadHeader> {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -60,7 +61,9 @@ public class ExecutionPayloadHeaderValidator {
     this.recentChainData = recentChainData;
   }
 
-  SafeFuture<InternalValidationResult> validate(final SignedExecutionPayloadHeader signedHeader) {
+  @Override
+  public SafeFuture<InternalValidationResult> validateForGossip(
+      final SignedExecutionPayloadHeader signedHeader) {
     final ExecutionPayloadHeaderEip7732 header =
         ExecutionPayloadHeaderEip7732.required(signedHeader.getMessage());
     final UInt64 builderIndex = header.getBuilderIndex();
@@ -167,6 +170,13 @@ public class ExecutionPayloadHeaderValidator {
 
               return InternalValidationResult.ACCEPT;
             });
+  }
+
+  // EIP7732 TODO: implement
+  @Override
+  public Optional<OperationInvalidReason> validateForBlockInclusion(
+      final BeaconState stateAtBlockSlot, final SignedExecutionPayloadHeader operation) {
+    return Optional.empty();
   }
 
   private boolean verifyBuilderSignature(
