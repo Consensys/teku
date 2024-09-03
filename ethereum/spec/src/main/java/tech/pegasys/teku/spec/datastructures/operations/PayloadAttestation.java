@@ -14,18 +14,18 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class PayloadAttestation
-    extends Container3<PayloadAttestation, SszBitlist, PayloadAttestationData, SszSignature> {
+    extends Container3<PayloadAttestation, SszBitvector, PayloadAttestationData, SszSignature> {
 
   PayloadAttestation(
       final PayloadAttestationSchema schema,
-      final SszBitlist aggregationBits,
+      final SszBitvector aggregationBits,
       final PayloadAttestationData data,
       final BLSSignature signature) {
     super(schema, aggregationBits, data, new SszSignature(signature));
@@ -35,7 +35,7 @@ public class PayloadAttestation
     super(type, backingNode);
   }
 
-  public SszBitlist getAggregationBits() {
+  public SszBitvector getAggregationBits() {
     return getField0();
   }
 

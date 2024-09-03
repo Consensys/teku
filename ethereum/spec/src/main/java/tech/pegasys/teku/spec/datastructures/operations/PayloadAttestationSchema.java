@@ -14,27 +14,28 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class PayloadAttestationSchema
-    extends ContainerSchema3<PayloadAttestation, SszBitlist, PayloadAttestationData, SszSignature> {
+    extends ContainerSchema3<
+        PayloadAttestation, SszBitvector, PayloadAttestationData, SszSignature> {
 
   public PayloadAttestationSchema(final long ptcSize) {
     super(
         "PayloadAttestation",
-        namedSchema("aggregation_bits", SszBitlistSchema.create(ptcSize)),
+        namedSchema("aggregation_bits", SszBitvectorSchema.create(ptcSize)),
         namedSchema("data", PayloadAttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
   public PayloadAttestation create(
-      final SszBitlist aggregationBits,
+      final SszBitvector aggregationBits,
       final PayloadAttestationData data,
       final BLSSignature signature) {
     return new PayloadAttestation(this, aggregationBits, data, signature);
