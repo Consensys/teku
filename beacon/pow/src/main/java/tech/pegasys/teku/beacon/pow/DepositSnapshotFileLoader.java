@@ -50,7 +50,7 @@ public class DepositSnapshotFileLoader {
           Eth2Network.SEPOLIA, "sepolia.ssz",
           Eth2Network.LUKSO, "lukso.ssz",
           Eth2Network.HOLESKY, "holesky.ssz",
-          Eth2Network.EPHEMERY, "https://github.com/ephemery-testnet/ephemery-genesis/releases/latest/download/genesis.ssz");
+          Eth2Network.EPHEMERY, "ephemery.ssz");
 
   private static final Logger LOG = LogManager.getLogger();
 
