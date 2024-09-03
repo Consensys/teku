@@ -107,7 +107,6 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
         .withJwtSecretFile(JWT_FILE)
-        .withTrustedSetupFromClasspath("mainnet-trusted-setup.txt")
         .withReadOnlyKeystorePath(validatorKeys)
         .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
         .withStartupTargetPeerCount(0)
