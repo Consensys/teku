@@ -291,14 +291,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
-                  "Attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  "Payload attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
     // what state can we use? If the current or next epoch, we can use the best state,
     // which would guarantee no state regeneration
     final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
 
-    LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
+    LOG.trace(
+        "Retrieving payload attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
         .thenApply(
@@ -528,7 +529,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
 
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
+    return combinedChainDataClient
+        .getTimelyExecutionPayload(slot)
+        .thenApply(
+            executionPayloadEnvelope ->
+                executionPayloadEnvelope.map(
+                    payloadStatusAndBeaconBlockRoot ->
+                        PayloadAttestationData.SSZ_SCHEMA.create(
+                            payloadStatusAndBeaconBlockRoot.beaconBlockRoot(),
+                            slot,
+                            payloadStatusAndBeaconBlockRoot.payloadStatus().getCode())));
   }
 
   @Override

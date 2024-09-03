@@ -13,10 +13,19 @@
 
 package tech.pegasys.teku.spec.constants;
 
-@SuppressWarnings("unused")
-public class PayloadStatus {
-  public static final Byte PAYLOAD_ABSENT = 0;
-  public static final Byte PAYLOAD_PRESENT = 1;
-  public static final Byte PAYLOAD_WITHHELD = 2;
-  public static final Byte PAYLOAD_INVALID_STATUS = 3;
+public enum PayloadStatus {
+  PAYLOAD_ABSENT((byte) 0),
+  PAYLOAD_PRESENT((byte) 1),
+  PAYLOAD_WITHHELD((byte) 2),
+  PAYLOAD_INVALID_STATUS((byte) 3);
+
+  private final byte code;
+
+  PayloadStatus(final byte code) {
+    this.code = code;
+  }
+
+  public byte getCode() {
+    return code;
+  }
 }
