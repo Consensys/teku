@@ -55,6 +55,7 @@ public class GetFinalizedStateSlotBefore extends RestApiEndpoint {
             .response(SC_OK, "Request successful", UINT64_RESPONSE)
             .withServiceUnavailableResponse()
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

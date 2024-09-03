@@ -66,6 +66,7 @@ public class GetAllBlocksAtSlot extends RestApiEndpoint {
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withServiceUnavailableResponse()
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

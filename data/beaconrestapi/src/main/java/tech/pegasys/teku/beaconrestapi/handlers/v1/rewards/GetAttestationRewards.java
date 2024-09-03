@@ -107,6 +107,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .withNotImplementedResponse()
             .withNotFoundResponse()
             .withInternalErrorResponse()
+            .withChainDataResponses()
             .build());
 
     this.chainDataProvider = chainDataProvider;

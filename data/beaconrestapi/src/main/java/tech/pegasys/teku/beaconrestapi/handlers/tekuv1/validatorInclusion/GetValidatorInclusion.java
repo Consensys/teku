@@ -71,6 +71,7 @@ public class GetValidatorInclusion extends RestApiEndpoint {
                     .build())
             .withNotFoundResponse()
             .withServiceUnavailableResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

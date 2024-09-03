@@ -75,6 +75,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
         .queryListParam(BLOB_INDICES_PARAMETER)
         .response(SC_OK, "Request successful", getResponseType(schemaCache), getSszResponseType())
         .withNotFoundResponse()
+        .withChainDataResponses()
         .build();
   }
 

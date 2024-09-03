@@ -79,6 +79,7 @@ public class PostValidatorLiveness extends RestApiEndpoint {
             .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE, 1))
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)
             .withServiceUnavailableResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
     this.nodeDataProvider = nodeDataProvider;
