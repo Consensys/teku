@@ -1309,7 +1309,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionPayloadValidator executionPayloadValidator =
         new ExecutionPayloadValidator(spec, gossipValidationHelper, recentChainData);
     executionPayloadManager =
-        new ExecutionPayloadManager(executionPayloadValidator, forkChoice, executionLayer);
+        new ExecutionPayloadManager(
+            executionPayloadValidator, forkChoice, recentChainData, executionLayer);
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadValidator);
   }
 

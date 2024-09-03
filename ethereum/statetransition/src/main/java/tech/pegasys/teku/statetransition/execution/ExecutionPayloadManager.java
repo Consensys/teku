@@ -23,20 +23,24 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ExecutionPayloadManager {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionPayloadValidator executionPayloadValidator;
   private final ForkChoice forkChoice;
+  private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayerChannel;
 
   public ExecutionPayloadManager(
       final ExecutionPayloadValidator executionPayloadValidator,
       final ForkChoice forkChoice,
+      final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayerChannel) {
     this.executionPayloadValidator = executionPayloadValidator;
     this.forkChoice = forkChoice;
+    this.recentChainData = recentChainData;
     this.executionLayerChannel = executionLayerChannel;
   }
 
@@ -50,9 +54,15 @@ public class ExecutionPayloadManager {
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case ACCEPT, SAVE_FOR_FUTURE -> forkChoice
-                .onExecutionPayload(signedExecutionPayloadEnvelope, executionLayerChannel)
-                .finish(err -> LOG.error("Failed to process received execution payload.", err));
+            case ACCEPT, SAVE_FOR_FUTURE -> {
+              arrivalTimestamp.ifPresentOrElse(
+                  timestamp ->
+                      recentChainData.onExecutionPayload(signedExecutionPayloadEnvelope, timestamp),
+                  () -> LOG.error("arrivalTimestamp tracking must be enabled to support Eip7732"));
+              forkChoice
+                  .onExecutionPayload(signedExecutionPayloadEnvelope, executionLayerChannel)
+                  .finish(err -> LOG.error("Failed to process received execution payload.", err));
+            }
             case IGNORE, REJECT -> {}
           }
         });
