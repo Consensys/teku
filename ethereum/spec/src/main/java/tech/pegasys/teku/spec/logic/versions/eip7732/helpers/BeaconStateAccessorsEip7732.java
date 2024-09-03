@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -89,7 +89,7 @@ public class BeaconStateAccessorsEip7732 extends BeaconStateAccessorsElectra {
   public IntList getPayloadAttestingIndices(
       final BeaconState state, final UInt64 slot, final PayloadAttestation payloadAttestation) {
     final IntList ptc = getPtc(state, slot);
-    final SszBitlist aggregationBits = payloadAttestation.getAggregationBits();
+    final SszBitvector aggregationBits = payloadAttestation.getAggregationBits();
     final IntList attestingIndices = new IntArrayList();
     for (int i = 0; i < ptc.size(); i++) {
       if (aggregationBits.isSet(i)) {
