@@ -25,7 +25,7 @@
       "type" : "string",
       "description" : "PeerDAS custody subnet count.",
       "example" : "1",
-      "format" : "uint8"
+      "format" : "uint64"
     }
   }
 }

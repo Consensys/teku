@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.ver
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -27,7 +26,8 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 
 public class MetadataMessageSchemaEip7594
-    extends ContainerSchema4<MetadataMessageEip7594, SszUInt64, SszBitvector, SszBitvector, SszByte>
+    extends ContainerSchema4<
+        MetadataMessageEip7594, SszUInt64, SszBitvector, SszBitvector, SszUInt64>
     implements MetadataMessageSchema<MetadataMessageEip7594> {
   public MetadataMessageSchemaEip7594(final NetworkingSpecConfig networkingSpecConfig) {
     super(
@@ -37,7 +37,7 @@ public class MetadataMessageSchemaEip7594
             "attnets", SszBitvectorSchema.create(networkingSpecConfig.getAttestationSubnetCount())),
         namedSchema(
             "syncnets", SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)),
-        namedSchema("custody_subnet_count", SszPrimitiveSchemas.UINT8_SCHEMA));
+        namedSchema("custody_subnet_count", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   @Override

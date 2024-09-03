@@ -88,7 +88,8 @@ public class DiscoveryPeer {
         && Objects.equal(getNodeAddress(), that.getNodeAddress())
         && Objects.equal(getEnrForkId(), that.getEnrForkId())
         && Objects.equal(getPersistentAttestationSubnets(), that.getPersistentAttestationSubnets())
-        && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets());
+        && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets())
+        && Objects.equal(getDasCustodySubnetCount(), that.getDasCustodySubnetCount());
   }
 
   @Override
@@ -98,7 +99,8 @@ public class DiscoveryPeer {
         getNodeAddress(),
         getEnrForkId(),
         getPersistentAttestationSubnets(),
-        getSyncCommitteeSubnets());
+        getSyncCommitteeSubnets(),
+        getDasCustodySubnetCount());
   }
 
   @Override
@@ -109,6 +111,7 @@ public class DiscoveryPeer {
         .add("enrForkId", enrForkId)
         .add("persistentSubnets", persistentAttestationSubnets)
         .add("syncCommitteeSubnets", syncCommitteeSubnets)
+        .add("dasCustodySubnetCount", dasCustodySubnetCount)
         .toString();
   }
 }
