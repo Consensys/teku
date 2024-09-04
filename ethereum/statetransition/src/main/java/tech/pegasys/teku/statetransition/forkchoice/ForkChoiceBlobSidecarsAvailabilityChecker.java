@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT_EIP7732;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
@@ -36,6 +38,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -381,6 +385,11 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   static Duration calculateCompletionTimeout(final Spec spec, final UInt64 slot) {
-    return Duration.ofMillis((spec.atSlot(slot).getConfig().getSecondsPerSlot() * 1000L) / 3);
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final int slotInterval =
+        specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)
+            ? INTERVALS_PER_SLOT_EIP7732
+            : INTERVALS_PER_SLOT;
+    return Duration.ofMillis((specVersion.getConfig().getSecondsPerSlot() * 1000L) / slotInterval);
   }
 }
