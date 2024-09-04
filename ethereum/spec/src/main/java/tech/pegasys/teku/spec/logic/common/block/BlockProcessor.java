@@ -168,6 +168,9 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
+  void processExecutionPayloadHeader(MutableBeaconState state, BeaconBlock block)
+      throws BlockProcessingException;
+
   void processDepositRequests(MutableBeaconState state, SszList<DepositRequest> depositRequests)
       throws BlockProcessingException;
 

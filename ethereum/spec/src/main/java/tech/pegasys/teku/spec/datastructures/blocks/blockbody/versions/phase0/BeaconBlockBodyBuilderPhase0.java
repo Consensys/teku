@@ -27,9 +27,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -133,6 +135,20 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     // No BlobKzgCommitments in phase 0
     return this;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder signedExecutionPayloadHeader(
+      final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
+    // No SignedExecutionPayloadHeader in phase 0
+    return null;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder payloadAttestations(
+      final SszList<PayloadAttestation> payloadAttestations) {
+    // No PayloadAttestation in phase 0
+    return null;
   }
 
   protected void validate() {

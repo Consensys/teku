@@ -34,10 +34,8 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
@@ -114,33 +112,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   @Override
-  protected void processOperationsNoValidation(
-      final MutableBeaconState state,
-      final BeaconBlockBody body,
-      final IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    super.processOperationsNoValidation(state, body, indexedAttestationCache);
-
-    safelyProcess(
-        () -> {
-          processDepositRequests(
-              state,
-              body.getOptionalExecutionPayload()
-                  .flatMap(ExecutionPayload::toVersionElectra)
-                  .map(ExecutionPayloadElectra::getDepositRequests)
-                  .orElseThrow(
-                      () ->
-                          new BlockProcessingException(
-                              "Deposit requests were not found during block processing.")));
-          this.processConsolidationRequests(
-              state,
-              BeaconBlockBodyElectra.required(body)
-                  .getExecutionPayload()
-                  .getConsolidationRequests());
-        });
-  }
-
-  @Override
   protected void verifyOutstandingDepositsAreProcessed(
       final BeaconState state, final BeaconBlockBody body) {
     final UInt64 eth1DepositIndexLimit =
@@ -171,7 +142,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final Optional<ExecutionPayload> executionPayload,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    this.processWithdrawalRequests(
+    processWithdrawalRequests(
         state, getWithdrawalRequestsFromBlock(executionPayload), validatorExitContextSupplier);
   }
 
@@ -350,13 +321,19 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                     "Withdrawal requests were not found during block processing."));
   }
 
+  @Override
+  protected void processDepositRequests(
+      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+      throws BlockProcessingException {
+    processDepositRequests(state, getDepositRequestsFromBlock(executionPayload));
+  }
+
   /*
    Implements process_deposit_request from consensus-specs (EIP-6110)
   */
   @Override
   public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final SszList<DepositRequest> depositRequests) {
     final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     for (DepositRequest depositRequest : depositRequests) {
       // process_deposit_request
@@ -374,6 +351,24 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           Optional.empty(),
           false);
     }
+  }
+
+  private SszList<DepositRequest> getDepositRequestsFromBlock(
+      final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
+    return maybeExecutionPayload
+        .flatMap(ExecutionPayload::toVersionElectra)
+        .map(ExecutionPayloadElectra::getDepositRequests)
+        .orElseThrow(
+            () ->
+                new BlockProcessingException(
+                    "Deposit requests were not found during block processing."));
+  }
+
+  @Override
+  protected void processConsolidationRequests(
+      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+      throws BlockProcessingException {
+    processConsolidationRequests(state, getConsolidationRequestsFromBlock(executionPayload));
   }
 
   /**
@@ -512,6 +507,17 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     state.getPendingConsolidations().append(pendingConsolidation);
 
     LOG.debug("process_consolidation_request: created {}", pendingConsolidation);
+  }
+
+  private SszList<ConsolidationRequest> getConsolidationRequestsFromBlock(
+      final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
+    return maybeExecutionPayload
+        .flatMap(ExecutionPayload::toVersionElectra)
+        .map(ExecutionPayloadElectra::getConsolidationRequests)
+        .orElseThrow(
+            () ->
+                new BlockProcessingException(
+                    "Consolidation requests were not found during block processing."));
   }
 
   @Override

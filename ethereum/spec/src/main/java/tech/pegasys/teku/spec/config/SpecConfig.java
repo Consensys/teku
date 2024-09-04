@@ -188,4 +188,8 @@ public interface SpecConfig extends NetworkingSpecConfig {
   default Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.empty();
   }
+
+  default Optional<SpecConfigEip7732> toVersionEip7732() {
+    return Optional.empty();
+  }
 }

@@ -449,8 +449,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
+          processDepositRequests(state, body.getOptionalExecutionPayload());
           processWithdrawalRequests(
               state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
+          processConsolidationRequests(state, body.getOptionalExecutionPayload());
         });
   }
 
@@ -900,6 +902,24 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
+  @Override
+  public void processExecutionPayloadHeader(final MutableBeaconState state, final BeaconBlock block)
+      throws BlockProcessingException {
+    // No processExecutionPayloadHeader until EIP-7732
+  }
+
+  protected void processDepositRequests(
+      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+      throws BlockProcessingException {
+    // No DepositRequests until Electra
+  }
+
+  @Override
+  public void processDepositRequests(
+      final MutableBeaconState state, final SszList<DepositRequest> depositRequests) {
+    // No DepositRequests until Electra
+  }
+
   protected void processWithdrawalRequests(
       final MutableBeaconState state,
       final Optional<ExecutionPayload> executionPayload,
@@ -909,19 +929,18 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
-  public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
-    // No DepositRequests until Electra
-  }
-
-  @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
       final SszList<WithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     // No WithdrawalRequests until Electra
+  }
+
+  protected void processConsolidationRequests(
+      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
+      throws BlockProcessingException {
+    // No Consolidations until Electra
   }
 
   @Override
