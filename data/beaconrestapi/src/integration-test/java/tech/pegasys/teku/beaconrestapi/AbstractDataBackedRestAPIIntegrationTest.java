@@ -39,6 +39,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
@@ -457,6 +458,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected JsonNode getResponseData(final Response response) throws IOException {
     final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
     return body.get("data");
+  }
+
+  protected void checkEmptyBodyToRoute(final String route, final int expectedResponseCode)
+      throws IOException {
+    final Response response = post(route, OBJECT_MAPPER.writeValueAsString(""));
+    Assertions.assertThat(response.code()).isEqualTo(expectedResponseCode);
   }
 
   @AfterEach
