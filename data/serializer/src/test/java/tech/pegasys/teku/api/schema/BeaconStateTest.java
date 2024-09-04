@@ -42,6 +42,7 @@ public class BeaconStateTest {
           case CAPELLA -> new BeaconStateCapella(beaconStateInternal);
           case DENEB -> new BeaconStateDeneb(beaconStateInternal);
           case ELECTRA -> new BeaconStateElectra(beaconStateInternal);
+          case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
         };
 
     assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);
