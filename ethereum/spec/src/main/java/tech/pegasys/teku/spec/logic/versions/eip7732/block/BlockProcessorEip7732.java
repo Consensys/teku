@@ -210,7 +210,8 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
       }
 
       final boolean payloadWasPresent = data.getSlot().equals(state.getLatestFullSlot());
-      final boolean votedPresent = data.getPayloadStatus().equals(PayloadStatus.PAYLOAD_PRESENT);
+      final boolean votedPresent =
+          data.getPayloadStatus().equals(PayloadStatus.PAYLOAD_PRESENT.getCode());
 
       final UInt64 proposerRewardDenominator =
           WEIGHT_DENOMINATOR

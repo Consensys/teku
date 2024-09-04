@@ -86,7 +86,7 @@ public class AttestationUtilEip7732 extends AttestationUtilElectra {
       final BeaconState state, final IndexedPayloadAttestation indexedPayloadAttestation) {
     // Verify the data is valid
     if (indexedPayloadAttestation.getData().getPayloadStatus()
-        >= PayloadStatus.PAYLOAD_INVALID_STATUS) {
+        >= PayloadStatus.PAYLOAD_INVALID_STATUS.getCode()) {
       return false;
     }
 

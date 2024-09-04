@@ -71,7 +71,7 @@ public class PayloadAttestationValidator {
     /*
      * [REJECT] The message's payload status is a valid status, i.e. data.payload_status < PAYLOAD_INVALID_STATUS.
      */
-    if (data.getPayloadStatus().compareTo(PayloadStatus.PAYLOAD_INVALID_STATUS) >= 0) {
+    if (data.getPayloadStatus().compareTo(PayloadStatus.PAYLOAD_INVALID_STATUS.getCode()) >= 0) {
       return completedFuture(
           InternalValidationResult.reject("The message's payload status is invalid"));
     }

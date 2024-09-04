@@ -44,6 +44,7 @@ public class ExecutionPayloadManager {
     this.executionLayerChannel = executionLayerChannel;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
       final Optional<UInt64> arrivalTimestamp) {
