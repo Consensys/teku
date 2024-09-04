@@ -579,6 +579,20 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return validatedBlockProvider.getBlock(root);
   }
 
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      retrieveExecutionPayloadEnvelopeByBlockRoot(final Bytes32 blockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return store.retrieveExecutionPayloadEnvelope(blockRoot);
+  }
+
+  // EIP7732 TODO: implement
+  public Optional<SignedExecutionPayloadEnvelope>
+      getRecentlyValidatedExecutionPayloadEnvelopeByRoot(final Bytes32 blockRoot) {
+    return Optional.empty();
+  }
+
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
