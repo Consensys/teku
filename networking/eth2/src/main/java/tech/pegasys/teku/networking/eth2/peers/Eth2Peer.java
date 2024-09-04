@@ -50,6 +50,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
+      final RateTracker executionPayloadRequestTracker,
       final RateTracker requestTracker,
       final KZG kzg) {
     return new DefaultEth2Peer(
@@ -62,6 +63,7 @@ public interface Eth2Peer extends Peer, SyncSource {
         peerChainValidator,
         blockRequestTracker,
         blobSidecarsRequestTracker,
+        executionPayloadRequestTracker,
         requestTracker,
         kzg);
   }
@@ -124,6 +126,14 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   void adjustBlobSidecarsRequest(
       RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
+
+  Optional<RequestApproval> approveExecutionPayloadEnvelopesRequest(
+      ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+      long executionPayloadEnvelopesCount);
+
+  void adjustExecutionPayloadEnvelopesRequest(
+      RequestApproval executionPayloadEnvelopesRequest,
+      long returnedExecutionPayloadEnvelopesCount);
 
   boolean approveRequest();
 
