@@ -21,9 +21,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -79,6 +81,11 @@ public interface BeaconBlockBodyBuilder {
   }
 
   BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
+
+  BeaconBlockBodyBuilder signedExecutionPayloadHeader(
+      SignedExecutionPayloadHeader signedExecutionPayloadHeader);
+
+  BeaconBlockBodyBuilder payloadAttestations(SszList<PayloadAttestation> payloadAttestations);
 
   BeaconBlockBody build();
 }

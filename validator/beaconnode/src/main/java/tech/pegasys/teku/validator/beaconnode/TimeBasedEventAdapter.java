@@ -16,14 +16,17 @@ package tech.pegasys.teku.validator.beaconnode;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT_EIP7732;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
+import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.RepeatingTask;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
@@ -65,13 +68,115 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     final UInt64 nextSlotStartTimeMillis = secondsToMillis(nextSlotStartTime);
 
     final UInt64 millisPerSlot = secondsToMillis(secondsPerSlot);
-    final UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
-    final UInt64 twoThirdsSlot = millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT);
 
+    final SpecMilestone currentMilestone = spec.atSlot(currentSlot).getMilestone();
+
+    if (currentMilestone.equals(SpecMilestone.EIP7732)) {
+      final UInt64 attestationDueSlotTimeOffset =
+          millisPerSlot.dividedBy(INTERVALS_PER_SLOT_EIP7732);
+      final UInt64 aggregationDueSlotTimeOffset =
+          millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT_EIP7732);
+      final UInt64 timelinessAttestationDueSlotTimeOffset =
+          millisPerSlot.times(3).dividedBy(INTERVALS_PER_SLOT_EIP7732);
+
+      scheduleDuty(
+          nextSlotStartTimeMillis,
+          millisPerSlot,
+          attestationDueSlotTimeOffset,
+          this::onAttestationCreationDue);
+      scheduleDuty(
+          nextSlotStartTimeMillis,
+          millisPerSlot,
+          aggregationDueSlotTimeOffset,
+          this::onAggregationDue);
+      scheduleDuty(
+          nextSlotStartTimeMillis,
+          millisPerSlot,
+          timelinessAttestationDueSlotTimeOffset,
+          this::onPayloadTimelinessAttestationDue);
+      return;
+    }
+
+    if (spec.getForkSchedule()
+        .getHighestSupportedMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      final UInt64 eip7732StartTimeMillis =
+          secondsToMillis(
+              spec.getSlotStartTime(
+                  spec.computeStartSlotAtEpoch(
+                      spec.getForkSchedule().getFork(SpecMilestone.EIP7732).getEpoch()),
+                  genesisTime));
+
+      final UInt64 attestationDueSlotTimeOffset = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
+      final UInt64 aggregationDueSlotTimeOffset =
+          millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT);
+
+      final UInt64 newAttestationDueSlotTimeOffset =
+          millisPerSlot.dividedBy(INTERVALS_PER_SLOT_EIP7732);
+      final UInt64 newAggregationDueSlotTimeOffset =
+          millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT_EIP7732);
+      final UInt64 timelinessAttestationDueSlotTimeOffset =
+          millisPerSlot.times(3).dividedBy(INTERVALS_PER_SLOT_EIP7732);
+
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(attestationDueSlotTimeOffset),
+          millisPerSlot,
+          this::onAttestationCreationDue,
+          eip7732StartTimeMillis,
+          (__, ___) ->
+              scheduleDuty(
+                  millisPerSlot, newAttestationDueSlotTimeOffset, this::onAttestationCreationDue));
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(aggregationDueSlotTimeOffset),
+          millisPerSlot,
+          this::onAggregationDue,
+          eip7732StartTimeMillis,
+          (__, ___) -> {
+            scheduleDuty(millisPerSlot, newAggregationDueSlotTimeOffset, this::onAggregationDue);
+            scheduleDuty(
+                millisPerSlot,
+                timelinessAttestationDueSlotTimeOffset,
+                this::onPayloadTimelinessAttestationDue);
+          });
+      return;
+    }
+
+    // no EIP7732 support
+
+    final UInt64 attestationDueSlotTimeOffset = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
+    final UInt64 aggregationDueSlotTimeOffset =
+        millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT);
+
+    scheduleDuty(
+        nextSlotStartTimeMillis,
+        millisPerSlot,
+        attestationDueSlotTimeOffset,
+        this::onAttestationCreationDue);
+    scheduleDuty(
+        nextSlotStartTimeMillis,
+        millisPerSlot,
+        aggregationDueSlotTimeOffset,
+        this::onAggregationDue);
+  }
+
+  private void scheduleDuty(
+      final UInt64 period, final UInt64 offset, final RepeatingTask dutyTask) {
+    scheduleDuty(getNextSlotStartMillis(), period, offset, dutyTask);
+  }
+
+  private void scheduleDuty(
+      final UInt64 nextSlotStartTimeMillis,
+      final UInt64 period,
+      final UInt64 offset,
+      final RepeatingTask dutyTask) {
     taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartTimeMillis.plus(oneThirdSlot), millisPerSlot, this::onAttestationCreationDue);
-    taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartTimeMillis.plus(twoThirdsSlot), millisPerSlot, this::onAggregationDue);
+        nextSlotStartTimeMillis.plus(offset), period, dutyTask);
+  }
+
+  private UInt64 getNextSlotStartMillis() {
+    final UInt64 currentSlot = getCurrentSlot();
+    final UInt64 nextSlotStartTime = spec.getSlotStartTime(currentSlot.plus(1), genesisTime);
+    return secondsToMillis(nextSlotStartTime);
   }
 
   private UInt64 getCurrentSlot() {
@@ -89,6 +194,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           "Skipping block creation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
+    LOG.info("EVENT *** onStartSlot");
     validatorTimingChannel.onSlot(slot);
     validatorTimingChannel.onBlockProductionDue(slot);
   }
@@ -100,6 +206,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       LOG.warn("Skipping attestation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
+    LOG.info("EVENT *** onAttestationCreationDue");
     validatorTimingChannel.onAttestationCreationDue(slot);
   }
 
@@ -110,7 +217,21 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       LOG.warn("Skipping aggregation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
+    LOG.info("EVENT *** onAggregationDue");
     validatorTimingChannel.onAttestationAggregationDue(slot);
+  }
+
+  private void onPayloadTimelinessAttestationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
+    if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
+      LOG.warn(
+          "Skipping timeliness attestation for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    LOG.info("EVENT *** onPayloadTimelinessAttestationDue");
+    validatorTimingChannel.onPayloadAttestationDue(slot);
   }
 
   private UInt64 getCurrentSlotForMillis(final UInt64 millis) {
