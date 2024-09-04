@@ -204,6 +204,7 @@ public final class DataStructureUtil {
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
+  private Function<Integer, BLSSignature> signatureGenerator = BLSTestUtil::randomSignature;
 
   public DataStructureUtil(final Spec spec) {
     this(92892824, spec);
@@ -216,6 +217,12 @@ public final class DataStructureUtil {
 
   public DataStructureUtil withPubKeyGenerator(final Supplier<BLSPublicKey> pubKeyGenerator) {
     this.pubKeyGenerator = pubKeyGenerator;
+    return this;
+  }
+
+  public DataStructureUtil withSignatureGenerator(
+      Function<Integer, BLSSignature> signatureGenerator) {
+    this.signatureGenerator = signatureGenerator;
     return this;
   }
 
@@ -299,7 +306,7 @@ public final class DataStructureUtil {
   }
 
   public BLSSignature randomSignature() {
-    return BLSTestUtil.randomSignature(nextSeed());
+    return signatureGenerator.apply(nextSeed());
   }
 
   public SszSignature randomSszSignature() {

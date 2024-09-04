@@ -14,6 +14,12 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
-public record DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier) {}
+public record DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier) {
+  public static DataColumnSlotAndIdentifier createFromSidecar(DataColumnSidecar sidecar) {
+    return new DataColumnSlotAndIdentifier(
+        sidecar.getSlot(), DataColumnIdentifier.createFromSidecar(sidecar));
+  }
+}

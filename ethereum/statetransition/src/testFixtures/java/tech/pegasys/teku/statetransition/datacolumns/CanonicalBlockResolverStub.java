@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -28,6 +29,7 @@ public class CanonicalBlockResolverStub implements CanonicalBlockResolver {
   private final Map<UInt64, BeaconBlock> chain = new HashMap<>();
 
   private final DataStructureUtil dataStructureUtil;
+  private AtomicLong blockAccessCounter = new AtomicLong();
 
   public CanonicalBlockResolverStub(Spec spec) {
     dataStructureUtil = new DataStructureUtil(0, spec);
@@ -42,12 +44,21 @@ public class CanonicalBlockResolverStub implements CanonicalBlockResolver {
     BeaconBlockBody beaconBlockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(blobCount);
     BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
-    chain.put(slotU, block);
+    addBlock(block);
     return block;
+  }
+
+  public void addBlock(BeaconBlock block) {
+    chain.put(block.getSlot(), block);
   }
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> getBlockAtSlot(UInt64 slot) {
+    blockAccessCounter.incrementAndGet();
     return SafeFuture.completedFuture(Optional.ofNullable(chain.get(slot)));
+  }
+
+  public AtomicLong getBlockAccessCounter() {
+    return blockAccessCounter;
   }
 }
