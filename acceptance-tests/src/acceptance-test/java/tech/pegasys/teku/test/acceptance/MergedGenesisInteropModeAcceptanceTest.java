@@ -72,7 +72,6 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
             .withBellatrixEpoch(UInt64.ZERO)
             .withTotalTerminalDifficulty(0)
             .withStartupTargetPeerCount(0)
-            .withTrustedSetupFromClasspath("mainnet-trusted-setup.txt")
             .withInteropNumberOfValidators(64)
             .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
 
