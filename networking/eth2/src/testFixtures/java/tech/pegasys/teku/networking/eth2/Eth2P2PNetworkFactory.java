@@ -462,7 +462,8 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
-        case EIP7732 -> new GossipForkSubscriptionsEip7732(
+        case EIP7732 ->
+            new GossipForkSubscriptionsEip7732(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,

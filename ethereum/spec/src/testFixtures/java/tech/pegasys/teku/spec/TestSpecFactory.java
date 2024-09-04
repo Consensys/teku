@@ -269,14 +269,15 @@ public class TestSpecFactory {
                       .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
                       .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
                       .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO));
-          case EIP7732 -> builder ->
+          case EIP7732 ->
+              builder ->
                   builder
-                          .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                          .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                          .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                          .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                          .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
-                          .eip7732Builder(e -> e.eip7732ForkEpoch(UInt64.ZERO));
+                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                      .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                      .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                      .eip7732Builder(e -> e.eip7732ForkEpoch(UInt64.ZERO));
         };
     return create(
         SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),

@@ -327,7 +327,8 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               debugDataDumper);
-      case EIP7732 -> new GossipForkSubscriptionsEip7732(
+      case EIP7732 ->
+          new GossipForkSubscriptionsEip7732(
               forkAndSpecMilestone.getFork(),
               spec,
               asyncRunner,
