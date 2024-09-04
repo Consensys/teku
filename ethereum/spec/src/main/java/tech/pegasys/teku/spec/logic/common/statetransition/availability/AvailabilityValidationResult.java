@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,9 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns;
+package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
-
-public record ColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier) {}
+public enum AvailabilityValidationResult {
+  NOT_REQUIRED,
+  NOT_AVAILABLE,
+  INVALID,
+  VALID
+}

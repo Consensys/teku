@@ -38,12 +38,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.statetransition.forkchoice.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
@@ -201,7 +201,7 @@ public class BlobSidecarManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
-        .isEqualTo(BlobSidecarsAvailabilityChecker.NOT_REQUIRED);
+        .isEqualTo(AvailabilityChecker.NOOP_BLOBSIDECAR);
   }
 
   @Test
@@ -212,7 +212,7 @@ public class BlobSidecarManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
-        .isEqualTo(BlobSidecarsAndValidationResult.NOT_REQUIRED);
+        .isEqualTo(DataAndValidationResult.notRequired());
   }
 
   @Test
@@ -226,7 +226,7 @@ public class BlobSidecarManagerTest {
         .thenReturn(blockBlobSidecarsTracker);
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
-        .isInstanceOf(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+        .isInstanceOf(BlobSidecarsAvailabilityChecker.class);
   }
 
   @Test
@@ -240,7 +240,7 @@ public class BlobSidecarManagerTest {
     when(store.getGenesisTime()).thenReturn(UInt64.ZERO);
 
     assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
-        .isInstanceOf(BlobSidecarsAndValidationResult.class);
+        .isInstanceOf(DataAndValidationResult.class);
 
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
   }

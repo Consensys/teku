@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
-import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSlotAndIdentifier;
 
 // TODO improve thread-safety: external calls are better to do outside of the synchronize block to
 // prevent potential dead locks
@@ -55,7 +55,7 @@ public class SimpleSidecarRetriever
   private final Duration roundPeriod;
   private final int maxRequestCount;
 
-  private final Map<ColumnSlotAndIdentifier, RetrieveRequest> pendingRequests =
+  private final Map<DataColumnSlotAndIdentifier, RetrieveRequest> pendingRequests =
       new LinkedHashMap<>();
   private final Map<UInt256, ConnectedPeer> connectedPeers = new HashMap<>();
   private boolean started = false;
@@ -91,7 +91,7 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public synchronized SafeFuture<DataColumnSidecar> retrieve(ColumnSlotAndIdentifier columnId) {
+  public synchronized SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId) {
     DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest =
         peerSearcher.requestPeers(columnId.slot(), columnId.identifier().getIndex());
 
@@ -145,10 +145,10 @@ public class SimpleSidecarRetriever
   }
 
   private void disposeCompletedRequests() {
-    Iterator<Map.Entry<ColumnSlotAndIdentifier, RetrieveRequest>> pendingIterator =
+    Iterator<Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest>> pendingIterator =
         pendingRequests.entrySet().iterator();
     while (pendingIterator.hasNext()) {
-      Map.Entry<ColumnSlotAndIdentifier, RetrieveRequest> pendingEntry = pendingIterator.next();
+      Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest> pendingEntry = pendingIterator.next();
       RetrieveRequest pendingRequest = pendingEntry.getValue();
       if (pendingRequest.result.isDone()) {
         pendingIterator.remove();
@@ -244,14 +244,14 @@ public class SimpleSidecarRetriever
   private record ActiveRequest(SafeFuture<DataColumnSidecar> promise, ConnectedPeer peer) {}
 
   private static class RetrieveRequest {
-    final ColumnSlotAndIdentifier columnId;
+    final DataColumnSlotAndIdentifier columnId;
     final DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
     final Map<UInt256, Integer> peerRequestCount = new HashMap<>();
     volatile ActiveRequest activeRpcRequest = null;
 
     private RetrieveRequest(
-        ColumnSlotAndIdentifier columnId,
+        DataColumnSlotAndIdentifier columnId,
         DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest) {
       this.columnId = columnId;
       this.peerSearchRequest = peerSearchRequest;
@@ -278,7 +278,7 @@ public class SimpleSidecarRetriever
           .computeCustodyColumnIndexes(nodeId, custodyCountSupplier.getCustodyCountForPeer(nodeId));
     }
 
-    public boolean isCustodyFor(ColumnSlotAndIdentifier columnId) {
+    public boolean isCustodyFor(DataColumnSlotAndIdentifier columnId) {
       return getNodeCustodyIndexes(spec.atSlot(columnId.slot()))
           .contains(columnId.identifier().getIndex());
     }

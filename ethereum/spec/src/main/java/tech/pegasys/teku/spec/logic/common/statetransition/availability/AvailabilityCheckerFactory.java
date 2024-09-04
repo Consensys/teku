@@ -11,15 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns;
+package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 
-import java.util.List;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public interface UpdatableDataColumnSidecarCustody extends DataColumnSidecarCustody {
-
-  void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
-
-  SafeFuture<List<DataColumnSlotAndIdentifier>> retrieveMissingColumns();
+@FunctionalInterface
+public interface AvailabilityCheckerFactory<T> {
+  AvailabilityChecker<T> createAvailabilityChecker(SignedBeaconBlock block);
 }

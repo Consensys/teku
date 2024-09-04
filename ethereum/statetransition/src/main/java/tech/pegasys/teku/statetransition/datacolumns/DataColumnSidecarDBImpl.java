@@ -54,6 +54,12 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   }
 
   @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
+      final ColumnSlotAndIdentifier identifier) {
+    return combinedChainDataClient.getSidecar(identifier);
+  }
+
+  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(final DataColumnIdentifier identifier) {
     return combinedChainDataClient.getSidecar(identifier);
   }

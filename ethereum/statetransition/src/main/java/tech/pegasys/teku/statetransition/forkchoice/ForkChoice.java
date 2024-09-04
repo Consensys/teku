@@ -43,11 +43,13 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -65,12 +67,13 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.St
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
@@ -94,7 +97,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
   private final BlobSidecarManager blobSidecarManager;
-  private final DasSamplerManager dasSamplerManager;
+  private final AvailabilityCheckerFactory<DataColumnSidecar> dasSamplerManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final AttestationStateSelector attestationStateSelector;
@@ -115,7 +118,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final BlobSidecarManager blobSidecarManager,
-      final DasSamplerManager dasSamplerManager,
+      final AvailabilityCheckerFactory<DataColumnSidecar> dasSamplerManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
@@ -432,25 +435,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
-        blobSidecarManager.createAvailabilityChecker(block);
-    // TODO: integrate result
-    dasSamplerManager
-        .checkDataAvailability(block)
-        .finish(
-            () ->
-                LOG.info(
-                    "ForkChoice: DAS check successful for block {} ({})",
-                    block.getRoot(),
-                    block.getSlot()),
-            ex ->
-                LOG.error(
-                    String.format(
-                        "ForkChoice: DAS check failed for block %s (%s)",
-                        block.getRoot(), block.getSlot()),
-                    ex));
+    final AvailabilityChecker<?> availabilityChecker;
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7594)) {
+      LOG.info("Created availabilityChecker for slot {}", block.getSlot());
+      availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
+    } else {
+      availabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
+    }
 
-    blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
+    availabilityChecker.initiateDataAvailabilityCheck();
 
     final BeaconState postState;
     try {
@@ -468,11 +461,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
 
-    final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityFuture =
-        blobSidecarsAvailabilityChecker
+    final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultSafeFuture =
+        availabilityChecker
             .getAvailabilityCheckResult()
             .thenPeek(
                 result -> {
+                  LOG.info(
+                      "Availability check slot {} result: {}",
+                      block.getSlot(),
+                      result.toLogString());
                   blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {
@@ -497,8 +494,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               }
 
               return payloadValidationFuture.thenCombineAsync(
-                  blobSidecarsAvailabilityFuture,
-                  (payloadResult, blobSidecarsAndValidationResult) ->
+                  dataAndValidationResultSafeFuture,
+                  (payloadResult, dataAndValidationResult) ->
                       importBlockAndState(
                           block,
                           blockSlotState.get(),
@@ -507,7 +504,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                           indexedAttestationCache,
                           postState,
                           payloadResult,
-                          blobSidecarsAndValidationResult),
+                          dataAndValidationResult),
                   forkChoiceExecutor);
             });
   }
@@ -520,7 +517,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
       final PayloadValidationResult payloadValidationResult,
-      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
+      final DataAndValidationResult<?> dataAndValidationResult) {
     blockImportPerformance.ifPresent(BlockImportPerformance::beginImporting);
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
@@ -554,20 +551,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
-    switch (blobSidecarsAndValidationResult.getValidationResult()) {
+    switch (dataAndValidationResult.validationResult()) {
       case VALID, NOT_REQUIRED -> LOG.debug(
-          "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+          "sidecars validation result: {}", dataAndValidationResult::toLogString);
       case NOT_AVAILABLE -> {
-        LOG.debug(
-            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+        LOG.debug("sidecars validation result: {}", dataAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
-            blobSidecarsAndValidationResult.getCause());
+            dataAndValidationResult.cause());
       }
       case INVALID -> {
-        LOG.error(
-            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+        LOG.error("blobSidecars validation result: {}", dataAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
-            blobSidecarsAndValidationResult.getCause());
+            dataAndValidationResult.cause());
       }
     }
 
@@ -583,21 +578,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
 
-    final Optional<List<BlobSidecar>> blobSidecars;
-    if (blobSidecarsAndValidationResult.isNotRequired()) {
-      // Outside availability window or pre-Deneb
-      blobSidecars = Optional.empty();
-    } else if (blobSidecarsAndValidationResult.isValid()) {
-      blobSidecars = Optional.of(blobSidecarsAndValidationResult.getBlobSidecars());
-    } else {
-      throw new IllegalStateException(
-          String.format(
-              "Unexpected attempt to store invalid blob sidecars (%s) for block: %s",
-              blobSidecarsAndValidationResult.getBlobSidecars().size(), block.toLogString()));
-    }
+    final Optional<List<BlobSidecar>> blobSidecars =
+        extractBlobSidecarsFromValidationResults(dataAndValidationResult, block);
     final Optional<UInt64> earliestBlobSidecarsSlot =
         computeEarliestBlobSidecarsSlot(
-            recentChainData.getStore(), blobSidecarsAndValidationResult, block.getMessage());
+            recentChainData.getStore(), dataAndValidationResult, block.getMessage());
 
     forkChoiceUtil.applyBlockToStore(
         transaction,
@@ -659,6 +644,30 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return transaction.getProposerBoostRoot().isEmpty();
   }
 
+  @SuppressWarnings("unchecked")
+  private Optional<List<BlobSidecar>> extractBlobSidecarsFromValidationResults(
+      final DataAndValidationResult<?> dataAndValidationResult, final SignedBeaconBlock block) {
+    final Optional<List<BlobSidecar>> blobSidecars;
+    if (dataAndValidationResult.isNotRequired()) {
+      // Outside availability window or pre-Deneb
+      blobSidecars = Optional.empty();
+    } else if (dataAndValidationResult.isValid()) {
+      final List<?> sidecars = dataAndValidationResult.data();
+      if (!sidecars.isEmpty() && sidecars.getFirst() instanceof BlobSidecar) {
+        blobSidecars = Optional.of((List<BlobSidecar>) sidecars);
+      } else {
+        blobSidecars = Optional.empty();
+      }
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Unexpected attempt to store invalid sidecars (%s) for block: %s",
+              dataAndValidationResult.data().size(), block.toLogString()));
+    }
+
+    return blobSidecars;
+  }
+
   /**
    * In order to keep track of DataAvailability Window, we need to compute the earliest slot we can
    * consider data available for the given block. It needs to take in account possible empty slots
@@ -667,16 +676,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
    * deneb slot.
    *
    * @param store requires for data availability window calculation
-   * @param blobSidecarsAndValidationResult If it's not required or invalid, we could skip
-   *     calculation
+   * @param dataAndValidationResult If it's not required or invalid, we could skip calculation
    * @param block Beacon block
    * @return the slot we could mark as earliestBlobSidecarsSlot if any, otherwise Optional.empty()
    */
   private Optional<UInt64> computeEarliestBlobSidecarsSlot(
       final ReadOnlyStore store,
-      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult,
+      final DataAndValidationResult<?> dataAndValidationResult,
       final BeaconBlock block) {
-    if (!blobSidecarsAndValidationResult.isValid()) {
+    if (!dataAndValidationResult.isValid()) {
       return Optional.empty();
     }
     final UInt64 earliestAffectedSlot =

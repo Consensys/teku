@@ -11,39 +11,58 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.deneb.blobs;
+package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult.NOT_REQUIRED_RESULT_FUTURE;
+import static tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult.notRequired;
+import static tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult.notRequiredResultFuture;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
-public interface BlobSidecarsAvailabilityChecker {
+public interface AvailabilityChecker<Data> {
 
-  BlobSidecarsAvailabilityChecker NOOP =
-      new BlobSidecarsAvailabilityChecker() {
+  AvailabilityChecker<BlobSidecar> NOOP_BLOBSIDECAR =
+      new AvailabilityChecker<>() {
         @Override
         public boolean initiateDataAvailabilityCheck() {
           return true;
         }
 
         @Override
-        public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
-          return NOT_REQUIRED_RESULT_FUTURE;
+        public SafeFuture<DataAndValidationResult<BlobSidecar>> getAvailabilityCheckResult() {
+          return notRequiredResultFuture();
         }
 
         @Override
-        public BlobSidecarsAndValidationResult validateImmediately(
-            final List<BlobSidecar> blobSidecars) {
-          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+        public DataAndValidationResult<BlobSidecar> validateImmediately(
+            final List<BlobSidecar> dataList) {
+          return notRequired();
         }
       };
 
-  BlobSidecarsAvailabilityChecker NOT_REQUIRED = NOOP;
+  AvailabilityChecker<DataColumnSidecar> NOOP_DATACOLUMN_SIDECAR =
+      new AvailabilityChecker<>() {
+        @Override
+        public boolean initiateDataAvailabilityCheck() {
+          return true;
+        }
+
+        @Override
+        public SafeFuture<DataAndValidationResult<DataColumnSidecar>> getAvailabilityCheckResult() {
+          return notRequiredResultFuture();
+        }
+
+        @Override
+        public DataAndValidationResult<DataColumnSidecar> validateImmediately(
+            final List<DataColumnSidecar> dataList) {
+          return notRequired();
+        }
+      };
 
   /**
    * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(
@@ -54,8 +73,8 @@ public interface BlobSidecarsAvailabilityChecker {
    */
   boolean initiateDataAvailabilityCheck();
 
-  SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult();
+  SafeFuture<DataAndValidationResult<Data>> getAvailabilityCheckResult();
 
   /** Perform the data availability check immediately on the provided blob sidecars */
-  BlobSidecarsAndValidationResult validateImmediately(List<BlobSidecar> blobSidecars);
+  DataAndValidationResult<Data> validateImmediately(List<Data> dataList);
 }

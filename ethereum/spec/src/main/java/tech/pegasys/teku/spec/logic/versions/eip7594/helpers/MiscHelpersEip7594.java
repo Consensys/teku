@@ -393,6 +393,13 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     return false;
   }
 
+  public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
+      final UInt64 currentEpoch, final UInt64 epoch) {
+    return currentEpoch
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(specConfigEip7594.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
   @Override
   public Optional<MiscHelpersEip7594> toVersionEip7594() {
     return Optional.of(this);

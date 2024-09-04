@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 
 public interface DataAvailabilitySampler {
-  DataAvailabilitySampler NOOP = (slot, blockRoot, parentRoot) -> SafeFuture.COMPLETE;
+  DataAvailabilitySampler NOOP =
+      (slot, blockRoot, parentRoot) -> SafeFuture.completedFuture(List.of());
 
-  SafeFuture<Void> checkDataAvailability(UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot);
+  SafeFuture<List<DataColumnSidecar>> checkDataAvailability(
+      UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot);
 }

@@ -55,14 +55,14 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityValidationResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
+public class BlobSidecarsAvailabilityCheckerTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
@@ -86,7 +86,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
   private final SafeFuture<Void> trackerCompletionFuture = new SafeFuture<>();
 
-  private ForkChoiceBlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker;
+  private BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker;
 
   @BeforeEach
   void setUp() {
@@ -101,7 +101,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   void shouldVerifyAvailableBlobsInTwoBatches(final Availability availability) throws Exception {
     prepareInitialAvailability(availability);
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
@@ -144,7 +144,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   void shouldVerifyAvailableBlobsInOneBatch() throws Exception {
     prepareInitialAvailability(Availability.FULL);
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
@@ -176,7 +176,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   void shouldReturnNotAvailableOnTimeout() throws Exception {
     prepareForImmediateTimeout();
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
@@ -198,7 +198,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
     prepareBlockAndBlobSidecarsOutsideAvailabilityWindow();
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
@@ -221,7 +221,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
           default -> Optional.empty();
         };
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
@@ -257,7 +257,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
           default -> Optional.empty();
         };
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
@@ -292,7 +292,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   void shouldReturnInvalidIfTrackerLiesWithCompletionButItIsNot() {
     prepareInitialAvailability(Availability.PARTIAL);
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
@@ -358,7 +358,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     final Throwable cause = new IllegalArgumentException("oops");
     doThrow(cause).when(miscHelpers).verifyBlobSidecarCompleteness(any(), any());
 
-    final BlobSidecarsAndValidationResult availabilityCheckResult =
+    final DataAndValidationResult<BlobSidecar> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete);
 
     assertInvalid(
@@ -397,34 +397,33 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void assertNotRequired(
-      final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
+      final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
         .isCompletedWithValueMatching(result -> !result.isFailure(), "is not failure")
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
+        .isCompletedWithValueMatching(DataAndValidationResult::isNotRequired, "is not required")
         .isCompletedWithValueMatching(
-            BlobSidecarsAndValidationResult::isNotRequired, "is not required")
-        .isCompletedWithValueMatching(
-            result -> result.getBlobSidecars().isEmpty(), "doesn't have blob sidecars");
+            result -> result.data().isEmpty(), "doesn't have blob sidecars");
   }
 
   private void assertInvalid(
-      final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck,
+      final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityOrValidityCheck,
       final List<BlobSidecar> invalidBlobs,
       final Optional<Throwable> cause) {
     assertThat(availabilityOrValidityCheck)
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
         .isCompletedWithValueMatching(
-            result -> result.getValidationResult() == BlobSidecarsValidationResult.INVALID,
+            result -> result.validationResult() == AvailabilityValidationResult.INVALID,
             "is not available")
         .isCompletedWithValueMatching(
-            result -> result.getBlobSidecars().equals(invalidBlobs), "doesn't have blob sidecars")
+            result -> result.data().equals(invalidBlobs), "doesn't have blob sidecars")
         .isCompletedWithValueMatching(
             result -> {
-              if (cause.isEmpty() != result.getCause().isEmpty()) {
+              if (cause.isEmpty() != result.cause().isEmpty()) {
                 return false;
               }
               return result
-                  .getCause()
+                  .cause()
                   .map(
                       resultCause ->
                           resultCause.getClass().equals(cause.get().getClass())
@@ -436,35 +435,34 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void assertNotAvailableDueToTimeout(
-      final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
+      final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityOrValidityCheck) {
     assertNotAvailable(availabilityOrValidityCheck);
     assertThat(availabilityOrValidityCheck)
         .isCompletedWithValueMatching(
-            result -> result.getCause().orElseThrow() instanceof TimeoutException);
+            result -> result.cause().orElseThrow() instanceof TimeoutException);
   }
 
   private void assertNotAvailable(
-      final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
+      final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
-        .isCompletedWithValueMatching(BlobSidecarsAndValidationResult::isFailure, "is failure")
+        .isCompletedWithValueMatching(DataAndValidationResult::isFailure, "is failure")
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
         .isCompletedWithValueMatching(
-            result -> result.getValidationResult() == BlobSidecarsValidationResult.NOT_AVAILABLE,
+            result -> result.validationResult() == AvailabilityValidationResult.NOT_AVAILABLE,
             "is not available")
         .isCompletedWithValueMatching(
-            result -> result.getBlobSidecars().isEmpty(), "doesn't have blob sidecars");
+            result -> result.data().isEmpty(), "doesn't have blob sidecars");
   }
 
   private void assertAvailable(
-      SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
+      SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
         .isCompletedWithValueMatching(result -> !result.isFailure(), "is not failure")
-        .isCompletedWithValueMatching(BlobSidecarsAndValidationResult::isValid, "is valid")
+        .isCompletedWithValueMatching(DataAndValidationResult::isValid, "is valid")
         .isCompletedWithValueMatching(
-            result -> result.getValidationResult() == BlobSidecarsValidationResult.VALID,
-            "is valid")
+            result -> result.validationResult() == AvailabilityValidationResult.VALID, "is valid")
         .isCompletedWithValueMatching(
-            result -> result.getBlobSidecars().equals(blobSidecarsComplete), "has blob sidecars");
+            result -> result.data().equals(blobSidecarsComplete), "has blob sidecars");
   }
 
   private void prepareInitialAvailabilityWithEmptyCommitmentsBlock() {
@@ -530,7 +528,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     blobSidecarsAvailabilityChecker =
-        new ForkChoiceBlobSidecarsAvailabilityChecker(
+        new BlobSidecarsAvailabilityChecker(
             spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg, timeout);
   }
 
@@ -616,7 +614,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     blobSidecarsAvailabilityChecker =
-        new ForkChoiceBlobSidecarsAvailabilityChecker(
+        new BlobSidecarsAvailabilityChecker(
             spec,
             asyncRunner,
             recentChainData,

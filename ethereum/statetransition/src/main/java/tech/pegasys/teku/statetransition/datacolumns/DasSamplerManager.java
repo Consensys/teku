@@ -13,33 +13,39 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import java.util.function.Supplier;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
+import tech.pegasys.teku.statetransition.forkchoice.DataColumnSidecarAvailabilityChecker;
 
-public class DasSamplerManager {
-  public static final DasSamplerManager NOOP =
-      new DasSamplerManager().setSampler(DataAvailabilitySampler.NOOP);
-  private volatile DataAvailabilitySampler dataAvailabilitySampler;
+public class DasSamplerManager implements AvailabilityCheckerFactory<DataColumnSidecar> {
+  public static final AvailabilityCheckerFactory<DataColumnSidecar> NOOP =
+      block -> AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+  private final Supplier<DataAvailabilitySampler> dataAvailabilitySamplerSupplier;
+  final KZG kzg;
+  final Spec spec;
+  final ReadOnlyStore store;
 
-  public DasSamplerManager setSampler(final DataAvailabilitySampler dataAvailabilitySampler) {
-    this.dataAvailabilitySampler = dataAvailabilitySampler;
-    return this;
+  public DasSamplerManager(
+      final Supplier<DataAvailabilitySampler> dataAvailabilitySamplerSupplier,
+      final KZG kzg,
+      final Spec spec,
+      final ReadOnlyStore store) {
+    this.dataAvailabilitySamplerSupplier = dataAvailabilitySamplerSupplier;
+    this.kzg = kzg;
+    this.spec = spec;
+    this.store = store;
   }
 
-  public SafeFuture<Void> checkDataAvailability(final SignedBeaconBlock block) {
-    final boolean isCheckRequired =
-        block
-            .getBeaconBlock()
-            .flatMap(beaconBlock -> beaconBlock.getBody().toVersionEip7594())
-            .map(bodyEip7594 -> !bodyEip7594.getBlobKzgCommitments().isEmpty())
-            .orElse(false);
-    if (!isCheckRequired) {
-      return SafeFuture.COMPLETE;
-    }
-    if (dataAvailabilitySampler == null) {
-      throw new RuntimeException("Not initialized!");
-    }
-    return dataAvailabilitySampler.checkDataAvailability(
-        block.getSlot(), block.getRoot(), block.getParentRoot());
+  @Override
+  public AvailabilityChecker<DataColumnSidecar> createAvailabilityChecker(
+      final SignedBeaconBlock block) {
+    return new DataColumnSidecarAvailabilityChecker(
+        dataAvailabilitySamplerSupplier.get(), store, kzg, spec, block);
   }
 }

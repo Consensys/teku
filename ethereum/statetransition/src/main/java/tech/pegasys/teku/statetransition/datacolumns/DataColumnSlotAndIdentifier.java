@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.deneb.blobs;
+package tech.pegasys.teku.statetransition.datacolumns;
 
-public enum BlobSidecarsValidationResult {
-  NOT_REQUIRED,
-  NOT_AVAILABLE,
-  INVALID,
-  VALID
-}
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+
+public record DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier) {}

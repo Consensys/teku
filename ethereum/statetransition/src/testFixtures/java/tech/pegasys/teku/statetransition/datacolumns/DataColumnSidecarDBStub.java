@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 
 public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
 
@@ -59,6 +60,11 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
     DataColumnIdentifier identifier = DataColumnIdentifier.createFromSidecar(sidecar);
     db.put(identifier, sidecar);
     slotIds.computeIfAbsent(sidecar.getSlot(), __ -> new HashSet<>()).add(identifier);
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(ColumnSlotAndIdentifier identifier) {
+    return SafeFuture.completedFuture(Optional.ofNullable(db.get(identifier.identifier())));
   }
 
   @Override

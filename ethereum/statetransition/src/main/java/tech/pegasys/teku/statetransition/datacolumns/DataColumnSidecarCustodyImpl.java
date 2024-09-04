@@ -14,9 +14,11 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -32,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
@@ -80,6 +84,7 @@ public class DataColumnSidecarCustodyImpl
   private final CanonicalBlockResolver blockResolver;
   private final UInt256 nodeId;
   private final int totalCustodySubnetCount;
+  private final Map<DataColumnIdentifier, ColumnSlotAndIdentifier> knownSavedIdentifiers;
 
   private final UInt64 eip7594StartEpoch;
 
@@ -103,6 +108,9 @@ public class DataColumnSidecarCustodyImpl
     this.nodeId = nodeId;
     this.totalCustodySubnetCount = totalCustodySubnetCount;
     this.eip7594StartEpoch = spec.getForkSchedule().getFork(SpecMilestone.EIP7594).getEpoch();
+    this.knownSavedIdentifiers =
+        LimitedMap.createSynchronizedNatural(
+            VALID_BLOCK_SET_SIZE * spec.getNumberOfDataColumns().orElseThrow());
   }
 
   private UInt64 getEarliestCustodySlot(UInt64 currentSlot) {
@@ -131,6 +139,11 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
     if (isMyCustody(dataColumnSidecar.getSlot(), dataColumnSidecar.getIndex())) {
+      final DataColumnIdentifier dataColumnIdentifier =
+          DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
+      knownSavedIdentifiers.put(
+          dataColumnIdentifier,
+          new ColumnSlotAndIdentifier(dataColumnSidecar.getSlot(), dataColumnIdentifier));
       db.addSidecar(dataColumnSidecar);
     }
   }
@@ -151,7 +164,11 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
       DataColumnIdentifier columnId) {
-    return db.getSidecar(columnId);
+    final Optional<ColumnSlotAndIdentifier> maybeColumnSlotAndIdentifier =
+        Optional.ofNullable(knownSavedIdentifiers.get(columnId));
+    return maybeColumnSlotAndIdentifier
+        .map(db::getSidecar)
+        .orElseGet(() -> db.getSidecar(columnId));
   }
 
   private void onEpoch(UInt64 epoch) {
@@ -251,7 +268,7 @@ public class DataColumnSidecarCustodyImpl
   }
 
   @Override
-  public SafeFuture<List<ColumnSlotAndIdentifier>> retrieveMissingColumns() {
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> retrieveMissingColumns() {
     // waiting a column for [gossipWaitSlots] to be delivered by gossip
     // and not considering it missing yet
     return retrievePotentiallyIncompleteSlotCustodies(
@@ -264,7 +281,7 @@ public class DataColumnSidecarCustodyImpl
                             slotCustody.getIncompleteColumns().stream()
                                 .map(
                                     colId ->
-                                        new ColumnSlotAndIdentifier(slotCustody.slot(), colId)))
+                                        new DataColumnSlotAndIdentifier(slotCustody.slot(), colId)))
                     .toList());
   }
 }

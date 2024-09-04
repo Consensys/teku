@@ -101,6 +101,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -116,6 +117,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -143,7 +145,7 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasLongPollCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerCombinedImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
@@ -307,7 +309,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile LateInitDataColumnSidecarCustody dataColumnSidecarCustody =
       new LateInitDataColumnSidecarCustody();
   protected volatile DasCustodySync dasCustodySync;
-  protected volatile DasSamplerManager dasSamplerManager;
+  protected volatile AvailabilityCheckerFactory<DataColumnSidecar> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
@@ -623,7 +625,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   private void initDasSamplerManager() {
-    this.dasSamplerManager = new DasSamplerManager();
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
+      LOG.info("Activated DAS Sampler Manager for EIP7594");
+      this.dasSamplerManager =
+          new DasSamplerManager(
+              () -> dataAvailabilitySampler, kzg, spec, recentChainData.getStore());
+    } else {
+      LOG.info("Using NOOP DAS Sampler Manager");
+      this.dasSamplerManager = DasSamplerManager.NOOP;
+    }
   }
 
   protected void initDataColumnSidecarManager() {
@@ -674,7 +684,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     DasLongPollCustody custody =
         new DasLongPollCustody(
-            dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, Duration.ofSeconds(5));
+            dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, spec, Duration.ofSeconds(5));
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         custody::onNewValidatedDataColumnSidecar);
     // TODO fix this dirty hack
@@ -722,42 +732,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dasCustodySync = new DasCustodySync(dataColumnSidecarCustodyImpl, recoveringSidecarRetriever);
     eventChannels.subscribe(SlotEventsChannel.class, dasCustodySync);
 
-    final int myDataColumnSampleCount =
-        Math.min(configEip7594.getSamplesPerSlot(), configEip7594.getNumberOfColumns());
-    if (myDataColumnSampleCount != 0) {
-      final DasSamplerCombinedImpl dasSampler;
-      if (beaconConfig.p2pConfig().isDasLossySamplerEnabled()) {
-        // We don't need recovering for Lossy Sampler
-        // the only issue - we will not gossip failed columns in case we reach half of columns
-        // failures,
-        // but it's not straightforward to sync lossy logic with recovering, so it's postponed
-        dasSampler =
-            new DasSamplerCombinedImpl(
-                spec, sidecarDB, recentChainData, sidecarRetriever, beaconAsyncRunner, true);
-        LOG.info(
-            "DAS Sampler initialized in a lossy mode with {} columns to sample",
-            myDataColumnSampleCount);
-      } else {
-        dasSampler =
-            new DasSamplerCombinedImpl(
-                spec,
-                sidecarDB,
-                recentChainData,
-                recoveringSidecarRetriever,
-                beaconAsyncRunner,
-                false);
-        LOG.info("DAS Sampler initialized with {} columns to sample", myDataColumnSampleCount);
-      }
-      eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
-      eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
-      dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-          dasSampler::onNewValidatedDataColumnSidecar);
-      this.dataAvailabilitySampler = dasSampler;
-    } else {
-      this.dataAvailabilitySampler = DataAvailabilitySampler.NOOP;
-      LOG.info("DAS Sampler is not initialized, no columns to sample");
+    if (beaconConfig.p2pConfig().isDasLossySamplerEnabled()) {
+      LOG.info("Lossy Sampler is not supported, starting basic sampler");
     }
-    dasSamplerManager.setSampler(dataAvailabilitySampler);
+    final DasSamplerBasic dasSampler =
+        new DasSamplerBasic(spec, sidecarDB, custody, nodeId, totalMyCustodySubnets);
+    LOG.info("DAS Basic Sampler initialized with {} subnets to sample", totalMyCustodySubnets);
+    eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
+    this.dataAvailabilitySampler = dasSampler;
   }
 
   protected void initMergeMonitors() {

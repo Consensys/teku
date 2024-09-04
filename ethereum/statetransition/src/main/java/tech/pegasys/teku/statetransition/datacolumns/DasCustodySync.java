@@ -36,7 +36,7 @@ public class DasCustodySync implements SlotEventsChannel {
   private final int maxPendingColumnRequests;
   private final int minPendingColumnRequests;
 
-  private final Map<ColumnSlotAndIdentifier, PendingRequest> pendingRequests =
+  private final Map<DataColumnSlotAndIdentifier, PendingRequest> pendingRequests =
       new ConcurrentHashMap<>();
   private boolean started = false;
   private boolean coolDownTillNextSlot = false;
@@ -94,7 +94,7 @@ public class DasCustodySync implements SlotEventsChannel {
   private void fillUp() {
     fillingUp = true;
     int newRequestCount = maxPendingColumnRequests - pendingRequests.size();
-    final SafeFuture<Set<ColumnSlotAndIdentifier>> missingColumnsToRequestFuture =
+    final SafeFuture<Set<DataColumnSlotAndIdentifier>> missingColumnsToRequestFuture =
         custody
             .retrieveMissingColumns()
             .thenApply(
@@ -109,7 +109,7 @@ public class DasCustodySync implements SlotEventsChannel {
     missingColumnsToRequestFuture
         .thenPeek(
             missingColumnsToRequest -> {
-              for (ColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
+              for (DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
                 addPendingRequest(missingColumn);
               }
 
@@ -120,7 +120,7 @@ public class DasCustodySync implements SlotEventsChannel {
               {
                 Set<UInt64> missingSlots =
                     missingColumnsToRequest.stream()
-                        .map(ColumnSlotAndIdentifier::slot)
+                        .map(DataColumnSlotAndIdentifier::slot)
                         .collect(Collectors.toSet());
                 LOG.info(
                     "[nyota] DataCustodySync.fillUp: synced={} pending={}, missingColumns={}({})",
@@ -134,7 +134,7 @@ public class DasCustodySync implements SlotEventsChannel {
         .ifExceptionGetsHereRaiseABug();
   }
 
-  private synchronized void addPendingRequest(final ColumnSlotAndIdentifier missingColumn) {
+  private synchronized void addPendingRequest(final DataColumnSlotAndIdentifier missingColumn) {
     if (pendingRequests.containsKey(missingColumn)) {
       return;
     }
@@ -165,5 +165,5 @@ public class DasCustodySync implements SlotEventsChannel {
   }
 
   private record PendingRequest(
-      ColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> columnPromise) {}
+      DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> columnPromise) {}
 }

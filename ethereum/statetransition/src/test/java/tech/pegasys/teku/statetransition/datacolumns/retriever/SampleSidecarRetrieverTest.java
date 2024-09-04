@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIde
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
-import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSlotAndIdentifier;
 
 @SuppressWarnings("unused")
 public class SampleSidecarRetrieverTest {
@@ -89,8 +89,8 @@ public class SampleSidecarRetrieverTest {
     return dataStructureUtil.signedBlock(block);
   }
 
-  private ColumnSlotAndIdentifier createId(BeaconBlock block, int colIdx) {
-    return new ColumnSlotAndIdentifier(
+  private DataColumnSlotAndIdentifier createId(BeaconBlock block, int colIdx) {
+    return new DataColumnSlotAndIdentifier(
         block.getSlot(), new DataColumnIdentifier(block.getRoot(), UInt64.valueOf(colIdx)));
   }
 
@@ -133,7 +133,7 @@ public class SampleSidecarRetrieverTest {
         miscHelpers.constructDataColumnSidecars(createSigned(block), blobs, kzg);
     DataColumnSidecar sidecar0 = sidecars.get(columnId.intValue());
 
-    ColumnSlotAndIdentifier id0 = createId(block, columnId.intValue());
+    DataColumnSlotAndIdentifier id0 = createId(block, columnId.intValue());
 
     testPeerManager.connectPeer(custodyPeerMissingData);
     testPeerManager.connectPeer(nonCustodyPeer);
@@ -181,8 +181,9 @@ public class SampleSidecarRetrieverTest {
 
     allPeers.forEach(testPeerManager::connectPeer);
 
-    ColumnSlotAndIdentifier id0 =
-        new ColumnSlotAndIdentifier(UInt64.ONE, new DataColumnIdentifier(Bytes32.ZERO, columnId));
+    DataColumnSlotAndIdentifier id0 =
+        new DataColumnSlotAndIdentifier(
+            UInt64.ONE, new DataColumnIdentifier(Bytes32.ZERO, columnId));
     SafeFuture<DataColumnSidecar> resp0 = simpleSidecarRetriever.retrieve(id0);
 
     advanceTimeGradually(retrieverRound);

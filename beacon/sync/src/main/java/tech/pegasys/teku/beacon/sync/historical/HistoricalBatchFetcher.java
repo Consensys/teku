@@ -52,8 +52,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -403,19 +403,19 @@ public class HistoricalBatchFetcher {
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
-    final BlobSidecarsAndValidationResult validationResult =
+    final DataAndValidationResult<BlobSidecar> validationResult =
         blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
 
     if (validationResult.isFailure()) {
       final String causeMessage =
           validationResult
-              .getCause()
+              .cause()
               .map(cause -> " (" + ExceptionUtil.getRootCauseMessage(cause) + ")")
               .orElse("");
       throw new IllegalArgumentException(
           String.format(
               "Blob sidecars validation for block %s failed: %s%s",
-              block.getRoot(), validationResult.getValidationResult(), causeMessage));
+              block.getRoot(), validationResult.validationResult(), causeMessage));
     }
   }
 

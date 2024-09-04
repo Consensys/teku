@@ -65,7 +65,7 @@ public class DasLongPollCustodyTest {
   void testLongPollingColumnRequest() throws Exception {
     Duration longPollTimeout = Duration.ofMillis(200);
     DasLongPollCustody custody =
-        new DasLongPollCustody(custodyImpl, stubAsyncRunner, longPollTimeout);
+        new DasLongPollCustody(custodyImpl, stubAsyncRunner, spec, longPollTimeout);
 
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);

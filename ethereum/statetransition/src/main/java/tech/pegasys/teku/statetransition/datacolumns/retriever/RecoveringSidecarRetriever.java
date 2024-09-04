@@ -38,8 +38,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIde
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
-import tech.pegasys.teku.statetransition.datacolumns.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSlotAndIdentifier;
 
 public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
@@ -80,7 +80,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(ColumnSlotAndIdentifier columnId) {
+  public SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId) {
     SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
     // TODO we probably need a better heuristics to submit requests for recovery
     asyncRunner
@@ -97,7 +97,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
   @VisibleForTesting
   void maybeInitiateRecovery(
-      ColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> promise) {
+      DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> promise) {
     blockResolver
         .getBlockAtSlot(columnId.slot())
         .thenPeek(
@@ -119,7 +119,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   private synchronized RecoveryEntry addRecovery(
-      final ColumnSlotAndIdentifier columnId, final BeaconBlock block) {
+      final DataColumnSlotAndIdentifier columnId, final BeaconBlock block) {
     return recoveryBySlot.compute(
         columnId.slot(),
         (slot, existingRecovery) -> {
@@ -230,7 +230,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                 .map(
                     columnIdx ->
                         delegate.retrieve(
-                            new ColumnSlotAndIdentifier(
+                            new DataColumnSlotAndIdentifier(
                                 block.getSlot(),
                                 new DataColumnIdentifier(block.getRoot(), columnIdx))))
                 .peek(promise -> promise.thenPeek(this::addSidecar).ifExceptionGetsHereRaiseABug())
