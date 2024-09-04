@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -203,6 +204,13 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
+  }
+
+  // EIP7732 TODO: implement
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return null;
   }
 
   @Override

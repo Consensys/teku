@@ -356,6 +356,19 @@ public class RespondingEth2Peer implements Eth2Peer {
       final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
 
   @Override
+  public Optional<RequestApproval> approveExecutionPayloadEnvelopesRequest(
+      final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+      final long returnedExecutionPayloadEnvelopesCount) {
+    return Optional.of(
+        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+  }
+
+  @Override
+  public void adjustExecutionPayloadEnvelopesRequest(
+      final RequestApproval executionPayloadEnvelopesRequest,
+      final long returnedExecutionPayloadEnvelopesCount) {}
+
+  @Override
   public boolean approveRequest() {
     return true;
   }

@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -366,6 +367,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
           Optional.of(blockData.get(blockRoot)).map(SignedBlockAndState::getBlock));
     }
     return store.retrieveSignedBlock(blockRoot);
+  }
+
+  // EIP7732 TODO: implement
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return null;
   }
 
   @Override

@@ -91,6 +91,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final AtomicInteger unansweredPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
   private final RateTracker blobSidecarsRequestTracker;
+  private final RateTracker executionPayloadRequestTracker;
   private final RateTracker requestTracker;
   private final KZG kzg;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
@@ -110,6 +111,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
+      final RateTracker executionPayloadRequestTracker,
       final RateTracker requestTracker,
       final KZG kzg) {
     super(peer);
@@ -121,6 +123,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.peerChainValidator = peerChainValidator;
     this.blockRequestTracker = blockRequestTracker;
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
+    this.executionPayloadRequestTracker = executionPayloadRequestTracker;
     this.requestTracker = requestTracker;
     this.kzg = kzg;
     this.firstSlotSupportingBlobSidecarsByRange =
@@ -439,6 +442,27 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RequestApproval blobSidecarsRequest, final long returnedBlobSidecarsCount) {
     adjustObjectsRequest(
         blobSidecarsRequestTracker, blobSidecarsRequest, returnedBlobSidecarsCount);
+  }
+
+  @Override
+  public Optional<RequestApproval> approveExecutionPayloadEnvelopesRequest(
+      final ResponseCallback<SignedExecutionPayloadEnvelope> callback,
+      final long executionPayloadEnvelopesCount) {
+    return approveObjectsRequest(
+        "execution payload envelopes",
+        executionPayloadRequestTracker,
+        executionPayloadEnvelopesCount,
+        callback);
+  }
+
+  @Override
+  public void adjustExecutionPayloadEnvelopesRequest(
+      final RequestApproval executionPayloadEnvelopesRequest,
+      final long returnedExecutionPayloadEnvelopesCount) {
+    adjustObjectsRequest(
+        executionPayloadRequestTracker,
+        executionPayloadEnvelopesRequest,
+        returnedExecutionPayloadEnvelopesCount);
   }
 
   @Override

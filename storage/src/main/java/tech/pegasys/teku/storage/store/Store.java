@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -661,6 +662,13 @@ class Store extends CacheableStore {
       return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
     return blockProvider.getBlock(blockRoot);
+  }
+
+  // EIP7732 TODO: implement
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return null;
   }
 
   @Override
