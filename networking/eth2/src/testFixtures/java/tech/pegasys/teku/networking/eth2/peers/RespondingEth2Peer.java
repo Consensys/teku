@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -259,6 +260,13 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
+      final List<Bytes32> blockRoots,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    throw new UnsupportedOperationException("EIP7732 TODO");
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock> handler =
         PendingRequestHandler.createForSingleBlockRequest(
@@ -283,6 +291,12 @@ public class RespondingEth2Peer implements Eth2Peer {
             () -> findBlobSidecarByBlobIdentifier(blobIdentifier));
 
     return createPendingBlobSidecarRequest(handler);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      final Bytes32 blockRoot) {
+    throw new UnsupportedOperationException("EIP7732 TODO");
   }
 
   private <T> SafeFuture<T> createPendingBlockRequest(

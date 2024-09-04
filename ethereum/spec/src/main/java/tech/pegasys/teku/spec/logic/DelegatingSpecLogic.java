@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -109,6 +110,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return specLogic.getBellatrixTransitionHelpers();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
+    return specLogic.getExecutionPayloadProcessor();
   }
 
   @Override

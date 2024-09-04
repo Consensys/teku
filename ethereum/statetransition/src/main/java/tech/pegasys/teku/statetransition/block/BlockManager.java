@@ -178,6 +178,11 @@ public class BlockManager extends Service
   }
 
   @Override
+  public void onBlockSeen(final SignedBeaconBlock block) {
+    // No-op
+  }
+
+  @Override
   public void onBlockValidated(final SignedBeaconBlock block) {
     // No-op
   }

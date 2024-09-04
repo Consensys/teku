@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 
 public interface ExecutionPayloadHeader extends ExecutionPayloadSummary, SszContainer {
 
@@ -35,6 +36,10 @@ public interface ExecutionPayloadHeader extends ExecutionPayloadSummary, SszCont
   }
 
   default Optional<ExecutionPayloadHeaderDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  default Optional<ExecutionPayloadHeaderEip7732> toVersionEip7732() {
     return Optional.empty();
   }
 }

@@ -52,8 +52,8 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersDeneb extends MiscHelpersCapella {
-  private final Predicates predicates;
-  private final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
+  protected final Predicates predicates;
+  protected final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
   private final BlobSidecarSchema blobSidecarSchema;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {

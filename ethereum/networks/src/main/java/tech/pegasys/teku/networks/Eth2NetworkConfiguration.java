@@ -92,6 +92,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> capellaForkEpoch;
   private final Optional<UInt64> denebForkEpoch;
   private final Optional<UInt64> electraForkEpoch;
+  private final Optional<UInt64> eip7732ForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -122,6 +123,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> capellaForkEpoch,
       final Optional<UInt64> denebForkEpoch,
       final Optional<UInt64> electraForkEpoch,
+      final Optional<UInt64> eip7732ForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -144,6 +146,7 @@ public class Eth2NetworkConfiguration {
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
     this.electraForkEpoch = electraForkEpoch;
+    this.eip7732ForkEpoch = eip7732ForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -231,6 +234,7 @@ public class Eth2NetworkConfiguration {
       case CAPELLA -> capellaForkEpoch;
       case DENEB -> denebForkEpoch;
       case ELECTRA -> electraForkEpoch;
+      case EIP7732 -> eip7732ForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -311,6 +315,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
+        && Objects.equals(eip7732ForkEpoch, that.eip7732ForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
         && Objects.equals(trustedSetup, that.trustedSetup)
@@ -335,6 +340,7 @@ public class Eth2NetworkConfiguration {
         capellaForkEpoch,
         denebForkEpoch,
         electraForkEpoch,
+        eip7732ForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
         trustedSetup,
@@ -375,6 +381,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
     private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<UInt64> electraForkEpoch = Optional.empty();
+    private Optional<UInt64> eip7732ForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -437,6 +444,9 @@ public class Eth2NetworkConfiguration {
                   builder.electraBuilder(
                       electraBuilder ->
                           electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
+                  builder.eip7732Builder(
+                      eip7732Builder ->
+                          eip7732ForkEpoch.ifPresent(eip7732Builder::eip7732ForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
@@ -469,6 +479,7 @@ public class Eth2NetworkConfiguration {
           capellaForkEpoch,
           denebForkEpoch,
           electraForkEpoch,
+          eip7732ForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -677,6 +688,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
       this.electraForkEpoch = Optional.of(electraForkEpoch);
+      return this;
+    }
+
+    public Builder eip7732ForkEpoch(final UInt64 eip7732ForkEpoch) {
+      this.eip7732ForkEpoch = Optional.of(eip7732ForkEpoch);
       return this;
     }
 

@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.PayloadAttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
@@ -49,10 +50,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -333,6 +336,31 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return relayRequest(
         apiChannel -> apiChannel.getSyncCommitteeSelectionProof(requests),
         BeaconNodeRequestLabels.SYNC_COMMITTEE_SELECTIONS);
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttesterDuties>> getPayloadAttestationDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getPayloadAttestationDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_PAYLOAD_ATTESTATION_DUTIES_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.createPayloadAttestationData(slot),
+        BeaconNodeRequestLabels.CREATE_PAYLOAD_ATTESTATION_METHOD);
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedPayloadAttestations(
+      final List<PayloadAttestationMessage> attestations) {
+    return relayRequest(
+        apiChannel -> apiChannel.sendSignedPayloadAttestations(attestations),
+        BeaconNodeRequestLabels.PUBLISH_PAYLOAD_ATTESTATION_METHOD,
+        failoversPublishSignedDuties);
   }
 
   private <T> SafeFuture<T> relayRequest(

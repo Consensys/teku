@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.EIP7732;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
@@ -76,9 +78,16 @@ public class SpecFactory {
             .toVersionElectra()
             .map(SpecConfigElectra::getElectraForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 eip7732ForkEpoch =
+        config
+            .toVersionEip7732()
+            .map(SpecConfigEip7732::getEip7732ForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
     final SpecMilestone highestMilestoneSupported;
 
-    if (!electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    if (!eip7732ForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = EIP7732;
+    } else if (!electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = ELECTRA;
     } else if (!denebForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = DENEB;

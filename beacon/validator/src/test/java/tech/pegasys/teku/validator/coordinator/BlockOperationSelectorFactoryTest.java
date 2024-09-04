@@ -68,10 +68,12 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -1460,6 +1462,18 @@ class BlockOperationSelectorFactoryTest {
     public BeaconBlockBodyBuilder blobKzgCommitments(
         final SszList<SszKZGCommitment> blobKzgCommitments) {
       this.blobKzgCommitments = blobKzgCommitments;
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder signedExecutionPayloadHeader(
+        final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder payloadAttestations(
+        final SszList<PayloadAttestation> payloadAttestations) {
       return this;
     }
 

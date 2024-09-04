@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.client.PayloadTimelinessProvider.PayloadStatusAndBeaconBlockRoot;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class CombinedChainDataClient {
@@ -718,6 +719,11 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<Checkpoint>> getInitialAnchor() {
     return historicalChainData.getAnchor();
+  }
+
+  public SafeFuture<Optional<PayloadStatusAndBeaconBlockRoot>> getTimelyExecutionPayload(
+      final UInt64 slot) {
+    return recentChainData.getTimelyExecutionPayload(slot);
   }
 
   private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(

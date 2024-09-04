@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.ExpirationTask;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler.RepeatingTask;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,6 +30,7 @@ class RepeatingTaskSchedulerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(500);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final RepeatingTask action = mock(RepeatingTask.class);
+  private final ExpirationTask expirationAction = mock(ExpirationTask.class);
 
   private final RepeatingTaskScheduler eventQueue =
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
@@ -122,6 +124,51 @@ class RepeatingTaskSchedulerTest {
     verify(action).execute(scheduledTime, getTime(type));
   }
 
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldExecuteEventAndExpireImmediatelyWhenAlreadyDueAndAlreadyExpired(
+      final SchedulerType type) {
+    scheduleRepeatingEventWithExpiration(
+        type, getTime(type), UInt64.valueOf(12), action, getTime(type), expirationAction);
+    verify(action).execute(getTime(type), getTime(type));
+    verify(expirationAction).execute(getTime(type), getTime(type));
+
+    advanceTimeBy(type, 24);
+
+    verifyNoMoreInteractions(action);
+    verifyNoMoreInteractions(expirationAction);
+  }
+
+  @ParameterizedTest
+  @EnumSource(SchedulerType.class)
+  void shouldExecuteEventAndExpire(final SchedulerType type) {
+    final UInt64 initialSchedule = getTime(type).plus(1);
+    final UInt64 expirationTime = getTime(type).plus(13);
+    scheduleRepeatingEventWithExpiration(
+        type, initialSchedule, UInt64.valueOf(12), action, expirationTime, expirationAction);
+
+    asyncRunner.executeDueActionsRepeatedly();
+    verifyNoInteractions(action);
+    verifyNoInteractions(expirationAction);
+
+    advanceTimeBy(type, 1);
+    asyncRunner.executeDueActionsRepeatedly();
+
+    verify(action).execute(getTime(type), getTime(type));
+    verifyNoInteractions(expirationAction);
+
+    advanceTimeBy(type, 12);
+    asyncRunner.executeDueActionsRepeatedly();
+
+    verify(action).execute(getTime(type), getTime(type));
+    verify(expirationAction).execute(expirationTime, getTime(type));
+
+    advanceTimeBy(type, 24);
+
+    verifyNoMoreInteractions(action);
+    verifyNoMoreInteractions(expirationAction);
+  }
+
   private void scheduleRepeatingEvent(
       final SchedulerType schedulerType,
       final UInt64 initialInvocationTime,
@@ -131,6 +178,22 @@ class RepeatingTaskSchedulerTest {
       eventQueue.scheduleRepeatingEvent(initialInvocationTime, repeatingPeriod, task);
     } else {
       eventQueue.scheduleRepeatingEventInMillis(initialInvocationTime, repeatingPeriod, task);
+    }
+  }
+
+  private void scheduleRepeatingEventWithExpiration(
+      final SchedulerType schedulerType,
+      final UInt64 initialInvocationTime,
+      final UInt64 repeatingPeriod,
+      final RepeatingTask task,
+      final UInt64 expirationTime,
+      final ExpirationTask expirationTask) {
+    if (schedulerType == SchedulerType.SECONDS) {
+      eventQueue.scheduleRepeatingEvent(
+          initialInvocationTime, repeatingPeriod, task, expirationTime, expirationTask);
+    } else {
+      eventQueue.scheduleRepeatingEventInMillis(
+          initialInvocationTime, repeatingPeriod, task, expirationTime, expirationTask);
     }
   }
 

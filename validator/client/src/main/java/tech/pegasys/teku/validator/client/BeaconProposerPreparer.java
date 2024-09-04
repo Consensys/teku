@@ -102,6 +102,9 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
+  public void onPayloadAttestationDue(final UInt64 slot) {}
+
+  @Override
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {}

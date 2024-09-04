@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -72,4 +73,6 @@ public interface SpecLogic {
   OperationSignatureVerifier operationSignatureVerifier();
 
   Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers();
+
+  Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor();
 }

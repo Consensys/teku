@@ -52,6 +52,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.PayloadAttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -74,10 +75,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -90,6 +93,10 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -129,6 +136,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
+  private final PayloadAttestationManager payloadAttestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
@@ -139,8 +147,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
+  private final ReceivedBlockEventsChannel receivedBlockEventsChannel;
   private final BlockPublisher blockPublisher;
-
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
@@ -152,6 +160,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
+      final PayloadAttestationManager payloadAttestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
       final ActiveValidatorTracker activeValidatorTracker,
       final DutyMetrics dutyMetrics,
@@ -164,7 +173,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-      final BlockPublisher blockPublisher) {
+      final BlockPublisher blockPublisher,
+      final ReceivedBlockEventsChannel receivedBlockEventsChannel) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -175,6 +185,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
+    this.payloadAttestationManager = payloadAttestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.activeValidatorTracker = activeValidatorTracker;
     this.dutyMetrics = dutyMetrics;
@@ -186,6 +197,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.receivedBlockEventsChannel = receivedBlockEventsChannel;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
@@ -244,6 +256,41 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 optionalState.map(
                     state ->
                         attesterDutiesGenerator.getAttesterDutiesFromIndicesAndState(
+                            state,
+                            epoch,
+                            validatorIndices,
+                            combinedChainDataClient.isChainHeadOptimistic())));
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttesterDuties>> getPayloadAttestationDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    if (epoch.isGreaterThan(
+        combinedChainDataClient
+            .getCurrentEpoch()
+            .plus(spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              String.format(
+                  "Payload attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
+    }
+    // what state can we use? If the current or next epoch, we can use the best state,
+    // which would guarantee no state regeneration
+    final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
+
+    LOG.trace(
+        "Retrieving payload attestation duties from epoch {} using state at slot {}", epoch, slot);
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(
+            optionalState ->
+                optionalState.map(
+                    state ->
+                        attesterDutiesGenerator.getPayloadAttesterDutiesFromIndicesAndState(
                             state,
                             epoch,
                             validatorIndices,
@@ -477,6 +524,61 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
   }
 
+  @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+
+    return combinedChainDataClient
+        .getTimelyExecutionPayload(slot)
+        .thenApply(
+            executionPayloadEnvelope ->
+                executionPayloadEnvelope.map(
+                    payloadStatusAndBeaconBlockRoot ->
+                        PayloadAttestationData.SSZ_SCHEMA.create(
+                            payloadStatusAndBeaconBlockRoot.beaconBlockRoot(),
+                            slot,
+                            payloadStatusAndBeaconBlockRoot.payloadStatus().getCode())));
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedPayloadAttestations(
+      final List<PayloadAttestationMessage> attestations) {
+    return SafeFuture.collectAll(attestations.stream().map(this::processPayloadAttestation))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  private SafeFuture<InternalValidationResult> processPayloadAttestation(
+      final PayloadAttestationMessage attestation) {
+    return payloadAttestationManager
+        .addPayloadAttestation(attestation, Optional.empty())
+        .thenPeek(
+            result -> {
+              if (!result.isReject()) {
+                // TODO update dutyMetrics and performanceTracker
+              } else {
+                VALIDATOR_LOGGER.producedInvalidPayloadAttestation(
+                    attestation.getData().getSlot(),
+                    result.getDescription().orElse("Unknown reason"));
+              }
+            })
+        .exceptionally(
+            error -> {
+              LOG.error(
+                  "Failed to send signed payload attestation for slot {}, block {}",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  error);
+              return InternalValidationResult.reject(
+                  "Failed to send signed payload attestation for slot %s, block %s: %s",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeaconBlockRoot(),
+                  getMessageOrSimpleName(error));
+            });
+  }
+
   private AttestationData createAttestationData(
       final BeaconBlock block,
       final BeaconState state,
@@ -660,6 +762,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
+    receivedBlockEventsChannel.onBlockSeen(maybeBlindedBlockContainer.getSignedBlock());
     final BlockPublishingPerformance blockPublishingPerformance =
         blockProductionAndPublishingPerformanceFactory.createForPublishing(
             maybeBlindedBlockContainer.getSlot());

@@ -40,6 +40,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.PayloadAttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
@@ -53,11 +54,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -329,6 +332,24 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
       final List<SyncCommitteeSelectionProof> requests) {
     return sendRequest(() -> typeDefClient.getSyncCommitteeSelectionProof(requests));
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttesterDuties>> getPayloadAttestationDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
+  }
+
+  @Override
+  public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
+      final UInt64 slot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedPayloadAttestations(
+      final List<PayloadAttestationMessage> attestations) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

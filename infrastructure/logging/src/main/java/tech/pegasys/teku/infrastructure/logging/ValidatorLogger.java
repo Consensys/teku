@@ -204,6 +204,17 @@ public class ValidatorLogger {
             Color.RED));
   }
 
+  public void producedInvalidPayloadAttestation(final UInt64 slot, final String reason) {
+    log.error(
+        ColorConsolePrinter.print(
+            PREFIX
+                + "Produced invalid payload attestation for slot "
+                + slot
+                + ". Invalid reason: "
+                + reason,
+            Color.RED));
+  }
+
   public void producedInvalidAggregate(final UInt64 slot, final String reason) {
     log.error(
         ColorConsolePrinter.print(

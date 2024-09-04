@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.SpecLogicBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.SpecLogicCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.SpecLogicDeneb;
+import tech.pegasys.teku.spec.logic.versions.eip7732.SpecLogicEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.SpecLogicElectra;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -85,6 +88,10 @@ public class SpecVersion extends DelegatingSpecLogic {
           specConfig
               .toVersionElectra()
               .map(specConfigElectra -> createElectra(specConfigElectra, schemaRegistryBuilder));
+      case EIP7732 ->
+          specConfig
+              .toVersionEip7732()
+              .map(specConfigEip7732 -> createEip7732(specConfigEip7732, schemaRegistryBuilder));
     };
   }
 
@@ -147,6 +154,15 @@ public class SpecVersion extends DelegatingSpecLogic {
     final SpecLogicElectra specLogic =
         SpecLogicElectra.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.ELECTRA, specConfig, schemaDefinitions, specLogic);
+  }
+
+  static SpecVersion createEip7732(final SpecConfigEip7732 specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.EIP7732, specConfig);
+    final SchemaDefinitionsEip7732 schemaDefinitions = new SchemaDefinitionsEip7732(schemaRegistry);
+    final SpecLogicEip7732 specLogic =
+        SpecLogicEip7732.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
+    return new SpecVersion(SpecMilestone.EIP7732, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {

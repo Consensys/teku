@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
@@ -71,6 +72,10 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   }
 
   default Optional<BeaconBlockBodySchemaElectra<?>> toVersionElectra() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconBlockBodySchemaEip7732<?>> toVersionEip7732() {
     return Optional.empty();
   }
 
