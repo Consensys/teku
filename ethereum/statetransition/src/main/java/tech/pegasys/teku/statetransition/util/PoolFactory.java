@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
+import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -105,6 +107,21 @@ public class PoolFactory {
         ValidatableAttestation::hashTreeRoot,
         ValidatableAttestation::getDependentBlockRoots,
         ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
+  }
+
+  public PendingPool<PayloadAttestationMessage> createPendingPoolForPayloadAttestations(
+      final Spec spec) {
+    return new PendingPool<>(
+        pendingPoolsSizeGauge,
+        "payload_attestations",
+        spec,
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_ATTESTATIONS,
+        PayloadAttestationMessage::hashTreeRoot,
+        payloadAttestationMessage ->
+            List.of(payloadAttestationMessage.getData().getBeaconBlockRoot()),
+        payloadAttestationMessage -> payloadAttestationMessage.getData().getSlot());
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(

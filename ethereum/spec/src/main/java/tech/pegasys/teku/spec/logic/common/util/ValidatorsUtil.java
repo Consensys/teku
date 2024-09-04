@@ -32,7 +32,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 
 public class ValidatorsUtil {
   private final SpecConfig specConfig;
@@ -96,6 +98,33 @@ public class ValidatorsUtil {
       }
     }
     return assignmentMap;
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPctAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    final Int2ObjectMap<UInt64> assignmentMap = new Int2ObjectArrayMap<>();
+
+    final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
+    final int committeeCountPerSlot = getPtCommitteesPerSlot(state, epoch).intValue();
+    final BeaconStateAccessorsEip7732 beaconStateAccessorsEip7732 =
+        BeaconStateAccessorsEip7732.required(beaconStateAccessors);
+
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    for (int slotOffset = 0; slotOffset < slotsPerEpoch; slotOffset++) {
+      final UInt64 slot = startSlot.plus(slotOffset);
+      for (int i = 0; i < committeeCountPerSlot; i++) {
+        final IntList committee = beaconStateAccessorsEip7732.getPtc(state, slot);
+        committee.forEach(j -> assignmentMap.put(j, slot));
+      }
+    }
+    return assignmentMap;
+  }
+
+  private UInt64 getPtCommitteesPerSlot(final BeaconState state, final UInt64 epoch) {
+    return MathHelpers.bitFloor(
+        BeaconStateAccessorsEip7732.required(beaconStateAccessors)
+            .getCommitteeCountPerSlot(state, epoch)
+            .min(specConfig.toVersionEip7732().orElseThrow().getPtcSize()));
   }
 
   /**

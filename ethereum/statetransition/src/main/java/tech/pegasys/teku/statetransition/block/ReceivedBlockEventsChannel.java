@@ -19,6 +19,22 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 /** Used to notify subscribers for events related to blocks received from P2P or API */
 public interface ReceivedBlockEventsChannel extends VoidReturningChannelInterface {
 
+  ReceivedBlockEventsChannel NOOP =
+      new ReceivedBlockEventsChannel() {
+        @Override
+        public void onBlockSeen(final SignedBeaconBlock block) {}
+
+        @Override
+        public void onBlockValidated(final SignedBeaconBlock block) {}
+
+        @Override
+        public void onBlockImported(
+            final SignedBeaconBlock block, final boolean executionOptimistic) {}
+      };
+
+  /** Block has been seen from P2P or API */
+  void onBlockSeen(SignedBeaconBlock block);
+
   /** Block passes validation rules of the `beacon_block` topic */
   void onBlockValidated(SignedBeaconBlock block);
 

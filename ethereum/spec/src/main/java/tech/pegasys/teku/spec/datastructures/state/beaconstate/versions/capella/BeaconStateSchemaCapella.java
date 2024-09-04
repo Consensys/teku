@@ -50,11 +50,13 @@ public class BeaconStateSchemaCapella
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
+    // Bellatrix
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
             () -> new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)));
+    // New
     final SszField nextWithdrawalIndexField =
         new SszField(
             NEXT_WITHDRAWAL_INDEX,
@@ -65,7 +67,6 @@ public class BeaconStateSchemaCapella
             NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-
     final SszField historicalSummariesField =
         new SszField(
             HISTORICAL_SUMMARIES_INDEX,
