@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.client.PayloadTimelinessProvider.PayloadStatusAndBeaconBlockRoot;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.EmptyStoreResults;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -108,6 +110,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
 
   private final LateBlockReorgLogic lateBlockReorgLogic;
+  private final PayloadTimelinessProvider payloadTimelinessProvider;
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
 
@@ -139,6 +142,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
     this.lateBlockReorgLogic = new LateBlockReorgLogic(spec, this);
+    this.payloadTimelinessProvider = new PayloadTimelinessProvider(this, spec);
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -689,5 +693,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+  }
+
+  public void onExecutionPayload(
+      final SignedExecutionPayloadEnvelope payload, final UInt64 arrivalTimeMillis) {
+    payloadTimelinessProvider.onPayload(payload, arrivalTimeMillis);
+  }
+
+  public SafeFuture<Optional<PayloadStatusAndBeaconBlockRoot>> getTimelyExecutionPayload(
+      final UInt64 slot) {
+    return payloadTimelinessProvider.getTimelyExecutionPayload(slot);
   }
 }

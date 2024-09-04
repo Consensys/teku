@@ -129,6 +129,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
+  public void onPayloadAttestationDue(final UInt64 slot) {}
+
+  @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override

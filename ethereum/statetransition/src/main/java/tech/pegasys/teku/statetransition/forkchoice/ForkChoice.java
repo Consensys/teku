@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT_EIP7732;
+import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult.INVALID;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -51,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -58,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -229,6 +234,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     executionLayer));
   }
 
+  /** Import an execution payload to the store. */
+  // EIP7732 TODO: implement
+  @SuppressWarnings("unused")
+  public SafeFuture<Void> onExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final ExecutionLayerChannel executionLayer) {
+    return SafeFuture.COMPLETE;
+  }
+
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidatableAttestation attestation) {
     return attestationStateSelector
@@ -278,6 +292,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             })
         .ifExceptionGetsHereRaiseABug();
   }
+
+  // EIP7732 TODO: implement
+  @SuppressWarnings("unused")
+  public SafeFuture<AttestationProcessingResult> onPayloadAttestationMessage(
+      final PayloadAttestationMessage payloadAttestationMessage) {
+    return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
+  }
+
+  // EIP7732 TODO: implement
+  @SuppressWarnings("unused")
+  public void applyPayloadAttestationMessages(
+      final List<PayloadAttestationMessage> payloadAttestationMessages) {}
 
   public void onAttesterSlashing(
       final AttesterSlashing slashing,
@@ -630,14 +656,17 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   // from consensus-specs/fork-choice:
   private boolean shouldApplyProposerBoost(
       final SignedBeaconBlock block, final StoreTransaction transaction) {
+    final SpecVersion specVersion =
+        spec.atTime(transaction.getGenesisTime(), transaction.getTimeInSeconds());
+
     // get_current_slot(store) == block.slot
-    if (!spec.getCurrentSlot(transaction).equals(block.getSlot())) {
+    if (!specVersion.getForkChoiceUtil().getCurrentSlot(transaction).equals(block.getSlot())) {
       return false;
     }
     // is_before_attesting_interval
     final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
     final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
-    if (!isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
+    if (!isBeforeAttestingInterval(specVersion, millisPerSlot, timeIntoSlotMillis)) {
       return false;
     }
     // is_first_block
@@ -688,9 +717,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private boolean isBeforeAttestingInterval(
-      final UInt64 millisPerSlot, final UInt64 timeIntoSlotMillis) {
-    UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
-    return timeIntoSlotMillis.isLessThan(oneThirdSlot);
+      final SpecVersion specVersion, final UInt64 millisPerSlot, final UInt64 timeIntoSlotMillis) {
+    final UInt64 attestationDueOffset =
+        millisPerSlot.dividedBy(
+            specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)
+                ? INTERVALS_PER_SLOT_EIP7732
+                : INTERVALS_PER_SLOT);
+    return timeIntoSlotMillis.isLessThan(attestationDueOffset);
   }
 
   private void onExecutionPayloadResult(

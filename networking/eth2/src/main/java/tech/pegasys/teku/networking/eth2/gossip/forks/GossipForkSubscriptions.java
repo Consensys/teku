@@ -19,7 +19,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -71,4 +74,16 @@ public interface GossipForkSubscriptions {
   }
 
   default void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {}
+
+  default void publishExecutionPayloadMessage(final SignedExecutionPayloadEnvelope message) {
+    // since EIP-7732
+  }
+
+  default void publishPayloadAttestation(final PayloadAttestationMessage payloadAttestation) {
+    // since EIP-7732
+  }
+
+  default void publishExecutionPayloadHeaderMessage(final SignedExecutionPayloadHeader message) {
+    // since EIP-7732
+  }
 }

@@ -42,4 +42,8 @@ public class BeaconNodeRequestLabels {
   public static final String GET_VALIDATORS_LIVENESS = "get_validators_liveness";
   public static final String BEACON_COMMITTEE_SELECTIONS = "beacon_committee_selections";
   public static final String SYNC_COMMITTEE_SELECTIONS = "sync_committee_selections";
+  public static final String GET_PAYLOAD_ATTESTATION_DUTIES_METHOD =
+      "get_payload_attestation_duties";
+  public static final String CREATE_PAYLOAD_ATTESTATION_METHOD = "create_payload_attestation";
+  public static final String PUBLISH_PAYLOAD_ATTESTATION_METHOD = "publish_payload_attestation";
 }
