@@ -148,7 +148,7 @@ public class RocksDbInstanceFactory {
             .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
             .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
             .setMaxOpenFiles(configuration.getMaxOpenFiles())
-            .setBytesPerSync(1048576L)
+            .setBytesPerSync(1_048_576L) // 1MB
             .setWalBytesPerSync(1048576L)
             .setCreateMissingColumnFamilies(true)
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
@@ -159,7 +159,8 @@ public class RocksDbInstanceFactory {
             .setRecycleLogFileNum(WAL_MAX_TOTAL_SIZE / EXPECTED_WAL_FILE_SIZE);
     ;
     if (configuration.optimizeForSmallDb()) {
-      options.optimizeForSmallDb();
+      options.optimizeForSmallDb(); // Java docs suggests this if db is under 1GB, nearly impossible
+      // atm
     }
     return options;
   }
