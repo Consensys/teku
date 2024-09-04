@@ -62,6 +62,7 @@ class Eth2PeerTest {
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final RateTracker blockRateTracker = mock(RateTracker.class);
   private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
+  private final RateTracker executionPayloadRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
   private final KZG kzg = mock(KZG.class);
 
@@ -78,6 +79,7 @@ class Eth2PeerTest {
           peerChainValidator,
           blockRateTracker,
           blobSidecarsRateTracker,
+          executionPayloadRateTracker,
           rateTracker,
           kzg);
 
