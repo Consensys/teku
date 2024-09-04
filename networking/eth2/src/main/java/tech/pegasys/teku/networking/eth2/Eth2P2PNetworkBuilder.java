@@ -38,6 +38,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsEip7732;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
@@ -73,7 +74,10 @@ import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -108,6 +112,10 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
   protected OperationProcessor<SignedBlsToExecutionChange>
       gossipedSignedBlsToExecutionChangeProcessor;
+  protected OperationProcessor<SignedExecutionPayloadEnvelope> gossipedExecutionPayloadProcessor;
+  protected OperationProcessor<PayloadAttestationMessage> gossipedPayloadAttestationProcessor;
+  protected OperationProcessor<SignedExecutionPayloadHeader>
+      gossipedExecutionPayloadHeaderProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
@@ -325,6 +333,29 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               debugDataDumper);
+      case EIP7732 ->
+          new GossipForkSubscriptionsEip7732(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              gossipedExecutionPayloadProcessor,
+              gossipedPayloadAttestationProcessor,
+              gossipedExecutionPayloadHeaderProcessor,
+              debugDataDumper);
     };
   }
 
@@ -436,6 +467,10 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedSyncCommitteeMessageProcessor", gossipedSyncCommitteeMessageProcessor);
     assertNotNull(
         "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
+    assertNotNull("gossipedExecutionPayloadProcessor", gossipedExecutionPayloadProcessor);
+    assertNotNull("gossipedPayloadAttestationProcessor", gossipedPayloadAttestationProcessor);
+    assertNotNull(
+        "gossipedExecutionPayloadHeaderProcessor", gossipedExecutionPayloadHeaderProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -544,6 +579,28 @@ public class Eth2P2PNetworkBuilder {
           gossipedSignedBlsToExecutionChangeProcessor) {
     checkNotNull(gossipedSignedBlsToExecutionChangeProcessor);
     this.gossipedSignedBlsToExecutionChangeProcessor = gossipedSignedBlsToExecutionChangeProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedExecutionPayload(
+      final OperationProcessor<SignedExecutionPayloadEnvelope> gossipedExecutionPayloadProcessor) {
+    checkNotNull(gossipedExecutionPayloadProcessor);
+    this.gossipedExecutionPayloadProcessor = gossipedExecutionPayloadProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedPayloadAttestationProcessor(
+      final OperationProcessor<PayloadAttestationMessage> gossipedPayloadAttestationProcessor) {
+    checkNotNull(gossipedPayloadAttestationProcessor);
+    this.gossipedPayloadAttestationProcessor = gossipedPayloadAttestationProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedExecutionPayloadHeaderProcessor(
+      final OperationProcessor<SignedExecutionPayloadHeader>
+          gossipedExecutionPayloadHeaderProcessor) {
+    checkNotNull(gossipedExecutionPayloadHeaderProcessor);
+    this.gossipedExecutionPayloadHeaderProcessor = gossipedExecutionPayloadHeaderProcessor;
     return this;
   }
 

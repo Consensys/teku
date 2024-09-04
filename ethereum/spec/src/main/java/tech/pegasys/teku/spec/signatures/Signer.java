@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -37,6 +38,9 @@ public interface Signer {
   SafeFuture<BLSSignature> signBlock(BeaconBlock block, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signAttestationData(AttestationData attestationData, ForkInfo forkInfo);
+
+  SafeFuture<BLSSignature> signPayloadAttestationData(
+      PayloadAttestationData payloadAttestationData, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signAggregationSlot(UInt64 slot, ForkInfo forkInfo);
 

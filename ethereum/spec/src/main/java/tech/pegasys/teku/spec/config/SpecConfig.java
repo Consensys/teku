@@ -190,5 +190,9 @@ public interface SpecConfig extends NetworkingSpecConfig {
     return Optional.empty();
   }
 
+  default Optional<SpecConfigEip7732> toVersionEip7732() {
+    return Optional.empty();
+  }
+
   SpecMilestone getMilestone();
 }

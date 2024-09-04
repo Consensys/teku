@@ -61,8 +61,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
         .forEach(
             milestone -> {
               switch (milestone) {
-                case PHASE0:
-                case ALTAIR:
+                case PHASE0, ALTAIR:
                   break;
                 case BELLATRIX:
                   methodsByMilestone.put(milestone, bellatrixSupportedMethods());
@@ -75,6 +74,9 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                   break;
                 case ELECTRA:
                   methodsByMilestone.put(milestone, electraSupportedMethods());
+                  break;
+                case EIP7732:
+                  // EIP7732 TODO: implement
                   break;
               }
             });

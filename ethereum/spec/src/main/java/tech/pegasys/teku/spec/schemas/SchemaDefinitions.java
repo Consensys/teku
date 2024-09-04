@@ -116,6 +116,11 @@ public interface SchemaDefinitions {
     return Optional.empty();
   }
 
+  @NonSchema
+  default Optional<SchemaDefinitionsEip7732> toVersionEip7732() {
+    return Optional.empty();
+  }
+
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.METHOD)
   @interface NonSchema {}

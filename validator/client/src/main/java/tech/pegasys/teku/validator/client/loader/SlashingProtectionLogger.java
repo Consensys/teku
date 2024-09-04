@@ -189,6 +189,9 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
+  public void onPayloadAttestationDue(final UInt64 slot) {}
+
+  @Override
   public void onValidatorsAdded() {}
 
   @Override

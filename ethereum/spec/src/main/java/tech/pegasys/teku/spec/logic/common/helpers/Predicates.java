@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
 public class Predicates {
@@ -169,6 +170,10 @@ public class Predicates {
   }
 
   public Optional<PredicatesElectra> toVersionElectra() {
+    return Optional.empty();
+  }
+
+  public Optional<PredicatesEip7732> toVersionEip7732() {
     return Optional.empty();
   }
 }

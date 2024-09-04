@@ -67,8 +67,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -102,6 +105,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -461,6 +465,26 @@ public class Spec {
     return atSlot(proof.getAggregate().getData().getSlot())
         .miscHelpers()
         .computeSigningRoot(proof, domain);
+  }
+
+  public Bytes computeSigningRoot(
+      final ExecutionPayloadHeader executionPayloadHeader, final Bytes32 domain) {
+    return atSlot(ExecutionPayloadHeaderEip7732.required(executionPayloadHeader).getSlot())
+        .miscHelpers()
+        .computeSigningRoot(executionPayloadHeader, domain);
+  }
+
+  public Bytes computeSigningRoot(final ExecutionPayloadEnvelope envelope, final Bytes32 domain) {
+    return forMilestone(envelope.getPayload().getMilestone())
+        .miscHelpers()
+        .computeSigningRoot(envelope, domain);
+  }
+
+  public Bytes computeSigningRoot(
+      final PayloadAttestationData payloadAttestationData, final Bytes32 domain) {
+    return atSlot(payloadAttestationData.getSlot())
+        .miscHelpers()
+        .computeSigningRoot(payloadAttestationData, domain);
   }
 
   public Bytes computeSigningRoot(final UInt64 slot, final Bytes32 domain) {
@@ -871,6 +895,11 @@ public class Spec {
     return atState(state).beaconStateAccessors().getBeaconCommitteesSize(state, slot);
   }
 
+  public IntList getPtc(final BeaconState state, final UInt64 slot) {
+    return BeaconStateAccessorsEip7732.required(atState(state).beaconStateAccessors())
+        .getPtc(state, slot);
+  }
+
   public Optional<BLSPublicKey> getValidatorPubKey(
       final BeaconState state, final UInt64 validatorIndex) {
     return atState(state).beaconStateAccessors().getValidatorPubKey(state, validatorIndex);
@@ -891,11 +920,21 @@ public class Spec {
     return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
   }
 
+  public Optional<CommitteeAssignment> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
+  }
+
   public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
     return atEpoch(epoch)
         .getValidatorsUtil()
         .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToPctAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPctAssignmentMap(state, epoch);
   }
 
   // Attestation helpers

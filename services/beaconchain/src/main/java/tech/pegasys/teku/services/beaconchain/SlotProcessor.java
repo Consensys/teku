@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT_EIP7732;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -180,13 +182,13 @@ public class SlotProcessor {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
-  // Attestations are due 1/3 of the way through the slots time period
+  // Attestations are due 1/3 (1/4 in Eip7732) of the way through the slots time period
   boolean isSlotAttestationDue(
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,
       final UInt64 nodeSlotStartTimeMillis) {
     final UInt64 earliestTimeInMillis =
-        nodeSlotStartTimeMillis.plus(oneThirdSlotMillis(calculatedSlot));
+        nodeSlotStartTimeMillis.plus(attestationDueMillis(calculatedSlot));
     final boolean processingDueForSlot =
         isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation);
     return processingDueForSlot && isTimeReached(currentTimeMillis, earliestTimeInMillis);
@@ -204,14 +206,17 @@ public class SlotProcessor {
     final UInt64 nextEpochStartTimeMillis =
         spec.getSlotStartTimeMillis(firstSlotOfNextEpoch, genesisTimeMillis);
     final UInt64 earliestTimeInMillis =
-        nextEpochStartTimeMillis.minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
+        nextEpochStartTimeMillis.minusMinZero(attestationDueMillis(firstSlotOfNextEpoch));
     final boolean processingDueForSlot =
         isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
     final boolean timeReached = isTimeReached(currentTimeMillis, earliestTimeInMillis);
     return processingDueForSlot && timeReached;
   }
 
-  private UInt64 oneThirdSlotMillis(final UInt64 slot) {
+  private UInt64 attestationDueMillis(final UInt64 slot) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT_EIP7732);
+    }
     return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT);
   }
 

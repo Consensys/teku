@@ -61,6 +61,11 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
     scheduleProduction(slot, validator, duty -> null);
   }
 
+  public synchronized void scheduleProductionOrAdd(
+      final UInt64 slot, final Validator validator, final Consumer<P> addToDuty) {
+    scheduleProduction(slot, validator, duty -> addToDuty);
+  }
+
   public synchronized <T> T scheduleProduction(
       final UInt64 slot, final Validator validator, final Function<P, T> addToDuty) {
     final P duty =

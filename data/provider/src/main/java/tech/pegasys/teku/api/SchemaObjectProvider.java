@@ -154,6 +154,7 @@ public class SchemaObjectProvider {
               block.getParentRoot(),
               block.getStateRoot(),
               getBeaconBlockBodyElectra(block.getBody()));
+      case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
     };
   }
 
