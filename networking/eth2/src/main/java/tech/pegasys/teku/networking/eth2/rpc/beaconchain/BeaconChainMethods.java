@@ -27,6 +27,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByR
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRootMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.ExecutionPayloadEnvelopesByRootMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.GoodbyeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage.BeaconBlocksByRangeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -54,11 +56,14 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage.EmptyMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -74,6 +79,10 @@ public class BeaconChainMethods {
       blobSidecarsByRoot;
   private final Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
       blobSidecarsByRange;
+  private final Optional<
+          Eth2RpcMethod<
+              ExecutionPayloadEnvelopesByRootRequestMessage, SignedExecutionPayloadEnvelope>>
+      executionPayloadEnvelopesByRoot;
   private final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata;
   private final Eth2RpcMethod<PingMessage, PingMessage> ping;
 
@@ -88,6 +97,10 @@ public class BeaconChainMethods {
           blobSidecarsByRoot,
       final Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
           blobSidecarsByRange,
+      final Optional<
+              Eth2RpcMethod<
+                  ExecutionPayloadEnvelopesByRootRequestMessage, SignedExecutionPayloadEnvelope>>
+          executionPayloadEnvelopesByRoot,
       final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata,
       final Eth2RpcMethod<PingMessage, PingMessage> ping) {
     this.status = status;
@@ -96,6 +109,7 @@ public class BeaconChainMethods {
     this.beaconBlocksByRange = beaconBlocksByRange;
     this.blobSidecarsByRoot = blobSidecarsByRoot;
     this.blobSidecarsByRange = blobSidecarsByRange;
+    this.executionPayloadEnvelopesByRoot = executionPayloadEnvelopesByRoot;
     this.getMetadata = getMetadata;
     this.ping = ping;
     this.allMethods =
@@ -103,6 +117,7 @@ public class BeaconChainMethods {
             List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange, getMetadata, ping));
     blobSidecarsByRoot.ifPresent(allMethods::add);
     blobSidecarsByRange.ifPresent(allMethods::add);
+    executionPayloadEnvelopesByRoot.ifPresent(allMethods::add);
   }
 
   public static BeaconChainMethods create(
@@ -144,6 +159,8 @@ public class BeaconChainMethods {
             peerLookup,
             rpcEncoding,
             recentChainData),
+        createExecutionPayloadEnvelopesByRoot(
+            spec, metricsSystem, asyncRunner, peerLookup, rpcEncoding, recentChainData),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -343,6 +360,47 @@ public class BeaconChainMethods {
             spec.getNetworkingConfig()));
   }
 
+  private static Optional<
+          Eth2RpcMethod<
+              ExecutionPayloadEnvelopesByRootRequestMessage, SignedExecutionPayloadEnvelope>>
+      createExecutionPayloadEnvelopesByRoot(
+          final Spec spec,
+          final MetricsSystem metricsSystem,
+          final AsyncRunner asyncRunner,
+          final PeerLookup peerLookup,
+          final RpcEncoding rpcEncoding,
+          final RecentChainData recentChainData) {
+    if (!spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
+      return Optional.empty();
+    }
+
+    final RpcContextCodec<Bytes4, SignedExecutionPayloadEnvelope> forkDigestContextCodec =
+        RpcContextCodec.forkDigest(
+            spec, recentChainData, ForkDigestPayloadContext.EXECUTION_PAYLOAD_ENVELOPE);
+
+    final ExecutionPayloadEnvelopesByRootMessageHandler
+        executionPayloadEnvelopesByRootMessageHandler =
+            new ExecutionPayloadEnvelopesByRootMessageHandler(spec, metricsSystem, recentChainData);
+    final ExecutionPayloadEnvelopesByRootRequestMessageSchema
+        executionPayloadEnvelopesByRootRequestMessageSchema =
+            SchemaDefinitionsEip7732.required(
+                    spec.forMilestone(SpecMilestone.EIP7732).getSchemaDefinitions())
+                .getExecutionPayloadEnvelopesByRootRequestMessageSchema();
+
+    return Optional.of(
+        new SingleProtocolEth2RpcMethod<>(
+            asyncRunner,
+            BeaconChainMethodIds.EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT,
+            1,
+            rpcEncoding,
+            executionPayloadEnvelopesByRootRequestMessageSchema,
+            true,
+            forkDigestContextCodec,
+            executionPayloadEnvelopesByRootMessageHandler,
+            peerLookup,
+            spec.getNetworkingConfig()));
+  }
+
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -458,6 +516,13 @@ public class BeaconChainMethods {
   public Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
       blobSidecarsByRange() {
     return blobSidecarsByRange;
+  }
+
+  public Optional<
+          Eth2RpcMethod<
+              ExecutionPayloadEnvelopesByRootRequestMessage, SignedExecutionPayloadEnvelope>>
+      executionPayloadEnvelopesByRoot() {
+    return executionPayloadEnvelopesByRoot;
   }
 
   public Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata() {

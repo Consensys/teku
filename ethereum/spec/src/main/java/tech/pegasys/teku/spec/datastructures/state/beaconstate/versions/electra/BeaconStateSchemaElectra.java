@@ -69,11 +69,13 @@ public class BeaconStateSchemaElectra
     final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
     final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
         new PendingConsolidation.PendingConsolidationSchema();
+    // Bellatrix
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
             () -> new ExecutionPayloadHeaderSchemaDeneb(specConfigElectra));
+    // Capella
     final SszField nextWithdrawalIndexField =
         new SszField(
             NEXT_WITHDRAWAL_INDEX,
@@ -84,7 +86,6 @@ public class BeaconStateSchemaElectra
             NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-
     final SszField historicalSummariesField =
         new SszField(
             HISTORICAL_SUMMARIES_INDEX,
@@ -92,6 +93,7 @@ public class BeaconStateSchemaElectra
             () ->
                 SszListSchema.create(
                     historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
+    // New
     final SszField depositRequestsStartIndexField =
         new SszField(
             DEPOSIT_REQUESTS_START_INDEX,
