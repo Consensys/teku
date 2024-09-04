@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -142,6 +143,12 @@ public class ExternalSigner implements Signer {
         SignType.ATTESTATION,
         Map.of(SignType.ATTESTATION.getName(), attestationData, FORK_INFO, forkInfo),
         slashableAttestationMessage(attestationData));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signPayloadAttestationData(
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
   }
 
   private void recordMetrics(final BLSSignature result, final Throwable error) {

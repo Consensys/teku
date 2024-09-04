@@ -47,8 +47,10 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -74,6 +76,8 @@ public class ValidatorApiHandlerIntegrationTest {
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
+  private final PayloadAttestationManager payloadAttestationManager =
+      mock(PayloadAttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriber =
       mock(AttestationTopicSubscriber.class);
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
@@ -114,6 +118,7 @@ public class ValidatorApiHandlerIntegrationTest {
           blobSidecarGossipChannel,
           attestationPool,
           attestationManager,
+          payloadAttestationManager,
           attestationTopicSubscriber,
           activeValidatorTracker,
           dutyMetrics,
@@ -125,7 +130,8 @@ public class ValidatorApiHandlerIntegrationTest {
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager,
           new BlockProductionAndPublishingPerformanceFactory(
-              new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0));
+              new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
+          ReceivedBlockEventsChannel.NOOP);
 
   @BeforeEach
   public void setup() {

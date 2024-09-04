@@ -190,4 +190,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
     notifyEpochDuties(PendingDuties::onAggregationDue, slot);
   }
+
+  @Override
+  public void onPayloadAttestationDue(final UInt64 slot) {}
 }

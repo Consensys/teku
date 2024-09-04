@@ -46,6 +46,7 @@ public class TestSpecFactory {
       case CAPELLA -> createMinimalCapella();
       case DENEB -> createMinimalDeneb();
       case ELECTRA -> createMinimalElectra();
+      case EIP7732 -> createMinimalEip7732();
     };
   }
 
@@ -57,6 +58,7 @@ public class TestSpecFactory {
       case CAPELLA -> createMainnetCapella();
       case DENEB -> createMainnetDeneb();
       case ELECTRA -> createMainnetElectra();
+      case EIP7732 -> createMainnetEip7732();
     };
   }
 
@@ -111,6 +113,11 @@ public class TestSpecFactory {
   public static Spec createMinimalElectra(final Consumer<SpecConfigBuilder> configAdapter) {
     final SpecConfigElectra specConfig = getElectraSpecConfig(Eth2Network.MINIMAL, configAdapter);
     return create(specConfig, SpecMilestone.ELECTRA);
+  }
+
+  public static Spec createMinimalEip7732() {
+    final SpecConfigElectra specConfig = getElectraSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.EIP7732);
   }
 
   /**
@@ -207,6 +214,11 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
+  public static Spec createMainnetEip7732() {
+    final SpecConfigElectra specConfig = getElectraSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.EIP7732);
+  }
+
   public static Spec createPhase0(final SpecConfig config) {
     return create(config, SpecMilestone.PHASE0);
   }
@@ -257,6 +269,15 @@ public class TestSpecFactory {
                       .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
                       .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
                       .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO));
+          case EIP7732 ->
+              builder ->
+                  builder
+                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                      .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                      .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                      .eip7732Builder(e -> e.eip7732ForkEpoch(UInt64.ZERO));
         };
     return create(
         SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),

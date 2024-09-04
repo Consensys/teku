@@ -61,6 +61,7 @@ import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
+import tech.pegasys.teku.validator.client.duties.attestations.PayloadAttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
@@ -460,6 +461,9 @@ public class ValidatorClientService extends Service {
             forkProvider, validatorApiChannel, blockContainerSigner, spec, validatorDutyMetrics);
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
+    final PayloadAttestationDutyFactory payloadAttestationDutyFactory =
+        new PayloadAttestationDutyFactory(
+            spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final boolean dvtSelectionsEndpointEnabled =
@@ -492,9 +496,24 @@ public class ValidatorClientService extends Service {
                         validatorDutyMetrics::performDutyWithMetrics),
                 validators,
                 validatorIndexProvider));
+
+    final DutyLoader<?> payloadDutyLoader =
+        new RetryingDutyLoader<>(
+            asyncRunner,
+            new PayloadAttestationDutyLoader(
+                validatorApiChannel,
+                dependentRoot ->
+                    new SlotBasedScheduledDuties<>(
+                        payloadAttestationDutyFactory,
+                        dependentRoot,
+                        validatorDutyMetrics::performDutyWithMetrics),
+                validators,
+                validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));
     validatorTimingChannels.add(
         new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, spec));
+    validatorTimingChannels.add(
+        new PayloadAttestationDutyScheduler(metricsSystem, payloadDutyLoader, spec));
     validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {

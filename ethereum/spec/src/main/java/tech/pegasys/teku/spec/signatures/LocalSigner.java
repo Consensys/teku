@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -68,6 +69,13 @@ public class LocalSigner implements Signer {
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
     return sign(signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signPayloadAttestationData(
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
+    return sign(
+        signingRootUtil.signingRootForPayloadAttestationData(payloadAttestationData, forkInfo));
   }
 
   @Override
