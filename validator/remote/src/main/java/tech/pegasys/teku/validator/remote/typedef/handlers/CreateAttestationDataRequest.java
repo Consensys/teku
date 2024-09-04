@@ -31,8 +31,7 @@ public class CreateAttestationDataRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<AttestationData> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
+  public Optional<AttestationData> submit(final UInt64 slot, final int committeeIndex) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("slot", slot.toString());
     queryParams.put("committee_index", Integer.toString(committeeIndex));

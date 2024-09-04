@@ -15,10 +15,10 @@ package tech.pegasys.teku.test.acceptance.dsl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.DATA_PATH;
-import static tech.pegasys.teku.test.acceptance.dsl.Node.JSON_PROVIDER;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.JWT_SECRET_FILE_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.METRICS_PORT;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.NETWORK_FILE_PATH;
+import static tech.pegasys.teku.test.acceptance.dsl.Node.OBJECT_MAPPER;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.P2P_PORT;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.PRIVATE_KEY_FILE_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.REST_API_PORT;
@@ -466,7 +466,7 @@ public class TekuNodeConfigBuilder {
       sentryNodesConfigFile.deleteOnExit();
 
       try (FileWriter fw = new FileWriter(sentryNodesConfigFile, StandardCharsets.UTF_8)) {
-        fw.write(sentryNodesConfig.toJson(JSON_PROVIDER));
+        fw.write(sentryNodesConfig.toJson(OBJECT_MAPPER));
       }
     } catch (IOException e) {
       throw new RuntimeException("Error creating sentry nodes configuration file", e);
@@ -507,6 +507,12 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withExternalSignerUrl(final String externalSignerUrl) {
     LOG.debug("validators-external-signer-url={}", externalSignerUrl);
     configMap.put("validators-external-signer-url", externalSignerUrl);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withExternalSignerPublicKeys(final String publicKeysList) {
+    LOG.debug("validators-external-signer-public-keys={}", publicKeysList);
+    configMap.put("validators-external-signer-public-keys", publicKeysList);
     return this;
   }
 

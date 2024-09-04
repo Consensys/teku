@@ -497,11 +497,7 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
-            ONE,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(false),
-            Optional.of(ONE));
+            ONE, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -518,11 +514,7 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(false),
-            Optional.of(ONE));
+            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -544,7 +536,6 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
@@ -554,7 +545,7 @@ class ValidatorApiHandlerTest {
     // we still want to check that all parameters are passed down the line to the block factory
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE));
+            newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
 
     verify(blockFactory)
         .createUnsignedBlock(
@@ -562,7 +553,6 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP);
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
@@ -915,14 +905,13 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            Optional.of(false),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
     assertThat(
             validatorApiHandler.createUnsignedBlock(
-                newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE)))
+                newSlot, randaoReveal, Optional.empty(), Optional.of(ONE)))
         .isCompleted();
 
     final SignedBeaconBlock block =
@@ -1285,7 +1274,7 @@ class ValidatorApiHandlerTest {
     return validatorLivenessAtEpochs.stream()
         .anyMatch(
             validatorLivenessAtEpoch ->
-                validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
+                validatorLivenessAtEpoch.index().equals(validatorIndex)
                     && validatorLivenessAtEpoch.isLive());
   }
 

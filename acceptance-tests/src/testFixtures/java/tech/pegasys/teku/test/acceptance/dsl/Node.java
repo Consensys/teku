@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +43,6 @@ import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.MetricLabelsCondition;
 import tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.MetricNameCondition;
 import tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.MetricValuesCondition;
@@ -56,7 +54,7 @@ public abstract class Node {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final String TEKU_DOCKER_IMAGE_NAME = "consensys/teku";
-  protected static final JsonProvider JSON_PROVIDER = new JsonProvider();
+  protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   protected final SimpleHttpClient httpClient = new SimpleHttpClient();
   protected static final int REST_API_PORT = 9051;
   protected static final int METRICS_PORT = 8008;
@@ -88,10 +86,7 @@ public abstract class Node {
         getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
     this.container =
         new NodeContainer(dockerImage)
-            .withImagePullPolicy(
-                dockerImage.endsWith(TekuDockerVersion.LOCAL_BUILD.getVersion())
-                    ? PullPolicy.defaultPolicy()
-                    : PullPolicy.ageBased(Duration.ofMinutes(5)))
+            .withImagePullPolicy(PullPolicy.defaultPolicy())
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));

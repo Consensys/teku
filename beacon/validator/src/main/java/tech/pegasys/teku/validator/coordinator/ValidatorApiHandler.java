@@ -86,8 +86,8 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -335,7 +335,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
@@ -357,7 +356,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     slot,
                     randaoReveal,
                     graffiti,
-                    requestedBlinded,
                     requestedBuilderBoostFactor,
                     blockSlotState,
                     blockProductionPerformance))
@@ -368,7 +366,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final Optional<BeaconState> maybeBlockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
@@ -390,7 +387,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             slot,
             randaoReveal,
             graffiti,
-            requestedBlinded,
             requestedBuilderBoostFactor,
             blockProductionPerformance)
         .thenApply(

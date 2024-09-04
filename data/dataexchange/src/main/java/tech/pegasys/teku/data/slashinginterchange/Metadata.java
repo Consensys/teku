@@ -13,42 +13,44 @@
 
 package tech.pegasys.teku.data.slashinginterchange;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class Metadata {
+public record Metadata(
+    Optional<String> interchangeFormat,
+    UInt64 interchangeFormatVersion,
+    Optional<Bytes32> genesisValidatorsRoot) {
 
   public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(5);
 
-  @JsonProperty("interchange_format")
-  public final String interchangeFormat;
-
-  @JsonProperty("interchange_format_version")
-  public final UInt64 interchangeFormatVersion;
-
-  @JsonProperty("genesis_validators_root")
-  public final Bytes32 genesisValidatorsRoot;
-
-  public Metadata(final UInt64 interchangeFormatVersion, final Bytes32 genesisValidatorsRoot) {
-    this.interchangeFormat = null;
-    this.interchangeFormatVersion = interchangeFormatVersion;
-    this.genesisValidatorsRoot = genesisValidatorsRoot;
-  }
-
-  @JsonCreator
-  public Metadata(
-      @JsonProperty("interchange_format") final String interchangeFormat,
-      @JsonProperty("interchange_format_version") final UInt64 interchangeFormatVersion,
-      @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot) {
-    this.interchangeFormatVersion = interchangeFormatVersion;
-    this.genesisValidatorsRoot = genesisValidatorsRoot;
-    this.interchangeFormat = interchangeFormat;
+  public static DeserializableTypeDefinition<Metadata> getJsonTypeDefinition() {
+    return DeserializableTypeDefinition.object(Metadata.class, MetadataBuilder.class)
+        .initializer(MetadataBuilder::new)
+        .finisher(MetadataBuilder::build)
+        .withOptionalField(
+            "interchange_format",
+            STRING_TYPE,
+            Metadata::interchangeFormat,
+            MetadataBuilder::interchangeFormat)
+        .withField(
+            "interchange_format_version",
+            UINT64_TYPE,
+            Metadata::interchangeFormatVersion,
+            MetadataBuilder::interchangeFormatVersion)
+        .withOptionalField(
+            "genesis_validators_root",
+            BYTES32_TYPE,
+            Metadata::genesisValidatorsRoot,
+            MetadataBuilder::genesisValidatorsRoot)
+        .build();
   }
 
   @Override
@@ -76,5 +78,30 @@ public class Metadata {
         .add("interchangeFormatVersion", interchangeFormatVersion)
         .add("genesisValidatorsRoot", genesisValidatorsRoot)
         .toString();
+  }
+
+  static class MetadataBuilder {
+    Optional<String> interchangeFormat = Optional.empty();
+    UInt64 interchangeFormatVersion;
+    Optional<Bytes32> genesisValidatorsRoot = Optional.empty();
+
+    MetadataBuilder interchangeFormat(final Optional<String> interchangeFormat) {
+      this.interchangeFormat = interchangeFormat;
+      return this;
+    }
+
+    MetadataBuilder interchangeFormatVersion(final UInt64 interchangeFormatVersion) {
+      this.interchangeFormatVersion = interchangeFormatVersion;
+      return this;
+    }
+
+    MetadataBuilder genesisValidatorsRoot(final Optional<Bytes32> genesisValidatorsRoot) {
+      this.genesisValidatorsRoot = genesisValidatorsRoot;
+      return this;
+    }
+
+    Metadata build() {
+      return new Metadata(interchangeFormat, interchangeFormatVersion, genesisValidatorsRoot);
+    }
   }
 }

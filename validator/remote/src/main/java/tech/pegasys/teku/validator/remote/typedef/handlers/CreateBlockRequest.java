@@ -16,8 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLINDED_BLOCK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V3;
 
 import com.google.common.net.MediaType;
 import java.io.IOException;
@@ -67,11 +66,8 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
-    apiMethod = blinded ? GET_UNSIGNED_BLINDED_BLOCK : GET_UNSIGNED_BLOCK_V2;
-    blockContainerSchema =
-        blinded
-            ? spec.atSlot(slot).getSchemaDefinitions().getBlindedBlockContainerSchema()
-            : spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
+    apiMethod = GET_UNSIGNED_BLOCK_V3;
+    blockContainerSchema = spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
     getBlockResponseDefinition =
         DeserializableTypeDefinition.object(GetBlockResponse.class)
             .initializer(GetBlockResponse::new)
@@ -99,7 +95,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
             : responseHandler;
   }
 
-  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> submit(
       final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("randao_reveal", randaoReveal.toString());

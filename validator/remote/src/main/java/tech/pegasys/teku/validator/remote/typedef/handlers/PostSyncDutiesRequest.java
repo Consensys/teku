@@ -32,7 +32,7 @@ public class PostSyncDutiesRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<SyncCommitteeDuties> postSyncDuties(
+  public Optional<SyncCommitteeDuties> submit(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return postJson(
         GET_SYNC_COMMITTEE_DUTIES,

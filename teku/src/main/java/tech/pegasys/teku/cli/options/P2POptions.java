@@ -49,9 +49,12 @@ public class P2POptions {
   private boolean p2pEnabled = true;
 
   @Option(
-      names = {"--p2p-interface"},
+      names = {"--p2p-interface", "--p2p-interfaces"},
       paramLabel = "<NETWORK>",
-      description = "P2P network interface",
+      description =
+          """
+              The network interface(s) on which the node listens for P2P communication.
+              You can define up to 2 interfaces, with one being IPv4 and the other IPv6. (Default: 0.0.0.0)""",
       split = ",",
       arity = "1..2")
   private List<String> p2pInterfaces = NetworkConfig.DEFAULT_P2P_INTERFACE;
@@ -64,11 +67,9 @@ public class P2POptions {
   private int p2pPort = NetworkConfig.DEFAULT_P2P_PORT;
 
   @Option(
-      names = {"--Xp2p-port-ipv6"},
+      names = {"--p2p-port-ipv6"},
       paramLabel = "<INTEGER>",
-      description =
-          "P2P IPv6 port. This port is only used when listening over both IPv4 and IPv6. If listening over only IPv6, the value of --p2p-port will be used.",
-      hidden = true,
+      description = "P2P IPv6 port. This port is only used when listening over both IPv4 and IPv6.",
       arity = "1")
   private int p2pPortIpv6 = NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 
@@ -80,13 +81,10 @@ public class P2POptions {
   private Integer p2pUdpPort;
 
   @Option(
-      names = {"--Xp2p-udp-port-ipv6"},
+      names = {"--p2p-udp-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
-          """
-             IPv6 UDP port used for discovery. This port is only used when listening over both IPv4 and IPv6.
-             If listening over only IPv6, the value of --p2p-udp-port will be used. The default is the port specified in --Xp2p-port-ipv6""",
-      hidden = true,
+          "IPv6 UDP port used for discovery. This port is only used when listening over both IPv4 and IPv6. The default is the port specified in --p2p-port-ipv6",
       arity = "1")
   private Integer p2pUdpPortIpv6;
 
@@ -108,9 +106,10 @@ public class P2POptions {
   private List<String> p2pDiscoveryBootnodes = null;
 
   @Option(
-      names = {"--p2p-advertised-ip"},
+      names = {"--p2p-advertised-ip", "--p2p-advertised-ips"},
       paramLabel = "<NETWORK>",
-      description = "P2P advertised IP (Default: 127.0.0.1)",
+      description =
+          "P2P advertised IP address(es). You can define up to 2 addresses, with one being IPv4 and the other IPv6. (Default: 127.0.0.1)",
       split = ",",
       arity = "1..2")
   private List<String> p2pAdvertisedIps;
@@ -123,13 +122,12 @@ public class P2POptions {
   private Integer p2pAdvertisedPort;
 
   @Option(
-      names = {"--Xp2p-advertised-port-ipv6"},
+      names = {"--p2p-advertised-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
           """
-             P2P advertised IPv6 port. The default is the port specified in --Xp2p-port-ipv6. This port is only used when advertising both IPv4 and IPv6 addresses.
-             If advertising only an IPv6 address, the value of ---p2p-advertised-port will be used.""",
-      hidden = true,
+              P2P advertised IPv6 port. This port is only used when advertising both IPv4 and IPv6 addresses.
+              The default is the port specified in --p2p-port-ipv6.""",
       arity = "1")
   private Integer p2pAdvertisedPortIpv6;
 
@@ -142,13 +140,12 @@ public class P2POptions {
   private Integer p2pAdvertisedUdpPort;
 
   @Option(
-      names = {"--Xp2p-advertised-udp-port-ipv6"},
+      names = {"--p2p-advertised-udp-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
           """
-         Advertised IPv6 UDP port to external peers. This port is only used when advertising both IPv4 and IPv6 addresses.
-         If advertising only an IPv6 address, the value of ---p2p-advertised-udp-port will be used. The default is the port specified in --Xp2p-advertised-port-ipv6""",
-      hidden = true,
+              Advertised IPv6 UDP port to external peers. This port is only used when advertising both IPv4 and IPv6 addresses.
+              The default is the port specified in --p2p-advertised-port-ipv6.""",
       arity = "1")
   private Integer p2pAdvertisedUdpPortIpv6;
 

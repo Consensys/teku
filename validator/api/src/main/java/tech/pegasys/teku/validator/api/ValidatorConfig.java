@@ -46,7 +46,6 @@ public class ValidatorConfig {
       List.of(URI.create("http://127.0.0.1:" + DEFAULT_REST_API_PORT));
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
   public static final boolean DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED = true;
-  public static final boolean DEFAULT_BLOCK_V3_ENABLED = false;
   public static final boolean DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED = true;
@@ -70,6 +69,7 @@ public class ValidatorConfig {
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
   public static final boolean DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
+  public static final boolean DEFAULT_ATTESTATIONS_V2_APIS_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -98,7 +98,6 @@ public class ValidatorConfig {
   private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final boolean failoversPublishSignedDutiesEnabled;
-  private final boolean blockV3Enabled;
   private final boolean exitWhenNoValidatorKeysEnabled;
   private final boolean shutdownWhenValidatorSlashedEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
@@ -112,6 +111,7 @@ public class ValidatorConfig {
 
   private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
   private final boolean dvtSelectionsEndpointEnabled;
+  private final boolean attestationsV2ApisEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -141,7 +141,6 @@ public class ValidatorConfig {
       final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final boolean failoversPublishSignedDutiesEnabled,
-      final boolean blockV3Enabled,
       final boolean exitWhenNoValidatorKeysEnabled,
       final boolean shutdownWhenValidatorSlashedEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
@@ -152,7 +151,8 @@ public class ValidatorConfig {
       final int executorThreads,
       final Optional<String> sentryNodeConfigurationFile,
       final boolean isLocalSlashingProtectionSynchronizedModeEnabled,
-      final boolean dvtSelectionsEndpointEnabled) {
+      final boolean dvtSelectionsEndpointEnabled,
+      final boolean attestationsV2ApisEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -184,7 +184,6 @@ public class ValidatorConfig {
     this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
-    this.blockV3Enabled = blockV3Enabled;
     this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
     this.shutdownWhenValidatorSlashedEnabled = shutdownWhenValidatorSlashedEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
@@ -197,6 +196,7 @@ public class ValidatorConfig {
     this.isLocalSlashingProtectionSynchronizedModeEnabled =
         isLocalSlashingProtectionSynchronizedModeEnabled;
     this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
+    this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
 
     LOG.debug(
         "Executor queue - {} threads, max queue size {} ", executorThreads, executorMaxQueueSize);
@@ -325,10 +325,6 @@ public class ValidatorConfig {
     return failoversPublishSignedDutiesEnabled;
   }
 
-  public boolean isBlockV3Enabled() {
-    return blockV3Enabled;
-  }
-
   public boolean isExitWhenNoValidatorKeysEnabled() {
     return exitWhenNoValidatorKeysEnabled;
   }
@@ -370,6 +366,10 @@ public class ValidatorConfig {
     return dvtSelectionsEndpointEnabled;
   }
 
+  public boolean isAttestationsV2ApisEnabled() {
+    return attestationsV2ApisEnabled;
+  }
+
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -408,7 +408,6 @@ public class ValidatorConfig {
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
     private boolean failoversPublishSignedDutiesEnabled =
         DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
-    private boolean blockV3Enabled = DEFAULT_BLOCK_V3_ENABLED;
     private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
     private boolean shutdownWhenValidatorSlashedEnabled =
         DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
@@ -423,6 +422,7 @@ public class ValidatorConfig {
     private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
         DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
     private boolean dvtSelectionsEndpointEnabled = DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
+    private boolean attestationsV2ApisEnabled = DEFAULT_ATTESTATIONS_V2_APIS_ENABLED;
 
     private Builder() {}
 
@@ -609,11 +609,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder blockV3enabled(final boolean useBlockV3) {
-      this.blockV3Enabled = useBlockV3;
-      return this;
-    }
-
     public Builder exitWhenNoValidatorKeysEnabled(final boolean exitWhenNoValidatorKeysEnabled) {
       this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
       return this;
@@ -681,6 +676,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder attestationsV2ApisEnabled(final boolean attestationsV2ApisEnabled) {
+      this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -715,7 +715,6 @@ public class ValidatorConfig {
           doppelgangerDetectionEnabled,
           failoversSendSubnetSubscriptionsEnabled,
           failoversPublishSignedDutiesEnabled,
-          blockV3Enabled,
           exitWhenNoValidatorKeysEnabled,
           shutdownWhenValidatorSlashedEnabled,
           builderRegistrationDefaultGasLimit,
@@ -726,7 +725,8 @@ public class ValidatorConfig {
           executorThreads,
           sentryNodeConfigurationFile,
           isLocalSlashingProtectionSynchronizedModeEnabled,
-          dvtSelectionsEndpointEnabled);
+          dvtSelectionsEndpointEnabled,
+          attestationsV2ApisEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

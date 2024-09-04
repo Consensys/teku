@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
@@ -96,7 +96,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
             UInt64 slot,
             BLSSignature randaoReveal,
             Optional<Bytes32> graffiti,
-            Optional<Boolean> requestedBlinded,
             Optional<UInt64> requestedBuilderBoostFactor) {
           return SafeFuture.completedFuture(Optional.empty());
         }
@@ -218,15 +217,10 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
-  /**
-   * @param requestedBlinded can be removed once block creation V2 APIs are removed in favour of V3
-   *     only
-   */
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       UInt64 slot,
       BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
-      Optional<Boolean> requestedBlinded,
       Optional<UInt64> requestedBuilderBoostFactor);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);

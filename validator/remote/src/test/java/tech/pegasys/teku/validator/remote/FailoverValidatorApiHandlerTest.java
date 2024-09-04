@@ -70,7 +70,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -584,8 +584,7 @@ class FailoverValidatorApiHandlerTest {
 
     final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> creationRequest =
         apiChannel ->
-            apiChannel.createUnsignedBlock(
-                slot, randaoReveal, Optional.empty(), Optional.of(true), Optional.empty());
+            apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), Optional.empty());
 
     setupFailures(creationRequest, primaryApiChannel);
     setupSuccesses(creationRequest, Optional.of(blindedBlock), failoverApiChannel1);
@@ -687,7 +686,7 @@ class FailoverValidatorApiHandlerTest {
             "createUnsignedBlock",
             apiChannel ->
                 apiChannel.createUnsignedBlock(
-                    slot, randaoReveal, Optional.empty(), Optional.of(false), Optional.empty()),
+                    slot, randaoReveal, Optional.empty(), Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             Optional.of(mock(BlockContainerAndMetaData.class))),
         getArguments(

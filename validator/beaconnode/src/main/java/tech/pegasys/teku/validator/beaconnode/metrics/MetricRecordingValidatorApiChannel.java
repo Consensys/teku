@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -139,11 +139,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     return countOptionalDataRequest(
-        delegate.createUnsignedBlock(
-            slot, randaoReveal, graffiti, requestedBlinded, requestedBuilderBoostFactor),
+        delegate.createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 

@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -156,6 +157,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected ChainBuilder chainBuilder;
   protected ChainUpdater chainUpdater;
 
+  protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   protected final JsonProvider jsonProvider = new JsonProvider();
 
   protected DataProvider dataProvider;
@@ -450,6 +452,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         + params.entrySet().stream()
             .map(e -> e.getKey() + "=" + e.getValue())
             .collect(Collectors.joining("&"));
+  }
+
+  protected JsonNode getResponseData(final Response response) throws IOException {
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
+    return body.get("data");
   }
 
   @AfterEach

@@ -175,11 +175,6 @@ class BlockOperationSelectorFactoryTest {
           .getExecutionPayloadSchema()
           .getDefault();
 
-  private final ExecutionPayloadHeader executionPayloadHeaderOfDefaultPayload =
-      SchemaDefinitionsBellatrix.required(specBellatrix.getGenesisSpec().getSchemaDefinitions())
-          .getExecutionPayloadHeaderSchema()
-          .getHeaderOfDefaultPayload();
-
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false);
 
@@ -256,7 +251,6 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -302,7 +296,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 randaoReveal,
                 Optional.of(defaultGraffiti),
-                Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -391,7 +384,6 @@ class BlockOperationSelectorFactoryTest {
                 randaoReveal,
                 Optional.of(defaultGraffiti),
                 Optional.empty(),
-                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -422,33 +414,10 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
-  }
-
-  @Test
-  void shouldIncludeExecutionPayloadHeaderOfDefaultPayload() {
-    final UInt64 slot = UInt64.ONE;
-    final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    safeJoin(
-        factoryBellatrix
-            .createSelector(
-                parentRoot,
-                blockSlotState,
-                dataStructureUtil.randomSignature(),
-                Optional.empty(),
-                Optional.of(true),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
-            .apply(bodyBuilder));
-    assertThat(bodyBuilder.executionPayloadHeader)
-        .isEqualTo(executionPayloadHeaderOfDefaultPayload);
   }
 
   @Test
@@ -471,7 +440,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -490,9 +458,16 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayloadHeader();
     final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
 
+    final ExecutionPayloadContext executionPayloadContextWithValidatorRegistration =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(executionPayloadContextWithValidatorRegistration)));
+
     prepareBlockProductionWithPayloadHeader(
         randomExecutionPayloadHeader,
-        executionPayloadContext,
+        executionPayloadContextWithValidatorRegistration,
         blockSlotState,
         Optional.of(blockExecutionValue));
 
@@ -503,7 +478,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(true),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -534,7 +508,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -566,7 +539,6 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -596,7 +568,6 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
-                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -638,7 +609,6 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
-                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -704,7 +674,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(false),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -729,9 +698,16 @@ class BlockOperationSelectorFactoryTest {
     final SszList<SszKZGCommitment> blobKzgCommitments =
         dataStructureUtil.randomBlobKzgCommitments();
 
+    final ExecutionPayloadContext executionPayloadContextWithValidatorRegistration =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(executionPayloadContextWithValidatorRegistration)));
+
     prepareBlindedBlockAndBlobsProduction(
         randomExecutionPayloadHeader,
-        executionPayloadContext,
+        executionPayloadContextWithValidatorRegistration,
         blockSlotState,
         blobKzgCommitments,
         blockExecutionValue);
@@ -745,7 +721,6 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.of(true),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
@@ -979,7 +954,6 @@ class BlockOperationSelectorFactoryTest {
                     blockSlotState,
                     dataStructureUtil.randomSignature(),
                     Optional.empty(),
-                    Optional.of(false),
                     Optional.empty(),
                     BlockProductionPerformance.NOOP)
                 .apply(bodyBuilder))

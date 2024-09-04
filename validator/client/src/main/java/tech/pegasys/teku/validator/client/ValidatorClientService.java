@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -41,7 +42,6 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -184,7 +184,7 @@ public class ValidatorClientService extends Service {
           ProposerConfigProvider.create(
               asyncRunner,
               validatorConfig.getRefreshProposerConfigFromSource(),
-              new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
+              new ProposerConfigLoader(new ObjectMapper()),
               services.getTimeProvider(),
               validatorConfig.getProposerConfigSource());
 
@@ -458,13 +458,7 @@ public class ValidatorClientService extends Service {
     final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
-            forkProvider,
-            validatorApiChannel,
-            blockContainerSigner,
-            config.getValidatorConfig().isBlindedBeaconBlocksEnabled(),
-            config.getValidatorConfig().isBlockV3Enabled(),
-            spec,
-            validatorDutyMetrics);
+            forkProvider, validatorApiChannel, blockContainerSigner, spec, validatorDutyMetrics);
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =

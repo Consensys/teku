@@ -28,7 +28,7 @@ public class GetGenesisRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<GetGenesisApiData> getGenesisData() {
+  public Optional<GetGenesisApiData> submit() {
     return get(GET_GENESIS, new ResponseHandler<>(GET_GENESIS_API_DATA_TYPE));
   }
 }
