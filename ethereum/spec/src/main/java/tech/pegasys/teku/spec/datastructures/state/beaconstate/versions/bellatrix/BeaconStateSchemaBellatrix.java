@@ -47,6 +47,7 @@ public class BeaconStateSchemaBellatrix
   }
 
   public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+    // New
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,

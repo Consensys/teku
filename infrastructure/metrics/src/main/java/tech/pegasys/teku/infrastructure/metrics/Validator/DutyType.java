@@ -16,7 +16,8 @@ package tech.pegasys.teku.infrastructure.metrics.Validator;
 public enum DutyType {
   ATTESTATION_AGGREGATION("attestation_aggregation"),
   ATTESTATION_PRODUCTION("attestation_production"),
-  BLOCK_PRODUCTION("block_production");
+  BLOCK_PRODUCTION("block_production"),
+  PAYLOAD_ATTESTATION_PRODUCTION("payload_attestation_production");
 
   private final String name;
 

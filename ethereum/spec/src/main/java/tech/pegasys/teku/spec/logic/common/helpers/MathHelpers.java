@@ -134,4 +134,12 @@ public class MathHelpers {
   public static UInt64 bytesToUInt64(final Bytes data) {
     return UInt64.fromLongBits(data.toLong(ByteOrder.LITTLE_ENDIAN));
   }
+
+  /** if ``n`` is not zero, returns the largest power of `2` that is not greater than `n`. */
+  public static UInt64 bitFloor(final UInt64 n) {
+    if (n.isZero()) {
+      return UInt64.ZERO;
+    }
+    return UInt64.valueOf(1L << (n.bigIntegerValue().bitLength() - 1));
+  }
 }

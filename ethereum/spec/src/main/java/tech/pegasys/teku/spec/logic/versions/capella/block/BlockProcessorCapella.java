@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -97,13 +98,13 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   @Override
   public void executionProcessing(
       final MutableBeaconState genericState,
-      final BeaconBlockBody beaconBlockBody,
+      final BeaconBlock block,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final ExecutionPayloadHeader executionPayloadHeader =
-        extractExecutionPayloadHeader(beaconBlockBody);
+        extractExecutionPayloadHeader(block.getBody());
     processWithdrawals(genericState, executionPayloadHeader);
-    super.executionProcessing(genericState, beaconBlockBody, payloadExecutor);
+    super.executionProcessing(genericState, block, payloadExecutor);
   }
 
   @Override
