@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -61,6 +62,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -68,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -92,6 +96,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
+  private final Supplier<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
+      executionPayloadEnvelopesByRootRequestMessageSchema;
+  private final Supplier<Integer> maxBlobsPerBlock;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -128,6 +135,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsDeneb.required(
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
+    this.executionPayloadEnvelopesByRootRequestMessageSchema =
+        Suppliers.memoize(
+            () ->
+                SchemaDefinitionsEip7732.required(
+                        spec.forMilestone(SpecMilestone.EIP7732).getSchemaDefinitions())
+                    .getExecutionPayloadEnvelopesByRootRequestMessageSchema());
+    this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
   }
 
   @Override
@@ -261,6 +275,22 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
+      final List<Bytes32> blockRoots,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    return rpcMethods
+        .executionPayloadEnvelopesByRoot()
+        .map(
+            method ->
+                requestStream(
+                    method,
+                    new ExecutionPayloadEnvelopesByRootRequestMessage(
+                        executionPayloadEnvelopesByRootRequestMessageSchema.get(), blockRoots),
+                    listener))
+        .orElse(failWithUnsupportedMethodException("ExecutionPayloadEnvelopesByRoot"));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
@@ -304,6 +334,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                               }));
             })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
+      final Bytes32 blockRoot) {
+    return rpcMethods
+        .executionPayloadEnvelopesByRoot()
+        .map(
+            method ->
+                requestOptionalItem(
+                    method,
+                    new ExecutionPayloadEnvelopesByRootRequestMessage(
+                        executionPayloadEnvelopesByRootRequestMessageSchema.get(),
+                        List.of(blockRoot))))
+        .orElse(failWithUnsupportedMethodException("ExecutionPayloadEnvelopesByRoot"));
   }
 
   @Override

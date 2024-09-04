@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.config.builder.AltairBuilder;
 import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
 import tech.pegasys.teku.spec.config.builder.DenebBuilder;
+import tech.pegasys.teku.spec.config.builder.Eip7732Builder;
 import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
@@ -206,6 +207,16 @@ public class SpecConfigReader {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConfig.get(constantKey);
               invokeSetter(setter, configBuilder::electraBuilder, constantKey, rawValue);
+              unprocessedConfig.remove(constantKey);
+            });
+
+    // Process eip7732 config
+    streamConfigSetters(Eip7732Builder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessedConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::eip7732Builder, constantKey, rawValue);
               unprocessedConfig.remove(constantKey);
             });
 

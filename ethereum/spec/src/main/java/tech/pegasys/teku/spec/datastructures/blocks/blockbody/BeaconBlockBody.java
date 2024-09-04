@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -92,6 +94,10 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
+  default Optional<SszList<PayloadAttestation>> getOptionalPayloadAttestations() {
+    return Optional.empty();
+  }
+
   default boolean isBlinded() {
     return false;
   }
@@ -124,6 +130,10 @@ public interface BeaconBlockBody extends SszContainer {
   }
 
   default Optional<BeaconBlockBodyElectra> toVersionElectra() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconBlockBodyEip7732> toVersionEip7732() {
     return Optional.empty();
   }
 

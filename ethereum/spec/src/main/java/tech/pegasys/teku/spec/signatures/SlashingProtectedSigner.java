@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -74,6 +75,12 @@ public class SlashingProtectedSigner implements Signer {
             attestationData.getTarget().getEpoch())
         .thenAccept(verifySigningAllowed(slashableAttestationMessage(attestationData)))
         .thenCompose(__ -> delegate.signAttestationData(attestationData, forkInfo));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signPayloadAttestationData(
+      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
+    return delegate.signPayloadAttestationData(payloadAttestationData, forkInfo);
   }
 
   private Supplier<String> slashableBlockMessage(final BeaconBlock block) {
