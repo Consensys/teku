@@ -20,11 +20,10 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
@@ -38,16 +37,14 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    Response response = post(PostValidatorLiveness.ROUTE, jsonProvider.objectToJSON(""));
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    checkEmptyBodyToRoute(PostValidatorLiveness.ROUTE, SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldReturnUnavailableWhenChainDataNotAvailable() throws Exception {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-    Response response = post(PostValidatorLiveness.ROUTE, jsonProvider.objectToJSON(""));
-    assertThat(response.code()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    checkEmptyBodyToRoute(PostValidatorLiveness.ROUTE, SC_SERVICE_UNAVAILABLE);
   }
 
   @Test
@@ -59,12 +56,13 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     setCurrentSlot(12);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    Response response =
+    final Response response =
         post(getValidatorLivenessUrl(epoch), String.format("[\"%s\"]", validatorIndex));
     assertThat(response.code()).isEqualTo(SC_OK);
-    final PostValidatorLivenessResponse result =
-        jsonProvider.jsonToObject(response.body().string(), PostValidatorLivenessResponse.class);
-    assertThat(result.data.get(0)).isEqualTo(new ValidatorLiveness(validatorIndex, true));
+    final JsonNode data = getResponseData(response);
+    assertThat(data.get(0).get("index").asInt()).isEqualTo(validatorIndex.intValue());
+    assertThat(data.get(0).get("is_live").asBoolean()).isTrue();
+    assertThat(data.size()).isEqualTo(1);
   }
 
   private String getValidatorLivenessUrl(final UInt64 epoch) {
