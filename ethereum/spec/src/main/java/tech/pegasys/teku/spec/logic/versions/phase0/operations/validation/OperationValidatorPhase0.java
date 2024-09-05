@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.operations.validation;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -87,5 +88,13 @@ public class OperationValidatorPhase0 implements OperationValidator {
   public Optional<OperationInvalidReason> validateBlsToExecutionChange(
       final Fork fork, final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
     return Optional.of(() -> "Bls to execution changes are not valid before Capella fork");
+  }
+
+  @Override
+  public Optional<OperationInvalidReason> validateExecutionPayloadHeader(
+      final Fork fork,
+      final BeaconState state,
+      final SignedExecutionPayloadHeader executionPayloadHeader) {
+    return Optional.of(() -> "Execution payload header is not valid before EIP7732 fork");
   }
 }

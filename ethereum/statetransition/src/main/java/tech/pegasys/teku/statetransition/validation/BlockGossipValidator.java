@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -144,7 +145,12 @@ public class BlockGossipValidator {
               }
               final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
 
-              if (miscHelpers.isMergeTransitionComplete(postState)) {
+              // skip execution payload validation for ePBS
+              if (miscHelpers.isMergeTransitionComplete(postState)
+                  && !spec.atSlot(postState.getSlot())
+                      .getMilestone()
+                      .isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+
                 Optional<ExecutionPayload> executionPayload =
                     block.getMessage().getBody().getOptionalExecutionPayload();
 
