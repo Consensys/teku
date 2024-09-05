@@ -73,6 +73,7 @@ public class GetAttesterSlashings extends RestApiEndpoint {
                 schemaDefinitionCache
                     .getSchemaDefinition(SpecMilestone.PHASE0)
                     .getAttesterSlashingSchema()
+                    .castTypeToAttesterSlashingSchema()
                     .getJsonTypeDefinition()),
             Function.identity())
         .build();
