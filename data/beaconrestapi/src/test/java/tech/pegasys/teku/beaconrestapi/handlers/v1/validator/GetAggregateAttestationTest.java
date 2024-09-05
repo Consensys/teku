@@ -38,53 +38,53 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetAggregateAttestationTest extends AbstractMigratedBeaconHandlerTest {
 
-    @BeforeEach
-    void setUp() {
-        setHandler(new GetAggregateAttestation(validatorDataProvider, spec));
-    }
+  @BeforeEach
+  void setUp() {
+    setHandler(new GetAggregateAttestation(validatorDataProvider, spec));
+  }
 
-    @Test
-    public void shouldReturnAttestationInformation() throws JsonProcessingException {
-        final Bytes32 attestationDataRoot = dataStructureUtil.randomBytes32();
-        request.setQueryParameter("slot", "1");
-        request.setQueryParameter("attestation_data_root", attestationDataRoot.toHexString());
+  @Test
+  public void shouldReturnAttestationInformation() throws JsonProcessingException {
+    final Bytes32 attestationDataRoot = dataStructureUtil.randomBytes32();
+    request.setQueryParameter("slot", "1");
+    request.setQueryParameter("attestation_data_root", attestationDataRoot.toHexString());
 
-        Attestation attestation = dataStructureUtil.randomAttestation();
-        when(validatorDataProvider.createAggregate(
-                eq(UInt64.valueOf(1)), eq(attestationDataRoot), eq(Optional.empty())))
-                .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
+    Attestation attestation = dataStructureUtil.randomAttestation();
+    when(validatorDataProvider.createAggregate(
+            eq(UInt64.valueOf(1)), eq(attestationDataRoot), eq(Optional.empty())))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
 
-        handler.handleRequest(request);
+    handler.handleRequest(request);
 
-        assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-        assertThat(request.getResponseBody()).isEqualTo(attestation);
-    }
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(attestation);
+  }
 
-    @Test
-    void metadata_shouldHandle400() throws JsonProcessingException {
-        verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
-    }
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
 
-    @Test
-    void metadata_shouldHandle404() throws JsonProcessingException {
-        verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
-    }
+  @Test
+  void metadata_shouldHandle404() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
+  }
 
-    @Test
-    void metadata_shouldHandle500() throws JsonProcessingException {
-        verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
-    }
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
 
-    @Test
-    void metadata_shouldHandle200() throws IOException {
-        Attestation responseData = dataStructureUtil.randomAttestation();
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    Attestation responseData = dataStructureUtil.randomAttestation();
 
-        final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
-        final String expected =
-                Resources.toString(
-                        Resources.getResource(
-                                GetAggregateAttestationTest.class, "getAggregateAttestation.json"),
-                        UTF_8);
-        assertThat(data).isEqualTo(expected);
-    }
+    final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+    final String expected =
+        Resources.toString(
+            Resources.getResource(
+                GetAggregateAttestationTest.class, "getAggregateAttestation.json"),
+            UTF_8);
+    assertThat(data).isEqualTo(expected);
+  }
 }
