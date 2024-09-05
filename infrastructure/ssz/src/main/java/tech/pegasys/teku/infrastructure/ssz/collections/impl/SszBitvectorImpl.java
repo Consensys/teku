@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.stream.IntStream;
-
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -37,12 +36,12 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   public static SszBitvector fromBytes(
-          final SszBitvectorSchema<?> schema, final Bytes value, final int size) {
+      final SszBitvectorSchema<?> schema, final Bytes value, final int size) {
     return new SszBitvectorImpl(schema, BitvectorImpl.fromBytes(value, size));
   }
 
   public static SszBitvector fromHexString(
-          final SszBitvectorSchema<?> schema, final String hexString, final int size) {
+      final SszBitvectorSchema<?> schema, final String hexString, final int size) {
     return fromBytes(schema, Bytes.fromHexString(hexString), size);
   }
 

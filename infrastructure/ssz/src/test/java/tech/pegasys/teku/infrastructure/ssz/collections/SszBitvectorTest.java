@@ -110,7 +110,8 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   void or_shouldThrowIfBitvectorSizeIsLarger(final SszBitvector bitvector) {
     final SszBitvectorSchema<SszBitvector> largerSchema =
         SszBitvectorSchema.create(bitvector.getSchema().getMaxLength() + 1);
-    final SszBitvector largerBitvector = largerSchema.ofBits(bitvector.size() - 1, bitvector.size());
+    final SszBitvector largerBitvector =
+        largerSchema.ofBits(bitvector.size() - 1, bitvector.size());
     assertThatThrownBy(() -> bitvector.or(largerBitvector))
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -247,7 +248,7 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
     final Bytes bytes = bitvector.sszSerialize();
     final long size = bitvector.getSchema().getMaxLength();
     final SszBitvector result =
-            SszBitvectorImpl.fromBytes(bitvector.getSchema(), bytes, (int) size);
+        SszBitvectorImpl.fromBytes(bitvector.getSchema(), bytes, (int) size);
     SszDataAssert.assertThatSszData(result).isEqualByAllMeansTo(bitvector);
   }
 
@@ -257,7 +258,7 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
     final String hexString = bitvector.sszSerialize().toHexString();
     final long size = bitvector.getSchema().getMaxLength();
     final SszBitvector result =
-            SszBitvectorImpl.fromHexString(bitvector.getSchema(), hexString, (int) size);
+        SszBitvectorImpl.fromHexString(bitvector.getSchema(), hexString, (int) size);
     SszDataAssert.assertThatSszData(result).isEqualByAllMeansTo(bitvector);
   }
 }
