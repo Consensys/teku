@@ -31,13 +31,13 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBase {
+public class ValidatorConsolidationAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void triggerValidatorExitWithFullWithdrawal() throws Exception {
+  void consolidateValidator() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
@@ -50,9 +50,11 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
     final String eth1PrivateKey =
         besuNode.getRichBenefactorKey(); // key for withdrawal_credentials account
 
+    // 192 validators (32 eth each) is the minimum number required to enable us to have enough limit
+    // to consolidate
     final ValidatorKeystores validatorKeys =
         createTekuDepositSender(NETWORK_NAME)
-            .generateValidatorKeys(4, Eth1Address.fromHexString(eth1Address));
+            .generateValidatorKeys(192, Eth1Address.fromHexString(eth1Address));
 
     final InitialStateData initialStateData =
         createGenesisGenerator()
@@ -72,17 +74,27 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
     final TekuBeaconNode tekuNode =
         createTekuBeaconNode(beaconNode(genesisTime, besuNode, initialStateData, validatorKeys));
     tekuNode.start();
-    // Ensures validator is active long enough to exit
+    // Ensures sourceValidator is active long enough to exit
     tekuNode.waitForNewFinalization();
 
-    final ValidatorKeys validator = validatorKeys.getValidatorKeys().get(0);
-    final BLSPublicKey validatorPublicKey = validator.getValidatorKey().getPublicKey();
+    final ValidatorKeys sourceValidator = validatorKeys.getValidatorKeys().get(0);
+    final BLSPublicKey sourceValidatorPublicKey = sourceValidator.getValidatorKey().getPublicKey();
 
-    besuNode.createWithdrawalRequest(eth1PrivateKey, validatorPublicKey, UInt64.ZERO);
+    final ValidatorKeys targetValidator = validatorKeys.getValidatorKeys().get(1);
+    final BLSPublicKey targetValidatorPublicKey = targetValidator.getValidatorKey().getPublicKey();
 
-    // Wait for validator exit confirmation
+    besuNode.createConsolidationRequest(
+        eth1PrivateKey, sourceValidatorPublicKey, targetValidatorPublicKey);
+    waitForValidatorExit(tekuNode, sourceValidatorPublicKey);
+  }
+
+  private void waitForValidatorExit(
+      final TekuBeaconNode tekuNode, final BLSPublicKey validatorPublicKey) {
+    final String pubKeySubstring = validatorPublicKey.toHexString().substring(2, 9);
     tekuNode.waitForLogMessageContaining(
-        "has changed status from active_ongoing to active_exiting");
+        "Validator "
+            + pubKeySubstring
+            + " has changed status from active_ongoing to active_exiting");
   }
 
   private BesuNode createBesuNode(final int genesisTime) {
