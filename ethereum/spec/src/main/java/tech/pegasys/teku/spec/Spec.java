@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -708,6 +709,13 @@ public class Spec {
     return atTime(state.getGenesisTime(), currentTime)
         .getOperationValidator()
         .validateBlsToExecutionChange(state.getFork(), state, blsToExecutionChange);
+  }
+
+  public Optional<OperationInvalidReason> validateExecutionPayloadHeader(
+      final BeaconState state, final SignedExecutionPayloadHeader executionPayloadHeader) {
+    return atState(state)
+        .getOperationValidator()
+        .validateExecutionPayloadHeader(state.getFork(), state, executionPayloadHeader);
   }
 
   public boolean verifyBlsToExecutionChangeSignature(
