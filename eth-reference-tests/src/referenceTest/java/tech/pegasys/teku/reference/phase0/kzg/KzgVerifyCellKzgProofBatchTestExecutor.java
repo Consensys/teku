@@ -16,14 +16,13 @@ package tech.pegasys.teku.reference.phase0.kzg;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.Streams;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
-import tech.pegasys.teku.kzg.KZGCellID;
-import tech.pegasys.teku.kzg.KZGCellWithIds;
+import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 
@@ -35,18 +34,16 @@ public class KzgVerifyCellKzgProofBatchTestExecutor extends KzgTestExecutor {
     final Boolean expectedVerificationResult = data.getOutput();
     Boolean actualVerificationResult;
     try {
+      if (data.getInput().cellIndices.size() != data.getInput().cells.size()) {
+        throw new RuntimeException("cellIndices and cells sizes don't match!");
+      }
       actualVerificationResult =
           kzg.verifyCellProofBatch(
-              data.getInput().getRowCommitments(),
-              IntStream.range(0, data.getInput().getCells().size())
-                  .mapToObj(
-                      index ->
-                          new KZGCellWithIds(
-                              data.getInput().getCells().get(index),
-                              KZGCellID.fromCellColumnIndex(
-                                  data.getInput().getRowIndices().get(index)),
-                              KZGCellID.fromCellColumnIndex(
-                                  data.getInput().getColumnIndices().get(index))))
+              data.getInput().getCommitments(),
+              Streams.zip(
+                      data.getInput().getCellIndices().stream(),
+                      data.getInput().getCells().stream(),
+                      (cellIndex, cell) -> KZGCellWithColumnId.fromCellAndColumn(cell, cellIndex))
                   .toList(),
               data.getInput().getProofs());
     } catch (final RuntimeException ex) {
@@ -71,14 +68,11 @@ public class KzgVerifyCellKzgProofBatchTestExecutor extends KzgTestExecutor {
     }
 
     private static class Input {
-      @JsonProperty(value = "row_commitments", required = true)
-      private List<String> rowCommitments;
+      @JsonProperty(value = "commitments", required = true)
+      private List<String> commitments;
 
-      @JsonProperty(value = "row_indices", required = true)
-      private List<Integer> rowIndices;
-
-      @JsonProperty(value = "column_indices", required = true)
-      private List<Integer> columnIndices;
+      @JsonProperty(value = "cell_indices", required = true)
+      private List<Integer> cellIndices;
 
       @JsonProperty(value = "cells", required = true)
       private List<String> cells;
@@ -86,16 +80,12 @@ public class KzgVerifyCellKzgProofBatchTestExecutor extends KzgTestExecutor {
       @JsonProperty(value = "proofs", required = true)
       private List<String> proofs;
 
-      public List<KZGCommitment> getRowCommitments() {
-        return rowCommitments.stream().map(KZGCommitment::fromHexString).toList();
+      public List<KZGCommitment> getCommitments() {
+        return commitments.stream().map(KZGCommitment::fromHexString).toList();
       }
 
-      public List<Integer> getRowIndices() {
-        return rowIndices;
-      }
-
-      public List<Integer> getColumnIndices() {
-        return columnIndices;
+      public List<Integer> getCellIndices() {
+        return cellIndices;
       }
 
       public List<KZGCell> getCells() {

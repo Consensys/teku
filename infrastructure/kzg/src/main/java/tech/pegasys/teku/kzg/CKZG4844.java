@@ -169,22 +169,23 @@ final class CKZG4844 implements KZG {
   @Override
   public boolean verifyCellProofBatch(
       List<KZGCommitment> commitments,
-      List<KZGCellWithIds> cellWithIdsList,
+      List<KZGCellWithColumnId> cellWithIdList,
       List<KZGProof> proofs) {
+    if (commitments.size() != cellWithIdList.size() || cellWithIdList.size() != proofs.size()) {
+      throw new KZGException("Cells, proofs and commitments sizes should match");
+    }
     return CKZG4844JNI.verifyCellKzgProofBatch(
         CKZG4844Utils.flattenBytes(
-            cellWithIdsList.stream()
-                .map(
-                    cellWithIds ->
-                        commitments.get(cellWithIds.rowId().id().intValue()).toSSZBytes())
+            commitments.stream()
+                .map(kzgCommitment -> (Bytes) kzgCommitment.getBytesCompressed())
                 .toList(),
-            cellWithIdsList.size() * BYTES_PER_COMMITMENT),
-        cellWithIdsList.stream()
+            commitments.size() * BYTES_PER_COMMITMENT),
+        cellWithIdList.stream()
             .mapToLong(cellWithIds -> cellWithIds.columnId().id().longValue())
             .toArray(),
         CKZG4844Utils.flattenBytes(
-            cellWithIdsList.stream().map(cellWithIds -> cellWithIds.cell().bytes()).toList(),
-            cellWithIdsList.size() * BYTES_PER_CELL),
+            cellWithIdList.stream().map(cellWithIds -> cellWithIds.cell().bytes()).toList(),
+            cellWithIdList.size() * BYTES_PER_CELL),
         CKZG4844Utils.flattenProofs(proofs));
   }
 

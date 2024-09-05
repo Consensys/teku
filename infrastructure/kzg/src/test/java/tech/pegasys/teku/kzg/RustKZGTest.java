@@ -32,7 +32,7 @@ public final class RustKZGTest extends KZGAbstractTest {
     final Bytes blob = getSampleBlob();
     assertThatThrownBy(() -> kzg.computeCellsAndProofs(blob))
         .isOfAnyClassIn(IllegalStateException.class)
-        .hasMessageStartingWith("PeerDAS context has been destroyed");
+        .hasMessageStartingWith("KZG context context has been destroyed");
   }
 
   @Test

@@ -38,7 +38,6 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.kzg.KZGCellWithIds;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.Cell;
@@ -102,7 +101,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
       throw new IllegalArgumentException(
           String.format(
               "Subnet count %s couldn't exceed number of subnet columns %s",
-              subnetCount, specConfigEip7594.getNumberOfColumns()));
+              subnetCount, specConfigEip7594.getDataColumnSidecarSubnetCount()));
     }
 
     return Stream.iterate(nodeId, this::incrementByModule)
@@ -158,13 +157,12 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
       return false;
     }
 
-    final List<KZGCellWithIds> cellWithIds =
+    final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getDataColumn().size())
             .mapToObj(
                 rowIndex ->
-                    KZGCellWithIds.fromCellAndIndices(
+                    KZGCellWithColumnId.fromCellAndColumn(
                         new KZGCell(dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
-                        rowIndex,
                         dataColumnSidecar.getIndex().intValue()))
             .collect(Collectors.toList());
 

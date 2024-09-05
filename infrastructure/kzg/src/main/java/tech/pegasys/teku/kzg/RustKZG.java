@@ -15,7 +15,7 @@ package tech.pegasys.teku.kzg;
 
 import com.google.common.collect.Streams;
 import ethereum.cryptography.CellsAndProofs;
-import ethereum.cryptography.LibPeerDASKZG;
+import ethereum.cryptography.LibEthKZG;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -34,7 +34,7 @@ final class RustKZG implements KZG {
   private static final Logger LOG = LogManager.getLogger();
 
   private static RustKZG instance;
-  private LibPeerDASKZG library;
+  private LibEthKZG library;
   private boolean initialized;
 
   static synchronized RustKZG getInstance() {
@@ -50,7 +50,7 @@ final class RustKZG implements KZG {
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     if (!initialized) {
       try {
-        this.library = new LibPeerDASKZG();
+        this.library = new LibEthKZG();
         this.initialized = true;
         LOG.info("Loaded LibPeerDASKZG library");
       } catch (final Exception ex) {
@@ -114,17 +114,14 @@ final class RustKZG implements KZG {
   @Override
   public boolean verifyCellProofBatch(
       List<KZGCommitment> commitments,
-      List<KZGCellWithIds> cellWithIdsList,
+      List<KZGCellWithColumnId> cellWithIdList,
       List<KZGProof> proofs) {
     return library.verifyCellKZGProofBatch(
         commitments.stream().map(KZGCommitment::toArrayUnsafe).toArray(byte[][]::new),
-        cellWithIdsList.stream()
-            .mapToLong(cellWithIds -> cellWithIds.rowId().id().longValue())
-            .toArray(),
-        cellWithIdsList.stream()
+        cellWithIdList.stream()
             .mapToLong(cellWithIds -> cellWithIds.columnId().id().longValue())
             .toArray(),
-        cellWithIdsList.stream()
+        cellWithIdList.stream()
             .map(cellWithIds -> cellWithIds.cell().bytes().toArrayUnsafe())
             .toArray(byte[][]::new),
         proofs.stream().map(KZGProof::toArrayUnsafe).toArray(byte[][]::new));
@@ -135,7 +132,7 @@ final class RustKZG implements KZG {
     long[] cellIds = cells.stream().mapToLong(c -> c.columnId().id().longValue()).toArray();
     byte[][] cellBytes =
         cells.stream().map(c -> c.cell().bytes().toArrayUnsafe()).toArray(byte[][]::new);
-    final CellsAndProofs cellsAndProofs = library.recoverCellsAndProofs(cellIds, cellBytes);
+    final CellsAndProofs cellsAndProofs = library.recoverCellsAndKZGProofs(cellIds, cellBytes);
     final byte[][] recoveredCells = cellsAndProofs.getCells();
     final Stream<KZGCell> kzgCellStream =
         Arrays.stream(recoveredCells).map(Bytes::wrap).map(KZGCell::new);

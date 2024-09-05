@@ -5,7 +5,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'io.consensys.protocols:jc-kzg-4844'
-  implementation "io.github.crate-crypto:peerdas-kzg"
+  implementation "io.github.crate-crypto:java-eth-kzg"
   implementation 'commons-io:commons-io'
 
   testFixturesImplementation 'com.google.guava:guava'
