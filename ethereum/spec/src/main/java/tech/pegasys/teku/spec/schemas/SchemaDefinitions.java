@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -76,9 +76,9 @@ public interface SchemaDefinitions {
 
   AttestationSchema<?> getAttestationSchema();
 
-  IndexedAttestationSchema getIndexedAttestationSchema();
+  IndexedAttestationSchema<?> getIndexedAttestationSchema();
 
-  AttesterSlashingSchema getAttesterSlashingSchema();
+  AttesterSlashingSchema<?> getAttesterSlashingSchema();
 
   BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
       getBeaconBlocksByRootRequestMessageSchema();

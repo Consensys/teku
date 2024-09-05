@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -91,7 +91,7 @@ public class BeaconBlockBodySchemaCapellaImpl
 
   public static BeaconBlockBodySchemaCapellaImpl create(
       final SpecConfigCapella specConfig,
-      final AttesterSlashingSchema attesterSlashingSchema,
+      final AttesterSlashingSchema<?> attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final long maxValidatorsPerAttestation,
       final String containerName) {
@@ -106,7 +106,9 @@ public class BeaconBlockBodySchemaCapellaImpl
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
-            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+            SszListSchema.create(
+                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(

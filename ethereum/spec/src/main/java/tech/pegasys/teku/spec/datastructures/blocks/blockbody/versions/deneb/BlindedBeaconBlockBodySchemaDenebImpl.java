@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -95,7 +95,7 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
 
   public static BlindedBeaconBlockBodySchemaDenebImpl create(
       final SpecConfigDeneb specConfig,
-      final AttesterSlashingSchema attesterSlashingSchema,
+      final AttesterSlashingSchema<?> attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
       final long maxValidatorsPerAttestation,
@@ -111,7 +111,9 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
-            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+            SszListSchema.create(
+                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
