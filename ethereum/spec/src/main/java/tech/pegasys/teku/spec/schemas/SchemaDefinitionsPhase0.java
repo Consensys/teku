@@ -28,12 +28,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.Be
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
@@ -42,8 +38,6 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
   private final BeaconStateSchemaPhase0 beaconStateSchema;
-  private final IndexedAttestationPhase0Schema indexedAttestationSchema;
-  private final AttesterSlashingPhase0Schema attesterSlashingSchema;
   private final BeaconBlockBodySchemaPhase0 beaconBlockBodySchema;
   private final MetadataMessageSchemaPhase0 metadataMessageSchema;
   private final BeaconBlockSchema beaconBlockSchema;
@@ -51,12 +45,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
 
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
     super(specConfig);
-    final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
-    this.indexedAttestationSchema = new IndexedAttestationPhase0Schema(maxValidatorsPerAttestation);
-    this.attesterSlashingSchema =
-        new AttesterSlashingPhase0Schema(
-            indexedAttestationSchema.castTypeToIndexedAttestationSchema());
-    this.attestationSchema = new AttestationPhase0Schema(maxValidatorsPerAttestation);
+    this.attestationSchema = new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
@@ -64,7 +53,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
             getAttesterSlashingSchema(),
-            maxValidatorsPerAttestation,
+            getMaxValidatorPerAttestation(specConfig),
             "BeaconBlockBodyPhase0");
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
     beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockPhase0");
@@ -150,16 +139,6 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
     return new BeaconBlockBodyBuilderPhase0(beaconBlockBodySchema);
-  }
-
-  @Override
-  public IndexedAttestationSchema<?> getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
-  }
-
-  @Override
-  public AttesterSlashingSchema<?> getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
   }
 
   @Override
