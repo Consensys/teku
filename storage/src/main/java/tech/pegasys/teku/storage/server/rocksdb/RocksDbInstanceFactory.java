@@ -14,11 +14,9 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.EXPECTED_WAL_FILE_SIZE;
 import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.NUMBER_OF_LOG_FILES_TO_KEEP;
 import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.ROCKSDB_BLOCK_SIZE;
 import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.TIME_TO_ROLL_LOG_FILE;
-import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.WAL_MAX_TOTAL_SIZE;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -154,9 +152,7 @@ public class RocksDbInstanceFactory {
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
             .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
             .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
-            .setStatistics(stats)
-            .setMaxTotalWalSize(WAL_MAX_TOTAL_SIZE)
-            .setRecycleLogFileNum(WAL_MAX_TOTAL_SIZE / EXPECTED_WAL_FILE_SIZE);
+            .setStatistics(stats);
     ;
     if (configuration.optimizeForSmallDb()) {
       options.optimizeForSmallDb(); // Java docs suggests this if db is under 1GB, nearly impossible

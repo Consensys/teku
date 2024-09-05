@@ -55,14 +55,8 @@ public class KvStoreConfiguration {
   public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 128 << 20;
   private static final boolean DEFAULT_OPTIMISE_FOR_SMALL_DB = false;
 
-  /** Max total size of all WAL file, after which a flush is triggered */
-  public static final long WAL_MAX_TOTAL_SIZE = 1_073_741_824L;
-
-  /** Expected size of a single WAL file, to determine how many WAL files to keep around */
-  public static final long EXPECTED_WAL_FILE_SIZE = 67_108_864L;
-
   /** RocksDb number of log files to keep on disk */
-  public static final long NUMBER_OF_LOG_FILES_TO_KEEP = 7;
+  public static final long NUMBER_OF_LOG_FILES_TO_KEEP = 5;
 
   /** RocksDb Time to roll a log file (1 day = 3600 * 24 seconds) */
   public static final long TIME_TO_ROLL_LOG_FILE = 86_400L;
