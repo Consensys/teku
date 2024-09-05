@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -44,4 +45,7 @@ public interface OperationValidator {
 
   Optional<OperationInvalidReason> validateBlsToExecutionChange(
       Fork fork, BeaconState state, BlsToExecutionChange blsToExecutionChange);
+
+  Optional<OperationInvalidReason> validateExecutionPayloadHeader(
+      Fork fork, BeaconState state, SignedExecutionPayloadHeader executionPayloadHeader);
 }
