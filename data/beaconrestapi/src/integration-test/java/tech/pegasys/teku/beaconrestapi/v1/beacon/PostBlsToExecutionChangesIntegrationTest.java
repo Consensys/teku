@@ -18,18 +18,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlsToExecutionChanges;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -47,34 +50,33 @@ public class PostBlsToExecutionChangesIntegrationTest
 
   @Test
   void postValidBlsToExecutionReturnsOk() throws IOException {
-    final tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange item =
-        dataStructureUtil.randomSignedBlsToExecutionChange();
-    final List<SignedBlsToExecutionChange> requestBody =
-        List.of(new SignedBlsToExecutionChange(item));
-
+    final SignedBlsToExecutionChange item = dataStructureUtil.randomSignedBlsToExecutionChange();
     when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    Response response =
-        post(PostBlsToExecutionChanges.ROUTE, jsonProvider.objectToJSON(requestBody));
+    final Response response =
+        post(
+            PostBlsToExecutionChanges.ROUTE,
+            JsonUtil.serialize(List.of(item), listOf(item.getSchema().getJsonTypeDefinition())));
 
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
   @Test
   void postInvalidBlsToExecutionReturnsBadRequest() throws IOException {
-    final tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange item =
-        dataStructureUtil.randomSignedBlsToExecutionChange();
-    final List<SignedBlsToExecutionChange> requestBody =
-        List.of(new SignedBlsToExecutionChange(item));
+    final SignedBlsToExecutionChange item = dataStructureUtil.randomSignedBlsToExecutionChange();
 
     when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Invalid!")));
 
-    Response response =
-        post(PostBlsToExecutionChanges.ROUTE, jsonProvider.objectToJSON(requestBody));
+    final Response response =
+        post(
+            PostBlsToExecutionChanges.ROUTE,
+            JsonUtil.serialize(List.of(item), listOf(item.getSchema().getJsonTypeDefinition())));
 
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.body().string()).contains("Invalid!");
+    assertThat(body.get("failures").get(0).get("index").asInt()).isZero();
+    assertThat(body.get("failures").get(0).get("message").asText()).isEqualTo("Invalid!");
   }
 }

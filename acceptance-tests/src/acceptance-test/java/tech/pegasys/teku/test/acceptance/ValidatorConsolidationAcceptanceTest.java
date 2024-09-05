@@ -17,10 +17,10 @@ import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -28,17 +28,16 @@ import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
+public class ValidatorConsolidationAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
-  public static final Eth1Address WITHDRAWAL_ADDRESS =
-      Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void upgradeFromDeneb() throws Exception {
+  void consolidateValidator() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
@@ -46,8 +45,16 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
 
+    final String eth1Address =
+        besuNode.getRichBenefactorAddress(); // used as withdrawal_credentials
+    final String eth1PrivateKey =
+        besuNode.getRichBenefactorKey(); // key for withdrawal_credentials account
+
+    // 192 validators (32 eth each) is the minimum number required to enable us to have enough limit
+    // to consolidate
     final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
+        createTekuDepositSender(NETWORK_NAME)
+            .generateValidatorKeys(192, Eth1Address.fromHexString(eth1Address));
 
     final InitialStateData initialStateData =
         createGenesisGenerator()
@@ -58,7 +65,7 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
             .withBellatrixEpoch(UInt64.ZERO)
             .withCapellaEpoch(UInt64.ZERO)
             .withDenebEpoch(UInt64.ZERO)
-            .withElectraEpoch(UInt64.ONE)
+            .withElectraEpoch(UInt64.ZERO)
             .withTotalTerminalDifficulty(0)
             .genesisExecutionPayloadHeaderSource(besuNode::createGenesisExecutionPayload)
             .validatorKeys(validatorKeys)
@@ -67,15 +74,31 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
     final TekuBeaconNode tekuNode =
         createTekuBeaconNode(beaconNode(genesisTime, besuNode, initialStateData, validatorKeys));
     tekuNode.start();
+    // Ensures sourceValidator is active long enough to exit
+    tekuNode.waitForNewFinalization();
 
-    tekuNode.waitForMilestone(SpecMilestone.ELECTRA);
-    tekuNode.waitForNewBlock();
+    final ValidatorKeys sourceValidator = validatorKeys.getValidatorKeys().get(0);
+    final BLSPublicKey sourceValidatorPublicKey = sourceValidator.getValidatorKey().getPublicKey();
+
+    final ValidatorKeys targetValidator = validatorKeys.getValidatorKeys().get(1);
+    final BLSPublicKey targetValidatorPublicKey = targetValidator.getValidatorKey().getPublicKey();
+
+    besuNode.createConsolidationRequest(
+        eth1PrivateKey, sourceValidatorPublicKey, targetValidatorPublicKey);
+    waitForValidatorExit(tekuNode, sourceValidatorPublicKey);
+  }
+
+  private void waitForValidatorExit(
+      final TekuBeaconNode tekuNode, final BLSPublicKey validatorPublicKey) {
+    final String pubKeySubstring = validatorPublicKey.toHexString().substring(2, 9);
+    tekuNode.waitForLogMessageContaining(
+        "Validator "
+            + pubKeySubstring
+            + " has changed status from active_ongoing to active_exiting");
   }
 
   private BesuNode createBesuNode(final int genesisTime) {
-    final int pragueTime =
-        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Prague on first slot
-    final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(pragueTime));
+    final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(genesisTime));
 
     return createBesuNode(
         // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
@@ -102,7 +125,7 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withBellatrixEpoch(UInt64.ZERO)
         .withCapellaEpoch(UInt64.ZERO)
         .withDenebEpoch(UInt64.ZERO)
-        .withElectraEpoch(UInt64.ONE)
+        .withElectraEpoch(UInt64.ZERO)
         .withTotalTerminalDifficulty(0)
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
