@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.Valida
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
-import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.eip7732.block.BlockProcessorEip7732;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.spec.logic.versions.eip7732.forktransition.Eip7732State
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.operations.validation.OperationValidatorEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.util.AttestationUtilEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
@@ -130,7 +130,7 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
     final VoluntaryExitValidatorElectra voluntaryExitValidatorElectra =
         new VoluntaryExitValidatorElectra(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
-        new OperationValidatorCapella(
+        new OperationValidatorEip7732(
             predicates,
             beaconStateAccessors,
             attestationDataValidator,

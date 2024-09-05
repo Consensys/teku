@@ -779,7 +779,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionPayloadHeaderValidator validator =
         new ExecutionPayloadHeaderValidator(spec, gossipValidationHelper, recentChainData);
 
-    executionPayloadHeaderPool = new ExecutionPayloadHeaderPool(validator, Optional.empty());
+    executionPayloadHeaderPool = new ExecutionPayloadHeaderPool(validator);
+    blockImporter.subscribeToVerifiedExecutionPayloadHeader(executionPayloadHeaderPool::remove);
   }
 
   protected void initDataProvider() {
