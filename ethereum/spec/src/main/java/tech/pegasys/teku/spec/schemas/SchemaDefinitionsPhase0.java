@@ -28,12 +28,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.Be
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
 public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
+  private final IndexedAttestationSchema<?> indexedAttestationSchema;
+  private final AttesterSlashingSchema<?> attesterSlashingSchema;
   private final AttestationSchema<?> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
@@ -45,6 +51,11 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
 
   public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
     super(specConfig);
+    this.indexedAttestationSchema =
+        new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
+    this.attesterSlashingSchema =
+        new AttesterSlashingPhase0Schema(
+            indexedAttestationSchema.castTypeToIndexedAttestationSchema());
     this.attestationSchema = new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
@@ -79,6 +90,16 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   @Override
   public AttestationSchema<?> getAttestationSchema() {
     return attestationSchema;
+  }
+
+  @Override
+  public IndexedAttestationSchema<?> getIndexedAttestationSchema() {
+    return indexedAttestationSchema;
+  }
+
+  @Override
+  public AttesterSlashingSchema<?> getAttesterSlashingSchema() {
+    return attesterSlashingSchema;
   }
 
   @Override

@@ -50,8 +50,12 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -61,6 +65,8 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConso
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
+  private final IndexedAttestationSchema<?> indexedAttestationSchema;
+  private final AttesterSlashingSchema<?> attesterSlashingSchema;
   private final AttestationSchema<?> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
@@ -101,6 +107,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     super(specConfig);
 
     final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
+    this.indexedAttestationSchema =
+        new IndexedAttestationElectraSchema(maxValidatorsPerAttestation);
+    this.attesterSlashingSchema =
+        new AttesterSlashingElectraSchema(
+            indexedAttestationSchema.castTypeToIndexedAttestationSchema());
 
     this.attestationSchema =
         new AttestationElectraSchema(
@@ -187,6 +198,16 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public AttestationSchema<?> getAttestationSchema() {
     return attestationSchema;
+  }
+
+  @Override
+  public IndexedAttestationSchema<?> getIndexedAttestationSchema() {
+    return indexedAttestationSchema;
+  }
+
+  @Override
+  public AttesterSlashingSchema<?> getAttesterSlashingSchema() {
+    return attesterSlashingSchema;
   }
 
   @Override

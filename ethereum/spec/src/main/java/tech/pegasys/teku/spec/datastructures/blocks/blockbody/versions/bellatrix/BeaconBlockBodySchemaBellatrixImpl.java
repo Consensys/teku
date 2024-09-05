@@ -35,11 +35,12 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.Execut
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -86,7 +87,6 @@ public class BeaconBlockBodySchemaBellatrixImpl
 
   public static BeaconBlockBodySchemaBellatrixImpl create(
       final SpecConfigBellatrix specConfig,
-      final AttesterSlashingSchema<?> attesterSlashingSchema,
       final long maxValidatorsPerAttestation,
       final String containerName) {
     final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
@@ -103,7 +103,10 @@ public class BeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                new AttesterSlashingPhase0Schema(
+                        new IndexedAttestationPhase0Schema(maxValidatorsPerAttestation)
+                            .castTypeToIndexedAttestationSchema())
+                    .castTypeToAttesterSlashingSchema(),
                 specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,

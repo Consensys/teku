@@ -18,12 +18,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
@@ -32,26 +26,11 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema =
       SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
   private final HistoricalBatchSchema historicalBatchSchema;
-  private final IndexedAttestationSchema<?> indexedAttestationSchema;
-  private final AttesterSlashingSchema<?> attesterSlashingSchema;
   private final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
       beaconBlocksByRootRequestMessageSchema;
 
   public AbstractSchemaDefinitions(final SpecConfig specConfig) {
     this.historicalBatchSchema = new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot());
-    if (toVersionElectra().isEmpty()) {
-      this.indexedAttestationSchema =
-          new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
-      this.attesterSlashingSchema =
-          new AttesterSlashingPhase0Schema(
-              indexedAttestationSchema.castTypeToIndexedAttestationSchema());
-    } else {
-      this.indexedAttestationSchema =
-          new IndexedAttestationElectraSchema(getMaxValidatorPerAttestation(specConfig));
-      this.attesterSlashingSchema =
-          new AttesterSlashingElectraSchema(
-              indexedAttestationSchema.castTypeToIndexedAttestationSchema());
-    }
 
     this.beaconBlocksByRootRequestMessageSchema =
         new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(specConfig);
@@ -73,16 +52,6 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   @Override
   public HistoricalBatchSchema getHistoricalBatchSchema() {
     return historicalBatchSchema;
-  }
-
-  @Override
-  public IndexedAttestationSchema<?> getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
-  }
-
-  @Override
-  public AttesterSlashingSchema<?> getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
   }
 
   @Override
