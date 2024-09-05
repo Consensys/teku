@@ -70,8 +70,8 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void testSszRoundtrip(final SszBitvector bitvector1) {
-    Bytes ssz1 = bitvector1.sszSerialize();
-    SszBitvector bitvector2 = bitvector1.getSchema().sszDeserialize(ssz1);
+    final Bytes ssz1 = bitvector1.sszSerialize();
+    final SszBitvector bitvector2 = bitvector1.getSchema().sszDeserialize(ssz1);
 
     assertThatIntCollection(bitvector2.getAllSetBits()).isEqualTo(bitvector1.getAllSetBits());
     Assertions.assertThat(bitvector2.size()).isEqualTo(bitvector1.size());
@@ -85,8 +85,8 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void testTreeRoundtrip(final SszBitvector bitvector1) {
-    TreeNode tree = bitvector1.getBackingNode();
-    SszBitvector bitvector2 = bitvector1.getSchema().createFromBackingNode(tree);
+    final TreeNode tree = bitvector1.getBackingNode();
+    final SszBitvector bitvector2 = bitvector1.getSchema().createFromBackingNode(tree);
 
     assertThatIntCollection(bitvector2.getAllSetBits()).isEqualTo(bitvector1.getAllSetBits());
     Assertions.assertThat(bitvector2.size()).isEqualTo(bitvector1.size());
@@ -100,16 +100,16 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void or_testEqualList(final SszBitvector bitvector) {
-    SszBitvector res = bitvector.or(bitvector);
+    final SszBitvector res = bitvector.or(bitvector);
     assertThat(res).isEqualTo(bitvector);
   }
 
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void or_shouldThrowIfBitvectorSizeIsLarger(final SszBitvector bitvector) {
-    SszBitvectorSchema<SszBitvector> largerSchema =
+    final SszBitvectorSchema<SszBitvector> largerSchema =
         SszBitvectorSchema.create(bitvector.getSchema().getMaxLength() + 1);
-    SszBitvector largerBitvector = largerSchema.ofBits(bitvector.size() - 1, bitvector.size());
+    final SszBitvector largerBitvector = largerSchema.ofBits(bitvector.size() - 1, bitvector.size());
     assertThatThrownBy(() -> bitvector.or(largerBitvector))
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -120,9 +120,9 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
     if (bitvector.getSchema().getMaxLength() == 1) {
       return;
     }
-    SszBitvectorSchema<SszBitvector> smallerSchema =
+    final SszBitvectorSchema<SszBitvector> smallerSchema =
         SszBitvectorSchema.create(bitvector.getSchema().getMaxLength() - 1);
-    SszBitvector smallerBitvector = smallerSchema.ofBits();
+    final SszBitvector smallerBitvector = smallerSchema.ofBits();
     assertThatThrownBy(() -> bitvector.or(smallerBitvector))
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -130,7 +130,7 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void getBitCount_shouldReturnCorrectCount(final SszBitvector bitvector) {
-    long bitCount = bitvector.stream().filter(AbstractSszPrimitive::get).count();
+    final long bitCount = bitvector.stream().filter(AbstractSszPrimitive::get).count();
     assertThat(bitvector.getBitCount()).isEqualTo(bitCount);
   }
 
@@ -156,7 +156,7 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void rightShift_test(final SszBitvector vector) {
-    SszBitvectorSchema<?> schema = vector.getSchema();
+    final SszBitvectorSchema<?> schema = vector.getSchema();
     IntStream.of(
             1,
             2,
@@ -183,8 +183,8 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
             schema.getLength() + 1)
         .forEach(
             i -> {
-              SszBitvector shiftedVector = vector.rightShift(i);
-              SszBitvector vectorExpected =
+              final SszBitvector shiftedVector = vector.rightShift(i);
+              final SszBitvector vectorExpected =
                   schema.ofBits(
                       vector
                           .streamAllSetBits()
@@ -210,8 +210,8 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void testOr(final SszBitvector bitvector) {
-    SszBitvector orVector = random(bitvector.getSchema());
-    SszBitvector res = bitvector.or(orVector);
+    final SszBitvector orVector = random(bitvector.getSchema());
+    final SszBitvector res = bitvector.or(orVector);
     assertThat(res.size()).isEqualTo(bitvector.size());
     assertThat(res.getSchema()).isEqualTo(bitvector.getSchema());
     for (int i = 0; i < bitvector.size(); i++) {
@@ -222,15 +222,15 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void testOrWithEmptyBitvector(final SszBitvector bitvector) {
-    SszBitvector empty = bitvector.getSchema().ofBits();
+    final SszBitvector empty = bitvector.getSchema().ofBits();
     assertThat(bitvector.or(empty)).isEqualTo(bitvector);
   }
 
   @ParameterizedTest
   @MethodSource("bitvectorArgs")
   void testGetLastSetBitIndex(final SszBitvector bitvector) {
-    int result = bitvector.getLastSetBitIndex();
-    int expected = bitvector.streamAllSetBits().reduce((first, second) -> second).orElse(-1);
+    final int result = bitvector.getLastSetBitIndex();
+    final int expected = bitvector.streamAllSetBits().reduce((first, second) -> second).orElse(-1);
     assertThat(result).isEqualTo(expected);
   }
 
@@ -238,5 +238,25 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   @MethodSource("bitvectorArgs")
   void get_shouldThrowIndexOutOfBounds(final SszBitvector vector) {
     assertThatThrownBy(() -> vector.get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void testFromBytes(final SszBitvector bitvector) {
+    final Bytes bytes = bitvector.sszSerialize();
+    final long size = bitvector.getSchema().getMaxLength();
+    final SszBitvector result =
+            SszBitvectorImpl.fromBytes(bitvector.getSchema(), bytes, (int) size);
+    SszDataAssert.assertThatSszData(result).isEqualByAllMeansTo(bitvector);
+  }
+
+  @ParameterizedTest
+  @MethodSource("bitvectorArgs")
+  void testFromHexString(final SszBitvector bitvector) {
+    final String hexString = bitvector.sszSerialize().toHexString();
+    final long size = bitvector.getSchema().getMaxLength();
+    final SszBitvector result =
+            SszBitvectorImpl.fromHexString(bitvector.getSchema(), hexString, (int) size);
+    SszDataAssert.assertThatSszData(result).isEqualByAllMeansTo(bitvector);
   }
 }
