@@ -40,7 +40,7 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
   void triggerValidatorExitWithFullWithdrawal() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
+        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
 
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
@@ -118,7 +118,6 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
         .withJwtSecretFile(JWT_FILE)
-        .withTrustedSetupFromClasspath("mainnet-trusted-setup.txt")
         .withReadOnlyKeystorePath(validatorKeys)
         .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
         .withStartupTargetPeerCount(0)

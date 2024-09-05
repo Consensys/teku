@@ -46,11 +46,13 @@ public class ExecutionRequestsService implements AutoCloseable {
   private final ScheduledExecutorService executorService;
   private final Web3j web3j;
   private final WithdrawalRequestContract withdrawalRequestContract;
+  private final ConsolidationRequestContract consolidationRequestContract;
 
   public ExecutionRequestsService(
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
-      final Eth1Address withdrawalRequestAddress) {
+      final Eth1Address withdrawalRequestAddress,
+      final Eth1Address consolidationRequestAddress) {
     this.httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
     this.executorService =
         Executors.newScheduledThreadPool(
@@ -69,6 +71,8 @@ public class ExecutionRequestsService implements AutoCloseable {
 
     this.withdrawalRequestContract =
         new WithdrawalRequestContract(withdrawalRequestAddress, web3j, transactionManager);
+    this.consolidationRequestContract =
+        new ConsolidationRequestContract(consolidationRequestAddress, web3j, transactionManager);
   }
 
   @Override
@@ -88,6 +92,24 @@ public class ExecutionRequestsService implements AutoCloseable {
 
     return withdrawalRequestContract
         .createWithdrawalRequest(publicKey, amount)
+        .thenCompose(
+            response -> {
+              final String txHash = response.getResult();
+              waitForSuccessfulTransaction(txHash);
+              return getTransactionReceipt(txHash);
+            });
+  }
+
+  public SafeFuture<TransactionReceipt> createConsolidationRequest(
+      final BLSPublicKey sourceValidatorPublicKey, final BLSPublicKey targetValidatorPublicKey) {
+    // Sanity check that we can interact with the contract
+    Waiter.waitFor(
+        () ->
+            assertThat(consolidationRequestContract.getExcessConsolidationRequests().get())
+                .isEqualTo(0));
+
+    return consolidationRequestContract
+        .createConsolidationRequest(sourceValidatorPublicKey, targetValidatorPublicKey)
         .thenCompose(
             response -> {
               final String txHash = response.getResult();

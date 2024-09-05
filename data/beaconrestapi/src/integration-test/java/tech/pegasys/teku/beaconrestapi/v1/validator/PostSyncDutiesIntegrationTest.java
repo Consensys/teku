@@ -44,9 +44,7 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    Response response =
-        post(PostSyncDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(""));
-    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    checkEmptyBodyToRoute(PostSyncDuties.ROUTE.replace("{epoch}", "1"), SC_BAD_REQUEST);
   }
 
   @Test
@@ -64,8 +62,10 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(validatorApiChannel.getSyncCommitteeDuties(ONE, validators)).thenReturn(out);
 
-    Response response =
-        post(PostSyncDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(validators));
+    final Response response =
+        post(
+            PostSyncDuties.ROUTE.replace("{epoch}", "1"),
+            OBJECT_MAPPER.writeValueAsString(validators));
 
     Assertions.assertThat(response.code()).isEqualTo(SC_OK);
     final SyncCommitteeDuties committeeDuties =
