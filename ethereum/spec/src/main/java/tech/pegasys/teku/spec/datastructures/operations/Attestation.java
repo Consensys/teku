@@ -19,7 +19,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.Attestat
  * Interface used to represent different types of attestations ({@link AttestationPhase0} and {@link
  * tech.pegasys.teku.spec.datastructures.state.PendingAttestation})
  */
-public interface Attestation extends SszData, SszContainer {
+public interface Attestation extends SszContainer {
 
   @Override
   AttestationSchema<? extends Attestation> getSchema();
