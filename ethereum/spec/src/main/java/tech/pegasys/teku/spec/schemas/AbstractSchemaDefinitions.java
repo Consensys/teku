@@ -39,7 +39,7 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
 
   public AbstractSchemaDefinitions(final SpecConfig specConfig) {
     this.historicalBatchSchema = new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot());
-    if (toVersionElectra().isPresent()) {
+    if (toVersionElectra().isEmpty()) {
       this.indexedAttestationSchema =
           new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
       this.attesterSlashingSchema =
