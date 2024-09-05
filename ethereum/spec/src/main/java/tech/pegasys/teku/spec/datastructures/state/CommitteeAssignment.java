@@ -14,62 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class CommitteeAssignment {
-
-  private final IntList committee;
-  private final UInt64 committeeIndex;
-  private final UInt64 slot;
-
-  public CommitteeAssignment(
-      final IntList committee, final UInt64 committeeIndex, final UInt64 slot) {
-    this.committee = committee;
-    this.committeeIndex = committeeIndex;
-    this.slot = slot;
-  }
-
-  public IntList getCommittee() {
-    return committee;
-  }
-
-  public UInt64 getCommitteeIndex() {
-    return committeeIndex;
-  }
-
-  public UInt64 getSlot() {
-    return slot;
-  }
-
-  @Override
-  public String toString() {
-    return "CommitteeAssignment{"
-        + "committee="
-        + committee
-        + ", committeeIndex="
-        + committeeIndex
-        + ", slot="
-        + slot
-        + '}';
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CommitteeAssignment that = (CommitteeAssignment) o;
-    return Objects.equals(committee, that.committee)
-        && Objects.equals(committeeIndex, that.committeeIndex)
-        && Objects.equals(slot, that.slot);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(committee, committeeIndex, slot);
-  }
-}
+public record CommitteeAssignment(IntList committee, UInt64 committeeIndex, UInt64 slot) {}

@@ -39,7 +39,9 @@ public class EnumTypeDefinitionTest {
   @Test
   void excludedShouldThrowExceptionSerialize() throws JsonProcessingException {
     DeserializableTypeDefinition<YesNo> definition =
-        DeserializableTypeDefinition.enumOf(YesNo.class, Objects::toString, Set.of(YesNo.YES));
+        new EnumTypeDefinition.EnumTypeBuilder<>(YesNo.class, Objects::toString)
+            .excludedEnumerations(Set.of(YesNo.YES))
+            .build();
     assertThatThrownBy(() -> JsonUtil.serialize(YesNo.YES, definition))
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(JsonUtil.serialize(YesNo.NO, definition)).isEqualTo("\"no\"");
@@ -48,7 +50,9 @@ public class EnumTypeDefinitionTest {
   @Test
   void excludedShouldThrowExceptionDeserialize() throws JsonProcessingException {
     DeserializableTypeDefinition<YesNo> definition =
-        DeserializableTypeDefinition.enumOf(YesNo.class, Objects::toString, Set.of(YesNo.YES));
+        new EnumTypeDefinition.EnumTypeBuilder<>(YesNo.class, Objects::toString)
+            .excludedEnumerations(Set.of(YesNo.YES))
+            .build();
     assertThatThrownBy(() -> JsonUtil.parse("\"yes\"", definition))
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(JsonUtil.parse("\"no\"", definition)).isEqualTo(YesNo.NO);
