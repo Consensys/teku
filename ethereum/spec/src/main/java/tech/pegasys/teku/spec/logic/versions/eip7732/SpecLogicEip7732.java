@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.eip7732.block.BlockProcessorEip7732;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.operations.validation.OperationValidatorEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.util.AttestationUtilEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.util.BlindBlockUtilEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
@@ -180,7 +180,7 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
-    final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
+    final BlindBlockUtilEip7732 blindBlockUtil = new BlindBlockUtilEip7732(schemaDefinitions);
 
     // State upgrade
     final Eip7732StateUpgrade stateUpgrade =
