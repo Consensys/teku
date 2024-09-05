@@ -15,14 +15,14 @@ package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
+import tech.pegasys.teku.infrastructure.ssz.containers.Profile3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class IndexedAttestationElectra
-    extends Container3<IndexedAttestationElectra, SszUInt64List, AttestationData, SszSignature>
+    extends Profile3<IndexedAttestationElectra, SszUInt64List, AttestationData, SszSignature>
     implements IndexedAttestation {
 
   IndexedAttestationElectra(

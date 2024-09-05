@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
+import tech.pegasys.teku.infrastructure.ssz.containers.Profile4;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class AttestationElectra
-    extends Container4<AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
+    extends Profile4<AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements Attestation {
 
   public AttestationElectra(final AttestationElectraSchema type, final TreeNode backingNode) {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
+import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_EXECUTION_PAYLOAD_FIELDS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
@@ -39,7 +41,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema20;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema20;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -54,7 +56,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderSchemaElectra
-    extends ContainerSchema20<
+    extends ProfileSchema20<
         ExecutionPayloadHeaderElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -103,7 +105,8 @@ public class ExecutionPayloadHeaderSchemaElectra
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(DEPOSIT_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWAL_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(CONSOLIDATION_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
+        namedSchema(CONSOLIDATION_REQUESTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        MAX_EXECUTION_PAYLOAD_FIELDS);
 
     final ExecutionPayloadElectraImpl defaultExecutionPayload =
         new ExecutionPayloadSchemaElectra(specConfig).getDefault();

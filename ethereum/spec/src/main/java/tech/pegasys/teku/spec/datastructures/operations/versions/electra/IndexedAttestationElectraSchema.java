@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
+import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_INDEXED_ATTESTATION_FIELDS;
+
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -25,8 +28,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class IndexedAttestationElectraSchema
-    extends ContainerSchema3<
-        IndexedAttestationElectra, SszUInt64List, AttestationData, SszSignature>
+    extends ProfileSchema3<IndexedAttestationElectra, SszUInt64List, AttestationData, SszSignature>
     implements IndexedAttestationSchema<IndexedAttestationElectra> {
 
   public IndexedAttestationElectraSchema(final long maxValidatorsPerIndexedAttestation) {
@@ -35,7 +37,8 @@ public class IndexedAttestationElectraSchema
         namedSchema(
             "attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerIndexedAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
-        namedSchema("signature", SszSignatureSchema.INSTANCE));
+        namedSchema("signature", SszSignatureSchema.INSTANCE),
+        MAX_INDEXED_ATTESTATION_FIELDS);
   }
 
   @Override

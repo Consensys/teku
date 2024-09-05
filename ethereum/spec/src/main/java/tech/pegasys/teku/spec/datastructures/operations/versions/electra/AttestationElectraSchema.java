@@ -14,13 +14,15 @@
 package tech.pegasys.teku.spec.datastructures.operations.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.namedSchema;
+import static tech.pegasys.teku.spec.datastructures.StableContainerCapacities.MAX_ATTESTATION_FIELDS;
 
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema4;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -31,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class AttestationElectraSchema
-    extends ContainerSchema4<
+    extends ProfileSchema4<
         AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements AttestationSchema<AttestationElectra> {
 
@@ -42,7 +44,8 @@ public class AttestationElectraSchema
         namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE),
-        namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteePerSlot)));
+        namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteePerSlot)),
+        MAX_ATTESTATION_FIELDS);
   }
 
   @Override

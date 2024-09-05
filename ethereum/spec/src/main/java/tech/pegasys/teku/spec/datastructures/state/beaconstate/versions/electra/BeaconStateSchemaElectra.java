@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateProfileSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConso
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class BeaconStateSchemaElectra
-    extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
+    extends AbstractBeaconStateProfileSchema<BeaconStateElectra, MutableBeaconStateElectra> {
   public static final int DEPOSIT_REQUESTS_START_INDEX = 28;
   public static final int DEPOSIT_BALANCE_TO_CONSUME_INDEX = 29;
   public static final int EXIT_BALANCE_TO_CONSUME_INDEX = 30;

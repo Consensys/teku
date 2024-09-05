@@ -19,8 +19,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container20;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema20;
+import tech.pegasys.teku.infrastructure.ssz.containers.Profile20;
+import tech.pegasys.teku.infrastructure.ssz.containers.ProfileSchema20;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionPayloadHeaderElectraImpl
-    extends Container20<
+    extends Profile20<
         ExecutionPayloadHeaderElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -53,7 +53,7 @@ public class ExecutionPayloadHeaderElectraImpl
     implements ExecutionPayloadHeaderElectra {
 
   protected ExecutionPayloadHeaderElectraImpl(
-      final ContainerSchema20<
+      final ProfileSchema20<
               ExecutionPayloadHeaderElectraImpl,
               SszBytes32,
               SszByteVector,
