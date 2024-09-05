@@ -26,26 +26,28 @@ public class EphemeryNetwork {
   private static final long GENESIS_TIMESTAMP = 1720119600;
   private static final int PERIOD = 28;
   private static final long PERIOD_IN_SECONDS = (PERIOD * 24 * 60 * 60);
+  public static final long PERIODS_SINCE_GENESIS =
+      ChronoUnit.DAYS.between(Instant.ofEpochSecond(GENESIS_TIMESTAMP), Instant.now()) / PERIOD;
 
   public static void updateConfig(final SpecConfigBuilder builder) {
     final SpecConfig config = SpecConfigLoader.loadConfig("ephemery");
+    SpecConfigBuilder rawConfigBuilder = builder.rawConfig(config.getRawConfig());
 
-    if (Eth2Network.EPHEMERY.configName().equals("ephemery") && config != null) {
+    if (Eth2Network.EPHEMERY.configName().equals("ephemery")) {
       long currentTimestamp = Instant.now().getEpochSecond();
-      long periodsSinceGenesis =
-          ChronoUnit.DAYS.between(Instant.ofEpochSecond(GENESIS_TIMESTAMP), Instant.now()) / PERIOD;
-      long updatedTimestamp = GENESIS_TIMESTAMP + (periodsSinceGenesis * PERIOD_IN_SECONDS);
-      Long updatedChainId = GENESIS_CHAINID + periodsSinceGenesis;
+
+      long updatedTimestamp = GENESIS_TIMESTAMP + (PERIODS_SINCE_GENESIS * PERIOD_IN_SECONDS);
+      Long updatedChainId = GENESIS_CHAINID + PERIODS_SINCE_GENESIS;
 
       try {
         if (currentTimestamp > (GENESIS_TIMESTAMP + PERIOD_IN_SECONDS)) {
-          builder.rawConfig(config.getRawConfig()).depositNetworkId(updatedChainId);
-          builder.rawConfig(config.getRawConfig()).depositChainId(updatedChainId);
-          builder.rawConfig(config.getRawConfig()).minGenesisTime(UInt64.valueOf(updatedTimestamp));
+          rawConfigBuilder.depositNetworkId(updatedChainId);
+          rawConfigBuilder.depositChainId(updatedChainId);
+          rawConfigBuilder.minGenesisTime(UInt64.valueOf(updatedTimestamp));
         }
 
       } catch (RuntimeException e) {
-        throw new RuntimeException("Error updating genesis file:  + e.getMessage(), e");
+        throw new RuntimeException("Error updating genesis file: " + e.getMessage(), e);
       }
     }
   }

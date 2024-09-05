@@ -15,7 +15,11 @@ package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networks.EphemeryNetwork.PERIODS_SINCE_GENESIS;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,41 +37,39 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 public class EphemeryNetworkTest {
   private static final long GENESIS_CHAINID = 39438135;
   private static final long GENESIS_TIMESTAMP = 1720119600;
-  //    private static final long CURRENT_TIMESTAMP = 1730119800;
-  private static final long PERIOD_SINCE_GENESIS = 3;
+  private SpecConfigBuilder builder;
+  private static final long CURRENT_TIMESTAMP = 1725547734;
   private static final int PERIOD = 28;
   private static final long PERIOD_IN_SECONDS = (PERIOD * 24 * 60 * 60);
-  private long expectedUpdatedTimestamp;
-  private long expectedUpdatedChainId;
+  private long expectedMinGenesisTime;
+  private long expectedChainId;
   private final SpecConfigReader reader = new SpecConfigReader();
 
   @BeforeEach
   void setUp() {
-    expectedUpdatedTimestamp = GENESIS_TIMESTAMP + (PERIOD_SINCE_GENESIS * PERIOD_IN_SECONDS);
-    expectedUpdatedChainId = GENESIS_CHAINID + PERIOD_SINCE_GENESIS;
+    expectedMinGenesisTime = GENESIS_TIMESTAMP + (PERIODS_SINCE_GENESIS * PERIOD_IN_SECONDS);
+    expectedChainId = GENESIS_CHAINID + PERIODS_SINCE_GENESIS;
+    builder = mock(SpecConfigBuilder.class);
   }
 
   @Test
   public void testUpdateConfig() {
-    final SpecConfigBuilder builder = new SpecConfigBuilder();
-    final SpecConfig config = SpecConfigLoader.loadConfig("ephemery");
+    final SpecConfig configFile = SpecConfigLoader.loadConfig("ephemery");
+    SpecConfig config = mock(SpecConfig.class);
 
-    builder.rawConfig(config.getRawConfig()).depositNetworkId(expectedUpdatedChainId);
-    builder.rawConfig(config.getRawConfig()).depositChainId(expectedUpdatedChainId);
-    builder
-        .rawConfig(config.getRawConfig())
-        .minGenesisTime(UInt64.valueOf(expectedUpdatedTimestamp));
+    when(config.getRawConfig()).thenReturn(configFile.getRawConfig());
+    when(builder.rawConfig(config.getRawConfig())).thenReturn(builder);
+    when(builder.depositChainId(expectedChainId)).thenReturn(builder);
+    when(builder.depositNetworkId(expectedChainId)).thenReturn(builder);
+    when(builder.minGenesisTime(UInt64.valueOf(expectedMinGenesisTime))).thenReturn(builder);
 
-    final String expectedDepositChainId =
-        String.valueOf(builder.rawConfig(config.getRawConfig()).build().getDepositChainId());
-    final String expectedDepositNetworkId =
-        String.valueOf(builder.rawConfig(config.getRawConfig()).build().getDepositNetworkId());
-    final String expectedMinGenesisTime =
-        String.valueOf(builder.rawConfig(config.getRawConfig()).build().getMinGenesisTime());
+    EphemeryNetwork.updateConfig(builder);
 
-    assertEquals(String.valueOf(expectedUpdatedChainId), expectedDepositChainId);
-    assertEquals(String.valueOf(expectedUpdatedChainId), expectedDepositNetworkId);
-    assertEquals(String.valueOf(expectedUpdatedTimestamp), String.valueOf(expectedMinGenesisTime));
+    verify(builder, times(1)).rawConfig(config.getRawConfig()); // Only verify once
+    verify(builder, times(1)).depositNetworkId(expectedChainId);
+    verify(builder, times(1)).depositChainId(expectedChainId);
+    verify(builder, times(1)).minGenesisTime(UInt64.valueOf(expectedMinGenesisTime));
+    assertThat(CURRENT_TIMESTAMP).isGreaterThan(GENESIS_CHAINID + PERIOD_IN_SECONDS);
   }
 
   @Test
@@ -142,9 +144,4 @@ public class EphemeryNetworkTest {
     final SpecConfig config = SpecConfigLoader.loadConfig("ephemery", consumer);
     return SpecFactory.create(config);
   }
-
-  //    private UInt256 randomUInt256() {
-  //        return UInt256.fromBytes(Bytes.wrap(randomBytes(32)));
-  //    }
-
 }
