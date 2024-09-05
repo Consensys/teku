@@ -202,7 +202,7 @@ public class SszBitvectorTest implements SszPrimitiveCollectionTestBase, SszVect
   void testBitMethodsAreConsistent(final SszBitvector vector) {
     assertThat(vector.streamAllSetBits())
         .containsExactlyInAnyOrderElementsOf(vector.getAllSetBits());
-    List<Integer> bitsIndices = vector.getAllSetBits();
+    final List<Integer> bitsIndices = vector.getAllSetBits();
     for (int i = 0; i < vector.size(); i++) {
       assertThat(vector.getBit(i)).isEqualTo(bitsIndices.contains(i));
     }
