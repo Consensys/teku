@@ -50,8 +50,12 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -81,6 +85,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final BuilderBidSchema<?> builderBidSchemaElectra;
   private final SignedBuilderBidSchema signedBuilderBidSchemaElectra;
 
+  private final IndexedAttestationElectraSchema indexedAttestationSchema;
+  private final AttesterSlashingElectraSchema attesterSlashingSchema;
+
   private final BlockContentsSchema blockContentsSchema;
   private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
@@ -101,6 +108,12 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     super(specConfig);
 
     final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
+
+    this.indexedAttestationSchema =
+        new IndexedAttestationElectraSchema(maxValidatorsPerAttestation);
+    this.attesterSlashingSchema =
+        new AttesterSlashingElectraSchema(
+            indexedAttestationSchema.castTypeToIndexedAttestationSchema());
 
     this.attestationSchema =
         new AttestationElectraSchema(
@@ -293,6 +306,16 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
     return executionPayloadAndBlobsBundleSchema;
+  }
+
+  @Override
+  public IndexedAttestationSchema<?> getIndexedAttestationSchema() {
+    return indexedAttestationSchema;
+  }
+
+  @Override
+  public AttesterSlashingSchema<?> getAttesterSlashingSchema() {
+    return attesterSlashingSchema;
   }
 
   public DepositRequestSchema getDepositRequestSchema() {
