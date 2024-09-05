@@ -113,7 +113,8 @@ public class BeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                attesterSlashingSchema.castTypeToAttesterSlashingSchema(), specConfig.getMaxAttesterSlashingsElectra())),
+                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                specConfig.getMaxAttesterSlashingsElectra())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
