@@ -172,11 +172,12 @@ public class ExecutionPayloadHeaderValidator
             });
   }
 
-  // EIP7732 TODO: implement
   @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState stateAtBlockSlot, final SignedExecutionPayloadHeader operation) {
-    return Optional.empty();
+    // The signature *is* verified during the state checks as part of
+    // process_execution_payload_header
+    return spec.validateExecutionPayloadHeader(stateAtBlockSlot, operation);
   }
 
   private boolean verifyBuilderSignature(

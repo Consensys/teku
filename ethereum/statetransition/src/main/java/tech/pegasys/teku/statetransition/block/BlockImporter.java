@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -62,6 +63,8 @@ public class BlockImporter {
       voluntaryExitSubscribers = Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<SignedBlsToExecutionChange>>
       blsToExecutionChangeSubscribers = Subscribers.create(true);
+  private final Subscribers<VerifiedBlockExecutionPayloadHeaderListener>
+      executionPayloadHeaderSubscribers = Subscribers.create(true);
 
   private final AtomicReference<CheckpointState> latestFinalizedCheckpointState =
       new AtomicReference<>(null);
@@ -213,6 +216,13 @@ public class BlockImporter {
             blsOperations ->
                 blsToExecutionChangeSubscribers.deliver(
                     VerifiedBlockOperationsListener::onOperationsFromBlock, blsOperations));
+    blockBody
+        .getOptionalSignedExecutionPayloadHeader()
+        .ifPresent(
+            signedExecutionPayloadHeader ->
+                executionPayloadHeaderSubscribers.deliver(
+                    VerifiedBlockExecutionPayloadHeaderListener::onOperationFromBlock,
+                    signedExecutionPayloadHeader));
   }
 
   public void subscribeToVerifiedBlockAttestations(
@@ -244,6 +254,12 @@ public class BlockImporter {
     blsToExecutionChangeSubscribers.subscribe(verifiedBlockBlsToExecutionChangeListener);
   }
 
+  public void subscribeToVerifiedExecutionPayloadHeader(
+      final VerifiedBlockExecutionPayloadHeaderListener
+          verifiedBlockExecutionPayloadHeaderListener) {
+    executionPayloadHeaderSubscribers.subscribe(verifiedBlockExecutionPayloadHeaderListener);
+  }
+
   private String getBlockContent(final SignedBeaconBlock block) {
     return block.sszSerialize().toHexString();
   }
@@ -259,5 +275,9 @@ public class BlockImporter {
 
   public interface VerifiedBlockAttestationListener {
     void onOperationsFromBlock(UInt64 slot, SszList<Attestation> attestations);
+  }
+
+  public interface VerifiedBlockExecutionPayloadHeaderListener {
+    void onOperationFromBlock(SignedExecutionPayloadHeader header);
   }
 }
