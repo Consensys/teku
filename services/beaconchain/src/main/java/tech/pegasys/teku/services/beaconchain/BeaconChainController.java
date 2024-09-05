@@ -1203,6 +1203,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
+    executionPayloadHeaderPool.subscribeOperationAdded(
+        new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedExecutionPayloadHeader));
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
