@@ -42,7 +42,7 @@ public class CapellaRemoteSignerAcceptanceTest extends AcceptanceTestBase {
   void capellaWithRemoteSigner() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
+        currentTime.intValue() + 30; // genesis needs added time for nodes to startup
 
     final Web3SignerNode web3SignerNode =
         createWeb3SignerNode(
