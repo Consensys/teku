@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -117,7 +116,7 @@ public class DasCustodySyncTest {
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().join();
+        custodyStand.custody.retrieveMissingColumns().toList().join();
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
   }
@@ -158,7 +157,7 @@ public class DasCustodySyncTest {
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().join();
+        custodyStand.custody.retrieveMissingColumns().toList().join();
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
   }
@@ -194,12 +193,12 @@ public class DasCustodySyncTest {
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().join();
+        custodyStand.custody.retrieveMissingColumns().toList().join();
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
   }
 
-  @Disabled("There are 2 issues at the moment: almost no sync and too many DB queries")
+  //  @Disabled("There are 2 issues at the moment: almost no sync and too many DB queries")
   @Test
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
     custodyStand.setCurrentSlot(0);
@@ -225,7 +224,7 @@ public class DasCustodySyncTest {
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().join();
+        custodyStand.custody.retrieveMissingColumns().toList().join();
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
   }

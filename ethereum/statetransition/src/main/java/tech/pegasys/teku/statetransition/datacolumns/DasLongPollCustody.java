@@ -29,6 +29,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.spec.Spec;
@@ -101,7 +102,7 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody {
   }
 
   @Override
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> retrieveMissingColumns() {
+  public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
     return delegate.retrieveMissingColumns();
   }
 

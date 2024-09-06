@@ -11,14 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns;
+package tech.pegasys.teku.infrastructure.async.stream;
 
-import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+abstract class AbstractDelegatingIteratorCallback<S, T> implements AsyncIteratorCallback<T> {
 
-public interface UpdatableDataColumnSidecarCustody extends DataColumnSidecarCustody {
+  protected final AsyncIteratorCallback<S> delegate;
 
-  void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
+  protected AbstractDelegatingIteratorCallback(AsyncIteratorCallback<S> delegate) {
+    this.delegate = delegate;
+  }
 
-  AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns();
+  @Override
+  public void onComplete() {
+    delegate.onComplete();
+  }
+
+  @Override
+  public void onError(Throwable t) {
+    delegate.onError(t);
+  }
 }
