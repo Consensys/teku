@@ -188,8 +188,8 @@ public class Eth2NetworkConfiguration {
   }
 
   /**
-   * @deprecated Constants should be accessed via {@link SpecVersion}
    * @return The constants resource name or url
+   * @deprecated Constants should be accessed via {@link SpecVersion}
    */
   @Deprecated
   public String getConstants() {
@@ -400,6 +400,7 @@ public class Eth2NetworkConfiguration {
             SpecFactory.create(
                 constants,
                 builder -> {
+//                  EphemeryNetwork.updateConfig(builder);
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(
@@ -423,11 +424,6 @@ public class Eth2NetworkConfiguration {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
-                        }
-                        if (trustedSetup.isEmpty()) {
-                          LOG.warn(
-                              "Setting a default for trusted setup as nothing was set explicitly");
-                          trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME);
                         }
                       });
                   builder.electraBuilder(
@@ -918,13 +914,13 @@ public class Eth2NetworkConfiguration {
           .startupTimeoutSeconds(120)
           .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(0)
-          .defaultInitialStateFromUrl(
-              "https://checkpoint-sync.ephemery.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
-          .customGenesisState(
-              "https://github.com/ephemery-testnet/ephemery-genesis/releases/latest/download/genesis.ssz")
+          .checkpointSyncUrl("https://ephemery.beaconstate.ethstaker.cc")
           .discoveryBootnodes(
-              // TEKU bootnode
-              "enr:-Iq4QNMYHuJGbnXyBj6FPS2UkOQ-hnxT-mIdNMMr7evR9UYtLemaluorL6J10RoUG1V4iTPTEbl3huijSNs5_ssBWFiGAYhBNHOzgmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQNULnJBzD8Sakd9EufSXhM4rQTIkhKBBTmWVJUtLCp8KoN1ZHCCIyk");
+              "enr:-Iq4QNMYHuJGbnXyBj6FPS2UkOQ-hnxT-mIdNMMr7evR9UYtLemaluorL6J10RoUG1V4iTPTEbl3huijSNs5_ssBWFiGAYhBNHOzgmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQNULnJBzD8Sakd9EufSXhM4rQTIkhKBBTmWVJUtLCp8KoN1ZHCCIyk",
+              "enr:-LK4QDvXfoKH4pVoVoJx3vz0q-3nFtxYKgIacrYPuorPO-KrGlOwQOlCDEPh0e_1x9O2Ob6YWajVU6y7IjIGYOQfXkwEh2F0dG5ldHOIAAAAAACAAQCEZXRoMpDKcygcUAAQG___________gmlkgnY0gmlwhIlKy_CJc2VjcDI1NmsxoQOqgG9xgvsFBhOI6mfWosFJheJOxvVz2zlbQzMeK-S7dIN0Y3CCI4yDdWRwgiOM",
+              "enr:-Jq4QI0JCZcwDmfiuBbzjtmE_QTQVi4-jRUJko5RMq1RCjQeTXncHIoCtriXgU_FrCtl9R2AKSyHcmF0fCuS4pIL4h0BhGV0aDKQynMoHFAAEBv__________4JpZIJ2NIJpcIRBbZouiXNlY3AyNTZrMaEC8GXWOjFPp85Cpv9CY6V-CfzNPkMm0VyNNeuiFxfjg3mDdWRwgiMp",
+              "enr:-Iq4QIc297-de1P6hznMX2cIdVsQkve9BD9NUsJ7vVQa7eh5UpekA9rLid5A-yLiS3gZwOGugYZPi58x76zNs2cEQFCGAYhBJlTYgmlkgnY0gmlwhEFtmi6Jc2VjcDI1NmsxoQJDyix-IHa_mVwLBEN9NeG8I-RUjNQK_MGxk9OqRQUAtIN1ZHCCIyg",
+              "enr:-MS4QPNnPV4zZJkeytVQTm8fg3Mrtyq7l3oVy9ht4229w5OUOftE2EsXAfgxEopHavIPTzdWGchD-rXDh_eS6fdF_dsBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDKcygcUAAQG___________gmlkgnY0gmlwhKfrAbmEcXVpY4IjUYlzZWNwMjU2azGhAwnM8CLwGlnZFe7XhDoC4PSYZMvWypChdu0NX9vmCGjKiHN5bmNuZXRzAIN0Y3CCI1CDdWRwgiNQ");
     }
 
     private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {
