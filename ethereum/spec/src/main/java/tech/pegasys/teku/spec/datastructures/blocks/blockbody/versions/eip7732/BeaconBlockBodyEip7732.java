@@ -62,4 +62,9 @@ public interface BeaconBlockBodyEip7732 extends BeaconBlockBodyElectra {
   default Optional<BeaconBlockBodyEip7732> toVersionEip7732() {
     return Optional.of(this);
   }
+
+  @Override
+  default Optional<BeaconBlockBodyEip7732> toBlindedVersionEip7732() {
+    return Optional.of(this);
+  }
 }

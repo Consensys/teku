@@ -144,4 +144,8 @@ public interface BeaconBlockBody extends SszContainer {
   default Optional<BlindedBeaconBlockBodyElectra> toBlindedVersionElectra() {
     return Optional.empty();
   }
+
+  default Optional<BeaconBlockBodyEip7732> toBlindedVersionEip7732() {
+    return Optional.empty();
+  }
 }

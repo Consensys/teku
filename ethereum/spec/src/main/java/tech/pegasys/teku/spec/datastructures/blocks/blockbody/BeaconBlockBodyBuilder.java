@@ -75,8 +75,16 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder blobKzgCommitments(SszList<SszKZGCommitment> blobKzgCommitments);
 
+  default Boolean supportsSignedExecutionPayloadHeader() {
+    return false;
+  }
+
   BeaconBlockBodyBuilder signedExecutionPayloadHeader(
       SignedExecutionPayloadHeader signedExecutionPayloadHeader);
+
+  default Boolean supportsPayloadAttestations() {
+    return false;
+  }
 
   BeaconBlockBodyBuilder payloadAttestations(SszList<PayloadAttestation> payloadAttestations);
 

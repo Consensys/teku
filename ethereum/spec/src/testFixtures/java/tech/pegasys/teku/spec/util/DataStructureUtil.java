@@ -84,7 +84,9 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -107,6 +109,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
@@ -123,6 +126,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -151,6 +155,8 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -192,6 +198,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public final class DataStructureUtil {
@@ -401,6 +408,10 @@ public final class DataStructureUtil {
     return randomSszBitvector(getMaxCommitteesPerSlot());
   }
 
+  public SszBitvector randomPtcBitVector() {
+    return randomSszBitvector(getPtcSize());
+  }
+
   public SszBitvector randomSszBitvector(final int n) {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
@@ -600,7 +611,13 @@ public final class DataStructureUtil {
                     .excessBlobGas(this::randomUInt64)
                     .depositRequestsRoot(this::randomBytes32)
                     .withdrawalRequestsRoot(this::randomBytes32)
-                    .consolidationRequestsRoot(this::randomBytes32));
+                    .consolidationRequestsRoot(this::randomBytes32)
+                    .parentBlockHash(this::randomBytes32)
+                    .parentBlockRoot(this::randomBytes32)
+                    .builderIndex(this::randomUInt64)
+                    .slot(this::randomSlot)
+                    .value(this::randomUInt64)
+                    .blobKzgCommitmentsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -1430,6 +1447,17 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomSszList(
+                        BeaconBlockBodySchemaEip7732.required(schema)
+                            .getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation,
+                        3));
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1857,7 +1885,7 @@ public final class DataStructureUtil {
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
-      case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
+      case EIP7732 -> stateBuilderEip7732(validatorCount, numItemsInSszLists);
     };
   }
 
@@ -1905,6 +1933,12 @@ public final class DataStructureUtil {
   public BeaconStateBuilderElectra stateBuilderElectra(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderElectra.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderEip7732 stateBuilderEip7732(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderEip7732.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
@@ -2528,6 +2562,28 @@ public final class DataStructureUtil {
             SszUInt64.of(randomUInt64()));
   }
 
+  public SignedExecutionPayloadHeader randomSignedExecutionPayloadHeader() {
+    return getEip7732SchemaDefinitions(randomSlot())
+        .getSignedExecutionPayloadHeaderSchema()
+        .create(
+            randomExecutionPayloadHeader(getSpec().forMilestone(SpecMilestone.EIP7732)),
+            randomSignature());
+  }
+
+  public PayloadAttestation randomPayloadAttestation() {
+    return getEip7732SchemaDefinitions(randomSlot())
+        .getPayloadAttestationSchema()
+        .create(
+            randomPtcBitVector(),
+            PayloadAttestationData.SSZ_SCHEMA.create(
+                randomBytes32(), randomSlot(), randomPayloadStatus().getCode()),
+            randomSignature());
+  }
+
+  public PayloadStatus randomPayloadStatus() {
+    return PayloadStatus.values()[randomInt(0, PayloadStatus.values().length)];
+  }
+
   public UInt64 randomBlobSidecarIndex() {
     return randomUInt64(spec.getMaxBlobsPerBlock().orElseThrow());
   }
@@ -2565,6 +2621,10 @@ public final class DataStructureUtil {
     return SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
+  private SchemaDefinitionsEip7732 getEip7732SchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions());
+  }
+
   int getEpochsPerEth1VotingPeriod() {
     return getConstant(SpecConfig::getEpochsPerEth1VotingPeriod);
   }
@@ -2591,6 +2651,10 @@ public final class DataStructureUtil {
 
   private UInt64 getMaxEffectiveBalance() {
     return getConstant(SpecConfig::getMaxEffectiveBalance);
+  }
+
+  private int getPtcSize() {
+    return getConstant(specConfig -> SpecConfigEip7732.required(specConfig).getPtcSize());
   }
 
   private Bytes32 computeDepositDomain() {
