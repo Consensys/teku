@@ -400,7 +400,7 @@ public class Eth2NetworkConfiguration {
             SpecFactory.create(
                 constants,
                 builder -> {
-//                  EphemeryNetwork.updateConfig(builder);
+                  EphemeryNetwork.updateConfig(builder);
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(

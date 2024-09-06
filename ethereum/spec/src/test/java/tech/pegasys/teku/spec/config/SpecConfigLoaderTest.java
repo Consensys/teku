@@ -39,9 +39,23 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class SpecConfigLoaderTest {
 
   @ParameterizedTest(name = "{0}")
-  @EnumSource(Eth2Network.class)
+  @EnumSource(
+      value = Eth2Network.class,
+      mode = EnumSource.Mode.EXCLUDE,
+      names = {"EPHEMERY"})
   public void shouldLoadAllKnownNetworks(final Eth2Network network) throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfigStrict(network.configName());
+    // testing latest SpecConfig ensures all fields will be asserted on
+    assertAllFieldsSet(config, SpecConfigElectra.class);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @EnumSource(
+      value = Eth2Network.class,
+      mode = EnumSource.Mode.INCLUDE,
+      names = {"EPHEMERY"})
+  public void shouldLoadEphemeryNetworks(final Eth2Network network) throws Exception {
+    final SpecConfig config = SpecConfigLoader.loadConfig(network.configName());
     // testing latest SpecConfig ensures all fields will be asserted on
     assertAllFieldsSet(config, SpecConfigElectra.class);
   }
