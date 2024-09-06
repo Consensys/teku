@@ -42,9 +42,9 @@ public class EpochCommitteeResponse {
   public final List<UInt64> validators;
 
   public EpochCommitteeResponse(final CommitteeAssignment committeeAssignment) {
-    this.slot = committeeAssignment.getSlot();
-    this.index = committeeAssignment.getCommitteeIndex();
-    this.validators = UInt64Util.intToUInt64List(committeeAssignment.getCommittee());
+    this.slot = committeeAssignment.slot();
+    this.index = committeeAssignment.committeeIndex();
+    this.validators = UInt64Util.intToUInt64List(committeeAssignment.committee());
   }
 
   @JsonCreator
