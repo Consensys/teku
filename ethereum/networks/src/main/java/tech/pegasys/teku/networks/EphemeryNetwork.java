@@ -31,13 +31,13 @@ public class EphemeryNetwork {
 
   public static void updateConfig(final SpecConfigBuilder builder) {
     final SpecConfig config = SpecConfigLoader.loadConfig("ephemery");
-    SpecConfigBuilder rawConfigBuilder = builder.rawConfig(config.getRawConfig());
+    final SpecConfigBuilder rawConfigBuilder = builder.rawConfig(config.getRawConfig());
 
     if (Eth2Network.EPHEMERY.configName().equals("ephemery")) {
-      long currentTimestamp = Instant.now().getEpochSecond();
+      final long currentTimestamp = Instant.now().getEpochSecond();
 
-      long updatedTimestamp = GENESIS_TIMESTAMP + (PERIODS_SINCE_GENESIS * PERIOD_IN_SECONDS);
-      Long updatedChainId = GENESIS_CHAINID + PERIODS_SINCE_GENESIS;
+      final long updatedTimestamp = GENESIS_TIMESTAMP + (PERIODS_SINCE_GENESIS * PERIOD_IN_SECONDS);
+      final long updatedChainId = GENESIS_CHAINID + PERIODS_SINCE_GENESIS;
 
       try {
         if (currentTimestamp > (GENESIS_TIMESTAMP + PERIOD_IN_SECONDS)) {

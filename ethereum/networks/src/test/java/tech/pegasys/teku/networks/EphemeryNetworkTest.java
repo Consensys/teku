@@ -55,7 +55,7 @@ public class EphemeryNetworkTest {
   @Test
   public void testUpdateConfig() {
     final SpecConfig configFile = SpecConfigLoader.loadConfig("ephemery");
-    SpecConfig config = mock(SpecConfig.class);
+    final SpecConfig config = mock(SpecConfig.class);
 
     when(config.getRawConfig()).thenReturn(configFile.getRawConfig());
     when(builder.rawConfig(config.getRawConfig())).thenReturn(builder);
@@ -124,7 +124,7 @@ public class EphemeryNetworkTest {
   }
 
   private InputStream getFileFromResourceAsStream(final String fileName) {
-    InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
+    final InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
     if (inputStream == null) {
       throw new IllegalArgumentException("File not found: " + fileName);
     }
