@@ -63,8 +63,8 @@ public class AttesterSlashingGenerator {
     UInt64 epoch = spec.computeEpochAtSlot(blockAndState.getSlot());
     Optional<CommitteeAssignment> maybeAssignment =
         spec.getCommitteeAssignment(blockAndState.getState(), epoch, validatorIndex);
-    IntList committeeIndices = maybeAssignment.orElseThrow().getCommittee();
-    UInt64 committeeIndex = maybeAssignment.orElseThrow().getCommitteeIndex();
+    IntList committeeIndices = maybeAssignment.orElseThrow().committee();
+    UInt64 committeeIndex = maybeAssignment.orElseThrow().committeeIndex();
     Committee committee = new Committee(committeeIndex, committeeIndices);
     int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
 
