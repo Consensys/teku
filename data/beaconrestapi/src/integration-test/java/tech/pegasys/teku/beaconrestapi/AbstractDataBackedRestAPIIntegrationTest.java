@@ -55,7 +55,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -159,7 +158,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected ChainUpdater chainUpdater;
 
   protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  protected final JsonProvider jsonProvider = new JsonProvider();
 
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
