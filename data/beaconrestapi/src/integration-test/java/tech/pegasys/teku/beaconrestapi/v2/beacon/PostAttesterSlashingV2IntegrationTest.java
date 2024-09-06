@@ -27,17 +27,17 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
 import okhttp3.Response;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttesterSlashingV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -58,8 +58,7 @@ public class PostAttesterSlashingV2IntegrationTest
 
   @TestTemplate
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
-    final Response response = post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(""));
-    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    checkEmptyBodyToRoute(PostAttesterSlashingV2.ROUTE, SC_BAD_REQUEST);
   }
 
   @TestTemplate
@@ -67,7 +66,7 @@ public class PostAttesterSlashingV2IntegrationTest
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            jsonProvider.objectToJSON("{\"foo\": \"bar\"}"),
+            "{\"foo\": \"bar\"}",
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
     assertThat(response.code()).isEqualTo(400);
@@ -75,17 +74,14 @@ public class PostAttesterSlashingV2IntegrationTest
 
   @TestTemplate
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
-        dataStructureUtil.randomAttesterSlashing();
-
-    final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
 
     doThrow(new RuntimeException()).when(attesterSlashingPool).addLocal(slashing);
 
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            jsonProvider.objectToJSON(schemaSlashing),
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
     assertThat(response.code()).isEqualTo(500);
@@ -93,10 +89,7 @@ public class PostAttesterSlashingV2IntegrationTest
 
   @TestTemplate
   public void shouldReturnSuccessWhenRequestBodyIsValid() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
-        dataStructureUtil.randomAttesterSlashing();
-
-    final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
 
     when(attesterSlashingPool.addLocal(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
@@ -104,7 +97,7 @@ public class PostAttesterSlashingV2IntegrationTest
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            jsonProvider.objectToJSON(schemaSlashing),
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
 
@@ -115,13 +108,12 @@ public class PostAttesterSlashingV2IntegrationTest
 
   @TestTemplate
   void shouldFailWhenMissingConsensusHeader() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
-        dataStructureUtil.randomAttesterSlashing();
-
-    final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
 
     final Response response =
-        post(PostAttesterSlashingV2.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
+        post(
+            PostAttesterSlashingV2.ROUTE,
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
 
@@ -133,10 +125,7 @@ public class PostAttesterSlashingV2IntegrationTest
   @TestTemplate
   void shouldFailWhenBadConsensusHeaderValue() throws Exception {
 
-    final tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing slashing =
-        dataStructureUtil.randomAttesterSlashing();
-
-    final AttesterSlashing schemaSlashing = new AttesterSlashing(slashing);
+    final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
 
     when(attesterSlashingPool.addLocal(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
@@ -144,7 +133,7 @@ public class PostAttesterSlashingV2IntegrationTest
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            jsonProvider.objectToJSON(schemaSlashing),
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()),
             Collections.emptyMap(),
             Optional.of(badConsensusHeaderValue));
 

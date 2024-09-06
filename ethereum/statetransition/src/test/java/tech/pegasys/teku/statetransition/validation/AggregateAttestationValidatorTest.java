@@ -516,8 +516,8 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregateAndProof2 =
         generator
             .generator()
-            .blockAndState(chainHead, epochOneCommitteeAssignment.slot())
-            .committeeIndex(epochOneCommitteeAssignment.committeeIndex())
+            .blockAndState(chainHead, epochOneCommitteeAssignment.getSlot())
+            .committeeIndex(epochOneCommitteeAssignment.getCommitteeIndex())
             .aggregatorIndex(aggregatorIndex)
             .generate();
     whenAttestationIsValid(aggregateAndProof1);
@@ -548,13 +548,13 @@ class AggregateAttestationValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator
             .generator()
-            .blockAndState(chainHead, committeeAssignment.slot())
+            .blockAndState(chainHead, committeeAssignment.getSlot())
             .aggregatorIndex(UInt64.valueOf(aggregatorIndex))
-            .committeeIndex(committeeAssignment.committeeIndex())
+            .committeeIndex(committeeAssignment.getCommitteeIndex())
             .generate();
     whenAttestationIsValid(aggregate);
     // Sanity check
-    final int committeeLength = committeeAssignment.committee().size();
+    final int committeeLength = committeeAssignment.getCommittee().size();
     final int aggregatorModulo =
         genesisSpec.getValidatorsUtil().getAggregatorModulo(committeeLength);
     assertThat(aggregatorModulo).isGreaterThan(1);
@@ -584,8 +584,8 @@ class AggregateAttestationValidatorTest {
     final CommitteeAssignment committeeAssignment =
         getCommitteeAssignment(
             chainHead, aggregatorIndex, spec.computeEpochAtSlot(chainHead.getSlot()));
-    if (committeeAssignment.committeeIndex().equals(attestationData.getIndex())
-        && committeeAssignment.slot().equals(attestationData.getSlot())) {
+    if (committeeAssignment.getCommitteeIndex().equals(attestationData.getIndex())
+        && committeeAssignment.getSlot().equals(attestationData.getSlot())) {
       fail("Aggregator was in the committee");
     }
 

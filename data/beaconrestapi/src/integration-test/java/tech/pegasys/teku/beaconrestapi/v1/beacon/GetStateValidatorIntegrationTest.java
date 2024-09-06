@@ -18,14 +18,13 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateValidatorIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach
@@ -37,9 +36,8 @@ public class GetStateValidatorIntegrationTest extends AbstractDataBackedRestAPII
   public void shouldGetValidatorResponseForKnownValidatorFromKnownState() throws IOException {
     final Response response = get("genesis", "1");
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateValidatorResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateValidatorResponse.class);
-    assertThat(body.data.index).isEqualTo(UInt64.ONE);
+    final JsonNode data = getResponseData(response);
+    assertThat(data.get("index").asInt()).isEqualTo(1);
   }
 
   @Test
