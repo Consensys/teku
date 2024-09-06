@@ -15,3 +15,4 @@
 - Added support for [Ephemery Testnet](https://github.com/ephemery.dev) `--network=ephemery`
 
 ### Bug Fixes
+ - removed a warning from logs about non blinded blocks being requested (#8562)
