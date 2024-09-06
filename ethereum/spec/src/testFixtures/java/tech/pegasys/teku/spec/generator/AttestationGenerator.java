@@ -343,12 +343,12 @@ public class AttestationGenerator {
         }
 
         final CommitteeAssignment assignment = maybeAssignment.get();
-        if (!assignment.slot().equals(assignedSlot)) {
+        if (!assignment.getSlot().equals(assignedSlot)) {
           continue;
         }
 
-        final IntList committeeIndices = assignment.committee();
-        final UInt64 committeeIndex = assignment.committeeIndex();
+        final IntList committeeIndices = assignment.getCommittee();
+        final UInt64 committeeIndex = assignment.getCommitteeIndex();
         final Committee committee = new Committee(committeeIndex, committeeIndices);
         final int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
         final AttestationData genericAttestationData =
