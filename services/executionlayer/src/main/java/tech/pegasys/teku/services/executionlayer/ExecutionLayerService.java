@@ -201,7 +201,6 @@ public class ExecutionLayerService extends Service {
         EVENT_LOG,
         executionClientHandler,
         builderClient,
-        config.getSpec(),
         metricsSystem,
         new BuilderBidValidatorImpl(config.getSpec(), EVENT_LOG),
         builderCircuitBreaker,
