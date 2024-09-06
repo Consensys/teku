@@ -33,7 +33,7 @@ public class HostAllowlistHandler implements Handler {
 
   @Override
   public void handle(final Context ctx) throws Exception {
-    String header = ctx.host();
+    String header = ctx.ip();
     if (!isHostAuthorized(hostAllowlist, header)) {
       LOG.debug("Host not authorized " + header);
       throw new ForbiddenResponse("Host not authorized");
