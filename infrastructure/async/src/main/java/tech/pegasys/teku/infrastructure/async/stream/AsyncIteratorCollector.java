@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-import java.util.Collection;
+import java.util.stream.Collector;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class AsyncIteratorCollector<T> {
@@ -24,21 +24,21 @@ class AsyncIteratorCollector<T> {
     this.iterator = iterator;
   }
 
-  public <C extends Collection<T>> SafeFuture<C> collect(C collection) {
-    SafeFuture<C> promise = new SafeFuture<>();
+  public <R, A> SafeFuture<R> collect(Collector<T, A, R> collector) {
+    SafeFuture<R> promise = new SafeFuture<>();
+    A accumulator = collector.supplier().get();
     iterator.iterate(
         new AsyncIteratorCallback<T>() {
           @Override
           public SafeFuture<Boolean> onNext(T t) {
-            synchronized (collection) {
-              collection.add(t);
-            }
+            collector.accumulator().accept(accumulator, t);
             return TRUE_FUTURE;
           }
 
           @Override
           public void onComplete() {
-            promise.complete(collection);
+            R result = collector.finisher().apply(accumulator);
+            promise.complete(result);
           }
 
           @Override

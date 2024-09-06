@@ -105,4 +105,46 @@ public class AsyncStreamTest {
 
     assertThat(listFut).isCompletedWithValue(List.of(0, 1));
   }
+
+  @Test
+  void checkUntilAndCollectLast() {
+    List<SafeFuture<Integer>> futures =
+        Stream.generate(() -> new SafeFuture<Integer>()).limit(10).toList();
+
+    SafeFuture<List<Integer>> resFuture =
+        AsyncStream.create(futures.iterator())
+            .mapAsync(fut -> fut)
+            .takeUntil(i -> i == 4, true)
+            .collectLast(2);
+
+    for (int i = 0; i < 4; i++) {
+      futures.get(i).complete(i);
+    }
+
+    assertThat(resFuture).isNotDone();
+
+    futures.get(4).complete(4);
+
+    assertThat(resFuture).isCompletedWithValue(List.of(3, 4));
+  }
+
+  @Test
+  void checkUntilEmpty() {
+    assertThat(AsyncStream.of(0, 1, 2).takeUntil(i -> i == 0, false).findFirst().join()).isEmpty();
+    assertThat(AsyncStream.of(0, 1, 2).takeUntil(i -> i == 100, false).collectLast(1).join())
+        .containsExactly(2);
+    assertThat(AsyncStream.of(0, 1, 2).takeUntil(i -> i == 100, true).collectLast(1).join())
+        .containsExactly(2);
+  }
+
+  @Test
+  void checkUntilFirst() {
+    assertThat(AsyncStream.of(0, 1, 2).takeUntil(i -> i == 0, true).toList().join())
+        .containsExactly(0);
+  }
+
+  @Test
+  void checkCollectLastWithLessElements() {
+    assertThat(AsyncStream.of(0, 1).collectLast(3).join()).containsExactly(0, 1);
+  }
 }

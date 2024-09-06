@@ -13,24 +13,25 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-import java.util.concurrent.atomic.AtomicLong;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import java.util.function.Function;
 
-class LimitIteratorCallback<T> extends AbstractDelegatingIteratorCallback<T, T> {
+/**
+ * Contains fundamental transformation stream methods All other transformations are expressed my
+ * means of those methods
+ */
+public interface BaseAsyncStreamTransform<T> {
 
-  private final AtomicLong limit;
-
-  protected LimitIteratorCallback(AsyncIteratorCallback<T> delegate, long limit) {
-    super(delegate);
-    this.limit = new AtomicLong(limit);
+  enum SliceResult {
+    CONTINUE,
+    INCLUDE_AND_STOP,
+    SKIP_AND_STOP
   }
 
-  @Override
-  public SafeFuture<Boolean> onNext(T t) {
-    if (limit.getAndDecrement() > 0) {
-      return delegate.onNext(t);
-    } else {
-      return FALSE_FUTURE;
-    }
+  interface BaseSlicer<T> {
+    SliceResult slice(T element);
   }
+
+  <R> AsyncStream<R> flatMap(Function<T, AsyncStream<R>> toStreamMapper);
+
+  AsyncStream<T> slice(BaseSlicer<T> slicer);
 }
