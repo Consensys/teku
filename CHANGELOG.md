@@ -14,3 +14,4 @@
 - Implemented [PostAggregateAndProofsV2](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Validator/publishAggregateAndProofsV2) (adding support for Electra)
 
 ### Bug Fixes
+ - removed a warning from logs about non blinded blocks being requested (#8562)

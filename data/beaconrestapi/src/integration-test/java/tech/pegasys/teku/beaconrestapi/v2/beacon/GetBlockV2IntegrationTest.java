@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONTENT_ENCODING;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,17 +27,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -46,17 +44,20 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     startRestAPIAtGenesis(SpecMilestone.PHASE0);
     final List<SignedBlockAndState> created = createBlocksAtSlots(10);
     final Response response = get("head");
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
 
-    final GetBlockResponseV2 body =
-        jsonProvider.jsonToObject(response.body().string(), GetBlockResponseV2.class);
-
-    assertThat(body.getVersion()).isEqualTo(Version.phase0);
-    assertThat(body.data).isInstanceOf(SignedBeaconBlockPhase0.class);
-    final SignedBeaconBlockPhase0 data = (SignedBeaconBlockPhase0) body.getData();
-    final SignedBlockAndState block = created.get(0);
-    assertThat(data).isEqualTo(SignedBeaconBlock.create(block.getBlock()));
-
+    assertThat(body.get("version").asText()).isEqualTo(Version.phase0.name());
+    assertThat(body.get("data").get("message").get("parent_root").asText())
+        .isEqualTo(created.get(0).getBlock().getMessage().getParentRoot().toHexString());
+    assertThat(body.get("data").get("message").get("state_root").asText())
+        .isEqualTo(created.get(0).getBlock().getMessage().getStateRoot().toHexString());
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
+
+    // this is the most practical way to compare the block to that created, but its secondary to
+    // comparing state root and parent root.
+    final SignedBeaconBlock block =
+        getSignedBeaconBlock(SpecMilestone.PHASE0, body.get("data").toString());
+    assertThat(block).isEqualTo(created.get(0).getBlock());
   }
 
   @Test
@@ -64,20 +65,30 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final List<SignedBlockAndState> created = createBlocksAtSlots(10);
     final Response response = get("head");
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
 
-    final GetBlockResponseV2 body =
-        jsonProvider.jsonToObject(response.body().string(), GetBlockResponseV2.class);
-
-    assertThat(body.getVersion()).isEqualTo(Version.altair);
-    assertThat(body.getData()).isInstanceOf(SignedBeaconBlockAltair.class);
-    final SignedBeaconBlockAltair data = (SignedBeaconBlockAltair) body.getData();
-    assertThat(data.signature.toHexString())
-        .isEqualTo(created.get(0).getBlock().getSignature().toString());
-    assertThat(data.getMessage().asInternalBeaconBlock(spec).getRoot().toHexString())
-        .isEqualTo(created.get(0).getBlock().getMessage().getRoot().toHexString());
-    assertThat(data.getMessage().getBody().syncAggregate.syncCommitteeBits)
-        .isEqualTo(Bytes.fromHexString("0x00000000"));
+    assertThat(body.get("version").asText()).isEqualTo(Version.altair.name());
+    assertThat(body.get("data").get("message").get("parent_root").asText())
+        .isEqualTo(created.get(0).getBlock().getMessage().getParentRoot().toHexString());
+    assertThat(body.get("data").get("message").get("state_root").asText())
+        .isEqualTo(created.get(0).getBlock().getMessage().getStateRoot().toHexString());
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+
+    // this is the most practical way to compare the block to that created, but its secondary to
+    // comparing state root and parent root.
+    final SignedBeaconBlock block =
+        getSignedBeaconBlock(SpecMilestone.ALTAIR, body.get("data").toString());
+    assertThat(block).isEqualTo(created.get(0).getBlock());
+  }
+
+  private SignedBeaconBlock getSignedBeaconBlock(final SpecMilestone milestone, final String data)
+      throws JsonProcessingException {
+    return JsonUtil.parse(
+        data,
+        spec.forMilestone(milestone)
+            .getSchemaDefinitions()
+            .getSignedBeaconBlockSchema()
+            .getJsonTypeDefinition());
   }
 
   @Test
@@ -100,14 +111,14 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
 
     // Decompress response
     final byte[] responseBody = response.body().bytes();
-    GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(responseBody));
-    byte[] bytesResult = gis.readAllBytes();
-    String block = new String(bytesResult, StandardCharsets.UTF_8);
+    final GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(responseBody));
+    final byte[] bytesResult = gis.readAllBytes();
+    final String block = new String(bytesResult, StandardCharsets.UTF_8);
 
     // Check block signatures are equivalent to ensure same block
-    JsonNode node = jsonProvider.getObjectMapper().readTree(block);
-    String blockSignature = node.get("data").get("signature").asText();
-    String expectedSignature =
+    final JsonNode node = OBJECT_MAPPER.readTree(block);
+    final String blockSignature = node.get("data").get("signature").asText();
+    final String expectedSignature =
         chainBuilder.getLatestBlockAndState().getBlock().getSignature().toString();
     assertThat(blockSignature).isEqualTo(expectedSignature);
   }
