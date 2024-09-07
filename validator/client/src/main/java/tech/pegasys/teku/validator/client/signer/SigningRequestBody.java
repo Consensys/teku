@@ -74,7 +74,7 @@ public record SigningRequestBody(Bytes signingRoot, SignType type, Map<String, O
             SigningRequestBody::getSyncAggregateSelectionData)
         .withOptionalField(
             SignType.BEACON_BLOCK.getName(),
-            BlockWrapper.getJsonTypeDefinition(schemaDefinitions),
+            getBlockWrapper().map(BlockWrapper::getJsonTypeDefinition).orElse(null),
             SigningRequestBody::getBlockWrapper)
         .withOptionalField(
             SignType.VALIDATOR_REGISTRATION.getName(),
