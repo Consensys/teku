@@ -16,32 +16,33 @@ package tech.pegasys.teku.validator.api.signer;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.enumOf;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public record BlockWrapper(
     SpecMilestone milestone, Optional<BeaconBlock> block, Optional<BeaconBlockHeader> blockHeader) {
-  public static DeserializableTypeDefinition<BlockWrapper> getJsonTypeDefinition(
-      final SchemaDefinitions schemaDefinitions) {
-    return DeserializableTypeDefinition.object(BlockWrapper.class, Builder.class)
-        .initializer(Builder::new)
-        .finisher(Builder::build)
-        .withField(
-            "version", enumOf(SpecMilestone.class), BlockWrapper::milestone, Builder::milestone)
-        .withOptionalField(
-            SignType.BLOCK.getName(),
-            schemaDefinitions.getBeaconBlockSchema().getJsonTypeDefinition(),
-            BlockWrapper::block,
-            Builder::block)
-        .withOptionalField(
-            "block_header",
-            BeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition(),
-            BlockWrapper::blockHeader,
-            Builder::blockHeader)
+  public SerializableTypeDefinition<BlockWrapper> getJsonTypeDefinition() {
+    return SerializableTypeDefinition.object(BlockWrapper.class)
+        .withField("version", enumOf(SpecMilestone.class), BlockWrapper::milestone)
+        .withOptionalField(SignType.BLOCK.getName(), getMaybeBlockSchema(), BlockWrapper::block)
+        .withOptionalField("block_header", getMaybeBlockHeaderSchema(), BlockWrapper::blockHeader)
         .build();
+  }
+
+  private SerializableTypeDefinition<BeaconBlock> getMaybeBlockSchema() {
+    return block
+        .<SerializableTypeDefinition<BeaconBlock>>map(
+            beaconBlock -> beaconBlock.getSchema().getJsonTypeDefinition())
+        .orElse(null);
+  }
+
+  private SerializableTypeDefinition<BeaconBlockHeader> getMaybeBlockHeaderSchema() {
+    return blockHeader
+        .<SerializableTypeDefinition<BeaconBlockHeader>>map(
+            beaconBlockHeader -> beaconBlockHeader.getSchema().getJsonTypeDefinition())
+        .orElse(null);
   }
 
   static class Builder {

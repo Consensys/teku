@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -60,6 +61,36 @@ public class ExternalSignerAltairIntegrationTest extends AbstractExternalSignerI
   @Override
   public Spec getSpec() {
     return TestSpecFactory.createMinimalAltair();
+  }
+
+  @Test
+  void shouldSignAltairBlock() throws Exception {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "luIZGEgsjSbFo4MEPVeqaqqm1AnnTODcxFy9gPmdAywVmDIpqkzYed8DJ2l4zx5WAejUTox+NO5HQ4M2APMNovd7FuqnCSVUEftrL4WtJqegPrING2ZCtVTrcaUzFpUQ"));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+
+    final BLSSignature response = externalSigner.signBlock(block, forkInfo).join();
+    assertThat(response).isEqualTo(expectedSignature);
+
+    final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
+        new ExternalSignerBlockRequestProvider(spec, block);
+
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(
+            signingRootUtil.signingRootForSignBlock(block, forkInfo),
+            externalSignerBlockRequestProvider.getSignType(),
+            externalSignerBlockRequestProvider.getBlockMetadata(Map.of("fork_info", forkInfo)));
+
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
+
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 
   @Test
