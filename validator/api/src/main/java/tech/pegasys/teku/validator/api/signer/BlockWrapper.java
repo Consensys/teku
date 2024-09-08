@@ -44,29 +44,4 @@ public record BlockWrapper(
             beaconBlockHeader -> beaconBlockHeader.getSchema().getJsonTypeDefinition())
         .orElse(null);
   }
-
-  static class Builder {
-    private SpecMilestone milestone;
-    private Optional<BeaconBlock> block = Optional.empty();
-    private Optional<BeaconBlockHeader> blockHeader = Optional.empty();
-
-    public Builder milestone(final SpecMilestone milestone) {
-      this.milestone = milestone;
-      return this;
-    }
-
-    public Builder block(final Optional<BeaconBlock> block) {
-      this.block = block;
-      return this;
-    }
-
-    public Builder blockHeader(final Optional<BeaconBlockHeader> blockHeader) {
-      this.blockHeader = blockHeader;
-      return this;
-    }
-
-    public BlockWrapper build() {
-      return new BlockWrapper(milestone, block, blockHeader);
-    }
-  }
 }
