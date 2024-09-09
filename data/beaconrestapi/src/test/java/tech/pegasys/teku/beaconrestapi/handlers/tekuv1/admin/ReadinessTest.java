@@ -85,7 +85,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+        .isEqualTo(
+            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -96,7 +97,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+        .isEqualTo(
+            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -107,7 +109,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+        .isEqualTo(
+            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -128,7 +131,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+        .isEqualTo(
+            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -139,7 +143,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+        .isEqualTo(
+            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -152,7 +157,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+        .isEqualTo(
+            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -165,7 +171,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
     assertThat(request.getResponseBody())
-        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+        .isEqualTo(
+            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test

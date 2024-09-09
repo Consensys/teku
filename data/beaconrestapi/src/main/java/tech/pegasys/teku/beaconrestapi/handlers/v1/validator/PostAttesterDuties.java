@@ -72,7 +72,8 @@ public class PostAttesterDuties extends RestApiEndpoint {
             .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Success response", ATTESTER_DUTIES_RESPONSE_TYPE)
-            .response(SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withServiceUnavailableResponse()
             .build());
     this.validatorDataProvider = validatorDataProvider;

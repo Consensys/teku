@@ -69,8 +69,12 @@ public class Readiness extends RestApiEndpoint {
             .queryParam(REQUIRE_PREPARED_PROPOSERS_PARAMETER)
             .queryParam(REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER)
             .response(SC_OK, "Node is ready")
-            .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues", HTTP_ERROR_RESPONSE_TYPE)
-            .response(SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
+            .response(
+                SC_SERVICE_UNAVAILABLE,
+                "Node not initialized or having issues",
+                HTTP_ERROR_RESPONSE_TYPE)
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .build());
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;

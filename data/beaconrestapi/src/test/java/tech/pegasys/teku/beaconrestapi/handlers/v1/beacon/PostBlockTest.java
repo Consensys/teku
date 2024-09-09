@@ -19,10 +19,9 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_U
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractPostBlockTest;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;

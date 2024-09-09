@@ -128,7 +128,8 @@ public class PostBlindedBlockV2 extends AbstractPostBlockV2 {
         .withBadRequestResponse(Optional.of("Unable to parse request body."))
         .response(
             SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
-        .response(SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
+        .response(
+            SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
         .build();
   }
 }
