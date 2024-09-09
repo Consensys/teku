@@ -76,7 +76,12 @@ public class DasCustodyStand {
 
     this.custody =
         new DataColumnSidecarCustodyImpl(
-            spec, blockResolver, dbAccessor, myNodeId, totalCustodySubnetCount);
+            spec,
+            blockResolver,
+            dbAccessor,
+            minCustodyPeriodSlotCalculator,
+            myNodeId,
+            totalCustodySubnetCount);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 

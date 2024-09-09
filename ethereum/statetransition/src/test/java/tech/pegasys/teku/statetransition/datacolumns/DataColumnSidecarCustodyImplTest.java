@@ -61,7 +61,13 @@ public class DataColumnSidecarCustodyImplTest {
   @SuppressWarnings("JavaCase")
   void sanityTest() throws Throwable {
     DataColumnSidecarCustodyImpl custody =
-        new DataColumnSidecarCustodyImpl(spec, blockResolver, dbAccessor, myNodeId, subnetCount);
+        new DataColumnSidecarCustodyImpl(
+            spec,
+            blockResolver,
+            dbAccessor,
+            MinCustodyPeriodSlotCalculator.createFromSpec(spec),
+            myNodeId,
+            subnetCount);
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);
     DataColumnSidecar sidecar1 = createSidecar(block, 1);

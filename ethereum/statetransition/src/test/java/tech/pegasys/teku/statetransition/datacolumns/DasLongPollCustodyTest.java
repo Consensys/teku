@@ -53,7 +53,13 @@ public class DasLongPollCustodyTest {
   final int subnetCount = config.getDataColumnSidecarSubnetCount();
 
   final DataColumnSidecarCustodyImpl custodyImpl =
-      new DataColumnSidecarCustodyImpl(spec, blockResolver, dbAccessor, myNodeId, subnetCount);
+      new DataColumnSidecarCustodyImpl(
+          spec,
+          blockResolver,
+          dbAccessor,
+          MinCustodyPeriodSlotCalculator.createFromSpec(spec),
+          myNodeId,
+          subnetCount);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
