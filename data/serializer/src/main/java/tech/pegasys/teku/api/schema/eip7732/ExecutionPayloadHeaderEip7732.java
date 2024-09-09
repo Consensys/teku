@@ -134,8 +134,12 @@ public class ExecutionPayloadHeaderEip7732 implements ExecutionPayloadHeader {
 
   @Override
   public boolean equals(final Object object) {
-    if (this == object) return true;
-    if (!(object instanceof final ExecutionPayloadHeaderEip7732 that)) return false;
+    if (this == object) {
+      return true;
+    }
+    if (!(object instanceof final ExecutionPayloadHeaderEip7732 that)) {
+      return false;
+    }
     return Objects.equals(parentBlockHash, that.parentBlockHash)
         && Objects.equals(parentBlockRoot, that.parentBlockRoot)
         && Objects.equals(blockHash, that.blockHash)

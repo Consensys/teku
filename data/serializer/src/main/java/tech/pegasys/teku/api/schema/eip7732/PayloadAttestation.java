@@ -44,8 +44,12 @@ public class PayloadAttestation {
 
   @Override
   public boolean equals(final Object object) {
-    if (this == object) return true;
-    if (!(object instanceof final PayloadAttestation that)) return false;
+    if (this == object) {
+      return true;
+    }
+    if (!(object instanceof final PayloadAttestation that)) {
+      return false;
+    }
     return Objects.equals(aggregation_bits, that.aggregation_bits)
         && Objects.equals(data, that.data)
         && Objects.equals(signature, that.signature);

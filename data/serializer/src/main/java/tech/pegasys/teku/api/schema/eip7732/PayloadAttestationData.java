@@ -58,8 +58,12 @@ public class PayloadAttestationData {
 
   @Override
   public boolean equals(final Object object) {
-    if (this == object) return true;
-    if (!(object instanceof final PayloadAttestationData that)) return false;
+    if (this == object) {
+      return true;
+    }
+    if (!(object instanceof final PayloadAttestationData that)) {
+      return false;
+    }
     return Objects.equals(beaconBlockRoot, that.beaconBlockRoot)
         && Objects.equals(slot, that.slot)
         && Objects.equals(payloadStatus, that.payloadStatus);

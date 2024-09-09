@@ -1345,6 +1345,17 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomSszList(
+                        BeaconBlockBodySchemaEip7732.required(schema)
+                            .getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation,
+                        3));
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
