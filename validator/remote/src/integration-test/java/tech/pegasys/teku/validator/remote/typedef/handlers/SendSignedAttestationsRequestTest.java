@@ -65,10 +65,7 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
         JsonUtil.parse(
             recordedRequest.getBody().readUtf8(),
             DeserializableTypeDefinition.listOf(
-                spec.getGenesisSchemaDefinitions()
-                    .getAttestationSchema()
-                    .castTypeToAttestationSchema()
-                    .getJsonTypeDefinition()));
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()));
     assertThat(data).isEqualTo(attestations);
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {

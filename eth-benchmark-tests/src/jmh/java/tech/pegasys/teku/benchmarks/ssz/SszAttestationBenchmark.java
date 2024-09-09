@@ -40,7 +40,7 @@ public class SszAttestationBenchmark extends SszAbstractContainerBenchmark<Attes
 
   @Override
   protected AttestationSchema<Attestation> getContainerType() {
-    return spec.getGenesisSchemaDefinitions().getAttestationSchema().castTypeToAttestationSchema();
+    return spec.getGenesisSchemaDefinitions().getAttestationSchema();
   }
 
   @Override

@@ -41,8 +41,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -124,17 +122,15 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void metadata_shouldHandle200_phase0Attestations() throws IOException {
     setHandler(
         new GetBlockAttestationsV2(
             chainDataProvider, new SchemaDefinitionCache(specMinimalPhase0)));
     final String data = getResponseStringFromMetadata(handler, SC_OK, phase0responseData);
 
-    final AttestationSchema<AttestationPhase0> phase0AttestationSchema =
-        (AttestationSchema<AttestationPhase0>)
-            schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttestationSchema();
-    final List<AttestationPhase0> attestations =
+    final AttestationSchema<Attestation> phase0AttestationSchema =
+        schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttestationSchema();
+    final List<Attestation> attestations =
         parseAttestationsFromResponse(data, phase0AttestationSchema);
 
     assertThat(attestations).isNotEmpty();
@@ -142,21 +138,19 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void metadata_shouldHandle200_electraAttestations() throws IOException {
     setHandler(
         new GetBlockAttestationsV2(
             chainDataProvider, new SchemaDefinitionCache(specMinimalElectra)));
     final String data = getResponseStringFromMetadata(handler, SC_OK, electraResponseData);
 
-    final AttestationSchema<AttestationElectra> electraAttestationSchema =
-        (AttestationSchema<AttestationElectra>)
-            schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA).getAttestationSchema();
-    final List<AttestationElectra> attestations =
+    final AttestationSchema<Attestation> electraAttestationSchema =
+        schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA).getAttestationSchema();
+    final List<Attestation> attestations =
         parseAttestationsFromResponse(data, electraAttestationSchema);
 
     assertThat(attestations).isNotEmpty();
-    assertThat(attestations).allMatch(AttestationElectra::requiresCommitteeBits);
+    assertThat(attestations).allMatch(Attestation::requiresCommitteeBits);
   }
 
   private <T extends Attestation> List<T> parseAttestationsFromResponse(
