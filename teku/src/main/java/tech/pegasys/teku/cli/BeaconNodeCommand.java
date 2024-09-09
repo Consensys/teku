@@ -401,11 +401,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
   protected TekuConfiguration tekuConfiguration() {
     try {
       TekuConfiguration.Builder builder = TekuConfiguration.builder();
-
-      //      String netwxafork =  eth2NetworkOptions.getNetwork();
-      //      if(network.equals(Eth2Network.EPHEMERY)){
-      //        EphemeryNetwork.updateConfig();
-      //      }
       // Eth2NetworkOptions configures network defaults across builders, so configure this first
       eth2NetworkOptions.configure(builder);
       executionLayerOptions.configure(builder);
