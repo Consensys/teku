@@ -761,10 +761,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body =
         serialize(
             expectedAttestation,
-            spec.getGenesisSchemaDefinitions()
-                .getAttestationSchema()
-                .castTypeToAttestationSchema()
-                .getJsonTypeDefinition());
+            spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition());
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(SC_OK).setBody("{\"data\": " + body + "}"));
 
@@ -784,10 +781,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body =
         serialize(
             expectedAttestation,
-            spec.getGenesisSchemaDefinitions()
-                .getAttestationSchema()
-                .castTypeToAttestationSchema()
-                .getJsonTypeDefinition());
+            spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition());
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(SC_OK)

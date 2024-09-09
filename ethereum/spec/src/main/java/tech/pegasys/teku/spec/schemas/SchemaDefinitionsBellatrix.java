@@ -59,14 +59,10 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.executionPayloadHeaderSchema = beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaBellatrixImpl.create(
-            specConfig,
-            getAttesterSlashingSchema(),
-            maxValidatorsPerAttestation,
-            "BeaconBlockBodyBellatrix");
+            specConfig, maxValidatorsPerAttestation, "BeaconBlockBodyBellatrix");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaBellatrixImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
             maxValidatorsPerAttestation,
             "BlindedBlockBodyBellatrix",
             executionPayloadHeaderSchema);

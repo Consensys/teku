@@ -14,17 +14,20 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 
-public interface IndexedAttestation extends SszContainer {
+public interface IndexedAttestationSchema<T extends IndexedAttestation>
+    extends SszContainerSchema<T> {
 
-  @Override
-  IndexedAttestationSchema<? extends IndexedAttestation> getSchema();
+  @SuppressWarnings("unchecked")
+  default IndexedAttestationSchema<IndexedAttestation> castTypeToIndexedAttestationSchema() {
+    return (IndexedAttestationSchema<IndexedAttestation>) this;
+  }
 
-  SszUInt64List getAttestingIndices();
+  SszUInt64ListSchema<?> getAttestingIndicesSchema();
 
-  AttestationData getData();
-
-  BLSSignature getSignature();
+  IndexedAttestation create(
+      SszUInt64List attestingIndices, AttestationData data, BLSSignature signature);
 }

@@ -77,10 +77,7 @@ public class GetAttestations extends RestApiEndpoint {
         .withField(
             "data",
             listOf(
-                spec.getGenesisSchemaDefinitions()
-                    .getAttestationSchema()
-                    .castTypeToAttestationSchema()
-                    .getJsonTypeDefinition()),
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()),
             Function.identity())
         .build();
   }
