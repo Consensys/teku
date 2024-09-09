@@ -33,8 +33,11 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateRespon
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
@@ -51,9 +54,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 
 public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
-  private final IndexedAttestationSchema<?> indexedAttestationSchema;
-  private final AttesterSlashingSchema<?> attesterSlashingSchema;
-  private final AttestationSchema<?> attestationSchema;
+  private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
+  private final AttesterSlashingSchema<AttesterSlashing> attesterSlashingSchema;
+  private final AttestationSchema<Attestation> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
   private final BeaconStateSchemaAltair beaconStateSchema;
@@ -72,11 +75,14 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     super(specConfig);
     this.indexedAttestationSchema =
-        new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
+        new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig))
+            .castTypeToIndexedAttestationSchema();
     this.attesterSlashingSchema =
-        new AttesterSlashingPhase0Schema(
-            indexedAttestationSchema.castTypeToIndexedAttestationSchema());
-    this.attestationSchema = new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig));
+        new AttesterSlashingPhase0Schema(indexedAttestationSchema)
+            .castTypeToAttesterSlashingSchema();
+    this.attestationSchema =
+        new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig))
+            .castTypeToAttestationSchema();
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
@@ -118,18 +124,18 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   }
 
   @Override
-  public AttestationSchema<?> getAttestationSchema() {
-    return attestationSchema;
+  public AttestationSchema<Attestation> getAttestationSchema() {
+    return attestationSchema.castTypeToAttestationSchema();
   }
 
   @Override
-  public IndexedAttestationSchema<?> getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
+  public IndexedAttestationSchema<IndexedAttestation> getIndexedAttestationSchema() {
+    return indexedAttestationSchema.castTypeToIndexedAttestationSchema();
   }
 
   @Override
-  public AttesterSlashingSchema<?> getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
+  public AttesterSlashingSchema<AttesterSlashing> getAttesterSlashingSchema() {
+    return attesterSlashingSchema.castTypeToAttesterSlashingSchema();
   }
 
   @Override

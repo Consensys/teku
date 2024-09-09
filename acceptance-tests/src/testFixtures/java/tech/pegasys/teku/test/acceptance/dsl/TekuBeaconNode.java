@@ -259,10 +259,7 @@ public class TekuBeaconNode extends TekuNode {
     final String body =
         JsonUtil.serialize(
             attesterSlashing,
-            spec.getGenesisSchemaDefinitions()
-                .getAttesterSlashingSchema()
-                .castTypeToAttesterSlashingSchema()
-                .getJsonTypeDefinition());
+            spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema().getJsonTypeDefinition());
     httpClient.post(getRestApiUrl(), POST_ATTESTER_SLASHING_URL, body);
   }
 
