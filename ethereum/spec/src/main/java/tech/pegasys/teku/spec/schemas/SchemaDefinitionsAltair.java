@@ -125,17 +125,17 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
 
   @Override
   public AttestationSchema<Attestation> getAttestationSchema() {
-    return attestationSchema.castTypeToAttestationSchema();
+    return attestationSchema;
   }
 
   @Override
   public IndexedAttestationSchema<IndexedAttestation> getIndexedAttestationSchema() {
-    return indexedAttestationSchema.castTypeToIndexedAttestationSchema();
+    return indexedAttestationSchema;
   }
 
   @Override
   public AttesterSlashingSchema<AttesterSlashing> getAttesterSlashingSchema() {
-    return attesterSlashingSchema.castTypeToAttesterSlashingSchema();
+    return attesterSlashingSchema;
   }
 
   @Override
