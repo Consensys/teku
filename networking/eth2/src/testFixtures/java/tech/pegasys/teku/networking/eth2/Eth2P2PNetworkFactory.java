@@ -471,7 +471,6 @@ public class Eth2P2PNetworkFactory {
             recentChainData,
             gossipEncoding,
             gossipedBlockProcessor,
-            gossipedBlobSidecarProcessor,
             gossipedAttestationProcessor,
             gossipedAggregateProcessor,
             attesterSlashingProcessor,

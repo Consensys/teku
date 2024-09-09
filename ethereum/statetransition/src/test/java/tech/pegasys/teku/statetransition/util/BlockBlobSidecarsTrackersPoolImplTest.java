@@ -205,6 +205,36 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
+  public void onNewBlock_shouldIgnoreEip7594Blocks() {
+    final Spec spec = TestSpecFactory.createMinimalEip7594();
+    final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolEip7594 =
+        new PoolFactory(metricsSystem)
+            .createPoolForBlockBlobSidecarsTrackers(
+                blockImportChannel,
+                spec,
+                timeProvider,
+                asyncRunner,
+                recentChainData,
+                historicalTolerance,
+                futureTolerance,
+                maxItems,
+                this::trackerFactory);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    blockBlobSidecarsTrackersPoolEip7594.onNewBlock(block, Optional.empty());
+
+    assertThat(blockBlobSidecarsTrackersPoolEip7594.containsBlock(block.getRoot())).isFalse();
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+
+    assertBlobSidecarsCount(0);
+    assertBlobSidecarsTrackersCount(0);
+  }
+
+  @Test
   public void
       onNewBlobSidecar_onNewBlock_onCompletedBlockAndBlobSidecars_shouldIgnoreAlreadyImportedBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);

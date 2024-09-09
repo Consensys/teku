@@ -337,7 +337,6 @@ public class Eth2P2PNetworkBuilder {
           combinedChainDataClient.getRecentChainData(),
           gossipEncoding,
           gossipedBlockProcessor,
-          gossipedBlobSidecarProcessor,
           gossipedAttestationConsumer,
           gossipedAggregateProcessor,
           gossipedAttesterSlashingConsumer,

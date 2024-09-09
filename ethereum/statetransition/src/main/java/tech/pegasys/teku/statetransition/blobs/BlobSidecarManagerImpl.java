@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
@@ -138,6 +139,11 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     // Block is pre-Deneb, blobs are not supported yet
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return DataAndValidationResult.notRequired();
+    }
+
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7594)) {
+      throw new RuntimeException(
+          String.format("PeerDAS block %s shouldn't be verified in BlobSidecarManager", block));
     }
 
     // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow

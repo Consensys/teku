@@ -223,7 +223,8 @@ public class HistoricalBatchFetcher {
             requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock);
 
     final SafeFuture<Void> blobSidecarsRequest;
-    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)
+        || blobSidecarManager.isAvailabilityRequiredAtSlot(requestParams.getStartSlot())) {
       maybeEarliestBlobSidecarSlot =
           Optional.of(
               requestParams
@@ -316,7 +317,8 @@ public class HistoricalBatchFetcher {
         .thenCompose(
             __ -> {
               final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
-              validateBlobSidecars(latestSlotInBatch, blocksToImport);
+              validateBlobSidecars(
+                  blocksToImport.getFirst().getSlot(), latestSlotInBatch, blocksToImport);
 
               final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
               return storageUpdateChannel
@@ -390,8 +392,11 @@ public class HistoricalBatchFetcher {
   }
 
   private void validateBlobSidecars(
-      final UInt64 latestSlotInBatch, final Collection<SignedBeaconBlock> blocks) {
-    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
+      final UInt64 firstSlotInBatch,
+      final UInt64 latestSlotInBatch,
+      final Collection<SignedBeaconBlock> blocks) {
+    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(firstSlotInBatch)
+        && !blobSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
       return;
     }
     LOG.trace("Validating blob sidecars for a batch");

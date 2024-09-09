@@ -22,7 +22,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -35,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class GossipForkSubscriptionsEip7594 extends GossipForkSubscriptionsDeneb {
+public class GossipForkSubscriptionsEip7594 extends GossipForkSubscriptionsCapella {
 
   private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
   private DataColumnSidecarGossipManager dataColumnSidecarGossipManager;
@@ -49,7 +48,6 @@ public class GossipForkSubscriptionsEip7594 extends GossipForkSubscriptionsDeneb
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
       final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<BlobSidecar> blobSidecarProcessor,
       final OperationProcessor<ValidatableAttestation> attestationProcessor,
       final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -71,7 +69,6 @@ public class GossipForkSubscriptionsEip7594 extends GossipForkSubscriptionsDeneb
         recentChainData,
         gossipEncoding,
         blockProcessor,
-        blobSidecarProcessor,
         attestationProcessor,
         aggregateProcessor,
         attesterSlashingProcessor,
