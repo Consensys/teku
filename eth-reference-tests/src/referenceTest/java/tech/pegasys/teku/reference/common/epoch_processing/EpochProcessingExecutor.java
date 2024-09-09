@@ -41,14 +41,15 @@ public class EpochProcessingExecutor {
       case PROCESS_SLASHINGS_RESET -> epochProcessor.processSlashingsReset(state);
       case PROCESS_RANDAO_MIXES_RESET -> epochProcessor.processRandaoMixesReset(state);
       case PROCESS_HISTORICAL_ROOTS_UPDATE -> epochProcessor.processHistoricalRootsUpdate(state);
-      case PROCESS_HISTORICAL_SUMMARIES_UPDATE -> epochProcessor.processHistoricalSummariesUpdate(
-          state);
+      case PROCESS_HISTORICAL_SUMMARIES_UPDATE ->
+          epochProcessor.processHistoricalSummariesUpdate(state);
       case SYNC_COMMITTEE_UPDATES -> epochProcessor.processSyncCommitteeUpdates(state);
       case INACTIVITY_UPDATES -> processInactivityUpdates(state);
       case PENDING_BALANCE_DEPOSITS -> processPendingBalanceDeposits(state);
       case PENDING_CONSOLIDATIONS -> processPendingConsolidations(state);
-      default -> throw new UnsupportedOperationException(
-          "Attempted to execute unknown operation type: " + operation);
+      default ->
+          throw new UnsupportedOperationException(
+              "Attempted to execute unknown operation type: " + operation);
     }
   }
 

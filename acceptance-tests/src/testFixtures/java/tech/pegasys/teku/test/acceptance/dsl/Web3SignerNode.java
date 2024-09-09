@@ -40,7 +40,7 @@ public class Web3SignerNode extends Node {
   private Set<File> configFiles;
 
   private Web3SignerNode(final Network network, final Web3SignerNode.Config config) {
-    super(network, "consensys/web3signer:22.4.0", LOG);
+    super(network, "consensys/web3signer:develop", LOG);
     container
         .withExposedPorts(HTTP_API_PORT)
         .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
@@ -128,6 +128,27 @@ public class Web3SignerNode extends Node {
 
     public Web3SignerNode.Config withAltairEpoch(final UInt64 altairSlot) {
       configMap.put("eth2.Xnetwork-altair-fork-epoch", altairSlot.toString());
+      return this;
+    }
+
+    public Web3SignerNode.Config withBellatrixEpoch(final UInt64 bellatrixSlot) {
+      configMap.put("eth2.Xnetwork-bellatrix-fork-epoch", bellatrixSlot.toString());
+      return this;
+    }
+
+    public Web3SignerNode.Config withCapellaEpoch(final UInt64 capellaSlot) {
+      configMap.put("eth2.Xnetwork-capella-fork-epoch", capellaSlot.toString());
+      return this;
+    }
+
+    public Web3SignerNode.Config withDenebEpoch(final UInt64 denebSlot) {
+      configMap.put("eth2.Xnetwork-deneb-fork-epoch", denebSlot.toString());
+      return this;
+    }
+
+    public Web3SignerNode.Config withTrustedSetupFromClasspath(
+        final String trustedSetupFromClasspath) {
+      configMap.put("eth2.Xtrusted-setup", trustedSetupFromClasspath);
       return this;
     }
 

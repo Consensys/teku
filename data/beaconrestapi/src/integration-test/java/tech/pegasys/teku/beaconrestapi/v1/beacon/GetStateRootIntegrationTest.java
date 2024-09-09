@@ -17,12 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 
@@ -44,10 +44,9 @@ public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
             .orElse(Bytes32.ZERO);
     final Response response = get("head");
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateRootResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateRootResponse.class);
+    final JsonNode data = getResponseData(response);
 
-    assertThat(body.data.root.toHexString()).isEqualTo(chainHeadStateRoot.toHexString());
+    assertThat(data.get("root").asText()).isEqualTo(chainHeadStateRoot.toHexString());
   }
 
   public Response get(final String stateIdString) throws IOException {

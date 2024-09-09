@@ -40,6 +40,7 @@ public class SendValidatorLivenessRequest extends AbstractTypeDefRequest {
         SEND_VALIDATOR_LIVENESS,
         Map.of("epoch", epoch.toString()),
         Collections.emptyMap(),
+        Collections.emptyMap(),
         validatorIndices,
         listOf(UINT64_TYPE),
         new ResponseHandler<>(

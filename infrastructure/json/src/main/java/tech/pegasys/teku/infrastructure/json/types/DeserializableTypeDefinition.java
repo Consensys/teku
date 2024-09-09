@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -59,21 +58,9 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
     return new DeserializableMapTypeDefinition<>(keyType, valueType, mapConstructor);
   }
 
-  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
+  static <TObject extends Enum<TObject>> EnumTypeDefinition<TObject> enumOf(
       final Class<TObject> itemType) {
-    return new EnumTypeDefinition<>(itemType);
-  }
-
-  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
-      final Class<TObject> itemType, final Function<TObject, String> serializer) {
-    return new EnumTypeDefinition<>(itemType, serializer);
-  }
-
-  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
-      final Class<TObject> itemType,
-      final Function<TObject, String> serializer,
-      final Set<TObject> excludedEnumerations) {
-    return new EnumTypeDefinition<>(itemType, serializer, excludedEnumerations);
+    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType).build();
   }
 
   static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject, TObject> object(

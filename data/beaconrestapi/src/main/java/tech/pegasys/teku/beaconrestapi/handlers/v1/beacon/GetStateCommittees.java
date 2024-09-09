@@ -47,12 +47,12 @@ public class GetStateCommittees extends RestApiEndpoint {
 
   private static final SerializableTypeDefinition<CommitteeAssignment> EPOCH_COMMITTEE_TYPE =
       SerializableTypeDefinition.object(CommitteeAssignment.class)
-          .withField("index", UINT64_TYPE, CommitteeAssignment::getCommitteeIndex)
-          .withField("slot", UINT64_TYPE, CommitteeAssignment::getSlot)
+          .withField("index", UINT64_TYPE, CommitteeAssignment::committeeIndex)
+          .withField("slot", UINT64_TYPE, CommitteeAssignment::slot)
           .withField(
               "validators",
               listOf(UINT64_TYPE),
-              committeeAssignment -> UInt64Util.intToUInt64List(committeeAssignment.getCommittee()))
+              committeeAssignment -> UInt64Util.intToUInt64List(committeeAssignment.committee()))
           .build();
 
   private static final SerializableTypeDefinition<ObjectAndMetaData<List<CommitteeAssignment>>>
