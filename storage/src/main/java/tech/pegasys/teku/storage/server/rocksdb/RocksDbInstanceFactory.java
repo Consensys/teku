@@ -36,7 +36,6 @@ import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
-import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
@@ -147,25 +146,25 @@ public class RocksDbInstanceFactory {
             .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
             .setMaxOpenFiles(configuration.getMaxOpenFiles())
             .setBytesPerSync(1_048_576L) // 1MB
-            .setWalBytesPerSync(1048576L)
+            .setWalBytesPerSync(1_048_576L)
             .setCreateMissingColumnFamilies(true)
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
             .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
             .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
             .setStatistics(stats);
-    ;
+
+    // Java docs suggests this if db is under 1GB, nearly impossible atm
     if (configuration.optimizeForSmallDb()) {
-      options.optimizeForSmallDb(); // Java docs suggests this if db is under 1GB, nearly impossible
-      // atm
+      options.optimizeForSmallDb();
     }
+
     return options;
   }
 
-  @SuppressWarnings("unused")
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
-        .setCompressionType(CompressionType.LZ4_COMPRESSION)
+        .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setTtl(0)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));

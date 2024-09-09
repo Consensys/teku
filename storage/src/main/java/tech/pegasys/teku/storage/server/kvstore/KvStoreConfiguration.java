@@ -96,7 +96,7 @@ public class KvStoreConfiguration {
   /* ---------------     Fixed Properties     ------------ */
 
   @JsonProperty("compressionType")
-  private CompressionType compressionType = CompressionType.NO_COMPRESSION;
+  private CompressionType compressionType = CompressionType.LZ4_COMPRESSION;
 
   @JsonProperty("bottomMostCompressionType")
   private CompressionType bottomMostCompressionType = CompressionType.NO_COMPRESSION;
