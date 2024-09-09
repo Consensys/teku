@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 @SuppressWarnings("unused")
@@ -48,7 +49,9 @@ public class DasCustodyStand {
   public final CanonicalBlockResolverStub blockResolver;
   public final UInt256 myNodeId;
 
-  public final DataColumnSidecarDBStub db = new DataColumnSidecarDBStub();
+  public final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
+  public final DataColumnSidecarDBStub db;
+  public final DataColumnSidecarDbAccessor dbAccessor;
 
   public final SpecConfigEip7594 config;
   public final DataColumnSidecarCustodyImpl custody;
@@ -67,9 +70,13 @@ public class DasCustodyStand {
     this.myNodeId = myNodeId;
     this.blockResolver = new CanonicalBlockResolverStub(spec);
     this.config = SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
+    this.minCustodyPeriodSlotCalculator = MinCustodyPeriodSlotCalculator.createFromSpec(spec);
+    this.db = new DataColumnSidecarDBStub();
+    this.dbAccessor = DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
+
     this.custody =
         new DataColumnSidecarCustodyImpl(
-            spec, blockResolver, db, myNodeId, totalCustodySubnetCount);
+            spec, blockResolver, dbAccessor, myNodeId, totalCustodySubnetCount);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 
@@ -121,10 +128,7 @@ public class DasCustodyStand {
   }
 
   public UInt64 getMinCustodySlot() {
-    UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
-    UInt64 minCustodyEpoch =
-        currentEpoch.minusMinZero(config.getMinEpochsForDataColumnSidecarsRequests());
-    return spec.computeStartSlotAtEpoch(minCustodyEpoch);
+    return minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
   }
 
   public List<DataColumnSidecar> createCustodyColumnSidecars(SignedBeaconBlock block) {

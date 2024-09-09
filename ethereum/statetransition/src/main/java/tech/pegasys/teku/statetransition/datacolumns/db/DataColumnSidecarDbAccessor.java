@@ -11,37 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns;
+package tech.pegasys.teku.statetransition.datacolumns.db;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 
-public interface DataColumnSidecarDB {
+/** Higher level {@link DataColumnSidecarDB} accessor */
+public interface DataColumnSidecarDbAccessor extends DataColumnSidecarCoreDB {
 
-  // read
+  static DataColumnSidecarDbAccessorBuilder builder(DataColumnSidecarDB db) {
+    return new DataColumnSidecarDbAccessorBuilder(db);
+  }
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
   SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
 
-  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier);
-
-  SafeFuture<Optional<DataColumnSidecar>> getSidecar(ColumnSlotAndIdentifier identifier);
-
-  SafeFuture<Stream<DataColumnIdentifier>> streamColumnIdentifiers(UInt64 slot);
-
   // update
-
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
 
   SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot);
-
-  void addSidecar(DataColumnSidecar sidecar);
-
-  void pruneAllSidecars(UInt64 tillSlot);
 }

@@ -38,8 +38,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIde
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
@@ -49,7 +49,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final MiscHelpersEip7594 specHelpers;
   private final SchemaDefinitionsEip7594 schemaDefinitions;
   private final CanonicalBlockResolver blockResolver;
-  private final DataColumnSidecarDB sidecarDB;
+  private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
   private final Duration recoverInitiationTimeout;
   private final int columnCount;
@@ -63,7 +63,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       MiscHelpersEip7594 specHelpers,
       SchemaDefinitionsEip7594 schemaDefinitionsEip7594,
       CanonicalBlockResolver blockResolver,
-      DataColumnSidecarDB sidecarDB,
+      DataColumnSidecarDbAccessor sidecarDB,
       AsyncRunner asyncRunner,
       Duration recoverInitiationTimeout,
       int columnCount) {
@@ -143,11 +143,13 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         recoveryEntry.block.getSlot(),
         recoveryEntry.block.getRoot());
     sidecarDB
-        .streamColumnIdentifiers(block.getSlot())
+        .getColumnIdentifiers(block.getSlot())
         .thenCompose(
             dataColumnIdentifiers ->
                 SafeFuture.collectAll(
-                    dataColumnIdentifiers.limit(recoverColumnCount).map(sidecarDB::getSidecar)))
+                    dataColumnIdentifiers.stream()
+                        .limit(recoverColumnCount)
+                        .map(sidecarDB::getSidecar)))
         .thenPeek(
             maybeDataColumnSidecars -> {
               maybeDataColumnSidecars.forEach(

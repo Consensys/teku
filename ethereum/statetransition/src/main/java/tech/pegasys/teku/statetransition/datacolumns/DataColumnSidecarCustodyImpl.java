@@ -31,13 +31,13 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 public class DataColumnSidecarCustodyImpl
@@ -83,51 +83,38 @@ public class DataColumnSidecarCustodyImpl
   private final int gossipWaitSlots = 2;
 
   private final Spec spec;
-  private final DataColumnSidecarDB db;
+  private final DataColumnSidecarDbAccessor db;
   private final CanonicalBlockResolver blockResolver;
   private final UInt256 nodeId;
   private final int totalCustodySubnetCount;
   private final Map<DataColumnIdentifier, ColumnSlotAndIdentifier> knownSavedIdentifiers;
 
-  private final UInt64 eip7594StartEpoch;
+  private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
 
   private volatile UInt64 currentSlot = null;
 
   public DataColumnSidecarCustodyImpl(
       Spec spec,
       CanonicalBlockResolver blockResolver,
-      DataColumnSidecarDB db,
+      DataColumnSidecarDbAccessor db,
+      MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
       UInt256 nodeId,
       int totalCustodySubnetCount) {
-
     checkNotNull(spec);
     checkNotNull(blockResolver);
+    checkNotNull(minCustodyPeriodSlotCalculator);
     checkNotNull(db);
     checkNotNull(nodeId);
 
     this.spec = spec;
     this.db = db;
     this.blockResolver = blockResolver;
+    this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     this.nodeId = nodeId;
     this.totalCustodySubnetCount = totalCustodySubnetCount;
-    this.eip7594StartEpoch = spec.getForkSchedule().getFork(SpecMilestone.EIP7594).getEpoch();
     this.knownSavedIdentifiers =
         LimitedMap.createSynchronizedNatural(
             VALID_BLOCK_SET_SIZE * spec.getNumberOfDataColumns().orElseThrow());
-  }
-
-  private UInt64 getEarliestCustodySlot(UInt64 currentSlot) {
-    UInt64 epoch = getEarliestCustodyEpoch(spec.computeEpochAtSlot(currentSlot));
-    return spec.computeStartSlotAtEpoch(epoch);
-  }
-
-  private UInt64 getEarliestCustodyEpoch(UInt64 currentEpoch) {
-    int custodyPeriod =
-        spec.getSpecConfig(currentEpoch)
-            .toVersionEip7594()
-            .orElseThrow()
-            .getMinEpochsForDataColumnSidecarsRequests();
-    return currentEpoch.minusMinZero(custodyPeriod).max(eip7594StartEpoch);
   }
 
   private List<UInt64> getCustodyColumnsForSlot(UInt64 slot) {
@@ -174,18 +161,9 @@ public class DataColumnSidecarCustodyImpl
         .orElseGet(() -> db.getSidecar(columnId));
   }
 
-  private void onEpoch(UInt64 epoch) {
-    UInt64 pruneSlot = spec.computeStartSlotAtEpoch(getEarliestCustodyEpoch(epoch));
-    db.pruneAllSidecars(pruneSlot);
-  }
-
   @Override
   public void onSlot(UInt64 slot) {
     currentSlot = slot;
-    UInt64 epoch = spec.computeEpochAtSlot(slot);
-    if (slot.equals(spec.computeStartSlotAtEpoch(epoch))) {
-      onEpoch(epoch);
-    }
   }
 
   @Override
@@ -213,7 +191,8 @@ public class DataColumnSidecarCustodyImpl
         .flatMap(
             maybeFirstIncompleteSlot -> {
               final UInt64 firstIncompleteSlot =
-                  maybeFirstIncompleteSlot.orElseGet(() -> getEarliestCustodySlot(currentSlot));
+                  maybeFirstIncompleteSlot.orElseGet(
+                      () -> minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot));
               Stream<UInt64> slotStream =
                   Stream.iterate(
                       firstIncompleteSlot,
@@ -226,8 +205,7 @@ public class DataColumnSidecarCustodyImpl
   private SafeFuture<SlotCustody> retrieveSlotCustody(final UInt64 slot) {
     final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootIfHaveBlobs(slot);
     final List<UInt64> requiredColumns = getCustodyColumnsForSlot(slot);
-    final SafeFuture<Stream<DataColumnIdentifier>> existingColumns =
-        db.streamColumnIdentifiers(slot);
+    final SafeFuture<List<DataColumnIdentifier>> existingColumns = db.getColumnIdentifiers(slot);
     return SafeFuture.allOf(maybeCanonicalBlockRoot, existingColumns)
         .thenApply(
             __ ->
@@ -235,7 +213,7 @@ public class DataColumnSidecarCustodyImpl
                     slot,
                     maybeCanonicalBlockRoot.getImmediately(),
                     requiredColumns,
-                    existingColumns.getImmediately().toList()));
+                    existingColumns.getImmediately()));
   }
 
   private SafeFuture<Optional<Bytes32>> getBlockRootIfHaveBlobs(UInt64 slot) {

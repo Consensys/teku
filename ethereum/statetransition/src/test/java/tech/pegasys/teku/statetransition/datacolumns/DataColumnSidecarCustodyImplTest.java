@@ -30,11 +30,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 public class DataColumnSidecarCustodyImplTest {
 
   final Spec spec = TestSpecFactory.createMinimalEip7594();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
+  final DataColumnSidecarDbAccessor dbAccessor =
+      DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
   final UInt256 myNodeId = UInt256.ONE;
 
@@ -57,7 +61,7 @@ public class DataColumnSidecarCustodyImplTest {
   @SuppressWarnings("JavaCase")
   void sanityTest() throws Throwable {
     DataColumnSidecarCustodyImpl custody =
-        new DataColumnSidecarCustodyImpl(spec, blockResolver, db, myNodeId, subnetCount);
+        new DataColumnSidecarCustodyImpl(spec, blockResolver, dbAccessor, myNodeId, subnetCount);
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);
     DataColumnSidecar sidecar1 = createSidecar(block, 1);

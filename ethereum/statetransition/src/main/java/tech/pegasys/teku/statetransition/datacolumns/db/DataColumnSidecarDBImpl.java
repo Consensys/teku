@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns;
+package tech.pegasys.teku.statetransition.datacolumns.db;
 
 import it.unimi.dsi.fastutil.Pair;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -27,8 +27,7 @@ import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-// FIXME: remove stinky joins
-public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
+class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final CombinedChainDataClient combinedChainDataClient;
@@ -65,10 +64,11 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Stream<DataColumnIdentifier>> streamColumnIdentifiers(final UInt64 slot) {
+  public SafeFuture<List<DataColumnIdentifier>> getColumnIdentifiers(final UInt64 slot) {
     return combinedChainDataClient
         .getDataColumnIdentifiers(slot)
-        .thenApply(identifiers -> identifiers.stream().map(ColumnSlotAndIdentifier::identifier));
+        .thenApply(
+            identifiers -> identifiers.stream().map(ColumnSlotAndIdentifier::identifier).toList());
   }
 
   @Override
@@ -79,17 +79,17 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
               sidecarUpdateChannel.onFirstCustodyIncompleteSlot(slot);
               if (maybeFirstIncompleteSlot.isEmpty()
                   || !maybeFirstIncompleteSlot.get().equals(slot)) {
-                streamColumnIdentifiers(slot)
+                getColumnIdentifiers(slot)
                     .thenCompose(
                         newSlotColumnIdentifiers -> {
-                          final long newSlotCount = newSlotColumnIdentifiers.count();
+                          final long newSlotCount = newSlotColumnIdentifiers.size();
                           if (maybeFirstIncompleteSlot.isEmpty()) {
                             return SafeFuture.completedFuture(Pair.of(0L, newSlotCount));
                           } else {
-                            return streamColumnIdentifiers(maybeFirstIncompleteSlot.get())
+                            return getColumnIdentifiers(maybeFirstIncompleteSlot.get())
                                 .thenApply(
                                     dataColumnIdentifierStream ->
-                                        Pair.of(dataColumnIdentifierStream.count(), newSlotCount));
+                                        Pair.of(dataColumnIdentifierStream.size(), newSlotCount));
                           }
                         })
                     .thenPeek(
@@ -129,10 +129,10 @@ public class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
     synchronized (this) {
       if (slot > maxAddedSlot) {
         final SafeFuture<UInt64> prevSlotCount =
-            streamColumnIdentifiers(UInt64.valueOf(maxAddedSlot))
+            getColumnIdentifiers(UInt64.valueOf(maxAddedSlot))
                 .thenApply(
                     dataColumnIdentifierStream ->
-                        UInt64.valueOf(dataColumnIdentifierStream.count()));
+                        UInt64.valueOf(dataColumnIdentifierStream.size()));
         final SafeFuture<UInt64> finalizedSlot =
             getFirstCustodyIncompleteSlot()
                 .thenApply(

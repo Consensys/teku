@@ -39,15 +39,18 @@ import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 public class RecoveringSidecarRetrieverTest {
 
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
   final Spec spec = TestSpecFactory.createMinimalEip7594();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
+  final DataColumnSidecarDbAccessor dbAccessor =
+      DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
 
   final SpecConfigEip7594 config =
@@ -88,7 +91,7 @@ public class RecoveringSidecarRetrieverTest {
             miscHelpers,
             schemaDefinitions,
             blockResolver,
-            db,
+            dbAccessor,
             stubAsyncRunner,
             Duration.ofSeconds(1),
             128);
