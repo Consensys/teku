@@ -42,8 +42,8 @@ public class AggregateAndProof
           namedSchema("selection_proof", SszSignatureSchema.INSTANCE));
     }
 
-    public AttestationSchema<? extends Attestation> getAttestationSchema() {
-      return (AttestationSchema<? extends Attestation>) getFieldSchema1();
+    public AttestationSchema<Attestation> getAttestationSchema() {
+      return (AttestationSchema<Attestation>) getFieldSchema1();
     }
 
     @Override

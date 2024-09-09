@@ -13,17 +13,15 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import java.util.Set;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 
-public interface AttesterSlashing extends SszContainer {
-  @Override
-  AttesterSlashingSchema<? extends AttesterSlashing> getSchema();
+public interface AttesterSlashingSchema<T extends AttesterSlashing> extends SszContainerSchema<T> {
 
-  Set<UInt64> getIntersectingValidatorIndices();
+  @SuppressWarnings("unchecked")
+  default AttesterSlashingSchema<AttesterSlashing> castTypeToAttesterSlashingSchema() {
+    return (AttesterSlashingSchema<AttesterSlashing>) this;
+  }
 
-  IndexedAttestation getAttestation1();
-
-  IndexedAttestation getAttestation2();
+  AttesterSlashing create(
+      final IndexedAttestation attestation1, final IndexedAttestation attestation2);
 }

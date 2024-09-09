@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -281,7 +282,7 @@ public class TekuBeaconNode extends TekuNode {
             secretKey,
             signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
 
-    final IndexedAttestation.IndexedAttestationSchema schema =
+    final IndexedAttestationSchema<?> schema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     return schema.create(
         Stream.of(index).collect(schema.getAttestingIndicesSchema().collectorUnboxed()),

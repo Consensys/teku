@@ -45,7 +45,8 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
         processor,
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
-            .getAttesterSlashingSchema(),
+            .getAttesterSlashingSchema()
+            .castTypeToAttesterSlashingSchema(),
         message -> spec.computeEpochAtSlot(message.getAttestation1().getData().getSlot()),
         spec.getNetworkingConfig(),
         debugDataDumper);
