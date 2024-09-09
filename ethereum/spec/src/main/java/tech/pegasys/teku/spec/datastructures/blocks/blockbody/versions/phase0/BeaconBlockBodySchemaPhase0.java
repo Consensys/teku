@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -75,7 +75,7 @@ public class BeaconBlockBodySchemaPhase0
 
   public static BeaconBlockBodySchemaPhase0 create(
       final SpecConfig specConfig,
-      final AttesterSlashingSchema attesterSlashingSchema,
+      final AttesterSlashingSchema<?> attesterSlashingSchema,
       final long maxValidatorsPerAttestation,
       final String containerName) {
     return new BeaconBlockBodySchemaPhase0(
@@ -89,7 +89,9 @@ public class BeaconBlockBodySchemaPhase0
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
-            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+            SszListSchema.create(
+                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(

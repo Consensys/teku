@@ -61,6 +61,7 @@ public class PostAttesterSlashingV2 extends RestApiEndpoint {
         schemaDefinitionCache
             .getSchemaDefinition(SpecMilestone.PHASE0)
             .getAttesterSlashingSchema()
+            .castTypeToAttesterSlashingSchema()
             .getJsonTypeDefinition();
 
     final DeserializableTypeDefinition<AttesterSlashing> attesterSlashingElectraSchema =
