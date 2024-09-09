@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -28,9 +27,11 @@ import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
+import tech.pegasys.teku.test.acceptance.dsl.Web3SignerNode;
+import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
+public class DenebRemoteSignerAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
   public static final Eth1Address WITHDRAWAL_ADDRESS =
@@ -38,16 +39,32 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void upgradeFromDeneb() throws Exception {
+  void denebWithRemoteSigner() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
 
+    final Web3SignerNode web3SignerNode =
+        createWeb3SignerNode(
+            config ->
+                config
+                    .withNetwork(NETWORK_NAME)
+                    .withAltairEpoch(UInt64.ZERO)
+                    .withBellatrixEpoch(UInt64.ZERO)
+                    .withCapellaEpoch(UInt64.ZERO)
+                    .withDenebEpoch(UInt64.ZERO)
+                    .withTrustedSetupFromClasspath("mainnet-trusted-setup.txt"));
+
+    web3SignerNode.start();
+    final ValidatorKeysApi signerApi = web3SignerNode.getValidatorKeysApi();
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
 
     final ValidatorKeystores validatorKeys =
         createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
+
+    signerApi.addLocalValidatorsAndExpect(validatorKeys, "imported");
+    signerApi.assertLocalValidatorListing(validatorKeys.getPublicKeys());
 
     final InitialStateData initialStateData =
         createGenesisGenerator()
@@ -58,32 +75,32 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
             .withBellatrixEpoch(UInt64.ZERO)
             .withCapellaEpoch(UInt64.ZERO)
             .withDenebEpoch(UInt64.ZERO)
-            .withElectraEpoch(UInt64.ONE)
             .withTotalTerminalDifficulty(0)
             .genesisExecutionPayloadHeaderSource(besuNode::createGenesisExecutionPayload)
             .validatorKeys(validatorKeys)
             .generate();
 
     final TekuBeaconNode tekuNode =
-        createTekuBeaconNode(beaconNode(genesisTime, besuNode, initialStateData, validatorKeys));
+        createTekuBeaconNode(
+            beaconNode(
+                genesisTime, besuNode, initialStateData, web3SignerNode.getValidatorRestApiUrl()));
+
     tekuNode.start();
 
-    tekuNode.waitForMilestone(SpecMilestone.ELECTRA);
+    tekuNode.waitForNextEpoch();
     tekuNode.waitForNewBlock();
+    tekuNode.waitForFullSyncCommitteeAggregate();
   }
 
   private BesuNode createBesuNode(final int genesisTime) {
-    final int pragueTime =
-        genesisTime + 4 * 2; // 4 slots, 2 seconds each (swift) - activate Prague on first slot
-    final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(pragueTime));
+    final Map<String, String> genesisOverrides = Map.of("cancunTime", String.valueOf(genesisTime));
 
     return createBesuNode(
-        // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
         BesuDockerVersion.DEVELOP,
         config ->
             config
                 .withMergeSupport()
-                .withGenesisFile("besu/pragueGenesis.json")
+                .withGenesisFile("besu/mergedGenesis.json")
                 .withP2pEnabled(true)
                 .withJwtTokenAuthorization(JWT_FILE),
         genesisOverrides);
@@ -93,21 +110,22 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
       final int genesisTime,
       final BesuNode besuNode,
       final InitialStateData initialStateData,
-      final ValidatorKeystores validatorKeys)
+      final String signerUrl)
       throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withInitialState(initialStateData)
+        .withInteropModeDisabled()
         .withNetwork(NETWORK_NAME)
         .withAltairEpoch(UInt64.ZERO)
         .withBellatrixEpoch(UInt64.ZERO)
         .withCapellaEpoch(UInt64.ZERO)
         .withDenebEpoch(UInt64.ZERO)
-        .withElectraEpoch(UInt64.ONE)
         .withTotalTerminalDifficulty(0)
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
         .withJwtSecretFile(JWT_FILE)
-        .withReadOnlyKeystorePath(validatorKeys)
+        .withExternalSignerUrl(signerUrl)
+        .withExternalSignerPublicKeys("external-signer")
         .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
         .withStartupTargetPeerCount(0)
         .withRealNetwork()
