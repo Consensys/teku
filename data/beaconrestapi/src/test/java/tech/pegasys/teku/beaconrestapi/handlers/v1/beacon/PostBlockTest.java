@@ -17,9 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractPostBlockTest;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
@@ -71,7 +74,7 @@ public class PostBlockTest extends AbstractPostBlockTest {
   }
 
   @Test
-  void metadata_shouldHandle503() {
-    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }

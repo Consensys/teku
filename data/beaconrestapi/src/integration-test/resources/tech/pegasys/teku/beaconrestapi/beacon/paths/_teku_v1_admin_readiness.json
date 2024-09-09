@@ -33,9 +33,19 @@
         "description" : "Node is ready",
         "content" : { }
       },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
       "503" : {
         "description" : "Node not initialized or having issues",
-        "content" : { }
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

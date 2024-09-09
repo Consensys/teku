@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.REQUIRE_PREPARED_PROPOSERS;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
@@ -82,7 +84,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody()).isNull();
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -92,7 +95,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody()).isNull();
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -102,7 +106,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody()).isNull();
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -122,7 +127,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody()).isNull();
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -132,7 +138,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody()).isNull();
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -144,7 +151,8 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody()).isNull();
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
@@ -156,12 +164,18 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody()).isNull();
+    assertThat(request.getResponseBody())
+        .isEqualTo(new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
   }
 
   @Test
   void metadata_shouldHandle200() {
     verifyMetadataEmptyResponse(handler, SC_OK);
+  }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
 
   @Test
@@ -175,7 +189,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle503() {
-    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }

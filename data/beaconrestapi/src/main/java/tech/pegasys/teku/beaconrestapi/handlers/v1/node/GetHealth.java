@@ -14,11 +14,13 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SYNCING_PARAMETER;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PARTIAL_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
@@ -54,7 +56,8 @@ public class GetHealth extends RestApiEndpoint {
             .tags(TAG_NODE)
             .response(SC_OK, "Node is ready")
             .response(SC_PARTIAL_CONTENT, "Node is syncing but can serve incomplete data")
-            .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues")
+            .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues", HTTP_ERROR_RESPONSE_TYPE)
+            .response(SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withBadRequestResponse(Optional.of("Invalid syncing status code"))
             .build());
     this.syncProvider = syncProvider;
@@ -65,7 +68,7 @@ public class GetHealth extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     if (!chainDataProvider.isStoreAvailable() || syncProvider.getRejectedExecutionCount() > 0) {
-      request.respondWithCode(SC_SERVICE_UNAVAILABLE);
+      request.respondError(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues");
     } else if (syncProvider.isSyncing()) {
       request.respondWithUndocumentedCode(getResponseCodeFromQueryParams(request));
     } else {

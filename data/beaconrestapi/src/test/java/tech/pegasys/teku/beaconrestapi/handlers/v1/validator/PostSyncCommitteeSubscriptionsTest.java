@@ -85,7 +85,7 @@ class PostSyncCommitteeSubscriptionsTest extends AbstractMigratedBeaconHandlerTe
   }
 
   @Test
-  void metadata_shouldHandle503() {
-    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }
