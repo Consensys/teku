@@ -196,7 +196,8 @@ public class BlockOperationSelectorFactory {
       // Post-Bellatrix: Execution Payload / Execution Payload Header
       // Post-Deneb: KZG Commitments
       // Post-ePBS: Signed Execution Payload Header
-      if (bodyBuilder.supportsExecutionPayload()) {
+      if (bodyBuilder.supportsExecutionPayload()
+          || bodyBuilder.supportsSignedExecutionPayloadHeader()) {
         blockProductionComplete =
             forkChoiceNotifier
                 .getPayloadId(parentRoot, blockSlotState.getSlot())
