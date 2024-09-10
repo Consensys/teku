@@ -50,10 +50,7 @@ public class OpenApiResponse {
     if(!header.isEmpty()){
       gen.writeObjectFieldStart("headers");
       for (var headerEntry : header) {
-        gen.writeFieldName("Eth-Consensus-Header");
-
         headerEntry.serializeOpenApiTypeOrReference(gen);
-
       }
       gen.writeEndObject();
     }
