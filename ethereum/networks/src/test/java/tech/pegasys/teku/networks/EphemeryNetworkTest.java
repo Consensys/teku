@@ -19,13 +19,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networks.EphemeryNetwork.PERIODS_SINCE_GENESIS;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -37,6 +37,8 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 public class EphemeryNetworkTest {
   private static final long GENESIS_CHAINID = 39438135;
   private static final long GENESIS_TIMESTAMP = 1720119600;
+  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
+
   private SpecConfigBuilder builder;
   private static final long CURRENT_TIMESTAMP = 1725547734;
   private static final int PERIOD = 28;
@@ -47,8 +49,9 @@ public class EphemeryNetworkTest {
 
   @BeforeEach
   void setUp() {
-    expectedMinGenesisTime = GENESIS_TIMESTAMP + (PERIODS_SINCE_GENESIS * PERIOD_IN_SECONDS);
-    expectedChainId = GENESIS_CHAINID + PERIODS_SINCE_GENESIS;
+    long periodSinceGenesis = EphemeryNetwork.getPeriodsSinceGenesis(timeProvider);
+    expectedMinGenesisTime = GENESIS_TIMESTAMP + (periodSinceGenesis * PERIOD_IN_SECONDS);
+    expectedChainId = GENESIS_CHAINID + periodSinceGenesis;
     builder = mock(SpecConfigBuilder.class);
   }
 

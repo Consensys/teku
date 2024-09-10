@@ -15,6 +15,8 @@ package tech.pegasys.teku.networks;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
@@ -26,18 +28,29 @@ public class EphemeryNetwork {
   private static final long GENESIS_TIMESTAMP = 1720119600;
   private static final int PERIOD = 28;
   private static final long PERIOD_IN_SECONDS = (PERIOD * 24 * 60 * 60);
-  public static final long PERIODS_SINCE_GENESIS =
-      ChronoUnit.DAYS.between(Instant.ofEpochSecond(GENESIS_TIMESTAMP), Instant.now()) / PERIOD;
+
+  static long getPeriodsSinceGenesis(final TimeProvider timeProvider) {
+    return ChronoUnit.DAYS.between(
+            Instant.ofEpochSecond(GENESIS_TIMESTAMP),
+            Instant.ofEpochMilli(timeProvider.getTimeInMillis().longValue()))
+        / PERIOD;
+  }
 
   public static void updateConfig(final SpecConfigBuilder builder) {
+    updateConfig(builder, new SystemTimeProvider());
+  }
+
+  private static void updateConfig(
+      final SpecConfigBuilder builder, final TimeProvider timeProvider) {
     final SpecConfig config = SpecConfigLoader.loadConfig("ephemery");
     final SpecConfigBuilder rawConfigBuilder = builder.rawConfig(config.getRawConfig());
 
     if (Eth2Network.EPHEMERY.configName().equals("ephemery")) {
-      final long currentTimestamp = Instant.now().getEpochSecond();
+      final long currentTimestamp = timeProvider.getTimeInMillis().longValue() / 1000;
 
-      final long updatedTimestamp = GENESIS_TIMESTAMP + (PERIODS_SINCE_GENESIS * PERIOD_IN_SECONDS);
-      final long updatedChainId = GENESIS_CHAINID + PERIODS_SINCE_GENESIS;
+      final long updatedTimestamp =
+          GENESIS_TIMESTAMP + (getPeriodsSinceGenesis(timeProvider) * PERIOD_IN_SECONDS);
+      final long updatedChainId = GENESIS_CHAINID + getPeriodsSinceGenesis(timeProvider);
 
       try {
         if (currentTimestamp > (GENESIS_TIMESTAMP + PERIOD_IN_SECONDS)) {
@@ -45,7 +58,6 @@ public class EphemeryNetwork {
           rawConfigBuilder.depositChainId(updatedChainId);
           rawConfigBuilder.minGenesisTime(UInt64.valueOf(updatedTimestamp));
         }
-
       } catch (RuntimeException e) {
         throw new RuntimeException("Error updating genesis file: " + e.getMessage(), e);
       }
