@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayl
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
@@ -320,6 +322,10 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   public PayloadAttestationMessageSchema getPayloadAttestationMessageSchema() {
     return payloadAttestationMessageSchema;
+  }
+
+  public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
+    return beaconBlockBodySchema.getPayloadAttestationsSchema();
   }
 
   @Override

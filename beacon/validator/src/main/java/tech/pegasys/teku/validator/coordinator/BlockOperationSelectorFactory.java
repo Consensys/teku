@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -180,6 +181,7 @@ public class BlockOperationSelectorFactory {
       // In `setExecutionData` the following fields are set:
       // Post-Bellatrix: Execution Payload / Execution Payload Header
       // Post-Deneb: KZG Commitments
+      // Post-ePBS: Signed Execution Payload Header
       if (bodyBuilder.supportsExecutionPayload()) {
         blockProductionComplete =
             forkChoiceNotifier
@@ -221,6 +223,35 @@ public class BlockOperationSelectorFactory {
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
       bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
+      return SafeFuture.COMPLETE;
+    }
+
+    // ePBS (TODO: placeholder) also the whole flow requires refactor
+    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
+      final SchemaDefinitionsEip7732 schemaDefinitionsEip7732 =
+          SchemaDefinitionsEip7732.required(schemaDefinitions);
+      final ExecutionPayloadHeader emptyHeader =
+          schemaDefinitions
+              .getExecutionPayloadHeaderSchema()
+              .createExecutionPayloadHeader(
+                  builder ->
+                      builder
+                          .parentBlockHash(() -> Bytes32.ZERO)
+                          .parentBlockRoot(() -> Bytes32.ZERO)
+                          .blockHash(Bytes32.ZERO)
+                          .gasLimit(UInt64.ZERO)
+                          .builderIndex(() -> UInt64.ZERO)
+                          .slot(() -> UInt64.ZERO)
+                          .value(() -> UInt64.ZERO)
+                          .blobKzgCommitmentsRoot(() -> Bytes32.ZERO));
+      // empty signed header
+      bodyBuilder.signedExecutionPayloadHeader(
+          schemaDefinitionsEip7732
+              .getSignedExecutionPayloadHeaderSchema()
+              .create(emptyHeader, BLSSignature.empty()));
+      // empty list
+      bodyBuilder.payloadAttestations(
+          schemaDefinitionsEip7732.getPayloadAttestationsSchema().createFromElements(List.of()));
       return SafeFuture.COMPLETE;
     }
 
@@ -294,6 +325,10 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsKzgCommitments()) {
+      return SafeFuture.COMPLETE;
+    }
+    // ePBS (no blob kzg commitments in block)
+    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
       return SafeFuture.COMPLETE;
     }
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =

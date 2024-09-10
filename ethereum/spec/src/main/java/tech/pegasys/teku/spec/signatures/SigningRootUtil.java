@@ -22,6 +22,8 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
@@ -124,5 +126,18 @@ public class SigningRootUtil {
     final MiscHelpers miscHelpers = spec.getGenesisSpec().miscHelpers();
     final Bytes32 domain = miscHelpers.computeDomain(Domain.APPLICATION_BUILDER);
     return miscHelpers.computeSigningRoot(validatorRegistration, domain);
+  }
+
+  public Bytes signingRootForExecutionPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader, final ForkInfo forkInfo) {
+    final UInt64 slot = ExecutionPayloadHeaderEip7732.required(executionPayloadHeader).getSlot();
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.BEACON_BUILDER,
+            spec.computeEpochAtSlot(slot),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    return specVersion.miscHelpers().computeSigningRoot(executionPayloadHeader, domain);
   }
 }

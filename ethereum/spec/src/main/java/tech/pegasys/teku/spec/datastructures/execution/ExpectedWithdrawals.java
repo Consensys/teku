@@ -269,7 +269,10 @@ public class ExpectedWithdrawals {
     final SszList<Withdrawal> expectedWithdrawals =
         getExpectedWithdrawalsSszList(schemaDefinitionsCapella);
 
-    assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
+    // EIP7732 TODO: hacky (requires refactor)
+    if (genericState.toVersionEip7732().isEmpty()) {
+      assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
+    }
 
     processWithdrawalsUnchecked(
         genericState, schemaDefinitionsCapella, beaconStateMutators, specConfigCapella);

@@ -98,7 +98,8 @@ public class ExecutionPayloadHeaderEip7732 implements ExecutionPayloadHeader {
   }
 
   public ExecutionPayloadHeaderEip7732(
-      tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732
+      final tech.pegasys.teku.spec.datastructures.execution.versions.eip7732
+              .ExecutionPayloadHeaderEip7732
           executionPayloadHeader) {
     this(
         executionPayloadHeader.getParentBlockHash(),

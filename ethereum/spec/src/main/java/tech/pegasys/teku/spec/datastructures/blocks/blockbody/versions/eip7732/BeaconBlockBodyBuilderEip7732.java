@@ -36,6 +36,16 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
   }
 
   @Override
+  public Boolean supportsExecutionPayload() {
+    return false;
+  }
+
+  @Override
+  public Boolean supportsKzgCommitments() {
+    return false;
+  }
+
+  @Override
   public Boolean supportsSignedExecutionPayloadHeader() {
     return true;
   }

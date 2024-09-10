@@ -2377,8 +2377,8 @@ public final class DataStructureUtil {
             .getMessage()
             .getBody()
             .getOptionalBlobKzgCommitments()
-            .orElseThrow()
-            .size();
+            .map(SszList::size)
+            .orElse(randomNumberOfBlobsPerBlock());
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
@@ -2406,7 +2406,11 @@ public final class DataStructureUtil {
   public BlockContents randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     final int numberOfBlobs =
-        beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
+        beaconBlock
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .map(SszList::size)
+            .orElse(randomNumberOfBlobsPerBlock());
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
@@ -2579,6 +2583,13 @@ public final class DataStructureUtil {
         .create(
             randomExecutionPayloadHeader(getSpec().forMilestone(SpecMilestone.EIP7732)),
             randomSignature());
+  }
+
+  public SszList<PayloadAttestation> emptyPayloadAttestations() {
+    return SchemaDefinitionsEip7732.required(
+            spec.forMilestone(SpecMilestone.EIP7732).getSchemaDefinitions())
+        .getPayloadAttestationsSchema()
+        .of();
   }
 
   public PayloadAttestation randomPayloadAttestation() {

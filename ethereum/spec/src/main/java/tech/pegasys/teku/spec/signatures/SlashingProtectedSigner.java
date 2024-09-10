@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
@@ -153,6 +154,12 @@ public class SlashingProtectedSigner implements Signer {
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
     return delegate.signValidatorRegistration(validatorRegistration);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signExecutionPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader, final ForkInfo forkInfo) {
+    return delegate.signExecutionPayloadHeader(executionPayloadHeader, forkInfo);
   }
 
   @Override

@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestation;
@@ -282,6 +283,13 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor) {
     // Removed in EIP-7732
+  }
+
+  @Override
+  public ExecutionPayloadHeader extractExecutionPayloadHeader(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    // Removed in EIP-7732 (only required for withdrawals validation against the state)
+    return null;
   }
 
   @Override

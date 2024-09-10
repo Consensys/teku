@@ -48,6 +48,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
@@ -282,6 +283,12 @@ public class ExternalSigner implements Signer {
                         "pubkey",
                         validatorRegistration.getPublicKey().toString())),
                 slashableGenericMessage("validator registration")));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signExecutionPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader, final ForkInfo forkInfo) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
   }
 
   @Override
