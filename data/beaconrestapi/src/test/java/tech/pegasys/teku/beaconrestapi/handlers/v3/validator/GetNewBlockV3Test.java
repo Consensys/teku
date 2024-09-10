@@ -78,15 +78,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
         .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
-    final boolean expectedHeaderExecutionPayloadBlinded;
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
-      // no blind/unblind concept in ePBS
-      expectedHeaderExecutionPayloadBlinded = false;
-    } else {
-      expectedHeaderExecutionPayloadBlinded = true;
-    }
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED))
-        .isEqualTo(Boolean.toString(expectedHeaderExecutionPayloadBlinded));
+        .isEqualTo(Boolean.toString(true));
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(blockContainerAndMetaData.executionPayloadValue().toDecimalString());
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_BLOCK_VALUE))

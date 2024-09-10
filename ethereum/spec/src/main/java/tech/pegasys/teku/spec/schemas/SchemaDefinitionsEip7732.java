@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyBuilderEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732Impl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BlindedBeaconBlockBodySchemaEip7732Impl;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
@@ -70,9 +71,12 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   private final ExecutionPayloadHeaderSchemaEip7732 executionPayloadHeaderSchemaEip7732;
 
   private final BeaconBlockBodySchemaEip7732Impl beaconBlockBodySchema;
+  private final BlindedBeaconBlockBodySchemaEip7732Impl blindedBeaconBlockBodySchema;
 
   private final BeaconBlockSchema beaconBlockSchema;
+  private final BeaconBlockSchema blindedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
+  private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
 
   private final BuilderBidSchema<?> builderBidSchemaElectra;
   private final SignedBuilderBidSchema signedBuilderBidSchemaElectra;
@@ -119,9 +123,22 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
             executionPayloadHeaderSchemaEip7732,
             payloadAttestationSchema,
             "BeaconBlockBodyEip7732");
+    this.blindedBeaconBlockBodySchema =
+        BlindedBeaconBlockBodySchemaEip7732Impl.create(
+            specConfig,
+            getAttesterSlashingSchema(),
+            getSignedBlsToExecutionChangeSchema(),
+            maxValidatorsPerAttestation,
+            executionPayloadHeaderSchemaEip7732,
+            payloadAttestationSchema,
+            "BlindedBlockBodyEip7732");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockEip7732");
+    this.blindedBeaconBlockSchema =
+        new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockEip7732");
     this.signedBeaconBlockSchema =
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockEip7732");
+    this.signedBlindedBeaconBlockSchema =
+        new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockEip7732");
     this.builderBidSchemaElectra =
         new BuilderBidSchemaDeneb(
             "BuilderBidEip7732",
@@ -202,7 +219,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   @Override
   public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
+    return blindedBeaconBlockBodySchema;
   }
 
   @Override
@@ -212,7 +229,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   @Override
   public BeaconBlockSchema getBlindedBeaconBlockSchema() {
-    return beaconBlockSchema;
+    return blindedBeaconBlockSchema;
   }
 
   @Override
@@ -222,7 +239,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   @Override
   public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
-    return signedBeaconBlockSchema;
+    return signedBlindedBeaconBlockSchema;
   }
 
   @Override
@@ -272,7 +289,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderEip7732(beaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderEip7732(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
   @Override

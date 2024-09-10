@@ -16,33 +16,27 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
-public interface BeaconBlockBodyEip7732 extends BeaconBlockBodyElectra {
-  static BeaconBlockBodyEip7732 required(final BeaconBlockBody body) {
-    return body.toVersionEip7732()
+public interface BlindedBeaconBlockBodyEip7732 extends BlindedBeaconBlockBodyElectra {
+  static BlindedBeaconBlockBodyEip7732 required(final BeaconBlockBody body) {
+    return body.toBlindedVersionEip7732()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Eip7732 block body but got " + body.getClass().getSimpleName()));
+                    "Expected an Eip7732 blinded block body but got "
+                        + body.getClass().getSimpleName()));
   }
 
   @Override
-  BeaconBlockBodySchemaEip7732<?> getSchema();
+  BlindedBeaconBlockBodySchemaEip7732<?> getSchema();
 
   SignedExecutionPayloadHeader getSignedExecutionPayloadHeader();
 
   SszList<PayloadAttestation> getPayloadAttestations();
-
-  @Override
-  default Optional<ExecutionPayload> getOptionalExecutionPayload() {
-    return Optional.empty();
-  }
 
   @Override
   default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
@@ -60,17 +54,12 @@ public interface BeaconBlockBodyEip7732 extends BeaconBlockBodyElectra {
   }
 
   @Override
-  default ExecutionPayloadElectra getExecutionPayload() {
-    throw new UnsupportedOperationException("ExecutionPayload removed in Eip7732");
-  }
-
-  @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
     throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
   }
 
   @Override
-  default Optional<BeaconBlockBodyEip7732> toVersionEip7732() {
+  default Optional<BlindedBeaconBlockBodyEip7732> toBlindedVersionEip7732() {
     return Optional.of(this);
   }
 }

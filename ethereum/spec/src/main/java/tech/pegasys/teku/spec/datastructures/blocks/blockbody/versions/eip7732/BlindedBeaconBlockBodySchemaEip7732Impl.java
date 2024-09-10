@@ -29,9 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -49,9 +47,9 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class BeaconBlockBodySchemaEip7732Impl
+public class BlindedBeaconBlockBodySchemaEip7732Impl
     extends ContainerSchema12<
-        BeaconBlockBodyEip7732Impl,
+        BlindedBeaconBlockBodyEip7732Impl,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -64,9 +62,9 @@ public class BeaconBlockBodySchemaEip7732Impl
         SszList<SignedBlsToExecutionChange>,
         SignedExecutionPayloadHeader,
         SszList<PayloadAttestation>>
-    implements BeaconBlockBodySchemaEip7732<BeaconBlockBodyEip7732Impl> {
+    implements BlindedBeaconBlockBodySchemaEip7732<BlindedBeaconBlockBodyEip7732Impl> {
 
-  protected BeaconBlockBodySchemaEip7732Impl(
+  protected BlindedBeaconBlockBodySchemaEip7732Impl(
       final String containerName,
       final NamedSchema<SszSignature> randaoRevealSchema,
       final NamedSchema<Eth1Data> eth1DataSchema,
@@ -96,7 +94,7 @@ public class BeaconBlockBodySchemaEip7732Impl
         payloadAttestations);
   }
 
-  public static BeaconBlockBodySchemaEip7732Impl create(
+  public static BlindedBeaconBlockBodySchemaEip7732Impl create(
       final SpecConfigEip7732 specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
@@ -104,7 +102,7 @@ public class BeaconBlockBodySchemaEip7732Impl
       final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema,
       final PayloadAttestationSchema payloadAttestationSchema,
       final String containerName) {
-    return new BeaconBlockBodySchemaEip7732Impl(
+    return new BlindedBeaconBlockBodySchemaEip7732Impl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA, Eth1Data.SSZ_SCHEMA),
@@ -150,13 +148,13 @@ public class BeaconBlockBodySchemaEip7732Impl
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
       final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
-    final BeaconBlockBodyBuilderEip7732 builder = new BeaconBlockBodyBuilderEip7732(this, null);
+    final BeaconBlockBodyBuilderEip7732 builder = new BeaconBlockBodyBuilderEip7732(null, this);
     return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 
   @Override
-  public BeaconBlockBody createEmpty() {
-    return new BeaconBlockBodyEip7732Impl(this);
+  public BlindedBeaconBlockBodyEip7732Impl createEmpty() {
+    return new BlindedBeaconBlockBodyEip7732Impl(this);
   }
 
   @SuppressWarnings("unchecked")
@@ -193,35 +191,25 @@ public class BeaconBlockBodySchemaEip7732Impl
         getChildSchema(getFieldIndex(BlockBodyFields.VOLUNTARY_EXITS));
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
+    return (SszListSchema<PayloadAttestation, ?>)
+        getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
+  }
+
   @Override
   public SyncAggregateSchema getSyncAggregateSchema() {
     return (SyncAggregateSchema) getChildSchema(getFieldIndex(BlockBodyFields.SYNC_AGGREGATE));
   }
 
   @Override
-  public BeaconBlockBodyEip7732Impl createFromBackingNode(final TreeNode node) {
-    return new BeaconBlockBodyEip7732Impl(this, node);
-  }
-
-  @Override
-  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    throw new UnsupportedOperationException("ExecutionPayload removed in Eip7732");
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChangesSchema() {
-    return (SszListSchema<SignedBlsToExecutionChange, ?>)
-        getChildSchema(getFieldIndex(BlockBodyFields.BLS_TO_EXECUTION_CHANGES));
+  public BlindedBeaconBlockBodyEip7732Impl createFromBackingNode(final TreeNode node) {
+    return new BlindedBeaconBlockBodyEip7732Impl(this, node);
   }
 
   @Override
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
-    throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
-  }
-
-  @Override
-  public long getBlobKzgCommitmentsGeneralizedIndex() {
     throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
   }
 
@@ -231,22 +219,14 @@ public class BeaconBlockBodySchemaEip7732Impl
   }
 
   @Override
-  public long getBlobKzgCommitmentsRootGeneralizedIndex() {
-    return getSignedExecutionPayloadHeaderSchema()
-        .getMessageSchema()
-        .getChildGeneralizedIndex(getFieldIndex(ExecutionPayloadFields.BLOB_KZG_COMMITMENTS_ROOT));
+  public SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChanges() {
+    return null;
   }
 
   @Override
-  public SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema() {
-    return (SignedExecutionPayloadHeaderSchema)
-        getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER));
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
-    return (SszListSchema<PayloadAttestation, ?>)
-        getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
+  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
+    return ((SignedExecutionPayloadHeaderSchema)
+            getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER)))
+        .getMessageSchema();
   }
 }

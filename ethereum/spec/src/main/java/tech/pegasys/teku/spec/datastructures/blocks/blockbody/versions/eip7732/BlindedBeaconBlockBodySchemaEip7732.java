@@ -15,28 +15,17 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
-import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
 
-public interface BeaconBlockBodySchemaEip7732<T extends BeaconBlockBodyEip7732>
-    extends BeaconBlockBodySchemaElectra<T> {
+public interface BlindedBeaconBlockBodySchemaEip7732<T extends BlindedBeaconBlockBodyEip7732>
+    extends BlindedBeaconBlockBodySchemaElectra<T> {
 
-  static BeaconBlockBodySchemaEip7732<?> required(final BeaconBlockBodySchema<?> schema) {
+  static BlindedBeaconBlockBodySchemaEip7732<?> required(final BeaconBlockBodySchema<?> schema) {
     checkArgument(
-        schema instanceof BeaconBlockBodySchemaEip7732,
-        "Expected a BeaconBlockBodySchemaEip7732 but was %s",
+        schema instanceof BlindedBeaconBlockBodySchemaEip7732,
+        "Expected a BlindedBeaconBlockBodySchemaEip7732 but was %s",
         schema.getClass());
-    return (BeaconBlockBodySchemaEip7732<?>) schema;
-  }
-
-  SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema();
-
-  long getBlobKzgCommitmentsRootGeneralizedIndex();
-
-  @Override
-  default Optional<BeaconBlockBodySchemaEip7732<?>> toVersionEip7732() {
-    return Optional.of(this);
+    return (BlindedBeaconBlockBodySchemaEip7732<?>) schema;
   }
 }

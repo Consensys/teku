@@ -109,7 +109,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
@@ -1351,10 +1350,7 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomSszList(
-                        BeaconBlockBodySchemaEip7732.required(schema)
-                            .getPayloadAttestationsSchema(),
-                        this::randomPayloadAttestation,
-                        3));
+                        schema.getPayloadAttestationsSchema(), this::randomPayloadAttestation, 3));
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -1464,10 +1460,7 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomSszList(
-                        BeaconBlockBodySchemaEip7732.required(schema)
-                            .getPayloadAttestationsSchema(),
-                        this::randomPayloadAttestation,
-                        3));
+                        schema.getPayloadAttestationsSchema(), this::randomPayloadAttestation, 3));
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -1529,9 +1522,7 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomFullSszList(
-                        BeaconBlockBodySchemaEip7732.required(schema)
-                            .getPayloadAttestationsSchema(),
-                        this::randomPayloadAttestation));
+                        schema.getPayloadAttestationsSchema(), this::randomPayloadAttestation));
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
