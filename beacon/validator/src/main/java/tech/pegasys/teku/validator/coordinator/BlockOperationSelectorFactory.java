@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -236,7 +237,18 @@ public class BlockOperationSelectorFactory {
 
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
-      bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
+      if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
+        // ePBS
+        final ExecutionPayloadHeader header =
+            schemaDefinitions.getExecutionPayloadHeaderSchema().getHeaderOfDefaultPayload();
+        final SignedExecutionPayloadHeader bid =
+            SchemaDefinitionsEip7732.required(schemaDefinitions)
+                .getSignedExecutionPayloadHeaderSchema()
+                .create(header, BLSSignature.empty());
+        bodyBuilder.signedExecutionPayloadHeader(bid);
+      } else {
+        bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
+      }
       return SafeFuture.COMPLETE;
     }
 

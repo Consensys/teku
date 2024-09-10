@@ -2504,9 +2504,16 @@ public final class DataStructureUtil {
   }
 
   public List<Bytes32> randomKzgCommitmentInclusionProof() {
-    final int depth =
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getKzgCommitmentInclusionProofDepth();
+    final int depth;
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      depth =
+          SpecConfigEip7732.required(spec.forMilestone(SpecMilestone.EIP7732).getConfig())
+              .getKzgCommitmentInclusionProofDepthEip7732();
+    } else {
+      depth =
+          SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+              .getKzgCommitmentInclusionProofDepth();
+    }
     return IntStream.range(0, depth).mapToObj(__ -> randomBytes32()).toList();
   }
 

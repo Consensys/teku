@@ -21,13 +21,13 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -170,10 +170,8 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     if (maybeDenebBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final Optional<BeaconBlockBodyEip7732> maybeEip7732Block =
-        maybeBlock.get().getMessage().getBody().toVersionEip7732();
     // no blob kzg commitments in EIP-7732 blocks
-    if (maybeEip7732Block.isEmpty() && maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
+    if (maybeDenebBlock.get().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(true)) {
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
     final SignedBeaconBlock block = maybeBlock.get();
