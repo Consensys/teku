@@ -19,10 +19,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
 public class OpenApiResponse {
@@ -31,7 +28,9 @@ public class OpenApiResponse {
   private final List<? extends ResponseContentTypeDefinition<?>> content;
 
   public OpenApiResponse(
-          final String description, final List<? extends ResponseContentTypeDefinition<?>> header, final List<? extends ResponseContentTypeDefinition<?>> content) {
+      final String description,
+      final List<? extends ResponseContentTypeDefinition<?>> header,
+      final List<? extends ResponseContentTypeDefinition<?>> content) {
     this.description = description;
     this.header = header;
     this.content = content;
@@ -47,14 +46,13 @@ public class OpenApiResponse {
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("description", description);
-    if(!header.isEmpty()){
+    if (!header.isEmpty()) {
       gen.writeObjectFieldStart("headers");
       for (var headerEntry : header) {
         headerEntry.serializeOpenApiTypeOrReference(gen);
       }
       gen.writeEndObject();
     }
-
 
     gen.writeObjectFieldStart("content");
     for (ResponseContentTypeDefinition<?> contentEntry : content) {
@@ -66,7 +64,6 @@ public class OpenApiResponse {
 
     gen.writeEndObject();
     gen.writeEndObject();
-
   }
 
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {

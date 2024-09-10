@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,9 +37,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-
-import static java.util.Collections.emptyList;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 public class EthereumTypes {
 
@@ -92,13 +90,14 @@ public class EthereumTypes {
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
   public static final EnumTypeHeaderDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
-          new EnumTypeHeaderDefinition.EnumTypeHeaderDefinitionBuilder<>(SpecMilestone.class,milestone -> milestone.name().toLowerCase(Locale.ROOT))
-            .title(HEADER_CONSENSUS_VERSION)
-            .required(true)
-            .description("Required in response so client can deserialize returned json or ssz data more effectively.")
-            .example("phase0").build();
-
-
+      new EnumTypeHeaderDefinition.EnumTypeHeaderDefinitionBuilder<>(
+              SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT))
+          .title(HEADER_CONSENSUS_VERSION)
+          .required(true)
+          .description(
+              "Required in response so client can deserialize returned json or ssz data more effectively.")
+          .example("phase0")
+          .build();
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {

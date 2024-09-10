@@ -72,7 +72,10 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
             .queryParamRequired(SLOT_PARAMETER)
             .queryParamRequired(COMMITTEE_INDEX_PARAMETER)
             .response(
-                HttpStatusCodes.SC_OK, "Request successful", getResponseType(schemaDefinitionCache),ETH_CONSENSUS_HEADER_TYPE)
+                HttpStatusCodes.SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
             .build());
     this.provider = provider;

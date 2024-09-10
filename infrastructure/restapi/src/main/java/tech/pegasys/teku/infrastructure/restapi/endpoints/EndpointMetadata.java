@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
@@ -50,7 +49,6 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.function.IOFunction;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.exceptions.BadRequestException;
@@ -673,16 +671,22 @@ public class EndpointMetadata {
         final String description,
         final SerializableTypeDefinition<?> content) {
       return response(
-          responseCode, description, List.of(new JsonResponseContentTypeDefinition<>(content)), List.of());
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content)),
+          List.of());
     }
 
     public EndpointMetaDataBuilder response(
-            final int responseCode,
-            final String description,
-            final SerializableTypeDefinition<?> content,
-            final SerializableTypeDefinition<?> header) {
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<?> content,
+        final SerializableTypeDefinition<?> header) {
       return response(
-              responseCode, description, List.of(new JsonResponseContentTypeDefinition<>(content)),  List.of(new JsonResponseContentTypeDefinition<>(header)));
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content)),
+          List.of(new JsonResponseContentTypeDefinition<>(header)));
     }
 
     public <T> EndpointMetaDataBuilder response(
@@ -693,7 +697,8 @@ public class EndpointMetadata {
       return response(
           responseCode,
           description,
-          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition), List.of());
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          List.of());
     }
 
     public <T> EndpointMetaDataBuilder response(
@@ -758,22 +763,19 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder response(
-            final int responseCode,
-            final String description,
-            final List<? extends ResponseContentTypeDefinition<?>> content){
-      return response(
-              responseCode,
-              description,
-              content,
-              List.of());
+        final int responseCode,
+        final String description,
+        final List<? extends ResponseContentTypeDefinition<?>> content) {
+      return response(responseCode, description, content, List.of());
     }
 
     public EndpointMetaDataBuilder response(
-            final int responseCode,
-            final String description,
-            final List<? extends ResponseContentTypeDefinition<?>> content,
-            final List<? extends ResponseContentTypeDefinition<?>> header) {
-      this.responses.put(Integer.toString(responseCode), new OpenApiResponse(description, header, content));
+        final int responseCode,
+        final String description,
+        final List<? extends ResponseContentTypeDefinition<?>> content,
+        final List<? extends ResponseContentTypeDefinition<?>> header) {
+      this.responses.put(
+          Integer.toString(responseCode), new OpenApiResponse(description, header, content));
       return this;
     }
 
