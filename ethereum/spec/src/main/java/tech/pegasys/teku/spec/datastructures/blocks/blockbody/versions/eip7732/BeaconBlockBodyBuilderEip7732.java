@@ -80,32 +80,8 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
   }
 
   @Override
-  protected Boolean isBlinded() {
-    return super.isBlinded() || blindedSchema != null;
-  }
-
-  @Override
   public BeaconBlockBody build() {
     validate();
-    if (isBlinded()) {
-      final BlindedBeaconBlockBodySchemaEip7732Impl schema =
-          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaEip7732Impl.class);
-      return new BlindedBeaconBlockBodyEip7732Impl(
-          schema,
-          new SszSignature(randaoReveal),
-          eth1Data,
-          SszBytes32.of(graffiti),
-          proposerSlashings,
-          attesterSlashings,
-          attestations,
-          deposits,
-          voluntaryExits,
-          syncAggregate,
-          getBlsToExecutionChanges(),
-          signedExecutionPayloadHeader,
-          payloadAttestations);
-    }
-
     final BeaconBlockBodySchemaEip7732Impl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaEip7732Impl.class);
     return new BeaconBlockBodyEip7732Impl(
