@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -63,10 +64,11 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.attestation.PayloadAttestationPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
@@ -78,6 +80,8 @@ public class BlockOperationSelectorFactory {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool contributionPool;
+  private final ExecutionPayloadHeaderPool executionPayloadHeaderPool;
+  private final PayloadAttestationPool payloadAttestationPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final GraffitiBuilder graffitiBuilder;
@@ -92,6 +96,8 @@ public class BlockOperationSelectorFactory {
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       final SyncCommitteeContributionPool contributionPool,
+      final ExecutionPayloadHeaderPool executionPayloadHeaderPool,
+      final PayloadAttestationPool payloadAttestationPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final GraffitiBuilder graffitiBuilder,
@@ -104,6 +110,8 @@ public class BlockOperationSelectorFactory {
     this.voluntaryExitPool = voluntaryExitPool;
     this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.contributionPool = contributionPool;
+    this.executionPayloadHeaderPool = executionPayloadHeaderPool;
+    this.payloadAttestationPool = payloadAttestationPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffitiBuilder = graffitiBuilder;
@@ -173,6 +181,12 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
+      // Post-ePBS: Payload attestations
+      if (bodyBuilder.supportsPayloadAttestations()) {
+        bodyBuilder.payloadAttestations(
+            payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState));
+      }
+
       final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
@@ -226,32 +240,17 @@ public class BlockOperationSelectorFactory {
       return SafeFuture.COMPLETE;
     }
 
-    // ePBS (TODO: placeholder) also the whole flow requires refactor
+    // ePBS (EIP7732 TODO: placeholder) need to think about the 3 flows (local, builder, p2p pool)
     if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
-      final SchemaDefinitionsEip7732 schemaDefinitionsEip7732 =
-          SchemaDefinitionsEip7732.required(schemaDefinitions);
-      final ExecutionPayloadHeader emptyHeader =
-          schemaDefinitions
-              .getExecutionPayloadHeaderSchema()
-              .createExecutionPayloadHeader(
-                  builder ->
-                      builder
-                          .parentBlockHash(() -> Bytes32.ZERO)
-                          .parentBlockRoot(() -> Bytes32.ZERO)
-                          .blockHash(Bytes32.ZERO)
-                          .gasLimit(UInt64.ZERO)
-                          .builderIndex(() -> UInt64.ZERO)
-                          .slot(() -> UInt64.ZERO)
-                          .value(() -> UInt64.ZERO)
-                          .blobKzgCommitmentsRoot(() -> Bytes32.ZERO));
-      // empty signed header
-      bodyBuilder.signedExecutionPayloadHeader(
-          schemaDefinitionsEip7732
-              .getSignedExecutionPayloadHeaderSchema()
-              .create(emptyHeader, BLSSignature.empty()));
-      // empty list
-      bodyBuilder.payloadAttestations(
-          schemaDefinitionsEip7732.getPayloadAttestationsSchema().createFromElements(List.of()));
+      final SignedExecutionPayloadHeader bid =
+          executionPayloadHeaderPool
+              .selectBidForBlock(blockSlotState)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "No bid available during block production for slot "
+                              + blockSlotState.getSlot()));
+      bodyBuilder.signedExecutionPayloadHeader(bid);
       return SafeFuture.COMPLETE;
     }
 
