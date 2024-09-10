@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
@@ -116,7 +117,7 @@ public class TestSpecFactory {
   }
 
   public static Spec createMinimalEip7732() {
-    final SpecConfigElectra specConfig = getElectraSpecConfig(Eth2Network.MINIMAL);
+    final SpecConfigEip7732 specConfig = getEip7732SpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.EIP7732);
   }
 
@@ -228,7 +229,7 @@ public class TestSpecFactory {
   }
 
   public static Spec createMainnetEip7732() {
-    final SpecConfigElectra specConfig = getElectraSpecConfig(Eth2Network.MAINNET);
+    final SpecConfigEip7732 specConfig = getEip7732SpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.EIP7732);
   }
 
@@ -437,13 +438,17 @@ public class TestSpecFactory {
             }));
   }
 
-  private static SpecConfigElectra getEip7732SpecConfig(
+  private static SpecConfigEip7732 getEip7732SpecConfig(final Eth2Network network) {
+    return getEip7732SpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  }
+
+  private static SpecConfigEip7732 getEip7732SpecConfig(
       final Eth2Network network,
       final UInt64 capellaForkEpoch,
       final UInt64 denebForkEpoch,
       final UInt64 electraForkEpoch,
       final UInt64 eip7732ForkEpoch) {
-    return getElectraSpecConfig(
+    return getEip7732SpecConfig(
         network,
         builder ->
             builder
@@ -453,6 +458,23 @@ public class TestSpecFactory {
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
                 .eip7732Builder(eip7732 -> eip7732.eip7732ForkEpoch(eip7732ForkEpoch)));
+  }
+
+  private static SpecConfigEip7732 getEip7732SpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return SpecConfigEip7732.required(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                  .eip7732Builder(eip7732 -> eip7732.eip7732ForkEpoch(UInt64.ZERO));
+              configAdapter.accept(builder);
+            }));
   }
 
   public static Spec createMinimalWithCapellaDenebAndElectraForkEpoch(
