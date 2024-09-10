@@ -130,6 +130,7 @@ class BlockOperationSelectorFactoryTest {
   private final SignedContributionAndProofValidator contributionValidator =
       mock(SignedContributionAndProofValidator.class);
 
+  @SuppressWarnings("unchecked")
   private final OperationValidator<SignedExecutionPayloadHeader> executionPayloadHeaderValidator =
       mock(OperationValidator.class);
 
