@@ -16,6 +16,8 @@ package tech.pegasys.teku.api.schema.eip7732;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -41,6 +43,16 @@ public class PayloadAttestation {
     this.aggregation_bits = payloadAttestation.getAggregationBits().sszSerialize();
     this.data = new PayloadAttestationData(payloadAttestation.getData());
     this.signature = new BLSSignature(payloadAttestation.getSignature());
+  }
+
+  @JsonCreator
+  public PayloadAttestation(
+      @JsonProperty("aggregation_bits") final Bytes aggregation_bits,
+      @JsonProperty("data") final PayloadAttestationData data,
+      @JsonProperty("signature") final BLSSignature signature) {
+    this.aggregation_bits = aggregation_bits;
+    this.data = data;
+    this.signature = signature;
   }
 
   @Override

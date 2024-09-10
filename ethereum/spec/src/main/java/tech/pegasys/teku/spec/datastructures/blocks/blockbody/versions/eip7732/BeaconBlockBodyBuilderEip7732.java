@@ -72,16 +72,40 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
 
   @Override
   protected void validate() {
-    // EIP7732 TODO: hacky skip of super.validate() to avoid blobKzgCommitments and executionPayload
-    // checks
+    // EIP7732 TODO: hacky skip of super.validate() to avoid blobKzgCommitments and executionPayload checks
     // super.validate();
     checkNotNull(signedExecutionPayloadHeader, "signedExecutionPayloadHeader must be specified");
     checkNotNull(payloadAttestations, "payloadAttestations must be specified");
   }
 
   @Override
+  protected Boolean isBlinded() {
+    // in ePBS always build non-blinded blocks, since the "blinded" concept has been dropped
+    // this is adapted only for testing purposes
+    return schema == null && blindedSchema != null;
+  }
+
+  @Override
   public BeaconBlockBody build() {
     validate();
+    if (isBlinded()) {
+      final BlindedBeaconBlockBodySchemaEip7732Impl schema =
+          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaEip7732Impl.class);
+      return new BlindedBeaconBlockBodyEip7732Impl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          getBlsToExecutionChanges(),
+          signedExecutionPayloadHeader,
+          payloadAttestations);
+    }
     final BeaconBlockBodySchemaEip7732Impl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaEip7732Impl.class);
     return new BeaconBlockBodyEip7732Impl(
