@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
@@ -61,8 +62,7 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
     final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
     final MiscHelpersElectra miscHelpersElectra =
         new MiscHelpersElectra(specConfig, predicatesElectra, schemaDefinitions);
-    return schemaDefinitions
-        .getBeaconStateSchema()
+    return BeaconStateSchemaElectra.required(schemaDefinitions.getBeaconStateSchema())
         .createEmpty()
         .updatedElectra(
             state -> {

@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
 
 public class BeaconBlockBodySchemaPhase0Test {
 
@@ -28,23 +26,15 @@ public class BeaconBlockBodySchemaPhase0Test {
   public void create_minimal() {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
-    final IndexedAttestationSchema<?> indexAttestationSchemaA =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
-    final IndexedAttestationSchema<?> indexAttestationSchemaB =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingPhase0Schema(
-                indexAttestationSchemaA.castTypeToIndexedAttestationSchema()),
-            specConfig.getMaxValidatorsPerCommittee(),
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingPhase0Schema(
-                indexAttestationSchemaB.castTypeToIndexedAttestationSchema()),
-            specConfig.getMaxValidatorsPerCommittee(),
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
             "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);
@@ -54,23 +44,15 @@ public class BeaconBlockBodySchemaPhase0Test {
   public void create_mainnet() {
     final Spec spec = TestSpecFactory.createMainnetPhase0();
     final SpecConfig specConfig = spec.getGenesisSpecConfig();
-    final IndexedAttestationSchema<?> indexAttestationSchemaA =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
-    final IndexedAttestationSchema<?> indexAttestationSchemaB =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingPhase0Schema(
-                indexAttestationSchemaA.castTypeToIndexedAttestationSchema()),
-            specConfig.getMaxValidatorsPerCommittee(),
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
             "BeaconBlockBodyPhase0");
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingPhase0Schema(
-                indexAttestationSchemaB.castTypeToIndexedAttestationSchema()),
-            specConfig.getMaxValidatorsPerCommittee(),
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry(),
             "BeaconBlockBodyPhase0");
 
     assertThat(specA).isEqualTo(specB);

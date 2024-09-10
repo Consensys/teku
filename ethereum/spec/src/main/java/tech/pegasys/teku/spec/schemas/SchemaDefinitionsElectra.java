@@ -14,22 +14,20 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BEACON_STATE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BLINDED_BEACON_BLOCK_BODY_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectraImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
@@ -38,56 +36,19 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
-  private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
-  private final AttesterSlashingSchema<AttesterSlashing> attesterSlashingSchema;
-  private final AttestationSchema<Attestation> attestationSchema;
-  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
-  private final AggregateAndProofSchema aggregateAndProofSchema;
-
-  private final BeaconStateSchemaElectra beaconStateSchema;
-
-  private final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra;
-  private final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchemaElectra;
-
-  private final BeaconBlockBodySchemaElectraImpl beaconBlockBodySchema;
-  private final BlindedBeaconBlockBodySchemaElectraImpl blindedBeaconBlockBodySchema;
-
-  private final BeaconBlockSchema beaconBlockSchema;
-  private final BeaconBlockSchema blindedBeaconBlockSchema;
-  private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
-
   private final BuilderBidSchema<?> builderBidSchemaElectra;
   private final SignedBuilderBidSchema signedBuilderBidSchemaElectra;
 
@@ -107,71 +68,31 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
       pendingPartialWithdrawalSchema;
   private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
 
-  public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
 
-    final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
-    this.indexedAttestationSchema =
-        new IndexedAttestationElectraSchema(maxValidatorsPerAttestation)
-            .castTypeToIndexedAttestationSchema();
-    this.attesterSlashingSchema =
-        new AttesterSlashingElectraSchema(indexedAttestationSchema)
-            .castTypeToAttesterSlashingSchema();
+    final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
 
-    this.attestationSchema =
-        new AttestationElectraSchema(
-                maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot())
-            .castTypeToAttestationSchema();
-    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
-    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
-
-    this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
-
-    this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
-    this.executionPayloadHeaderSchemaElectra =
-        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaElectraImpl.create(
-            specConfig,
-            getAttesterSlashingSchema(),
-            getSignedBlsToExecutionChangeSchema(),
-            getBlobKzgCommitmentsSchema(),
-            maxValidatorsPerAttestation,
-            "BeaconBlockBodyElectra");
-    this.blindedBeaconBlockBodySchema =
-        BlindedBeaconBlockBodySchemaElectraImpl.create(
-            specConfig,
-            getAttesterSlashingSchema(),
-            getSignedBlsToExecutionChangeSchema(),
-            getBlobKzgCommitmentsSchema(),
-            maxValidatorsPerAttestation,
-            "BlindedBlockBodyElectra");
-    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
-    this.blindedBeaconBlockSchema =
-        new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockElectra");
-    this.signedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockElectra");
-    this.signedBlindedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
     this.builderBidSchemaElectra =
         new BuilderBidSchemaDeneb(
-            "BuilderBidElectra",
-            executionPayloadHeaderSchemaElectra,
-            getBlobKzgCommitmentsSchema());
+            "BuilderBidElectra", getExecutionPayloadHeaderSchema(), getBlobKzgCommitmentsSchema());
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidElectra", builderBidSchemaElectra);
 
     this.blockContentsSchema =
         BlockContentsSchema.create(
-            specConfig, beaconBlockSchema, getBlobSchema(), "BlockContentsElectra");
+            specConfig, getBeaconBlockSchema(), getBlobSchema(), "BlockContentsElectra");
     this.signedBlockContentsSchema =
         SignedBlockContentsSchema.create(
-            specConfig, signedBeaconBlockSchema, getBlobSchema(), "SignedBlockContentsElectra");
+            specConfig,
+            getSignedBeaconBlockSchema(),
+            getBlobSchema(),
+            "SignedBlockContentsElectra");
     this.blobsBundleSchema =
         new BlobsBundleSchema(
             "BlobsBundleElectra", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
 
     this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
     this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
@@ -193,64 +114,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
-    return signedAggregateAndProofSchema;
-  }
-
-  @Override
-  public AggregateAndProofSchema getAggregateAndProofSchema() {
-    return aggregateAndProofSchema;
-  }
-
-  @Override
-  public AttestationSchema<Attestation> getAttestationSchema() {
-    return attestationSchema;
-  }
-
-  @Override
-  public IndexedAttestationSchema<IndexedAttestation> getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
-  }
-
-  @Override
-  public AttesterSlashingSchema<AttesterSlashing> getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
-  }
-
-  @Override
-  public BeaconStateSchema<? extends BeaconStateElectra, ? extends MutableBeaconStateElectra>
-      getBeaconStateSchema() {
-    return beaconStateSchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
-    return blindedBeaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockSchema getBeaconBlockSchema() {
-    return beaconBlockSchema;
-  }
-
-  @Override
-  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
-    return blindedBeaconBlockSchema;
-  }
-
-  @Override
-  public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
-    return signedBeaconBlockSchema;
-  }
-
-  @Override
-  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
-    return signedBlindedBeaconBlockSchema;
+  @SuppressWarnings("unchecked")
+  public BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyElectra>
+      getBlindedBeaconBlockBodySchema() {
+    return (BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyElectra>)
+        schemaRegistry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA);
   }
 
   @Override
@@ -259,28 +127,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  public BlockContainerSchema<BlockContainer> getBlindedBlockContainerSchema() {
-    return getBlindedBeaconBlockSchema().castTypeToBlockContainer();
-  }
-
-  @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
     return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
-    return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return executionPayloadSchemaElectra;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return executionPayloadHeaderSchemaElectra;
   }
 
   @Override
@@ -300,7 +148,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderElectra(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderElectra(
+        getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
+        getBlindedBeaconBlockBodySchema());
   }
 
   @Override
@@ -340,15 +190,18 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   public SszListSchema<PendingBalanceDeposit, ?> getPendingBalanceDepositsSchema() {
-    return beaconStateSchema.getPendingBalanceDepositsSchema();
+    return BeaconStateSchemaElectra.required(schemaRegistry.get(BEACON_STATE_SCHEMA))
+        .getPendingBalanceDepositsSchema();
   }
 
   public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
-    return beaconStateSchema.getPendingConsolidationsSchema();
+    return BeaconStateSchemaElectra.required(schemaRegistry.get(BEACON_STATE_SCHEMA))
+        .getPendingConsolidationsSchema();
   }
 
   public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
-    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
+    return BeaconStateSchemaElectra.required(schemaRegistry.get(BEACON_STATE_SCHEMA))
+        .getPendingPartialWithdrawalsSchema();
   }
 
   public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
@@ -367,10 +220,5 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public ConsolidationRequestSchema getConsolidationRequestSchema() {
     return consolidationRequestSchema;
-  }
-
-  @Override
-  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
-    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 }

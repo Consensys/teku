@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
+
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,11 +42,9 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.SchemaRegistry;
 
 public class BeaconBlockBodySchemaBellatrixImpl
     extends ContainerSchema10<
@@ -87,10 +89,8 @@ public class BeaconBlockBodySchemaBellatrixImpl
 
   public static BeaconBlockBodySchemaBellatrixImpl create(
       final SpecConfigBellatrix specConfig,
-      final long maxValidatorsPerAttestation,
+      final SchemaRegistry schemaRegistry,
       final String containerName) {
-    final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
-        new ExecutionPayloadSchemaBellatrix(specConfig);
     return new BeaconBlockBodySchemaBellatrixImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -103,17 +103,12 @@ public class BeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                new AttesterSlashingPhase0Schema(
-                        new IndexedAttestationPhase0Schema(maxValidatorsPerAttestation)
-                            .castTypeToIndexedAttestationSchema())
-                    .castTypeToAttesterSlashingSchema(),
+                schemaRegistry.get(ATTESTER_SLASHING_SCHEMA),
                 specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationPhase0Schema(maxValidatorsPerAttestation)
-                    .castTypeToAttestationSchema(),
-                specConfig.getMaxAttestations())),
+                schemaRegistry.get(ATTESTATION_SCHEMA), specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
@@ -124,7 +119,9 @@ public class BeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD, executionPayloadSchemaBellatrix));
+        namedSchema(
+            BlockBodyFields.EXECUTION_PAYLOAD,
+            (ExecutionPayloadSchemaBellatrix) schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA)));
   }
 
   @Override

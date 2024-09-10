@@ -13,50 +13,47 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
+
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
 
-  final SszBitvectorSchema<SszBitvector> attnetsENRFieldSchema;
-  final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema =
-      SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
-  private final HistoricalBatchSchema historicalBatchSchema;
-  private final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
-      beaconBlocksByRootRequestMessageSchema;
+  protected SchemaRegistry schemaRegistry;
 
-  public AbstractSchemaDefinitions(final SpecConfig specConfig) {
-    this.historicalBatchSchema = new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot());
-
-    this.beaconBlocksByRootRequestMessageSchema =
-        new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(specConfig);
-    this.attnetsENRFieldSchema = SszBitvectorSchema.create(specConfig.getAttestationSubnetCount());
+  public AbstractSchemaDefinitions(final SchemaRegistry schemaRegistry) {
+    this.schemaRegistry = schemaRegistry;
   }
 
-  abstract long getMaxValidatorPerAttestation(SpecConfig specConfig);
+  @Override
+  public SchemaRegistry getSchemaRegistry() {
+    return schemaRegistry;
+  }
 
   @Override
   public SszBitvectorSchema<SszBitvector> getAttnetsENRFieldSchema() {
-    return attnetsENRFieldSchema;
+    return schemaRegistry.get(ATTNETS_ENR_FIELD_SCHEMA);
   }
 
   @Override
   public SszBitvectorSchema<SszBitvector> getSyncnetsENRFieldSchema() {
-    return syncnetsENRFieldSchema;
+    return schemaRegistry.get(SYNCNETS_ENR_FIELD_SCHEMA);
   }
 
   @Override
   public HistoricalBatchSchema getHistoricalBatchSchema() {
-    return historicalBatchSchema;
+    return schemaRegistry.get(HISTORICAL_BATCH_SCHEMA);
   }
 
   @Override
   public BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
       getBeaconBlocksByRootRequestMessageSchema() {
-    return beaconBlocksByRootRequestMessageSchema;
+    return schemaRegistry.get(BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
   }
 }

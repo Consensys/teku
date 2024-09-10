@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -43,8 +44,7 @@ public class BellatrixStateUpgrade implements StateUpgrade<BeaconStateBellatrix>
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     BeaconStateAltair preStateAltair = BeaconStateAltair.required(preState);
 
-    return schemaDefinitions
-        .getBeaconStateSchema()
+    return BeaconStateSchemaBellatrix.required(schemaDefinitions.getBeaconStateSchema())
         .createEmpty()
         .updatedBellatrix(
             state -> {

@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
@@ -60,8 +61,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final int validatorCount = preState.getValidators().size();
 
-    return schemaDefinitions
-        .getBeaconStateSchema()
+    return BeaconStateSchemaAltair.required(schemaDefinitions.getBeaconStateSchema())
         .createEmpty()
         .updatedAltair(
             state -> {

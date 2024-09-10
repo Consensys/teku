@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -45,8 +46,7 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
   public BeaconStateDeneb upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateCapella preStateCapella = BeaconStateCapella.required(preState);
-    return schemaDefinitions
-        .getBeaconStateSchema()
+    return BeaconStateSchemaDeneb.required(schemaDefinitions.getBeaconStateSchema())
         .createEmpty()
         .updatedDeneb(
             state -> {

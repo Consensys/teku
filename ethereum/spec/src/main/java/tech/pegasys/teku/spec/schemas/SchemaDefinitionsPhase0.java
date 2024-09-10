@@ -13,8 +13,18 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BEACON_STATE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.METADATA_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
+
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
@@ -24,8 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -34,99 +43,57 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
 public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
-  private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
-  private final AttesterSlashingSchema<AttesterSlashing> attesterSlashingSchema;
-  private final AttestationSchema<Attestation> attestationSchema;
-  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
-  private final AggregateAndProofSchema aggregateAndProofSchema;
-  private final BeaconStateSchemaPhase0 beaconStateSchema;
-  private final BeaconBlockBodySchemaPhase0 beaconBlockBodySchema;
-  private final MetadataMessageSchemaPhase0 metadataMessageSchema;
-  private final BeaconBlockSchema beaconBlockSchema;
-  private final SignedBeaconBlockSchema signedBeaconBlockSchema;
 
-  public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
-    super(specConfig);
-    this.indexedAttestationSchema =
-        new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig))
-            .castTypeToIndexedAttestationSchema();
-    this.attesterSlashingSchema =
-        new AttesterSlashingPhase0Schema(indexedAttestationSchema)
-            .castTypeToAttesterSlashingSchema();
-
-    this.aggregateAndProofSchema =
-        new AggregateAndProofSchema(
-            new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig)));
-    this.attestationSchema = this.aggregateAndProofSchema.getAttestationSchema();
-    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
-    this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaPhase0.create(
-            specConfig,
-            getAttesterSlashingSchema(),
-            getMaxValidatorPerAttestation(specConfig),
-            "BeaconBlockBodyPhase0");
-    this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
-    beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockPhase0");
-    signedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockPhase0");
-  }
-
-  @Override
-  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
-    return specConfig.getMaxValidatorsPerCommittee();
+  public SchemaDefinitionsPhase0(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
   }
 
   @Override
   public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
-    return signedAggregateAndProofSchema;
+    return schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
   }
 
   @Override
   public AggregateAndProofSchema getAggregateAndProofSchema() {
-    return aggregateAndProofSchema;
+    return schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA);
   }
 
   @Override
   public AttestationSchema<Attestation> getAttestationSchema() {
-    return attestationSchema;
+    return schemaRegistry.get(ATTESTATION_SCHEMA);
   }
 
   @Override
   public IndexedAttestationSchema<IndexedAttestation> getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
+    return schemaRegistry.get(INDEXED_ATTESTATION_SCHEMA);
   }
 
   @Override
   public AttesterSlashingSchema<AttesterSlashing> getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
+    return schemaRegistry.get(ATTESTER_SLASHING_SCHEMA);
   }
 
   @Override
   public BeaconStateSchema<?, ?> getBeaconStateSchema() {
-    return beaconStateSchema;
+    return schemaRegistry.get(BEACON_STATE_SCHEMA);
   }
 
   @Override
   public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
-    return signedBeaconBlockSchema;
+    return schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
   }
 
   @Override
   public BeaconBlockSchema getBeaconBlockSchema() {
-    return beaconBlockSchema;
+    return schemaRegistry.get(BEACON_BLOCK_SCHEMA);
   }
 
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
+    return schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
   }
 
   @Override
@@ -166,12 +133,12 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
 
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderPhase0(beaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderPhase0(getBeaconBlockBodySchema());
   }
 
   @Override
-  public MetadataMessageSchemaPhase0 getMetadataMessageSchema() {
-    return metadataMessageSchema;
+  public MetadataMessageSchema<?> getMetadataMessageSchema() {
+    return schemaRegistry.get(METADATA_MESSAGE_SCHEMA);
   }
 
   @Override
