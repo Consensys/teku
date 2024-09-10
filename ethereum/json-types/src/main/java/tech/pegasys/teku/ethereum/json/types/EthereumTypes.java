@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 import static java.util.Collections.emptyList;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 public class EthereumTypes {
 
@@ -91,14 +92,12 @@ public class EthereumTypes {
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
   public static final EnumTypeHeaderDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
-          new EnumTypeHeaderDefinition<>(
-                  SpecMilestone.class,
-                  milestone -> milestone.name().toLowerCase(Locale.ROOT),
-                  Optional.of("phase0"),
-                  Optional.of("Required in response so client can deserialize returned json or ssz data more effectively."),
-                  Optional.of("test"),
-                  Optional.of(Set.of()),
-                  Optional.of(true));
+          new EnumTypeHeaderDefinition.EnumTypeHeaderDefinitionBuilder<>(SpecMilestone.class,milestone -> milestone.name().toLowerCase(Locale.ROOT))
+            .title(HEADER_CONSENSUS_VERSION)
+            .required(true)
+            .description("Required in response so client can deserialize returned json or ssz data more effectively.")
+            .example("phase0").build();
+
 
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
@@ -125,7 +124,7 @@ public class EthereumTypes {
   private static <T extends SszData> Map<String, String> getSszHeaders(
       final Function<T, SpecMilestone> milestoneSelector, final T value) {
     return Map.of(
-        RestApiConstants.HEADER_CONSENSUS_VERSION,
+        HEADER_CONSENSUS_VERSION,
         Version.fromMilestone(milestoneSelector.apply(value)).name(),
         RestApiConstants.HEADER_CONTENT_DISPOSITION,
         getSszFilename(value));
