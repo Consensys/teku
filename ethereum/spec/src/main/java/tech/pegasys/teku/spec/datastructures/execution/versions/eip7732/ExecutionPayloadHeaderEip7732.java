@@ -53,7 +53,8 @@ public interface ExecutionPayloadHeaderEip7732 extends ExecutionPayloadHeaderEle
 
   @Override
   default UInt64 getBlockNumber() {
-    throw new UnsupportedOperationException("Not supported in Eip7732");
+    // Removed in Eip7732 (used in StateAndBlockSummary)
+    return UInt64.ZERO;
   }
 
   @Override

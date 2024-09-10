@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
+@SuppressWarnings("JavaCase")
 public class PayloadAttestation {
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
