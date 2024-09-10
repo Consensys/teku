@@ -1,23 +1,58 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-public class EnumTypeHeaderDefinition<T extends Enum<T>> extends EnumTypeDefinition<T> {
-    Optional<Boolean> required = Optional.empty();
-  
-    public EnumTypeHeaderDefinition(final Class<T> itemType, final Function<T, String> serializer, final Optional<String> example, final Optional<String> description, final Optional<String> format, final Optional<Set<T>> excludedEnumerations, final Optional<Boolean> required) {
-        super(itemType, serializer, example, description, format, excludedEnumerations);
+public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueTypeDefinition<T> {
+    final Class<T> itemType;
+    private final Function<T, String> serializer;
+    private final Optional<String> name;
+    private final String title;
+    private final Optional<Boolean> required;
+    private final Optional<String> description;
+    private final Optional<String> example;
+
+    public EnumTypeHeaderDefinition(
+            final Class<T> itemType,
+            final Function<T, String> serializer,
+            final Optional<String> name,
+            final String title,
+            final Optional<Boolean> required,
+            final Optional<String> description,
+            final Optional<String> example) {
+        this.itemType = itemType;
+        this.serializer = serializer;
+        this.name = name;
+        this.title = title;
         this.required = required;
+        this.description = description;
+        this.example = example;
     }
 
     @Override
-    public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
+    public Optional<String> getTypeName() {
+        return name;
+    }
 
+    @Override
+    public T deserialize(final JsonParser parser) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void serialize(final T value, final JsonGenerator gen) throws IOException {
+
+    }
+
+    @Override
+    public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
+        gen.writeFieldName(title);
+        gen.writeStartObject();
 
         if (description.isPresent()) {
             gen.writeStringField("description", description.get());
@@ -32,9 +67,6 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> extends EnumTypeDefinit
         gen.writeArrayFieldStart("enum");
 
         for (T value : itemType.getEnumConstants()) {
-            if (excludedEnumerations.contains(value)) {
-                continue;
-            }
             gen.writeString(serializeToString(value));
         }
         gen.writeEndArray();
@@ -43,6 +75,77 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> extends EnumTypeDefinit
             gen.writeStringField("example", example.get());
         }
         gen.writeEndObject();
+        gen.writeEndObject();
+    }
 
+    @Override
+    public String serializeToString(final T value) {
+        return value != null ? serializer.apply(value) : null;
+    }
+
+    @Override
+    public T deserializeFromString(final String value) {
+        for (T t : itemType.getEnumConstants()) {
+            if (t.toString().equalsIgnoreCase(value)) {
+                return t;
+            }
+        }
+        throw new IllegalArgumentException("Unknown enum value: " + value);
+    }
+
+    @Override
+    public StringValueTypeDefinition<T> withDescription(final String description) {
+        return new EnumTypeHeaderDefinition<>(
+                itemType,
+                serializer,
+                Optional.empty(),
+                title,
+                required,
+                Optional.of(description),
+                example);
+    }
+
+    public static class EnumTypeHeaderDefinitionBuilder<T extends Enum<T>> {
+        private final Class<T> itemType;
+        private final Function<T, String> serializer;
+        private Optional<String> name = Optional.empty();
+        private String title;
+        private Optional<Boolean> required = Optional.empty();
+        private Optional<String> description = Optional.empty();
+        private Optional<String> example = Optional.empty();
+
+        public EnumTypeHeaderDefinitionBuilder(final Class<T> itemType, final Function<T, String> serializer) {
+            this.itemType = itemType;
+            this.serializer = serializer;
+        }
+
+        public EnumTypeHeaderDefinitionBuilder<T> name(final String name) {
+            this.name = Optional.of(name);
+            return this;
+        }
+
+        public EnumTypeHeaderDefinitionBuilder<T> title(final String title) {
+            this.title = title;
+            return this;
+        }
+
+        public EnumTypeHeaderDefinitionBuilder<T> required(final Boolean required) {
+            this.required = Optional.of(required);
+            return this;
+        }
+
+        public EnumTypeHeaderDefinitionBuilder<T> description(final String description) {
+            this.description = Optional.of(description);
+            return this;
+        }
+
+        public EnumTypeHeaderDefinitionBuilder<T> example(final String example) {
+            this.example = Optional.of(example);
+            return this;
+        }
+
+        public EnumTypeHeaderDefinition<T> build() {
+            return new EnumTypeHeaderDefinition<>(itemType, serializer, name, title, required, description, example);
+        }
     }
 }
