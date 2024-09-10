@@ -269,7 +269,7 @@ public class ExpectedWithdrawals {
     final SszList<Withdrawal> expectedWithdrawals =
         getExpectedWithdrawalsSszList(schemaDefinitionsCapella);
 
-    // EIP7732 TODO: hacky (requires refactor)
+    // no verification against a header required in ePBS
     if (genericState.toVersionEip7732().isEmpty()) {
       assertWithdrawalsInExecutionPayloadMatchExpected(payloadSummary, expectedWithdrawals);
     }
