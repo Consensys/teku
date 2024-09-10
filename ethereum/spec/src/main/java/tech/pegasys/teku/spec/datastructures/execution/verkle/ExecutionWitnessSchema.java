@@ -14,17 +14,21 @@
 package tech.pegasys.teku.spec.datastructures.execution.verkle;
 
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class ExecutionWitnessSchema
-    extends ContainerSchema2<ExecutionWitness, SszList<StemStateDiff>, VerkleProof> {
+    extends ContainerSchema3<ExecutionWitness, SszList<StemStateDiff>, VerkleProof, SszBytes32> {
 
   static final SszFieldName FIELD_STATE_DIFF = () -> "state_diff";
   static final SszFieldName FIELD_VERKLE_PROOF = () -> "verkle_proof";
+  static final SszFieldName FIELD_PARENT_STATE_ROOT = () -> "parent_state_root";
 
   public ExecutionWitnessSchema(
       final int maxStems,
@@ -33,7 +37,8 @@ public class ExecutionWitnessSchema
     super(
         "ExecutionWitness",
         namedSchema(FIELD_STATE_DIFF, SszListSchema.create(stemStateDiffSchema, maxStems)),
-        namedSchema(FIELD_VERKLE_PROOF, verkleProofSchema));
+        namedSchema(FIELD_VERKLE_PROOF, verkleProofSchema),
+        namedSchema(FIELD_PARENT_STATE_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 
   @SuppressWarnings("unchecked")
@@ -47,8 +52,10 @@ public class ExecutionWitnessSchema
   }
 
   public ExecutionWitness create(
-      final List<StemStateDiff> stateDiffList, final VerkleProof verkleProof) {
-    return new ExecutionWitness(this, stateDiffList, verkleProof);
+      final List<StemStateDiff> stateDiffList,
+      final VerkleProof verkleProof,
+      final Bytes32 parentStateRoot) {
+    return new ExecutionWitness(this, stateDiffList, verkleProof, parentStateRoot);
   }
 
   @Override

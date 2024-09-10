@@ -14,12 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.execution.verkle;
 
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class ExecutionWitness
-    extends Container2<ExecutionWitness, SszList<StemStateDiff>, VerkleProof> {
+    extends Container3<ExecutionWitness, SszList<StemStateDiff>, VerkleProof, SszBytes32> {
 
   ExecutionWitness(
       final ExecutionWitnessSchema executionWitnessSchema, final TreeNode backingTreeNode) {
@@ -29,8 +31,13 @@ public class ExecutionWitness
   public ExecutionWitness(
       final ExecutionWitnessSchema schema,
       final List<StemStateDiff> stateDiffList,
-      final VerkleProof verkleProof) {
-    super(schema, schema.getStateDiffSchema().createFromElements(stateDiffList), verkleProof);
+      final VerkleProof verkleProof,
+      final Bytes32 parentStateRoot) {
+    super(
+        schema,
+        schema.getStateDiffSchema().createFromElements(stateDiffList),
+        verkleProof,
+        SszBytes32.of(parentStateRoot));
   }
 
   public List<StemStateDiff> getStateDiffs() {
@@ -39,5 +46,9 @@ public class ExecutionWitness
 
   public VerkleProof getVerkleProof() {
     return getField1();
+  }
+
+  public Bytes32 getParentStateRoot() {
+    return getField2().get();
   }
 }

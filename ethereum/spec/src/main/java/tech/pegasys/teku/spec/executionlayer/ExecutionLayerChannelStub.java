@@ -282,7 +282,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                               Bytes32.ZERO,
                                               schemaDefinitionsElectra
                                                   .getIpaProofSchema()
-                                                  .create(List.of(), List.of(), Bytes32.ZERO)));
+                                                  .create(List.of(), List.of(), Bytes32.ZERO)),
+                                      Bytes32.ZERO);
                             })
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)

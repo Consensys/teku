@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.spec.Spec;
@@ -79,13 +80,16 @@ class ExecutionWitnessTest {
           List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()),
           dataStructureUtil.randomBytes32(),
           ipaProof);
+  private final Bytes32 parentStateRoot = dataStructureUtil.randomBytes32();
 
   @Test
   public void objectEquality() {
     final ExecutionWitness executionWitness1 =
-        executionWitnessSchema.create(List.of(stemStateDiff1, stemStateDiff2), verkleProof);
+        executionWitnessSchema.create(
+            List.of(stemStateDiff1, stemStateDiff2), verkleProof, parentStateRoot);
     final ExecutionWitness executionWitness2 =
-        executionWitnessSchema.create(List.of(stemStateDiff1, stemStateDiff2), verkleProof);
+        executionWitnessSchema.create(
+            List.of(stemStateDiff1, stemStateDiff2), verkleProof, parentStateRoot);
 
     assertThat(executionWitness1).isEqualTo(executionWitness2);
     SszDataAssert.assertThatSszData(executionWitness1).isEqualByAllMeansTo(executionWitness2);
@@ -94,9 +98,11 @@ class ExecutionWitnessTest {
   @Test
   public void objectNonEquality() {
     final ExecutionWitness executionWitness1 =
-        executionWitnessSchema.create(List.of(stemStateDiff1, stemStateDiff2), verkleProof);
+        executionWitnessSchema.create(
+            List.of(stemStateDiff1, stemStateDiff2), verkleProof, parentStateRoot);
     final ExecutionWitness executionWitness2 =
-        executionWitnessSchema.create(List.of(stemStateDiff2, stemStateDiff1), verkleProof);
+        executionWitnessSchema.create(
+            List.of(stemStateDiff2, stemStateDiff1), verkleProof, parentStateRoot);
 
     assertThat(executionWitness1).isNotEqualTo(executionWitness2);
   }
@@ -104,16 +110,19 @@ class ExecutionWitnessTest {
   @Test
   public void objectAccessorMethods() {
     final ExecutionWitness executionWitness =
-        executionWitnessSchema.create(List.of(stemStateDiff1, stemStateDiff2), verkleProof);
+        executionWitnessSchema.create(
+            List.of(stemStateDiff1, stemStateDiff2), verkleProof, parentStateRoot);
 
     assertThat(executionWitness.getStateDiffs()).isEqualTo(List.of(stemStateDiff1, stemStateDiff2));
     assertThat(executionWitness.getVerkleProof()).isEqualTo(verkleProof);
+    assertThat(executionWitness.getParentStateRoot()).isEqualTo(parentStateRoot);
   }
 
   @Test
   public void roundTripSSZ() {
     final ExecutionWitness executionWitness =
-        executionWitnessSchema.create(List.of(stemStateDiff1, stemStateDiff2), verkleProof);
+        executionWitnessSchema.create(
+            List.of(stemStateDiff1, stemStateDiff2), verkleProof, parentStateRoot);
 
     final Bytes executionWitnessBytes = executionWitness.sszSerialize();
     final ExecutionWitness deserializedObject =

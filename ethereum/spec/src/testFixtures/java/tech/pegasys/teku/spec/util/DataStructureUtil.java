@@ -705,7 +705,9 @@ public final class DataStructureUtil {
     return schemaDefinitionsElectra
         .getExecutionWitnessSchema()
         .create(
-            List.of(randomStemStateDiff(5), randomStemStateDiff(2)), randomVerkleProof(6, 6, 3, 4));
+            List.of(randomStemStateDiff(5), randomStemStateDiff(2)),
+            randomVerkleProof(6, 6, 3, 4),
+            randomBytes32());
   }
 
   private VerkleProof randomVerkleProof(

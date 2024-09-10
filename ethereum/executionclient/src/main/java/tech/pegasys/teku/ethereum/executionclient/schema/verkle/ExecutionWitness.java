@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.schema.verkle;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.verkle.StemStateDiffSchema;
 
@@ -26,11 +27,16 @@ public class ExecutionWitness {
   @JsonProperty("verkleProof")
   private final VerkleProof verkleProof;
 
+  @JsonProperty("parentStateRoot")
+  private final Bytes32 parentStateRoot;
+
   public ExecutionWitness(
       @JsonProperty("stateDiff") final List<StemStateDiff> stateDiff,
-      @JsonProperty("verkleProof") final VerkleProof verkleProof) {
+      @JsonProperty("verkleProof") final VerkleProof verkleProof,
+      @JsonProperty("parentStateRoot") final Bytes32 parentStateRoot) {
     this.stateDiff = stateDiff;
     this.verkleProof = verkleProof;
+    this.parentStateRoot = parentStateRoot;
   }
 
   public ExecutionWitness(
@@ -38,6 +44,7 @@ public class ExecutionWitness {
           executionWitness) {
     this.stateDiff = executionWitness.getStateDiffs().stream().map(StemStateDiff::new).toList();
     this.verkleProof = new VerkleProof(executionWitness.getVerkleProof());
+    this.parentStateRoot = executionWitness.getParentStateRoot();
   }
 
   public tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness
@@ -49,6 +56,7 @@ public class ExecutionWitness {
                     external.asInternalStemStateDiff(
                         (StemStateDiffSchema) schema.getStateDiffSchema().getElementSchema()))
             .toList(),
-        verkleProof.asInternalVerkleProof(schema.getVerkleProofSchema()));
+        verkleProof.asInternalVerkleProof(schema.getVerkleProofSchema()),
+        parentStateRoot);
   }
 }
