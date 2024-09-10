@@ -1523,6 +1523,16 @@ public final class DataStructureUtil {
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
                         this::randomSszKZGCommitment));
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomFullSszList(
+                        BeaconBlockBodySchemaEip7732.required(schema)
+                            .getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation));
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })

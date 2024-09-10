@@ -170,8 +170,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     if (maybeDenebBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    // no blob kzg commitments in EIP-7732 blocks
-    if (maybeDenebBlock.get().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(true)) {
+    if (maybeDenebBlock.get().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(false)) {
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
     final SignedBeaconBlock block = maybeBlock.get();
