@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -92,5 +93,17 @@ class SpecVersionTest {
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
     assertThat(actualVersion.get().getSchemaDefinitions().getSchemaRegistry().getMilestone())
         .isSameAs(milestone);
+  }
+
+  @Test
+  void shouldCreateEip7732Spec() {
+    final SpecConfigEip7732 eip7732SpecConfig = SpecConfigEip7732.required(minimalConfig);
+    final SpecVersion expectedVersion = SpecVersion.createEip7732(eip7732SpecConfig);
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.EIP7732, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.EIP7732);
+    assertThat(actualVersion.get().getSchemaDefinitions())
+        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
 }
