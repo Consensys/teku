@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;

@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -151,7 +150,7 @@ public class BeaconBlockBodySchemaEip7732Impl
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
       final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
-    final BeaconBlockBodyBuilderEip7732 builder = new BeaconBlockBodyBuilderEip7732(this);
+    final BeaconBlockBodyBuilderEip7732 builder = new BeaconBlockBodyBuilderEip7732(this, null);
     return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 
@@ -226,12 +225,9 @@ public class BeaconBlockBodySchemaEip7732Impl
     throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
   }
 
-  // TODO: not sure what to do here
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
-    return GIndexUtil.gIdxComposeAll(
-        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)),
-        getExecutionPayloadSchema().getBlindedNodeGeneralizedIndices());
+    return LongList.of();
   }
 
   @Override

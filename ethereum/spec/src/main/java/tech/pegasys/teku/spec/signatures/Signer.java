@@ -21,9 +21,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
@@ -59,6 +60,9 @@ public interface Signer {
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signValidatorRegistration(ValidatorRegistration validatorRegistration);
+
+  SafeFuture<BLSSignature> signExecutionPayloadHeader(
+      ExecutionPayloadHeader executionPayloadHeader, ForkInfo forkInfo);
 
   default boolean isLocal() {
     return getSigningServiceUrl().isEmpty();
