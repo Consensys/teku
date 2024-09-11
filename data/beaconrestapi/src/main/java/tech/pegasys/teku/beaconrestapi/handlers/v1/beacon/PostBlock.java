@@ -91,6 +91,7 @@ public class PostBlock extends AbstractPostBlock {
             successfully broadcast but failed integration. After Deneb, this additionally instructs \
             the beacon node to broadcast all given signed blobs.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .deprecated(true)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
