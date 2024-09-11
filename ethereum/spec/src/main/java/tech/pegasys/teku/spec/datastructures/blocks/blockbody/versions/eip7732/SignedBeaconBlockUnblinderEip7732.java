@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -36,6 +37,7 @@ public class SignedBeaconBlockUnblinderEip7732 extends AbstractSignedBeaconBlock
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblind() {
-    return SafeFuture.completedFuture(signedBlindedBeaconBlock);
+    return SafeFuture.completedFuture(
+        signedBlindedBeaconBlock.unblind(schemaDefinitions, Optional.empty()));
   }
 }
