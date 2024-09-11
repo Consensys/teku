@@ -54,7 +54,7 @@ public class MiscHelpersDenebPropertyTest {
   private final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
       spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow();
   private final MiscHelpersDeneb miscHelpers =
-      new MiscHelpersDeneb(specConfig, predicates, schemaDefinitionsDeneb);
+      MiscHelpersDeneb.required(spec.getGenesisSpec().miscHelpers());
 
   @Property(tries = 100)
   void fuzzKzgCommitmentToVersionedHash(
