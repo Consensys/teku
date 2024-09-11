@@ -58,6 +58,7 @@ public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeader
     checkNotNull(slot, "slot must be specified");
     checkNotNull(value, "value must be specified");
     checkNotNull(blobKzgCommitmentsRoot, "blobKzgCommitmentsRoot must be specified");
+    validateSchema();
   }
 
   @Override
