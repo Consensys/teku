@@ -82,7 +82,7 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
   @Override
   protected Boolean isBlinded() {
     // in ePBS always build non-blinded blocks, since the "blinded" concept has been dropped
-    // this is adapted only for testing purposes
+    // this method is adapted only for testing purposes
     return schema == null && blindedSchema != null;
   }
 
