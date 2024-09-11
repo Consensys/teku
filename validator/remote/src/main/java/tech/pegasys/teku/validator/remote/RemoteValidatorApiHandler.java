@@ -54,6 +54,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -215,6 +219,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
+  }
+
+  @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return sendRequest(() -> typeDefClient.createAttestationData(slot, committeeIndex));
@@ -244,6 +253,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final BroadcastValidationLevel broadcastValidationLevel) {
     return sendRequest(
         () -> typeDefClient.sendSignedBlock(blockContainer, broadcastValidationLevel));
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
   }
 
   @Override
@@ -280,9 +295,20 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
+      final UInt64 slot, final Bytes32 parentBlockRoot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
+  }
+
+  @Override
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     return sendRequest(() -> typeDefClient.sendAggregateAndProofs(aggregateAndProofs));
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedHeader(final SignedExecutionPayloadHeader signedHeader) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
   }
 
   @Override
