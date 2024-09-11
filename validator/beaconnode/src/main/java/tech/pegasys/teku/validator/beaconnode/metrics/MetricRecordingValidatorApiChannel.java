@@ -47,6 +47,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -138,6 +142,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+    return countOptionalDataRequest(
+        delegate.getHeader(slot), BeaconNodeRequestLabels.GET_HEADER_METHOD);
+  }
+
+  @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
@@ -172,6 +182,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countOptionalDataRequest(
         delegate.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
         BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
+      final UInt64 slot, final Bytes32 parentBlockRoot) {
+    return countOptionalDataRequest(
+        delegate.getExecutionPayloadEnvelope(slot, parentBlockRoot),
+        BeaconNodeRequestLabels.GET_EXECUTION_PAYLOAD_ENVELOPE_METHOD);
   }
 
   @Override
@@ -218,12 +236,26 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Void> sendSignedHeader(final SignedExecutionPayloadHeader signedHeader) {
+    return countDataRequest(
+        delegate.sendSignedHeader(signedHeader), BeaconNodeRequestLabels.PUBLISH_HEADER_METHOD);
+  }
+
+  @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     return countDataRequest(
         delegate.sendSignedBlock(blockContainer, broadcastValidationLevel),
         BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    return countDataRequest(
+        delegate.sendSignedExecutionPayloadEnvelope(signedExecutionPayloadEnvelope),
+        BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_ENVELOPE);
   }
 
   @Override
@@ -285,7 +317,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PayloadAttesterDuties>> getPayloadAttestationDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.getPayloadAttestationDuties(epoch, validatorIndices),
         BeaconNodeRequestLabels.GET_PAYLOAD_ATTESTATION_DUTIES_METHOD);
   }
@@ -293,7 +325,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<PayloadAttestationData>> createPayloadAttestationData(
       final UInt64 slot) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.createPayloadAttestationData(slot),
         BeaconNodeRequestLabels.CREATE_PAYLOAD_ATTESTATION_METHOD);
   }
