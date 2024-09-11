@@ -13,18 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.helpers;
 
-import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
@@ -57,33 +52,6 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
   public byte removeFlag(final byte participationFlags, final int flagIndex) {
     final byte flag = (byte) (1 << flagIndex);
     return (byte) (participationFlags & ~flag);
-  }
-
-  // add the blob kzg commitments root for an empty list
-  @Override
-  public boolean isMergeTransitionComplete(final BeaconState genericState) {
-    final ExecutionPayloadHeader header =
-        schemaDefinitions
-            .getExecutionPayloadHeaderSchema()
-            .createExecutionPayloadHeader(
-                builder ->
-                    builder
-                        .parentBlockHash(() -> Bytes32.ZERO)
-                        .parentBlockRoot(() -> Bytes32.ZERO)
-                        .blockHash(Bytes32.ZERO)
-                        .gasLimit(UInt64.ZERO)
-                        .builderIndex(() -> UInt64.ZERO)
-                        .slot(() -> UInt64.ZERO)
-                        .value(() -> UInt64.ZERO)
-                        .blobKzgCommitmentsRoot(
-                            () ->
-                                schemaDefinitions
-                                    .getBlobKzgCommitmentsSchema()
-                                    .createFromElements(List.of())
-                                    .hashTreeRoot()));
-    return !BeaconStateEip7732.required(genericState)
-        .getLatestExecutionPayloadHeader()
-        .equals(header);
   }
 
   @Override
