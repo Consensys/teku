@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatri
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -57,7 +58,7 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
                   .hashTreeRoot()
                   .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
               "executionPayloadHeader root in blinded block do not match provided executionPayload root");
-          return signedBlindedBeaconBlock.unblind(schemaDefinitions, executionPayload);
+          return signedBlindedBeaconBlock.unblind(schemaDefinitions, Optional.of(executionPayload));
         });
   }
 }

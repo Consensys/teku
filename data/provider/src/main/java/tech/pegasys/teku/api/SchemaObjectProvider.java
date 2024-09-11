@@ -29,6 +29,11 @@ import tech.pegasys.teku.api.schema.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.api.schema.deneb.BeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.api.schema.deneb.BlindedBlockDeneb;
+import tech.pegasys.teku.api.schema.eip7732.BeaconBlockBodyEip7732;
+import tech.pegasys.teku.api.schema.eip7732.BeaconBlockEip7732;
+import tech.pegasys.teku.api.schema.eip7732.BeaconStateEip7732;
+import tech.pegasys.teku.api.schema.eip7732.BlindedBeaconBlockBodyEip7732;
+import tech.pegasys.teku.api.schema.eip7732.BlindedBlockEip7732;
 import tech.pegasys.teku.api.schema.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.api.schema.electra.BeaconBlockElectra;
 import tech.pegasys.teku.api.schema.electra.BlindedBeaconBlockBodyElectra;
@@ -105,6 +110,13 @@ public class SchemaObjectProvider {
               block.getParentRoot(),
               block.getStateRoot(),
               getBlindedBlockBodyElectra(block.getBody()));
+      case EIP7732 ->
+          new BlindedBlockEip7732(
+              block.getSlot(),
+              block.getProposerIndex(),
+              block.getParentRoot(),
+              block.getStateRoot(),
+              getBlindedBlockBodyEip7732(block.getBody()));
     };
   }
 
@@ -154,7 +166,13 @@ public class SchemaObjectProvider {
               block.getParentRoot(),
               block.getStateRoot(),
               getBeaconBlockBodyElectra(block.getBody()));
-      case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
+      case EIP7732 ->
+          new BeaconBlockEip7732(
+              block.getSlot(),
+              block.getProposerIndex(),
+              block.getParentRoot(),
+              block.getStateRoot(),
+              getBeaconBlockBodyEip7732(block.getBody()));
     };
   }
 
@@ -193,6 +211,13 @@ public class SchemaObjectProvider {
             .BeaconBlockBodyElectra.required(body));
   }
 
+  private BeaconBlockBodyEip7732 getBeaconBlockBodyEip7732(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BeaconBlockBodyEip7732(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732
+            .BeaconBlockBodyEip7732.required(body));
+  }
+
   private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyBellatrix(
@@ -219,5 +244,12 @@ public class SchemaObjectProvider {
     return new BlindedBeaconBlockBodyElectra(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
             .BlindedBeaconBlockBodyElectra.required(body));
+  }
+
+  private BlindedBeaconBlockBodyEip7732 getBlindedBlockBodyEip7732(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BlindedBeaconBlockBodyEip7732(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732
+            .BlindedBeaconBlockBodyEip7732.required(body));
   }
 }

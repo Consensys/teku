@@ -31,8 +31,24 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
   private SszList<PayloadAttestation> payloadAttestations;
 
   public BeaconBlockBodyBuilderEip7732(
-      final BeaconBlockBodySchema<? extends BeaconBlockBodyEip7732> schema) {
-    super(schema, null);
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyEip7732> schema,
+      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyEip7732> blindedSchema) {
+    super(schema, blindedSchema);
+  }
+
+  @Override
+  public Boolean supportsExecutionPayload() {
+    return false;
+  }
+
+  @Override
+  public Boolean supportsKzgCommitments() {
+    return false;
+  }
+
+  @Override
+  public Boolean supportsSignedExecutionPayloadHeader() {
+    return true;
   }
 
   @Override
@@ -40,6 +56,11 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
       final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
     this.signedExecutionPayloadHeader = signedExecutionPayloadHeader;
     return this;
+  }
+
+  @Override
+  public Boolean supportsPayloadAttestations() {
+    return true;
   }
 
   @Override
@@ -59,9 +80,33 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
   }
 
   @Override
+  protected Boolean isBlinded() {
+    // in ePBS always build non-blinded blocks, since the "blinded" concept has been dropped
+    // this method is adapted only for testing purposes
+    return schema == null && blindedSchema != null;
+  }
+
+  @Override
   public BeaconBlockBody build() {
     validate();
-
+    if (isBlinded()) {
+      final BlindedBeaconBlockBodySchemaEip7732Impl schema =
+          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaEip7732Impl.class);
+      return new BlindedBeaconBlockBodyEip7732Impl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          getBlsToExecutionChanges(),
+          signedExecutionPayloadHeader,
+          payloadAttestations);
+    }
     final BeaconBlockBodySchemaEip7732Impl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaEip7732Impl.class);
     return new BeaconBlockBodyEip7732Impl(

@@ -497,23 +497,9 @@ public class ValidatorClientService extends Service {
                 validators,
                 validatorIndexProvider));
 
-    final DutyLoader<?> payloadDutyLoader =
-        new RetryingDutyLoader<>(
-            asyncRunner,
-            new PayloadAttestationDutyLoader(
-                validatorApiChannel,
-                dependentRoot ->
-                    new SlotBasedScheduledDuties<>(
-                        payloadAttestationDutyFactory,
-                        dependentRoot,
-                        validatorDutyMetrics::performDutyWithMetrics),
-                validators,
-                validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));
     validatorTimingChannels.add(
         new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, spec));
-    validatorTimingChannels.add(
-        new PayloadAttestationDutyScheduler(metricsSystem, payloadDutyLoader, spec));
     validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
@@ -544,6 +530,24 @@ public class ValidatorClientService extends Service {
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
+
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
+      final DutyLoader<?> payloadDutyLoader =
+          new RetryingDutyLoader<>(
+              asyncRunner,
+              new PayloadAttestationDutyLoader(
+                  validatorApiChannel,
+                  dependentRoot ->
+                      new SlotBasedScheduledDuties<>(
+                          payloadAttestationDutyFactory,
+                          dependentRoot,
+                          validatorDutyMetrics::performDutyWithMetrics),
+                  validators,
+                  validatorIndexProvider));
+      validatorTimingChannels.add(
+          new PayloadAttestationDutyScheduler(metricsSystem, payloadDutyLoader, spec));
+    }
+
     addValidatorCountMetric(metricsSystem, validators);
     final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
     validatorStatusProvider.subscribeValidatorStatusesUpdates(
