@@ -762,7 +762,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    receivedBlockEventsChannel.onBlockSeen(maybeBlindedBlockContainer.getSignedBlock());
     final BlockPublishingPerformance blockPublishingPerformance =
         blockProductionAndPublishingPerformanceFactory.createForPublishing(
             maybeBlindedBlockContainer.getSlot());
