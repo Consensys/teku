@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
 
-  private SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
+  protected SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   public BeaconBlockBodyBuilderCapella(
       final BeaconBlockBodySchema<? extends BeaconBlockBodyCapella> schema,
