@@ -18,7 +18,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -44,5 +43,9 @@ public class PayloadAttestationSchema
   @Override
   public PayloadAttestation createFromBackingNode(final TreeNode node) {
     return new PayloadAttestation(this, node);
+  }
+
+  public SszBitvectorSchema<?> getAggregationBitsSchema() {
+    return (SszBitvectorSchema<?>) getFieldSchema0();
   }
 }

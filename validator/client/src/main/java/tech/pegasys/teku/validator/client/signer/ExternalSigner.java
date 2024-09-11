@@ -48,9 +48,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
@@ -269,6 +270,12 @@ public class ExternalSigner implements Signer {
                 SignType.VALIDATOR_REGISTRATION,
                 Map.of(SignType.VALIDATOR_REGISTRATION.getName(), validatorRegistration),
                 slashableGenericMessage("validator registration")));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signExecutionPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader, final ForkInfo forkInfo) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
   }
 
   @Override

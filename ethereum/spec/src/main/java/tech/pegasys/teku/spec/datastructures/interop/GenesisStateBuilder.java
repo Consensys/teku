@@ -169,6 +169,13 @@ public class GenesisStateBuilder {
               b.depositRequestsRoot(() -> Bytes32.ZERO);
               b.withdrawalRequestsRoot(() -> Bytes32.ZERO);
               b.consolidationRequestsRoot(() -> Bytes32.ZERO);
+              // ePBS
+              b.parentBlockHash(() -> Bytes32.ZERO);
+              b.parentBlockRoot(() -> Bytes32.ZERO);
+              b.builderIndex(() -> UInt64.ZERO);
+              b.slot(() -> UInt64.ZERO);
+              b.value(() -> UInt64.ZERO);
+              b.blobKzgCommitmentsRoot(() -> Bytes32.ZERO);
             });
   }
 }
