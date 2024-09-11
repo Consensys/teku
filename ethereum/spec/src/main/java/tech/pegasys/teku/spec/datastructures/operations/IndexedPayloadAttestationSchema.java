@@ -18,7 +18,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 

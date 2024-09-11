@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "eip7732" ]
     },
     "execution_payload_blinded" : {
       "type" : "boolean"
@@ -45,7 +45,11 @@
         "$ref" : "#/components/schemas/BlockContentsElectra"
       }, {
         "$ref" : "#/components/schemas/BlindedBlockElectra"
-      }  ]
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsEip7732"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockEip7732"
+      } ]
     }
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.context;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
@@ -51,23 +52,30 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         }
       };
 
-  ForkDigestPayloadContext<SignedExecutionPayloadEnvelope> EXECUTION_PAYLOAD_ENVELOPE =
-      new ForkDigestPayloadContext<>() {
-        // EIP7732 TODO: not sure here
-        @Override
-        public UInt64 getSlotFromPayload(final SignedExecutionPayloadEnvelope responsePayload) {
-          return UInt64.ZERO;
-        }
+  static ForkDigestPayloadContext<SignedExecutionPayloadEnvelope> executionPayloadEnvelope(
+      final Spec spec) {
+    return new ForkDigestPayloadContext<>() {
+      @Override
+      public UInt64 getSlotFromPayload(final SignedExecutionPayloadEnvelope responsePayload) {
+        // used only for the fork digest, so no need to be accurate (there is no slot field in the
+        // ExecutionPayload)
+        final UInt64 epoch =
+            spec.getForkSchedule()
+                .getFork(responsePayload.getMessage().getPayload().getMilestone())
+                .getEpoch();
+        return spec.computeStartSlotAtEpoch(epoch);
+      }
 
-        @Override
-        public SszSchema<SignedExecutionPayloadEnvelope> getSchemaFromSchemaDefinitions(
-            final SchemaDefinitions schemaDefinitions) {
-          return schemaDefinitions
-              .toVersionEip7732()
-              .orElseThrow()
-              .getSignedExecutionPayloadEnvelopeSchema();
-        }
-      };
+      @Override
+      public SszSchema<SignedExecutionPayloadEnvelope> getSchemaFromSchemaDefinitions(
+          final SchemaDefinitions schemaDefinitions) {
+        return schemaDefinitions
+            .toVersionEip7732()
+            .orElseThrow()
+            .getSignedExecutionPayloadEnvelopeSchema();
+      }
+    };
+  }
 
   UInt64 getSlotFromPayload(final TPayload responsePayload);
 
