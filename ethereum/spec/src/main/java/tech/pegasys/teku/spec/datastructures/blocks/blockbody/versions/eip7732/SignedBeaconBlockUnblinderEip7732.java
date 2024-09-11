@@ -37,6 +37,7 @@ public class SignedBeaconBlockUnblinderEip7732 extends AbstractSignedBeaconBlock
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblind() {
+    // No Execution Payload in ePBS
     return SafeFuture.completedFuture(
         signedBlindedBeaconBlock.unblind(schemaDefinitions, Optional.empty()));
   }
