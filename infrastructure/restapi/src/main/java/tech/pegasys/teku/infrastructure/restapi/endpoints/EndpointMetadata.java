@@ -702,6 +702,19 @@ public class EndpointMetadata {
     }
 
     public <T> EndpointMetaDataBuilder response(
+            final int responseCode,
+            final String description,
+            final SerializableTypeDefinition<? extends T> content,
+            final ResponseContentTypeDefinition<? extends T> octetStreamTypeDefinition,
+            final SerializableTypeDefinition<? extends T> header) {
+      return response(
+              responseCode,
+              description,
+              List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+              List.of(new JsonResponseContentTypeDefinition<>(header)));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
         final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
