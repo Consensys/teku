@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -106,6 +107,46 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueT
   public StringValueTypeDefinition<T> withDescription(final String description) {
     return new EnumTypeHeaderDefinition<>(
         itemType, serializer, Optional.empty(), title, required, Optional.of(description), example);
+  }
+
+  @Override
+  public String toString() {
+    return "EnumTypeHeaderDefinition{"
+        + "itemType="
+        + itemType
+        + ", serializer="
+        + serializer
+        + ", name="
+        + name
+        + ", title='"
+        + title
+        + '\''
+        + ", required="
+        + required
+        + ", description="
+        + description
+        + ", example="
+        + example
+        + '}';
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {return true;}
+    if (o == null || getClass() != o.getClass()) {return false;}
+    final EnumTypeHeaderDefinition<?> that = (EnumTypeHeaderDefinition<?>) o;
+    return Objects.equals(itemType, that.itemType)
+        && Objects.equals(serializer, that.serializer)
+        && Objects.equals(name, that.name)
+        && Objects.equals(title, that.title)
+        && Objects.equals(required, that.required)
+        && Objects.equals(description, that.description)
+        && Objects.equals(example, that.example);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(itemType, serializer, name, title, required, description, example);
   }
 
   public static class EnumTypeHeaderDefinitionBuilder<T extends Enum<T>> {
