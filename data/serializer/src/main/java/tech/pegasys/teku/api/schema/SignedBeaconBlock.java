@@ -29,6 +29,8 @@ import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
+import tech.pegasys.teku.api.schema.eip7732.SignedBeaconBlockEip7732;
+import tech.pegasys.teku.api.schema.eip7732.SignedBlindedBeaconBlockEip7732;
 import tech.pegasys.teku.api.schema.electra.SignedBeaconBlockElectra;
 import tech.pegasys.teku.api.schema.electra.SignedBlindedBeaconBlockElectra;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
@@ -65,6 +67,14 @@ public class SignedBeaconBlock implements SignedBlock {
         internalBlock.getMessage().getBody();
 
     return Stream.of(
+            () ->
+                beaconBlock
+                    .toBlindedVersionEip7732()
+                    .map(__ -> new SignedBlindedBeaconBlockEip7732(internalBlock)),
+            () ->
+                beaconBlock
+                    .toVersionEip7732()
+                    .map(__ -> new SignedBeaconBlockEip7732(internalBlock)),
             () ->
                 beaconBlock
                     .toBlindedVersionElectra()

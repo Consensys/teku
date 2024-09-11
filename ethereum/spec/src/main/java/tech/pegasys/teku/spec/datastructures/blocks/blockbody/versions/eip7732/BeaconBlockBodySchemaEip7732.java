@@ -16,11 +16,9 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 
 public interface BeaconBlockBodySchemaEip7732<T extends BeaconBlockBodyEip7732>
     extends BeaconBlockBodySchemaElectra<T> {
@@ -34,8 +32,6 @@ public interface BeaconBlockBodySchemaEip7732<T extends BeaconBlockBodyEip7732>
   }
 
   SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema();
-
-  SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema();
 
   long getBlobKzgCommitmentsRootGeneralizedIndex();
 

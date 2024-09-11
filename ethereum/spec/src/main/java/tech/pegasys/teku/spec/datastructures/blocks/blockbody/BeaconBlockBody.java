@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BlindedBeaconBlockBodyEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -147,6 +148,10 @@ public interface BeaconBlockBody extends SszContainer {
   }
 
   default Optional<BlindedBeaconBlockBodyElectra> toBlindedVersionElectra() {
+    return Optional.empty();
+  }
+
+  default Optional<BlindedBeaconBlockBodyEip7732> toBlindedVersionEip7732() {
     return Optional.empty();
   }
 }

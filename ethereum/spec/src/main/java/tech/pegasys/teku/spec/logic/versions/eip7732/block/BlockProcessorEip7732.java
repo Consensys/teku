@@ -34,16 +34,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
 import tech.pegasys.teku.spec.logic.versions.eip7732.util.AttestationUtilEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
@@ -62,11 +64,12 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
 
   private final MiscHelpersEip7732 miscHelpersEip7732;
   private final BeaconStateAccessorsEip7732 beaconStateAccessorsEip7732;
+  private final PredicatesEip7732 predicatesEip7732;
   private final AttestationUtilEip7732 attestationUtilEip7732;
 
   public BlockProcessorEip7732(
       final SpecConfigEip7732 specConfig,
-      final Predicates predicates,
+      final PredicatesEip7732 predicates,
       final MiscHelpersEip7732 miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsEip7732 beaconStateAccessors,
@@ -92,6 +95,7 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
         schemaDefinitions);
     this.miscHelpersEip7732 = miscHelpers;
     this.beaconStateAccessorsEip7732 = beaconStateAccessors;
+    this.predicatesEip7732 = predicates;
     this.attestationUtilEip7732 = attestationUtil;
   }
 
@@ -282,6 +286,24 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor) {
     // Removed in EIP-7732
+  }
+
+  @Override
+  public void processWithdrawals(
+      final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
+      throws BlockProcessingException {
+    // return early if the parent block was empty
+    if (!predicatesEip7732.isParentBlockFull(genericState)) {
+      return;
+    }
+    super.processWithdrawals(genericState, payloadSummary);
+  }
+
+  @Override
+  public ExecutionPayloadHeader extractExecutionPayloadHeader(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    // Removed in EIP-7732 (only required for withdrawals validation against the state)
+    return null;
   }
 
   @Override

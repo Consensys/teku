@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
@@ -54,6 +55,10 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   SszListSchema<Deposit, ?> getDepositsSchema();
 
   SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
+
+  default SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
+    throw new UnsupportedOperationException("PayloadAttestations not supported until EIP-7732");
+  }
 
   default Optional<BeaconBlockBodySchemaAltair<?>> toVersionAltair() {
     return Optional.empty();

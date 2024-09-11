@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -64,8 +63,7 @@ public class PayloadAttestationPool {
         spec.atSlot(stateAtBlockSlot.getSlot()).getSchemaDefinitions();
 
     final SszListSchema<PayloadAttestation, ?> attestationsSchema =
-        BeaconBlockBodySchemaEip7732.required(schemaDefinitions.getBeaconBlockBodySchema())
-            .getPayloadAttestationsSchema();
+        schemaDefinitions.getBeaconBlockBodySchema().getPayloadAttestationsSchema();
 
     return attestationsSchema.createFromElements(List.of());
   }

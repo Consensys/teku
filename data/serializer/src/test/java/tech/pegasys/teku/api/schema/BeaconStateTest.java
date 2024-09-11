@@ -20,6 +20,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.api.schema.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
@@ -42,7 +43,7 @@ public class BeaconStateTest {
           case CAPELLA -> new BeaconStateCapella(beaconStateInternal);
           case DENEB -> new BeaconStateDeneb(beaconStateInternal);
           case ELECTRA -> new BeaconStateElectra(beaconStateInternal);
-          case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
+          case EIP7732 -> new BeaconStateEip7732(beaconStateInternal);
         };
 
     assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);

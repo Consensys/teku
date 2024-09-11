@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "eip7732" ]
     },
     "execution_optimistic" : {
       "type" : "boolean"
@@ -28,7 +28,9 @@
         "$ref" : "#/components/schemas/BeaconStateDeneb"
       }, {
         "$ref" : "#/components/schemas/BeaconStateElectra"
-      }  ]
+      }, {
+        "$ref" : "#/components/schemas/BeaconStateEip7732"
+      } ]
     }
   }
 }

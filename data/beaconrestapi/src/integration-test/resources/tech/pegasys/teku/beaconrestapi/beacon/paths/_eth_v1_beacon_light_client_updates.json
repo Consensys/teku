@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : ["Beacon", "Experimental"],
+    "tags" : [ "Beacon", "Experimental" ],
     "operationId" : "getLightClientUpdatesByRange",
     "summary" : "Get `LightClientUpdate` instances in a requested sync committee period range",
     "description" : "Requests the [`LightClientUpdate`](https://github.com/ethereum/consensus-specs/blob/v1.2.0-rc.3/specs/altair/light-client/sync-protocol.md#lightclientupdate) instances in the sync committee period range `[start_period, start_period + count)`, leading up to the current head sync committee period as selected by fork choice. Depending on the `Accept` header they can be returned either as JSON or SSZ-serialized bytes.",
@@ -36,19 +36,12 @@
                 "type" : "object",
                 "required" : [ "version", "data" ],
                 "properties" : {
-                  "version": {
-                    "type": "string",
-                    "enum": [
-                      "phase0",
-                      "altair",
-                      "bellatrix",
-                      "capella",
-                      "deneb",
-                      "electra"
-                    ]
+                  "version" : {
+                    "type" : "string",
+                    "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "eip7732" ]
                   },
-                  "data": {
-                    "$ref": "#/components/schemas/LightClientUpdate"
+                  "data" : {
+                    "$ref" : "#/components/schemas/LightClientUpdate"
                   }
                 }
               }
@@ -82,7 +75,7 @@
           }
         }
       },
-      "400": {
+      "400" : {
         "description" : "The request could not be processed, check the response for more information.",
         "content" : {
           "application/json" : {
@@ -95,7 +88,7 @@
       "500" : {
         "description" : "Internal server error",
         "content" : {
-          "application/json": {
+          "application/json" : {
             "schema" : {
               "$ref" : "#/components/schemas/HttpErrorResponse"
             }
