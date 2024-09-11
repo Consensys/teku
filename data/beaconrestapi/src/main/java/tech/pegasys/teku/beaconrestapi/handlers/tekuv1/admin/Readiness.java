@@ -21,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
@@ -69,10 +68,7 @@ public class Readiness extends RestApiEndpoint {
             .queryParam(REQUIRE_PREPARED_PROPOSERS_PARAMETER)
             .queryParam(REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER)
             .response(SC_OK, "Node is ready")
-            .response(
-                SC_SERVICE_UNAVAILABLE,
-                "Node not initialized or having issues",
-                HTTP_ERROR_RESPONSE_TYPE)
+            .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues")
             .response(
                 SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .build());
@@ -92,7 +88,7 @@ public class Readiness extends RestApiEndpoint {
         || belowTargetPeerCount(request)
         || !requiredNodeDataIsAvailable(request)
         || !executionClientDataProvider.isExecutionClientAvailable()) {
-      request.respondError(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues");
+      request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else {
       request.respondWithCode(SC_OK);
     }

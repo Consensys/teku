@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
@@ -69,9 +70,10 @@ public class GetValidatorInclusion extends RestApiEndpoint {
                         GetValidatorInclusionResponseData.RESPONSE_DATA,
                         Function.identity())
                     .build())
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withNotFoundResponse()
             .withServiceUnavailableResponse()
-            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

@@ -39,8 +39,12 @@
           }
         }
       },
-      "501" : {
-        "description" : "Not implemented",
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -69,8 +73,8 @@
           }
         }
       },
-      "503" : {
-        "description" : "Service unavailable",
+      "501" : {
+        "description" : "Not implemented",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -79,12 +83,8 @@
           }
         }
       },
-      "204" : {
-        "description" : "Data is unavailable because the chain has not yet reached genesis",
-        "content" : { }
-      },
-      "400" : {
-        "description" : "The request could not be processed, check the response for more information.",
+      "503" : {
+        "description" : "Service unavailable",
         "content" : {
           "application/json" : {
             "schema" : {

@@ -35,7 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
@@ -84,9 +83,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
@@ -96,9 +93,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
@@ -108,9 +103,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
@@ -130,9 +123,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
@@ -142,9 +133,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
@@ -156,9 +145,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
@@ -170,9 +157,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
-    assertThat(request.getResponseBody())
-        .isEqualTo(
-            new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues"));
+    assertThat(request.getResponseBody()).isNull();
   }
 
   @Test
@@ -197,6 +182,6 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle503() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
+    verifyMetadataEmptyResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }

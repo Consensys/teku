@@ -22,7 +22,7 @@
         "content" : { }
       },
       "503" : {
-        "description" : "Service unavailable",
+        "description" : "Beacon node is currently syncing and not serving requests.",
         "content" : {
           "application/json" : {
             "schema" : {

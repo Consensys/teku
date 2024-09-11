@@ -27,13 +27,7 @@
       },
       "503" : {
         "description" : "Node not initialized or having issues",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
-            }
-          }
-        }
+        "content" : { }
       },
       "400" : {
         "description" : "Invalid syncing status code",
