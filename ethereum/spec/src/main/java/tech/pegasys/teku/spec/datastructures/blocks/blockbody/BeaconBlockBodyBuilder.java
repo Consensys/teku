@@ -82,8 +82,16 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
 
+  default Boolean supportsSignedExecutionPayloadHeader() {
+    return false;
+  }
+
   BeaconBlockBodyBuilder signedExecutionPayloadHeader(
       SignedExecutionPayloadHeader signedExecutionPayloadHeader);
+
+  default Boolean supportsPayloadAttestations() {
+    return false;
+  }
 
   BeaconBlockBodyBuilder payloadAttestations(SszList<PayloadAttestation> payloadAttestations);
 
