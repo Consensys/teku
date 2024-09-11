@@ -250,7 +250,6 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
-              // EIP7732 TODO:
               if (builder.supportsSignedExecutionPayloadHeader()) {
                 final SchemaDefinitionsEip7732 schemaDefinitionsEip7732 =
                     SchemaDefinitionsEip7732.required(spec.atSlot(newSlot).getSchemaDefinitions());
