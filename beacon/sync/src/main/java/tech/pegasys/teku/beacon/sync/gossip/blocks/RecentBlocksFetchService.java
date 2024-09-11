@@ -129,9 +129,6 @@ public class RecentBlocksFetchService
   }
 
   @Override
-  public void onBlockSeen(final SignedBeaconBlock block) {}
-
-  @Override
   public void onBlockValidated(final SignedBeaconBlock block) {}
 
   @Override

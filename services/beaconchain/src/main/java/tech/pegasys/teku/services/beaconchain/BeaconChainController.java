@@ -1163,11 +1163,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
-            .gossipedBlockProcessor(
-                (block, arrivalTimestamp) -> {
-                  receivedBlockEventsChannelPublisher.onBlockSeen(block);
-                  return blockManager.validateAndImportBlock(block, arrivalTimestamp);
-                })
+            .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
