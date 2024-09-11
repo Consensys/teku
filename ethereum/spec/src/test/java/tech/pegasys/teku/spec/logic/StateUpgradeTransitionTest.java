@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
@@ -47,7 +48,8 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
       SpecMilestone.BELLATRIX,
       SpecMilestone.CAPELLA,
       SpecMilestone.DENEB,
-      SpecMilestone.ELECTRA
+      SpecMilestone.ELECTRA,
+      SpecMilestone.EIP7732
     },
     doNotGenerateSpec = true)
 public class StateUpgradeTransitionTest {
@@ -93,7 +95,11 @@ public class StateUpgradeTransitionTest {
             afterBeaconStateClass = BeaconStateElectra.class;
             yield TestSpecFactory.createMinimalWithElectraForkEpoch(milestoneTransitionEpoch);
           }
-          case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
+          case EIP7732 -> {
+            beforeBeaconStateClass = BeaconStateElectra.class;
+            afterBeaconStateClass = BeaconStateEip7732.class;
+            yield TestSpecFactory.createMinimalWithEip7732ForkEpoch(milestoneTransitionEpoch);
+          }
         };
 
     genesis = createGenesis(spec);
