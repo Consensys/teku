@@ -95,6 +95,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -834,6 +835,12 @@ public class Spec {
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
+  }
+
+  // Execution Payload Processor Utils
+
+  public ExecutionPayloadProcessor getExecutionPayloadProcessor(final UInt64 slot) {
+    return atSlot(slot).getExecutionPayloadProcessor().orElseThrow();
   }
 
   public BeaconState replayValidatedBlock(final BeaconState preState, final SignedBeaconBlock block)
