@@ -38,6 +38,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -95,6 +99,11 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
         public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
             UInt64 slot,
             BLSSignature randaoReveal,
@@ -118,6 +127,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
         @Override
         public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
             UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
+            final UInt64 slot, final Bytes32 parentBlockRoot) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -152,10 +167,21 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<Void> sendSignedHeader(final SignedExecutionPayloadHeader signedHeader) {
+          return SafeFuture.COMPLETE;
+        }
+
+        @Override
         public SafeFuture<SendSignedBlockResult> sendSignedBlock(
             SignedBlockContainer blockContainer,
             BroadcastValidationLevel broadcastValidationLevel) {
           return SafeFuture.completedFuture(SendSignedBlockResult.rejected("NO OP Implementation"));
+        }
+
+        @Override
+        public SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
+            final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+          return SafeFuture.COMPLETE;
         }
 
         @Override
@@ -241,6 +267,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
+  SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(UInt64 slot);
+
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       UInt64 slot,
       BLSSignature randaoReveal,
@@ -260,6 +288,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
 
+  SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
+      UInt64 slot, Bytes32 parentBlockRoot);
+
   SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   SafeFuture<Void> subscribeToSyncCommitteeSubnets(
@@ -272,8 +303,13 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       List<SignedAggregateAndProof> aggregateAndProofs);
 
+  SafeFuture<Void> sendSignedHeader(SignedExecutionPayloadHeader signedHeader);
+
   SafeFuture<SendSignedBlockResult> sendSignedBlock(
       SignedBlockContainer blockContainer, BroadcastValidationLevel broadcastValidationLevel);
+
+  SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
+      SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope);
 
   SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
