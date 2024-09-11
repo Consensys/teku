@@ -66,7 +66,7 @@
       "in" : "header",
       "schema" : {
         "type" : "string",
-        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "eip7732" ],
         "description" : "Version of the attester slashing being submitted."
       }
     } ],

@@ -85,6 +85,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.PayloadAttestationPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -109,6 +111,10 @@ public abstract class AbstractBlockFactoryTest {
       mock(ExecutionLayerBlockProductionManager.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
+  protected final ExecutionPayloadHeaderPool executionPayloadHeaderPool =
+      mock(ExecutionPayloadHeaderPool.class);
+  protected final PayloadAttestationPool payloadAttestationPool =
+      mock(PayloadAttestationPool.class);
   protected final DepositProvider depositProvider = mock(DepositProvider.class);
   protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
 

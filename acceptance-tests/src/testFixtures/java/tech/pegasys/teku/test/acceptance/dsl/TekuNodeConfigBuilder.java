@@ -171,6 +171,18 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withEip7732Epoch(final UInt64 eip7732ForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-eip7732-fork-epoch={}", eip7732ForkEpoch);
+    configMap.put("Xnetwork-eip7732-fork-epoch", eip7732ForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.eip7732Builder(
+                    eip7732Builder -> eip7732Builder.eip7732ForkEpoch(eip7732ForkEpoch)));
+    return this;
+  }
+
   public TekuNodeConfigBuilder withTrustedSetupFromClasspath(final String trustedSetup)
       throws Exception {
     mustBe(NodeType.BEACON_NODE);

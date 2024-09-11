@@ -186,6 +186,19 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ELECTRA);
   }
 
+  /**
+   * Create a spec that forks to EIP7732 at the provided epoch
+   *
+   * @param eip7732ForkEpoch The EIP7732 fork epoch
+   * @return A spec with EIP7732 enabled, forking to EIP7732 at the given epoch
+   */
+  public static Spec createMinimalWithEip7732ForkEpoch(final UInt64 eip7732ForkEpoch) {
+    final SpecConfigElectra config =
+        getEip7732SpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, eip7732ForkEpoch);
+    return create(config, SpecMilestone.EIP7732);
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfigAndParent<? extends SpecConfig> configAndParent =
         SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
@@ -441,6 +454,45 @@ public class TestSpecFactory {
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
                   .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
                   .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO));
+              configAdapter.accept(builder);
+            }));
+  }
+
+  private static SpecConfigEip7732 getEip7732SpecConfig(final Eth2Network network) {
+    return getEip7732SpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  }
+
+  private static SpecConfigEip7732 getEip7732SpecConfig(
+      final Eth2Network network,
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final UInt64 electraForkEpoch,
+      final UInt64 eip7732ForkEpoch) {
+    return getEip7732SpecConfig(
+        network,
+        builder ->
+            builder
+                .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
+                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
+                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
+                .eip7732Builder(eip7732 -> eip7732.eip7732ForkEpoch(eip7732ForkEpoch)));
+  }
+
+  private static SpecConfigEip7732 getEip7732SpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return SpecConfigEip7732.required(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                  .eip7732Builder(eip7732 -> eip7732.eip7732ForkEpoch(UInt64.ZERO));
               configAdapter.accept(builder);
             }));
   }
