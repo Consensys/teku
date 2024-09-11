@@ -21,6 +21,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -169,7 +170,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     if (maybeDenebBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
+    if (maybeDenebBlock.get().getOptionalBlobKzgCommitments().map(SszList::isEmpty).orElse(false)) {
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
     final SignedBeaconBlock block = maybeBlock.get();

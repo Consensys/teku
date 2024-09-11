@@ -31,11 +31,13 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class SignedBeaconBlockTest {
 
   private Spec spec;
+  private SpecMilestone milestone;
   private DataStructureUtil dataStructureUtil;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
+    milestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
   }
 
@@ -58,9 +60,7 @@ class SignedBeaconBlockTest {
 
     if (!blinded.getMessage().getBody().isBlinded()) {
       // Didn't blind the block so we must have a spec prior to bellatrix that doesn't have payloads
-      assertThat(
-              spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX))
-          .isFalse();
+      assertThat(milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isFalse();
     } else {
       // Check the blinded block actually matches the schema by serializing it
       assertThatNoException().isThrownBy(blinded::sszSerialize);
@@ -72,12 +72,10 @@ class SignedBeaconBlockTest {
                       spec.getGenesisSchemaDefinitions()
                           .getSignedBlindedBeaconBlockSchema()
                           .getJsonTypeDefinition()));
-
-      // Otherwise, we should be able to unblind it again
       final SignedBeaconBlock unblinded =
           blinded.unblind(
               spec.getGenesisSchemaDefinitions(),
-              original.getMessage().getBody().getOptionalExecutionPayload().orElseThrow());
+              original.getMessage().getBody().getOptionalExecutionPayload());
       assertThat(unblinded.hashTreeRoot()).isEqualTo(original.hashTreeRoot());
       assertThat(unblinded.sszSerialize()).isEqualTo(original.sszSerialize());
       assertThatNoException()

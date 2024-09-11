@@ -58,6 +58,8 @@ import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
+import tech.pegasys.teku.api.schema.eip7732.BeaconStateEip7732;
+import tech.pegasys.teku.api.schema.eip7732.SignedBeaconBlockEip7732;
 import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
 import tech.pegasys.teku.api.schema.electra.SignedBeaconBlockElectra;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
@@ -92,7 +94,9 @@ public class JsonProviderPropertyTest {
               SpecMilestone.DENEB,
               SignedBeaconBlockDeneb.class,
               SpecMilestone.ELECTRA,
-              SignedBeaconBlockElectra.class);
+              SignedBeaconBlockElectra.class,
+              SpecMilestone.EIP7732,
+              SignedBeaconBlockEip7732.class);
 
   private static final Map<SpecMilestone, Class<? extends BeaconState>> BEACON_STATE_CLASS_MAP =
       Map.of(
@@ -107,7 +111,9 @@ public class JsonProviderPropertyTest {
           SpecMilestone.DENEB,
           BeaconStateDeneb.class,
           SpecMilestone.ELECTRA,
-          BeaconStateElectra.class);
+          BeaconStateElectra.class,
+          SpecMilestone.EIP7732,
+          BeaconStateEip7732.class);
 
   @Property
   void roundTripBytes32(@ForAll @Size(32) final byte[] value) throws JsonProcessingException {
