@@ -14,29 +14,20 @@
 package tech.pegasys.teku.spec.logic.versions.eip7732.util;
 
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.SignedBeaconBlockBlinderEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.SignedBeaconBlockUnblinderEip7732;
-import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
-public class BlindBlockUtilEip7732 extends BlindBlockUtil {
-
-  private final SchemaDefinitionsEip7732 schemaDefinitions;
+public class BlindBlockUtilEip7732 extends BlindBlockUtilBellatrix {
 
   public BlindBlockUtilEip7732(final SchemaDefinitionsEip7732 schemaDefinitions) {
-    this.schemaDefinitions = schemaDefinitions;
+    super(schemaDefinitions);
   }
 
   @Override
   protected SignedBeaconBlockUnblinder createSignedBeaconBlockUnblinder(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     return new SignedBeaconBlockUnblinderEip7732(schemaDefinitions, signedBlindedBeaconBlock);
-  }
-
-  @Override
-  protected SignedBeaconBlockBlinder getSignedBeaconBlockBlinder() {
-    return new SignedBeaconBlockBlinderEip7732(schemaDefinitions);
   }
 }

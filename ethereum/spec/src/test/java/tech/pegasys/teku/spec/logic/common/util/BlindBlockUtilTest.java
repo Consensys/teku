@@ -31,10 +31,12 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
       SpecMilestone.BELLATRIX,
       SpecMilestone.CAPELLA,
       SpecMilestone.DENEB,
-      SpecMilestone.ELECTRA
+      SpecMilestone.ELECTRA,
+      SpecMilestone.EIP7732
     })
 class BlindBlockUtilTest {
 
+  private SpecMilestone milestone;
   private DataStructureUtil dataStructureUtil;
   private BlindBlockUtil blindBlockUtil;
 
@@ -42,7 +44,8 @@ class BlindBlockUtilTest {
   void setUp(final SpecContext specContext) {
     final Spec spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
-    final SpecVersion specVersion = spec.forMilestone(specContext.getSpecMilestone());
+    milestone = specContext.getSpecMilestone();
+    final SpecVersion specVersion = spec.forMilestone(milestone);
     blindBlockUtil = specVersion.getBlindBlockUtil().orElseThrow();
   }
 
@@ -76,19 +79,37 @@ class BlindBlockUtilTest {
     final SignedBeaconBlock unblindedSignedBeaconBlock =
         signedBeaconBlockSafeFuture.getImmediately();
     assertThat(unblindedSignedBeaconBlock).isEqualTo(signedBeaconBlock);
-    assertThat(
-            unblindedSignedBeaconBlock
-                .getBeaconBlock()
-                .orElseThrow()
-                .getBody()
-                .getOptionalExecutionPayload())
-        .isNotEmpty();
-    assertThat(
-            unblindedSignedBeaconBlock
-                .getBeaconBlock()
-                .orElseThrow()
-                .getBody()
-                .getOptionalExecutionPayloadHeader())
-        .isEmpty();
+    assertThat(unblindedSignedBeaconBlock.isBlinded()).isFalse();
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      assertThat(
+              unblindedSignedBeaconBlock
+                  .getBeaconBlock()
+                  .orElseThrow()
+                  .getBody()
+                  .getOptionalSignedExecutionPayloadHeader())
+          .isNotEmpty();
+      assertThat(
+              unblindedSignedBeaconBlock
+                  .getBeaconBlock()
+                  .orElseThrow()
+                  .getBody()
+                  .getOptionalExecutionPayload())
+          .isEmpty();
+    } else {
+      assertThat(
+              unblindedSignedBeaconBlock
+                  .getBeaconBlock()
+                  .orElseThrow()
+                  .getBody()
+                  .getOptionalExecutionPayload())
+          .isNotEmpty();
+      assertThat(
+              unblindedSignedBeaconBlock
+                  .getBeaconBlock()
+                  .orElseThrow()
+                  .getBody()
+                  .getOptionalExecutionPayloadHeader())
+          .isEmpty();
+    }
   }
 }
