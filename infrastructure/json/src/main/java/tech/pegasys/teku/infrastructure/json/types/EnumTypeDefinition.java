@@ -26,10 +26,10 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
   final Class<T> itemType;
   private final Function<T, String> serializer;
 
-  final Set<T> excludedEnumerations = new HashSet<>();
-  Optional<String> example = Optional.empty();
-  Optional<String> description = Optional.empty();
-  Optional<String> format = Optional.empty();
+  private final Set<T> excludedEnumerations = new HashSet<>();
+  private Optional<String> example = Optional.empty();
+  private Optional<String> description = Optional.empty();
+  private Optional<String> format = Optional.empty();
 
   public EnumTypeDefinition(final Class<T> itemType) {
     this(itemType, Objects::toString);
