@@ -40,8 +40,8 @@ public class EphemeryNetwork {
     updateConfig(builder, new SystemTimeProvider());
   }
 
-  private static void updateConfig(
-      final SpecConfigBuilder builder, final TimeProvider timeProvider) {
+  static void updateConfig(
+          final SpecConfigBuilder builder, final TimeProvider timeProvider) {
     final SpecConfig config = SpecConfigLoader.loadConfig("ephemery");
     final SpecConfigBuilder rawConfigBuilder = builder.rawConfig(config.getRawConfig());
 

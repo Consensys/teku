@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -36,7 +37,9 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class EphemeryNetworkTest {
   private static final long GENESIS_CHAINID = 39438135;
-  private static final long GENESIS_TIMESTAMP = 1720119600;
+  private static final long  ONE_PERIOD = 1;
+  private static final int   MANY_PERIOD = 1000;
+  private static final long MIN_GENESIS_TIME = 1720119600;
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
 
   private SpecConfigBuilder builder;
@@ -45,21 +48,23 @@ public class EphemeryNetworkTest {
   private static final long PERIOD_IN_SECONDS = (PERIOD * 24 * 60 * 60);
   private long expectedMinGenesisTime;
   private long expectedChainId;
+  private long periodSinceGenesis;
   private final SpecConfigReader reader = new SpecConfigReader();
+  private SpecConfig configFile;
+  private SpecConfig config;
 
   @BeforeEach
   void setUp() {
-    long periodSinceGenesis = EphemeryNetwork.getPeriodsSinceGenesis(timeProvider);
-    expectedMinGenesisTime = GENESIS_TIMESTAMP + (periodSinceGenesis * PERIOD_IN_SECONDS);
+    periodSinceGenesis = EphemeryNetwork.getPeriodsSinceGenesis(timeProvider);
+    expectedMinGenesisTime = MIN_GENESIS_TIME + (periodSinceGenesis * PERIOD_IN_SECONDS);
     expectedChainId = GENESIS_CHAINID + periodSinceGenesis;
     builder = mock(SpecConfigBuilder.class);
+    configFile = SpecConfigLoader.loadConfig("ephemery");
+    config = mock(SpecConfig.class);
   }
 
   @Test
   public void testUpdateConfig() {
-    final SpecConfig configFile = SpecConfigLoader.loadConfig("ephemery");
-    final SpecConfig config = mock(SpecConfig.class);
-
     when(config.getRawConfig()).thenReturn(configFile.getRawConfig());
     when(builder.rawConfig(config.getRawConfig())).thenReturn(builder);
     when(builder.depositChainId(expectedChainId)).thenReturn(builder);
@@ -94,10 +99,10 @@ public class EphemeryNetworkTest {
   @Test
   public void shouldLoadMinGenesisTime() {
     final Spec spec =
-        getSpec(phase0Builder -> phase0Builder.minGenesisTime(UInt64.valueOf(GENESIS_TIMESTAMP)));
+        getSpec(phase0Builder -> phase0Builder.minGenesisTime(UInt64.valueOf(MIN_GENESIS_TIME)));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("MIN_GENESIS_TIME"))
-        .isEqualTo(String.valueOf(GENESIS_TIMESTAMP));
+        .isEqualTo(String.valueOf(MIN_GENESIS_TIME));
   }
 
   @Test
@@ -107,6 +112,95 @@ public class EphemeryNetworkTest {
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("MIN_PER_EPOCH_CHURN_LIMIT");
+  }
+
+  @Test
+  void shouldNotUpdateConfigBeforeGenesis() {
+    final Spec spec =
+            getSpec(phase0Builder -> phase0Builder.minGenesisTime(UInt64.valueOf(MIN_GENESIS_TIME)));
+
+    final long preGenesisTime = MIN_GENESIS_TIME - ONE_PERIOD;
+    final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(preGenesisTime * 1000);
+    EphemeryNetwork.updateConfig(builder, stubTimeProvider);
+
+    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("MIN_GENESIS_TIME"))
+            .isEqualTo(String.valueOf(MIN_GENESIS_TIME));
+    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("DEPOSIT_CHAIN_ID"))
+            .isEqualTo(String.valueOf(GENESIS_CHAINID));
+    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("DEPOSIT_NETWORK_ID"))
+            .isEqualTo(String.valueOf(GENESIS_CHAINID));
+  }
+
+  @Test
+  public void shouldUpdateConfigAfterFirstPeriod() {
+
+    final long onePeriodSinceGenesis = MIN_GENESIS_TIME + PERIOD_IN_SECONDS + ONE_PERIOD;
+
+    final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(onePeriodSinceGenesis * 1000);
+    final long genesisChainidAfterFirstPeriod = GENESIS_CHAINID + ONE_PERIOD;
+
+    final long expectedMinGenesisTime = MIN_GENESIS_TIME + (ONE_PERIOD * PERIOD_IN_SECONDS);
+
+    when(config.getRawConfig()).thenReturn(configFile.getRawConfig());
+    when(builder.rawConfig(config.getRawConfig())).thenReturn(builder);
+    when(builder.depositChainId(genesisChainidAfterFirstPeriod)).thenReturn(builder);
+    when(builder.depositNetworkId(genesisChainidAfterFirstPeriod)).thenReturn(builder);
+    when(builder.minGenesisTime(UInt64.valueOf(expectedMinGenesisTime))).thenReturn(builder);
+
+    EphemeryNetwork.updateConfig(builder, stubTimeProvider);
+
+    verify(builder, times(1)).rawConfig(config.getRawConfig()); // Only verify once
+    verify(builder, times(1)).depositNetworkId(genesisChainidAfterFirstPeriod);
+    verify(builder, times(1)).depositChainId(genesisChainidAfterFirstPeriod);
+    verify(builder, times(1)).minGenesisTime(UInt64.valueOf(expectedMinGenesisTime));
+    assertThat(CURRENT_TIMESTAMP).isGreaterThan(genesisChainidAfterFirstPeriod + PERIOD_IN_SECONDS);
+  }
+
+
+  @Test
+  public void shouldUpdateConfigForManyPeriods() {
+
+    final long timeFor1000Periods = MIN_GENESIS_TIME + (MANY_PERIOD * PERIOD_IN_SECONDS);
+    final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(timeFor1000Periods * 1000);
+
+    final long genesisChainIdAfter1000Period = GENESIS_CHAINID + MANY_PERIOD;
+
+    final long expectedMinGenesisTime = MIN_GENESIS_TIME + MANY_PERIOD * PERIOD_IN_SECONDS;
+
+    when(config.getRawConfig()).thenReturn(configFile.getRawConfig());
+    when(builder.rawConfig(config.getRawConfig())).thenReturn(builder);
+    when(builder.depositChainId(genesisChainIdAfter1000Period)).thenReturn(builder);
+    when(builder.depositNetworkId(genesisChainIdAfter1000Period)).thenReturn(builder);
+    when(builder.minGenesisTime(UInt64.valueOf(expectedMinGenesisTime))).thenReturn(builder);
+
+    EphemeryNetwork.updateConfig(builder, stubTimeProvider);
+
+    verify(builder, times(1)).rawConfig(config.getRawConfig()); // Only verify once
+    verify(builder, times(1)).depositNetworkId(genesisChainIdAfter1000Period);
+    verify(builder, times(1)).depositChainId(genesisChainIdAfter1000Period);
+    verify(builder, times(1)).minGenesisTime(UInt64.valueOf(expectedMinGenesisTime));
+
+    assertThat(expectedMinGenesisTime).isGreaterThan(MIN_GENESIS_TIME);
+    assertThat(genesisChainIdAfter1000Period).isGreaterThan(GENESIS_CHAINID);
+    assertThat(CURRENT_TIMESTAMP + expectedMinGenesisTime).isGreaterThan(genesisChainIdAfter1000Period + PERIOD_IN_SECONDS);
+  }
+
+
+  @Test
+  void shouldNotUpdateConfigBeforeNextPeriod() {
+    final Spec spec =
+            getSpec(phase0Builder -> phase0Builder.minGenesisTime(UInt64.valueOf(MIN_GENESIS_TIME)));
+    final long timeBeforeNextPeriod = MIN_GENESIS_TIME + PERIOD_IN_SECONDS - 1;
+    final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(timeBeforeNextPeriod * 1000);
+    
+    EphemeryNetwork.updateConfig(builder, stubTimeProvider);
+
+    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("MIN_GENESIS_TIME"))
+            .isEqualTo(String.valueOf(MIN_GENESIS_TIME));
+    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("DEPOSIT_CHAIN_ID"))
+            .isEqualTo(String.valueOf(GENESIS_CHAINID));
+    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("DEPOSIT_NETWORK_ID"))
+            .isEqualTo(String.valueOf(GENESIS_CHAINID));
   }
 
   private static String getInvalidConfigPath(final String name) {
