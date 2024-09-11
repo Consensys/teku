@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -91,14 +92,11 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     if (!isBlinded()) {
       return this;
     }
-    if (payload.isEmpty()) {
-      return this;
-    }
-    final TreeNode unblindedTree = getUnblindedTree(payload.get());
+    final TreeNode unblindedTree = getUnblindedTree(payload);
     return schemaDefinitions.getSignedBeaconBlockSchema().createFromBackingNode(unblindedTree);
   }
 
-  private TreeNode getUnblindedTree(final ExecutionPayload payload) {
+  private TreeNode getUnblindedTree(final Optional<ExecutionPayload> payload) {
     final SignedBeaconBlockSchema schema = getSchema();
     final TreeNode backingNode = getBackingNode();
     final LongList blindedNodeIndices = schema.getBlindedNodeGeneralizedIndices();
@@ -106,7 +104,8 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
       return backingNode;
     }
     final List<TreeUpdates.Update> updatesList = new ArrayList<>();
-    final List<TreeNode> unblindedData = payload.getUnblindedTreeNodes();
+    final List<TreeNode> unblindedData =
+        payload.map(ExecutionPayload::getUnblindedTreeNodes).orElse(Collections.emptyList());
     for (int i = 0; i < blindedNodeIndices.size(); i++) {
       final long blindedNodeIndex = blindedNodeIndices.getLong(i);
       final Bytes32 expectedRoot = backingNode.get(blindedNodeIndex).hashTreeRoot();

@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class BlindBlockUtilBellatrix extends BlindBlockUtil {
-  private final SchemaDefinitionsBellatrix schemaDefinitions;
+  protected final SchemaDefinitionsBellatrix schemaDefinitions;
   private final SignedBeaconBlockBlinder signedBeaconBlockBlinder;
 
   public BlindBlockUtilBellatrix(final SchemaDefinitionsBellatrix schemaDefinitions) {
