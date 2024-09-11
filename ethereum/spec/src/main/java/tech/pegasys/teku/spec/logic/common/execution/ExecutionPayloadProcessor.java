@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.execution;
 
-import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
@@ -28,7 +27,7 @@ public interface ExecutionPayloadProcessor {
   BeaconState processAndVerifyExecutionPayload(
       BeaconState preState,
       SignedExecutionPayloadEnvelope signedEnvelope,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      OptimisticExecutionPayloadExecutor payloadExecutor)
       throws StateTransitionException;
 
   boolean verifyExecutionPayloadEnvelopeSignature(
@@ -37,7 +36,7 @@ public interface ExecutionPayloadProcessor {
   void processExecutionPayload(
       MutableBeaconState state,
       ExecutionPayloadEnvelope envelope,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      OptimisticExecutionPayloadExecutor payloadExecutor)
       throws ExecutionPayloadProcessingException;
 
   NewPayloadRequest computeNewPayloadRequest(BeaconState state, ExecutionPayloadEnvelope envelope);

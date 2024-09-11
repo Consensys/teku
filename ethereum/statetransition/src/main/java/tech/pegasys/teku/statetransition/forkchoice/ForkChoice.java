@@ -235,12 +235,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   /** Import an execution payload to the store. */
-  // EIP7732 TODO: implement
-  @SuppressWarnings("unused")
   public SafeFuture<Void> onExecutionPayload(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
-    return SafeFuture.COMPLETE;
+    final Bytes32 blockRoot = signedEnvelope.getMessage().getBeaconBlockRoot();
+    return recentChainData
+        .retrieveBlockState(blockRoot)
+        .thenCompose(
+            blockState -> {
+              if (blockState.isEmpty()) {
+                return SafeFuture.failedFuture(
+                    new IllegalStateException(
+                        String.format("State for block root %s is not available.", blockRoot)));
+              }
+              return onExecutionPayload(blockState.get(), signedEnvelope, executionLayer);
+            });
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -521,6 +530,30 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                           payloadResult,
                           blobSidecarsAndValidationResult),
                   forkChoiceExecutor);
+            });
+  }
+
+  // EIP7732 TODO: implement proper fork choice
+  @SuppressWarnings({"UnusedDeclaration", "UnusedAssignment"})
+  private SafeFuture<Void> onExecutionPayload(
+      final BeaconState blockSlotState,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final ExecutionLayerChannel executionLayer) {
+    final ForkChoicePayloadExecutorEip7732 payloadExecutor =
+        ForkChoicePayloadExecutorEip7732.create(executionLayer);
+    final BeaconState postState;
+    try {
+      postState =
+          spec.getExecutionPayloadProcessor(blockSlotState.getSlot())
+              .processAndVerifyExecutionPayload(blockSlotState, signedEnvelope, payloadExecutor);
+    } catch (final StateTransitionException ex) {
+      return SafeFuture.failedFuture(ex);
+    }
+    return payloadExecutor
+        .getExecutionResult()
+        .thenAccept(
+            payloadResult -> {
+              // EIP7732 TODO:
             });
   }
 

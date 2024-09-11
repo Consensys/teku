@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.execution;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
@@ -30,7 +29,7 @@ public abstract class AbstractExecutionPayloadProcessor implements ExecutionPayl
   public BeaconState processAndVerifyExecutionPayload(
       final BeaconState preState,
       final SignedExecutionPayloadEnvelope signedEnvelope,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws StateTransitionException {
     if (!verifyExecutionPayloadEnvelopeSignature(preState, signedEnvelope)) {
       throw new StateTransitionException(
