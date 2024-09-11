@@ -142,13 +142,8 @@ public class ExecutionPayloadValidator implements ReceivedBlockEventsChannel {
   }
 
   @Override
-  public void onBlockSeen(final SignedBeaconBlock block) {
-    seenBlockRootInfoSet.add(block.getRoot());
-  }
-
-  @Override
   public void onBlockValidated(final SignedBeaconBlock block) {
-    // NO-OP
+    seenBlockRootInfoSet.add(block.getRoot());
   }
 
   @Override
