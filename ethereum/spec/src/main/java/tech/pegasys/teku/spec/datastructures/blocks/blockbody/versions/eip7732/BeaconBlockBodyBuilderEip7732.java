@@ -72,9 +72,19 @@ public class BeaconBlockBodyBuilderEip7732 extends BeaconBlockBodyBuilderElectra
 
   @Override
   protected void validate() {
-    // EIP7732 TODO: hacky skip of super.validate() to avoid blobKzgCommitments and executionPayload
-    // checks
-    // super.validate();
+    // skipping super.validate() because fields were removed
+    // old fields
+    checkNotNull(randaoReveal, "randaoReveal must be specified");
+    checkNotNull(eth1Data, "eth1Data must be specified");
+    checkNotNull(graffiti, "graffiti must be specified");
+    checkNotNull(attestations, "attestations must be specified");
+    checkNotNull(proposerSlashings, "proposerSlashings must be specified");
+    checkNotNull(attesterSlashings, "attesterSlashings must be specified");
+    checkNotNull(deposits, "deposits must be specified");
+    checkNotNull(voluntaryExits, "voluntaryExits must be specified");
+    checkNotNull(syncAggregate, "syncAggregate must be specified");
+    checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
+    // new fields
     checkNotNull(signedExecutionPayloadHeader, "signedExecutionPayloadHeader must be specified");
     checkNotNull(payloadAttestations, "payloadAttestations must be specified");
   }

@@ -47,8 +47,11 @@ public class ExecutionPayloadHeaderBuilderEip7732 extends ExecutionPayloadHeader
 
   @Override
   protected void validate() {
-    // EIP7732 TODO: hacky skip validation
-    // super.validate();
+    // skipping super.validate() because fields were removed
+    // old fields
+    checkNotNull(blockHash, "blockHash must be specified");
+    checkNotNull(gasLimit, "gasLimit must be specified");
+    // new fields
     checkNotNull(parentBlockHash, "parentBlockHash must be specified");
     checkNotNull(parentBlockRoot, "parentBlockRoot must be specified");
     checkNotNull(builderIndex, "builderIndex must be specified");

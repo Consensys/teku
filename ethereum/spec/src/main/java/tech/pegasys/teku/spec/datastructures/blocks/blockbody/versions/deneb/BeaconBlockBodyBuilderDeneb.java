@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
 
-  private SszList<SszKZGCommitment> blobKzgCommitments;
+  protected SszList<SszKZGCommitment> blobKzgCommitments;
 
   public BeaconBlockBodyBuilderDeneb(
       final BeaconBlockBodySchema<? extends BeaconBlockBodyDeneb> schema,
