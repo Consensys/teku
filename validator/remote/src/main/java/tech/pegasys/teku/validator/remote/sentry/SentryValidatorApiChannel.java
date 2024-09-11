@@ -37,6 +37,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -110,6 +114,11 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+    return blockHandlerChannel.orElse(dutiesProviderChannel).getHeader(slot);
+  }
+
+  @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
@@ -142,6 +151,14 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
         .createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
+      final UInt64 slot, final Bytes32 parentBlockRoot) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .getExecutionPayloadEnvelope(slot, parentBlockRoot);
   }
 
   @Override
@@ -185,12 +202,25 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Void> sendSignedHeader(final SignedExecutionPayloadHeader signedHeader) {
+    return blockHandlerChannel.orElse(dutiesProviderChannel).sendSignedHeader(signedHeader);
+  }
+
+  @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
         .sendSignedBlock(blockContainer, broadcastValidationLevel);
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .sendSignedExecutionPayloadEnvelope(signedExecutionPayloadEnvelope);
   }
 
   @Override
