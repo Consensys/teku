@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 
 @SuppressWarnings("JavaCase")
 public class AttesterSlashing {
@@ -46,7 +46,7 @@ public class AttesterSlashing {
 
   public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
       asInternalAttesterSlashing(final SpecVersion spec) {
-    final AttesterSlashingSchema attesterSlashingSchema =
+    final AttesterSlashingSchema<?> attesterSlashingSchema =
         spec.getSchemaDefinitions().getAttesterSlashingSchema();
     return attesterSlashingSchema.create(
         attestation_1.asInternalIndexedAttestation(spec),

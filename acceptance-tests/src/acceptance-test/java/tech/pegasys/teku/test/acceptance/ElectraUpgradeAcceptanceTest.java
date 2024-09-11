@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -39,11 +38,10 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  @Disabled("Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)")
   void upgradeFromDeneb() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
+        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
 
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
@@ -80,7 +78,8 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
     final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(pragueTime));
 
     return createBesuNode(
-        BesuDockerVersion.STABLE,
+        // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
+        BesuDockerVersion.DEVELOP,
         config ->
             config
                 .withMergeSupport()
@@ -108,7 +107,6 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
         .withJwtSecretFile(JWT_FILE)
-        .withTrustedSetupFromClasspath("mainnet-trusted-setup.txt")
         .withReadOnlyKeystorePath(validatorKeys)
         .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
         .withStartupTargetPeerCount(0)

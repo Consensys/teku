@@ -95,7 +95,7 @@ public class GetAttestationRewardsIntegrationTest extends AbstractDataBackedRest
       final long epoch, final List<String> validatorIds) {
     try {
       final String requestBody =
-          validatorIds != null ? jsonProvider.objectToJSON(validatorIds) : "";
+          validatorIds != null ? OBJECT_MAPPER.writeValueAsString(validatorIds) : "";
       return post(
           GetAttestationRewards.ROUTE.replace("{epoch}", String.valueOf(epoch)), requestBody);
     } catch (IOException e) {

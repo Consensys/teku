@@ -45,7 +45,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -67,7 +66,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
   private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
@@ -76,7 +74,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final EventLogger eventLogger,
       final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
-      final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
@@ -104,7 +101,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return new ExecutionLayerManagerImpl(
         executionClientHandler,
         builderClient,
-        spec,
         eventLogger,
         builderBidValidator,
         builderCircuitBreaker,
@@ -142,7 +138,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private ExecutionLayerManagerImpl(
       final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
-      final Spec spec,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
@@ -150,7 +145,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
-    this.spec = spec;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
     this.executionBuilderModule =
         new ExecutionBuilderModule(
@@ -194,28 +188,21 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    return engineGetPayload(executionPayloadContext, state.getSlot(), false)
+    return engineGetPayload(executionPayloadContext, state.getSlot())
         .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
   SafeFuture<GetPayloadResponse> engineGetPayloadForFallback(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    return engineGetPayload(executionPayloadContext, slot, true);
+    return engineGetPayload(executionPayloadContext, slot);
   }
 
   private SafeFuture<GetPayloadResponse> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot,
-      final boolean isFallbackCall) {
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     LOG.trace(
         "calling engineGetPayload(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
         slot);
-    if (!isFallbackCall
-        && executionBuilderModule.isBuilderAvailable()
-        && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
-    }
     return executionClientHandler.engineGetPayload(executionPayloadContext, slot);
   }
 
