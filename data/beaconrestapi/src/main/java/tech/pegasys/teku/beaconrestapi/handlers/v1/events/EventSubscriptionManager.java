@@ -172,11 +172,6 @@ public class EventSubscriptionManager
   }
 
   @Override
-  public void onBlockSeen(final SignedBeaconBlock block) {
-    // No-op
-  }
-
-  @Override
   public void onBlockValidated(final SignedBeaconBlock block) {
     onNewBlockGossip(block);
   }
