@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumTypeHeaderDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -86,6 +89,16 @@ public class EthereumTypes {
       new EnumTypeDefinition<>(
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
+  public static final EnumTypeHeaderDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
+      new EnumTypeHeaderDefinition.EnumTypeHeaderDefinitionBuilder<>(
+              SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT))
+          .title(HEADER_CONSENSUS_VERSION)
+          .required(true)
+          .description(
+              "Required in response so client can deserialize returned json or ssz data more effectively.")
+          .example("phase0")
+          .build();
+
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {
     return new OctetStreamResponseContentTypeDefinition<>(
@@ -110,7 +123,7 @@ public class EthereumTypes {
   private static <T extends SszData> Map<String, String> getSszHeaders(
       final Function<T, SpecMilestone> milestoneSelector, final T value) {
     return Map.of(
-        RestApiConstants.HEADER_CONSENSUS_VERSION,
+        HEADER_CONSENSUS_VERSION,
         Version.fromMilestone(milestoneSelector.apply(value)).name(),
         RestApiConstants.HEADER_CONTENT_DISPOSITION,
         getSszFilename(value));

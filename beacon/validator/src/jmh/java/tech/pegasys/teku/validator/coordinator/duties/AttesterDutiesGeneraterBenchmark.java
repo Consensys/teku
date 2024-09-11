@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.benchmarks.gen.KeyFileGenerator;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
@@ -79,43 +80,56 @@ public class AttesterDutiesGeneraterBenchmark {
 
   IntList validatorIndices = new IntArrayList();
 
-  @Param({"800000"})
-  int validatorsCount = 800_000;
+  @Param({"20000"})
+  int validatorsCount = 20_000;
 
-  @Param({"500000"})
-  int querySize = 50_000;
+  @Param({"20000"})
+  int querySize = 20_000;
 
   @Setup(Level.Trial)
   public void init() {
+    BLSConstants.disableBLSVerification();
     List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
     state =
         BeaconStateBellatrix.required(
             new GenesisStateBuilder()
                 .spec(spec)
-                .signDeposits(false)
+                .signDeposits(true)
                 .addValidators(validatorKeys)
                 .build());
     final MutableBeaconStateBellatrix mutableState = state.createWritableCopy();
     mutableState.setSlot(UInt64.ONE);
     state = mutableState.commitChanges();
 
+    System.out.println("active validators: " + state.getValidators().size());
+
     for (int i = 0; i < querySize; i++) {
       validatorIndices.add(i);
     }
 
     attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
-    System.out.println("Done!");
     epoch = spec.computeEpochAtSlot(state.getSlot()).increment();
+
+    int generatedDuties = computeAttesterDuties().getDuties().size();
+    if (generatedDuties == 0) {
+      throw new IllegalStateException("No duties generated, check the state");
+    }
+
+    System.out.println("computed duties: " + computeAttesterDuties().getDuties().size());
+    System.out.println("Done!");
   }
 
   @Benchmark
   @Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10)
   public void computeAttesterDuties(Blackhole bh) {
-    AttesterDuties attesterDutiesFromIndicesAndState =
-        attesterDutiesGenerator.getAttesterDutiesFromIndicesAndState(
-            state, epoch, validatorIndices, false);
+    final AttesterDuties attesterDutiesFromIndicesAndState = computeAttesterDuties();
 
     bh.consume(attesterDutiesFromIndicesAndState);
+  }
+
+  private AttesterDuties computeAttesterDuties() {
+    return attesterDutiesGenerator.getAttesterDutiesFromIndicesAndState(
+        state, epoch, validatorIndices, false);
   }
 }

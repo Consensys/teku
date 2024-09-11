@@ -40,7 +40,7 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
   void triggerValidatorExitWithFullWithdrawal() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
+        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
 
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
