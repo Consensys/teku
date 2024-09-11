@@ -534,7 +534,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   // EIP7732 TODO: implement proper fork choice
-  @SuppressWarnings({"UnusedDeclaration", "UnusedAssignment"})
+  @SuppressWarnings({"UnusedDeclaration", "UnusedAssignment", "unused"})
   private SafeFuture<Void> onExecutionPayload(
       final BeaconState blockSlotState,
       final SignedExecutionPayloadEnvelope signedEnvelope,
