@@ -57,7 +57,11 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
             .description(
                 "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache),ETH_CONSENSUS_HEADER_TYPE)
+            .response(
+                SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .build());
     this.nodeDataProvider = provider;
   }

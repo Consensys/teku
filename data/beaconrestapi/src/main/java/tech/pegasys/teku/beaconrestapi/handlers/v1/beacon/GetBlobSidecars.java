@@ -74,7 +74,12 @@ public class GetBlobSidecars extends RestApiEndpoint {
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
         .queryListParam(BLOB_INDICES_PARAMETER)
-        .response(SC_OK, "Request successful", getResponseType(schemaCache), getSszResponseType(),ETH_CONSENSUS_HEADER_TYPE)
+        .response(
+            SC_OK,
+            "Request successful",
+            getResponseType(schemaCache),
+            getSszResponseType(),
+            ETH_CONSENSUS_HEADER_TYPE)
         .withNotFoundResponse()
         .build();
   }

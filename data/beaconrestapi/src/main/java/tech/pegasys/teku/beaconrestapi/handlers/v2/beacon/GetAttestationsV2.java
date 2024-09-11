@@ -68,7 +68,11 @@ public class GetAttestationsV2 extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache),ETH_CONSENSUS_HEADER_TYPE)
+            .response(
+                SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .build());
     this.nodeDataProvider = nodeDataProvider;
   }

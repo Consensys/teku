@@ -64,7 +64,11 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
             .description("Retrieves attestations included in requested block.")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_BLOCK_ID)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache),ETH_CONSENSUS_HEADER_TYPE)
+            .response(
+                SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;

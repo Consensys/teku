@@ -66,7 +66,8 @@ public class GetState extends RestApiEndpoint {
                 SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
-                sszResponseType(),ETH_CONSENSUS_HEADER_TYPE)
+                sszResponseType(),
+                ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
