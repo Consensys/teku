@@ -83,7 +83,7 @@
         }
       },
       "503" : {
-        "description" : "Service unavailable",
+        "description" : "Beacon node is currently syncing.",
         "content" : {
           "application/json" : {
             "schema" : {

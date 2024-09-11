@@ -68,7 +68,6 @@ public class GetHealth extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     if (!chainDataProvider.isStoreAvailable() || syncProvider.getRejectedExecutionCount() > 0) {
-      // request.respondError(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues");
       request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else if (syncProvider.isSyncing()) {
       request.respondWithUndocumentedCode(getResponseCodeFromQueryParams(request));
