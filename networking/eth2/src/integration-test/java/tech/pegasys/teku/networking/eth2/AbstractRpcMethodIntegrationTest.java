@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -84,8 +85,13 @@ public abstract class AbstractRpcMethodIntegrationTest {
         checkState(nextSpecMilestone.equals(SpecMilestone.ELECTRA), "next spec should be electra");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithElectraForkEpoch(nextSpecEpoch));
       }
-      case ELECTRA -> throw new RuntimeException("Base spec is already latest supported milestone");
-      case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
+      case ELECTRA -> {
+        checkState(nextSpecMilestone.equals(SpecMilestone.EIP7732), "next spec should be eip7732");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithEip7732ForkEpoch(nextSpecEpoch));
+      }
+      case EIP7732 ->
+          throw new UnsupportedOperationException(
+              "Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -263,7 +269,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
       case ELECTRA -> BeaconBlockBodyElectra.class;
-      case EIP7732 -> throw new UnsupportedOperationException("EIP7732 TODO");
+      case EIP7732 -> BeaconBlockBodyEip7732.class;
     };
   }
 }

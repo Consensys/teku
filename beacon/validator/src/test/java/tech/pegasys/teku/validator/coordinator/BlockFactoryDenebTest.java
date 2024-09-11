@@ -188,6 +188,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             voluntaryExitPool,
             blsToExecutionChangePool,
             syncCommitteeContributionPool,
+            executionPayloadHeaderPool,
+            payloadAttestationPool,
             depositProvider,
             eth1DataCache,
             graffitiBuilder,

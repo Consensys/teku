@@ -87,12 +87,14 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   }
 
   public SignedBeaconBlock unblind(
-      final SchemaDefinitions schemaDefinitions, final ExecutionPayload payload) {
+      final SchemaDefinitions schemaDefinitions, final Optional<ExecutionPayload> payload) {
     if (!isBlinded()) {
       return this;
     }
-
-    final TreeNode unblindedTree = getUnblindedTree(payload);
+    if (payload.isEmpty()) {
+      return this;
+    }
+    final TreeNode unblindedTree = getUnblindedTree(payload.get());
     return schemaDefinitions.getSignedBeaconBlockSchema().createFromBackingNode(unblindedTree);
   }
 
