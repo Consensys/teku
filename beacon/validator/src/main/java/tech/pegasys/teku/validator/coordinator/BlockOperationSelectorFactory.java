@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -67,6 +68,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.attestation.PayloadAttestationPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
@@ -78,6 +81,8 @@ public class BlockOperationSelectorFactory {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool contributionPool;
+  private final ExecutionPayloadHeaderPool executionPayloadHeaderPool;
+  private final PayloadAttestationPool payloadAttestationPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final GraffitiBuilder graffitiBuilder;
@@ -92,6 +97,8 @@ public class BlockOperationSelectorFactory {
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       final SyncCommitteeContributionPool contributionPool,
+      final ExecutionPayloadHeaderPool executionPayloadHeaderPool,
+      final PayloadAttestationPool payloadAttestationPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final GraffitiBuilder graffitiBuilder,
@@ -104,6 +111,8 @@ public class BlockOperationSelectorFactory {
     this.voluntaryExitPool = voluntaryExitPool;
     this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.contributionPool = contributionPool;
+    this.executionPayloadHeaderPool = executionPayloadHeaderPool;
+    this.payloadAttestationPool = payloadAttestationPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffitiBuilder = graffitiBuilder;
@@ -173,6 +182,12 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
+      // Post-ePBS: Payload attestations
+      if (bodyBuilder.supportsPayloadAttestations()) {
+        bodyBuilder.payloadAttestations(
+            payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState));
+      }
+
       final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
@@ -223,6 +238,16 @@ public class BlockOperationSelectorFactory {
     if (executionPayloadContext.isEmpty()) {
       bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
       return SafeFuture.COMPLETE;
+    }
+
+    // ePBS (EIP7732 TODO: placeholder) need to think about the 3 flows (local, builder, p2p pool)
+    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
+      final Optional<SignedExecutionPayloadHeader> bid =
+          executionPayloadHeaderPool.selectBidForBlock(blockSlotState);
+      if (bid.isPresent()) {
+        bodyBuilder.signedExecutionPayloadHeader(bid.get());
+        return SafeFuture.COMPLETE;
+      }
     }
 
     // We should run Builder flow (blinded) only if we have a validator registration
@@ -296,6 +321,10 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsKzgCommitments()) {
+      return SafeFuture.COMPLETE;
+    }
+    // ePBS (no blob kzg commitments in block)
+    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
       return SafeFuture.COMPLETE;
     }
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =

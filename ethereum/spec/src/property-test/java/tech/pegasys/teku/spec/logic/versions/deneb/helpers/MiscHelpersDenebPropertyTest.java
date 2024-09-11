@@ -27,12 +27,10 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarIndexSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
@@ -40,19 +38,13 @@ import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSu
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersDenebPropertyTest {
 
   private final Spec spec =
       Objects.requireNonNull(new SpecSupplier(SpecMilestone.DENEB).get()).sample();
-  private final SpecConfigDeneb specConfig =
-      spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow();
-  private final Predicates predicates = spec.getGenesisSpec().predicates();
-  private final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-      spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow();
   private final MiscHelpersDeneb miscHelpers =
-      new MiscHelpersDeneb(specConfig, predicates, schemaDefinitionsDeneb);
+      MiscHelpersDeneb.required(spec.getGenesisSpec().miscHelpers());
 
   @Property(tries = 100)
   void fuzzKzgCommitmentToVersionedHash(
