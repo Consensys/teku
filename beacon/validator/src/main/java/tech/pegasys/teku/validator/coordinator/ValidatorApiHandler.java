@@ -78,6 +78,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -351,6 +355,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  }
+
+  @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
       final Collection<BLSPublicKey> validatorIdentifiers) {
     return isSyncActive()
@@ -614,6 +623,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
+      final UInt64 slot, final Bytes32 parentBlockRoot) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  }
+
+  @Override
   public SafeFuture<Void> subscribeToBeaconCommittee(
       final List<CommitteeSubscriptionRequest> requests) {
     return SafeFuture.fromRunnable(() -> processCommitteeSubscriptionRequests(requests));
@@ -725,6 +740,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
+  @Override
+  public SafeFuture<Void> sendSignedHeader(final SignedExecutionPayloadHeader signedHeader) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  }
+
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
     return attestationManager
@@ -763,6 +783,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               return SendSignedBlockResult.rejected(reason);
             })
         .alwaysRun(blockPublishingPerformance::complete);
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
   @Override
