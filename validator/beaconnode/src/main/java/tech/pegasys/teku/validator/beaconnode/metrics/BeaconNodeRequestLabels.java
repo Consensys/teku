@@ -22,6 +22,9 @@ public class BeaconNodeRequestLabels {
   public static final String GET_PROPOSER_DUTIES_REQUESTS_METHOD = "get_proposer_duties";
   public static final String GET_PEER_COUNT_METHOD = "get_peer_count";
   public static final String GET_SYNC_COMMITTEE_DUTIES_METHOD = "get_sync_committee_duties";
+  public static final String GET_HEADER_METHOD = "get_header_method";
+  public static final String GET_EXECUTION_PAYLOAD_ENVELOPE_METHOD =
+      "get_execution_payload_envelope";
   public static final String CREATE_UNSIGNED_BLOCK_METHOD = "create_unsigned_block";
   public static final String CREATE_ATTESTATION_METHOD = "create_attestation";
   public static final String CREATE_AGGREGATE_METHOD = "create_aggregate";
@@ -34,7 +37,10 @@ public class BeaconNodeRequestLabels {
       "persistent_subnets_subscription";
   public static final String PUBLISH_ATTESTATION_METHOD = "publish_attestation";
   public static final String PUBLISH_AGGREGATE_AND_PROOFS_METHOD = "publish_aggregate_and_proofs";
+  public static final String PUBLISH_HEADER_METHOD = "publish_header";
   public static final String PUBLISH_BLOCK_METHOD = "publish_block";
+  public static final String PUBLISH_EXECUTION_PAYLOAD_ENVELOPE =
+      "publish_execution_payload_envelope";
   public static final String SEND_SYNC_COMMITTEE_MESSAGES_METHOD = "send_sync_committee_messages";
   public static final String SEND_CONTRIBUTIONS_AND_PROOFS_METHOD = "send_contributions_and_proofs";
   public static final String PREPARE_BEACON_PROPOSERS_METHOD = "prepare_beacon_proposers";
