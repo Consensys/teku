@@ -83,6 +83,7 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -123,6 +124,8 @@ import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -144,6 +147,8 @@ class ValidatorApiHandlerTest {
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
+  private final ExecutionPayloadHeaderFactory executionPayloadHeaderFactory =
+      mock(ExecutionPayloadHeaderFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final PayloadAttestationManager payloadAttestationManager =
@@ -157,6 +162,8 @@ class ValidatorApiHandlerTest {
       mock(BlockBlobSidecarsTrackersPool.class);
   private final BlobSidecarGossipChannel blobSidecarGossipChannel =
       mock(BlobSidecarGossipChannel.class);
+  private final ExecutionPayloadGossipChannel executionPayloadGossipChannel =
+      mock(ExecutionPayloadGossipChannel.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -171,6 +178,10 @@ class ValidatorApiHandlerTest {
       mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
+  private final ExecutionPayloadHeaderPool executionPayloadHeaderPool =
+      mock(ExecutionPayloadHeaderPool.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<List<BlobSidecar>> blobSidecarsCaptor1 =
@@ -207,10 +218,12 @@ class ValidatorApiHandlerTest {
             chainDataClient,
             syncStateProvider,
             blockFactory,
+            executionPayloadHeaderFactory,
             blockImportChannel,
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            executionPayloadGossipChannel,
             attestationPool,
             attestationManager,
             payloadAttestationManager,
@@ -224,6 +237,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            executionPayloadHeaderPool,
+            executionPayloadManager,
             blockProductionPerformanceFactory);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
@@ -463,10 +478,12 @@ class ValidatorApiHandlerTest {
             chainDataClient,
             syncStateProvider,
             blockFactory,
+            executionPayloadHeaderFactory,
             blockImportChannel,
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            executionPayloadGossipChannel,
             attestationPool,
             attestationManager,
             payloadAttestationManager,
@@ -480,6 +497,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            executionPayloadHeaderPool,
+            executionPayloadManager,
             blockProductionPerformanceFactory);
     // Best state is still in Phase0
     final BeaconState state =
@@ -1364,10 +1383,12 @@ class ValidatorApiHandlerTest {
             chainDataClient,
             syncStateProvider,
             blockFactory,
+            executionPayloadHeaderFactory,
             blockImportChannel,
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            executionPayloadGossipChannel,
             attestationPool,
             attestationManager,
             payloadAttestationManager,
@@ -1381,6 +1402,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            executionPayloadHeaderPool,
+            executionPayloadManager,
             blockProductionPerformanceFactory);
 
     // BlobSidecar builder
