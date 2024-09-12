@@ -21,43 +21,57 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 
 /**
- * In non-blinded flow, both {@link #executionPayloadFuture} and {@link #blobsBundleFuture} would be
- * present. The {@link #blobsBundleFuture} will have a value when the future is complete only after
- * Deneb, otherwise it will be empty.
+ * In non-blinded flow, {@link #getPayloadResponseFuture} will be present.
  *
- * <p>In blinded flow, {@link #builderBidOrFallbackDataFuture} would be present
+ * <p>In blinded flow, {@link #builderBidOrFallbackDataFuture} would be present.
  */
 public class ExecutionPayloadResult {
 
   private final ExecutionPayloadContext executionPayloadContext;
-  private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
-  private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
+  private final Optional<SafeFuture<GetPayloadResponse>> getPayloadResponseFuture;
   private final Optional<SafeFuture<BuilderBidOrFallbackData>> builderBidOrFallbackDataFuture;
-  private final SafeFuture<UInt256> executionPayloadValueFuture;
 
   private ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
-      final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
-      final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
-      final Optional<SafeFuture<BuilderBidOrFallbackData>> builderBidOrFallbackDataFuture,
-      final SafeFuture<UInt256> executionPayloadValueFuture) {
+      final Optional<SafeFuture<GetPayloadResponse>> getPayloadResponseFuture,
+      final Optional<SafeFuture<BuilderBidOrFallbackData>> builderBidOrFallbackDataFuture) {
     this.executionPayloadContext = executionPayloadContext;
-    this.executionPayloadFuture = executionPayloadFuture;
-    this.blobsBundleFuture = blobsBundleFuture;
+    this.getPayloadResponseFuture = getPayloadResponseFuture;
     this.builderBidOrFallbackDataFuture = builderBidOrFallbackDataFuture;
-    this.executionPayloadValueFuture = executionPayloadValueFuture;
+  }
+
+  public static ExecutionPayloadResult createForLocalFlow(
+      final ExecutionPayloadContext executionPayloadContext,
+      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
+    return new ExecutionPayloadResult(
+        executionPayloadContext, Optional.of(getPayloadResponseFuture), Optional.empty());
+  }
+
+  public static ExecutionPayloadResult createForBuilderFlow(
+      final ExecutionPayloadContext executionPayloadContext,
+      final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture) {
+    return new ExecutionPayloadResult(
+        executionPayloadContext, Optional.empty(), Optional.of(builderBidOrFallbackDataFuture));
   }
 
   public ExecutionPayloadContext getExecutionPayloadContext() {
     return executionPayloadContext;
   }
 
+  public SafeFuture<GetPayloadResponse> getLocalPayloadResponseRequired() {
+    return getPayloadResponseFuture.orElseThrow(
+        () -> new IllegalStateException("GetPayloadResponse is not available in " + this));
+  }
+
   public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFutureFromLocalFlow() {
-    return executionPayloadFuture;
+    return getPayloadResponseFuture.map(
+        getPayloadResponse ->
+            getPayloadResponse.thenApply(GetPayloadResponse::getExecutionPayload));
   }
 
   public Optional<SafeFuture<Optional<BlobsBundle>>> getBlobsBundleFutureFromLocalFlow() {
-    return blobsBundleFuture;
+    return getPayloadResponseFuture.map(
+        getPayloadResponse -> getPayloadResponse.thenApply(GetPayloadResponse::getBlobsBundle));
   }
 
   public Optional<SafeFuture<BuilderBidOrFallbackData>> getBuilderBidOrFallbackDataFuture() {
@@ -68,31 +82,21 @@ public class ExecutionPayloadResult {
    * @return the value from the local payload, the builder bid or the local fallback payload
    */
   public SafeFuture<UInt256> getExecutionPayloadValueFuture() {
-    return executionPayloadValueFuture;
+    return getPayloadResponseFuture
+        .map(
+            getPayloadResponse ->
+                getPayloadResponse.thenApply(GetPayloadResponse::getExecutionPayloadValue))
+        .orElseGet(this::getExecutionPayloadValueFutureFromBuilderFlow);
   }
 
   public boolean isFromLocalFlow() {
-    return executionPayloadFuture.isPresent();
+    return getPayloadResponseFuture.isPresent();
   }
 
-  public static ExecutionPayloadResult createForLocalFlow(
-      final ExecutionPayloadContext executionPayloadContext,
-      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture) {
-    final SafeFuture<UInt256> executionPayloadValueFuture =
-        getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
-    return new ExecutionPayloadResult(
-        executionPayloadContext,
-        Optional.of(getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload)),
-        Optional.of(getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle)),
-        Optional.empty(),
-        executionPayloadValueFuture);
-  }
-
-  public static ExecutionPayloadResult createForBuilderFlow(
-      final ExecutionPayloadContext executionPayloadContext,
-      final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture) {
-    final SafeFuture<UInt256> executionPayloadValueFuture =
-        builderBidOrFallbackDataFuture.thenApply(
+  private SafeFuture<UInt256> getExecutionPayloadValueFutureFromBuilderFlow() {
+    return builderBidOrFallbackDataFuture
+        .orElseThrow()
+        .thenApply(
             builderBidOrFallbackData ->
                 builderBidOrFallbackData
                     .getBuilderBid()
@@ -104,12 +108,6 @@ public class ExecutionPayloadResult {
                             builderBidOrFallbackData
                                 .getFallbackDataRequired()
                                 .getExecutionPayloadValue()));
-    return new ExecutionPayloadResult(
-        executionPayloadContext,
-        Optional.empty(),
-        Optional.empty(),
-        Optional.of(builderBidOrFallbackDataFuture),
-        executionPayloadValueFuture);
   }
 
   @Override
@@ -122,30 +120,22 @@ public class ExecutionPayloadResult {
     }
     final ExecutionPayloadResult that = (ExecutionPayloadResult) o;
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
-        && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
-        && Objects.equals(blobsBundleFuture, that.blobsBundleFuture)
-        && Objects.equals(builderBidOrFallbackDataFuture, that.builderBidOrFallbackDataFuture)
-        && Objects.equals(executionPayloadValueFuture, that.executionPayloadValueFuture);
+        && Objects.equals(getPayloadResponseFuture, that.getPayloadResponseFuture)
+        && Objects.equals(builderBidOrFallbackDataFuture, that.builderBidOrFallbackDataFuture);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        executionPayloadContext,
-        executionPayloadFuture,
-        blobsBundleFuture,
-        builderBidOrFallbackDataFuture,
-        executionPayloadValueFuture);
+        executionPayloadContext, getPayloadResponseFuture, builderBidOrFallbackDataFuture);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("executionPayloadContext", executionPayloadContext)
-        .add("executionPayloadFuture", executionPayloadFuture)
-        .add("blobsBundleFuture", blobsBundleFuture)
+        .add("getPayloadResponseFuture", getPayloadResponseFuture)
         .add("builderBidOrFallbackDataFuture", builderBidOrFallbackDataFuture)
-        .add("executionPayloadValueFuture", executionPayloadValueFuture)
         .toString();
   }
 }
