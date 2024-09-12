@@ -127,8 +127,11 @@ public class DeletableSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
-      final ExecutionPayloadEnvelope executionPayloadEnvelope, final ForkInfo forkInfo) {
-    return sign(() -> delegate.signExecutionPayloadEnvelope(executionPayloadEnvelope, forkInfo));
+      final UInt64 slot,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final ForkInfo forkInfo) {
+    return sign(
+        () -> delegate.signExecutionPayloadEnvelope(slot, executionPayloadEnvelope, forkInfo));
   }
 
   @Override

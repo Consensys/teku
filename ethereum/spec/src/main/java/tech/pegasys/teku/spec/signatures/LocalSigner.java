@@ -141,9 +141,12 @@ public class LocalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
-      final ExecutionPayloadEnvelope executionPayloadEnvelope, final ForkInfo forkInfo) {
+      final UInt64 slot,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final ForkInfo forkInfo) {
     return sign(
-        signingRootUtil.signingRootForExecutionPayloadEnvelope(executionPayloadEnvelope, forkInfo));
+        signingRootUtil.signingRootForExecutionPayloadEnvelope(
+            slot, executionPayloadEnvelope, forkInfo));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

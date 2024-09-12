@@ -165,8 +165,10 @@ public class SlashingProtectedSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
-      final ExecutionPayloadEnvelope executionPayloadEnvelope, final ForkInfo forkInfo) {
-    return delegate.signExecutionPayloadEnvelope(executionPayloadEnvelope, forkInfo);
+      final UInt64 slot,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final ForkInfo forkInfo) {
+    return delegate.signExecutionPayloadEnvelope(slot, executionPayloadEnvelope, forkInfo);
   }
 
   @Override

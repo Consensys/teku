@@ -66,7 +66,7 @@ public interface Signer {
       ExecutionPayloadHeader executionPayloadHeader, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
-      ExecutionPayloadEnvelope executionPayloadEnvelope, ForkInfo forkInfo);
+      UInt64 slot, ExecutionPayloadEnvelope executionPayloadEnvelope, ForkInfo forkInfo);
 
   default boolean isLocal() {
     return getSigningServiceUrl().isEmpty();
