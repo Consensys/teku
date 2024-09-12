@@ -134,6 +134,9 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(
             Eth2Network.SEPOLIA,
             (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.SEPOLIA)),
+        Arguments.of(
+            Eth2Network.EPHEMERY,
+            (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.EPHEMERY)),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
             Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()),
