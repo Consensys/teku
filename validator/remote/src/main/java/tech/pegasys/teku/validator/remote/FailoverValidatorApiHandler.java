@@ -48,13 +48,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -83,7 +81,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private final Map<SlotAndBlockRoot, ValidatorApiChannel> blindedBlockCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
-  private final Map<SlotAndBlockRoot, ValidatorApiChannel> headerCreatorCache =
+  private final Map<GetHeaderIdentifier, ValidatorApiChannel> headerCreatorCache =
       LimitedMap.createSynchronizedLRU(8);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -167,18 +165,17 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
     return tryRequestUntilSuccess(
         apiChannel ->
             apiChannel
-                .getHeader(slot)
+                .getHeader(slot, builderPublicKey)
                 .thenPeek(
                     maybeHeader -> {
                       if (maybeHeader.isPresent()) {
-                        final ExecutionPayloadHeaderEip7732 header =
-                            ExecutionPayloadHeaderEip7732.required(maybeHeader.get());
                         headerCreatorCache.put(
-                            new SlotAndBlockRoot(slot, header.getParentBlockRoot()), apiChannel);
+                            new GetHeaderIdentifier(slot, builderPublicKey), apiChannel);
                       }
                     }),
         BeaconNodeRequestLabels.GET_HEADER_METHOD);
@@ -242,19 +239,21 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
-      final UInt64 slot, final Bytes32 parentBlockRoot) {
-    final SlotAndBlockRoot key = new SlotAndBlockRoot(slot, parentBlockRoot);
-    if (headerCreatorCache.containsKey(key)) {
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
+    final GetHeaderIdentifier getHeaderId = new GetHeaderIdentifier(slot, builderPublicKey);
+    if (headerCreatorCache.containsKey(getHeaderId)) {
       LOG.info(
-          "Execution payload envelope for slot {} and parent block root {} will be revealed only by the beacon node which created the header.",
+          "Execution payload envelope for slot {} and builder public key {} will be revealed only by the beacon node which created the header.",
           slot,
-          parentBlockRoot);
-      return headerCreatorCache.remove(key).getExecutionPayloadEnvelope(slot, parentBlockRoot);
+          builderPublicKey);
+      return headerCreatorCache
+          .remove(getHeaderId)
+          .getExecutionPayloadEnvelope(slot, builderPublicKey);
     }
     LOG.error(
-        "No beacon node has created a header for slot {} and parent block root {}. Execution payload envelope can't be revealed.",
+        "No beacon node has created a header for slot {} and builder public key {}. Execution payload envelope can't be revealed.",
         slot,
-        parentBlockRoot);
+        builderPublicKey);
     return SafeFuture.completedFuture(Optional.empty());
   }
 
@@ -631,4 +630,6 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       return displayName;
     }
   }
+
+  private record GetHeaderIdentifier(UInt64 slot, BLSPublicKey builderPublicKey) {}
 }

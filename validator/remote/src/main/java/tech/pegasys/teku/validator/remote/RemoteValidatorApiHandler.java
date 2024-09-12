@@ -219,7 +219,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
   }
 
@@ -296,7 +297,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
-      final UInt64 slot, final Bytes32 parentBlockRoot) {
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("not implemented"));
   }
 

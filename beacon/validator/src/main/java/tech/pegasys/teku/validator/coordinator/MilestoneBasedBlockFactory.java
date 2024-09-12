@@ -54,7 +54,10 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+              // in ePBS, the builder creates the blob sidecars later in the slot
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+                registeredFactories.put(milestone, blockFactoryPhase0);
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredFactories.put(milestone, blockFactoryDenebSupplier.get());
               } else {
                 registeredFactories.put(milestone, blockFactoryPhase0);

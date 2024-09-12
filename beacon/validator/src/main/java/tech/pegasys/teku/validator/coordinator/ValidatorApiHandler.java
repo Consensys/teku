@@ -66,6 +66,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -79,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -100,6 +104,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -114,6 +120,8 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
@@ -137,6 +145,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
+  private final ExecutionPayloadHeaderFactory executionPayloadHeaderFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final PayloadAttestationManager payloadAttestationManager;
@@ -149,8 +158,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeMessagePool syncCommitteeMessagePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
+  private final ExecutionPayloadHeaderPool executionPayloadHeaderPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+  private final ExecutionPayloadPublisher executionPayloadPublisher;
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
@@ -160,6 +171,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
       final BlockFactory blockFactory,
+      final ExecutionPayloadHeaderFactory executionPayloadHeaderFactory,
+      final BlockImportChannel blockImportChannel,
+      final BlockGossipChannel blockGossipChannel,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final BlobSidecarGossipChannel blobSidecarGossipChannel,
+      final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final PayloadAttestationManager payloadAttestationManager,
@@ -173,10 +190,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
+      final ExecutionPayloadHeaderPool executionPayloadHeaderPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-      final BlockPublisher blockPublisher,
-      final ReceivedBlockEventsChannel receivedBlockEventsChannel) {
+      final BlockPublisher blockPublisher) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -185,6 +203,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
     this.blockFactory = blockFactory;
+    this.executionPayloadHeaderFactory = executionPayloadHeaderFactory;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.payloadAttestationManager = payloadAttestationManager;
@@ -197,9 +216,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeMessagePool = syncCommitteeMessagePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
+    this.executionPayloadHeaderPool = executionPayloadHeaderPool;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
-    this.receivedBlockEventsChannel = receivedBlockEventsChannel;
+    this.executionPayloadPublisher =
+        new ExecutionPayloadPublisher(executionPayloadManager, executionPayloadGossipChannel);
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
@@ -341,8 +362,28 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
+    LOG.info(
+        "Creating unsigned header for slot {} and builder with public key {}",
+        slot,
+        builderPublicKey);
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    return combinedChainDataClient
+        .getStateForBlockProduction(slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled())
+        .thenCompose(
+            maybeSlotState -> {
+              if (maybeSlotState.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final BeaconState slotState = maybeSlotState.get();
+              final Bytes32 parentRoot = spec.getBlockRootAtSlot(slotState, slot.decrement());
+              return executionPayloadHeaderFactory
+                  .createUnsignedHeader(slotState, slot, parentRoot, builderPublicKey)
+                  .thenApply(Optional::of);
+            });
   }
 
   @Override
@@ -632,7 +673,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
-      final UInt64 slot, final Bytes32 parentBlockRoot) {
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
     throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
@@ -757,7 +798,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> sendSignedHeader(final SignedExecutionPayloadHeader signedHeader) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+    return executionPayloadHeaderPool
+        .addLocal(signedHeader)
+        .thenAccept(
+            result -> {
+              if (result.isNotProcessable()) {
+                final UInt64 slot =
+                    ExecutionPayloadHeaderEip7732.required(signedHeader.getMessage()).getSlot();
+                VALIDATOR_LOGGER.producedInvalidBid(
+                    slot, result.getDescription().orElse("Unknown reason"));
+              }
+            });
   }
 
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
@@ -803,7 +854,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+    return executionPayloadPublisher
+        .sendExecutionPayload(signedExecutionPayloadEnvelope)
+        .thenAccept(
+            result -> {
+              if (result.isNotProcessable()) {
+                VALIDATOR_LOGGER.producedInvalidExecutionPayload(
+                    signedExecutionPayloadEnvelope.getMessage().getBeaconBlockRoot(),
+                    result.getDescription().orElse("Unknown reason"));
+              }
+            });
   }
 
   @Override
