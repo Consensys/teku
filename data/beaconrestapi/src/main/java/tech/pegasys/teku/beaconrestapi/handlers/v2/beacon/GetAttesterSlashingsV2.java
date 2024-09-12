@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -56,7 +57,11 @@ public class GetAttesterSlashingsV2 extends RestApiEndpoint {
             .description(
                 "Retrieves attester slashings known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .response(
+                SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .build());
     this.nodeDataProvider = provider;
   }

@@ -78,6 +78,7 @@ public class PostPrepareBeaconProposer extends RestApiEndpoint {
             HttpStatusCodes.SC_ACCEPTED,
             "Block has been successfully broadcast, but failed validation and has not been imported.")
         .withBadRequestResponse(Optional.of("Invalid parameter supplied."))
+        .withChainDataResponses()
         .build();
   }
 }

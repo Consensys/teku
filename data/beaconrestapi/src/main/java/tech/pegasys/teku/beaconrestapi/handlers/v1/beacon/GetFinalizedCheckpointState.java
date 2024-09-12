@@ -59,6 +59,7 @@ public class GetFinalizedCheckpointState extends RestApiEndpoint {
                         spec.getForkSchedule()
                             .getSpecMilestoneAtSlot(((BeaconState) beaconState).getSlot())))
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
