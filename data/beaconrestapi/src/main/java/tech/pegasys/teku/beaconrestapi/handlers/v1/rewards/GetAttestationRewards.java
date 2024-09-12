@@ -104,7 +104,6 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .optionalRequestBody()
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .withNotImplementedResponse()
             .withNotFoundResponse()
             .withInternalErrorResponse()
             .withChainDataResponses()
