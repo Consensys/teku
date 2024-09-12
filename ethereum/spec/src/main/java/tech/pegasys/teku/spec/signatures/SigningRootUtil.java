@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -139,5 +140,18 @@ public class SigningRootUtil {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     return specVersion.miscHelpers().computeSigningRoot(executionPayloadHeader, domain);
+  }
+
+  public Bytes signingRootForExecutionPayloadEnvelope(
+      final ExecutionPayloadEnvelope executionPayloadEnvelope, final ForkInfo forkInfo) {
+    final SpecVersion specVersion =
+        spec.forMilestone(executionPayloadEnvelope.getPayload().getMilestone());
+    final MiscHelpers miscHelpers = specVersion.miscHelpers();
+    final Bytes32 domain =
+        miscHelpers.computeDomain(
+            Domain.BEACON_BUILDER,
+            forkInfo.getFork().getCurrentVersion(),
+            forkInfo.getGenesisValidatorsRoot());
+    return miscHelpers.computeSigningRoot(executionPayloadEnvelope, domain);
   }
 }
