@@ -19,13 +19,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
-import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlockTest;
@@ -105,15 +100,5 @@ public class PostBlockV2Test extends PostBlockTest {
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
-  }
-
-  @Test
-  void metadata_shouldHandle204() {
-    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
-  }
-
-  @Test
-  void metadata_shouldHandle503() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }
