@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -239,6 +240,14 @@ public class GossipForkManager {
         message,
         "signed execution payload header",
         GossipForkSubscriptions::publishExecutionPayloadHeaderMessage);
+  }
+
+  public void publishSignedExecutionPayloadEnvelope(final SignedExecutionPayloadEnvelope message) {
+    publishMessage(
+        spec.computeStartSlotAtEpoch(currentEpoch.orElseThrow()),
+        message,
+        "signed execution payload envelope",
+        GossipForkSubscriptions::publishExecutionPayloadMessage);
   }
 
   private synchronized <T> void publishMessage(

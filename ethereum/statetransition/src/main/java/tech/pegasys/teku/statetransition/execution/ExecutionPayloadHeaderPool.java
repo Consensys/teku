@@ -13,21 +13,28 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
-public class ExecutionPayloadHeaderPool {
+public class ExecutionPayloadHeaderPool implements SlotEventsChannel {
 
+  // builders can broadcast a bid for only the current or the next slot, so no need to keep the bids
+  // for a long time in the pool
+  private static final int BIDS_RETENTION_SLOTS = 3;
   private static final int DEFAULT_SIGNED_BIDS_POOL_SIZE = 64;
 
   private final Set<SignedExecutionPayloadHeader> signedBids =
@@ -43,14 +50,33 @@ public class ExecutionPayloadHeaderPool {
     this.operationValidator = operationValidator;
   }
 
+  @Override
+  public void onSlot(final UInt64 slot) {
+    signedBids.removeIf(
+        bid -> {
+          final UInt64 bidSlot = ExecutionPayloadHeaderEip7732.required(bid.getMessage()).getSlot();
+          return bidSlot.isLessThan(slot.minusMinZero(BIDS_RETENTION_SLOTS));
+        });
+  }
+
   public void subscribeOperationAdded(
       final OperationAddedSubscriber<SignedExecutionPayloadHeader> subscriber) {
     this.subscribers.subscribe(subscriber);
   }
 
   public Optional<SignedExecutionPayloadHeader> selectBidForBlock(
-      final BeaconState stateAtBlockSlot) {
-    for (SignedExecutionPayloadHeader bid : signedBids) {
+      final BeaconState stateAtBlockSlot, final Bytes32 parentBeaconBlockRoot) {
+    final List<SignedExecutionPayloadHeader> applicableBids =
+        signedBids.stream()
+            .filter(
+                signedBid -> {
+                  // The header parent block root equals the current block's parent_root.
+                  final ExecutionPayloadHeaderEip7732 bid =
+                      ExecutionPayloadHeaderEip7732.required(signedBid.getMessage());
+                  return bid.getParentBlockRoot().equals(parentBeaconBlockRoot);
+                })
+            .toList();
+    for (SignedExecutionPayloadHeader bid : applicableBids) {
       if (operationValidator.validateForBlockInclusion(stateAtBlockSlot, bid).isEmpty()) {
         return Optional.of(bid);
       } else {
