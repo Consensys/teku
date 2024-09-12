@@ -90,6 +90,7 @@ public class PostBlindedBlock extends AbstractPostBlock {
             broadcast but a different status code is returned (202). Pre-Bellatrix, this endpoint will accept \
             a `SignedBeaconBlock`.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .deprecated(true)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
