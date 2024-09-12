@@ -142,9 +142,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
     return countOptionalDataRequest(
-        delegate.getHeader(slot), BeaconNodeRequestLabels.GET_HEADER_METHOD);
+        delegate.getHeader(slot, builderPublicKey), BeaconNodeRequestLabels.GET_HEADER_METHOD);
   }
 
   @Override
@@ -186,9 +187,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
-      final UInt64 slot, final Bytes32 parentBlockRoot) {
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
     return countOptionalDataRequest(
-        delegate.getExecutionPayloadEnvelope(slot, parentBlockRoot),
+        delegate.getExecutionPayloadEnvelope(slot, builderPublicKey),
         BeaconNodeRequestLabels.GET_EXECUTION_PAYLOAD_ENVELOPE_METHOD);
   }
 
