@@ -121,7 +121,7 @@ public class EphemeryNetworkTest {
 
     final long preGenesisTime = MIN_GENESIS_TIME - ONE_PERIOD;
     final StubTimeProvider stubTimeProvider =
-        StubTimeProvider.withTimeInMillis(preGenesisTime * 1000);
+        StubTimeProvider.withTimeInSeconds(preGenesisTime);
     EphemeryNetwork.updateConfig(builder, stubTimeProvider);
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("MIN_GENESIS_TIME"))
@@ -138,7 +138,7 @@ public class EphemeryNetworkTest {
     final long onePeriodSinceGenesis = MIN_GENESIS_TIME + PERIOD_IN_SECONDS + ONE_PERIOD;
 
     final StubTimeProvider stubTimeProvider =
-        StubTimeProvider.withTimeInMillis(onePeriodSinceGenesis * 1000);
+        StubTimeProvider.withTimeInSeconds(onePeriodSinceGenesis);
     final long genesisChainidAfterFirstPeriod = GENESIS_CHAINID + ONE_PERIOD;
 
     final long expectedMinGenesisTime = MIN_GENESIS_TIME + (ONE_PERIOD * PERIOD_IN_SECONDS);
@@ -163,7 +163,7 @@ public class EphemeryNetworkTest {
 
     final long timeFor1000Periods = MIN_GENESIS_TIME + (MANY_PERIOD * PERIOD_IN_SECONDS);
     final StubTimeProvider stubTimeProvider =
-        StubTimeProvider.withTimeInMillis(timeFor1000Periods * 1000);
+        StubTimeProvider.withTimeInSeconds(timeFor1000Periods);
 
     final long genesisChainIdAfter1000Period = GENESIS_CHAINID + MANY_PERIOD;
 
@@ -194,7 +194,7 @@ public class EphemeryNetworkTest {
         getSpec(phase0Builder -> phase0Builder.minGenesisTime(UInt64.valueOf(MIN_GENESIS_TIME)));
     final long timeBeforeNextPeriod = MIN_GENESIS_TIME + PERIOD_IN_SECONDS - 1;
     final StubTimeProvider stubTimeProvider =
-        StubTimeProvider.withTimeInMillis(timeBeforeNextPeriod * 1000);
+        StubTimeProvider.withTimeInSeconds(timeBeforeNextPeriod);
 
     EphemeryNetwork.updateConfig(builder, stubTimeProvider);
 
