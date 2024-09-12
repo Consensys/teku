@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -47,10 +48,11 @@ import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -183,14 +185,28 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
+      // Post-ePBS: Signed Execution Payload Header
+      if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
+        final SignedExecutionPayloadHeader bid =
+            executionPayloadHeaderPool
+                .selectBidForBlock(blockSlotState, parentRoot)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "No bid is available for slot " + blockSlotState.getSlot()));
+        final ExecutionPayloadHeaderEip7732 header =
+            ExecutionPayloadHeaderEip7732.required(bid.getMessage());
+        // cache execution payload value
+        BeaconStateCache.getSlotCaches(blockSlotState)
+            .setBlockExecutionValue(UInt256.valueOf(header.getValue().bigIntegerValue()));
+        bodyBuilder.signedExecutionPayloadHeader(bid);
+      }
+
       // Post-ePBS: Payload attestations
       if (bodyBuilder.supportsPayloadAttestations()) {
         bodyBuilder.payloadAttestations(
             payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState));
       }
-
-      final SchemaDefinitions schemaDefinitions =
-          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
       final SafeFuture<Void> blockProductionComplete;
 
@@ -258,16 +274,6 @@ public class BlockOperationSelectorFactory {
     if (executionPayloadContext.isEmpty()) {
       bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
       return SafeFuture.COMPLETE;
-    }
-
-    // ePBS (EIP7732 TODO: placeholder) need to think about the 3 flows (local, builder, p2p pool)
-    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
-      final Optional<SignedExecutionPayloadHeader> bid =
-          executionPayloadHeaderPool.selectBidForBlock(blockSlotState);
-      if (bid.isPresent()) {
-        bodyBuilder.signedExecutionPayloadHeader(bid.get());
-        return SafeFuture.COMPLETE;
-      }
     }
 
     // We should run Builder flow (blinded) only if we have a validator registration
@@ -341,10 +347,6 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsKzgCommitments()) {
-      return SafeFuture.COMPLETE;
-    }
-    // ePBS (no blob kzg commitments in block)
-    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
       return SafeFuture.COMPLETE;
     }
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =

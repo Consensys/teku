@@ -61,7 +61,6 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
             .getBlobKzgCommitmentsRootGeneralizedIndex();
     final long commitmentGeneralizedIndex =
         schemaDefinitions
-            .getExecutionPayloadEnvelopeSchema()
             .getBlobKzgCommitmentsSchema()
             .getChildGeneralizedIndex(blobSidecarIndex.longValue());
     return (int)
