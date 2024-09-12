@@ -99,7 +99,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
+        public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(
+            final UInt64 slot, final BLSPublicKey builderPublicKey) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -132,7 +133,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
-            final UInt64 slot, final Bytes32 parentBlockRoot) {
+            final UInt64 slot, final BLSPublicKey builderPublicKey) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -267,7 +268,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
-  SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(UInt64 slot);
+  SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(
+      UInt64 slot, BLSPublicKey builderPublicKey);
 
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       UInt64 slot,
@@ -289,7 +291,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
 
   SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
-      UInt64 slot, Bytes32 parentBlockRoot);
+      UInt64 slot, BLSPublicKey builderPublicKey);
 
   SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
