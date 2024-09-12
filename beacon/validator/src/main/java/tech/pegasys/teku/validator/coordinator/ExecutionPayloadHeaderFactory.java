@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -57,9 +59,10 @@ public class ExecutionPayloadHeaderFactory {
     if (maybeBuilderIndex.isEmpty()) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
-              "There is no index assigned to a builder with a public key " + builderPublicKey));
+              "There is no validator index assigned to a builder with a public key "
+                  + builderPublicKey));
     }
-    final int builderIndex = maybeBuilderIndex.get();
+    final UInt64 builderIndex = UInt64.valueOf(maybeBuilderIndex.get());
     return forkChoiceNotifier
         .getPayloadId(parentRoot, slot)
         .thenCompose(
@@ -89,11 +92,17 @@ public class ExecutionPayloadHeaderFactory {
 
   private ExecutionPayloadHeader createLocalBid(
       final UInt64 slot,
-      final int builderIndex,
+      final UInt64 builderIndex,
       final Bytes32 parentRoot,
       final ExecutionPayloadContext executionPayloadContext,
       final GetPayloadResponse getPayloadResponse) {
-    return SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions())
+    final SchemaDefinitionsEip7732 schemaDefinitions =
+        SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions());
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        schemaDefinitions
+            .getBlobKzgCommitmentsSchema()
+            .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
+    return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
         .createExecutionPayloadHeader(
             builder ->
@@ -102,11 +111,11 @@ public class ExecutionPayloadHeaderFactory {
                     .parentBlockRoot(() -> parentRoot)
                     .blockHash(getPayloadResponse.getExecutionPayload().getBlockHash())
                     .gasLimit(getPayloadResponse.getExecutionPayload().getGasLimit())
-                    .builderIndex(() -> UInt64.valueOf(builderIndex))
+                    .builderIndex(() -> builderIndex)
                     .slot(() -> slot)
                     .value(
                         () ->
                             UInt64.valueOf(getPayloadResponse.getExecutionPayloadValue().toLong()))
-                    .blobKzgCommitmentsRoot(() -> Bytes32.ZERO));
+                    .blobKzgCommitmentsRoot(blobKzgCommitments::hashTreeRoot));
   }
 }
