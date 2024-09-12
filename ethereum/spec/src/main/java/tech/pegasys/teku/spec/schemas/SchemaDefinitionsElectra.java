@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositR
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
@@ -95,8 +96,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
+  private final ExecutionRequestsSchema executionRequestsSchema;
   private final DepositRequestSchema depositRequestSchema;
-
   private final WithdrawalRequestSchema withdrawalRequestSchema;
   private final ConsolidationRequestSchema consolidationRequestSchema;
 
@@ -172,6 +173,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
 
+    this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
     this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
     this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
     this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
@@ -319,6 +321,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
     return executionPayloadAndBlobsBundleSchema;
+  }
+
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    return executionRequestsSchema;
   }
 
   public DepositRequestSchema getDepositRequestSchema() {
