@@ -50,6 +50,7 @@ public class ExecutionPayloadManager {
       final Optional<UInt64> arrivalTimestamp) {
     final SafeFuture<InternalValidationResult> validationResult =
         executionPayloadValidator.validate(signedExecutionPayloadEnvelope);
+    // Async import
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
