@@ -13,40 +13,100 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 
-@SuppressWarnings("unused")
 public class ExecutionPayloadHeaderFactory {
 
   private final Spec spec;
+  private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
 
   public ExecutionPayloadHeaderFactory(
       final Spec spec,
+      final ForkChoiceNotifier forkChoiceNotifier,
       final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.spec = spec;
+    this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
   }
 
-  // EIP7732 TODO: implement
   public SafeFuture<ExecutionPayloadHeader> createUnsignedHeader(
-      final BeaconState state, final UInt64 slot, final BLSPublicKey builderPublicKey) {
-    int builderIndex =
-        BeaconStateCache.getTransitionCaches(state)
+      final BeaconState slotState,
+      final UInt64 slot,
+      final Bytes32 parentRoot,
+      final BLSPublicKey builderPublicKey) {
+    final Optional<Integer> maybeBuilderIndex =
+        BeaconStateCache.getTransitionCaches(slotState)
             .getValidatorIndexCache()
-            .getValidatorIndex(state, builderPublicKey)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "There is no index assigned to a builder with a public key "
-                            + builderPublicKey));
-    return SafeFuture.completedFuture(null);
+            .getValidatorIndex(slotState, builderPublicKey);
+    if (maybeBuilderIndex.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              "There is no index assigned to a builder with a public key " + builderPublicKey));
+    }
+    final int builderIndex = maybeBuilderIndex.get();
+    return forkChoiceNotifier
+        .getPayloadId(parentRoot, slot)
+        .thenCompose(
+            maybeExecutionPayloadContext -> {
+              final ExecutionPayloadContext executionPayloadContext =
+                  maybeExecutionPayloadContext.orElseThrow();
+              // TODO: EIP-7732 Disable the builder flow for the prototype
+              final ExecutionPayloadResult executionPayloadResult =
+                  executionLayerBlockProductionManager.initiateBlockProduction(
+                      executionPayloadContext,
+                      slotState,
+                      false,
+                      Optional.empty(),
+                      BlockProductionPerformance.NOOP);
+              return executionPayloadResult
+                  .getLocalPayloadResponseRequired()
+                  .thenApply(
+                      getPayloadResponse ->
+                          createLocalBid(
+                              slot,
+                              builderIndex,
+                              parentRoot,
+                              executionPayloadContext,
+                              getPayloadResponse));
+            });
+  }
+
+  private ExecutionPayloadHeader createLocalBid(
+      final UInt64 slot,
+      final int builderIndex,
+      final Bytes32 parentRoot,
+      final ExecutionPayloadContext executionPayloadContext,
+      final GetPayloadResponse getPayloadResponse) {
+    return SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions())
+        .getExecutionPayloadHeaderSchema()
+        .createExecutionPayloadHeader(
+            builder ->
+                builder
+                    .parentBlockHash(executionPayloadContext::getParentHash)
+                    .parentBlockRoot(() -> parentRoot)
+                    .blockHash(getPayloadResponse.getExecutionPayload().getBlockHash())
+                    .gasLimit(getPayloadResponse.getExecutionPayload().getGasLimit())
+                    .builderIndex(() -> UInt64.valueOf(builderIndex))
+                    .slot(() -> slot)
+                    .value(
+                        () ->
+                            UInt64.valueOf(getPayloadResponse.getExecutionPayloadValue().toLong()))
+                    .blobKzgCommitmentsRoot(() -> Bytes32.ZERO));
   }
 }

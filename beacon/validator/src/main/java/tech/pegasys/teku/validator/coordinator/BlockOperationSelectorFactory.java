@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -47,9 +48,9 @@ import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -57,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -65,7 +65,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -183,23 +182,39 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
+      // Post-ePBS: Signed Execution Payload Header
+      if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
+        final SignedExecutionPayloadHeader bid =
+            executionPayloadHeaderPool
+                .selectBidForBlock(blockSlotState, parentRoot)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "No bid is available for slot " + blockSlotState.getSlot()));
+        final ExecutionPayloadHeaderEip7732 header =
+            ExecutionPayloadHeaderEip7732.required(bid.getMessage());
+        // cache execution payload value
+        BeaconStateCache.getSlotCaches(blockSlotState)
+            .setBlockExecutionValue(UInt256.valueOf(header.getValue().bigIntegerValue()));
+        bodyBuilder.signedExecutionPayloadHeader(bid);
+      }
+
       // Post-ePBS: Payload attestations
       if (bodyBuilder.supportsPayloadAttestations()) {
         bodyBuilder.payloadAttestations(
             payloadAttestationPool.getPayloadAttestationsForBlock(blockSlotState));
       }
 
-      final SchemaDefinitions schemaDefinitions =
-          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
-
       final SafeFuture<Void> blockProductionComplete;
 
       // In `setExecutionData` the following fields are set:
       // Post-Bellatrix: Execution Payload / Execution Payload Header
       // Post-Deneb: KZG Commitments
-      // Post-ePBS: Signed Execution Payload Header
-      if (bodyBuilder.supportsExecutionPayload()
-          || bodyBuilder.supportsSignedExecutionPayloadHeader()) {
+      // in ePBS, this section is skipped entirely because the bid is already available
+      if (bodyBuilder.supportsExecutionPayload()) {
+        final SchemaDefinitionsBellatrix schemaDefinitions =
+            SchemaDefinitionsBellatrix.required(
+                spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions());
         blockProductionComplete =
             forkChoiceNotifier
                 .getPayloadId(parentRoot, blockSlotState.getSlot())
@@ -209,9 +224,8 @@ public class BlockOperationSelectorFactory {
                             executionPayloadContext,
                             bodyBuilder,
                             requestedBuilderBoostFactor,
-                            SchemaDefinitionsBellatrix.required(schemaDefinitions),
+                            schemaDefinitions,
                             blockSlotState,
-                            parentRoot,
                             blockProductionPerformance));
       } else {
         blockProductionComplete = SafeFuture.COMPLETE;
@@ -229,7 +243,6 @@ public class BlockOperationSelectorFactory {
       final Optional<UInt64> requestedBuilderBoostFactor,
       final SchemaDefinitionsBellatrix schemaDefinitions,
       final BeaconState blockSlotState,
-      final Bytes32 parentRoot,
       final BlockProductionPerformance blockProductionPerformance) {
 
     if (spec.isMergeTransitionComplete(blockSlotState) && executionPayloadContext.isEmpty()) {
@@ -243,16 +256,6 @@ public class BlockOperationSelectorFactory {
     if (executionPayloadContext.isEmpty()) {
       bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
       return SafeFuture.COMPLETE;
-    }
-
-    // ePBS (EIP7732 TODO: placeholder) need to think about the 3 flows (local, builder, p2p pool)
-    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
-      final Optional<SignedExecutionPayloadHeader> bid =
-          executionPayloadHeaderPool.selectBidForBlock(blockSlotState);
-      if (bid.isPresent()) {
-        bodyBuilder.signedExecutionPayloadHeader(bid.get());
-        return SafeFuture.COMPLETE;
-      }
     }
 
     // We should run Builder flow (blinded) only if we have a validator registration
@@ -271,10 +274,7 @@ public class BlockOperationSelectorFactory {
 
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
-        // EIP7732 TODO: this whole flow needs drastic changes to make it work, just put a skeleton
-        // for now
-        setPayloadOrPayloadHeader(
-            bodyBuilder, executionPayloadResult, schemaDefinitions, blockSlotState, parentRoot),
+        setPayloadOrPayloadHeader(bodyBuilder, executionPayloadResult),
         setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
   }
 
@@ -290,25 +290,13 @@ public class BlockOperationSelectorFactory {
 
   private SafeFuture<Void> setPayloadOrPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final ExecutionPayloadResult executionPayloadResult,
-      final SchemaDefinitionsBellatrix schemaDefinitions,
-      final BeaconState state,
-      final Bytes32 parentRoot) {
+      final ExecutionPayloadResult executionPayloadResult) {
 
     if (executionPayloadResult.isFromLocalFlow()) {
       // local, non-blinded flow
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           executionPayloadResult.getExecutionPayloadFutureFromLocalFlow().orElseThrow();
-      // ePBS
-      if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
-        return executionPayloadFuture.thenAccept(
-            executionPayload ->
-                bodyBuilder.signedExecutionPayloadHeader(
-                    createBidFromLocalExecutionPayload(
-                        schemaDefinitions, state, parentRoot, executionPayload)));
-      } else {
-        return executionPayloadFuture.thenAccept(bodyBuilder::executionPayload);
-      }
+      return executionPayloadFuture.thenAccept(bodyBuilder::executionPayload);
     }
     // builder, blinded flow
     return executionPayloadResult
@@ -321,77 +309,13 @@ public class BlockOperationSelectorFactory {
               if (builderBidOrFallbackData.getFallbackData().isPresent()) {
                 final ExecutionPayload executionPayload =
                     builderBidOrFallbackData.getFallbackDataRequired().getExecutionPayload();
-                // ePBS
-                if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
-                  bodyBuilder.signedExecutionPayloadHeader(
-                      createBidFromLocalExecutionPayload(
-                          schemaDefinitions, state, parentRoot, executionPayload));
-                } else {
-                  bodyBuilder.executionPayload(executionPayload);
-                }
+                bodyBuilder.executionPayload(executionPayload);
               } else {
                 final BuilderBid builderBid =
                     builderBidOrFallbackData.getBuilderBid().orElseThrow();
-                // ePBS
-                if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
-                  bodyBuilder.signedExecutionPayloadHeader(
-                      createBidFromBuilderBid(schemaDefinitions, builderBid));
-                } else {
-                  bodyBuilder.executionPayloadHeader(builderBid.getHeader());
-                }
+                bodyBuilder.executionPayloadHeader(builderBid.getHeader());
               }
             });
-  }
-
-  private SignedExecutionPayloadHeader createBidFromLocalExecutionPayload(
-      final SchemaDefinitionsBellatrix schemaDefinitions,
-      final BeaconState state,
-      final Bytes32 parentRoot,
-      final ExecutionPayload executionPayload) {
-    final ExecutionPayloadHeader message =
-        schemaDefinitions
-            .getExecutionPayloadHeaderSchema()
-            .createExecutionPayloadHeader(
-                b ->
-                    b.parentBlockHash(() -> BeaconStateEip7732.required(state).getLatestBlockHash())
-                        .parentBlockRoot(() -> parentRoot)
-                        .blockHash(executionPayload.getBlockHash())
-                        .gasLimit(executionPayload.getGasLimit())
-                        .builderIndex(
-                            () ->
-                                UInt64.valueOf(spec.getBeaconProposerIndex(state, state.getSlot())))
-                        .slot(state::getSlot)
-                        // TODO: need the GetPayloadResponse
-                        .value(() -> UInt64.ZERO)
-                        // TODO: set the root from the kzg commitments
-                        .blobKzgCommitmentsRoot(() -> Bytes32.ZERO));
-    // TODO: need a real signature
-    return SchemaDefinitionsEip7732.required(schemaDefinitions)
-        .getSignedExecutionPayloadHeaderSchema()
-        .create(message, BLSSignature.empty());
-  }
-
-  // EIP7732 TODO: have to actually get the SignedBuilderBid (not sure of container changes for
-  // BuilderBid in ePBS)
-  @SuppressWarnings("unused")
-  private SignedExecutionPayloadHeader createBidFromBuilderBid(
-      final SchemaDefinitionsBellatrix schemaDefinitions, final BuilderBid builderBid) {
-    final ExecutionPayloadHeader message =
-        schemaDefinitions
-            .getExecutionPayloadHeaderSchema()
-            .createExecutionPayloadHeader(
-                b ->
-                    b.parentBlockHash(() -> Bytes32.ZERO)
-                        .parentBlockRoot(() -> Bytes32.ZERO)
-                        .blockHash(Bytes32.ZERO)
-                        .gasLimit(UInt64.ZERO)
-                        .builderIndex(() -> UInt64.ZERO)
-                        .slot(() -> UInt64.ZERO)
-                        .value(() -> UInt64.ZERO)
-                        .blobKzgCommitmentsRoot(() -> Bytes32.ZERO));
-    return SchemaDefinitionsEip7732.required(schemaDefinitions)
-        .getSignedExecutionPayloadHeaderSchema()
-        .create(message, BLSSignature.empty());
   }
 
   private SafeFuture<Void> setKzgCommitments(
@@ -399,10 +323,6 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsKzgCommitments()) {
-      return SafeFuture.COMPLETE;
-    }
-    // ePBS (no blob kzg commitments in block)
-    if (bodyBuilder.supportsSignedExecutionPayloadHeader()) {
       return SafeFuture.COMPLETE;
     }
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =

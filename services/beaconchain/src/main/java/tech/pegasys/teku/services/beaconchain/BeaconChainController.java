@@ -760,6 +760,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new ExecutionPayloadHeaderValidator(spec, gossipValidationHelper, recentChainData);
 
     executionPayloadHeaderPool = new ExecutionPayloadHeaderPool(validator);
+
+    eventChannels.subscribe(SlotEventsChannel.class, executionPayloadHeaderPool);
     blockImporter.subscribeToVerifiedExecutionPayloadHeader(executionPayloadHeaderPool::remove);
   }
 
@@ -953,7 +955,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayerBlockProductionManager);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
     final ExecutionPayloadHeaderFactory executionPayloadHeaderFactory =
-        new ExecutionPayloadHeaderFactory(spec, executionLayerBlockProductionManager);
+        new ExecutionPayloadHeaderFactory(
+            spec, forkChoiceNotifier, executionLayerBlockProductionManager);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)

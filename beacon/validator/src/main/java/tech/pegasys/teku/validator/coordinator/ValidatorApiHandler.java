@@ -401,18 +401,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    // Not sure the best state to use
-    final Optional<SafeFuture<BeaconState>> maybeBestState = combinedChainDataClient.getBestState();
-    if (maybeBestState.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    return maybeBestState
-        .get()
+    return combinedChainDataClient
+        .getStateForBlockProduction(slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled())
         .thenCompose(
-            state ->
-                executionPayloadHeaderFactory
-                    .createUnsignedHeader(state, slot, builderPublicKey)
-                    .thenApply(Optional::of));
+            maybeSlotState -> {
+              if (maybeSlotState.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final BeaconState slotState = maybeSlotState.get();
+              final Bytes32 parentRoot = spec.getBlockRootAtSlot(slotState, slot.decrement());
+              return executionPayloadHeaderFactory
+                  .createUnsignedHeader(slotState, slot, parentRoot, builderPublicKey)
+                  .thenApply(Optional::of);
+            });
   }
 
   @Override
