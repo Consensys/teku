@@ -77,7 +77,10 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+              // in ePBS, the builder publishes the blob sidecars later in the slot
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+                registeredPublishers.put(milestone, blockPublisherPhase0);
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredPublishers.put(milestone, blockAndBlobSidecarsPublisherSupplier.get());
               } else {
                 registeredPublishers.put(milestone, blockPublisherPhase0);

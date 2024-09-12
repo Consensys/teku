@@ -59,6 +59,11 @@ public class ExecutionPayloadResult {
     return executionPayloadContext;
   }
 
+  public SafeFuture<GetPayloadResponse> getLocalPayloadResponseRequired() {
+    return getPayloadResponseFuture.orElseThrow(
+        () -> new IllegalStateException("GetPayloadResponse is not available in " + this));
+  }
+
   public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFutureFromLocalFlow() {
     return getPayloadResponseFuture.map(
         getPayloadResponse ->

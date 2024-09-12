@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -67,6 +68,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -95,6 +98,8 @@ public class ValidatorApiHandlerIntegrationTest {
   // Other dependencies are mocked, but these can be updated as needed
   private final SyncStateProvider syncStateProvider = mock(SyncStateTracker.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
+  private final ExecutionPayloadHeaderFactory executionPayloadHeaderFactory =
+      mock(ExecutionPayloadHeaderFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final PayloadAttestationManager payloadAttestationManager =
@@ -110,6 +115,8 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(BlockBlobSidecarsTrackersPool.class);
   private final BlobSidecarGossipChannel blobSidecarGossipChannel =
       mock(BlobSidecarGossipChannel.class);
+  private final ExecutionPayloadGossipChannel executionPayloadGossipChannel =
+      mock(ExecutionPayloadGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
@@ -123,6 +130,10 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
+  private final ExecutionPayloadHeaderPool executionPayloadHeaderPool =
+      mock(ExecutionPayloadHeaderPool.class);
+  private final ExecutionPayloadManager executionPayloadManager =
+      mock(ExecutionPayloadManager.class);
 
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
 
