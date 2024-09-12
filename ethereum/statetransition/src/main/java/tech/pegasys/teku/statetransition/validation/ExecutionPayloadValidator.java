@@ -47,10 +47,7 @@ public class ExecutionPayloadValidator implements ReceivedBlockEventsChannel {
   private final Set<BlockRootAndBuilderIndex> receivedValidEnvelopeInfoSet =
       LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
 
-  public ExecutionPayloadValidator(
-      final Spec spec,
-      final GossipValidationHelper gossipValidationHelper,
-      final RecentChainData recentChainData) {
+  public ExecutionPayloadValidator(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
   }

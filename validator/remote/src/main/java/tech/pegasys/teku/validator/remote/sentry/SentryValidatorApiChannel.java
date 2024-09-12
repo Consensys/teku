@@ -114,8 +114,9 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(final UInt64 slot) {
-    return blockHandlerChannel.orElse(dutiesProviderChannel).getHeader(slot);
+  public SafeFuture<Optional<ExecutionPayloadHeader>> getHeader(
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
+    return blockHandlerChannel.orElse(dutiesProviderChannel).getHeader(slot, builderPublicKey);
   }
 
   @Override
@@ -155,10 +156,10 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
-      final UInt64 slot, final Bytes32 parentBlockRoot) {
+      final UInt64 slot, final BLSPublicKey builderPublicKey) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .getExecutionPayloadEnvelope(slot, parentBlockRoot);
+        .getExecutionPayloadEnvelope(slot, builderPublicKey);
   }
 
   @Override
