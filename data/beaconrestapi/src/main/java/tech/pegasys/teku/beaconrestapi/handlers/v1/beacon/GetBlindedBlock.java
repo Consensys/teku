@@ -69,6 +69,7 @@ public class GetBlindedBlock extends RestApiEndpoint {
                 sszResponseType(),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

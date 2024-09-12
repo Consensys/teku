@@ -77,6 +77,7 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                 getResponseType(schemaDefinitionCache),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

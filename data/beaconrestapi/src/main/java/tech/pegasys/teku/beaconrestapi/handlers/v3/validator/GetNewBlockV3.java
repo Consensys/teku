@@ -102,6 +102,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             "Request successful",
             getResponseType(schemaDefinitionCache),
             blockContainerAndMetaDataSszResponseType())
+        .withChainDataResponses()
         .build();
   }
 

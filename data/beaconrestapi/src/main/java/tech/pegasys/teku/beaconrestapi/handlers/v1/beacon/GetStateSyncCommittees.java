@@ -78,6 +78,7 @@ public class GetStateSyncCommittees extends RestApiEndpoint {
             .queryParam(EPOCH_PARAMETER)
             .response(HttpStatusCodes.SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

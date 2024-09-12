@@ -70,6 +70,7 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
                 getResponseType(schemaDefinitionCache),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

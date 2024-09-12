@@ -68,6 +68,7 @@ public class GetBlockHeaders extends RestApiEndpoint {
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(PARENT_ROOT_PARAMETER)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
