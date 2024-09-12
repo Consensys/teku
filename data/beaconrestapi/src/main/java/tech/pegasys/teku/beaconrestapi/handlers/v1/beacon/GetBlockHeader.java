@@ -61,6 +61,7 @@ public class GetBlockHeader extends RestApiEndpoint {
             .pathParam(PARAMETER_BLOCK_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

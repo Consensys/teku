@@ -120,6 +120,7 @@ public class PostAttestationsV2 extends RestApiEndpoint {
             SC_BAD_REQUEST,
             "Errors with one or more attestations",
             ErrorListBadRequest.getJsonTypeDefinition())
+        .withChainDataResponses()
         .build();
   }
 }

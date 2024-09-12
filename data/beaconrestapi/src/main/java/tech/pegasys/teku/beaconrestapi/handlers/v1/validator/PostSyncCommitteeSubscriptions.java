@@ -50,6 +50,7 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(DeserializableTypeDefinition.listOf(SYNC_COMMITTEE_SUBSCRIPTION))
             .response(SC_OK, "Successful response")
+            .withChainDataResponses()
             .build());
     this.provider = validatorDataProvider;
   }
