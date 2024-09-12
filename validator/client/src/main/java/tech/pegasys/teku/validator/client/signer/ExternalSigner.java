@@ -281,7 +281,9 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
-      final ExecutionPayloadEnvelope executionPayloadEnvelope, final ForkInfo forkInfo) {
+      final UInt64 slot,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final ForkInfo forkInfo) {
     return SafeFuture.failedFuture(new UnsupportedOperationException("Not Yet Implemented"));
   }
 
