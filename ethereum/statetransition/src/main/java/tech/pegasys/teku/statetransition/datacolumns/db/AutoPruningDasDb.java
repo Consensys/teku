@@ -51,13 +51,17 @@ class AutoPruningDasDb extends AbstractDelegatingDasDb implements DataColumnSide
   }
 
   @Override
-  public void addSidecar(DataColumnSidecar sidecar) {
-    super.addSidecar(sidecar);
+  public SafeFuture<Void> addSidecar(DataColumnSidecar sidecar) {
+    SafeFuture<Void> addFuture = super.addSidecar(sidecar);
+    final SafeFuture<Void> pruneFuture;
     if (sidecar.getSlot().isGreaterThanOrEqualTo(nextPruneSlot)) {
       nextPruneSlot = sidecar.getSlot().plus(prunePeriod);
       UInt64 minCustodySlot = calculatePruneSlot(sidecar.getSlot());
-      delegate.pruneAllSidecars(minCustodySlot);
+      pruneFuture = delegate.pruneAllSidecars(minCustodySlot);
+    } else {
+      pruneFuture = SafeFuture.COMPLETE;
     }
+    return SafeFuture.allOf(addFuture, pruneFuture);
   }
 
   @Override

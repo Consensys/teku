@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 
 public interface UpdatableDataColumnSidecarCustody extends DataColumnSidecarCustody {
 
-  void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
+  SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
 
   AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns();
 }

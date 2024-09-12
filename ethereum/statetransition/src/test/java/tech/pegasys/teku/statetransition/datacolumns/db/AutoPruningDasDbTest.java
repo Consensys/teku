@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIde
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class AutoPruningDasDbTest {
   final Spec spec = TestSpecFactory.createMinimalEip7594();
   final DasCustodyStand das = DasCustodyStand.builder(spec).build();

@@ -32,5 +32,5 @@ interface DataColumnSidecarCoreDB {
   SafeFuture<List<DataColumnIdentifier>> getColumnIdentifiers(UInt64 slot);
 
   // update
-  void addSidecar(DataColumnSidecar sidecar);
+  SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);
 }

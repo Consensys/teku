@@ -44,7 +44,7 @@ abstract class AbstractDelegatingDasDb implements DataColumnSidecarCoreDB {
   }
 
   @Override
-  public void addSidecar(DataColumnSidecar sidecar) {
-    delegateDb.addSidecar(sidecar);
+  public SafeFuture<Void> addSidecar(DataColumnSidecar sidecar) {
+    return delegateDb.addSidecar(sidecar);
   }
 }

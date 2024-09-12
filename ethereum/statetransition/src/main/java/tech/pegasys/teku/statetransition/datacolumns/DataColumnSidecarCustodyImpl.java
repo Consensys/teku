@@ -127,14 +127,16 @@ public class DataColumnSidecarCustodyImpl
   }
 
   @Override
-  public void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
+  public SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
     if (isMyCustody(dataColumnSidecar.getSlot(), dataColumnSidecar.getIndex())) {
       final DataColumnIdentifier dataColumnIdentifier =
           DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
       knownSavedIdentifiers.put(
           dataColumnIdentifier,
           new ColumnSlotAndIdentifier(dataColumnSidecar.getSlot(), dataColumnIdentifier));
-      db.addSidecar(dataColumnSidecar);
+      return db.addSidecar(dataColumnSidecar);
+    } else {
+      return SafeFuture.COMPLETE;
     }
   }
 

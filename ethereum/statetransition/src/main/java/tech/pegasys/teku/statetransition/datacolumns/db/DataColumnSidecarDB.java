@@ -53,7 +53,7 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot);
 
   @Override
-  void addSidecar(DataColumnSidecar sidecar);
+  SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);
 
-  void pruneAllSidecars(UInt64 tillSlot);
+  SafeFuture<Void> pruneAllSidecars(UInt64 tillSlot);
 }

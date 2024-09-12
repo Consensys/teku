@@ -69,11 +69,12 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
-  public void addSidecar(DataColumnSidecar sidecar) {
+  public SafeFuture<Void> addSidecar(DataColumnSidecar sidecar) {
     dbWriteCounter.incrementAndGet();
     DataColumnIdentifier identifier = DataColumnIdentifier.createFromSidecar(sidecar);
     db.put(identifier, sidecar);
     slotIds.computeIfAbsent(sidecar.getSlot(), __ -> new HashSet<>()).add(identifier);
+    return SafeFuture.COMPLETE;
   }
 
   @Override
@@ -95,11 +96,12 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
-  public void pruneAllSidecars(UInt64 tillSlot) {
+  public SafeFuture<Void> pruneAllSidecars(UInt64 tillSlot) {
     dbWriteCounter.incrementAndGet();
     SortedMap<UInt64, Set<DataColumnIdentifier>> slotsToPrune = slotIds.headMap(tillSlot);
     slotsToPrune.values().stream().flatMap(Collection::stream).forEach(db::remove);
     slotsToPrune.clear();
+    return SafeFuture.COMPLETE;
   }
 
   public AtomicLong getDbReadCounter() {

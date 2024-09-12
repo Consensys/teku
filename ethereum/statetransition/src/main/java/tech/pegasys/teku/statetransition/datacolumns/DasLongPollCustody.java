@@ -60,14 +60,19 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody {
   }
 
   @Override
-  public void onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
+  public SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
     knownSavedIdentifiers.add(DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
-    delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar);
-    final List<SafeFuture<DataColumnSidecar>> pendingRequests =
-        this.pendingRequests.remove(DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
-    for (SafeFuture<DataColumnSidecar> pendingRequest : pendingRequests) {
-      pendingRequest.complete(dataColumnSidecar);
-    }
+    return delegate
+        .onNewValidatedDataColumnSidecar(dataColumnSidecar)
+        .thenRun(
+            () -> {
+              final List<SafeFuture<DataColumnSidecar>> pendingRequests =
+                  this.pendingRequests.remove(
+                      DataColumnIdentifier.createFromSidecar(dataColumnSidecar));
+              for (SafeFuture<DataColumnSidecar> pendingRequest : pendingRequests) {
+                pendingRequest.complete(dataColumnSidecar);
+              }
+            });
   }
 
   @Override

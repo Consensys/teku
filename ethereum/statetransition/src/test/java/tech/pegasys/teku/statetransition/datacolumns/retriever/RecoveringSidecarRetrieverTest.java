@@ -44,6 +44,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSlotAndIdentifier
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class RecoveringSidecarRetrieverTest {
 
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();

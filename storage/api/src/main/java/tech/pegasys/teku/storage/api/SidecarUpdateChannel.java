@@ -13,20 +13,21 @@
 
 package tech.pegasys.teku.storage.api;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 
-public interface SidecarUpdateChannel extends VoidReturningChannelInterface {
+public interface SidecarUpdateChannel extends ChannelInterface {
 
   // TODO: as it's pushed separately from sidecars, an eventual consistency could occur.
   //  Clarify that it's safe
-  void onFirstCustodyIncompleteSlot(UInt64 slot);
+  SafeFuture<Void> onFirstCustodyIncompleteSlot(UInt64 slot);
 
-  void onFirstSamplerIncompleteSlot(UInt64 slot);
+  SafeFuture<Void> onFirstSamplerIncompleteSlot(UInt64 slot);
 
-  void onNewSidecar(DataColumnSidecar sidecar);
+  SafeFuture<Void> onNewSidecar(DataColumnSidecar sidecar);
 
   // TODO: Make a dedicated pruner instead
-  void onSidecarsAvailabilitySlot(UInt64 earliestSlotRequired);
+  SafeFuture<Void> onSidecarsAvailabilitySlot(UInt64 earliestSlotRequired);
 }

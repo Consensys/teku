@@ -412,22 +412,23 @@ public class ChainStorage
   }
 
   @Override
-  public void onFirstCustodyIncompleteSlot(final UInt64 slot) {
-    database.setFirstCustodyIncompleteSlot(slot);
+  public SafeFuture<Void> onFirstCustodyIncompleteSlot(final UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.setFirstCustodyIncompleteSlot(slot));
   }
 
   @Override
-  public void onFirstSamplerIncompleteSlot(final UInt64 slot) {
-    database.setFirstSamplerIncompleteSlot(slot);
+  public SafeFuture<Void> onFirstSamplerIncompleteSlot(final UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.setFirstSamplerIncompleteSlot(slot));
   }
 
   @Override
-  public void onNewSidecar(final DataColumnSidecar sidecar) {
-    database.addSidecar(sidecar);
+  public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
+    return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
   }
 
   @Override
-  public void onSidecarsAvailabilitySlot(final UInt64 earliestSlotRequired) {
-    database.pruneAllSidecars(earliestSlotRequired.minusMinZero(1));
+  public SafeFuture<Void> onSidecarsAvailabilitySlot(final UInt64 earliestSlotRequired) {
+    return SafeFuture.fromRunnable(
+        () -> database.pruneAllSidecars(earliestSlotRequired.minusMinZero(1)));
   }
 }

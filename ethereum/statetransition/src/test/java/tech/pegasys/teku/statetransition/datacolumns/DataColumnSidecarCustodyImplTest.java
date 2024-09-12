@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
+@SuppressWarnings({"JavaCase", "FutureReturnValueIgnored"})
 public class DataColumnSidecarCustodyImplTest {
 
   final Spec spec = TestSpecFactory.createMinimalEip7594();
@@ -58,7 +59,6 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
-  @SuppressWarnings("JavaCase")
   void sanityTest() throws Throwable {
     DataColumnSidecarCustodyImpl custody =
         new DataColumnSidecarCustodyImpl(
