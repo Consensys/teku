@@ -61,11 +61,6 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   @Override
-  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-    return Optional.ofNullable(executionResultCache.get(slot));
-  }
-
-  @Override
   public ExecutionPayloadResult initiateBlockProduction(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
@@ -82,6 +77,11 @@ public class ExecutionLayerBlockProductionManagerImpl
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
+  }
+
+  @Override
+  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
+    return Optional.ofNullable(executionResultCache.get(slot));
   }
 
   @Override

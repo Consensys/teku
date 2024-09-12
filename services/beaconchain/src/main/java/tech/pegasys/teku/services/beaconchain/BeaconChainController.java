@@ -78,6 +78,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -205,6 +206,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadHeaderFactory;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
@@ -768,6 +770,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new ExecutionPayloadHeaderValidator(spec, gossipValidationHelper, recentChainData);
 
     executionPayloadHeaderPool = new ExecutionPayloadHeaderPool(validator);
+
+    eventChannels.subscribe(SlotEventsChannel.class, executionPayloadHeaderPool);
     blockImporter.subscribeToVerifiedExecutionPayloadHeader(executionPayloadHeaderPool::remove);
   }
 
@@ -960,6 +964,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceNotifier,
             executionLayerBlockProductionManager);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
+    final ExecutionPayloadHeaderFactory executionPayloadHeaderFactory =
+        new ExecutionPayloadHeaderFactory(
+            spec, forkChoiceNotifier, executionLayerBlockProductionManager);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -973,6 +980,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
       blobSidecarGossipChannel = eventChannels.getPublisher(BlobSidecarGossipChannel.class);
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
+    }
+    final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
+      executionPayloadGossipChannel =
+          eventChannels.getPublisher(ExecutionPayloadGossipChannel.class);
+    } else {
+      executionPayloadGossipChannel = ExecutionPayloadGossipChannel.NOOP;
     }
 
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
@@ -993,10 +1007,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             combinedChainDataClient,
             syncService,
             blockFactory,
+            executionPayloadHeaderFactory,
             blockImportChannel,
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
+            executionPayloadGossipChannel,
             attestationPool,
             attestationManager,
             payloadAttestationManager,
@@ -1010,6 +1026,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            executionPayloadHeaderPool,
+            executionPayloadManager,
             blockProductionPerformanceFactory);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
@@ -1317,7 +1335,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initExecutionPayloadManager() {
     LOG.debug("BeaconChainController.initExecutionPayloadManager()");
     final ExecutionPayloadValidator executionPayloadValidator =
-        new ExecutionPayloadValidator(spec, gossipValidationHelper, recentChainData);
+        new ExecutionPayloadValidator(spec, recentChainData);
     executionPayloadManager =
         new ExecutionPayloadManager(
             executionPayloadValidator, forkChoice, recentChainData, executionLayer);
