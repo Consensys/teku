@@ -110,7 +110,9 @@ public abstract class NoOpSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
-      ExecutionPayloadEnvelope executionPayloadEnvelope, ForkInfo forkInfo) {
+      final UInt64 slot,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }
 
