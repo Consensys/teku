@@ -428,6 +428,11 @@ public class Eth2NetworkConfiguration {
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
+                        if (trustedSetup.isEmpty()) {
+                          LOG.warn(
+                              "Setting a default for trusted setup as nothing was set explicitly");
+                          trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME);
+                        }
                       });
                   builder.electraBuilder(
                       electraBuilder ->

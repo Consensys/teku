@@ -120,8 +120,7 @@ public class EphemeryNetworkTest {
         getSpec(phase0Builder -> phase0Builder.minGenesisTime(UInt64.valueOf(MIN_GENESIS_TIME)));
 
     final long preGenesisTime = MIN_GENESIS_TIME - ONE_PERIOD;
-    final StubTimeProvider stubTimeProvider =
-        StubTimeProvider.withTimeInSeconds(preGenesisTime);
+    final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(preGenesisTime);
     EphemeryNetwork.updateConfig(builder, stubTimeProvider);
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("MIN_GENESIS_TIME"))
