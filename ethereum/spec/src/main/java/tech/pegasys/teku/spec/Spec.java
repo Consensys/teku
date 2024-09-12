@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -110,7 +110,7 @@ public class Spec {
 
   private Spec(
       final Map<SpecMilestone, SpecVersion> specVersions, final ForkSchedule forkSchedule) {
-    Preconditions.checkArgument(specVersions != null && specVersions.size() > 0);
+    Preconditions.checkArgument(specVersions != null && !specVersions.isEmpty());
     Preconditions.checkArgument(forkSchedule != null);
     this.specVersions = specVersions;
     this.forkSchedule = forkSchedule;
@@ -120,7 +120,7 @@ public class Spec {
   }
 
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
-    final Map<SpecMilestone, SpecVersion> specVersions = new HashMap<>();
+    final Map<SpecMilestone, SpecVersion> specVersions = new EnumMap<>(SpecMilestone.class);
     final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
 
     for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
