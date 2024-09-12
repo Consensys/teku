@@ -400,7 +400,10 @@ public class Eth2NetworkConfiguration {
             SpecFactory.create(
                 constants,
                 builder -> {
-                  EphemeryNetwork.updateConfig(builder);
+                  // Ephemery network field change periodically, update to current
+                  if (constants.equals(EPHEMERY.configName())) {
+                    EphemeryNetwork.updateConfig(builder);
+                  }
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(
