@@ -143,15 +143,16 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForExecutionPayloadEnvelope(
-      final ExecutionPayloadEnvelope executionPayloadEnvelope, final ForkInfo forkInfo) {
-    final SpecVersion specVersion =
-        spec.forMilestone(executionPayloadEnvelope.getPayload().getMilestone());
-    final MiscHelpers miscHelpers = specVersion.miscHelpers();
+      final UInt64 slot,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atSlot(slot);
     final Bytes32 domain =
-        miscHelpers.computeDomain(
+        spec.getDomain(
             Domain.BEACON_BUILDER,
-            forkInfo.getFork().getCurrentVersion(),
+            spec.computeEpochAtSlot(slot),
+            forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return miscHelpers.computeSigningRoot(executionPayloadEnvelope, domain);
+    return specVersion.miscHelpers().computeSigningRoot(executionPayloadEnvelope, domain);
   }
 }
