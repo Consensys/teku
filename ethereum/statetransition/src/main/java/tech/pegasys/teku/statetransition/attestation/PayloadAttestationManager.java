@@ -39,20 +39,20 @@ public class PayloadAttestationManager implements SlotEventsChannel, ReceivedBlo
   private final ForkChoice forkChoice;
 
   private final PayloadAttestationPool payloadAttestationPool;
-  private final PendingPool<PayloadAttestationMessage> pendingAttestations;
-  private final FutureItems<PayloadAttestationMessage> futureAttestations;
+  private final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations;
+  private final FutureItems<PayloadAttestationMessage> futurePayloadAttestations;
 
   public PayloadAttestationManager(
       final PayloadAttestationValidator payloadAttestationValidator,
       final ForkChoice forkChoice,
       final PayloadAttestationPool payloadAttestationPool,
-      final PendingPool<PayloadAttestationMessage> pendingAttestations,
-      final FutureItems<PayloadAttestationMessage> futureAttestations) {
+      final PendingPool<PayloadAttestationMessage> pendingPayloadAttestations,
+      final FutureItems<PayloadAttestationMessage> futurePayloadAttestations) {
     this.payloadAttestationValidator = payloadAttestationValidator;
     this.forkChoice = forkChoice;
     this.payloadAttestationPool = payloadAttestationPool;
-    this.pendingAttestations = pendingAttestations;
-    this.futureAttestations = futureAttestations;
+    this.pendingPayloadAttestations = pendingPayloadAttestations;
+    this.futurePayloadAttestations = futurePayloadAttestations;
   }
 
   public SafeFuture<InternalValidationResult> addPayloadAttestation(
@@ -106,14 +106,14 @@ public class PayloadAttestationManager implements SlotEventsChannel, ReceivedBlo
                   LOG.trace(
                       "Deferring payload attestation {} as required block is not yet present",
                       payloadAttestationMessage::hashTreeRoot);
-                  pendingAttestations.add(payloadAttestationMessage);
+                  pendingPayloadAttestations.add(payloadAttestationMessage);
                   break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(
                       "Deferring payload attestation {} until a future slot",
                       payloadAttestationMessage::hashTreeRoot);
                   payloadAttestationPool.add(payloadAttestationMessage);
-                  futureAttestations.add(payloadAttestationMessage);
+                  futurePayloadAttestations.add(payloadAttestationMessage);
                   break;
                 case DEFER_FORK_CHOICE_PROCESSING, INVALID:
                   break;
@@ -127,13 +127,14 @@ public class PayloadAttestationManager implements SlotEventsChannel, ReceivedBlo
 
   @Override
   public void onSlot(final UInt64 slot) {
-    pendingAttestations.onSlot(slot);
+    pendingPayloadAttestations.onSlot(slot);
     applyFutureAttestations(slot);
   }
 
   private void applyFutureAttestations(final UInt64 slot) {
-    futureAttestations.onSlot(slot);
-    final List<PayloadAttestationMessage> payloadAttestations = futureAttestations.prune(slot);
+    futurePayloadAttestations.onSlot(slot);
+    final List<PayloadAttestationMessage> payloadAttestations =
+        futurePayloadAttestations.prune(slot);
     if (payloadAttestations.isEmpty()) {
       return;
     }
@@ -148,11 +149,11 @@ public class PayloadAttestationManager implements SlotEventsChannel, ReceivedBlo
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
-    pendingAttestations
+    pendingPayloadAttestations
         .getItemsDependingOn(blockRoot, false)
         .forEach(
             payloadAttestationMessage -> {
-              pendingAttestations.remove(payloadAttestationMessage);
+              pendingPayloadAttestations.remove(payloadAttestationMessage);
               onPayloadAttestationMessage(payloadAttestationMessage)
                   .finish(
                       err ->
