@@ -199,8 +199,8 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     return schemaGetterList;
   }
 
-  private static List<SerializableTypeDefinition<?>> getHeaders(){
-     List<SerializableTypeDefinition<?>> headers = new ArrayList<>();
+  private static List<SerializableTypeDefinition<?>> getHeaders() {
+    List<SerializableTypeDefinition<?>> headers = new ArrayList<>();
     headers.add(ETH_CONSENSUS_HEADER_TYPE);
     headers.add(ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE);
     headers.add(ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE);
