@@ -79,13 +79,13 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 public class BlockOperationSelectorFactory {
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
+  private final PayloadAttestationPool payloadAttestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final OperationPool<ProposerSlashing> proposerSlashingPool;
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool contributionPool;
   private final ExecutionPayloadHeaderPool executionPayloadHeaderPool;
-  private final PayloadAttestationPool payloadAttestationPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final GraffitiBuilder graffitiBuilder;
@@ -109,13 +109,13 @@ public class BlockOperationSelectorFactory {
       final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.spec = spec;
     this.attestationPool = attestationPool;
+    this.payloadAttestationPool = payloadAttestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
     this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.contributionPool = contributionPool;
     this.executionPayloadHeaderPool = executionPayloadHeaderPool;
-    this.payloadAttestationPool = payloadAttestationPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffitiBuilder = graffitiBuilder;
