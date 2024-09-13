@@ -81,6 +81,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
             getSszResponseType(),
             ETH_CONSENSUS_HEADER_TYPE)
         .withNotFoundResponse()
+        .withChainDataResponses()
         .build();
   }
 

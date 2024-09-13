@@ -18,10 +18,10 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -44,8 +44,8 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 
 public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpcMethodsResolver {
 
-  private final Map<SpecMilestone, Map<EngineApiMethod, EngineJsonRpcMethod<?>>>
-      methodsByMilestone = new TreeMap<>();
+  private final EnumMap<SpecMilestone, Map<EngineApiMethod, EngineJsonRpcMethod<?>>>
+      methodsByMilestone = new EnumMap<>(SpecMilestone.class);
 
   private final Spec spec;
   private final ExecutionEngineClient executionEngineClient;

@@ -48,7 +48,7 @@
               "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
             }, {
               "$ref" : "#/components/schemas/SignedBlindedBlockElectra"
-            }  ]
+            } ]
           }
         }
       }
@@ -91,6 +91,10 @@
             }
           }
         }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "500" : {
         "description" : "Internal server error",

@@ -47,6 +47,7 @@ public class GetGenesis extends RestApiEndpoint {
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Request successful", GET_GENESIS_API_DATA_TYPE)
             .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

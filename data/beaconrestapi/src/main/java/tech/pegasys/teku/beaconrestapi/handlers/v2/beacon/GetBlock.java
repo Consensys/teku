@@ -65,6 +65,7 @@ public class GetBlock extends RestApiEndpoint {
                 getResponseType(schemaDefinitionCache),
                 sszResponseType())
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
