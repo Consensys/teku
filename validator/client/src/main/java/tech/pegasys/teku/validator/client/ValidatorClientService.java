@@ -158,135 +158,119 @@ public class ValidatorClientService extends Service {
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
-    final Optional<GraffitiManager> graffitiManager =
-        Optional.ofNullable(
-            validatorApiConfig.isRestApiEnabled()
-                ? new GraffitiManager(services.getDataDirLayout())
-                : null);
+
+    final Optional<GraffitiManager> graffitiManager = Optional.ofNullable(
+            validatorApiConfig.isRestApiEnabled() ? new GraffitiManager(services.getDataDirLayout()) : null);
+
     final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider =
-        (publicKey) -> graffitiManager.flatMap(manager -> manager.getGraffiti(publicKey));
+            (publicKey) -> graffitiManager.flatMap(manager -> manager.getGraffiti(publicKey));
 
     final ValidatorLoader validatorLoader =
         createValidatorLoader(services, config, asyncRunner, updatableGraffitiProvider);
-    final ValidatorStatusProvider validatorStatusProvider =
-        new OwnedValidatorStatusProvider(
-            services.getMetricsSystem(),
-            validatorLoader.getOwnedValidators(),
-            validatorApiChannel,
-            config.getSpec(),
-            asyncRunner);
+
+    final ValidatorStatusProvider validatorStatusProvider = new OwnedValidatorStatusProvider(
+                                                                              services.getMetricsSystem(),
+                                                                              validatorLoader.getOwnedValidators(),
+                                                                              validatorApiChannel,
+                                                                              config.getSpec(),
+                                                                              asyncRunner);
+
     final Optional<ProposerConfigManager> proposerConfigManager;
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
     Optional<ValidatorRegistrator> validatorRegistrator = Optional.empty();
+
     if (config.getSpec().isMilestoneSupported(SpecMilestone.BELLATRIX)) {
 
-      final ProposerConfigProvider proposerConfigProvider =
-          ProposerConfigProvider.create(
-              asyncRunner,
-              validatorConfig.getRefreshProposerConfigFromSource(),
-              new ProposerConfigLoader(new ObjectMapper()),
-              services.getTimeProvider(),
-              validatorConfig.getProposerConfigSource());
+      final ProposerConfigProvider proposerConfigProvider = ProposerConfigProvider.create(
+                                                                                asyncRunner,
+                                                                                validatorConfig.getRefreshProposerConfigFromSource(),
+                                                                                new ProposerConfigLoader(new ObjectMapper()),
+                                                                                services.getTimeProvider(),
+                                                                                validatorConfig.getProposerConfigSource());
 
-      proposerConfigManager =
-          Optional.of(
-              new ProposerConfigManager(
-                  validatorConfig,
-                  new RuntimeProposerConfig(
-                      Optional.of(
-                          ValidatorClientService.getKeyManagerPath(services.getDataDirLayout())
-                              .resolve("api-proposer-config.json"))),
-                  proposerConfigProvider));
+      proposerConfigManager = Optional.of(new ProposerConfigManager(
+                                                      validatorConfig,
+                                                      new RuntimeProposerConfig(Optional.of(ValidatorClientService.getKeyManagerPath(services.getDataDirLayout()).resolve("api-proposer-config.json"))),
+                                                      proposerConfigProvider));
 
-      beaconProposerPreparer =
-          Optional.of(
-              new BeaconProposerPreparer(
-                  validatorApiChannel,
-                  Optional.empty(),
-                  proposerConfigManager.get(),
-                  config.getSpec()));
-      final ValidatorRegistrator validatorRegistratorImpl =
-          new ValidatorRegistrator(
-              config.getSpec(),
-              validatorLoader.getOwnedValidators(),
-              proposerConfigManager.get(),
-              new SignedValidatorRegistrationFactory(
-                  proposerConfigManager.get(), services.getTimeProvider()),
-              validatorApiChannel,
-              validatorConfig.getBuilderRegistrationSendingBatchSize(),
-              asyncRunner);
-      validatorStatusProvider.subscribeValidatorStatusesUpdates(
-          validatorRegistratorImpl::onUpdatedValidatorStatuses);
+      beaconProposerPreparer = Optional.of(new BeaconProposerPreparer(
+                                                      validatorApiChannel,
+                                                      Optional.empty(),
+                                                      proposerConfigManager.get(),
+                                                      config.getSpec()));
+
+      final ValidatorRegistrator validatorRegistratorImpl = new ValidatorRegistrator(
+                                                      config.getSpec(),
+                                                      validatorLoader.getOwnedValidators(),
+                                                      proposerConfigManager.get(),
+                                                      new SignedValidatorRegistrationFactory(proposerConfigManager.get(), services.getTimeProvider()),
+                                                      validatorApiChannel,
+                                                      validatorConfig.getBuilderRegistrationSendingBatchSize(),
+                                                      asyncRunner);
+
+      validatorStatusProvider.subscribeValidatorStatusesUpdates(validatorRegistratorImpl::onUpdatedValidatorStatuses);
       validatorRegistrator = Optional.of(validatorRegistratorImpl);
+
     } else {
       proposerConfigManager = Optional.empty();
     }
 
-    final ValidatorClientService validatorClientService =
-        new ValidatorClientService(
-            eventChannels,
-            validatorLoader,
-            beaconNodeApi,
-            forkProvider,
-            validatorStatusProvider,
-            proposerConfigManager,
-            beaconProposerPreparer,
-            validatorRegistrator,
-            config.getSpec(),
-            services.getMetricsSystem(),
-            doppelgangerDetectionAction,
-            maybeValidatorSlashedAction);
+    final ValidatorClientService validatorClientService = new ValidatorClientService(
+                                                                            eventChannels,
+                                                                            validatorLoader,
+                                                                            beaconNodeApi,
+                                                                            forkProvider,
+                                                                            validatorStatusProvider,
+                                                                            proposerConfigManager,
+                                                                            beaconProposerPreparer,
+                                                                            validatorRegistrator,
+                                                                            config.getSpec(),
+                                                                            services.getMetricsSystem(),
+                                                                            doppelgangerDetectionAction,
+                                                                            maybeValidatorSlashedAction);
 
     asyncRunner
-        .runAsync(
-            () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
-        .thenCompose(
-            __ -> {
-              checkNoKeysLoaded(validatorConfig, validatorLoader);
+        .runAsync(() -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
+        .thenCompose(__ -> {
+          checkNoKeysLoaded(validatorConfig, validatorLoader);
 
-              if (validatorConfig.isDoppelgangerDetectionEnabled()) {
-                validatorClientService.initializeDoppelgangerDetector(
-                    asyncRunner,
-                    validatorApiChannel,
-                    validatorClientService.spec,
-                    services.getTimeProvider(),
-                    genesisDataProvider);
-              }
-              return SafeFuture.COMPLETE;
-            })
-        .thenCompose(
-            __ -> {
-              if (validatorApiConfig.isRestApiEnabled()) {
-                validatorClientService.initializeValidatorRestApi(
-                    validatorApiConfig,
-                    validatorApiChannel,
-                    genesisDataProvider,
-                    proposerConfigManager,
-                    new OwnedKeyManager(
-                        validatorLoader,
-                        services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
-                    services.getDataDirLayout(),
-                    services.getTimeProvider(),
-                    validatorClientService.maybeDoppelgangerDetector,
-                    graffitiManager.orElseThrow());
-              } else {
-                LOG.info("validator-api-enabled is false, not starting rest api.");
-              }
-              return SafeFuture.COMPLETE;
-            })
-        .thenCompose(
-            __ -> {
-              asyncRunner
-                  .runAsync(
-                      () ->
-                          validatorClientService.scheduleValidatorsDuties(
-                              config, validatorApiChannel, asyncRunner))
-                  .propagateTo(validatorClientService.initializationComplete);
-              return SafeFuture.COMPLETE;
-            })
-        .exceptionally(
-            error -> {
-              ExceptionUtil.getCause(error, InvalidConfigurationException.class)
+          if (validatorConfig.isDoppelgangerDetectionEnabled()) {
+            validatorClientService.initializeDoppelgangerDetector(
+                                                          asyncRunner,
+                                                          validatorApiChannel,
+                                                          validatorClientService.spec,
+                                                          services.getTimeProvider(),
+                                                          genesisDataProvider);
+          }
+          return SafeFuture.COMPLETE;
+        })
+        .thenCompose(__ -> {
+          if (validatorApiConfig.isRestApiEnabled()) {
+            validatorClientService.initializeValidatorRestApi(
+                                                          validatorApiConfig,
+                                                          validatorApiChannel,
+                                                          genesisDataProvider,
+                                                          proposerConfigManager,
+                                                          new OwnedKeyManager(
+                                                              validatorLoader,
+                                                              services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
+                                                          services.getDataDirLayout(),
+                                                          services.getTimeProvider(),
+                                                          validatorClientService.maybeDoppelgangerDetector,
+                                                          graffitiManager.orElseThrow());
+          } else {
+            LOG.info("validator-api-enabled is false, not starting rest api.");
+          }
+          return SafeFuture.COMPLETE;
+        })
+        .thenCompose(__ -> {
+          asyncRunner.runAsync(
+                  () -> validatorClientService.scheduleValidatorsDuties(config, validatorApiChannel, asyncRunner)
+          ).propagateTo(validatorClientService.initializationComplete);
+          return SafeFuture.COMPLETE;
+        })
+        .exceptionally(error -> {
+          ExceptionUtil.getCause(error, InvalidConfigurationException.class)
                   .ifPresentOrElse(
                       cause -> STATUS_LOG.failedToLoadValidatorKey(cause.getMessage()),
                       () -> {
@@ -295,7 +279,8 @@ public class ValidatorClientService extends Service {
                         LOG.error(
                             "An error was encountered during validator client service start up.",
                             error);
-                      });
+                      }
+                  );
               // an unhandled exception getting this far means any number of above steps failed to
               // complete,
               // which is fatal, we don't know how to recover at this point, regardless of if we're
