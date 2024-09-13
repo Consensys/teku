@@ -162,6 +162,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final ExecutionPayloadHeaderPool executionPayloadHeaderPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+  private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer;
   private final ExecutionPayloadPublisher executionPayloadPublisher;
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
@@ -193,6 +194,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final ExecutionPayloadHeaderPool executionPayloadHeaderPool,
       final ExecutionPayloadManager executionPayloadManager,
+      final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory) {
     this.blockProductionAndPublishingPerformanceFactory =
@@ -229,7 +231,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             performanceTracker,
             dutyMetrics);
     this.executionPayloadPublisher =
-        new ExecutionPayloadPublisher(executionPayloadManager, executionPayloadGossipChannel);
+        new ExecutionPayloadPublisher(
+            executionPayloadManager,
+            blockBlobSidecarsTrackersPool,
+            executionPayloadGossipChannel,
+            executionPayloadAndBlobSidecarsRevealer,
+            blobSidecarGossipChannel);
+    this.executionPayloadAndBlobSidecarsRevealer = executionPayloadAndBlobSidecarsRevealer;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
@@ -661,7 +669,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
       final UInt64 slot, final BLSPublicKey builderPublicKey) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+    return combinedChainDataClient
+        .getBlockAtSlotExact(slot)
+        .thenCombine(
+            combinedChainDataClient.getStateAtSlotExact(slot),
+            (maybeBlock, maybeState) -> {
+              if (maybeBlock.isEmpty() || maybeState.isEmpty()) {
+                return Optional.empty();
+              }
+              return executionPayloadAndBlobSidecarsRevealer.revealExecutionPayload(
+                  maybeBlock.get(), maybeState.get());
+            });
   }
 
   @Override
@@ -834,8 +852,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Void> sendSignedExecutionPayloadEnvelope(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
-    return executionPayloadPublisher
-        .sendExecutionPayload(signedExecutionPayloadEnvelope)
+    final Bytes32 blockRoot = signedExecutionPayloadEnvelope.getMessage().getBeaconBlockRoot();
+    return combinedChainDataClient
+        .getBlockByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeBlock -> {
+              if (maybeBlock.isEmpty()) {
+                return SafeFuture.failedFuture(
+                    new IllegalArgumentException(
+                        "There is no block available with root " + blockRoot));
+              }
+              return executionPayloadPublisher.sendExecutionPayload(
+                  maybeBlock.get(), signedExecutionPayloadEnvelope);
+            })
         .thenAccept(
             result -> {
               if (result.isNotProcessable()) {
