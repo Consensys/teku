@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -57,6 +58,20 @@ public interface BlobSidecarManager {
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
           return BlobSidecarsAndValidationResult.NOT_REQUIRED;
         }
+
+        @Override
+        public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
+            final SignedBeaconBlock block,
+            final SignedExecutionPayloadEnvelope executionPayloadEnvelope) {
+          return BlobSidecarsAvailabilityChecker.NOOP;
+        }
+
+        @Override
+        public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+            final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
+            final List<BlobSidecar> blobSidecars) {
+          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+        }
       };
 
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
@@ -72,6 +87,13 @@ public interface BlobSidecarManager {
 
   BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
       SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+
+  // ePBS
+  BlobSidecarsAvailabilityChecker createAvailabilityChecker(
+      SignedBeaconBlock block, SignedExecutionPayloadEnvelope executionPayloadEnvelope);
+
+  BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+      SignedExecutionPayloadEnvelope executionPayloadEnvelope, List<BlobSidecar> blobSidecars);
 
   interface ReceivedBlobSidecarListener {
     void onBlobSidecarReceived(BlobSidecar blobSidecar);
