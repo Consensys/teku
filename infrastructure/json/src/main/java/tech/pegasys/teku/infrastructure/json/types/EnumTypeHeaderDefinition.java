@@ -53,11 +53,13 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueT
 
   @Override
   public T deserialize(final JsonParser parser) throws IOException {
-    return null;
+    return deserializeFromString(parser.getValueAsString());
   }
 
   @Override
-  public void serialize(final T value, final JsonGenerator gen) throws IOException {}
+  public void serialize(final T value, final JsonGenerator gen) throws IOException {
+    gen.writeString(serializeToString(value));
+  }
 
   @Override
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
