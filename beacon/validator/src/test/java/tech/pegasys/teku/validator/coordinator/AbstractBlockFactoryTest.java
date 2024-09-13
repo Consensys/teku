@@ -101,6 +101,8 @@ public abstract class AbstractBlockFactoryTest {
 
   protected final AggregatingAttestationPool attestationsPool =
       mock(AggregatingAttestationPool.class);
+  protected final PayloadAttestationPool payloadAttestationPool =
+      mock(PayloadAttestationPool.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
@@ -113,8 +115,6 @@ public abstract class AbstractBlockFactoryTest {
       mock(SyncCommitteeContributionPool.class);
   protected final ExecutionPayloadHeaderPool executionPayloadHeaderPool =
       mock(ExecutionPayloadHeaderPool.class);
-  protected final PayloadAttestationPool payloadAttestationPool =
-      mock(PayloadAttestationPool.class);
   protected final DepositProvider depositProvider = mock(DepositProvider.class);
   protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
 

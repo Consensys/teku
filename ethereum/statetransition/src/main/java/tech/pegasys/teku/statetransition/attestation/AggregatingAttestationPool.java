@@ -200,8 +200,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     if (!dataHashesToRemove.isEmpty()) {
       LOG.trace(
           "firstValidAttestationSlot: {}, removing: {}",
-          () -> firstValidAttestationSlot,
-          dataHashesToRemove::size);
+          firstValidAttestationSlot.longValue(),
+          dataHashesToRemove.size());
     }
     dataHashesToRemove.clear();
   }
