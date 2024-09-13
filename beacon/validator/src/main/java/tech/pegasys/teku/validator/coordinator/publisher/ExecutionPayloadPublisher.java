@@ -48,7 +48,7 @@ public class ExecutionPayloadPublisher {
     final List<BlobSidecar> blobSidecars =
         executionPayloadAndBlobSidecarsRevealer.revealBlobSidecars(block);
     publishExecutionPayloadAndBlobSidecars(executionPayload, blobSidecars);
-    // EIP7732 TODO: import blob sidecars
+    // EIP7732 TODO: provide blobs for the execution payload before importing it
     return executionPayloadManager.validateAndImportExecutionPayload(
         executionPayload, Optional.empty());
   }
