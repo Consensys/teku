@@ -1264,7 +1264,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initPayloadAttestationPool() {
     LOG.debug("BeaconChainController.initPayloadAttestationPool()");
-    payloadAttestationPool = new PayloadAttestationPool(spec, metricsSystem);
+    payloadAttestationPool =
+        new PayloadAttestationPool(spec, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+    blockImporter.subscribeToVerifiedBlockPayloadAttestations(
+        payloadAttestationPool::onPayloadAttestationsIncludedInBlock);
   }
 
   public void initRestAPI() {

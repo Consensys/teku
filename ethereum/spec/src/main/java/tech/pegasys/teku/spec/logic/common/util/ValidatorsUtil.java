@@ -100,6 +100,33 @@ public class ValidatorsUtil {
     return assignmentMap;
   }
 
+  /**
+   * Return the slot during the requested epoch in which the validator with index `validator_index`
+   * is a member of the PTC. Returns None if no assignment is found.
+   *
+   * @param state the BeaconState.
+   * @param epoch either on or between previous or current epoch.
+   * @param validatorIndex the validator that is calling this function.
+   * @return Optional containing the slot if any, empty otherwise
+   */
+  public Optional<UInt64> getPtcAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+    checkArgument(epoch.compareTo(nextEpoch) <= 0, "get_ptc_assignment: Epoch number too high");
+
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    for (UInt64 slot = startSlot;
+        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
+        slot = slot.plus(UInt64.ONE)) {
+      final IntList ptcCommittee =
+          BeaconStateAccessorsEip7732.required(beaconStateAccessors).getPtc(state, slot);
+      if (ptcCommittee.contains(validatorIndex)) {
+        return Optional.of(slot);
+      }
+    }
+    return Optional.empty();
+  }
+
   public Int2ObjectMap<UInt64> getValidatorIndexToPctAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
     final Int2ObjectMap<UInt64> assignmentMap = new Int2ObjectArrayMap<>();

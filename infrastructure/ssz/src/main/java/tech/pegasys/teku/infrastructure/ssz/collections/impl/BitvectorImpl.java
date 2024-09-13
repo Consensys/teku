@@ -107,6 +107,10 @@ class BitvectorImpl {
     return data.cardinality();
   }
 
+  public boolean intersects(final BitvectorImpl other) {
+    return data.intersects(other.data);
+  }
+
   public boolean getBit(final int i) {
     checkElementIndex(i, size);
     return data.get(i);

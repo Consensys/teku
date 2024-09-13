@@ -48,6 +48,8 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit>, SszBi
   /** Returns the number of bits set to {@code true} in this {@code SszBitlist}. */
   int getBitCount();
 
+  boolean intersects(SszBitvector other);
+
   @Override
   default boolean isSet(final int i) {
     return i < size() && getBit(i);

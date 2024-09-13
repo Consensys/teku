@@ -935,9 +935,9 @@ public class Spec {
     return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
   }
 
-  public Optional<CommitteeAssignment> getPtcAssignment(
+  public Optional<UInt64> getPtcAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
-    return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
+    return atEpoch(epoch).getValidatorsUtil().getPtcAssignment(state, epoch, validatorIndex);
   }
 
   public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(

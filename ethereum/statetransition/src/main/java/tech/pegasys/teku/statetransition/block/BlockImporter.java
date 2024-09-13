@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHea
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -59,6 +60,8 @@ public class BlockImporter {
 
   private final Subscribers<VerifiedBlockAttestationListener> attestationSubscribers =
       Subscribers.create(true);
+  private final Subscribers<VerifiedBlockOperationsListener<PayloadAttestation>>
+      payloadAttestationSubscribers = Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
       attesterSlashingSubscribers = Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<ProposerSlashing>>
@@ -253,6 +256,12 @@ public class BlockImporter {
   public void subscribeToVerifiedBlockAttestations(
       final VerifiedBlockAttestationListener verifiedBlockAttestationsListener) {
     attestationSubscribers.subscribe(verifiedBlockAttestationsListener);
+  }
+
+  public void subscribeToVerifiedBlockPayloadAttestations(
+      final VerifiedBlockOperationsListener<PayloadAttestation>
+          verifiedBlockPayloadAttestationsListener) {
+    payloadAttestationSubscribers.subscribe(verifiedBlockPayloadAttestationsListener);
   }
 
   public void subscribeToVerifiedBlockAttesterSlashings(
