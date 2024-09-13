@@ -234,9 +234,9 @@ public class DebugToolsCommand implements Runnable {
     System.out.printf(
         "Validator %s assigned to attest at slot %s in committee index %s, position %s%n",
         validatorIndex,
-        assignment.getSlot(),
-        assignment.getCommitteeIndex(),
-        assignment.getCommittee().indexOf(validatorIndex));
+        assignment.slot(),
+        assignment.committeeIndex(),
+        assignment.committee().indexOf(validatorIndex));
     return 0;
   }
 }

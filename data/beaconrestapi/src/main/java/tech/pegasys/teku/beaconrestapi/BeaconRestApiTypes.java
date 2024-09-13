@@ -247,24 +247,20 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<SpecMilestone> ETH_CONSENSUS_VERSION_TYPE =
       new ParameterMetadata<>(HEADER_CONSENSUS_VERSION, MILESTONE_TYPE);
 
-  @SuppressWarnings("unchecked")
   public static DeserializableTypeDefinition<Attestation> electraAttestationTypeDef(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    return (DeserializableTypeDefinition<Attestation>)
-        schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.ELECTRA)
-            .getAttestationSchema()
-            .getJsonTypeDefinition();
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.ELECTRA)
+        .getAttestationSchema()
+        .getJsonTypeDefinition();
   }
 
-  @SuppressWarnings("unchecked")
   public static DeserializableTypeDefinition<Attestation> phase0AttestationTypeDef(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    return (DeserializableTypeDefinition<Attestation>)
-        schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.PHASE0)
-            .getAttestationSchema()
-            .getJsonTypeDefinition();
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.PHASE0)
+        .getAttestationSchema()
+        .getJsonTypeDefinition();
   }
 
   @SuppressWarnings("JavaCase")

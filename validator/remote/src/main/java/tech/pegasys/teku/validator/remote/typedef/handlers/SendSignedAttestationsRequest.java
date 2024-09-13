@@ -35,11 +35,16 @@ import tech.pegasys.teku.validator.remote.typedef.FailureListResponse;
 
 public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
 
+  private final boolean attestationsV2ApisEnabled;
   private final Spec spec;
 
   public SendSignedAttestationsRequest(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final Spec spec) {
+      final HttpUrl baseEndpoint,
+      final OkHttpClient okHttpClient,
+      final boolean attestationsV2ApisEnabled,
+      final Spec spec) {
     super(baseEndpoint, okHttpClient);
+    this.attestationsV2ApisEnabled = attestationsV2ApisEnabled;
     this.spec = spec;
   }
 
@@ -51,7 +56,7 @@ public class SendSignedAttestationsRequest extends AbstractTypeDefRequest {
     // milestone
     final SpecMilestone specMilestone =
         spec.atSlot(attestations.getFirst().getData().getSlot()).getMilestone();
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+    if (attestationsV2ApisEnabled || specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       return submitPostElectra(attestations, specMilestone);
     }
     return submitPreElectra(attestations);

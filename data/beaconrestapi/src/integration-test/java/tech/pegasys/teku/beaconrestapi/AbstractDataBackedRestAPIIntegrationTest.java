@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
@@ -53,7 +55,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -156,7 +157,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected ChainBuilder chainBuilder;
   protected ChainUpdater chainUpdater;
 
-  protected final JsonProvider jsonProvider = new JsonProvider();
+  protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
@@ -450,6 +451,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         + params.entrySet().stream()
             .map(e -> e.getKey() + "=" + e.getValue())
             .collect(Collectors.joining("&"));
+  }
+
+  protected JsonNode getResponseData(final Response response) throws IOException {
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
+    return body.get("data");
+  }
+
+  protected void checkEmptyBodyToRoute(final String route, final int expectedResponseCode)
+      throws IOException {
+    final Response response = post(route, OBJECT_MAPPER.writeValueAsString(""));
+    Assertions.assertThat(response.code()).isEqualTo(expectedResponseCode);
   }
 
   @AfterEach

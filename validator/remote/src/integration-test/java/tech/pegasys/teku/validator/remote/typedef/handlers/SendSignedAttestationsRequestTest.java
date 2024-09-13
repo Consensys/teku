@@ -50,7 +50,8 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
 
   @BeforeEach
   public void setup() {
-    this.request = new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, spec);
+    this.request =
+        new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, false, spec);
     this.attestations = List.of(dataStructureUtil.randomAttestation());
   }
 
@@ -64,13 +65,12 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
         JsonUtil.parse(
             recordedRequest.getBody().readUtf8(),
             DeserializableTypeDefinition.listOf(
-                spec.getGenesisSchemaDefinitions()
-                    .getAttestationSchema()
-                    .castTypeToAttestationSchema()
-                    .getJsonTypeDefinition()));
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()));
     assertThat(data).isEqualTo(attestations);
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(emptyMap()));
       assertThat(recordedRequest.getRequestUrl().queryParameterNames())
           .isEqualTo(Collections.emptySet());
       assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
@@ -103,5 +103,19 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
                 "{\"code\": 400,\"message\": \"z\",\"failures\": [{\"index\": 3,\"message\": \"a\"}]}"));
     final List<SubmitDataError> response = request.submit(attestations);
     assertThat(response).containsExactly(new SubmitDataError(UInt64.valueOf(3), "a"));
+  }
+
+  @TestTemplate
+  void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled()
+      throws InterruptedException, JsonProcessingException {
+    this.request =
+        new SendSignedAttestationsRequest(mockWebServer.url("/"), okHttpClient, true, spec);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+    final List<SubmitDataError> response = request.submit(attestations);
+    assertThat(response).isEmpty();
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(emptyMap()));
   }
 }

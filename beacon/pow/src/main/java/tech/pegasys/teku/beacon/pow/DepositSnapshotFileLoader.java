@@ -79,7 +79,7 @@ public class DepositSnapshotFileLoader {
               "Deposit tree snapshot loaded from " + sanitizedUrl + " is not a correct snapshot",
               e);
         } else {
-          LOG.warn("Failed to load deposit tree snapshot from " + sanitizedUrl, e);
+          LOG.warn("Failed to load deposit tree snapshot from " + sanitizedUrl, e.getMessage());
         }
 
         if (isRequired) {
@@ -97,7 +97,9 @@ public class DepositSnapshotFileLoader {
         ResourceLoader.urlOrFile("application/octet-stream, application/json")
             .loadBytes(path)
             .orElseThrow(
-                () -> new FileNotFoundException(String.format("File '%s' not found", path)));
+                () ->
+                    new FileNotFoundException(
+                        String.format("Failed to load deposit tree snapshot from %s", path)));
 
     try {
       return parseSszDepositSnapshotTreeData(snapshotData);

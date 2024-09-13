@@ -516,7 +516,6 @@ class ExecutionLayerBlockProductionManagerImplTest {
         eventLogger,
         executionClientHandler,
         builderEnabled ? Optional.of(builderClient) : Optional.empty(),
-        spec,
         stubMetricsSystem,
         builderValidatorEnabled
             ? new BuilderBidValidatorImpl(spec, eventLogger)

@@ -510,6 +510,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withExternalSignerPublicKeys(final String publicKeysList) {
+    LOG.debug("validators-external-signer-public-keys={}", publicKeysList);
+    configMap.put("validators-external-signer-public-keys", publicKeysList);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withValidatorProposerDefaultFeeRecipient(
       final String validatorProposerDefaultFeeRecipient) {
     LOG.debug("validators-proposer-default-fee-recipient={}", validatorProposerDefaultFeeRecipient);

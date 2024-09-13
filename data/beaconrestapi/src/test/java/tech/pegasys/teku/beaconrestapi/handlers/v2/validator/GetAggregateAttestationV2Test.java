@@ -41,8 +41,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -122,35 +120,29 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void metadata_shouldHandle200_phase0Attestation() throws IOException {
     setHandler(
         new GetAggregateAttestationV2(
             validatorDataProvider, new SchemaDefinitionCache(specMinimalPhase0)));
     final String data = getResponseStringFromMetadata(handler, SC_OK, phase0responseData);
 
-    final AttestationSchema<AttestationPhase0> phase0AttestationSchema =
-        (AttestationSchema<AttestationPhase0>)
-            schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttestationSchema();
-    final AttestationPhase0 attestation =
-        parseAttestationFromResponse(data, phase0AttestationSchema);
+    final AttestationSchema<Attestation> phase0AttestationSchema =
+        schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttestationSchema();
+    final Attestation attestation = parseAttestationFromResponse(data, phase0AttestationSchema);
 
     assertThat(attestation.requiresCommitteeBits()).isFalse();
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void metadata_shouldHandle200_electraAttestation() throws IOException {
     setHandler(
         new GetAggregateAttestationV2(
             validatorDataProvider, new SchemaDefinitionCache(specMinimalElectra)));
     final String data = getResponseStringFromMetadata(handler, SC_OK, electraResponseData);
 
-    final AttestationSchema<AttestationElectra> electraAttestationSchema =
-        (AttestationSchema<AttestationElectra>)
-            schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA).getAttestationSchema();
-    final AttestationElectra attestation =
-        parseAttestationFromResponse(data, electraAttestationSchema);
+    final AttestationSchema<Attestation> electraAttestationSchema =
+        schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA).getAttestationSchema();
+    final Attestation attestation = parseAttestationFromResponse(data, electraAttestationSchema);
 
     assertThat(attestation.requiresCommitteeBits()).isTrue();
   }

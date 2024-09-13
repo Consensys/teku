@@ -432,12 +432,12 @@ public class ChainDataProvider {
       final Optional<UInt64> committeeIndex,
       final Optional<UInt64> slot) {
     final Predicate<CommitteeAssignment> slotFilter =
-        slot.isEmpty() ? __ -> true : (assignment) -> assignment.getSlot().equals(slot.get());
+        slot.isEmpty() ? __ -> true : (assignment) -> assignment.slot().equals(slot.get());
 
     final Predicate<CommitteeAssignment> committeeFilter =
         committeeIndex.isEmpty()
             ? __ -> true
-            : (assignment) -> assignment.getCommitteeIndex().compareTo(committeeIndex.get()) == 0;
+            : (assignment) -> assignment.committeeIndex().compareTo(committeeIndex.get()) == 0;
 
     final UInt64 stateEpoch = spec.computeEpochAtSlot(state.getSlot());
     if (epoch.isPresent() && epoch.get().isGreaterThan(stateEpoch.plus(ONE))) {
