@@ -137,6 +137,7 @@ class BlockOperationSelectorFactoryTest {
       mock(OperationValidator.class);
 
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
   private final OperationPool<AttesterSlashing> attesterSlashingPool =
       new SimpleOperationPool<>(
           "attester_slashing",
@@ -172,9 +173,6 @@ class BlockOperationSelectorFactoryTest {
 
   private final ExecutionPayloadHeaderPool executionPayloadHeaderPool =
       new ExecutionPayloadHeaderPool(executionPayloadHeaderValidator);
-
-  private final PayloadAttestationPool payloadAttestationPool =
-      new PayloadAttestationPool(spec, metricsSystem);
 
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
