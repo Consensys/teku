@@ -13,34 +13,54 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadAndBlobSidecarsRevealer;
 
 public class ExecutionPayloadPublisher {
 
   private final ExecutionPayloadManager executionPayloadManager;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
+  private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer;
+  private final BlobSidecarGossipChannel blobSidecarGossipChannel;
 
   public ExecutionPayloadPublisher(
       final ExecutionPayloadManager executionPayloadManager,
-      final ExecutionPayloadGossipChannel executionPayloadGossipChannel) {
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
+      final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer,
+      final BlobSidecarGossipChannel blobSidecarGossipChannel) {
     this.executionPayloadManager = executionPayloadManager;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.executionPayloadGossipChannel = executionPayloadGossipChannel;
+    this.executionPayloadAndBlobSidecarsRevealer = executionPayloadAndBlobSidecarsRevealer;
+    this.blobSidecarGossipChannel = blobSidecarGossipChannel;
   }
 
   public SafeFuture<InternalValidationResult> sendExecutionPayload(
-      final SignedExecutionPayloadEnvelope executionPayload) {
-    return executionPayloadManager
-        .validateAndImportExecutionPayload(executionPayload, Optional.empty())
-        .thenPeek(
-            result -> {
-              if (result.isAccept()) {
-                executionPayloadGossipChannel.publishExecutionPayload(executionPayload);
-              }
-            });
+      final SignedBeaconBlock block, final SignedExecutionPayloadEnvelope executionPayload) {
+    final List<BlobSidecar> blobSidecars =
+        executionPayloadAndBlobSidecarsRevealer.revealBlobSidecars(block);
+    publishExecutionPayloadAndBlobSidecars(executionPayload, blobSidecars);
+    // provide blobs for the execution payload before importing it
+    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    return executionPayloadManager.validateAndImportExecutionPayload(
+        executionPayload, Optional.empty());
+  }
+
+  private void publishExecutionPayloadAndBlobSidecars(
+      final SignedExecutionPayloadEnvelope executionPayload, final List<BlobSidecar> blobSidecars) {
+    executionPayloadGossipChannel.publishExecutionPayload(executionPayload);
+    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
   }
 }
