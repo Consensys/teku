@@ -112,6 +112,8 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(ExecutionPayloadHeaderPool.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
+  private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer =
+      mock(ExecutionPayloadAndBlobSidecarsRevealer.class);
 
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ValidatorApiHandler handler =
@@ -143,6 +145,7 @@ public class ValidatorApiHandlerIntegrationTest {
           syncCommitteeSubscriptionManager,
           executionPayloadHeaderPool,
           executionPayloadManager,
+          executionPayloadAndBlobSidecarsRevealer,
           new BlockProductionAndPublishingPerformanceFactory(
               new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0));
 

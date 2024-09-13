@@ -37,14 +37,17 @@ public class ExecutionPayloadHeaderFactory {
   private final Spec spec;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
+  private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer;
 
   public ExecutionPayloadHeaderFactory(
       final Spec spec,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
+      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
+      final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer) {
     this.spec = spec;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
+    this.executionPayloadAndBlobSidecarsRevealer = executionPayloadAndBlobSidecarsRevealer;
   }
 
   public SafeFuture<ExecutionPayloadHeader> createUnsignedHeader(
@@ -80,13 +83,18 @@ public class ExecutionPayloadHeaderFactory {
               return executionPayloadResult
                   .getLocalPayloadResponseRequired()
                   .thenApply(
-                      getPayloadResponse ->
-                          createLocalBid(
-                              slot,
-                              builderIndex,
-                              parentRoot,
-                              executionPayloadContext,
-                              getPayloadResponse));
+                      getPayloadResponse -> {
+                        final ExecutionPayloadHeader localBid =
+                            createLocalBid(
+                                slot,
+                                builderIndex,
+                                parentRoot,
+                                executionPayloadContext,
+                                getPayloadResponse);
+                        executionPayloadAndBlobSidecarsRevealer.commit(
+                            localBid, getPayloadResponse);
+                        return localBid;
+                      });
             });
   }
 
