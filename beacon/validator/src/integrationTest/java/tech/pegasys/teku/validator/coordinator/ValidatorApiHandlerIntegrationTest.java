@@ -134,6 +134,8 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(ExecutionPayloadHeaderPool.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
+  private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer =
+      mock(ExecutionPayloadAndBlobSidecarsRevealer.class);
 
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
 
