@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -32,7 +31,6 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherEip7594 extends AbstractBlockPublisher {
 
-  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final BlockGossipChannel blockGossipChannel;
   private final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
 
@@ -40,12 +38,10 @@ public class BlockPublisherEip7594 extends AbstractBlockPublisher {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
-    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.blockGossipChannel = blockGossipChannel;
     this.dataColumnSidecarGossipChannel = dataColumnSidecarGossipChannel;
   }
@@ -57,8 +53,6 @@ public class BlockPublisherEip7594 extends AbstractBlockPublisher {
       final BroadcastValidationLevel broadcastValidationLevel,
       final BlockPublishingPerformance blockPublishingPerformance) {
     // TODO: DataColumnSidecars pool fill up
-    // provide blobs for the block before importing it
-    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return blockImportChannel
         .importBlock(block, broadcastValidationLevel)
         .thenPeek(__ -> blockPublishingPerformance.blockImportCompleted());

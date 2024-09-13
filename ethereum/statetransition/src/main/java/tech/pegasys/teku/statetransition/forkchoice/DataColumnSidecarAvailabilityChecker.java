@@ -110,6 +110,7 @@ public class DataColumnSidecarAvailabilityChecker
     }
     final boolean isNotValid =
         dataColumnSidecars.stream()
+            .parallel()
             .map(
                 dataColumnSidecar ->
                     spec.atSlot(dataColumnSidecar.getSlot())

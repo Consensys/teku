@@ -15,20 +15,34 @@ package tech.pegasys.teku.spec.logic.versions.eip7594.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGAbstractBenchmark;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.MatrixEntry;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class MiscHelpersEip7594Test {
+public class MiscHelpersEip7594Test extends KZGAbstractBenchmark {
 
   private final Spec spec =
       TestSpecFactory.createMinimalEip7594(
@@ -58,6 +72,59 @@ public class MiscHelpersEip7594Test {
         .isOfAnyClassIn(IllegalArgumentException.class)
         .hasMessageStartingWith(
             "Allowed failures (65) should be less than half of columns number (128)");
+  }
+
+  @Test
+  @Disabled("Benchmark")
+  public void benchmarkComputeExtendedMatrix() {
+    final int numberOfRounds = 10;
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final List<Blob> blobs =
+        IntStream.range(0, 6).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<Integer> runTimes = new ArrayList<>();
+    for (int i = 0; i < numberOfRounds; i++) {
+      final long start = System.currentTimeMillis();
+      final List<List<MatrixEntry>> extendedMatrix =
+          miscHelpersEip7594.computeExtendedMatrix(blobs, getKzg());
+      assertEquals(6, extendedMatrix.size());
+      final long end = System.currentTimeMillis();
+      runTimes.add((int) (end - start));
+    }
+    printStats(runTimes);
+  }
+
+  @Test
+  @Disabled("Benchmark")
+  public void benchmarkConstructDataColumnSidecarsWithExtendedMatrix() {
+    final int numberOfRounds = 10;
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final List<Blob> blobs =
+        IntStream.range(0, 6).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersEip7594.computeExtendedMatrix(blobs, getKzg());
+    final List<SszKZGCommitment> kzgCommitments =
+        blobs.stream()
+            .map(blob -> getKzg().blobToKzgCommitment(blob.getBytes()))
+            .map(SszKZGCommitment::new)
+            .toList();
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema();
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
+            blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
+
+    final List<Integer> runTimes = new ArrayList<>();
+    for (int i = 0; i < numberOfRounds; i++) {
+      final long start = System.currentTimeMillis();
+      List<DataColumnSidecar> dataColumnSidecars =
+          miscHelpersEip7594.constructDataColumnSidecars(
+              signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+      assertEquals(blobs.size(), dataColumnSidecars.getFirst().getDataColumn().size());
+      final long end = System.currentTimeMillis();
+      runTimes.add((int) (end - start));
+    }
+    printStats(runTimes);
   }
 
   static Stream<Arguments> getExtendedSampleCountFixtures() throws IOException {

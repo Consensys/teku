@@ -212,24 +212,26 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
    * <p>>The data structure for storing cells is implementation-dependent.
    */
   public List<List<MatrixEntry>> computeExtendedMatrix(final List<Blob> blobs, final KZG kzg) {
-    final List<List<MatrixEntry>> extendedMatrix = new ArrayList<>();
-    for (int blobIndex = 0; blobIndex < blobs.size(); ++blobIndex) {
-      final List<MatrixEntry> row = new ArrayList<>();
-      final List<KZGCellAndProof> kzgCellAndProofs =
-          kzg.computeCellsAndProofs(blobs.get(blobIndex).getBytes());
-      for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
-        row.add(
-            schemaDefinitions
-                .getMatrixEntrySchema()
-                .create(
-                    kzgCellAndProofs.get(cellIndex).cell(),
-                    kzgCellAndProofs.get(cellIndex).proof(),
-                    blobIndex,
-                    cellIndex));
-      }
-      extendedMatrix.add(row);
-    }
-    return extendedMatrix;
+    return IntStream.range(0, blobs.size())
+        .parallel()
+        .mapToObj(
+            blobIndex -> {
+              final List<KZGCellAndProof> kzgCellAndProofs =
+                  kzg.computeCellsAndProofs(blobs.get(blobIndex).getBytes());
+              final List<MatrixEntry> row = new ArrayList<>();
+              for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
+                row.add(
+                    schemaDefinitions
+                        .getMatrixEntrySchema()
+                        .create(
+                            kzgCellAndProofs.get(cellIndex).cell(),
+                            kzgCellAndProofs.get(cellIndex).proof(),
+                            blobIndex,
+                            cellIndex));
+              }
+              return row;
+            })
+        .toList();
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
@@ -251,7 +253,7 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
     final SszListSchema<SszKZGProof, ?> kzgProofsSchema =
         dataColumnSidecarSchema.getKzgProofsSchema();
 
-    int columnCount = extendedMatrix.get(0).size();
+    int columnCount = extendedMatrix.getFirst().size();
 
     return IntStream.range(0, columnCount)
         .mapToObj(

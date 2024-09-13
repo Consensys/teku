@@ -127,7 +127,7 @@ public class SampleSidecarRetrieverTest {
     TestPeer nonCustodyPeer =
         new TestPeer(stubAsyncRunner, nonCustodyNodeIds.next(), Duration.ofMillis(100));
 
-    List<Blob> blobs = Stream.generate(dataStructureUtil::randomBlob).limit(1).toList();
+    List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     BeaconBlock block = blockResolver.addBlock(10, 1);
     List<DataColumnSidecar> sidecars =
         miscHelpers.constructDataColumnSidecars(createSigned(block), blobs, kzg);

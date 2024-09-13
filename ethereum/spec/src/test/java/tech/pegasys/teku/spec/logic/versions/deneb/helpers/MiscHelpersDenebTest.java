@@ -191,7 +191,7 @@ class MiscHelpersDenebTest {
   void shouldConstructValidBlobSidecar() {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
-    final Blob blob = dataStructureUtil.randomBlob();
+    final Blob blob = dataStructureUtil.randomValidBlob();
     final SszKZGCommitment expectedCommitment =
         BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments()
@@ -214,7 +214,7 @@ class MiscHelpersDenebTest {
   void shouldThrowWhenConstructingBlobSidecarWithInvalidIndex() {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
-    final Blob blob = dataStructureUtil.randomBlob();
+    final Blob blob = dataStructureUtil.randomValidBlob();
     final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
 
     assertThatThrownBy(

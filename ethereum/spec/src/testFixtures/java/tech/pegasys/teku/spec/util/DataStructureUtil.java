@@ -2109,7 +2109,7 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public Blob randomBlob() {
+  public Blob randomValidBlob() {
     final BlobSchema blobSchema = getDenebSchemaDefinitions(randomSlot()).getBlobSchema();
     List<Bytes> blobElements =
         Stream.generate(this::randomBlobElement).limit(blobSchema.getLength() / 32).toList();
@@ -2121,7 +2121,7 @@ public final class DataStructureUtil {
   }
 
   public Bytes randomBlobBytes() {
-    return randomBlob().getBytes();
+    return randomValidBlob().getBytes();
   }
 
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
@@ -2210,7 +2210,7 @@ public final class DataStructureUtil {
         schema,
         commitments,
         randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, commitments.size()),
-        randomSszList(schema.getBlobsSchema(), this::randomBlob, commitments.size()));
+        randomSszList(schema.getBlobsSchema(), this::randomValidBlob, commitments.size()));
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
@@ -2231,7 +2231,7 @@ public final class DataStructureUtil {
   public SszList<Blob> randomSszBlobs(final int count) {
     return randomSszList(
         getDenebSchemaDefinitions(UInt64.ZERO).getBlobsBundleSchema().getBlobsSchema(),
-        this::randomBlob,
+        this::randomValidBlob,
         count);
   }
 
@@ -2442,7 +2442,8 @@ public final class DataStructureUtil {
 
       return dataColumnSidecarSchema.create(
           index.orElseGet(DataStructureUtil.this::randomBlobSidecarIndex),
-          dataColumn.orElseGet(() -> randomDataColumn(signedBlockHeader.getMessage().getSlot())),
+          dataColumn.orElseGet(
+              () -> randomDataColumn(signedBlockHeader.getMessage().getSlot(), numberOfProofs)),
           kzgCommitments.orElseGet(
               () ->
                   IntStream.range(0, numberOfProofs)
@@ -2463,11 +2464,10 @@ public final class DataStructureUtil {
     }
   }
 
-  public DataColumn randomDataColumn(final UInt64 slot) {
+  public DataColumn randomDataColumn(final UInt64 slot, final int blobs) {
     final DataColumnSchema dataColumnSchema =
         getEip7594SchemaDefinitions(slot).getDataColumnSchema();
-    List<Cell> list =
-        IntStream.range(0, randomNumberOfBlobsPerBlock()).mapToObj(__ -> randomCell(slot)).toList();
+    List<Cell> list = IntStream.range(0, blobs).mapToObj(__ -> randomCell(slot)).toList();
     return dataColumnSchema.create(list);
   }
 

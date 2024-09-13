@@ -72,7 +72,6 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
                     blockFactory,
                     blockImportChannel,
                     blockGossipChannel,
-                    blockBlobSidecarsTrackersPool,
                     dataColumnSidecarGossipChannel,
                     performanceTracker,
                     dutyMetrics));
