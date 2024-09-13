@@ -233,6 +233,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.executionPayloadPublisher =
         new ExecutionPayloadPublisher(
             executionPayloadManager,
+            blockBlobSidecarsTrackersPool,
             executionPayloadGossipChannel,
             executionPayloadAndBlobSidecarsRevealer,
             blobSidecarGossipChannel);

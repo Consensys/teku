@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadAndBlobSidecarsRevealer;
@@ -28,16 +29,19 @@ import tech.pegasys.teku.validator.coordinator.ExecutionPayloadAndBlobSidecarsRe
 public class ExecutionPayloadPublisher {
 
   private final ExecutionPayloadManager executionPayloadManager;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
   private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer;
   private final BlobSidecarGossipChannel blobSidecarGossipChannel;
 
   public ExecutionPayloadPublisher(
       final ExecutionPayloadManager executionPayloadManager,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
       final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer,
       final BlobSidecarGossipChannel blobSidecarGossipChannel) {
     this.executionPayloadManager = executionPayloadManager;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.executionPayloadGossipChannel = executionPayloadGossipChannel;
     this.executionPayloadAndBlobSidecarsRevealer = executionPayloadAndBlobSidecarsRevealer;
     this.blobSidecarGossipChannel = blobSidecarGossipChannel;
@@ -48,7 +52,8 @@ public class ExecutionPayloadPublisher {
     final List<BlobSidecar> blobSidecars =
         executionPayloadAndBlobSidecarsRevealer.revealBlobSidecars(block);
     publishExecutionPayloadAndBlobSidecars(executionPayload, blobSidecars);
-    // EIP7732 TODO: provide blobs for the execution payload before importing it
+    // provide blobs for the execution payload before importing it
+    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return executionPayloadManager.validateAndImportExecutionPayload(
         executionPayload, Optional.empty());
   }

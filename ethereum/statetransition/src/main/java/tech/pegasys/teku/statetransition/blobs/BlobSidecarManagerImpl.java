@@ -26,7 +26,6 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
@@ -150,22 +149,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
             spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg)
         .validateImmediately(blobSidecars);
-  }
-
-  // EIP7732 TODO: implement
-  @Override
-  public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
-      final SignedBeaconBlock block,
-      final SignedExecutionPayloadEnvelope executionPayloadEnvelope) {
-    return BlobSidecarsAvailabilityChecker.NOOP;
-  }
-
-  // EIP7732 TODO: implement
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
-      final List<BlobSidecar> blobSidecars) {
-    return BlobSidecarsAndValidationResult.NOT_REQUIRED;
   }
 
   @Override

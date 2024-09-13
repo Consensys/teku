@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -129,20 +128,6 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   @Override
   public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    throw new UnsupportedOperationException("Not available in fork choice reference tests");
-  }
-
-  @Override
-  public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
-      final SignedBeaconBlock block,
-      final SignedExecutionPayloadEnvelope executionPayloadEnvelope) {
-    throw new UnsupportedOperationException("Not yet supported");
-  }
-
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
-      final List<BlobSidecar> blobSidecars) {
     throw new UnsupportedOperationException("Not available in fork choice reference tests");
   }
 
