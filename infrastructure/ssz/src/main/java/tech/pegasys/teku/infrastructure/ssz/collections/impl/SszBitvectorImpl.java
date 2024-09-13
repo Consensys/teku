@@ -81,6 +81,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
+  public boolean intersects(final SszBitvector other) {
+    return value.intersects(toBitvectorImpl(other));
+  }
+
+  @Override
   public SszBitvector rightShift(final int n) {
     return new SszBitvectorImpl(getSchema(), value.rightShift(n));
   }
