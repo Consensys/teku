@@ -148,7 +148,8 @@ public class HistoricalBatchFetcherTest {
 
     when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
-    when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))
+    when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(
+            any(SignedBeaconBlock.class), anyList()))
         .thenAnswer(i -> BlobSidecarsAndValidationResult.validResult(i.getArgument(1)));
   }
 
@@ -208,7 +209,8 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-    when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))
+    when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(
+            any(SignedBeaconBlock.class), anyList()))
         .thenAnswer(
             i ->
                 BlobSidecarsAndValidationResult.invalidResult(
