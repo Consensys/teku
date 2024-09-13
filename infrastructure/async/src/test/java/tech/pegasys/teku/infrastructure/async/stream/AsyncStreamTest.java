@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -69,6 +70,31 @@ public class AsyncStreamTest {
     assertThat(collector).containsExactly(0, 20, 40, 100, 120, 140, 200, 220, 240, 300);
     assertThat(listPromise)
         .isCompletedWithValue(List.of(0, 20, 40, 100, 120, 140, 200, 220, 240, 300));
+  }
+
+  @Test
+  void mapAsyncTest() throws Exception {
+    int listSize = 100;
+    SafeFuture<Void> launchFuture = new SafeFuture<>();
+    List<SafeFuture<Integer>> futures =
+        Stream.generate(() -> new SafeFuture<Integer>()).limit(listSize).toList();
+
+    SafeFuture<List<Integer>> listFuture =
+        AsyncStream.create(launchFuture)
+            .flatMap(
+                __ -> {
+                  Stream<Integer> idxStream = IntStream.range(0, futures.size()).boxed();
+                  return AsyncStream.create(idxStream).mapAsync(futures::get);
+                })
+            .toList();
+
+    launchFuture.complete(null);
+    for (int i = 0; i < futures.size(); i++) {
+      futures.get(i).complete(i);
+    }
+
+    assertThat(listFuture.get(1, TimeUnit.SECONDS))
+        .containsExactlyElementsOf(IntStream.range(0, listSize).boxed().toList());
   }
 
   @Test

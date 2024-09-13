@@ -116,7 +116,7 @@ public class DasCustodySync implements SlotEventsChannel {
                 addPendingRequest(missingColumn);
               }
 
-              if (missingColumnsToRequest.isEmpty()) {
+              if (missingColumnsToRequest.size() < newRequestCount) {
                 coolDownTillNextSlot = true;
               }
 

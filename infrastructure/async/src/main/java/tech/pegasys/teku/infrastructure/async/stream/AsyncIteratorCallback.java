@@ -32,7 +32,12 @@ interface AsyncIteratorCallback<T> {
    */
   SafeFuture<Boolean> onNext(T t);
 
-  /** Called when the stream is complete. No other calls are expected after this call */
+  /**
+   * Called when the stream is complete. No other calls are expected after this call
+   *
+   * <p>An implementation MUST NOT call this method prior to {@link SafeFuture<Boolean>} returned
+   * from the last {@link #onNext(Object)} call is completed.
+   */
   void onComplete();
 
   /** Called when upstream error happened Basically no other calls are expected after this */

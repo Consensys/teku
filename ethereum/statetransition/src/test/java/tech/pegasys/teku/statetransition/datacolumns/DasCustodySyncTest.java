@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -26,7 +31,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DelayedDataColumnSidecarRetriever;
 
 @SuppressWarnings("JavaCase")
 public class DasCustodySyncTest {
@@ -45,12 +52,19 @@ public class DasCustodySyncTest {
                           .custodyRequirement(2)
                           .minEpochsForDataColumnSidecarsRequests(64)));
 
-  final DataColumnSidecarRetrieverStub retrieverStub = new DataColumnSidecarRetrieverStub();
-  final DasCustodyStand custodyStand = DasCustodyStand.builder(spec).build();
+  final DasCustodyStand custodyStand =
+      DasCustodyStand.builder(spec)
+          .withAsyncDb(ofMillis(1))
+          .withAsyncBlockResolver(ofMillis(2))
+          .build();
   final int maxSyncRequests = 32;
   final int minSyncRequests = 8;
+  final DataColumnSidecarRetrieverStub retrieverStub = new DataColumnSidecarRetrieverStub();
+  final DataColumnSidecarRetriever asyncRetriever =
+      new DelayedDataColumnSidecarRetriever(
+          retrieverStub, custodyStand.stubAsyncRunner, ofMillis(0));
   final DasCustodySync dasCustodySync =
-      new DasCustodySync(custodyStand.custody, retrieverStub, maxSyncRequests, minSyncRequests);
+      new DasCustodySync(custodyStand.custody, asyncRetriever, maxSyncRequests, minSyncRequests);
 
   final int epochLength = spec.slotsPerEpoch(UInt64.ZERO);
 
@@ -60,9 +74,13 @@ public class DasCustodySyncTest {
     custodyStand.subscribeToSlotEvents(dasCustodySync);
     dasCustodySync.start();
 
+    advanceTimeGraduallyUntilAllDone();
+
     printAndResetStats();
 
     custodyStand.setCurrentSlot(5);
+
+    advanceTimeGraduallyUntilAllDone();
 
     printAndResetStats();
     assertThat(retrieverStub.requests).isEmpty();
@@ -71,8 +89,12 @@ public class DasCustodySyncTest {
     custodyStand.blockResolver.addBlock(block_1.getMessage());
     custodyStand.setCurrentSlot(6);
 
+    advanceTimeGraduallyUntilAllDone();
+
     printAndResetStats();
     assertThat(retrieverStub.requests).isNotEmpty();
+
+    advanceTimeGraduallyUntilAllDone();
 
     custodyStand.setCurrentSlot(7);
 
@@ -85,7 +107,6 @@ public class DasCustodySyncTest {
     for (int slot = 0; slot <= startSlot; slot++) {
       addBlockAndSidecars(slot);
     }
-
     printAndResetStats();
 
     // on start we have 1000 uncustodied slots
@@ -93,6 +114,7 @@ public class DasCustodySyncTest {
     custodyStand.subscribeToSlotEvents(dasCustodySync);
     dasCustodySync.start();
 
+    advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
     for (int slot = startSlot + 1; slot <= startSlot + 1000; slot++) {
@@ -102,6 +124,7 @@ public class DasCustodySyncTest {
         int epoch = slot / epochLength;
         custodyStand.setFinalizedEpoch(epoch - 2);
       }
+      advanceTimeGraduallyUntilAllDone();
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
@@ -113,12 +136,16 @@ public class DasCustodySyncTest {
 
     custodyStand.incCurrentSlot(10);
 
+    advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().toList().join();
+        await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
+
+    assertThat(await(custodyStand.db.getFirstCustodyIncompleteSlot()))
+        .hasValueSatisfying(slot -> assertThat(slot.intValue()).isGreaterThan(1900));
   }
 
   @Test
@@ -134,6 +161,7 @@ public class DasCustodySyncTest {
     custodyStand.subscribeToSlotEvents(dasCustodySync);
     dasCustodySync.start();
 
+    advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
     for (int slot = startSlot + 1; slot <= startSlot + 1000; slot++) {
@@ -143,6 +171,7 @@ public class DasCustodySyncTest {
         int epoch = slot / epochLength;
         custodyStand.setFinalizedEpoch(epoch - 2);
       }
+      advanceTimeGraduallyUntilAllDone();
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
@@ -154,10 +183,11 @@ public class DasCustodySyncTest {
 
     custodyStand.incCurrentSlot(10);
 
+    advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().toList().join();
+        await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
   }
@@ -170,6 +200,7 @@ public class DasCustodySyncTest {
     custodyStand.subscribeToSlotEvents(dasCustodySync);
     dasCustodySync.start();
 
+    advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
     for (int slot = startSlot + 1; slot <= startSlot + 1000; slot++) {
@@ -179,6 +210,7 @@ public class DasCustodySyncTest {
         int epoch = slot / epochLength;
         custodyStand.setFinalizedEpoch(epoch - 2);
       }
+      advanceTimeGraduallyUntilAllDone();
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
@@ -189,11 +221,12 @@ public class DasCustodySyncTest {
     printAndResetStats();
 
     custodyStand.incCurrentSlot(10);
+    advanceTimeGraduallyUntilAllDone();
 
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().toList().join();
+        await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
   }
@@ -209,11 +242,13 @@ public class DasCustodySyncTest {
     custodyStand.subscribeToSlotEvents(dasCustodySync);
     dasCustodySync.start();
 
+    advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
     for (int slot = 1; slot <= 1000; slot++) {
       addBlockAndSidecars(slot);
       custodyStand.incCurrentSlot(1);
+      advanceTimeGraduallyUntilAllDone();
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
@@ -225,10 +260,11 @@ public class DasCustodySyncTest {
 
     custodyStand.incCurrentSlot(10);
 
+    advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
     List<DataColumnSlotAndIdentifier> missingColumns =
-        custodyStand.custody.retrieveMissingColumns().toList().join();
+        await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
   }
@@ -255,11 +291,9 @@ public class DasCustodySyncTest {
               Collection<UInt64> colIndexes = custodyStand.getCustodyColumnIndexes(uSlot);
               for (UInt64 colIndex : colIndexes) {
                 Optional<DataColumnSidecar> maybeSidecar =
-                    custodyStand
-                        .custody
-                        .getCustodyDataColumnSidecar(
-                            new DataColumnIdentifier(block.getRoot(), colIndex))
-                        .join();
+                    await(
+                        custodyStand.custody.getCustodyDataColumnSidecar(
+                            new DataColumnIdentifier(block.getRoot(), colIndex)));
                 assertThat(maybeSidecar)
                     .isPresent()
                     .hasValueSatisfying(
@@ -273,6 +307,28 @@ public class DasCustodySyncTest {
             }
           });
     }
+  }
+
+  private void advanceTimeGraduallyUntilAllDone() {
+    custodyStand.advanceTimeGraduallyUntilAllDone(ofMinutes(1));
+  }
+
+  private <T> T await(CompletableFuture<T> future) {
+    return await(future, ofMinutes(1));
+  }
+
+  private <T> T await(CompletableFuture<T> future, Duration maxWait) {
+    for (int i = 0; i < maxWait.toMillis(); i++) {
+      if (future.isDone()) {
+        try {
+          return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      custodyStand.advanceTimeGradually(ofMillis(1));
+    }
+    throw new AssertionError("Timeout waiting for the future to complete");
   }
 
   private void printAndResetStats() {
