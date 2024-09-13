@@ -202,11 +202,13 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
+import tech.pegasys.teku.validator.coordinator.CachingExecutionPayloadAndBlobSidecarsRevealer;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadAndBlobSidecarsRevealer;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadHeaderFactory;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
@@ -976,9 +978,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceNotifier,
             executionLayerBlockProductionManager);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
+    final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer =
+        new CachingExecutionPayloadAndBlobSidecarsRevealer(spec);
     final ExecutionPayloadHeaderFactory executionPayloadHeaderFactory =
         new ExecutionPayloadHeaderFactory(
-            spec, forkChoiceNotifier, executionLayerBlockProductionManager);
+            spec,
+            forkChoiceNotifier,
+            executionLayerBlockProductionManager,
+            executionPayloadAndBlobSidecarsRevealer);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -1056,6 +1063,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager,
             executionPayloadHeaderPool,
             executionPayloadManager,
+            executionPayloadAndBlobSidecarsRevealer,
             blockProductionPerformanceFactory,
             blockPublisher);
     eventChannels

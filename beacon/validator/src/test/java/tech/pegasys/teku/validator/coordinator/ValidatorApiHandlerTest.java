@@ -167,6 +167,8 @@ class ValidatorApiHandlerTest {
       mock(ExecutionPayloadHeaderPool.class);
   private final ExecutionPayloadManager executionPayloadManager =
       mock(ExecutionPayloadManager.class);
+  private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer =
+      mock(ExecutionPayloadAndBlobSidecarsRevealer.class);
 
   private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
       new BlockProductionAndPublishingPerformanceFactory(
@@ -211,6 +213,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager,
             executionPayloadHeaderPool,
             executionPayloadManager,
+            executionPayloadAndBlobSidecarsRevealer,
             blockProductionPerformanceFactory,
             blockPublisher);
 
@@ -467,6 +470,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager,
             executionPayloadHeaderPool,
             executionPayloadManager,
+            executionPayloadAndBlobSidecarsRevealer,
             blockProductionPerformanceFactory,
             blockPublisher);
     // Best state is still in Phase0

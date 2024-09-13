@@ -32,8 +32,8 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class ExecutionPayloadHeaderPool implements SlotEventsChannel {
 
-  // builders can broadcast a bid for only the current or the next slot, so no need to keep the bids
-  // for a long time in the pool
+  // builders can broadcast a bid for only the current or the next slot, so no need to keep bids for
+  // a long time in the pool
   private static final int BIDS_RETENTION_SLOTS = 3;
   private static final int DEFAULT_SIGNED_BIDS_POOL_SIZE = 64;
 

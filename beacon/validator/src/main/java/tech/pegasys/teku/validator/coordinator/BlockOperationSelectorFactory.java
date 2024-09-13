@@ -213,6 +213,8 @@ public class BlockOperationSelectorFactory {
       // In `setExecutionData` the following fields are set:
       // Post-Bellatrix: Execution Payload / Execution Payload Header
       // Post-Deneb: KZG Commitments
+      // in ePBS, this section is skipped entirely because the bid is already available and local
+      // EL/builder have been called
       if (bodyBuilder.supportsExecutionPayload()) {
         blockProductionComplete =
             forkChoiceNotifier
