@@ -17,20 +17,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
 public class CachingExecutionPayloadAndBlobSidecarsRevealer
@@ -86,7 +93,6 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
     return Optional.of(executionPayload);
   }
 
-  // EIP7732 TODO: implement
   @Override
   public List<BlobSidecar> revealBlobSidecars(final SignedBeaconBlock block) {
     final Bytes32 committedHeaderRoot =
@@ -100,7 +106,24 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
       logMissingPayload(block);
       return List.of();
     }
-    return List.of();
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.atSlot(block.getSlot()).miscHelpers());
+
+    final BlobsBundle blobsBundle = getPayloadResponse.getBlobsBundle().orElseThrow();
+
+    final List<Blob> blobs = blobsBundle.getBlobs();
+    final List<KZGProof> proofs = blobsBundle.getProofs();
+
+    // EIP7732 TODO: need to modify the constructBlobSidecar method in ePBS
+    return IntStream.range(0, blobsBundle.getNumberOfBlobs())
+        .mapToObj(
+            index ->
+                miscHelpersDeneb.constructBlobSidecar(
+                    block,
+                    UInt64.valueOf(index),
+                    blobs.get(index),
+                    new SszKZGProof(proofs.get(index))))
+        .toList();
   }
 
   private void logMissingPayload(final SignedBeaconBlock block) {
