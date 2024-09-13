@@ -240,15 +240,22 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ExecutionLayerChannel executionLayer) {
     final Bytes32 blockRoot = signedEnvelope.getMessage().getBeaconBlockRoot();
     return recentChainData
-        .retrieveBlockState(blockRoot)
-        .thenCompose(
-            blockState -> {
-              if (blockState.isEmpty()) {
+        .retrieveSignedBlockByRoot(blockRoot)
+        .thenComposeCombined(
+            recentChainData.retrieveBlockState(blockRoot),
+            (block, blockSlotState) -> {
+              if (block.isEmpty()) {
+                return SafeFuture.failedFuture(
+                    new IllegalStateException(
+                        String.format("Block with root %s is not available.", blockRoot)));
+              }
+              if (blockSlotState.isEmpty()) {
                 return SafeFuture.failedFuture(
                     new IllegalStateException(
                         String.format("State for block root %s is not available.", blockRoot)));
               }
-              return onExecutionPayload(blockState.get(), signedEnvelope, executionLayer);
+              return onExecutionPayload(
+                  blockSlotState.get(), block.get(), signedEnvelope, executionLayer);
             });
   }
 
@@ -468,8 +475,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
-        blobSidecarManager.createAvailabilityChecker(block);
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker;
+    // post-ePBS data availability check is moved to the on_execution_payload handler
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      blobSidecarsAvailabilityChecker = BlobSidecarsAvailabilityChecker.NOT_REQUIRED;
+    } else {
+      blobSidecarsAvailabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
+    }
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
@@ -534,13 +546,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   // EIP7732 TODO: implement proper fork choice
-  @SuppressWarnings({"UnusedDeclaration", "UnusedAssignment", "unused"})
+  @SuppressWarnings({"UnusedDeclaration", "unused"})
   private SafeFuture<Void> onExecutionPayload(
       final BeaconState blockSlotState,
+      final SignedBeaconBlock block,
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
     final ForkChoicePayloadExecutorEip7732 payloadExecutor =
         ForkChoicePayloadExecutorEip7732.create(executionLayer);
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+        blobSidecarManager.createAvailabilityChecker(block);
+
+    blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
+
     final BeaconState postState;
     try {
       postState =
@@ -549,12 +567,23 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } catch (final StateTransitionException ex) {
       return SafeFuture.failedFuture(ex);
     }
-    return payloadExecutor
-        .getExecutionResult()
-        .thenAccept(
-            payloadResult -> {
-              // EIP7732 TODO:
-            });
+    final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityFuture =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+    final SafeFuture<PayloadValidationResult> payloadValidationFuture =
+        payloadExecutor.getExecutionResult();
+    return payloadValidationFuture.thenCombineAsync(
+        blobSidecarsAvailabilityFuture,
+        (payloadResult, blobSidecarsAndValidationResult) -> {
+          importExecutionPayloadAndState(
+              signedEnvelope,
+              blockSlotState,
+              block,
+              postState,
+              payloadResult,
+              blobSidecarsAndValidationResult);
+          return null;
+        },
+        forkChoiceExecutor);
   }
 
   private BlockImportResult importBlockAndState(
@@ -685,6 +714,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
+
+  // EIP7732 TODO: implement proper fork choice
+  @SuppressWarnings("unused")
+  private void importExecutionPayloadAndState(
+      final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
+      final BeaconState blockSlotState,
+      final SignedBeaconBlock block,
+      final BeaconState postState,
+      final PayloadValidationResult payloadValidationResult,
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {}
 
   // from consensus-specs/fork-choice:
   private boolean shouldApplyProposerBoost(
