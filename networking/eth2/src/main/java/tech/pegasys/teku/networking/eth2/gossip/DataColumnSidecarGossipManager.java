@@ -21,6 +21,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 public class DataColumnSidecarGossipManager implements GossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final GossipFailureLogger gossipFailureLogger =
+      new GossipFailureLogger("data column sidecar");
   private final DataColumnSidecarSubnetSubscriptions subnetSubscriptions;
 
   public DataColumnSidecarGossipManager(
@@ -32,16 +34,13 @@ public class DataColumnSidecarGossipManager implements GossipManager {
     subnetSubscriptions
         .gossip(dataColumnSidecar)
         .finish(
-            __ -> {
-              LOG.debug(
-                  "Successfully published data column sidecar for slot {}",
-                  dataColumnSidecar.toLogString());
-            },
-            error -> {
-              LOG.warn(
-                  "Error publishing data column sidecar for slot {}",
-                  dataColumnSidecar.toLogString());
-            });
+            __ ->
+                LOG.debug(
+                    "Successfully published data column sidecar for slot {}",
+                    dataColumnSidecar::toLogString),
+            error ->
+                gossipFailureLogger.logWithSuppression(
+                    error, dataColumnSidecar.getSlot(), dataColumnSidecar.toLogString()));
   }
 
   public void subscribeToSubnetId(final int subnetId) {

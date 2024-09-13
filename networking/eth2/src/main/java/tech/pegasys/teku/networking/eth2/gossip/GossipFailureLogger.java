@@ -33,7 +33,13 @@ public class GossipFailureLogger {
     this.messageType = messageType;
   }
 
-  public synchronized void logWithSuppression(final Throwable error, final UInt64 slot) {
+  public void logWithSuppression(final Throwable error, final UInt64 slot) {
+    logWithSuppression(error, slot, "");
+  }
+
+  public synchronized void logWithSuppression(
+      final Throwable error, final UInt64 slot, String details) {
+    final String appendDetails = details.isEmpty() ? "" : ": " + details;
     final Throwable rootCause = Throwables.getRootCause(error);
 
     final boolean suppress =
@@ -44,22 +50,25 @@ public class GossipFailureLogger {
 
     if (lastRootCause instanceof MessageAlreadySeenException) {
       LOG.debug(
-          "Failed to publish {}(s) for slot {} because the message has already been seen",
+          "Failed to publish {}(s) for slot {} because the message has already been seen {}",
           messageType,
-          lastErroredSlot);
+          lastErroredSlot,
+          appendDetails);
     } else if (lastRootCause instanceof NoPeersForOutboundMessageException
         || lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic",
+          "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic {}",
           messageType,
-          lastErroredSlot);
+          lastErroredSlot,
+          appendDetails);
     } else {
       LOG.log(
           suppress ? Level.DEBUG : Level.ERROR,
-          "Failed to publish {}(s) for slot {}",
+          "Failed to publish {}(s) for slot {} {}",
           messageType,
           lastErroredSlot,
+          appendDetails,
           error);
     }
   }
