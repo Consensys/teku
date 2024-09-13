@@ -48,4 +48,9 @@ public class PayloadAttestationSchema
   public SszBitvectorSchema<?> getAggregationBitsSchema() {
     return (SszBitvectorSchema<?>) getFieldSchema0();
   }
+
+  public SszBitvector createEmptyAggregationBits() {
+    final SszBitvectorSchema<?> bitvectorSchema = getAggregationBitsSchema();
+    return bitvectorSchema.ofBits(Math.toIntExact(bitvectorSchema.getMaxLength()));
+  }
 }
