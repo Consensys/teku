@@ -900,11 +900,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
+  // TODO update to get withdrawal requests from block body instead of execution payload
   protected void processWithdrawalRequests(
       final MutableBeaconState state,
       final Optional<ExecutionPayload> executionPayload,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     // No WithdrawalRequests until Electra
   }
 

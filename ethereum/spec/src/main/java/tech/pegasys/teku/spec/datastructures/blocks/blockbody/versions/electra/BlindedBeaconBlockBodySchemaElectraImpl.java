@@ -31,8 +31,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
@@ -58,7 +58,7 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadHeaderElectraImpl,
+        ExecutionPayloadHeaderDenebImpl,
         SszList<SignedBlsToExecutionChange>,
         SszList<SszKZGCommitment>>
     implements BlindedBeaconBlockBodySchemaElectra<BlindedBeaconBlockBodyElectraImpl> {
@@ -74,7 +74,7 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
       final NamedSchema<SszList<Deposit>> deposits,
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
       final NamedSchema<SyncAggregate> syncAggregate,
-      final NamedSchema<ExecutionPayloadHeaderElectraImpl> executionPayloadHeader,
+      final NamedSchema<ExecutionPayloadHeaderDenebImpl> executionPayloadHeader,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
       final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments) {
     super(
@@ -133,7 +133,7 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
             BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
-            new ExecutionPayloadHeaderSchemaElectra(specConfig)),
+            new ExecutionPayloadHeaderSchemaDeneb(specConfig)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
@@ -198,8 +198,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
   }
 
   @Override
-  public ExecutionPayloadHeaderSchemaElectra getExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaElectra)
+  public ExecutionPayloadHeaderSchemaDeneb getExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaDeneb)
         getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER));
   }
 

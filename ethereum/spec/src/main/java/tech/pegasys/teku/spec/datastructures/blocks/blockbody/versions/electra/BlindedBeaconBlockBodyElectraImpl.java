@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -47,7 +47,7 @@ class BlindedBeaconBlockBodyElectraImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadHeaderElectraImpl,
+        ExecutionPayloadHeaderDenebImpl,
         SszList<SignedBlsToExecutionChange>,
         SszList<SszKZGCommitment>>
     implements BlindedBeaconBlockBodyElectra {
@@ -72,7 +72,7 @@ class BlindedBeaconBlockBodyElectraImpl
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> voluntaryExits,
       final SyncAggregate syncAggregate,
-      final ExecutionPayloadHeaderElectraImpl executionPayloadHeader,
+      final ExecutionPayloadHeaderDenebImpl executionPayloadHeader,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     super(

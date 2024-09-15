@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -47,7 +47,7 @@ public class BeaconBlockBodyElectraImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadElectraImpl,
+        ExecutionPayloadDenebImpl,
         SszList<SignedBlsToExecutionChange>,
         SszList<SszKZGCommitment>>
     implements BeaconBlockBodyElectra {
@@ -63,7 +63,7 @@ public class BeaconBlockBodyElectraImpl
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> voluntaryExits,
       final SyncAggregate syncAggregate,
-      final ExecutionPayloadElectraImpl executionPayload,
+      final ExecutionPayloadDenebImpl executionPayload,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     super(
@@ -155,7 +155,7 @@ public class BeaconBlockBodyElectraImpl
   }
 
   @Override
-  public ExecutionPayloadElectra getExecutionPayload() {
+  public ExecutionPayloadDeneb getExecutionPayload() {
     return getField9();
   }
 

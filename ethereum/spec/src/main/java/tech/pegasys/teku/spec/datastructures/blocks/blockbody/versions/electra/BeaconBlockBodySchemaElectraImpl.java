@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
@@ -59,7 +59,7 @@ public class BeaconBlockBodySchemaElectraImpl
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
-        ExecutionPayloadElectraImpl,
+        ExecutionPayloadDenebImpl,
         SszList<SignedBlsToExecutionChange>,
         SszList<SszKZGCommitment>>
     implements BeaconBlockBodySchemaElectra<BeaconBlockBodyElectraImpl> {
@@ -75,7 +75,7 @@ public class BeaconBlockBodySchemaElectraImpl
       final NamedSchema<SszList<Deposit>> depositsSchema,
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       final NamedSchema<SyncAggregate> syncAggregateSchema,
-      final NamedSchema<ExecutionPayloadElectraImpl> executionPayloadSchema,
+      final NamedSchema<ExecutionPayloadDenebImpl> executionPayloadSchema,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments) {
     super(
@@ -132,8 +132,7 @@ public class BeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchemaElectra(specConfig)),
+        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchemaDeneb(specConfig)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(

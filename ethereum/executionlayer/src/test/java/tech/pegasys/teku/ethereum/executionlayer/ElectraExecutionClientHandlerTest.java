@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -74,7 +74,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV4(context.getPayloadId());
     assertThat(future).isCompleted();
-    assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadElectra.class);
+    assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadDeneb.class);
     assertThat(future.get().getExecutionPayloadValue()).isEqualTo(UInt256.MAX_VALUE);
     assertThat(future.get().getBlobsBundle()).isPresent();
     assertThat(future.get().getShouldOverrideBuilder()).isTrue();

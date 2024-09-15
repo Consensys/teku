@@ -17,8 +17,8 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyBuilderDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
@@ -51,8 +51,7 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
           deposits,
           voluntaryExits,
           syncAggregate,
-          (ExecutionPayloadHeaderElectraImpl)
-              executionPayloadHeader.toVersionElectra().orElseThrow(),
+          (ExecutionPayloadHeaderDenebImpl) executionPayloadHeader.toVersionDeneb().orElseThrow(),
           getBlsToExecutionChanges(),
           getBlobKzgCommitments());
     }
@@ -70,7 +69,7 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
         deposits,
         voluntaryExits,
         syncAggregate,
-        (ExecutionPayloadElectraImpl) executionPayload.toVersionElectra().orElseThrow(),
+        (ExecutionPayloadDenebImpl) executionPayload.toVersionDeneb().orElseThrow(),
         getBlsToExecutionChanges(),
         getBlobKzgCommitments());
   }

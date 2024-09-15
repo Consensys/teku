@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange;
+import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -40,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
 
   @JsonProperty("execution_payload")
-  public final ExecutionPayloadElectra executionPayload;
+  public final ExecutionPayloadDeneb executionPayload;
 
   @JsonProperty("bls_to_execution_changes")
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
@@ -59,7 +60,7 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
-      @JsonProperty("execution_payload") final ExecutionPayloadElectra executionPayload,
+      @JsonProperty("execution_payload") final ExecutionPayloadDeneb executionPayload,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
       @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments) {
@@ -87,7 +88,7 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
           message) {
     super(message);
     checkNotNull(message.getExecutionPayload(), "Execution Payload is required for Electra blocks");
-    this.executionPayload = new ExecutionPayloadElectra(message.getExecutionPayload());
+    this.executionPayload = new ExecutionPayloadDeneb(message.getExecutionPayload());
     checkNotNull(
         message.getBlsToExecutionChanges(),
         "BlsToExecutionChanges are required for Electra blocks");
