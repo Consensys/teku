@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.execution;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -25,12 +27,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class ExecutionPayloadHeaderPool implements SlotEventsChannel {
+  private static final Logger LOG = LogManager.getLogger();
 
   // builders can broadcast a bid for only the current or the next slot, so no need to keep bids for
   // a long time in the pool
@@ -77,10 +81,14 @@ public class ExecutionPayloadHeaderPool implements SlotEventsChannel {
                 })
             .toList();
     for (SignedExecutionPayloadHeader bid : applicableBids) {
-      if (operationValidator.validateForBlockInclusion(stateAtBlockSlot, bid).isEmpty()) {
+      final Optional<OperationInvalidReason> blockInclusionValidation =
+          operationValidator.validateForBlockInclusion(stateAtBlockSlot, bid);
+      if (blockInclusionValidation.isEmpty()) {
         return Optional.of(bid);
       } else {
-        // The item is no longer valid to be included in a block so remove it from the pool.
+        LOG.warn(
+            "Bid is not valid to be included in a block: {}. Removing it from the pool.",
+            blockInclusionValidation.get().describe());
         remove(bid);
       }
     }
