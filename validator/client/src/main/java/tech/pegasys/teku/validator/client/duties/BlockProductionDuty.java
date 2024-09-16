@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
@@ -161,7 +160,8 @@ public class BlockProductionDuty implements Duty {
               VALIDATOR_LOGGER.logPublishedBid(
                   bid.getSlot(),
                   bid.getBuilderIndex(),
-                  gweiToEth(UInt256.valueOf(bid.getValue().longValue())));
+                  bid.getParentBlockRoot(),
+                  gweiToEth(bid.getValue()));
             });
   }
 

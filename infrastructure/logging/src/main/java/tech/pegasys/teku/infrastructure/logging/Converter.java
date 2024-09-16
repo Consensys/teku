@@ -14,9 +14,12 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.utils.Convert;
+import org.web3j.utils.Convert.Unit;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Converter {
 
@@ -28,8 +31,19 @@ public class Converter {
   }
 
   public static String gweiToEth(final UInt256 gwei) {
-    return new BigDecimal(gwei.toBigInteger())
-        .divide(gweiToEthFactor, 6, RoundingMode.HALF_UP)
-        .toString();
+    return gweiToEth(new BigDecimal(gwei.toBigInteger()));
+  }
+
+  public static String gweiToEth(final UInt64 gwei) {
+    return gweiToEth(new BigDecimal(gwei.bigIntegerValue()));
+  }
+
+  public static UInt64 weiToGwei(final UInt256 wei) {
+    final BigInteger gwei = Convert.fromWei(wei.toDecimalString(), Unit.GWEI).toBigInteger();
+    return UInt64.valueOf(gwei);
+  }
+
+  private static String gweiToEth(final BigDecimal gwei) {
+    return gwei.divide(gweiToEthFactor, 6, RoundingMode.HALF_UP).toString();
   }
 }

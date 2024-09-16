@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static tech.pegasys.teku.infrastructure.logging.Converter.weiToGwei;
+
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -110,6 +112,7 @@ public class ExecutionPayloadHeaderFactory {
         schemaDefinitions
             .getBlobKzgCommitmentsSchema()
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
+    // convert Wei to Gwei
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
         .createExecutionPayloadHeader(
@@ -121,9 +124,7 @@ public class ExecutionPayloadHeaderFactory {
                     .gasLimit(getPayloadResponse.getExecutionPayload().getGasLimit())
                     .builderIndex(() -> builderIndex)
                     .slot(() -> slot)
-                    .value(
-                        () ->
-                            UInt64.valueOf(getPayloadResponse.getExecutionPayloadValue().toLong()))
+                    .value(() -> weiToGwei(getPayloadResponse.getExecutionPayloadValue()))
                     .blobKzgCommitmentsRoot(blobKzgCommitments::hashTreeRoot));
   }
 }

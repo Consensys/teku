@@ -170,12 +170,16 @@ public class ValidatorLogger {
     return blockRoots.stream().map(LogFormatter::formatHashRoot).collect(Collectors.joining(", "));
   }
 
-  public void logPublishedBid(final UInt64 slot, final UInt64 builderIndex, final String ethValue) {
+  public void logPublishedBid(
+      final UInt64 slot,
+      final UInt64 builderIndex,
+      final Bytes32 parentBlockRoot,
+      final String ethValue) {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPublished bid  Slot: %s, Builder: %s, Value: %s ETH",
-                PREFIX, slot, builderIndex, ethValue),
+                "%sPublished bid  Slot: %s, Builder: %s, Parent Block Root: %s, Value: %s ETH",
+                PREFIX, slot, builderIndex, parentBlockRoot, ethValue),
             Color.CYAN));
   }
 

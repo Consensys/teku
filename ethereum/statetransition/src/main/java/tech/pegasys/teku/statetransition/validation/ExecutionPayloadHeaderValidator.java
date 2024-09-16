@@ -133,7 +133,7 @@ public class ExecutionPayloadHeaderValidator
               final Optional<Bytes32> parentBlockHash =
                   recentChainData.getExecutionBlockHashForBlockRoot(header.getParentBlockRoot());
               if (parentBlockHash.isEmpty()
-                  || header.getParentBlockHash().equals(parentBlockHash.get())) {
+                  || !header.getParentBlockHash().equals(parentBlockHash.get())) {
                 return InternalValidationResult.IGNORE;
               }
               /*
