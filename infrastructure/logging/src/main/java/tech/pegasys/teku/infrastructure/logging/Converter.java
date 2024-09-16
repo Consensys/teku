@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Converter {
 
-  static BigDecimal gweiToEthFactor = BigDecimal.TEN.pow(18);
+  static BigDecimal gweiToEthFactor = BigDecimal.TEN.pow(9);
 
   public static String weiToEth(final UInt256 wei) {
     final BigDecimal result = Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);

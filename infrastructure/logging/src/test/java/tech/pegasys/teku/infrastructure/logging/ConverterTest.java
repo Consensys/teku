@@ -38,6 +38,13 @@ class ConverterTest {
     assertThat(output).isEqualTo(expected);
   }
 
+  @ParameterizedTest
+  @MethodSource("getGweiToEthArguments")
+  void testGweiToEth(final UInt64 gwei, final String expected) {
+    String output = Converter.gweiToEth(gwei);
+    assertThat(output).isEqualTo(expected);
+  }
+
   private static Stream<Arguments> getWeiToEthArguments() {
     return Stream.of(
         Arguments.of(UInt256.valueOf(1), "0.000000"),
@@ -51,6 +58,11 @@ class ConverterTest {
         Arguments.of(UInt256.valueOf(1), UInt64.valueOf(0)),
         Arguments.of(UInt256.valueOf(1000), UInt64.valueOf(0)),
         Arguments.of(UInt256.valueOf(3401220000000000L), UInt64.valueOf(3401220)),
-        Arguments.of(UInt256.valueOf(889999203452340000L), UInt64.valueOf(889999203)));
+        Arguments.of(UInt256.valueOf(889999203452340000L), UInt64.valueOf(889999203)),
+        Arguments.of(UInt256.valueOf(424242424242424242L), UInt64.valueOf(424242424)));
+  }
+
+  private static Stream<Arguments> getGweiToEthArguments() {
+    return Stream.of(Arguments.of(UInt64.valueOf(424242424), "0.424242"));
   }
 }
