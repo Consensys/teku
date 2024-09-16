@@ -31,11 +31,11 @@ import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
-import tech.pegasys.teku.infrastructure.json.types.BooleanTypeHeaderDefinition;
+import tech.pegasys.teku.infrastructure.json.types.BooleanHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.EnumTypeHeaderDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringTypeHeaderDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumHeaderTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringBasedHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -97,8 +97,8 @@ public class EthereumTypes {
       new EnumTypeDefinition<>(
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
-  public static final EnumTypeHeaderDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
-      new EnumTypeHeaderDefinition.EnumTypeHeaderDefinitionBuilder<>(
+  public static final EnumHeaderTypeDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
+      new EnumHeaderTypeDefinition.EnumTypeHeaderDefinitionBuilder<>(
               SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT))
           .title(HEADER_CONSENSUS_VERSION)
           .required(true)
@@ -107,14 +107,14 @@ public class EthereumTypes {
           .example("phase0")
           .build();
 
-  public static final BooleanTypeHeaderDefinition ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE =
-      new BooleanTypeHeaderDefinition(
+  public static final BooleanHeaderTypeDefinition ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE =
+      new BooleanHeaderTypeDefinition(
           HEADER_EXECUTION_PAYLOAD_BLINDED,
           Optional.of(true),
           "Required in response so client can deserialize returned json or ssz data to the correct object.");
 
-  public static final StringTypeHeaderDefinition<UInt256> ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE =
-      new StringTypeHeaderDefinition.Builder<UInt256>()
+  public static final StringBasedHeaderTypeDefinition<UInt256> ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE =
+      new StringBasedHeaderTypeDefinition.Builder<UInt256>()
           .title(HEADER_EXECUTION_PAYLOAD_VALUE)
           .description(
               "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.")
@@ -124,8 +124,8 @@ public class EthereumTypes {
           .required(true)
           .build();
 
-  public static final StringTypeHeaderDefinition<UInt256> ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE =
-      new StringTypeHeaderDefinition.Builder<UInt256>()
+  public static final StringBasedHeaderTypeDefinition<UInt256> ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE =
+      new StringBasedHeaderTypeDefinition.Builder<UInt256>()
           .title(HEADER_CONSENSUS_BLOCK_VALUE)
           .description(
               "Consensus rewards paid to the proposer for this block, in Wei. Required in response so client can determine relative value of consensus blocks.")

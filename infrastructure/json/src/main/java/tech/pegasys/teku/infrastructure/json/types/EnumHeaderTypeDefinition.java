@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
-public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueTypeDefinition<T> {
+public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueTypeDefinition<T> {
   final Class<T> itemType;
   private final Function<T, String> serializer;
   private final Optional<String> name;
@@ -29,7 +29,7 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueT
   private final Optional<String> description;
   private final Optional<String> example;
 
-  public EnumTypeHeaderDefinition(
+  public EnumHeaderTypeDefinition(
       final Class<T> itemType,
       final Function<T, String> serializer,
       final Optional<String> name,
@@ -107,7 +107,7 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueT
 
   @Override
   public StringValueTypeDefinition<T> withDescription(final String description) {
-    return new EnumTypeHeaderDefinition<>(
+    return new EnumHeaderTypeDefinition<>(
         itemType, serializer, Optional.empty(), title, required, Optional.of(description), example);
   }
 
@@ -140,7 +140,7 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueT
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final EnumTypeHeaderDefinition<?> that = (EnumTypeHeaderDefinition<?>) o;
+    final EnumHeaderTypeDefinition<?> that = (EnumHeaderTypeDefinition<?>) o;
     return Objects.equals(itemType, that.itemType)
         && Objects.equals(serializer, that.serializer)
         && Objects.equals(name, that.name)
@@ -195,8 +195,8 @@ public class EnumTypeHeaderDefinition<T extends Enum<T>> implements StringValueT
       return this;
     }
 
-    public EnumTypeHeaderDefinition<T> build() {
-      return new EnumTypeHeaderDefinition<>(
+    public EnumHeaderTypeDefinition<T> build() {
+      return new EnumHeaderTypeDefinition<>(
           itemType, serializer, name, title, required, description, example);
     }
   }

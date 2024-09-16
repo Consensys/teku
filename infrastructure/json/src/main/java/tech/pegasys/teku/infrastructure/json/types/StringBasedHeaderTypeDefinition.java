@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
 
-public class StringTypeHeaderDefinition<T> implements StringValueTypeDefinition<T> {
+public class StringBasedHeaderTypeDefinition<T> implements StringValueTypeDefinition<T> {
   private final Optional<String> name;
   private final Optional<String> title;
   private final Optional<String> example;
@@ -31,7 +31,7 @@ public class StringTypeHeaderDefinition<T> implements StringValueTypeDefinition<
   final Function<String, T> objectFromString;
   final Function<T, String> stringFromObject;
 
-  public StringTypeHeaderDefinition(
+  public StringBasedHeaderTypeDefinition(
       final Optional<String> name,
       final Optional<String> title,
       final Optional<String> example,
@@ -107,7 +107,15 @@ public class StringTypeHeaderDefinition<T> implements StringValueTypeDefinition<
 
   @Override
   public StringValueTypeDefinition<T> withDescription(final String description) {
-    return null;
+    return new StringBasedHeaderTypeDefinition<>(
+            Optional.empty(),
+            title,
+            example,
+            Optional.of(description),
+            required,
+            objectFromString,
+            stringFromObject
+            );
   }
 
   public static class Builder<T> {
@@ -154,11 +162,11 @@ public class StringTypeHeaderDefinition<T> implements StringValueTypeDefinition<
       return this;
     }
 
-    public StringTypeHeaderDefinition<T> build() {
+    public StringBasedHeaderTypeDefinition<T> build() {
       checkNotNull(parser, "Must specify parser");
       checkNotNull(formatter, "Must specify formatter");
 
-      return new StringTypeHeaderDefinition<>(
+      return new StringBasedHeaderTypeDefinition<>(
           name, title, example, description, required, parser, formatter);
     }
   }

@@ -17,11 +17,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Optional;
 
-public class BooleanTypeHeaderDefinition extends BooleanTypeDefinition {
+public class BooleanHeaderTypeDefinition extends BooleanTypeDefinition {
   private final String title;
   private final Optional<Boolean> required;
 
-  public BooleanTypeHeaderDefinition(
+  public BooleanHeaderTypeDefinition(
       final String title, final Optional<Boolean> required, final String description) {
     super(description);
     this.title = title;
