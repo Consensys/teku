@@ -66,13 +66,6 @@ public class ExecutionPayloadV4 extends ExecutionPayloadV3 {
         excessBlobGas);
   }
 
-  @Override
-  protected ExecutionPayloadBuilder applyToBuilder(
-      final ExecutionPayloadSchema<?> executionPayloadSchema,
-      final ExecutionPayloadBuilder builder) {
-    return super.applyToBuilder(executionPayloadSchema, builder);
-  }
-
   public static ExecutionPayloadV4 fromInternalExecutionPayload(
       final ExecutionPayload executionPayload) {
     return new ExecutionPayloadV4(
