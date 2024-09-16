@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
@@ -449,8 +448,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
-          processWithdrawalRequests(
-              state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
+          processWithdrawalRequests(state, body, validatorExitContextSupplier);
         });
   }
 
@@ -900,25 +898,23 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  // TODO update to get withdrawal requests from block body instead of execution payload
   protected void processWithdrawalRequests(
       final MutableBeaconState state,
-      final Optional<ExecutionPayload> executionPayload,
+      final BeaconBlockBody beaconBlockBody,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     // No WithdrawalRequests until Electra
   }
 
   @Override
   public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     // No DepositRequests until Electra
   }
 
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<WithdrawalRequest> withdrawalRequests,
+      final List<WithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     // No WithdrawalRequests until Electra
@@ -926,7 +922,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public void processConsolidationRequests(
-      final MutableBeaconState state, final SszList<ConsolidationRequest> consolidationRequests)
+      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
       throws BlockProcessingException {
     // No Consolidations until Electra
   }

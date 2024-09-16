@@ -74,6 +74,10 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder blobKzgCommitments(SszList<SszKZGCommitment> blobKzgCommitments);
 
+  default boolean supportsExecutionRequests() {
+    return false;
+  }
+
   BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
 
   BeaconBlockBody build();

@@ -42,6 +42,11 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
   }
 
   @Override
+  public boolean supportsExecutionRequests() {
+    return true;
+  }
+
+  @Override
   public BeaconBlockBodyBuilder executionRequests(final ExecutionRequests executionRequests) {
     this.executionRequests = executionRequests;
     return this;
