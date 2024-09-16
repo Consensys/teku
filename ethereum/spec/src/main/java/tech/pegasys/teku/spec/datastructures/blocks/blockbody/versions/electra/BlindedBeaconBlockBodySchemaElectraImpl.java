@@ -17,7 +17,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
@@ -47,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class BlindedBeaconBlockBodySchemaElectraImpl
-    extends ContainerSchema12<
+    extends ContainerSchema13<
         BlindedBeaconBlockBodyElectraImpl,
         SszSignature,
         Eth1Data,
@@ -60,7 +62,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         SyncAggregate,
         ExecutionPayloadHeaderDenebImpl,
         SszList<SignedBlsToExecutionChange>,
-        SszList<SszKZGCommitment>>
+        SszList<SszKZGCommitment>,
+        ExecutionRequests>
     implements BlindedBeaconBlockBodySchemaElectra<BlindedBeaconBlockBodyElectraImpl> {
 
   private BlindedBeaconBlockBodySchemaElectraImpl(
@@ -76,7 +79,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
       final NamedSchema<SyncAggregate> syncAggregate,
       final NamedSchema<ExecutionPayloadHeaderDenebImpl> executionPayloadHeader,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges,
-      final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final NamedSchema<SszList<SszKZGCommitment>> blobKzgCommitments,
+      final NamedSchema<ExecutionRequests> executionRequests) {
     super(
         containerName,
         randaoReveal,
@@ -90,7 +94,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
         syncAggregate,
         executionPayloadHeader,
         blsToExecutionChanges,
-        blobKzgCommitments);
+        blobKzgCommitments,
+        executionRequests);
   }
 
   public static BlindedBeaconBlockBodySchemaElectraImpl create(
@@ -98,6 +103,7 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
       final AttesterSlashingSchema<?> attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final ExecutionRequestsSchema executionRequestsSchema,
       final long maxValidatorsPerAttestation,
       final String containerName) {
     return new BlindedBeaconBlockBodySchemaElectraImpl(
@@ -138,7 +144,8 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
                 signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())),
-        namedSchema(BlockBodyFields.BLOB_KZG_COMMITMENTS, blobKzgCommitmentsSchema));
+        namedSchema(BlockBodyFields.BLOB_KZG_COMMITMENTS, blobKzgCommitmentsSchema),
+        namedSchema(BlockBodyFields.EXECUTION_REQUESTS, executionRequestsSchema));
   }
 
   @Override
@@ -215,6 +222,12 @@ public class BlindedBeaconBlockBodySchemaElectraImpl
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
     return (SszListSchema<SszKZGCommitment, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
+  }
+
+  @Override
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    return (ExecutionRequestsSchema)
+        getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_REQUESTS));
   }
 
   @Override

@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -1164,6 +1165,7 @@ class BlockOperationSelectorFactoryTest {
     protected ExecutionPayload executionPayload;
     protected ExecutionPayloadHeader executionPayloadHeader;
     protected SszList<SszKZGCommitment> blobKzgCommitments;
+    protected ExecutionRequests executionRequests;
 
     public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
       this.supportsKzgCommitments = supportsKzgCommitments;
@@ -1240,6 +1242,12 @@ class BlockOperationSelectorFactoryTest {
     public BeaconBlockBodyBuilder blsToExecutionChanges(
         final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
       this.blsToExecutionChanges = blsToExecutionChanges;
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder executionRequests(final ExecutionRequests executionRequests) {
+      this.executionRequests = executionRequests;
       return this;
     }
 
