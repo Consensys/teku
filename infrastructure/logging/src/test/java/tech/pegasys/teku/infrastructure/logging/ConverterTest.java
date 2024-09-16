@@ -20,21 +20,49 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ConverterTest {
 
   @ParameterizedTest
-  @MethodSource("getUInt256Values")
-  void test(final UInt256 wei, final String expected) {
+  @MethodSource("getWeiToEthArguments")
+  void testWeiToEth(final UInt256 wei, final String expected) {
     String output = Converter.weiToEth(wei);
     assertThat(output).isEqualTo(expected);
   }
 
-  private static Stream<Arguments> getUInt256Values() {
+  @ParameterizedTest
+  @MethodSource("getWeiToGweiArguments")
+  void testWeiToGwei(final UInt256 wei, final UInt64 expected) {
+    UInt64 output = Converter.weiToGwei(wei);
+    assertThat(output).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getGweiToEthArguments")
+  void testGweiToEth(final UInt64 gwei, final String expected) {
+    String output = Converter.gweiToEth(gwei);
+    assertThat(output).isEqualTo(expected);
+  }
+
+  private static Stream<Arguments> getWeiToEthArguments() {
     return Stream.of(
         Arguments.of(UInt256.valueOf(1), "0.000000"),
         Arguments.of(UInt256.valueOf(1000), "0.000000"),
         Arguments.of(UInt256.valueOf(3401220000000000L), "0.003401"),
         Arguments.of(UInt256.valueOf(889999203452340000L), "0.889999"));
+  }
+
+  private static Stream<Arguments> getWeiToGweiArguments() {
+    return Stream.of(
+        Arguments.of(UInt256.valueOf(1), UInt64.valueOf(0)),
+        Arguments.of(UInt256.valueOf(1000), UInt64.valueOf(0)),
+        Arguments.of(UInt256.valueOf(3401220000000000L), UInt64.valueOf(3401220)),
+        Arguments.of(UInt256.valueOf(889999203452340000L), UInt64.valueOf(889999203)),
+        Arguments.of(UInt256.valueOf(424242424242424242L), UInt64.valueOf(424242424)));
+  }
+
+  private static Stream<Arguments> getGweiToEthArguments() {
+    return Stream.of(Arguments.of(UInt64.valueOf(424242424), "0.424242"));
   }
 }

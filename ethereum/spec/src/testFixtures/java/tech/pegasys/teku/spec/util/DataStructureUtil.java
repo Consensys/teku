@@ -124,7 +124,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
@@ -2591,6 +2593,24 @@ public final class DataStructureUtil {
         .create(
             randomExecutionPayloadHeader(getSpec().forMilestone(SpecMilestone.EIP7732)),
             randomSignature());
+  }
+
+  public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope() {
+    return getEip7732SchemaDefinitions(randomSlot())
+        .getSignedExecutionPayloadEnvelopeSchema()
+        .create(randomExecutionPayloadEnvelope(), randomSignature());
+  }
+
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope() {
+    return getEip7732SchemaDefinitions(randomSlot())
+        .getExecutionPayloadEnvelopeSchema()
+        .create(
+            randomExecutionPayload(),
+            randomUInt64(),
+            randomBytes32(),
+            randomBlobKzgCommitments(),
+            false,
+            randomBytes32());
   }
 
   public SszList<PayloadAttestation> emptyPayloadAttestations() {
