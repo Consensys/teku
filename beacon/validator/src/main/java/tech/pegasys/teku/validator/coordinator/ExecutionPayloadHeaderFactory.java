@@ -112,7 +112,6 @@ public class ExecutionPayloadHeaderFactory {
         schemaDefinitions
             .getBlobKzgCommitmentsSchema()
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
-    // convert Wei to Gwei
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
         .createExecutionPayloadHeader(
@@ -124,6 +123,7 @@ public class ExecutionPayloadHeaderFactory {
                     .gasLimit(getPayloadResponse.getExecutionPayload().getGasLimit())
                     .builderIndex(() -> builderIndex)
                     .slot(() -> slot)
+                    // Engine API returns the block value in wei, so conversion to gwei is required
                     .value(() -> weiToGwei(getPayloadResponse.getExecutionPayloadValue()))
                     .blobKzgCommitmentsRoot(blobKzgCommitments::hashTreeRoot));
   }
