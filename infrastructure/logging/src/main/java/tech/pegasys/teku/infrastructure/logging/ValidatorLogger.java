@@ -170,12 +170,12 @@ public class ValidatorLogger {
     return blockRoots.stream().map(LogFormatter::formatHashRoot).collect(Collectors.joining(", "));
   }
 
-  public void logPublishedBid(final UInt64 slot, final UInt64 builderIndex, final UInt64 value) {
+  public void logPublishedBid(final UInt64 slot, final UInt64 builderIndex, final String ethValue) {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPublished bid  Slot: %s, Builder: %s, Value: %s",
-                PREFIX, slot, builderIndex, value),
+                "%sPublished bid  Slot: %s, Builder: %s, Value: %s ETH",
+                PREFIX, slot, builderIndex, ethValue),
             Color.CYAN));
   }
 
@@ -184,12 +184,12 @@ public class ValidatorLogger {
       final UInt64 builderIndex,
       final Bytes32 blockRoot,
       final int numberOfBlobs,
-      final String context) {
+      final String executionSummary) {
     log.info(
         ColorConsolePrinter.print(
             String.format(
                 "%sPublished execution payload  Slot: %s, Builder: %s, Block Root: %s, Blobs: %d, %s",
-                PREFIX, slot, builderIndex, blockRoot, numberOfBlobs, context),
+                PREFIX, slot, builderIndex, blockRoot, numberOfBlobs, executionSummary),
             Color.CYAN));
   }
 
