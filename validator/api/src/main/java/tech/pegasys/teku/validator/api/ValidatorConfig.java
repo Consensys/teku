@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDA
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -744,12 +745,12 @@ public class ValidatorConfig {
           source -> {
             if (source.contains(":")) {
               try {
-                final URL url = new URL(source);
+                final URL url = new URI(source).toURL();
                 if (hostAndPortMatching(url, validatorExternalSignerUrl)) {
                   LOG.warn(
                       "'--validators-external-signer-public-keys' contains an URL matching the external-signer-url host and port. Use 'external-signer' instead if you want to use all public keys exposed by the external signer");
                 }
-              } catch (MalformedURLException e) {
+              } catch (MalformedURLException | URISyntaxException e) {
                 throw new InvalidConfigurationException(
                     "Invalid configuration. '--validators-external-signer-public-keys' contains a malformed URL: "
                         + source);

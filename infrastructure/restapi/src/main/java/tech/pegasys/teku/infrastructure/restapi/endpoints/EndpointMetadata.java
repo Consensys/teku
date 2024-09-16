@@ -577,7 +577,7 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder response(final int responseCode, final String description) {
-      return response(responseCode, description, emptyList(), List.of());
+      return response(responseCode, description, emptyList(), emptyList());
     }
 
     public EndpointMetaDataBuilder defaultResponseType(final String defaultContentType) {
@@ -674,7 +674,7 @@ public class EndpointMetadata {
           responseCode,
           description,
           List.of(new JsonResponseContentTypeDefinition<>(content)),
-          List.of());
+          emptyList());
     }
 
     public EndpointMetaDataBuilder response(
@@ -698,7 +698,7 @@ public class EndpointMetadata {
           responseCode,
           description,
           List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
-          List.of());
+          emptyList());
     }
 
     public <T> EndpointMetaDataBuilder response(
@@ -717,8 +717,23 @@ public class EndpointMetadata {
     public <T> EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
+        final SerializableTypeDefinition<? extends T> content,
+        final ResponseContentTypeDefinition<? extends T> octetStreamTypeDefinition,
+        final List<SerializableTypeDefinition<? extends T>> headers) {
+      return response(
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          headers.stream()
+              .map(JsonResponseContentTypeDefinition::new)
+              .collect(Collectors.toList()));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
         final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
-      return response(responseCode, description, List.of(octetStreamTypeDefinition), List.of());
+      return response(responseCode, description, List.of(octetStreamTypeDefinition), emptyList());
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
@@ -779,7 +794,7 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final List<? extends ResponseContentTypeDefinition<?>> content) {
-      return response(responseCode, description, content, List.of());
+      return response(responseCode, description, content, emptyList());
     }
 
     public EndpointMetaDataBuilder response(
