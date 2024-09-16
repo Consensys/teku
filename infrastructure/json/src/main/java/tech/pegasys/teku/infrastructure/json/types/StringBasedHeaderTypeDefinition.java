@@ -108,14 +108,13 @@ public class StringBasedHeaderTypeDefinition<T> implements StringValueTypeDefini
   @Override
   public StringValueTypeDefinition<T> withDescription(final String description) {
     return new StringBasedHeaderTypeDefinition<>(
-            Optional.empty(),
-            title,
-            example,
-            Optional.of(description),
-            required,
-            objectFromString,
-            stringFromObject
-            );
+        Optional.empty(),
+        title,
+        example,
+        Optional.of(description),
+        required,
+        objectFromString,
+        stringFromObject);
   }
 
   public static class Builder<T> {

@@ -33,8 +33,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.BooleanHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.EnumHeaderTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
@@ -113,27 +113,29 @@ public class EthereumTypes {
           Optional.of(true),
           "Required in response so client can deserialize returned json or ssz data to the correct object.");
 
-  public static final StringBasedHeaderTypeDefinition<UInt256> ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE =
-      new StringBasedHeaderTypeDefinition.Builder<UInt256>()
-          .title(HEADER_EXECUTION_PAYLOAD_VALUE)
-          .description(
-              "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.")
-          .formatter(value -> value.toBigInteger().toString(10))
-          .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
-          .example("1")
-          .required(true)
-          .build();
+  public static final StringBasedHeaderTypeDefinition<UInt256>
+      ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE =
+          new StringBasedHeaderTypeDefinition.Builder<UInt256>()
+              .title(HEADER_EXECUTION_PAYLOAD_VALUE)
+              .description(
+                  "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.")
+              .formatter(value -> value.toBigInteger().toString(10))
+              .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
+              .example("1")
+              .required(true)
+              .build();
 
-  public static final StringBasedHeaderTypeDefinition<UInt256> ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE =
-      new StringBasedHeaderTypeDefinition.Builder<UInt256>()
-          .title(HEADER_CONSENSUS_BLOCK_VALUE)
-          .description(
-              "Consensus rewards paid to the proposer for this block, in Wei. Required in response so client can determine relative value of consensus blocks.")
-          .formatter(value -> value.toBigInteger().toString(10))
-          .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
-          .example("1")
-          .required(true)
-          .build();
+  public static final StringBasedHeaderTypeDefinition<UInt256>
+      ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE =
+          new StringBasedHeaderTypeDefinition.Builder<UInt256>()
+              .title(HEADER_CONSENSUS_BLOCK_VALUE)
+              .description(
+                  "Consensus rewards paid to the proposer for this block, in Wei. Required in response so client can determine relative value of consensus blocks.")
+              .formatter(value -> value.toBigInteger().toString(10))
+              .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
+              .example("1")
+              .required(true)
+              .build();
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {
