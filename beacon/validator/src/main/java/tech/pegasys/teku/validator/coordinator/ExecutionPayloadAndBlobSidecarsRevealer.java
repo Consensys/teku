@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionPayloadAndBlobSidecarsRevealer {
@@ -32,5 +33,6 @@ public interface ExecutionPayloadAndBlobSidecarsRevealer {
       SignedBeaconBlock block, BeaconState state);
 
   /** 3. builder reveals the blob sidecars */
-  List<BlobSidecar> revealBlobSidecars(SignedBeaconBlock block);
+  List<BlobSidecar> revealBlobSidecars(
+      SignedBeaconBlock block, SignedExecutionPayloadEnvelope executionPayloadEnvelope);
 }

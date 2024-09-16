@@ -13,13 +13,22 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.helpers;
 
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
@@ -75,6 +84,35 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
         SpecConfigEip7732.required(specConfig).getKzgCommitmentInclusionProofDepthEip7732(),
         getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
         blobSidecar.getBlockBodyRoot());
+  }
+
+  public BlobSidecar constructBlobSidecar(
+      final SignedBeaconBlock signedBeaconBlock,
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope,
+      final UInt64 index,
+      final Blob blob,
+      final SszKZGProof proof) {
+    final BeaconBlockBody beaconBlockBody = signedBeaconBlock.getMessage().getBody();
+    final SszKZGCommitment commitment;
+    try {
+      commitment =
+          signedExecutionPayloadEnvelope.getMessage().getBlobKzgCommitments().get(index.intValue());
+    } catch (final IndexOutOfBoundsException | NoSuchElementException ex) {
+      final int commitmentsCount = getBlobKzgCommitmentsCount(signedExecutionPayloadEnvelope);
+      throw new IllegalArgumentException(
+          String.format(
+              "Can't create blob sidecar with index %s because there are %d commitment(s) in the execution payload envelope",
+              index, commitmentsCount));
+    }
+    final List<Bytes32> kzgCommitmentInclusionProof =
+        computeKzgCommitmentInclusionProof(index, beaconBlockBody);
+    return blobSidecarSchema.create(
+        index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
+  }
+
+  public int getBlobKzgCommitmentsCount(
+      final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
+    return signedExecutionPayloadEnvelope.getMessage().getBlobKzgCommitments().size();
   }
 
   @Override
