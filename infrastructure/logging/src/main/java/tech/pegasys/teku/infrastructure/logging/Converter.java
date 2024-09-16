@@ -30,20 +30,14 @@ public class Converter {
     return result.setScale(6, RoundingMode.HALF_UP).toString();
   }
 
-  public static String gweiToEth(final UInt256 gwei) {
-    return gweiToEth(new BigDecimal(gwei.toBigInteger()));
-  }
-
   public static String gweiToEth(final UInt64 gwei) {
-    return gweiToEth(new BigDecimal(gwei.bigIntegerValue()));
+    return new BigDecimal(gwei.bigIntegerValue())
+        .divide(gweiToEthFactor, 6, RoundingMode.HALF_UP)
+        .toString();
   }
 
   public static UInt64 weiToGwei(final UInt256 wei) {
     final BigInteger gwei = Convert.fromWei(wei.toDecimalString(), Unit.GWEI).toBigInteger();
     return UInt64.valueOf(gwei);
-  }
-
-  private static String gweiToEth(final BigDecimal gwei) {
-    return gwei.divide(gweiToEthFactor, 6, RoundingMode.HALF_UP).toString();
   }
 }
