@@ -170,6 +170,29 @@ public class ValidatorLogger {
     return blockRoots.stream().map(LogFormatter::formatHashRoot).collect(Collectors.joining(", "));
   }
 
+  public void logPublishedBid(final UInt64 slot, final UInt64 builderIndex, final UInt64 value) {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sPublished bid  Slot: %s, Builder: %s, Value: %s",
+                PREFIX, slot, builderIndex, value),
+            Color.CYAN));
+  }
+
+  public void logPublishedExecutionPayload(
+      final UInt64 slot,
+      final UInt64 builderIndex,
+      final Bytes32 blockRoot,
+      final int numberOfBlobs,
+      final String context) {
+    log.info(
+        ColorConsolePrinter.print(
+            String.format(
+                "%sPublished execution payload  Slot: %s, Builder: %s, Block Root: %s, Blobs: %d, %s",
+                PREFIX, slot, builderIndex, blockRoot, numberOfBlobs, context),
+            Color.CYAN));
+  }
+
   public void aggregationSkipped(final UInt64 slot, final UInt64 committeeIndex) {
     log.warn(
         ColorConsolePrinter.print(
