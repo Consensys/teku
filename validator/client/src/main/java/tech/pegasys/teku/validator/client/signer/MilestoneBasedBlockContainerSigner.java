@@ -46,7 +46,10 @@ public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner 
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+              // only need to sign the block in ePBS
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+                registeredSigners.put(milestone, blockContainerSignerPhase0);
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredSigners.put(milestone, blockContainerSignerDeneb.get());
               } else {
                 registeredSigners.put(milestone, blockContainerSignerPhase0);
