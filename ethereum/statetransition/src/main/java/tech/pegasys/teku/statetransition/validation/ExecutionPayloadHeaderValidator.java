@@ -115,7 +115,7 @@ public class ExecutionPayloadHeaderValidator
               final boolean builderIsActive =
                   builder.getActivationEpoch().isLessThanOrEqualTo(epoch)
                       && epoch.isLessThan(builder.getExitEpoch());
-              if (builderIsActive || builder.isSlashed()) {
+              if (!builderIsActive || builder.isSlashed()) {
                 return reject("Builder is not active or is slashed");
               }
               /*
