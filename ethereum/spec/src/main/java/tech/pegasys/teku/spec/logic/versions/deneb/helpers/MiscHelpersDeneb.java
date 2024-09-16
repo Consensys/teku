@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 public class MiscHelpersDeneb extends MiscHelpersCapella {
   protected final Predicates predicates;
   protected final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
-  private final BlobSidecarSchema blobSidecarSchema;
+  protected final BlobSidecarSchema blobSidecarSchema;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers

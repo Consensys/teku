@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTESTATION_PRODUCTION;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE;
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
@@ -227,7 +228,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockBlobSidecarsTrackersPool,
             executionPayloadGossipChannel,
             executionPayloadAndBlobSidecarsRevealer,
-            blobSidecarGossipChannel);
+            blobSidecarGossipChannel,
+            SYSTEM_TIME_PROVIDER);
     this.executionPayloadAndBlobSidecarsRevealer = executionPayloadAndBlobSidecarsRevealer;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }

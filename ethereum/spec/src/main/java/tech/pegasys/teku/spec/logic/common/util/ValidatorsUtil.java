@@ -127,7 +127,7 @@ public class ValidatorsUtil {
     return Optional.empty();
   }
 
-  public Int2ObjectMap<UInt64> getValidatorIndexToPctAssignmentMap(
+  public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
     final Int2ObjectMap<UInt64> assignmentMap = new Int2ObjectArrayMap<>();
 
