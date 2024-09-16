@@ -23,17 +23,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Converter {
 
-  static BigDecimal gweiToEthFactor = BigDecimal.TEN.pow(9);
-
   public static String weiToEth(final UInt256 wei) {
-    final BigDecimal result = Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
-    return result.setScale(6, RoundingMode.HALF_UP).toString();
+    final BigDecimal eth = Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
+    return eth.setScale(6, RoundingMode.HALF_UP).toString();
   }
 
   public static String gweiToEth(final UInt64 gwei) {
-    return new BigDecimal(gwei.bigIntegerValue())
-        .divide(gweiToEthFactor, 6, RoundingMode.HALF_UP)
-        .toString();
+    final BigDecimal wei = Convert.toWei(gwei.toString(), Unit.GWEI);
+    return weiToEth(UInt256.valueOf(wei.toBigInteger()));
   }
 
   public static UInt64 weiToGwei(final UInt256 wei) {
