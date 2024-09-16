@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -29,13 +30,18 @@ import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -81,8 +87,21 @@ public class BlockProductionDuty implements Duty {
     return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
   }
 
+  // EIP7732 TODO: "naive" ePBS block production, need to think about a proper builder flow duty
+  // abstraction
   private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
-    return createRandaoReveal(forkInfo)
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
+
+    final SafeFuture<Void> ePBSBidPreparation;
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      final SchemaDefinitionsEip7732 schemaDefinitions =
+          SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions());
+      ePBSBidPreparation = processExecutionPayloadHeader(schemaDefinitions, forkInfo);
+    } else {
+      ePBSBidPreparation = SafeFuture.COMPLETE;
+    }
+    return ePBSBidPreparation
+        .thenCompose(__ -> createRandaoReveal(forkInfo))
         .thenCompose(
             signature ->
                 validatorDutyMetrics.record(
@@ -98,7 +117,52 @@ public class BlockProductionDuty implements Duty {
             signedBlockContainer ->
                 validatorDutyMetrics.record(
                     () -> sendBlock(signedBlockContainer), this, ValidatorDutyMetricsSteps.SEND))
+        .thenCompose(
+            dutyResult -> {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+                final SchemaDefinitionsEip7732 schemaDefinitions =
+                    SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions());
+                return processExecutionPayloadEnvelope(dutyResult, schemaDefinitions, forkInfo);
+              } else {
+                return SafeFuture.completedFuture(dutyResult);
+              }
+            })
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
+  }
+
+  private SafeFuture<Void> processExecutionPayloadHeader(
+      final SchemaDefinitionsEip7732 schemaDefinitions, final ForkInfo forkInfo) {
+    return validatorApiChannel
+        .getHeader(slot, validator.getPublicKey())
+        .thenCompose(
+            maybeHeader -> {
+              final ExecutionPayloadHeader header =
+                  maybeHeader.orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "Node was not syncing but could not create header"));
+              return validator
+                  .getSigner()
+                  .signExecutionPayloadHeader(header, forkInfo)
+                  .thenApply(
+                      signature ->
+                          schemaDefinitions
+                              .getSignedExecutionPayloadHeaderSchema()
+                              .create(header, signature));
+            })
+        .thenCompose(
+            signedHeader ->
+                validatorApiChannel.sendSignedHeader(signedHeader).thenApply(__ -> signedHeader))
+        .thenAccept(
+            publishedHeader -> {
+              final ExecutionPayloadHeaderEip7732 bid =
+                  ExecutionPayloadHeaderEip7732.required(publishedHeader.getMessage());
+              VALIDATOR_LOGGER.logPublishedBid(
+                  bid.getSlot(),
+                  bid.getBuilderIndex(),
+                  bid.getParentBlockRoot(),
+                  gweiToEth(bid.getValue()));
+            });
   }
 
   private SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
@@ -153,6 +217,46 @@ public class BlockProductionDuty implements Duty {
                   new IllegalArgumentException(
                       "Block was rejected by the beacon node: "
                           + result.getRejectionReason().orElse("<reason unknown>")));
+            });
+  }
+
+  private SafeFuture<DutyResult> processExecutionPayloadEnvelope(
+      final DutyResult blockProductionDutyResult,
+      final SchemaDefinitionsEip7732 schemaDefinitions,
+      final ForkInfo forkInfo) {
+    return validatorApiChannel
+        .getExecutionPayloadEnvelope(slot, validator.getPublicKey())
+        .thenCompose(
+            maybeEnvelope -> {
+              final ExecutionPayloadEnvelope envelope =
+                  maybeEnvelope.orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "Node was not syncing but envelope was not available"));
+              return validator
+                  .getSigner()
+                  .signExecutionPayloadEnvelope(slot, envelope, forkInfo)
+                  .thenApply(
+                      signature ->
+                          schemaDefinitions
+                              .getSignedExecutionPayloadEnvelopeSchema()
+                              .create(envelope, signature))
+                  .thenCompose(
+                      signedEnvelope ->
+                          validatorApiChannel
+                              .sendSignedExecutionPayloadEnvelope(signedEnvelope)
+                              .thenApply(__ -> signedEnvelope));
+            })
+        .thenApply(
+            signedEnvelope -> {
+              final ExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
+              VALIDATOR_LOGGER.logPublishedExecutionPayload(
+                  slot,
+                  envelope.getBuilderIndex(),
+                  envelope.getBeaconBlockRoot(),
+                  envelope.getBlobKzgCommitments().size(),
+                  getExecutionSummaryString(envelope.getPayload()));
+              return blockProductionDutyResult;
             });
   }
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -33,29 +34,32 @@ public class ExecutionPayloadPublisher {
   private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
   private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer;
   private final BlobSidecarGossipChannel blobSidecarGossipChannel;
+  private final TimeProvider timeProvider;
 
   public ExecutionPayloadPublisher(
       final ExecutionPayloadManager executionPayloadManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
       final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer,
-      final BlobSidecarGossipChannel blobSidecarGossipChannel) {
+      final BlobSidecarGossipChannel blobSidecarGossipChannel,
+      final TimeProvider timeProvider) {
     this.executionPayloadManager = executionPayloadManager;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.executionPayloadGossipChannel = executionPayloadGossipChannel;
     this.executionPayloadAndBlobSidecarsRevealer = executionPayloadAndBlobSidecarsRevealer;
     this.blobSidecarGossipChannel = blobSidecarGossipChannel;
+    this.timeProvider = timeProvider;
   }
 
   public SafeFuture<InternalValidationResult> sendExecutionPayload(
       final SignedBeaconBlock block, final SignedExecutionPayloadEnvelope executionPayload) {
     final List<BlobSidecar> blobSidecars =
-        executionPayloadAndBlobSidecarsRevealer.revealBlobSidecars(block);
+        executionPayloadAndBlobSidecarsRevealer.revealBlobSidecars(block, executionPayload);
     publishExecutionPayloadAndBlobSidecars(executionPayload, blobSidecars);
     // provide blobs for the execution payload before importing it
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return executionPayloadManager.validateAndImportExecutionPayload(
-        executionPayload, Optional.empty());
+        executionPayload, Optional.of(timeProvider.getTimeInMillis()));
   }
 
   private void publishExecutionPayloadAndBlobSidecars(

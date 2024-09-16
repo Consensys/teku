@@ -947,9 +947,9 @@ public class Spec {
         .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
   }
 
-  public Int2ObjectMap<UInt64> getValidatorIndexToPctAssignmentMap(
+  public Int2ObjectMap<UInt64> getValidatorIndexToPtcAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
-    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPctAssignmentMap(state, epoch);
+    return atEpoch(epoch).getValidatorsUtil().getValidatorIndexToPtcAssignmentMap(state, epoch);
   }
 
   // Attestation helpers

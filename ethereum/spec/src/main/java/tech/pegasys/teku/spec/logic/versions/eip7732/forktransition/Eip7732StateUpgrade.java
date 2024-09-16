@@ -136,7 +136,8 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
                         }
                       });
 
-              state.setLatestBlockHash(Bytes32.ZERO);
+              state.setLatestBlockHash(
+                  preStateElectra.getLatestExecutionPayloadHeader().getBlockHash());
               state.setLatestFullSlot(UInt64.ZERO);
               state.setLatestWithdrawalsRoot(Bytes32.ZERO);
             });

@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Objects;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
@@ -26,12 +25,11 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarIndexSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSupplier;
@@ -41,8 +39,7 @@ import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
 
 public class MiscHelpersDenebPropertyTest {
 
-  private final Spec spec =
-      Objects.requireNonNull(new SpecSupplier(SpecMilestone.DENEB).get()).sample();
+  private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final MiscHelpersDeneb miscHelpers =
       MiscHelpersDeneb.required(spec.getGenesisSpec().miscHelpers());
 
