@@ -106,7 +106,7 @@ public class AttesterDutiesGenerator {
     final List<PayloadAttesterDuty> payloadAttesterDutyList = new ArrayList<>();
 
     final Int2ObjectMap<UInt64> validatorIndexToCommitteeAssignmentMap =
-        spec.getValidatorIndexToPctAssignmentMap(state, epoch);
+        spec.getValidatorIndexToPtcAssignmentMap(state, epoch);
     for (final int validatorIndex : validatorIndices) {
       final UInt64 slot = validatorIndexToCommitteeAssignmentMap.get(validatorIndex);
       if (slot != null) {
