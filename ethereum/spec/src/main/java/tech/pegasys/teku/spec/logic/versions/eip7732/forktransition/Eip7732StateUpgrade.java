@@ -88,14 +88,8 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
                               builder
                                   .parentBlockHash(() -> Bytes32.ZERO)
                                   .parentBlockRoot(() -> Bytes32.ZERO)
-                                  .blockHash(
-                                      preStateElectra
-                                          .getLatestExecutionPayloadHeader()
-                                          .getBlockHash())
-                                  .gasLimit(
-                                      preStateElectra
-                                          .getLatestExecutionPayloadHeader()
-                                          .getGasLimit())
+                                  .blockHash(Bytes32.ZERO)
+                                  .gasLimit(UInt64.ZERO)
                                   .builderIndex(() -> UInt64.ZERO)
                                   .slot(() -> UInt64.ZERO)
                                   .value(() -> UInt64.ZERO)
