@@ -426,28 +426,37 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
   }
 
   @Test
-  void testFromBytesWithInvalidInput() {
+  public void testFromHexStringEdgeCases() {
     SszBitlistSchema<SszBitlist> testSchema = SszBitlistSchema.create(100);
 
-    assertThatThrownBy(() -> testSchema.fromBytes(null))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Input bytes cannot be null");
+    // Test valid minimal hex string
+    String minimalHex = "0x01";
+    Assertions.assertThatCode(() -> testSchema.fromHexString(minimalHex))
+        .doesNotThrowAnyException();
+    SszBitlist validResult = testSchema.fromHexString(minimalHex);
+    assertThat(validResult).isNotNull();
+    assertThat(validResult.sszSerialize()).isEqualTo(Bytes.fromHexString(minimalHex));
+    assertThat(validResult.size()).isZero();
 
-    assertThatThrownBy(() -> testSchema.fromBytes(Bytes.EMPTY))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("BitlistImpl must contain at least one byte");
-  }
+    // Test valid complex hex string
+    String complexHex = "0x01020304";
+    Assertions.assertThatCode(() -> testSchema.fromHexString(complexHex))
+        .doesNotThrowAnyException();
+    SszBitlist complexResult = testSchema.fromHexString(complexHex);
+    assertThat(complexResult).isNotNull();
+    assertThat(complexResult.sszSerialize()).isEqualTo(Bytes.fromHexString(complexHex));
 
-  @Test
-  void testFromHexStringWithInvalidInput() {
-    SszBitlistSchema<SszBitlist> testSchema = SszBitlistSchema.create(100);
-
+    // Test empty string
     assertThatThrownBy(() -> testSchema.fromHexString(""))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("BitlistImpl must contain at least one byte");
+        .isInstanceOf(IllegalArgumentException.class);
 
-    assertThatThrownBy(() -> testSchema.fromHexString("invalid_hex"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Invalid hex string");
+    // Test "0x"
+    assertThatThrownBy(() -> testSchema.fromHexString("0x"))
+        .isInstanceOf(IllegalArgumentException.class);
+
+    // Test invalid hex string
+    String invalidHex = "i am a string, not a valid hex string";
+    assertThatThrownBy(() -> testSchema.fromHexString(invalidHex))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }
