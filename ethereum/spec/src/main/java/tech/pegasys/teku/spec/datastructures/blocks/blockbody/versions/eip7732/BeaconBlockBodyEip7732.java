@@ -18,8 +18,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
@@ -45,6 +46,11 @@ public interface BeaconBlockBodyEip7732 extends BeaconBlockBodyElectra {
   }
 
   @Override
+  default Optional<ExecutionPayloadSummary> getOptionalExecutionPayloadSummary() {
+    return Optional.empty();
+  }
+
+  @Override
   default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
     return Optional.empty();
   }
@@ -60,7 +66,7 @@ public interface BeaconBlockBodyEip7732 extends BeaconBlockBodyElectra {
   }
 
   @Override
-  default ExecutionPayloadElectra getExecutionPayload() {
+  default ExecutionPayloadEip7732 getExecutionPayload() {
     throw new UnsupportedOperationException("ExecutionPayload removed in Eip7732");
   }
 
