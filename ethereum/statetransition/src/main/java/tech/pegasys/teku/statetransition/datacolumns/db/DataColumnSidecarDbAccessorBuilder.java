@@ -48,7 +48,8 @@ public class DataColumnSidecarDbAccessorBuilder {
   }
 
   public DataColumnSidecarDbAccessor build() {
-    return autoPruneDbBuilder.build();
+    SlotCachingDasDb slotIdCachingDb = new SlotCachingDasDb(db);
+    return autoPruneDbBuilder.build(slotIdCachingDb);
   }
 
   MinCustodyPeriodSlotCalculator getMinCustodyPeriodSlotCalculator() {
@@ -77,7 +78,7 @@ public class DataColumnSidecarDbAccessorBuilder {
       this.prunePeriodInSlots = prunePeriodInSlots;
     }
 
-    AutoPruningDasDb build() {
+    AutoPruningDasDb build(DataColumnSidecarDB db) {
       return new AutoPruningDasDb(
           db, getMinCustodyPeriodSlotCalculator(), pruneMarginSlots, prunePeriodInSlots);
     }

@@ -19,15 +19,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
 
 interface DataColumnSidecarCoreDB {
 
   // read
 
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier);
-
-  SafeFuture<Optional<DataColumnSidecar>> getSidecar(ColumnSlotAndIdentifier identifier);
 
   SafeFuture<List<DataColumnIdentifier>> getColumnIdentifiers(UInt64 slot);
 

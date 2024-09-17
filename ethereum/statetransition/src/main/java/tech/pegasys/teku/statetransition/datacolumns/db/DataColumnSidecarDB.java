@@ -40,7 +40,6 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   @Override
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier);
 
-  @Override
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(ColumnSlotAndIdentifier identifier);
 
   @Override
