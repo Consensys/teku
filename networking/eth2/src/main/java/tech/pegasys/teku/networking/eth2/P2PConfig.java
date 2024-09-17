@@ -23,6 +23,7 @@ import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
@@ -42,6 +43,7 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
+  public static final boolean DEFAULT_FLOOD_PUBLISH_ENABLED = true;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -174,6 +176,7 @@ public class P2PConfig {
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
     private boolean allTopicsFilterEnabled = DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
+    private Boolean isFloodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH;
 
     private Builder() {}
 
@@ -196,6 +199,7 @@ public class P2PConfig {
             builder.seenTTL(
                 Duration.ofSeconds(
                     (long) specConfig.getSecondsPerSlot() * specConfig.getSlotsPerEpoch() * 2));
+            builder.floodPublish(isFloodPublishEnabled);
           });
 
       final NetworkConfig networkConfig = this.networkConfig.build();
@@ -281,6 +285,11 @@ public class P2PConfig {
             String.format("Invalid peerRequestLimit: %d", peerRequestLimit));
       }
       this.peerRequestLimit = peerRequestLimit;
+      return this;
+    }
+
+    public Builder isFloodPublishEnabled(final Boolean floodPublishEnabled) {
+      isFloodPublishEnabled = floodPublishEnabled;
       return this;
     }
 

@@ -36,6 +36,7 @@ public class GossipConfig {
   // After EIP-7045, attestations are valid for up to 2 full epochs, so TTL is 65
   // slots 1115 * HEARTBEAT = 1115 * 0.7 / 12 = 65.125
   static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(1115);
+  public static final Boolean DEFAULT_FLOOD_PUBLISH = Boolean.TRUE;
 
   private final int d;
   private final int dLow;
@@ -46,6 +47,7 @@ public class GossipConfig {
   private final int history;
   private final Duration heartbeatInterval;
   private final Duration seenTTL;
+  private final Boolean floodPublish;
   private final GossipScoringConfig scoringConfig;
 
   private GossipConfig(
@@ -58,6 +60,7 @@ public class GossipConfig {
       final int history,
       final Duration heartbeatInterval,
       final Duration seenTTL,
+      final Boolean floodPublish,
       final GossipScoringConfig scoringConfig) {
     this.d = d;
     this.dLow = dLow;
@@ -68,6 +71,7 @@ public class GossipConfig {
     this.history = history;
     this.heartbeatInterval = heartbeatInterval;
     this.seenTTL = seenTTL;
+    this.floodPublish = floodPublish;
     this.scoringConfig = scoringConfig;
   }
 
@@ -115,6 +119,10 @@ public class GossipConfig {
     return seenTTL;
   }
 
+  public Boolean getFloodPublish() {
+    return floodPublish;
+  }
+
   public GossipScoringConfig getScoringConfig() {
     return scoringConfig;
   }
@@ -131,6 +139,7 @@ public class GossipConfig {
     private Integer history = DEFAULT_HISTORY;
     private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private Duration seenTTL = DEFAULT_SEEN_TTL;
+    private Boolean floodPublish = DEFAULT_FLOOD_PUBLISH;
 
     private Builder() {}
 
@@ -145,6 +154,7 @@ public class GossipConfig {
           history,
           heartbeatInterval,
           seenTTL,
+          floodPublish,
           scoringConfigBuilder.build());
     }
 
@@ -214,6 +224,11 @@ public class GossipConfig {
         throw new InvalidConfigurationException(String.format("Invalid seenTTL: %s", seenTTL));
       }
       this.seenTTL = seenTTL;
+      return this;
+    }
+
+    public Builder floodPublish(final Boolean floodPublish) {
+      this.floodPublish = floodPublish;
       return this;
     }
 
