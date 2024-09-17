@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadEip7732;
@@ -34,16 +33,13 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.Executio
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
-import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ExecutionPayloadValidator implements ReceivedBlockEventsChannel {
+public class ExecutionPayloadValidator {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
 
-  private final Set<Bytes32> seenBlockRootInfoSet =
-      LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
   private final Set<BlockRootAndBuilderIndex> receivedValidEnvelopeInfoSet =
       LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
 
@@ -58,7 +54,7 @@ public class ExecutionPayloadValidator implements ReceivedBlockEventsChannel {
     /*
      * [IGNORE] The envelope's block root envelope.block_root has been seen (via both gossip and non-gossip sources) (a client MAY queue payload for processing once the block is retrieved).
      */
-    if (seenBlockRootInfoSet.add(envelope.getBeaconBlockRoot())) {
+    if (!recentChainData.containsBlock(envelope.getBeaconBlockRoot())) {
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
     /*
@@ -136,16 +132,6 @@ public class ExecutionPayloadValidator implements ReceivedBlockEventsChannel {
     final Bytes signingRoot =
         spec.computeSigningRoot(signedExecutionPayloadEnvelope.getMessage(), domain);
     return BLS.verify(publicKey, signingRoot, signedExecutionPayloadEnvelope.getSignature());
-  }
-
-  @Override
-  public void onBlockValidated(final SignedBeaconBlock block) {
-    seenBlockRootInfoSet.add(block.getRoot());
-  }
-
-  @Override
-  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    // NO-OP
   }
 
   record BlockRootAndBuilderIndex(Bytes32 blockRoot, UInt64 builderIndex) {}
