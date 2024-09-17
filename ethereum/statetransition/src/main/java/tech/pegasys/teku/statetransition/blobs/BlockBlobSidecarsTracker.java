@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -109,7 +110,7 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
-    final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
+    final Optional<Integer> blockCommitmentsCount = getBlobKzgCommitmentsCount();
     if (blockCommitmentsCount.isPresent()) {
       return UInt64.range(UInt64.ZERO, UInt64.valueOf(blockCommitmentsCount.get()))
           .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
@@ -127,7 +128,7 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getUnusedBlobSidecarsForBlock() {
-    final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
+    final Optional<Integer> blockCommitmentsCount = getBlobKzgCommitmentsCount();
     checkState(blockCommitmentsCount.isPresent(), "Block must me known to call this method");
 
     final UInt64 firstUnusedIndex = UInt64.valueOf(blockCommitmentsCount.get());
@@ -231,12 +232,12 @@ public class BlockBlobSidecarsTracker {
   }
 
   private void pruneExcessiveBlobSidecars() {
-    getBlockKzgCommitmentsCount()
+    getBlobKzgCommitmentsCount()
         .ifPresent(count -> blobSidecars.tailMap(UInt64.valueOf(count), true).clear());
   }
 
   private boolean isExcessiveBlobSidecar(final BlobSidecar blobSidecar) {
-    return getBlockKzgCommitmentsCount()
+    return getBlobKzgCommitmentsCount()
         .map(count -> blobSidecar.getIndex().isGreaterThanOrEqualTo(count))
         .orElse(false);
   }
@@ -256,17 +257,17 @@ public class BlockBlobSidecarsTracker {
   }
 
   private boolean areBlobsComplete() {
-    return getBlockKzgCommitmentsCount().map(count -> blobSidecars.size() >= count).orElse(false);
+    return getBlobKzgCommitmentsCount().map(count -> blobSidecars.size() >= count).orElse(false);
   }
 
-  private Optional<Integer> getBlockKzgCommitmentsCount() {
+  private Optional<Integer> getBlobKzgCommitmentsCount() {
     return block
         .get()
-        .map(
+        .flatMap(
             b ->
                 BeaconBlockBodyDeneb.required(b.getMessage().getBody())
-                    .getBlobKzgCommitments()
-                    .size());
+                    .getOptionalBlobKzgCommitments()
+                    .map(SszList::size));
   }
 
   /**
