@@ -46,8 +46,7 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
 
     BesuNode primaryEL =
         createBesuNode(
-            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-            BesuDockerVersion.DEVELOP,
+            BesuDockerVersion.STABLE,
             config ->
                 config
                     .withMergeSupport()
@@ -59,8 +58,7 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
 
     BesuNode secondaryEL =
         createBesuNode(
-            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-            BesuDockerVersion.DEVELOP,
+            BesuDockerVersion.STABLE,
             config ->
                 config
                     .withMergeSupport()

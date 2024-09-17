@@ -89,8 +89,7 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
     final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(genesisTime));
 
     return createBesuNode(
-        // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-        BesuDockerVersion.DEVELOP,
+        BesuDockerVersion.STABLE,
         config ->
             config
                 .withMergeSupport()
