@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
+import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -127,8 +127,8 @@ public class BlockProductionDuty implements Duty {
       LOG.info(
           "Received block for slot {}, block rewards {} ETH, execution payload value {} ETH",
           slot,
-          gweiToEth(blockContainerAndMetaData.consensusBlockValue()),
-          gweiToEth(blockContainerAndMetaData.executionPayloadValue()));
+          weiToEth(blockContainerAndMetaData.consensusBlockValue()),
+          weiToEth(blockContainerAndMetaData.executionPayloadValue()));
     }
     return SafeFuture.completedFuture(unsignedBlockContainer);
   }
