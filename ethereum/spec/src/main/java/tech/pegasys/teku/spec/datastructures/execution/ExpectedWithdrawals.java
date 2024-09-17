@@ -301,6 +301,13 @@ public class ExpectedWithdrawals {
     final SszList<Withdrawal> expectedWithdrawals =
         getExpectedWithdrawalsSszList(schemaDefinitionsCapella);
 
+    // new in ePBS
+    genericState
+        .toMutableVersionEip7732()
+        .ifPresent(
+            genericStateEip7732 ->
+                genericStateEip7732.setLatestWithdrawalsRoot(expectedWithdrawals.hashTreeRoot()));
+
     for (int i = 0; i < expectedWithdrawals.size(); i++) {
       final Withdrawal withdrawal = expectedWithdrawals.get(i);
       beaconStateMutators.decreaseBalance(

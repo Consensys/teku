@@ -116,7 +116,9 @@ public class BlockProductionDuty implements Duty {
         .thenCompose(
             signedBlockContainer ->
                 validatorDutyMetrics.record(
-                    () -> sendBlock(signedBlockContainer), this, ValidatorDutyMetricsSteps.SEND))
+                    () -> sendBlock(signedBlockContainer, milestone),
+                    this,
+                    ValidatorDutyMetricsSteps.SEND))
         .thenCompose(
             dutyResult -> {
               if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
@@ -202,9 +204,16 @@ public class BlockProductionDuty implements Duty {
     return blockContainerSigner.sign(blockContainer, validator, forkInfo);
   }
 
-  private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
+  private SafeFuture<DutyResult> sendBlock(
+      final SignedBlockContainer signedBlockContainer, final SpecMilestone milestone) {
     return validatorApiChannel
-        .sendSignedBlock(signedBlockContainer, BroadcastValidationLevel.GOSSIP)
+        .sendSignedBlock(
+            signedBlockContainer,
+            // EIP7732 TODO: need to make sure block is imported for ePBS (at least for the "naive"
+            // flow)
+            milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)
+                ? BroadcastValidationLevel.CONSENSUS
+                : BroadcastValidationLevel.GOSSIP)
         .thenApply(
             result -> {
               if (result.isPublished()) {
