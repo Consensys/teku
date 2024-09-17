@@ -95,6 +95,14 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     return sszData().filter(SszCollection::isEmpty).map(Arguments::of);
   }
 
+  public Stream<Arguments> fromBytesTestCases() {
+    return sszData().map(bitlist -> Arguments.of(bitlist, bitlist.sszSerialize()));
+  }
+
+  public Stream<Arguments> fromHexStringTestCases() {
+    return sszData().map(bitlist -> Arguments.of(bitlist, bitlist.sszSerialize().toHexString()));
+  }
+
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void testSszRoundtrip(final SszBitlist bitlist1) {
@@ -393,5 +401,53 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
     SszBitlist emptyList1 = bitlist.getSchema().sszDeserialize(Bytes.of(1));
     assertThat(emptyList1).isEmpty();
+  }
+
+  @ParameterizedTest
+  @MethodSource("fromBytesTestCases")
+  void testFromBytes(final SszBitlist bitlist, final Bytes serialized) {
+    SszBitlist deserialized = bitlist.getSchema().fromBytes(serialized);
+
+    assertThat(deserialized).isEqualTo(bitlist);
+    assertThat(deserialized.size()).isEqualTo(bitlist.size());
+    assertThatIntCollection(deserialized.getAllSetBits()).isEqualTo(bitlist.getAllSetBits());
+    assertThat(deserialized.hashTreeRoot()).isEqualTo(bitlist.hashTreeRoot());
+  }
+
+  @ParameterizedTest
+  @MethodSource("fromHexStringTestCases")
+  void testFromHexString(final SszBitlist bitlist, final String hexString) {
+    SszBitlist deserialized = bitlist.getSchema().fromHexString(hexString);
+
+    assertThat(deserialized).isEqualTo(bitlist);
+    assertThat(deserialized.size()).isEqualTo(bitlist.size());
+    assertThatIntCollection(deserialized.getAllSetBits()).isEqualTo(bitlist.getAllSetBits());
+    assertThat(deserialized.hashTreeRoot()).isEqualTo(bitlist.hashTreeRoot());
+  }
+
+  @Test
+  void testFromBytesWithInvalidInput() {
+    SszBitlistSchema<SszBitlist> testSchema = SszBitlistSchema.create(100);
+
+    assertThatThrownBy(() -> testSchema.fromBytes(null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Input bytes cannot be null");
+
+    assertThatThrownBy(() -> testSchema.fromBytes(Bytes.EMPTY))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("BitlistImpl must contain at least one byte");
+  }
+
+  @Test
+  void testFromHexStringWithInvalidInput() {
+    SszBitlistSchema<SszBitlist> testSchema = SszBitlistSchema.create(100);
+
+    assertThatThrownBy(() -> testSchema.fromHexString(""))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("BitlistImpl must contain at least one byte");
+
+    assertThatThrownBy(() -> testSchema.fromHexString("invalid_hex"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Invalid hex string");
   }
 }
