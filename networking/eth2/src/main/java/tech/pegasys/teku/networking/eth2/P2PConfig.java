@@ -43,7 +43,6 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
-  public static final boolean DEFAULT_FLOOD_PUBLISH_ENABLED = true;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -289,7 +288,7 @@ public class P2PConfig {
     }
 
     public Builder isFloodPublishEnabled(final Boolean floodPublishEnabled) {
-      isFloodPublishEnabled = floodPublishEnabled;
+      this.isFloodPublishEnabled = floodPublishEnabled;
       return this;
     }
 
