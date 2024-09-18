@@ -82,8 +82,9 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
   private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
 
-  public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsDeneb(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(schemaRegistry.getSpecConfig());
     this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
 
     this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);

@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
+  protected SchemaRegistry schemaRegistry;
 
   final SszBitvectorSchema<SszBitvector> attnetsENRFieldSchema;
   final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema =
@@ -29,15 +30,24 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   private final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
       beaconBlocksByRootRequestMessageSchema;
 
-  public AbstractSchemaDefinitions(final SpecConfig specConfig) {
-    this.historicalBatchSchema = new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot());
+  public AbstractSchemaDefinitions(final SchemaRegistry schemaRegistry) {
+    this.schemaRegistry = schemaRegistry;
+    this.historicalBatchSchema =
+        new HistoricalBatchSchema(schemaRegistry.getSpecConfig().getSlotsPerHistoricalRoot());
 
     this.beaconBlocksByRootRequestMessageSchema =
-        new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(specConfig);
-    this.attnetsENRFieldSchema = SszBitvectorSchema.create(specConfig.getAttestationSubnetCount());
+        new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(
+            schemaRegistry.getSpecConfig());
+    this.attnetsENRFieldSchema =
+        SszBitvectorSchema.create(schemaRegistry.getSpecConfig().getAttestationSubnetCount());
   }
 
   abstract long getMaxValidatorPerAttestation(SpecConfig specConfig);
+
+  @Override
+  public SchemaRegistry getSchemaRegistry() {
+    return schemaRegistry;
+  }
 
   @Override
   public SszBitvectorSchema<SszBitvector> getAttnetsENRFieldSchema() {

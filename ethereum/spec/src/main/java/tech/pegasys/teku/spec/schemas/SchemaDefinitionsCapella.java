@@ -70,8 +70,9 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
 
-  public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsCapella(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfigCapella specConfig = SpecConfigCapella.required(schemaRegistry.getSpecConfig());
     this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
     this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
     this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();

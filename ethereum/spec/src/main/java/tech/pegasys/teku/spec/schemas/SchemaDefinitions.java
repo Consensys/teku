@@ -90,6 +90,9 @@ public interface SchemaDefinitions {
   BeaconBlockBodyBuilder createBeaconBlockBodyBuilder();
 
   @NonSchema
+  SchemaRegistry getSchemaRegistry();
+
+  @NonSchema
   default Optional<SchemaDefinitionsAltair> toVersionAltair() {
     return Optional.empty();
   }

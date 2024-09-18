@@ -52,8 +52,9 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
 
-  public SchemaDefinitionsPhase0(final SpecConfig specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsPhase0(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfig specConfig = schemaRegistry.getSpecConfig();
     this.indexedAttestationSchema =
         new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig))
             .castTypeToIndexedAttestationSchema();

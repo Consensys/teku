@@ -72,8 +72,9 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final LightClientUpdateSchema lightClientUpdateSchema;
   private final LightClientUpdateResponseSchema lightClientUpdateResponseSchema;
 
-  public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsAltair(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfigAltair specConfig = SpecConfigAltair.required(schemaRegistry.getSpecConfig());
     this.indexedAttestationSchema =
         new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig))
             .castTypeToIndexedAttestationSchema();
