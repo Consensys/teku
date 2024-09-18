@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConso
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -295,6 +297,42 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
               .subList(nextPendingBalanceConsolidation, pendingConsolidations.size());
       stateElectra.setPendingConsolidations(
           schemaDefinitionsElectra.getPendingConsolidationsSchema().createFromElements(newList));
+    }
+  }
+
+  /** Processes slashings */
+  @Override
+  public void processSlashings(
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses) {
+    final UInt64 totalBalance =
+        validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators();
+    final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 adjustedTotalSlashingBalance =
+        state
+            .getSlashings()
+            .streamUnboxed()
+            .reduce(ZERO, UInt64::plus)
+            .times(getProportionalSlashingMultiplier())
+            .min(totalBalance);
+
+    final List<ValidatorStatus> validatorStatusList = validatorStatuses.getStatuses();
+    final int halfEpochsPerSlashingsVector = specConfig.getEpochsPerSlashingsVector() / 2;
+
+    final UInt64 increment = specConfig.getEffectiveBalanceIncrement();
+    final UInt64 penaltyPerEffectiveBalanceIncrement =
+        adjustedTotalSlashingBalance.dividedBy(totalBalance.dividedBy(increment));
+    for (int index = 0; index < validatorStatusList.size(); index++) {
+      final ValidatorStatus status = validatorStatusList.get(index);
+      if (status.isSlashed()
+          && epoch.plus(halfEpochsPerSlashingsVector).equals(status.getWithdrawableEpoch())) {
+
+        // EIP7251
+        final UInt64 effectiveBalanceIncrements =
+            status.getCurrentEpochEffectiveBalance().dividedBy(increment);
+        final UInt64 penalty =
+            penaltyPerEffectiveBalanceIncrement.times(effectiveBalanceIncrements);
+        beaconStateMutators.decreaseBalance(state, index, penalty);
+      }
     }
   }
 }
