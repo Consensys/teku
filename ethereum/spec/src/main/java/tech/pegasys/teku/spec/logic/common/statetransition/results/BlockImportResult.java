@@ -118,6 +118,9 @@ public interface BlockImportResult {
   default boolean hasFailedExecutingExecutionPayload() {
     return false;
   }
+  default boolean isDataNotYetAvailable() {
+    return false;
+  }
 
   default void markAsCanonical() {
     throw new UnsupportedOperationException(

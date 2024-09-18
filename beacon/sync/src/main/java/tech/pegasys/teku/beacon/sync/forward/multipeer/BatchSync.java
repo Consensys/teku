@@ -42,7 +42,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 /** Manages the sync process to reach a finalized chain. */
 public class BatchSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration PAUSE_ON_SERVICE_OFFLINE = Duration.ofSeconds(5);
+  private static final Duration PAUSE_ON_SERVICE_OFFLINE_OR_DAS_CHECK = Duration.ofSeconds(5);
 
   private final EventThread eventThread;
   private final AsyncRunner asyncRunner;
@@ -402,7 +402,8 @@ public class BatchSync implements Sync {
         LOG.debug("Marking batch {} as invalid because it extends from an invalid block", batch);
         batch.markAsInvalid();
       }
-    } else if (result == BatchImportResult.SERVICE_OFFLINE) {
+    } else if (result == BatchImportResult.SERVICE_OFFLINE
+        || result == BatchImportResult.DATA_NOT_YET_AVAILABLE) {
       if (!scheduledProgressSync) {
         LOG.warn("Unable to import blocks because execution client is offline.");
         asyncRunner
@@ -413,7 +414,7 @@ public class BatchSync implements Sync {
                           scheduledProgressSync = false;
                           progressSync();
                         }),
-                PAUSE_ON_SERVICE_OFFLINE)
+                PAUSE_ON_SERVICE_OFFLINE_OR_DAS_CHECK)
             .ifExceptionGetsHereRaiseABug();
         scheduledProgressSync = true;
       }
