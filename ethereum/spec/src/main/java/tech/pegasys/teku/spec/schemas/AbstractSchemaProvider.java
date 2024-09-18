@@ -78,5 +78,5 @@ public abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
   }
 
   protected abstract T createSchema(
-      SchemaRegistry registry, SpecMilestone baseVersion, SpecConfig specConfig);
+      SchemaRegistry registry, SpecMilestone effectiveMilestone, SpecConfig specConfig);
 }

@@ -83,7 +83,7 @@ class BaseSchemaProviderTest {
     @Override
     protected String createSchema(
         final SchemaRegistry registry,
-        final SpecMilestone baseVersion,
+        final SpecMilestone effectiveMilestone,
         final SpecConfig specConfig) {
       return "TestSchema";
     }
