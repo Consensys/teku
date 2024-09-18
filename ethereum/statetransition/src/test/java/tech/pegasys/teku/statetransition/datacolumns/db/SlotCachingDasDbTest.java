@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
 
 @SuppressWarnings({"JavaCase", "FutureReturnValueIgnored"})
@@ -48,26 +48,26 @@ public class SlotCachingDasDbTest {
     DataColumnSidecar sidecar11_0 = das.createSidecar(block11, 0);
     slotCachingDasDb.addSidecar(sidecar10_0);
 
-    when(db.getSidecar(any(ColumnSlotAndIdentifier.class)))
+    when(db.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar10_0)));
     when(db.getSidecar(any(DataColumnIdentifier.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar10_0)));
 
     slotCachingDasDb.getSidecar(DataColumnIdentifier.createFromSidecar(sidecar10_0));
 
-    verify(db).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(db).getSidecar(any(DataColumnSlotAndIdentifier.class));
     verify(db, never()).getSidecar(any(DataColumnIdentifier.class));
 
     slotCachingDasDb.getSidecar(DataColumnIdentifier.createFromSidecar(sidecar10_1));
 
     // the blockRoot <-> slot should be cached
-    verify(db, times(2)).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(db, times(2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
     verify(db, never()).getSidecar(any(DataColumnIdentifier.class));
 
     slotCachingDasDb.getSidecar(DataColumnIdentifier.createFromSidecar(sidecar11_0));
 
     // should fall back to query by DataColumnIdentifier when slot is not cached
-    verify(db, times(2)).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(db, times(2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
     verify(db).getSidecar(any(DataColumnIdentifier.class));
   }
 
@@ -81,7 +81,7 @@ public class SlotCachingDasDbTest {
     slotCachingDasDb.addSidecar(sidecar10_0);
     slotCachingDasDb.addSidecar(sidecar11_0);
 
-    when(db.getSidecar(any(ColumnSlotAndIdentifier.class)))
+    when(db.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar10_0)));
     when(db.getSidecar(any(DataColumnIdentifier.class)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar10_0)));
@@ -91,13 +91,13 @@ public class SlotCachingDasDbTest {
     slotCachingDasDb.getSidecar(DataColumnIdentifier.createFromSidecar(sidecar10_0));
 
     // slot 10 cache should be evicted
-    verify(db, never()).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(db, never()).getSidecar(any(DataColumnSlotAndIdentifier.class));
     verify(db).getSidecar(any(DataColumnIdentifier.class));
 
     slotCachingDasDb.getSidecar(DataColumnIdentifier.createFromSidecar(sidecar11_0));
 
     // slot 11 cache should not be evicted
-    verify(db).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(db).getSidecar(any(DataColumnSlotAndIdentifier.class));
     verify(db).getSidecar(any(DataColumnIdentifier.class));
   }
 }

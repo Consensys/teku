@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -838,7 +838,7 @@ public class CombinedChainDataClient {
     final Optional<UInt64> hotSlotForBlockRoot =
         recentChainData.getSlotForBlockRoot(identifier.getBlockRoot());
     if (hotSlotForBlockRoot.isPresent()) {
-      return getSidecar(new ColumnSlotAndIdentifier(hotSlotForBlockRoot.get(), identifier));
+      return getSidecar(new DataColumnSlotAndIdentifier(hotSlotForBlockRoot.get(), identifier));
     }
     return historicalChainData
         .getBlockByBlockRoot(identifier.getBlockRoot())
@@ -846,7 +846,7 @@ public class CombinedChainDataClient {
             blockOptional -> {
               if (blockOptional.isPresent()) {
                 return getSidecar(
-                    new ColumnSlotAndIdentifier(blockOptional.get().getSlot(), identifier));
+                    new DataColumnSlotAndIdentifier(blockOptional.get().getSlot(), identifier));
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
@@ -854,15 +854,15 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      final ColumnSlotAndIdentifier identifier) {
+      final DataColumnSlotAndIdentifier identifier) {
     return historicalChainData.getSidecar(identifier);
   }
 
-  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return historicalChainData.getDataColumnIdentifiers(slot);
   }
 
-  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
   }

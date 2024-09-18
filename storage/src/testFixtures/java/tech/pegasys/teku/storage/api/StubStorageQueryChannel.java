@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
@@ -191,17 +191,17 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      final ColumnSlotAndIdentifier identifier) {
+      final DataColumnSlotAndIdentifier identifier) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
-  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return SafeFuture.completedFuture(Collections.emptyList());
   }
 
   @Override
-  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return SafeFuture.completedFuture(Collections.emptyList());
   }

@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnapshotState {
@@ -50,7 +50,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex();
   }
 
-  public KvStoreColumn<ColumnSlotAndIdentifier, Bytes> getColumnSidecarByColumnSlotAndIdentifier() {
+  public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      getColumnSidecarByColumnSlotAndIdentifier() {
     return delegate.getColumnSidecarByColumnSlotAndIdentifier();
   }
 

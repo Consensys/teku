@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -68,15 +68,16 @@ public class BlobSidecarReconstructionProvider {
 
   public SafeFuture<List<BlobSidecar>> reconstructBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
-    final SafeFuture<List<ColumnSlotAndIdentifier>> dataColumnIdentifiersFuture =
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> dataColumnIdentifiersFuture =
         combinedChainDataClient.getDataColumnIdentifiers(slotAndBlockRoot.getSlot());
     return dataColumnIdentifiersFuture.thenCompose(
         dataColumnIdentifiers -> {
           if (dataColumnIdentifiers.isEmpty()) {
             return SafeFuture.completedFuture(emptyList());
           }
-          final Set<ColumnSlotAndIdentifier> dbIdentifiers = new HashSet<>(dataColumnIdentifiers);
-          final List<ColumnSlotAndIdentifier> requiredIdentifiers =
+          final Set<DataColumnSlotAndIdentifier> dbIdentifiers =
+              new HashSet<>(dataColumnIdentifiers);
+          final List<DataColumnSlotAndIdentifier> requiredIdentifiers =
               Stream.iterate(
                       UInt64.ZERO,
                       // We need first 50% for reconstruction
@@ -84,7 +85,7 @@ public class BlobSidecarReconstructionProvider {
                       UInt64::increment)
                   .map(
                       index ->
-                          new ColumnSlotAndIdentifier(
+                          new DataColumnSlotAndIdentifier(
                               slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), index))
                   .toList();
           if (requiredIdentifiers.stream()
@@ -96,7 +97,7 @@ public class BlobSidecarReconstructionProvider {
   }
 
   private SafeFuture<List<BlobSidecar>> reconstructBlobSidecarsForIdentifiers(
-      final List<ColumnSlotAndIdentifier> slotAndIdentifiers, final List<UInt64> indices) {
+      final List<DataColumnSlotAndIdentifier> slotAndIdentifiers, final List<UInt64> indices) {
     return SafeFuture.collectAll(
             slotAndIdentifiers.stream().map(combinedChainDataClient::getSidecar))
         .thenCompose(

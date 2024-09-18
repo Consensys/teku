@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
@@ -528,28 +528,29 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<Bytes> getSidecar(final ColumnSlotAndIdentifier identifier) {
+  public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
   }
 
   @Override
   @MustBeClosed
-  public Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
       UInt64 startSlot, UInt64 endSlot) {
     return db.streamKeys(
         schema.getColumnSidecarByColumnSlotAndIdentifier(),
-        new ColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
-        new ColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
+        new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
+        new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
   @Override
-  public List<ColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot) {
-    try (final Stream<ColumnSlotAndIdentifier> columnSlotAndIdentifierStream =
+  public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
+      SlotAndBlockRoot slotAndBlockRoot) {
+    try (final Stream<DataColumnSlotAndIdentifier> columnSlotAndIdentifierStream =
         db.streamKeys(
             schema.getColumnSidecarByColumnSlotAndIdentifier(),
-            new ColumnSlotAndIdentifier(
+            new DataColumnSlotAndIdentifier(
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
-            new ColumnSlotAndIdentifier(
+            new DataColumnSlotAndIdentifier(
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE)); ) {
       return columnSlotAndIdentifierStream.toList();
     }
@@ -559,7 +560,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
     return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
         .map(ColumnEntry::getKey)
-        .map(ColumnSlotAndIdentifier::slot);
+        .map(DataColumnSlotAndIdentifier::slot);
   }
 
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
@@ -835,13 +836,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void addSidecar(final DataColumnSidecar sidecar) {
       transaction.put(
           schema.getColumnSidecarByColumnSlotAndIdentifier(),
-          new ColumnSlotAndIdentifier(
+          new DataColumnSlotAndIdentifier(
               sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
     @Override
-    public void removeSidecar(final ColumnSlotAndIdentifier identifier) {
+    public void removeSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
     }
   }

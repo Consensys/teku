@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface KvStoreCombinedDao extends AutoCloseable {
@@ -167,12 +167,12 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getFirstSamplerIncompleteSlot();
 
-  Optional<Bytes> getSidecar(ColumnSlotAndIdentifier identifier);
+  Optional<Bytes> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   @MustBeClosed
-  Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(UInt64 startSlot, UInt64 endSlot);
+  Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(UInt64 startSlot, UInt64 endSlot);
 
-  List<ColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
+  List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<UInt64> getEarliestDataSidecarColumnSlot();
 
@@ -275,7 +275,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addSidecar(DataColumnSidecar sidecar);
 
-    void removeSidecar(ColumnSlotAndIdentifier identifier);
+    void removeSidecar(DataColumnSlotAndIdentifier identifier);
 
     void commit();
 

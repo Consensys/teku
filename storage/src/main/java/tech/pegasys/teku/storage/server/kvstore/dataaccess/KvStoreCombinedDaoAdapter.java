@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao.V4FinalizedUpdater;
@@ -316,19 +316,19 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<Bytes> getSidecar(final ColumnSlotAndIdentifier identifier) {
+  public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return finalizedDao.getSidecar(identifier);
   }
 
   @Override
   @MustBeClosed
-  public Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamDataColumnIdentifiers(startSlot, endSlot);
   }
 
   @Override
-  public List<ColumnSlotAndIdentifier> getDataColumnIdentifiers(
+  public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return finalizedDao.getDataColumnIdentifiers(slotAndBlockRoot);
   }
@@ -624,7 +624,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void removeSidecar(final ColumnSlotAndIdentifier identifier) {
+    public void removeSidecar(final DataColumnSlotAndIdentifier identifier) {
       finalizedUpdater.removeSidecar(identifier);
     }
 

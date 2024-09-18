@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
@@ -49,7 +49,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> blobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
-  private final KvStoreColumn<ColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
   private final List<Bytes> deletedColumnIds;
 
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
@@ -149,7 +149,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   }
 
   @Override
-  public KvStoreColumn<ColumnSlotAndIdentifier, Bytes> getColumnSidecarByColumnSlotAndIdentifier() {
+  public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      getColumnSidecarByColumnSlotAndIdentifier() {
     return sidecarByColumnSlotAndIdentifier;
   }
 

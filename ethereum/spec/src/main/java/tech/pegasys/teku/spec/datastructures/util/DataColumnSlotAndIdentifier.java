@@ -20,23 +20,24 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
-public record ColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier)
-    implements Comparable<ColumnSlotAndIdentifier> {
-  public ColumnSlotAndIdentifier(
+public record DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier)
+    implements Comparable<DataColumnSlotAndIdentifier> {
+  public DataColumnSlotAndIdentifier(
       final UInt64 slot, final Bytes32 blockRoot, final UInt64 columnIndex) {
     this(slot, new DataColumnIdentifier(blockRoot, columnIndex));
   }
 
-  public static ColumnSlotAndIdentifier fromDataColumn(final DataColumnSidecar dataColumnSidecar) {
-    return new ColumnSlotAndIdentifier(
+  public static DataColumnSlotAndIdentifier fromDataColumn(
+      final DataColumnSidecar dataColumnSidecar) {
+    return new DataColumnSlotAndIdentifier(
         dataColumnSidecar.getSlot(),
         dataColumnSidecar.getBlockRoot(),
         dataColumnSidecar.getIndex());
   }
 
   @Override
-  public int compareTo(@NotNull final ColumnSlotAndIdentifier o) {
-    return Comparator.comparing(ColumnSlotAndIdentifier::slot)
+  public int compareTo(@NotNull final DataColumnSlotAndIdentifier o) {
+    return Comparator.comparing(DataColumnSlotAndIdentifier::slot)
         .thenComparing(
             columnSlotAndIdentifier -> columnSlotAndIdentifier.identifier().getBlockRoot())
         .thenComparing(columnSlotAndIdentifier -> columnSlotAndIdentifier.identifier().getIndex())

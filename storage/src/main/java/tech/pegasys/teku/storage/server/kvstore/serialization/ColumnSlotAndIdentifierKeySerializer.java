@@ -19,7 +19,7 @@ import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 /**
  * This serializer is intended to be used as a Key so that it preserve slot ordering when we stream
@@ -27,7 +27,8 @@ import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
  * us the ability to quickly lookup most recent\oldest values by slot as well as perform pruning
  * based on slot
  */
-class ColumnSlotAndIdentifierKeySerializer implements KvStoreSerializer<ColumnSlotAndIdentifier> {
+class ColumnSlotAndIdentifierKeySerializer
+    implements KvStoreSerializer<DataColumnSlotAndIdentifier> {
   static final int SLOT_SIZE = Long.BYTES;
   static final int BLOCK_ROOT_SIZE = Bytes32.SIZE;
   static final int COLUMN_INDEX_SIZE = Long.BYTES;
@@ -38,16 +39,16 @@ class ColumnSlotAndIdentifierKeySerializer implements KvStoreSerializer<ColumnSl
   static final int DATA_SIZE = COLUMN_INDEX_OFFSET + COLUMN_INDEX_SIZE;
 
   @Override
-  public ColumnSlotAndIdentifier deserialize(final byte[] data) {
+  public DataColumnSlotAndIdentifier deserialize(final byte[] data) {
     checkArgument(data.length == DATA_SIZE);
     final UInt64 slot = UInt64Serializer.deserialize(data, SLOT_OFFSET);
     final Bytes32 blockRoot = Bytes32.wrap(data, BLOCK_ROOT_OFFSET);
     final UInt64 columnIndex = UInt64Serializer.deserialize(data, COLUMN_INDEX_OFFSET);
-    return new ColumnSlotAndIdentifier(slot, blockRoot, columnIndex);
+    return new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex);
   }
 
   @Override
-  public byte[] serialize(final ColumnSlotAndIdentifier value) {
+  public byte[] serialize(final DataColumnSlotAndIdentifier value) {
     return Bytes.concatenate(
             Bytes.wrap(Longs.toByteArray(value.slot().longValue())),
             value.identifier().getBlockRoot(),

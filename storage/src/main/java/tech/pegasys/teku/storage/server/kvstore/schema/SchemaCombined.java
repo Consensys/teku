@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface SchemaCombined extends Schema {
@@ -63,7 +63,7 @@ public interface SchemaCombined extends Schema {
   KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex();
 
-  KvStoreColumn<ColumnSlotAndIdentifier, Bytes> getColumnSidecarByColumnSlotAndIdentifier();
+  KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> getColumnSidecarByColumnSlotAndIdentifier();
 
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();

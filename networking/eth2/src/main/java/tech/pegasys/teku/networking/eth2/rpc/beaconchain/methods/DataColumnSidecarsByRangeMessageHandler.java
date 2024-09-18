@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -275,7 +275,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     // since our storage stores hot and finalized data columns sidecar on the same "table", this
     // iterator can span
     // over hot and finalized data column sidecar
-    private Optional<Iterator<ColumnSlotAndIdentifier>> dataColumnSidecarKeysIterator =
+    private Optional<Iterator<DataColumnSlotAndIdentifier>> dataColumnSidecarKeysIterator =
         Optional.empty();
 
     RequestState(
@@ -314,9 +314,10 @@ public class DataColumnSidecarsByRangeMessageHandler
     }
 
     private SafeFuture<Optional<DataColumnSidecar>> getNextDataColumnSidecar(
-        final Iterator<ColumnSlotAndIdentifier> dataColumnSidecarIdentifiers) {
+        final Iterator<DataColumnSlotAndIdentifier> dataColumnSidecarIdentifiers) {
       if (dataColumnSidecarIdentifiers.hasNext()) {
-        final ColumnSlotAndIdentifier columnSlotAndIdentifier = dataColumnSidecarIdentifiers.next();
+        final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
+            dataColumnSidecarIdentifiers.next();
 
         // Column that was not requested. TODO: get identifiers only for requested columns from DB
         if (!columns.contains(columnSlotAndIdentifier.identifier().getIndex())) {
@@ -340,7 +341,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     }
 
     private boolean isCanonicalHotDataColumnSidecar(
-        final ColumnSlotAndIdentifier columnSlotAndIdentifier) {
+        final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
       return Optional.ofNullable(canonicalHotRoots.get(columnSlotAndIdentifier.slot()))
           .map(blockRoot -> blockRoot.equals(columnSlotAndIdentifier.identifier().getBlockRoot()))
           .orElse(false);

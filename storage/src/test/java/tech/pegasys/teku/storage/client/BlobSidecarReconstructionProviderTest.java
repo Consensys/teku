@@ -52,7 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -88,17 +88,17 @@ public class BlobSidecarReconstructionProviderTest {
         blobSidecarReconstructionProvider.reconstructBlobSidecars(
             slotAndBlockRoot, Collections.emptyList());
     assertThat(result).isCompletedWithValueMatching(List::isEmpty);
-    verify(client, never()).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(client, never()).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
   @Test
   public void shouldGiveUpIfAnyDataColumnIdentifiersMissing() {
     final Integer numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<ColumnSlotAndIdentifier> allButLast50Percent =
+    final List<DataColumnSlotAndIdentifier> allButLast50Percent =
         IntStream.range(0, numberOfColumns / 2 - 1)
             .mapToObj(
                 index ->
-                    new ColumnSlotAndIdentifier(
+                    new DataColumnSlotAndIdentifier(
                         slotAndBlockRoot.getSlot(),
                         slotAndBlockRoot.getBlockRoot(),
                         UInt64.valueOf(index)))
@@ -109,17 +109,17 @@ public class BlobSidecarReconstructionProviderTest {
         blobSidecarReconstructionProvider.reconstructBlobSidecars(
             slotAndBlockRoot, Collections.emptyList());
     assertThat(result).isCompletedWithValueMatching(List::isEmpty);
-    verify(client, never()).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(client, never()).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
   @Test
   public void shouldGiveUpIfAnySidecarsMissing() {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<ColumnSlotAndIdentifier> all50Percent =
+    final List<DataColumnSlotAndIdentifier> all50Percent =
         IntStream.range(0, numberOfColumns / 2)
             .mapToObj(
                 index ->
-                    new ColumnSlotAndIdentifier(
+                    new DataColumnSlotAndIdentifier(
                         slotAndBlockRoot.getSlot(),
                         slotAndBlockRoot.getBlockRoot(),
                         UInt64.valueOf(index)))
@@ -129,10 +129,10 @@ public class BlobSidecarReconstructionProviderTest {
 
     when(client.getDataColumnIdentifiers(any()))
         .thenReturn(SafeFuture.completedFuture(all50Percent));
-    when(client.getSidecar(any(ColumnSlotAndIdentifier.class)))
+    when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
-              final ColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
+              final DataColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
               if (!identifier.identifier().getIndex().equals(UInt64.valueOf(10))) {
                 return SafeFuture.completedFuture(
                     Optional.of(
@@ -147,17 +147,17 @@ public class BlobSidecarReconstructionProviderTest {
         blobSidecarReconstructionProvider.reconstructBlobSidecars(
             slotAndBlockRoot, Collections.emptyList());
     assertThat(result).isCompletedWithValueMatching(List::isEmpty);
-    verify(client, times(numberOfColumns / 2)).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
   @Test
   public void shouldGiveUpIfFullBlockMissing() {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<ColumnSlotAndIdentifier> all50Percent =
+    final List<DataColumnSlotAndIdentifier> all50Percent =
         IntStream.range(0, numberOfColumns / 2)
             .mapToObj(
                 index ->
-                    new ColumnSlotAndIdentifier(
+                    new DataColumnSlotAndIdentifier(
                         slotAndBlockRoot.getSlot(),
                         slotAndBlockRoot.getBlockRoot(),
                         UInt64.valueOf(index)))
@@ -167,10 +167,10 @@ public class BlobSidecarReconstructionProviderTest {
 
     when(client.getDataColumnIdentifiers(any()))
         .thenReturn(SafeFuture.completedFuture(all50Percent));
-    when(client.getSidecar(any(ColumnSlotAndIdentifier.class)))
+    when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
-              final ColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
+              final DataColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
               return SafeFuture.completedFuture(
                   Optional.of(
                       dataStructureUtil.randomDataColumnSidecar(
@@ -183,17 +183,17 @@ public class BlobSidecarReconstructionProviderTest {
         blobSidecarReconstructionProvider.reconstructBlobSidecars(
             slotAndBlockRoot, Collections.emptyList());
     assertThat(result).isCompletedWithValueMatching(List::isEmpty);
-    verify(client, times(numberOfColumns / 2)).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
   @Test
   public void shouldReturnBlobs() {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<ColumnSlotAndIdentifier> all50Percent =
+    final List<DataColumnSlotAndIdentifier> all50Percent =
         IntStream.range(0, numberOfColumns / 2)
             .mapToObj(
                 index ->
-                    new ColumnSlotAndIdentifier(
+                    new DataColumnSlotAndIdentifier(
                         slotAndBlockRoot.getSlot(),
                         slotAndBlockRoot.getBlockRoot(),
                         UInt64.valueOf(index)))
@@ -214,10 +214,10 @@ public class BlobSidecarReconstructionProviderTest {
 
     when(client.getDataColumnIdentifiers(any()))
         .thenReturn(SafeFuture.completedFuture(all50Percent));
-    when(client.getSidecar(any(ColumnSlotAndIdentifier.class)))
+    when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
-              final ColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
+              final DataColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
               return SafeFuture.completedFuture(
                   Optional.of(
                       dataColumnSidecars.get(identifier.identifier().getIndex().intValue())));
@@ -235,17 +235,17 @@ public class BlobSidecarReconstructionProviderTest {
                 list.size() == 2
                     && list.getFirst().getBlob().equals(blobsAndMatrix.blobs.getFirst())
                     && list.get(1).getBlob().equals(blobsAndMatrix.blobs.get(1)));
-    verify(client, times(numberOfColumns / 2)).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
   @Test
   public void shouldReturnBlobsFiltered() {
     final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
-    final List<ColumnSlotAndIdentifier> all50Percent =
+    final List<DataColumnSlotAndIdentifier> all50Percent =
         IntStream.range(0, numberOfColumns / 2)
             .mapToObj(
                 index ->
-                    new ColumnSlotAndIdentifier(
+                    new DataColumnSlotAndIdentifier(
                         slotAndBlockRoot.getSlot(),
                         slotAndBlockRoot.getBlockRoot(),
                         UInt64.valueOf(index)))
@@ -266,10 +266,10 @@ public class BlobSidecarReconstructionProviderTest {
 
     when(client.getDataColumnIdentifiers(any()))
         .thenReturn(SafeFuture.completedFuture(all50Percent));
-    when(client.getSidecar(any(ColumnSlotAndIdentifier.class)))
+    when(client.getSidecar(any(DataColumnSlotAndIdentifier.class)))
         .thenAnswer(
             invocationOnMock -> {
-              final ColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
+              final DataColumnSlotAndIdentifier identifier = invocationOnMock.getArgument(0);
               return SafeFuture.completedFuture(
                   Optional.of(
                       dataColumnSidecars.get(identifier.identifier().getIndex().intValue())));
@@ -285,7 +285,7 @@ public class BlobSidecarReconstructionProviderTest {
         .isCompletedWithValueMatching(
             list ->
                 list.size() == 1 && list.getFirst().getBlob().equals(blobsAndMatrix.blobs.get(1)));
-    verify(client, times(numberOfColumns / 2)).getSidecar(any(ColumnSlotAndIdentifier.class));
+    verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
   private BlobsAndMatrix loadBlobsAndMatrixFixture() {

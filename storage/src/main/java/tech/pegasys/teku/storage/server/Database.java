@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -244,13 +244,14 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> getFirstSamplerIncompleteSlot();
 
-  Optional<DataColumnSidecar> getSidecar(ColumnSlotAndIdentifier identifier);
+  Optional<DataColumnSidecar> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   @MustBeClosed
-  Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(UInt64 firstSlot, UInt64 lastSlot);
+  Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+      UInt64 firstSlot, UInt64 lastSlot);
 
   @MustBeClosed
-  default Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(final UInt64 slot) {
+  default Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(final UInt64 slot) {
     return streamDataColumnIdentifiers(slot, slot);
   }
 

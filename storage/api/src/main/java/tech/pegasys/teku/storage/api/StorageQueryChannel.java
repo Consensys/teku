@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface StorageQueryChannel extends ChannelInterface {
@@ -114,11 +114,11 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
 
-  SafeFuture<Optional<DataColumnSidecar>> getSidecar(ColumnSlotAndIdentifier identifier);
+  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
-  SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(UInt64 slot);
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(UInt64 slot);
 
-  SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       UInt64 startSlot, UInt64 endSlot, UInt64 limit);
 
   SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot();

@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -340,13 +340,13 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<DataColumnSidecar> getSidecar(final ColumnSlotAndIdentifier identifier) {
+  public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return Optional.empty();
   }
 
   @Override
   @MustBeClosed
-  public Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
       final UInt64 firstSlot, final UInt64 lastSlot) {
     return Stream.empty();
   }

@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.ChainStorageFacade;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
@@ -379,15 +379,15 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      final ColumnSlotAndIdentifier identifier) {
+      final DataColumnSlotAndIdentifier identifier) {
     return SafeFuture.of(() -> database.getSidecar(identifier));
   }
 
   @Override
-  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return SafeFuture.of(
         () -> {
-          try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+          try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
               database.streamDataColumnIdentifiers(slot)) {
             return dataColumnIdentifiersStream.toList();
           }
@@ -395,11 +395,11 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<List<ColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return SafeFuture.of(
         () -> {
-          try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+          try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
               database.streamDataColumnIdentifiers(startSlot, endSlot).limit(limit.longValue())) {
             return dataColumnIdentifiersStream.toList();
           }

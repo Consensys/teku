@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -53,7 +53,7 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      final ColumnSlotAndIdentifier identifier) {
+      final DataColumnSlotAndIdentifier identifier) {
     return combinedChainDataClient.getSidecar(identifier);
   }
 
@@ -67,7 +67,8 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
     return combinedChainDataClient
         .getDataColumnIdentifiers(slot)
         .thenApply(
-            identifiers -> identifiers.stream().map(ColumnSlotAndIdentifier::identifier).toList());
+            identifiers ->
+                identifiers.stream().map(DataColumnSlotAndIdentifier::identifier).toList());
   }
 
   @Override

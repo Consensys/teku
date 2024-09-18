@@ -65,7 +65,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -935,14 +935,14 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<DataColumnSidecar> getSidecar(final ColumnSlotAndIdentifier identifier) {
+  public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     final Optional<Bytes> maybePayload = dao.getSidecar(identifier);
     return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
   }
 
   @Override
   @MustBeClosed
-  public Stream<ColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
       final UInt64 firstSlot, final UInt64 lastSlot) {
     return dao.streamDataColumnIdentifiers(firstSlot, lastSlot);
   }
@@ -978,7 +978,7 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive) {
-    try (final Stream<ColumnSlotAndIdentifier> prunableIdentifiers =
+    try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
             streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
         final FinalizedUpdater updater = finalizedUpdater()) {
       prunableIdentifiers.forEach(updater::removeSidecar);

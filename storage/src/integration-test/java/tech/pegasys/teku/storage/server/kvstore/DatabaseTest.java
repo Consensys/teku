@@ -75,7 +75,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.ColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -2179,8 +2179,8 @@ public class DatabaseTest {
     setupWithSpec(TestSpecFactory.createMinimalEip7594());
     initialize(context);
     final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
-    final ColumnSlotAndIdentifier columnSlotAndIdentifier =
-        ColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
     assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
 
     database.addSidecar(dataColumnSidecar);
@@ -2221,37 +2221,37 @@ public class DatabaseTest {
     final SignedBeaconBlockHeader blockHeader1 = dataStructureUtil.randomSignedBeaconBlockHeader();
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
-    final ColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
-        ColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
     final DataColumnSidecar dataColumnSidecar1_1 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
-    final ColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
-        ColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
 
     final SignedBeaconBlockHeader blockHeader2 =
         dataStructureUtil.randomSignedBeaconBlockHeader(
             blockHeader1.getMessage().getSlot().plus(100));
     final DataColumnSidecar dataColumnSidecar2_0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
-    final ColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
-        ColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
 
     database.addSidecar(dataColumnSidecar1_0);
     database.addSidecar(dataColumnSidecar1_1);
     database.addSidecar(dataColumnSidecar2_0);
 
-    try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(dataColumnSidecar1_0.getSlot().plus(1))) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
 
-    try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(dataColumnSidecar1_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
           .containsExactly(columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1);
     }
 
-    try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(
             dataColumnSidecar1_0.getSlot().plus(1), dataColumnSidecar2_0.getSlot().plus(1))) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
@@ -2268,27 +2268,27 @@ public class DatabaseTest {
         dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
-    final ColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
-        ColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
     final DataColumnSidecar dataColumnSidecar1_1 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
-    final ColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
-        ColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
 
     final SignedBeaconBlockHeader blockHeader2 =
         dataStructureUtil.randomSignedBeaconBlockHeader(
             blockHeader1.getMessage().getSlot().plus(100));
     final DataColumnSidecar dataColumnSidecar2_0 =
         dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
-    final ColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
-        ColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
 
     database.addSidecar(dataColumnSidecar1_0);
     database.addSidecar(dataColumnSidecar1_1);
     database.addSidecar(dataColumnSidecar2_0);
 
     database.pruneAllSidecars(ZERO);
-    try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
           .containsExactly(
@@ -2296,13 +2296,13 @@ public class DatabaseTest {
     }
 
     database.pruneAllSidecars(ONE);
-    try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
     }
 
     database.pruneAllSidecars(dataColumnSidecar2_0.getSlot());
-    try (final Stream<ColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
