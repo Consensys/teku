@@ -19,7 +19,6 @@ import com.google.errorprone.annotations.FormatMethod;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.util.List;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -114,10 +113,10 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
     addConstructor(
         implClass,
         """
-                    public %s(%s schema, tech.pegasys.teku.infrastructure.ssz.tree.TreeNode node) {
-                      super($1, $2);
-                    }
-                    """,
+                public %s(%s schema, tech.pegasys.teku.infrastructure.ssz.tree.TreeNode node) {
+                  super($1, $2);
+                }
+                """,
         typeInterface.getSimpleName() + "Impl",
         schemaClassName);
 
@@ -129,10 +128,10 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
       addMethod(
           implClass,
           """
-                      public %s %s() {
-                        return (%s) getAny(%d);
-                      }
-                      """,
+                  public %s %s() {
+                    return (%s) getAny(%d);
+                  }
+                  """,
           declaredMethod.getReturnType().getCanonicalName(),
           methodName,
           declaredMethod.getReturnType().getCanonicalName(),
@@ -142,7 +141,7 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
     final String methodName = "getSchema";
     final Method declaredMethod;
     try {
-      declaredMethod = findMethod(typeInterface, methodName);
+      declaredMethod = typeInterface.getMethod(methodName);
     } catch (NoSuchMethodException e) {
       // interface doesn't care about this schema getter
       return;
@@ -150,10 +149,10 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
     addMethod(
         implClass,
         """
-                    public %s getSchema() {
-                      return (%s) super.getSchema();
-                    }
-                    """,
+                public %s getSchema() {
+                  return (%s) super.getSchema();
+                }
+                """,
         declaredMethod.getReturnType().getCanonicalName(),
         declaredMethod.getReturnType().getCanonicalName());
 
@@ -170,29 +169,9 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
 
   }
 
-  private Method findMethod(final Class<?> typeInterface, final String methodName)
-      throws NoSuchMethodException {
-    // Check if the method is declared in the given class
-    for (Method method : typeInterface.getDeclaredMethods()) {
-      if (method.getName().equals(methodName)) {
-        return method;
-      }
-    }
-
-    // Check if the method is declared in any of the generic interfaces
-    for (Type genericInterface : typeInterface.getInterfaces()) {
-      if (genericInterface instanceof Class<?> interfaceClass) {
-        return findMethod(interfaceClass, methodName);
-      }
-    }
-
-    // If the method is not found, return null
-    throw new NoSuchMethodException(methodName);
-  }
-
   private Method validateInterfaceMethod(final String methodName, final NamedSchema<?> field)
       throws NoSuchMethodException {
-    final Method declaredMethod = findMethod(typeInterface, methodName);
+    final Method declaredMethod = typeInterface.getMethod(methodName);
     if (!declaredMethod.getReturnType().equals(field.getTypeClass())) {
       throw new IllegalArgumentException(
           String.format(
@@ -211,10 +190,10 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
     addConstructor(
         schemaClass,
         """
-                    public %s(java.util.List fields) {
-                      super(\"%s\", $1);
-                    }
-                    """,
+                public %s(java.util.List fields) {
+                  super(\"%s\", $1);
+                }
+                """,
         schemaClass.getSimpleName(),
         typeInterface.getSimpleName());
 
@@ -278,7 +257,7 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
 
       final Method declaredMethod;
       try {
-        declaredMethod = findMethod(schemaInterface, methodName);
+        declaredMethod = schemaInterface.getMethod(methodName);
       } catch (NoSuchMethodException e) {
         // interface doesn't care about this schema getter
         continue;
@@ -293,10 +272,10 @@ public class SszTypeGenerator<T extends SszContainer, S extends SszSchema<T>> {
       addMethod(
           schemaClass,
           """
-                      public %s %s() {
-                        return (%s) getChildSchema(%d);
-                      }
-                      """,
+                  public %s %s() {
+                    return (%s) getChildSchema(%d);
+                  }
+                  """,
           declaredMethod.getReturnType().getCanonicalName(),
           methodName,
           declaredMethod.getReturnType().getCanonicalName(),
