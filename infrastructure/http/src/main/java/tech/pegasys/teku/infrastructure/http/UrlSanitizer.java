@@ -49,7 +49,7 @@ public class UrlSanitizer {
     final String sanitizedPath = path == null ? "" : path;
     final URL urlWithPath;
     try {
-      urlWithPath = new URL(new URL(url), sanitizedPath);
+      urlWithPath = URI.create(url).resolve(sanitizedPath).toURL();
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException("Invalid URL " + url, e);
     }
