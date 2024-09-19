@@ -24,11 +24,15 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContent
 
 public class OpenApiResponse {
   private final String description;
+  private final List<? extends ResponseContentTypeDefinition<?>> header;
   private final List<? extends ResponseContentTypeDefinition<?>> content;
 
   public OpenApiResponse(
-      final String description, final List<? extends ResponseContentTypeDefinition<?>> content) {
+      final String description,
+      final List<? extends ResponseContentTypeDefinition<?>> header,
+      final List<? extends ResponseContentTypeDefinition<?>> content) {
     this.description = description;
+    this.header = header;
     this.content = content;
   }
 
@@ -42,6 +46,14 @@ public class OpenApiResponse {
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("description", description);
+    if (!header.isEmpty()) {
+      gen.writeObjectFieldStart("headers");
+      for (var headerEntry : header) {
+        headerEntry.serializeOpenApiTypeOrReference(gen);
+      }
+      gen.writeEndObject();
+    }
+
     gen.writeObjectFieldStart("content");
     for (ResponseContentTypeDefinition<?> contentEntry : content) {
       gen.writeObjectFieldStart(contentEntry.getContentType());

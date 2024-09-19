@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_V
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.headerBasedSelectorWithSlotFallback;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
@@ -90,6 +91,7 @@ public class PostBlindedBlock extends AbstractPostBlock {
             broadcast but a different status code is returned (202). Pre-Bellatrix, this endpoint will accept \
             a `SignedBeaconBlock`.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .deprecated(true)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
@@ -116,6 +118,8 @@ public class PostBlindedBlock extends AbstractPostBlock {
         .withBadRequestResponse(Optional.of("Unable to parse request body."))
         .response(
             SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
+        .response(
+            SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
         .build();
   }
 }

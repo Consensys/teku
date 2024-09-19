@@ -115,6 +115,7 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
                 "Version of the aggregate and proofs being submitted."))
         .response(SC_OK, "Attestations are stored in pool and broadcast on appropriate subnet")
         .withBadRequestResponse(Optional.of("Invalid request syntax."))
+        .withChainDataResponses()
         .build();
   }
 }

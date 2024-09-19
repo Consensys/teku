@@ -53,6 +53,7 @@ public class PostContributionAndProofs extends RestApiEndpoint {
             .requestBodyType(
                 DeserializableTypeDefinition.listOf(getRequestType(schemaDefinitionCache)))
             .response(SC_OK, "Successful response")
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOB_INDICES_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
@@ -73,8 +74,14 @@ public class GetBlobSidecars extends RestApiEndpoint {
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
         .queryListParam(BLOB_INDICES_PARAMETER)
-        .response(SC_OK, "Request successful", getResponseType(schemaCache), getSszResponseType())
+        .response(
+            SC_OK,
+            "Request successful",
+            getResponseType(schemaCache),
+            getSszResponseType(),
+            ETH_CONSENSUS_HEADER_TYPE)
         .withNotFoundResponse()
+        .withChainDataResponses()
         .build();
   }
 

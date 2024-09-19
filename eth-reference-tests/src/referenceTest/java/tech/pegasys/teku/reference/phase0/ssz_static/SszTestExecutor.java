@@ -187,6 +187,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
 
           // Electra types
           .put(
+              "ssz_static/ExecutionRequests",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getExecutionRequestsSchema()))
+          .put(
               "ssz_static/DepositRequest",
               new SszTestExecutor<>(
                   schemas -> SchemaDefinitionsElectra.required(schemas).getDepositRequestSchema()))

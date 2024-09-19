@@ -81,7 +81,9 @@ public class PostAttesterSlashingV2IntegrationTest
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()),
+            JsonUtil.serialize(
+                slashing,
+                slashing.getSchema().castTypeToAttesterSlashingSchema().getJsonTypeDefinition()),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
     assertThat(response.code()).isEqualTo(500);
@@ -97,7 +99,9 @@ public class PostAttesterSlashingV2IntegrationTest
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()),
+            JsonUtil.serialize(
+                slashing,
+                slashing.getSchema().castTypeToAttesterSlashingSchema().getJsonTypeDefinition()),
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
 
@@ -113,7 +117,9 @@ public class PostAttesterSlashingV2IntegrationTest
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()));
+            JsonUtil.serialize(
+                slashing,
+                slashing.getSchema().castTypeToAttesterSlashingSchema().getJsonTypeDefinition()));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
 
@@ -133,7 +139,9 @@ public class PostAttesterSlashingV2IntegrationTest
     final Response response =
         post(
             PostAttesterSlashingV2.ROUTE,
-            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()),
+            JsonUtil.serialize(
+                slashing,
+                slashing.getSchema().castTypeToAttesterSlashingSchema().getJsonTypeDefinition()),
             Collections.emptyMap(),
             Optional.of(badConsensusHeaderValue));
 

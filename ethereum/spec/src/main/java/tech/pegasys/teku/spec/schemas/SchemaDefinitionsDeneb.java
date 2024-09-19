@@ -93,7 +93,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaDenebImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             getMaxValidatorPerAttestation(specConfig),
@@ -101,7 +100,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaDenebImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             getMaxValidatorPerAttestation(specConfig),

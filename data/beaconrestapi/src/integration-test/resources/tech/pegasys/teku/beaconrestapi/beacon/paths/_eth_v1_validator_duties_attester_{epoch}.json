@@ -41,6 +41,10 @@
           }
         }
       },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
       "503" : {
         "description" : "Beacon node is currently syncing and not serving requests.",
         "content" : {

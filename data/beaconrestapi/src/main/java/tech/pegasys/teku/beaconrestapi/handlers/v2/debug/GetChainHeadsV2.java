@@ -49,6 +49,7 @@ public class GetChainHeadsV2 extends GetChainHeads {
             .description("Retrieves all possible chain heads (leaves of fork choice tree).")
             .tags(TAG_DEBUG)
             .response(SC_OK, "Success", responseType(CHAIN_HEAD_TYPE_V2))
+            .withChainDataResponses()
             .build());
   }
 }

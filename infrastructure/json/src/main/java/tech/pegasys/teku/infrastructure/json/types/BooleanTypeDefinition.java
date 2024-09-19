@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class BooleanTypeDefinition implements StringValueTypeDefinition<Boolean> {
-  private final Optional<String> description;
+  final Optional<String> description;
 
   public BooleanTypeDefinition() {
     this.description = Optional.empty();
