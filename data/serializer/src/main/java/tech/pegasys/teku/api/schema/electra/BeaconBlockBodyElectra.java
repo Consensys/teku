@@ -36,7 +36,9 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
 
@@ -129,6 +131,15 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
+
+          // TODO update as part of Electra Beacon API changes
+          // (https://github.com/Consensys/teku/issues/8623)
+          builder.executionRequests(
+              new ExecutionRequestsBuilderElectra(
+                      SchemaDefinitionsElectra.required(spec.getSchemaDefinitions())
+                          .getExecutionRequestsSchema())
+                  .build());
+
           return SafeFuture.COMPLETE;
         });
   }

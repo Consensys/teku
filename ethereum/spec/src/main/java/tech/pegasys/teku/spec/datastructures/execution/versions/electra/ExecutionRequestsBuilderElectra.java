@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
@@ -24,8 +25,13 @@ public class ExecutionRequestsBuilderElectra implements ExecutionRequestsBuilder
   private List<WithdrawalRequest> withdrawals = List.of();
   private List<ConsolidationRequest> consolidations = List.of();
 
+  @VisibleForTesting
   public ExecutionRequestsBuilderElectra(final SpecConfigElectra specConfig) {
-    this.executionRequestsSchemaElectra = new ExecutionRequestsSchema(specConfig);
+    this(new ExecutionRequestsSchema(specConfig));
+  }
+
+  public ExecutionRequestsBuilderElectra(final ExecutionRequestsSchema executionRequestsSchema) {
+    this.executionRequestsSchemaElectra = executionRequestsSchema;
   }
 
   @Override

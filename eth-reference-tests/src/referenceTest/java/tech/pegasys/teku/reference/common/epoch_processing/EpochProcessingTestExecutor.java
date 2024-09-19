@@ -34,7 +34,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           .put(
               "epoch_processing/slashings",
-              // Re-enable these tests as part of https://github.com/Consensys/teku/pull/8612
+              // TODO: Re-enable these tests as part of https://github.com/Consensys/teku/pull/8612
               TestExecutor.IGNORE_TESTS)
           .put(
               "epoch_processing/registry_updates",
