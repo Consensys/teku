@@ -175,7 +175,7 @@ public class P2PConfig {
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
     private boolean allTopicsFilterEnabled = DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
-    private Boolean isFloodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH;
+    private Boolean isFloodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
 
     private Builder() {}
 
@@ -198,7 +198,7 @@ public class P2PConfig {
             builder.seenTTL(
                 Duration.ofSeconds(
                     (long) specConfig.getSecondsPerSlot() * specConfig.getSlotsPerEpoch() * 2));
-            builder.floodPublish(isFloodPublishEnabled);
+            builder.floodPublishEnabled(isFloodPublishEnabled);
           });
 
       final NetworkConfig networkConfig = this.networkConfig.build();
@@ -288,6 +288,7 @@ public class P2PConfig {
     }
 
     public Builder isFloodPublishEnabled(final Boolean floodPublishEnabled) {
+      checkNotNull(floodPublishEnabled);
       this.isFloodPublishEnabled = floodPublishEnabled;
       return this;
     }

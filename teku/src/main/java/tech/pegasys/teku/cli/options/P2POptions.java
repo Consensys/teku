@@ -374,10 +374,9 @@ public class P2POptions {
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Enables gossip 'floodPublish' feature",
-      hidden = true,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean floodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH;
+  private boolean floodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
 
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
