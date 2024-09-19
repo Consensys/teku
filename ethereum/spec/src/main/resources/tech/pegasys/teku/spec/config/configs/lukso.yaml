@@ -59,6 +59,11 @@ BELLATRIX_FORK_EPOCH: 0
 CAPELLA_FORK_VERSION: 0x42000004
 CAPELLA_FORK_EPOCH: 8100
 
+# Deneb
+# Date and time (GMT): Wednesday, 20 November 2024 16:20:00
+DENEB_FORK_VERSION: 0x42000005
+DENEB_FORK_EPOCH: 123075
+
 # Fork choice
 # ---------------------------------------------------------------
 # 40%
