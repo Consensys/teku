@@ -259,11 +259,11 @@ public class SchemaRegistryTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void shouldThrowIfRegisteringTheSameProviderTwice() {
+  void shouldThrowIfRegisteringTheSameSchemaIdTwice() {
     final SchemaProvider<String> provider1 = mock(SchemaProvider.class);
     schemaRegistry.registerProvider(provider1);
     assertThatThrownBy(() -> schemaRegistry.registerProvider(provider1))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("has been already added");
+        .hasMessageContaining("has been already added via another provider");
   }
 }

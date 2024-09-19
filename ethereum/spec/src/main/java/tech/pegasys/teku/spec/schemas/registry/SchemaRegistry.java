@@ -52,7 +52,11 @@ public class SchemaRegistry {
     }
     if (providers.put(provider.getSchemaId(), provider) != null) {
       throw new IllegalStateException(
-          "Cannot provider " + provider.getClass().getSimpleName() + " has been already added");
+          "Cannot add provider "
+              + provider.getClass().getSimpleName()
+              + " referencing "
+              + provider.getSchemaId()
+              + " which has been already added via another provider");
     }
   }
 
