@@ -1165,6 +1165,10 @@ class BlockOperationSelectorFactoryTest {
     protected ExecutionPayload executionPayload;
     protected ExecutionPayloadHeader executionPayloadHeader;
     protected SszList<SszKZGCommitment> blobKzgCommitments;
+
+    // TODO Update as part of Electra Engine API updates
+    // (https://github.com/Consensys/teku/issues/8620)
+    @SuppressWarnings("unused")
     protected ExecutionRequests executionRequests;
 
     public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
