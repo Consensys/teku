@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,7 +31,7 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 public class SchemaRegistryTest {
 
   private final SpecConfig specConfig = mock(SpecConfig.class);
-  private final SchemaCache schemaCache = mock(SchemaCache.class);
+  private final SchemaCache schemaCache = spy(SchemaCache.createDefault());
 
   @SuppressWarnings("unchecked")
   private final SchemaProvider<String> schemaProvider = mock(SchemaProvider.class);
@@ -59,7 +60,6 @@ public class SchemaRegistryTest {
   void shouldGetSchemaFromProvider() {
     final String newSchema = "schema";
     when(schemaProvider.getSchemaId()).thenReturn(schemaId);
-    when(schemaCache.get(SpecMilestone.ALTAIR, schemaId)).thenReturn(null);
     when(schemaProvider.getEffectiveMilestone(SpecMilestone.ALTAIR))
         .thenReturn(SpecMilestone.ALTAIR);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
@@ -77,8 +77,6 @@ public class SchemaRegistryTest {
   void shouldCacheMilestoneAndEffectiveMilestoneFromProvider() {
     final String newSchema = "schema";
     when(schemaProvider.getSchemaId()).thenReturn(schemaId);
-    when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(null);
-    when(schemaCache.get(SpecMilestone.ALTAIR, schemaId)).thenReturn(null);
     when(schemaProvider.getEffectiveMilestone(SpecMilestone.ALTAIR))
         .thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
@@ -98,7 +96,6 @@ public class SchemaRegistryTest {
   void shouldGetFromCachedOfEffectiveMilestone() {
     final String newSchema = "schema";
     when(schemaProvider.getSchemaId()).thenReturn(schemaId);
-    when(schemaCache.get(SpecMilestone.ALTAIR, schemaId)).thenReturn(null);
     when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(newSchema);
     when(schemaProvider.getEffectiveMilestone(SpecMilestone.ALTAIR))
         .thenReturn(SpecMilestone.PHASE0);
@@ -122,6 +119,51 @@ public class SchemaRegistryTest {
   @Test
   @SuppressWarnings("unchecked")
   void shouldThrowIfDependencyWhenDependencyLoop() {
+    final SchemaProvider<String> provider1 = mock(SchemaProvider.class);
+    final SchemaProvider<Integer> provider2 = mock(SchemaProvider.class);
+    final SchemaProvider<Integer> provider3 = mock(SchemaProvider.class);
+    final SchemaId<String> id1 = mock(SchemaId.class);
+    final SchemaId<Integer> id2 = mock(SchemaId.class);
+    final SchemaId<Integer> id3 = mock(SchemaId.class);
+
+    when(provider1.getSchemaId()).thenReturn(id1);
+    when(provider2.getSchemaId()).thenReturn(id2);
+    when(provider3.getSchemaId()).thenReturn(id3);
+
+    // create a dependency loop
+    when(provider1.getSchema(schemaRegistry))
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, SchemaRegistry.class).get(id2);
+              return "test";
+            });
+
+    when(provider2.getSchema(schemaRegistry))
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, SchemaRegistry.class).get(id3);
+              return 42;
+            });
+
+    when(provider3.getSchema(schemaRegistry))
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, SchemaRegistry.class).get(id1);
+              return 42;
+            });
+
+    schemaRegistry.registerProvider(provider1);
+    schemaRegistry.registerProvider(provider2);
+    schemaRegistry.registerProvider(provider3);
+
+    assertThatThrownBy(schemaRegistry::primeRegistry)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageStartingWith("loop detected creating schema");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldThrowIfDependencyWhenMutualDependencyLoop() {
     final SchemaProvider<String> provider1 = mock(SchemaProvider.class);
     final SchemaProvider<Integer> provider2 = mock(SchemaProvider.class);
     final SchemaId<String> id1 = mock(SchemaId.class);
@@ -155,12 +197,46 @@ public class SchemaRegistryTest {
 
   @Test
   @SuppressWarnings("unchecked")
+  void shouldResolveNonLoopedDependencies() {
+    final SchemaProvider<String> provider1 = mock(SchemaProvider.class);
+    final SchemaProvider<Integer> provider2 = mock(SchemaProvider.class);
+
+    final SchemaId<String> id1 = mock(SchemaId.class);
+    final SchemaId<Integer> id2 = mock(SchemaId.class);
+
+    when(provider1.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
+    when(provider2.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
+    when(provider1.getSchemaId()).thenReturn(id1);
+    when(provider2.getSchemaId()).thenReturn(id2);
+
+    // create a mutual dependency
+    when(provider1.getSchema(schemaRegistry)).thenReturn("test");
+    when(provider2.getSchema(schemaRegistry))
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, SchemaRegistry.class).get(id1);
+              return 42;
+            });
+
+    schemaRegistry.registerProvider(provider1);
+    schemaRegistry.registerProvider(provider2);
+
+    schemaRegistry.primeRegistry();
+
+    verify(schemaCache).put(SpecMilestone.ALTAIR, id1, "test");
+    verify(schemaCache).put(SpecMilestone.ALTAIR, id2, 42);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
   void shouldPrimeRegistry() {
     final SchemaProvider<String> provider1 = mock(SchemaProvider.class);
     final SchemaProvider<Integer> provider2 = mock(SchemaProvider.class);
     final SchemaId<String> id1 = mock(SchemaId.class);
     final SchemaId<Integer> id2 = mock(SchemaId.class);
 
+    when(provider1.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
+    when(provider2.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
     when(provider1.getSchemaId()).thenReturn(id1);
     when(provider2.getSchemaId()).thenReturn(id2);
 
@@ -171,5 +247,23 @@ public class SchemaRegistryTest {
 
     verify(provider1).getSchema(schemaRegistry);
     verify(provider2).getSchema(schemaRegistry);
+  }
+
+  @Test
+  void shouldThrowIfPrimeTwice() {
+    schemaRegistry.primeRegistry();
+    assertThatThrownBy(schemaRegistry::primeRegistry)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Registry already primed");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldThrowIfRegisteringTheSameProviderTwice() {
+    final SchemaProvider<String> provider1 = mock(SchemaProvider.class);
+    schemaRegistry.registerProvider(provider1);
+    assertThatThrownBy(() -> schemaRegistry.registerProvider(provider1))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("has been already added");
   }
 }

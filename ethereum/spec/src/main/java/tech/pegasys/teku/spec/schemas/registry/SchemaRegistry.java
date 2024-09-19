@@ -50,7 +50,10 @@ public class SchemaRegistry {
     if (primed) {
       throw new IllegalStateException("Cannot add a provider to a primed registry");
     }
-    providers.put(provider.getSchemaId(), provider);
+    if (providers.put(provider.getSchemaId(), provider) != null) {
+      throw new IllegalStateException(
+          "Cannot provider " + provider.getClass().getSimpleName() + " has been already added");
+    }
   }
 
   @VisibleForTesting
