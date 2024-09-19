@@ -14,13 +14,15 @@
 package tech.pegasys.teku.spec.schemas.registry;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryBuilder {
-  private final List<SchemaProvider<?>> providers = new ArrayList<>();
+  private final Set<SchemaProvider<?>> providers = new HashSet<>();
+  private final Set<SchemaId<?>> schemaIds = new HashSet<>();
   private final SchemaCache cache;
 
   public static SchemaRegistryBuilder create() {
@@ -37,7 +39,15 @@ public class SchemaRegistryBuilder {
   }
 
   <T> SchemaRegistryBuilder addProvider(final SchemaProvider<T> provider) {
-    providers.add(provider);
+    if (!providers.add(provider)) {
+      throw new IllegalArgumentException(
+          "The provider " + provider.getClass().getSimpleName() + " has been already added");
+    }
+    if (!schemaIds.add(provider.getSchemaId())) {
+      throw new IllegalStateException(
+          "A previously added provider was already providing the schema for "
+              + provider.getSchemaId());
+    }
     return this;
   }
 

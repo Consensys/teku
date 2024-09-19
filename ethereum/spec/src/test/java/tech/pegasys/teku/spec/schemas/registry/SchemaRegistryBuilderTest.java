@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas.registry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -30,7 +31,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
-public class SchemaDefinitionBuilderTest {
+public class SchemaRegistryBuilderTest {
   private final SpecConfig specConfig = mock(SpecConfig.class);
   private final SchemaCache cache = spy(SchemaCache.createDefault());
   private final SchemaRegistryBuilder builder = new SchemaRegistryBuilder(cache);
@@ -74,5 +75,26 @@ public class SchemaDefinitionBuilderTest {
 
     // we should have it in cache immediately
     verify(cache).put(ALTAIR, stringId, stringSchema);
+  }
+
+  @Test
+  void shouldThrowWhenAddingTheSameProviderTwice() {
+    builder.addProvider(mockProvider);
+    assertThatThrownBy(() -> builder.addProvider(mockProvider))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("has been already added");
+  }
+
+  @Test
+  void shouldThrowWhenAddingTwoProvidersReferencingTheSameSchemaId() {
+    @SuppressWarnings("unchecked")
+    final SchemaProvider<String> mockProvider2 = mock(SchemaProvider.class);
+    when(mockProvider2.getSchemaId()).thenReturn(stringId);
+
+    builder.addProvider(mockProvider);
+
+    assertThatThrownBy(() -> builder.addProvider(mockProvider2))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("A previously added provider was already providing the");
   }
 }
