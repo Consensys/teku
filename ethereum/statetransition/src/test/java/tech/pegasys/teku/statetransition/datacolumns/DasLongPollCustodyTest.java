@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -72,11 +72,11 @@ public class DasLongPollCustodyTest {
 
   private final BeaconBlock block10 = blockResolver.addBlock(10, true);
   private final DataColumnSidecar sidecar10_0 = createSidecar(block10, 0);
-  private final DataColumnIdentifier columnId10_0 =
-      DataColumnIdentifier.createFromSidecar(sidecar10_0);
+  private final DataColumnSlotAndIdentifier columnId10_0 =
+      DataColumnSlotAndIdentifier.fromDataColumn(sidecar10_0);
   private final DataColumnSidecar sidecar10_1 = createSidecar(block10, 1);
-  private final DataColumnIdentifier columnId10_1 =
-      DataColumnIdentifier.createFromSidecar(sidecar10_1);
+  private final DataColumnSlotAndIdentifier columnId10_1 =
+      DataColumnSlotAndIdentifier.fromDataColumn(sidecar10_1);
 
   private DataColumnSidecar createSidecar(BeaconBlock block, int column) {
     return dataStructureUtil.randomDataColumnSidecar(createSigned(block), UInt64.valueOf(column));

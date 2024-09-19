@@ -38,8 +38,6 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
 
   @Override
-  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier);
-
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   @Override

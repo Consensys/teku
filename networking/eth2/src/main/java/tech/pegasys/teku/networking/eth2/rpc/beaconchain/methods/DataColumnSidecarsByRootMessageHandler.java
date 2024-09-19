@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -58,7 +58,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final DataColumnSidecarCustody dataColumnSidecarCustody;
+  private final DataColumnSidecarByRootCustody dataColumnSidecarCustody;
 
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
@@ -67,7 +67,7 @@ public class DataColumnSidecarsByRootMessageHandler
       final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
-      final DataColumnSidecarCustody dataColumnSidecarCustody) {
+      final DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
@@ -216,7 +216,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
       final DataColumnIdentifier identifier) {
-    return dataColumnSidecarCustody.getCustodyDataColumnSidecar(identifier);
+    return dataColumnSidecarCustody.getCustodyDataColumnSidecarByRoot(identifier);
   }
 
   private void handleError(

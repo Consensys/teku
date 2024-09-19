@@ -142,7 +142,7 @@ public class DataColumnSidecarCustodyImpl
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-      DataColumnIdentifier columnId) {
+      DataColumnSlotAndIdentifier columnId) {
     return db.getSidecar(columnId);
   }
 

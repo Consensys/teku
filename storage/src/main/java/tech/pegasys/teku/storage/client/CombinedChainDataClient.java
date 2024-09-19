@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -832,25 +831,6 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
     return historicalChainData.getFirstSamplerIncompleteSlot();
-  }
-
-  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(final DataColumnIdentifier identifier) {
-    final Optional<UInt64> hotSlotForBlockRoot =
-        recentChainData.getSlotForBlockRoot(identifier.getBlockRoot());
-    if (hotSlotForBlockRoot.isPresent()) {
-      return getSidecar(new DataColumnSlotAndIdentifier(hotSlotForBlockRoot.get(), identifier));
-    }
-    return historicalChainData
-        .getBlockByBlockRoot(identifier.getBlockRoot())
-        .thenCompose(
-            blockOptional -> {
-              if (blockOptional.isPresent()) {
-                return getSidecar(
-                    new DataColumnSlotAndIdentifier(blockOptional.get().getSlot(), identifier));
-              } else {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-            });
   }
 
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(

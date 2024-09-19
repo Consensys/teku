@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -74,7 +74,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
-      final DataColumnSidecarCustody dataColumnSidecarCustody,
+      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
@@ -109,7 +109,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   public static Eth2PeerManager create(
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
-      final DataColumnSidecarCustody dataColumnSidecarCustody,
+      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,

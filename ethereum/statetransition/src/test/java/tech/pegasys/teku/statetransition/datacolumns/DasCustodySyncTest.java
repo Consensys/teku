@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
@@ -294,7 +293,8 @@ public class DasCustodySyncTest {
                 Optional<DataColumnSidecar> maybeSidecar =
                     await(
                         custodyStand.custody.getCustodyDataColumnSidecar(
-                            new DataColumnIdentifier(block.getRoot(), colIndex)));
+                            new DataColumnSlotAndIdentifier(
+                                block.getSlot(), block.getRoot(), colIndex)));
                 assertThat(maybeSidecar)
                     .isPresent()
                     .hasValueSatisfying(

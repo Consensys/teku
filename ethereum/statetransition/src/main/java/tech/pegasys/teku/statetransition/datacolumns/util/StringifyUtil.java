@@ -89,6 +89,7 @@ public class StringifyUtil {
       return first > last;
     }
 
+    @SuppressWarnings("UnusedMethod")
     boolean isSingle() {
       return first == last;
     }

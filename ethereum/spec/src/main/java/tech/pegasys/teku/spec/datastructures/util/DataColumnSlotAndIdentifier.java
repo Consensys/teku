@@ -35,6 +35,10 @@ public record DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier iden
         dataColumnSidecar.getIndex());
   }
 
+  public static DataColumnSlotAndIdentifier minimalComparableForSlot(UInt64 slot) {
+    return new DataColumnSlotAndIdentifier(slot, Bytes32.ZERO, UInt64.ZERO);
+  }
+
   @Override
   public int compareTo(@NotNull final DataColumnSlotAndIdentifier o) {
     return Comparator.comparing(DataColumnSlotAndIdentifier::slot)

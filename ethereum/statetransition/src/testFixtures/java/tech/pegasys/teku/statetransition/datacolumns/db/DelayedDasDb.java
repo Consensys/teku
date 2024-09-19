@@ -54,11 +54,6 @@ public class DelayedDasDb implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnIdentifier identifier) {
-    return delay(() -> delegate.getSidecar(identifier));
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       DataColumnSlotAndIdentifier identifier) {
     return delay(() -> delegate.getSidecar(identifier));

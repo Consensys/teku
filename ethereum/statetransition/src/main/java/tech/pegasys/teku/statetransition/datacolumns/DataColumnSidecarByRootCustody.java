@@ -11,36 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns.db;
+package tech.pegasys.teku.statetransition.datacolumns;
 
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
-abstract class AbstractDelegatingDasDb implements DataColumnSidecarCoreDB {
-  private final DataColumnSidecarCoreDB delegateDb;
+public interface DataColumnSidecarByRootCustody extends DataColumnSidecarCustody {
 
-  public AbstractDelegatingDasDb(DataColumnSidecarCoreDB delegateDb) {
-    this.delegateDb = delegateDb;
-  }
+  public static final DataColumnSidecarByRootCustody NOOP =
+      new DataColumnSidecarByRootCustody() {
+        @Override
+        public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
+            DataColumnIdentifier columnId) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
 
-  @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      DataColumnSlotAndIdentifier identifier) {
-    return delegateDb.getSidecar(identifier);
-  }
+        @Override
+        public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
+            DataColumnSlotAndIdentifier columnId) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+      };
 
-  @Override
-  public SafeFuture<List<DataColumnIdentifier>> getColumnIdentifiers(UInt64 slot) {
-    return delegateDb.getColumnIdentifiers(slot);
-  }
-
-  @Override
-  public SafeFuture<Void> addSidecar(DataColumnSidecar sidecar) {
-    return delegateDb.addSidecar(sidecar);
-  }
+  SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
+      DataColumnIdentifier columnId);
 }

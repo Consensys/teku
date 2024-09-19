@@ -90,7 +90,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
@@ -107,7 +107,7 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
-  protected DataColumnSidecarCustody dataColumnSidecarCustody;
+  protected DataColumnSidecarByRootCustody dataColumnSidecarCustody;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
@@ -496,7 +496,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder dataColumnSidecarCustody(
-      DataColumnSidecarCustody dataColumnSidecarCustody) {
+      DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
     checkNotNull(dataColumnSidecarCustody);
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
     return this;

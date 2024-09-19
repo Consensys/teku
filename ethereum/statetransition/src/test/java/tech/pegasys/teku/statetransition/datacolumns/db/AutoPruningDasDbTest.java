@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 
@@ -54,9 +54,10 @@ public class AutoPruningDasDbTest {
     DataColumnSidecar s1000 = createSidecar(1000, 0);
     autoPruningDb.addSidecar(s1000);
 
-    assertThat(das.db.getSidecar(DataColumnIdentifier.createFromSidecar(s0)).join()).isEmpty();
-    assertThat(das.db.getSidecar(DataColumnIdentifier.createFromSidecar(s900)).join()).isEmpty();
-    assertThat(das.db.getSidecar(DataColumnIdentifier.createFromSidecar(s1000)).join())
+    assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(s0)).join()).isEmpty();
+    assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(s900)).join())
+        .isEmpty();
+    assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(s1000)).join())
         .isNotEmpty();
   }
 
@@ -72,11 +73,11 @@ public class AutoPruningDasDbTest {
     autoPruningDb.addSidecar(createSidecar(1010 + prunePeriodSlots - 1, 0));
     // check that no additional prune was called
     assertThat(das.db.getDbWriteCounter().get()).isEqualTo(writesCount + 5);
-    assertThat(das.db.getSidecar(DataColumnIdentifier.createFromSidecar(sidecar1000)).join())
+    assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1000)).join())
         .isNotEmpty();
 
     autoPruningDb.addSidecar(createSidecar(1010 + prunePeriodSlots + 1, 0));
-    assertThat(das.db.getSidecar(DataColumnIdentifier.createFromSidecar(sidecar1000)).join())
+    assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1000)).join())
         .isEmpty();
   }
 
@@ -85,8 +86,8 @@ public class AutoPruningDasDbTest {
     final int totalPeriod = custodyPeriodSlots + custodyPeriodMarginSlots;
     List<DataColumnSidecar> sidecars =
         IntStream.range(0, 30).mapToObj(slot -> createSidecar(slot, 0)).toList();
-    List<DataColumnIdentifier> sidecarIds =
-        sidecars.stream().map(DataColumnIdentifier::createFromSidecar).toList();
+    List<DataColumnSlotAndIdentifier> sidecarIds =
+        sidecars.stream().map(DataColumnSlotAndIdentifier::fromDataColumn).toList();
     sidecars.forEach(
         sidecar -> {
           autoPruningDb.addSidecar(sidecar);

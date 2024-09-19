@@ -29,8 +29,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
@@ -83,10 +83,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                     miscHelpersEip7594.computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount))
             .orElse(Collections.emptyList())
             .stream()
-            .map(
-                columnIndex ->
-                    new DataColumnSlotAndIdentifier(
-                        slot, new DataColumnIdentifier(blockRoot, columnIndex)))
+            .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
             .toList();
 
     LOG.debug(
@@ -104,7 +101,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                 .map(
                     id ->
                         custody
-                            .getCustodyDataColumnSidecar(id.identifier())
+                            .getCustodyDataColumnSidecar(id)
                             .thenApply(
                                 maybeSidecar -> new ColumnIdAndMaybeSidecar(id, maybeSidecar))));
 
@@ -137,8 +134,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                       retrievedColumns -> {
                         if (!retrievedColumns.isEmpty()) {
                           LOG.info(
-                              "checkDataAvailability(): retrieved {} (of {}) columns via Req/Resp for block {} ({})",
-                              columnIdentifiers.size() - missingColumnIds.size(),
+                              "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
+                              retrievedColumns.size(),
                               columnIdentifiers.size(),
                               slot,
                               blockRoot);

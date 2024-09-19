@@ -41,12 +41,21 @@ public class DataColumnReqRespImpl implements DataColumnReqResp {
         .requestDataColumnSidecar(nodeId, columnIdentifier)
         .whenException(
             ex -> {
-              LOG.error(
-                  String.format(
-                      "Error requesting data column sidecar %s from %s", columnIdentifier, nodeId),
-                  ex);
-              // TODO: uncomment in production
-              // peerManager.banNode(nodeId);
+              if (ex instanceof DataColumnReqRespException) {
+                LOG.debug(
+                    "Error requesting data column sidecar {} from {}: {}",
+                    columnIdentifier,
+                    nodeId,
+                    ex);
+              } else {
+                LOG.warn(
+                    "Error requesting data column sidecar {} from {}: {}",
+                    columnIdentifier,
+                    nodeId,
+                    ex);
+                // TODO: uncomment in production
+                // peerManager.banNode(nodeId);
+              }
             });
   }
 

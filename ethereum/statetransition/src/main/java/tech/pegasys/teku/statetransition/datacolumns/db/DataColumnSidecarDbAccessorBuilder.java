@@ -48,8 +48,7 @@ public class DataColumnSidecarDbAccessorBuilder {
   }
 
   public DataColumnSidecarDbAccessor build() {
-    SlotCachingDasDb slotIdCachingDb = new SlotCachingDasDb(db);
-    return autoPruneDbBuilder.build(slotIdCachingDb);
+    return autoPruneDbBuilder.build(db);
   }
 
   MinCustodyPeriodSlotCalculator getMinCustodyPeriodSlotCalculator() {

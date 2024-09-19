@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -151,7 +151,7 @@ public class BeaconChainMethodsTest {
         asyncRunner,
         peerLookup,
         combinedChainDataClient,
-        DataColumnSidecarCustody.NOOP,
+        DataColumnSidecarByRootCustody.NOOP,
         recentChainData,
         metricsSystem,
         statusMessageFactory,
