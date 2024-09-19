@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.schemas.SchemaTypes.SchemaId;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
-public interface SchemaCache {
+interface SchemaCache {
   static SchemaCache createDefault() {
     return new SchemaCache() {
       private final Map<SpecMilestone, Map<SchemaId<?>, Object>> cache =
@@ -28,7 +28,11 @@ public interface SchemaCache {
       @SuppressWarnings("unchecked")
       @Override
       public <T> T get(final SpecMilestone milestone, final SchemaId<T> schemaId) {
-        return (T) cache.computeIfAbsent(milestone, __ -> new HashMap<>()).get(schemaId);
+        final Map<?, ?> milestoneSchemaIds = cache.get(milestone);
+        if (milestoneSchemaIds == null) {
+          return null;
+        }
+        return (T) milestoneSchemaIds.get(schemaId);
       }
 
       @Override

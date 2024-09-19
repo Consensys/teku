@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,21 +24,17 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.EnumSet;
 import java.util.Set;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 class BaseSchemaProviderTest {
+  @SuppressWarnings("unchecked")
+  private static final SchemaId<String> STRING_SCHEMA_ID = mock(SchemaId.class);
 
-  private TestSchemaProvider provider;
-  private SchemaRegistry mockRegistry;
-
-  @BeforeEach
-  void setUp() {
-    provider = new TestSchemaProvider();
-    mockRegistry = mock(SchemaRegistry.class);
-  }
+  private final TestSchemaProvider provider = new TestSchemaProvider();
+  private final SchemaRegistry mockRegistry = mock(SchemaRegistry.class);
 
   @Test
   void shouldGetEffectiveMilestone() {
@@ -77,7 +73,7 @@ class BaseSchemaProviderTest {
 
   private static class TestSchemaProvider extends AbstractSchemaProvider<String> {
     TestSchemaProvider() {
-      super(SchemaTypes.create("TestSchema"));
+      super(STRING_SCHEMA_ID);
     }
 
     @Override

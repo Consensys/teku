@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;

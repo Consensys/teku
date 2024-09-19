@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.lang.reflect.Field;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.schemas.SchemaTypes.SchemaId;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaTypesTest {
 

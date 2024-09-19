@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.schemas.SchemaTypes.SchemaId;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaCacheTest {
 

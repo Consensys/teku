@@ -11,8 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +25,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.schemas.SchemaTypes.SchemaId;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryTest {
 
@@ -116,6 +117,40 @@ public class SchemaRegistryTest {
   @Test
   void shouldThrowExceptionWhenGettingSchemaForUnregisteredProvider() {
     assertThrows(IllegalArgumentException.class, () -> schemaRegistry.get(schemaId));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldThrowIfDependencyWhenDependencyLoop() {
+    final SchemaProvider<String> provider1 = mock(SchemaProvider.class);
+    final SchemaProvider<Integer> provider2 = mock(SchemaProvider.class);
+    final SchemaId<String> id1 = mock(SchemaId.class);
+    final SchemaId<Integer> id2 = mock(SchemaId.class);
+
+    when(provider1.getSchemaId()).thenReturn(id1);
+    when(provider2.getSchemaId()).thenReturn(id2);
+
+    // create a mutual dependency
+    when(provider2.getSchema(schemaRegistry))
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, SchemaRegistry.class).get(id1);
+              return 42;
+            });
+
+    when(provider1.getSchema(schemaRegistry))
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, SchemaRegistry.class).get(id2);
+              return "test";
+            });
+
+    schemaRegistry.registerProvider(provider1);
+    schemaRegistry.registerProvider(provider2);
+
+    assertThatThrownBy(schemaRegistry::primeRegistry)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageStartingWith("loop detected creating schema");
   }
 
   @Test

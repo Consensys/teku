@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
@@ -21,9 +21,9 @@ import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import java.util.EnumSet;
 import java.util.Set;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.schemas.SchemaTypes.SchemaId;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
-public interface SchemaProvider<T> {
+interface SchemaProvider<T> {
   Set<SpecMilestone> ALL_MILESTONES = EnumSet.allOf(SpecMilestone.class);
   Set<SpecMilestone> FROM_BELLATRIX = from(BELLATRIX);
   Set<SpecMilestone> FROM_CAPELLA = from(CAPELLA);

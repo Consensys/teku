@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -36,12 +36,13 @@ public class SchemaRegistryBuilder {
     this.cache = cache;
   }
 
-  public <T> SchemaRegistryBuilder addProvider(final SchemaProvider<T> provider) {
+  <T> SchemaRegistryBuilder addProvider(final SchemaProvider<T> provider) {
     providers.add(provider);
     return this;
   }
 
-  public SchemaRegistry build(final SpecMilestone milestone, final SpecConfig specConfig) {
+  public synchronized SchemaRegistry build(
+      final SpecMilestone milestone, final SpecConfig specConfig) {
     final SchemaRegistry registry = new SchemaRegistry(milestone, specConfig, cache);
 
     for (final SchemaProvider<?> provider : providers) {

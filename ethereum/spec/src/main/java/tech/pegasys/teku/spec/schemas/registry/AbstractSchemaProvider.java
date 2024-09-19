@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas;
+package tech.pegasys.teku.spec.schemas.registry;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -19,9 +19,9 @@ import java.util.EnumMap;
 import java.util.Map;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.schemas.SchemaTypes.SchemaId;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
-public abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
+abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
   private final Map<SpecMilestone, SpecMilestone> milestoneToEffectiveMilestone =
       new EnumMap<>(SpecMilestone.class);
   private final SchemaId<T> schemaId;
