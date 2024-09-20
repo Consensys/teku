@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public final class Teku {
@@ -74,6 +75,7 @@ public final class Teku {
     if (BlstLoader.INSTANCE.isEmpty()) {
       throw new UnsupportedOperationException("BLS native library unavailable for this platform");
     }
+    JemallocDetector.logJemallocPresence();
 
     node.start();
 
