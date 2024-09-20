@@ -425,38 +425,42 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     assertThat(deserialized.hashTreeRoot()).isEqualTo(bitlist.hashTreeRoot());
   }
 
-  @Test
-  public void testFromHexStringEdgeCases() {
-    SszBitlistSchema<SszBitlist> testSchema = SszBitlistSchema.create(100);
+  private static final SszBitlistSchema<SszBitlist> FROM_HEX_STRING_TEST_SCHEMA =
+      SszBitlistSchema.create(100);
 
-    // Test valid minimal hex string
+  @Test
+  public void fromHexString_shouldHandleMinimalValidHexString() {
     String minimalHex = "0x01";
-    Assertions.assertThatCode(() -> testSchema.fromHexString(minimalHex))
-        .doesNotThrowAnyException();
-    SszBitlist validResult = testSchema.fromHexString(minimalHex);
+    SszBitlist validResult = FROM_HEX_STRING_TEST_SCHEMA.fromHexString(minimalHex);
     assertThat(validResult).isNotNull();
     assertThat(validResult.sszSerialize()).isEqualTo(Bytes.fromHexString(minimalHex));
     assertThat(validResult.size()).isZero();
+  }
 
-    // Test valid complex hex string
+  @Test
+  public void fromHexString_shouldHandleComplexValidHexString() {
     String complexHex = "0x01020304";
-    Assertions.assertThatCode(() -> testSchema.fromHexString(complexHex))
-        .doesNotThrowAnyException();
-    SszBitlist complexResult = testSchema.fromHexString(complexHex);
+    SszBitlist complexResult = FROM_HEX_STRING_TEST_SCHEMA.fromHexString(complexHex);
     assertThat(complexResult).isNotNull();
     assertThat(complexResult.sszSerialize()).isEqualTo(Bytes.fromHexString(complexHex));
+  }
 
-    // Test empty string
-    assertThatThrownBy(() -> testSchema.fromHexString(""))
+  @Test
+  public void fromHexString_shouldThrowForEmptyString() {
+    assertThatThrownBy(() -> FROM_HEX_STRING_TEST_SCHEMA.fromHexString(""))
         .isInstanceOf(IllegalArgumentException.class);
+  }
 
-    // Test "0x"
-    assertThatThrownBy(() -> testSchema.fromHexString("0x"))
+  @Test
+  public void fromHexString_shouldThrowForOnlyPrefix() {
+    assertThatThrownBy(() -> FROM_HEX_STRING_TEST_SCHEMA.fromHexString("0x"))
         .isInstanceOf(IllegalArgumentException.class);
+  }
 
-    // Test invalid hex string
+  @Test
+  public void fromHexString_shouldThrowForInvalidHexString() {
     String invalidHex = "i am a string, not a valid hex string";
-    assertThatThrownBy(() -> testSchema.fromHexString(invalidHex))
+    assertThatThrownBy(() -> FROM_HEX_STRING_TEST_SCHEMA.fromHexString(invalidHex))
         .isInstanceOf(IllegalArgumentException.class);
   }
 }
