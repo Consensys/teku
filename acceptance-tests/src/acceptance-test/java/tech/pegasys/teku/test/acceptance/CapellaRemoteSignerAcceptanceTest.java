@@ -95,7 +95,7 @@ public class CapellaRemoteSignerAcceptanceTest extends AcceptanceTestBase {
     final Map<String, String> genesisOverrides = Map.of("shanghaiTime", String.valueOf(shanghai));
 
     return createBesuNode(
-        BesuDockerVersion.DEVELOP,
+        BesuDockerVersion.STABLE,
         config ->
             config
                 .withMergeSupport()

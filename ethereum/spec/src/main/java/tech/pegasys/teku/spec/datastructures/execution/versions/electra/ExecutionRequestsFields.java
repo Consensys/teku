@@ -11,19 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
-public enum BesuDockerVersion {
-  STABLE("24.9.1"),
-  DEVELOP("develop");
+import java.util.Locale;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 
-  private final String version;
+public enum ExecutionRequestsFields implements SszFieldName {
+  DEPOSITS,
+  WITHDRAWALS,
+  CONSOLIDATIONS;
 
-  BesuDockerVersion(final String version) {
-    this.version = version;
+  private final String sszFieldName;
+
+  ExecutionRequestsFields() {
+    this.sszFieldName = name().toLowerCase(Locale.ROOT);
   }
 
-  public String getVersion() {
-    return version;
+  @Override
+  public String getSszFieldName() {
+    return sszFieldName;
   }
 }
