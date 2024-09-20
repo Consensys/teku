@@ -320,7 +320,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             dataColumnSidecarIdentifiers.next();
 
         // Column that was not requested. TODO: get identifiers only for requested columns from DB
-        if (!columns.contains(columnSlotAndIdentifier.identifier().getIndex())) {
+        if (!columns.contains(columnSlotAndIdentifier.columnIndex())) {
           return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
         }
 
@@ -343,7 +343,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     private boolean isCanonicalHotDataColumnSidecar(
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier) {
       return Optional.ofNullable(canonicalHotRoots.get(columnSlotAndIdentifier.slot()))
-          .map(blockRoot -> blockRoot.equals(columnSlotAndIdentifier.identifier().getBlockRoot()))
+          .map(blockRoot -> blockRoot.equals(columnSlotAndIdentifier.blockRoot()))
           .orElse(false);
     }
 

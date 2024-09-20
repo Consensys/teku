@@ -18,7 +18,6 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -41,7 +40,7 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   @Override
-  SafeFuture<List<DataColumnIdentifier>> getColumnIdentifiers(UInt64 slot);
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
 
   // update
 

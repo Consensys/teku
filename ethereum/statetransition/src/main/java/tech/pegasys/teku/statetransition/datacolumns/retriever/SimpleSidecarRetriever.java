@@ -93,7 +93,7 @@ public class SimpleSidecarRetriever
   @Override
   public synchronized SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId) {
     DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest =
-        peerSearcher.requestPeers(columnId.slot(), columnId.identifier().getIndex());
+        peerSearcher.requestPeers(columnId.slot(), columnId.columnIndex());
 
     RetrieveRequest existingRequest = pendingRequests.get(columnId);
     if (existingRequest == null) {
@@ -164,7 +164,8 @@ public class SimpleSidecarRetriever
     List<RequestMatch> matches = matchRequestsAndPeers();
     for (RequestMatch match : matches) {
       SafeFuture<DataColumnSidecar> reqRespPromise =
-          reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId.identifier());
+          reqResp.requestDataColumnSidecar(
+              match.peer.nodeId, match.request.columnId.toDataColumnIdentifier());
       match.request().onPeerRequest(match.peer().nodeId);
       match.request.activeRpcRequest =
           new ActiveRequest(
@@ -279,8 +280,7 @@ public class SimpleSidecarRetriever
     }
 
     public boolean isCustodyFor(DataColumnSlotAndIdentifier columnId) {
-      return getNodeCustodyIndexes(spec.atSlot(columnId.slot()))
-          .contains(columnId.identifier().getIndex());
+      return getNodeCustodyIndexes(spec.atSlot(columnId.slot())).contains(columnId.columnIndex());
     }
   }
 

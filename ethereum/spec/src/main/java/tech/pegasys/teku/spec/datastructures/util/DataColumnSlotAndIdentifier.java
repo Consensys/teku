@@ -20,11 +20,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
-public record DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier identifier)
+public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64 columnIndex)
     implements Comparable<DataColumnSlotAndIdentifier> {
-  public DataColumnSlotAndIdentifier(
-      final UInt64 slot, final Bytes32 blockRoot, final UInt64 columnIndex) {
-    this(slot, new DataColumnIdentifier(blockRoot, columnIndex));
+
+  public DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier dataColumnIdentifier) {
+    this(slot, dataColumnIdentifier.getBlockRoot(), dataColumnIdentifier.getIndex());
   }
 
   public static DataColumnSlotAndIdentifier fromDataColumn(
@@ -39,12 +39,15 @@ public record DataColumnSlotAndIdentifier(UInt64 slot, DataColumnIdentifier iden
     return new DataColumnSlotAndIdentifier(slot, Bytes32.ZERO, UInt64.ZERO);
   }
 
+  public DataColumnIdentifier toDataColumnIdentifier() {
+    return new DataColumnIdentifier(blockRoot(), columnIndex());
+  }
+
   @Override
   public int compareTo(@NotNull final DataColumnSlotAndIdentifier o) {
     return Comparator.comparing(DataColumnSlotAndIdentifier::slot)
-        .thenComparing(
-            columnSlotAndIdentifier -> columnSlotAndIdentifier.identifier().getBlockRoot())
-        .thenComparing(columnSlotAndIdentifier -> columnSlotAndIdentifier.identifier().getIndex())
+        .thenComparing(DataColumnSlotAndIdentifier::blockRoot)
+        .thenComparing(DataColumnSlotAndIdentifier::columnIndex)
         .compare(this, o);
   }
 }

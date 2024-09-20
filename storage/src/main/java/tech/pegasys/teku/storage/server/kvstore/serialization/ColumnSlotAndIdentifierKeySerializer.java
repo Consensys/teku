@@ -51,8 +51,8 @@ class ColumnSlotAndIdentifierKeySerializer
   public byte[] serialize(final DataColumnSlotAndIdentifier value) {
     return Bytes.concatenate(
             Bytes.wrap(Longs.toByteArray(value.slot().longValue())),
-            value.identifier().getBlockRoot(),
-            Bytes.wrap(Longs.toByteArray(value.identifier().getIndex().longValue())))
+            value.blockRoot(),
+            Bytes.wrap(Longs.toByteArray(value.columnIndex().longValue())))
         .toArrayUnsafe();
   }
 }

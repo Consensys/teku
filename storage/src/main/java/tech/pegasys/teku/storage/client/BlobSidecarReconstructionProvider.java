@@ -111,7 +111,7 @@ public class BlobSidecarReconstructionProvider {
 
               final SafeFuture<Optional<SignedBeaconBlock>> signedBeaconBlockFuture =
                   combinedChainDataClient.getBlockByBlockRoot(
-                      slotAndIdentifiers.getFirst().identifier().getBlockRoot());
+                      slotAndIdentifiers.getFirst().blockRoot());
               return signedBeaconBlockFuture.thenApply(
                   signedBeaconBlock ->
                       signedBeaconBlock

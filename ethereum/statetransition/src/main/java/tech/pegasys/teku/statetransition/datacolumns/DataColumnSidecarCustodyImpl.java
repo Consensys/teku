@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
@@ -44,25 +43,27 @@ public class DataColumnSidecarCustodyImpl
       UInt64 slot,
       Optional<Bytes32> canonicalBlockRoot,
       Collection<UInt64> requiredColumnIndices,
-      Collection<DataColumnIdentifier> custodiedColumnIndices) {
-    public Collection<DataColumnIdentifier> getIncompleteColumns() {
+      Collection<DataColumnSlotAndIdentifier> custodiedColumnIndices) {
+    public Collection<DataColumnSlotAndIdentifier> getIncompleteColumns() {
       return canonicalBlockRoot
           .map(
               blockRoot -> {
                 Set<UInt64> collectedIndices =
                     custodiedColumnIndices.stream()
-                        .filter(identifier -> identifier.getBlockRoot().equals(blockRoot))
-                        .map(DataColumnIdentifier::getIndex)
+                        .filter(identifier -> identifier.blockRoot().equals(blockRoot))
+                        .map(DataColumnSlotAndIdentifier::columnIndex)
                         .collect(Collectors.toSet());
                 return requiredColumnIndices.stream()
                     .filter(requiredColIdx -> !collectedIndices.contains(requiredColIdx))
-                    .map(missedColIdx -> new DataColumnIdentifier(blockRoot, missedColIdx));
+                    .map(
+                        missedColIdx ->
+                            new DataColumnSlotAndIdentifier(slot(), blockRoot, missedColIdx));
               })
           .orElse(Stream.empty())
           .toList();
     }
 
-    public AsyncStream<DataColumnIdentifier> streamIncompleteColumns() {
+    public AsyncStream<DataColumnSlotAndIdentifier> streamIncompleteColumns() {
       return AsyncStream.create(getIncompleteColumns().iterator());
     }
 
@@ -190,7 +191,8 @@ public class DataColumnSidecarCustodyImpl
   private SafeFuture<SlotCustody> retrieveSlotCustody(final UInt64 slot) {
     final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootIfHaveBlobs(slot);
     final List<UInt64> requiredColumns = getCustodyColumnsForSlot(slot);
-    final SafeFuture<List<DataColumnIdentifier>> existingColumns = db.getColumnIdentifiers(slot);
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> existingColumns =
+        db.getColumnIdentifiers(slot);
     return SafeFuture.allOf(maybeCanonicalBlockRoot, existingColumns)
         .thenApply(
             __ ->
@@ -223,10 +225,6 @@ public class DataColumnSidecarCustodyImpl
     // waiting a column for [gossipWaitSlots] to be delivered by gossip
     // and not considering it missing yet
     return retrievePotentiallyIncompleteSlotCustodies(currentSlot.minusMinZero(gossipWaitSlots))
-        .flatMap(
-            slotCustody ->
-                slotCustody
-                    .streamIncompleteColumns()
-                    .map(colId -> new DataColumnSlotAndIdentifier(slotCustody.slot(), colId)));
+        .flatMap(SlotCustody::streamIncompleteColumns);
   }
 }
