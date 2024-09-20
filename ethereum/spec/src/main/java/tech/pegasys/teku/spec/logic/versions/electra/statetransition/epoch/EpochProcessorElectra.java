@@ -326,7 +326,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
       if (status.isSlashed()
           && epoch.plus(halfEpochsPerSlashingsVector).equals(status.getWithdrawableEpoch())) {
 
-        // EIP7251
+        // EIP-7251
         final UInt64 effectiveBalanceIncrements =
             status.getCurrentEpochEffectiveBalance().dividedBy(increment);
         final UInt64 penalty =
