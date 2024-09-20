@@ -1332,6 +1332,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1490,6 +1493,9 @@ public final class DataStructureUtil {
                     randomFullSszList(
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
                         this::randomSszKZGCommitment));
+              }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
