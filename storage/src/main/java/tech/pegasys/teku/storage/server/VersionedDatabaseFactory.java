@@ -20,13 +20,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
@@ -166,7 +169,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          Optional.of(String.valueOf(spec.getGenesisSpecConfig().getDepositChainId())));
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           KvStoreConfiguration.v4Settings(dbDirectory.toPath()),
@@ -190,7 +196,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          Optional.of(String.valueOf(spec.getGenesisSpecConfig().getDepositChainId())));
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -233,7 +242,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          Optional.of(String.valueOf(spec.getGenesisSpecConfig().getDepositChainId())));
       return LevelDbDatabaseFactory.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -284,7 +296,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         V6DatabaseMetadata.init(getMetadataFile(), V6DatabaseMetadata.singleDBDefault());
 
     DatabaseNetwork.init(
-        getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+        getNetworkFile(),
+        spec.getGenesisSpecConfig().getGenesisForkVersion(),
+        eth1Address,
+        Optional.of(String.valueOf(spec.getGenesisSpecConfig().getDepositChainId())));
 
     return metaData.getSingleDbConfiguration().getConfiguration();
   }
@@ -307,6 +322,12 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   }
 
   private void createDirectories(final DatabaseVersion dbVersion) {
+    final Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(Eth2Network.EPHEMERY).build();
+
+    if (networkConfig.getEth2Network().equals(Optional.of(Eth2Network.EPHEMERY))) {
+      resetDatabaseDirectories();
+    }
     if (!dbDirectory.mkdirs() && !dbDirectory.isDirectory()) {
       throw DatabaseStorageException.unrecoverable(
           String.format(
@@ -370,6 +391,50 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       throw DatabaseStorageException.unrecoverable(
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),
           e);
+    }
+  }
+
+  // This implementation is required for Ephemery Network
+  private void resetDatabaseDirectories() {
+    File networkFile = getNetworkFile();
+
+    try {
+      if (dbDirectory.exists()) {
+        deleteDirectoryRecursively(dbDirectory.toPath());
+      }
+      if (v5ArchiveDirectory.exists()) {
+        deleteDirectoryRecursively(v5ArchiveDirectory.toPath());
+      }
+      if (networkFile.exists()) {
+        try {
+          LOG.info("Resetting network file at: {}", networkFile.getAbsolutePath());
+          Files.delete(networkFile.toPath());
+          System.out.println("Database directories reset successfully.");
+        } catch (IOException e) {
+          throw DatabaseStorageException.unrecoverable(
+              String.format("Failed to reset network file at %s", networkFile.getAbsolutePath()),
+              e);
+        }
+      }
+    } catch (IOException e) {
+      throw DatabaseStorageException.unrecoverable("Failed to reset database directories", e);
+    }
+  }
+
+  private void deleteDirectoryRecursively(final Path path) throws IOException {
+    if (Files.isDirectory(path)) {
+      try (var stream = Files.walk(path)) {
+        stream
+            .sorted((o1, o2) -> o2.compareTo(o1))
+            .forEach(
+                p -> {
+                  try {
+                    Files.delete(p);
+                  } catch (IOException e) {
+                    throw new RuntimeException("Failed to delete file: " + p, e);
+                  }
+                });
+      }
     }
   }
 }
