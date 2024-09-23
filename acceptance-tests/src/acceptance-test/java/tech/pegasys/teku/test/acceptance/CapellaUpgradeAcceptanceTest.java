@@ -51,6 +51,15 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     primaryEL.start();
 
+    TekuBeaconNode primaryNode =
+            createTekuBeaconNode(
+                    beaconNodeConfigWithForks(genesisTime, primaryEL)
+                            .withStartupTargetPeerCount(0)
+                            .build());
+
+    primaryNode.start();
+    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
+
     BesuNode secondaryEL =
         createBesuNode(
             BesuDockerVersion.STABLE,
@@ -63,15 +72,6 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
-
-    TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            beaconNodeConfigWithForks(genesisTime, primaryEL)
-                .withStartupTargetPeerCount(0)
-                .build());
-
-    primaryNode.start();
-    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
 
     final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 

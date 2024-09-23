@@ -56,6 +56,15 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     primaryEL.start();
 
+    TekuBeaconNode primaryNode =
+            createTekuBeaconNode(
+                    beaconNodeWithTrustedSetup(genesisTime, primaryEL)
+                            .withStartupTargetPeerCount(0)
+                            .build());
+
+    primaryNode.start();
+    primaryNode.waitForMilestone(SpecMilestone.DENEB);
+
     BesuNode secondaryEL =
         createBesuNode(
             BesuDockerVersion.STABLE,
@@ -68,15 +77,6 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
-
-    TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            beaconNodeWithTrustedSetup(genesisTime, primaryEL)
-                .withStartupTargetPeerCount(0)
-                .build());
-
-    primaryNode.start();
-    primaryNode.waitForMilestone(SpecMilestone.DENEB);
 
     final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 
