@@ -106,7 +106,8 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
-    // TODO add execution requests from BeaconBlocBodyElectra (https://github.com/Consensys/teku/pull/8600)
+    // TODO add execution requests from BeaconBlocBodyElectra
+    // (https://github.com/Consensys/teku/pull/8600)
     this.executionRequests = new ExecutionRequests(List.of(), List.of(), List.of());
   }
 
