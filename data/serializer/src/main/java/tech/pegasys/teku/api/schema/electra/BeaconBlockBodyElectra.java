@@ -36,7 +36,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -109,9 +108,19 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
-    // TODO add execution requests from BeaconBlocBodyElectra
-    // (https://github.com/Consensys/teku/pull/8600)
-    this.executionRequests = new ExecutionRequests(List.of(), List.of(), List.of());
+
+    final List<DepositRequest> depositRequests =
+        message.getExecutionRequests().getDeposits().stream().map(DepositRequest::new).toList();
+    final List<WithdrawalRequest> withdrawalRequests =
+        message.getExecutionRequests().getWithdrawals().stream()
+            .map(WithdrawalRequest::new)
+            .toList();
+    final List<ConsolidationRequest> consolidationRequests =
+        message.getExecutionRequests().getConsolidations().stream()
+            .map(ConsolidationRequest::new)
+            .toList();
+    this.executionRequests =
+        new ExecutionRequests(depositRequests, withdrawalRequests, consolidationRequests);
   }
 
   @Override
@@ -140,14 +149,10 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
-
-          // TODO update as part of Electra Beacon API changes
-          // (https://github.com/Consensys/teku/issues/8623)
           builder.executionRequests(
-              new ExecutionRequestsBuilderElectra(
-                      SchemaDefinitionsElectra.required(spec.getSchemaDefinitions())
-                          .getExecutionRequestsSchema())
-                  .build());
+              this.executionRequests.asInternalConsolidationRequest(
+                  SchemaDefinitionsElectra.required(spec.getSchemaDefinitions())
+                      .getExecutionRequestsSchema()));
 
           return SafeFuture.COMPLETE;
         });

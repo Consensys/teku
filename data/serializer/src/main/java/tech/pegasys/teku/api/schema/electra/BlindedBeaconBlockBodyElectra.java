@@ -39,9 +39,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
 
@@ -104,7 +102,7 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
           blockBody) {
     super(blockBody);
     this.executionPayloadHeader =
-        new ExecutionPayloadHeaderElectra(blockBody.getExecutionPayloadHeader());
+        new ExecutionPayloadHeaderDeneb(blockBody.getExecutionPayloadHeader());
     this.blsToExecutionChanges =
         blockBody.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
     this.blobKZGCommitments =

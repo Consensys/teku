@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@Disabled("Waiting for https://github.com/Consensys/teku/issues/8620")
 public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTest {
 
   @BeforeEach
