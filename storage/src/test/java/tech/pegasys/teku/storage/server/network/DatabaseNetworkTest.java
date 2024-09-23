@@ -18,12 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -147,9 +149,12 @@ public class DatabaseNetworkTest {
         new DatabaseNetwork(fork.toHexString(), eth1Address.toHexString(), null);
 
     objectMapper.writerFor(DatabaseNetwork.class).writeValue(networkFile, databaseNetwork);
+    String networkContent = Files.readString(networkFile.toPath());
+
     final DatabaseNetwork readDatabaseNetwork =
         objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
 
+    assertFalse(networkContent.contains("deposit_chain_id"));
     assertNull(readDatabaseNetwork.depositChainId);
   }
 }
