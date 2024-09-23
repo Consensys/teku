@@ -48,6 +48,9 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
   @JsonProperty("blob_kzg_commitments")
   public final List<KZGCommitment> blobKZGCommitments;
 
+  @JsonProperty("execution_requests")
+  public final ExecutionRequests executionRequests;
+
   @JsonCreator
   public BeaconBlockBodyElectra(
       @JsonProperty("randao_reveal") final BLSSignature randaoReveal,
@@ -62,7 +65,8 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
       @JsonProperty("execution_payload") final ExecutionPayloadElectra executionPayload,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
-      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments) {
+      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments,
+      @JsonProperty("execution_requests") final ExecutionRequests executionRequests) {
     super(
         randaoReveal,
         eth1Data,
@@ -79,6 +83,8 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
     this.blsToExecutionChanges = blsToExecutionChanges;
     checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blocks");
     this.blobKZGCommitments = blobKZGCommitments;
+    checkNotNull(executionRequests, "Execution Requests is required for Electra blocks");
+    this.executionRequests = executionRequests;
   }
 
   public BeaconBlockBodyElectra(
@@ -100,6 +106,8 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
+    // TODO add execution requests from BeaconBlocBodyElectra (https://github.com/Consensys/teku/pull/8600)
+    this.executionRequests = new ExecutionRequests(List.of(), List.of(), List.of());
   }
 
   @Override
@@ -128,6 +136,7 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
+          // TODO add execution requests (https://github.com/Consensys/teku/pull/8600)
           return SafeFuture.COMPLETE;
         });
   }
