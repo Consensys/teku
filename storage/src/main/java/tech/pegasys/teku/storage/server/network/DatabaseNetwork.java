@@ -17,6 +17,7 @@ import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -39,12 +40,25 @@ public class DatabaseNetwork {
   @VisibleForTesting
   final String depositContract;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonProperty("deposit_chainId")
+  @VisibleForTesting
+  final Long depositChainId;
+
   @JsonCreator
   DatabaseNetwork(
-      @JsonProperty("fork_version") final String forkVersion,
-      @JsonProperty("deposit_contract") final String depositContract) {
+          @JsonProperty("fork_version") final String forkVersion,
+          @JsonProperty("deposit_contract") final String depositContract,
+          @JsonProperty("deposit_chainId") final Long depositChainId) {
     this.forkVersion = forkVersion;
     this.depositContract = depositContract;
+    this.depositChainId = depositChainId;
+  }
+
+  DatabaseNetwork(
+          final String forkVersion,
+          final String depositContract) {
+    this(forkVersion, depositContract, null);
   }
 
   public static DatabaseNetwork init(
@@ -95,7 +109,8 @@ public class DatabaseNetwork {
     }
     final DatabaseNetwork that = (DatabaseNetwork) o;
     return Objects.equals(forkVersion, that.forkVersion)
-        && Objects.equals(depositContract, that.depositContract);
+        && Objects.equals(depositContract, that.depositContract)
+            && Objects.equals(depositChainId, that.depositChainId);
   }
 
   @Override

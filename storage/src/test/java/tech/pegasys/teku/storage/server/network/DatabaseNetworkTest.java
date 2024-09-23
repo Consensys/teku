@@ -82,4 +82,6 @@ public class DatabaseNetworkTest {
 
     assertDoesNotThrow(() -> DatabaseNetwork.init(networkFile, fork, eth1Address));
   }
+
+
 }
