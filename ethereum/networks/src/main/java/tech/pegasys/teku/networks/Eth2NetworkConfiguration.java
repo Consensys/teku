@@ -914,7 +914,7 @@ public class Eth2NetworkConfiguration {
               "enr:-Le4QLoE1wFHSlGcm48a9ZESb_MRLqPPu6G0vHqu4MaUcQNDHS69tsy-zkN0K6pglyzX8m24mkb-LtBcbjAYdP1uxm4BhGV0aDKQabfZdAQBcAAAAQAAAAAAAIJpZIJ2NIJpcIQ5gR6Wg2lwNpAgAUHQBwEQAAAAAAAAADR-iXNlY3AyNTZrMaEDPMSNdcL92uNIyCsS177Z6KTXlbZakQqxv3aQcWawNXeDdWRwgiMohHVkcDaCI4I",
               // TEKU bootnode
               "enr:-KO4QCi3ZY4TM5KL7bAG6laSYiYelDWu0crvUjCXlyc_cwEfUpMIuARuMJYGxWe-UYYpHEw_aBbZ1u-4tHQ8imyI5uaCAsGEZXRoMpBprg6ZBQFwAP__________gmlkgnY0gmlwhKyuI_mJc2VjcDI1NmsxoQLoFG5-vuNX6N49vnkTBaA3ZsBDF8B30DGqWOGtRGz5w4N0Y3CCIyiDdWRwgiMo",
-              //Lodestar bootnode
+              // Lodestar bootnode
               "enr:-KG4QC9Wm32mtzB5Fbj2ri2TEKglHmIWgvwTQCvNHBopuwpNAi1X6qOsBg_Z1-Bee-kfSrhzUQZSgDUyfH5outUprtoBgmlkgnY0gmlwhHEel3eDaXA2kP6AAAAAAAAAAlBW__4Srr-Jc2VjcDI1NmsxoQO7KE63Z4eSI55S1Yn7q9_xFkJ1Wt-a3LgiXuKGs19s0YN1ZHCCIyiEdWRwNoIjKA");
     }
 
