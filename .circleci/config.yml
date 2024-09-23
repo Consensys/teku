@@ -364,7 +364,7 @@ jobs:
 
   acceptanceTests:
     parallelism: 5
-    executor: machine_large_executor_amd64
+    executor: machine_executor_amd64
     steps:
       - install_java_21
       - prepare
