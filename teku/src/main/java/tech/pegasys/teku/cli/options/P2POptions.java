@@ -32,6 +32,7 @@ import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrPeerAddress;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
@@ -366,6 +367,17 @@ public class P2POptions {
       fallbackValue = "true")
   private boolean yamuxEnabled = NetworkConfig.DEFAULT_YAMUX_ENABLED;
 
+  // More about flood publishing
+  // https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/gossipsub-v1.1.md#flood-publishing
+  @Option(
+      names = {"--p2p-flood-publish-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables gossip 'floodPublish' feature",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean floodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -395,7 +407,8 @@ public class P2POptions {
                   .isGossipScoringEnabled(gossipScoringEnabled)
                   .peerRateLimit(peerRateLimit)
                   .allTopicsFilterEnabled(allTopicsFilterEnabled)
-                  .peerRequestLimit(peerRequestLimit);
+                  .peerRequestLimit(peerRequestLimit)
+                  .isFloodPublishEnabled(floodPublishEnabled);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(
