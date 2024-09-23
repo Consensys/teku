@@ -28,8 +28,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -56,13 +59,16 @@ public class DataColumnSidecarGossipValidator {
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final MiscHelpersEip7594 miscHelpersEip7594;
   private final KZG kzg;
+  private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
+  private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
 
   public static DataColumnSidecarGossipValidator create(
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper validationHelper,
       final MiscHelpersEip7594 miscHelpersEip7594,
-      final KZG kzg) {
+      final KZG kzg,
+      final MetricsSystem metricsSystem) {
 
     final Optional<Integer> maybeNumberOfColumns = spec.getNumberOfDataColumns();
 
@@ -77,6 +83,7 @@ public class DataColumnSidecarGossipValidator {
         validationHelper,
         miscHelpersEip7594,
         kzg,
+        metricsSystem,
         LimitedSet.createSynchronized(validInfoSize),
         LimitedSet.createSynchronized(validSignedBlockHeadersSize),
         LimitedSet.createSynchronized(validSignedBlockHeadersSize));
@@ -93,6 +100,7 @@ public class DataColumnSidecarGossipValidator {
       final GossipValidationHelper gossipValidationHelper,
       final MiscHelpersEip7594 miscHelpersEip7594,
       final KZG kzg,
+      final MetricsSystem metricsSystem,
       final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet,
       final Set<InclusionProofInfo> validInclusionProofInfoSet,
       final Set<Bytes32> validSignedBlockHeaders) {
@@ -102,6 +110,16 @@ public class DataColumnSidecarGossipValidator {
     this.miscHelpersEip7594 = miscHelpersEip7594;
     this.kzg = kzg;
     this.receivedValidDataColumnSidecarInfoSet = receivedValidDataColumnSidecarInfoSet;
+    this.totalDataColumnSidecarsProcessingRequestsCounter =
+            metricsSystem.createCounter(
+                    TekuMetricCategory.BEACON,
+                    "data_column_sidecar_processing_requests_total",
+                    "Total number of data column sidecars submitted for processing");
+    this.totalDataColumnSidecarsProcessingSuccessesCounter =
+            metricsSystem.createCounter(
+                    TekuMetricCategory.BEACON,
+                    "data_column_sidecar_processing_successes_total",
+                    "Total number of data column sidecars verified for gossip");
     this.validInclusionProofInfoSet = validInclusionProofInfoSet;
     this.validSignedBlockHeaders = validSignedBlockHeaders;
   }
@@ -109,6 +127,8 @@ public class DataColumnSidecarGossipValidator {
   public SafeFuture<InternalValidationResult> validate(final DataColumnSidecar dataColumnSidecar) {
     final BeaconBlockHeader blockHeader =
         dataColumnSidecar.getSignedBeaconBlockHeader().getMessage();
+
+    totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
     /*
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
@@ -272,6 +292,7 @@ public class DataColumnSidecarGossipValidator {
                       dataColumnSidecar.getKzgCommitmentsInclusionProof().hashTreeRoot(),
                       dataColumnSidecar.getBlockBodyRoot()));
 
+              totalDataColumnSidecarsProcessingSuccessesCounter.inc();
               return ACCEPT;
             });
   }
@@ -314,6 +335,8 @@ public class DataColumnSidecarGossipValidator {
               "DataColumnSidecar is not the first valid for its slot and index. It will be dropped."));
     }
 
+    totalDataColumnSidecarsProcessingSuccessesCounter.inc();
+    
     return SafeFuture.completedFuture(ACCEPT);
   }
 
