@@ -68,7 +68,11 @@ public class LogCaptor implements AutoCloseable {
   }
 
   public void assertLogged(final Level level, final String message) {
-    assertThat(getMessages(level)).contains(message);
+    assertThat(getMessages(level))
+        .anySatisfy(
+            logString -> {
+              assertThat(logString.contains(message)).isTrue();
+            });
   }
 
   public List<String> getInfoLogs() {

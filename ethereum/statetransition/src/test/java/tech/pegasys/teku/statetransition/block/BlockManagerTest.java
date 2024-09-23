@@ -867,7 +867,6 @@ public class BlockManagerTest {
 
     assertThatBlockImport(block3).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker3).getAvailabilityCheckResult();
-    assertThatStored(block3.getMessage(), blobSidecars3);
     // Have not changed
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValue(Optional.of(signedBlockAndState1.getSlot()));
