@@ -14,9 +14,11 @@
 package tech.pegasys.teku.api.schema.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -52,6 +54,10 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
   @JsonProperty("blob_kzg_commitments")
   public final List<KZGCommitment> blobKZGCommitments;
 
+  @JsonProperty("execution_requests_root")
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
+  public final Bytes32 executionRequestsRoot;
+
   @JsonCreator
   public BlindedBeaconBlockBodyElectra(
       @JsonProperty("randao_reveal") final BLSSignature randaoReveal,
@@ -67,7 +73,8 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
           final ExecutionPayloadHeaderDeneb executionPayloadHeader,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
-      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments) {
+      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments,
+      @JsonProperty("execution_requests_root") final Bytes32 executionRequestsRoot) {
     super(
         randaoReveal,
         eth1Data,
@@ -86,6 +93,9 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
     this.blsToExecutionChanges = blsToExecutionChanges;
     checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blinded blocks");
     this.blobKZGCommitments = blobKZGCommitments;
+    checkNotNull(
+        executionRequestsRoot, "execution_requests_root is required for Electra blinded blocks");
+    this.executionRequestsRoot = executionRequestsRoot;
   }
 
   public BlindedBeaconBlockBodyElectra(
@@ -94,7 +104,7 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
           blockBody) {
     super(blockBody);
     this.executionPayloadHeader =
-        new ExecutionPayloadHeaderDeneb(blockBody.getExecutionPayloadHeader());
+        new ExecutionPayloadHeaderElectra(blockBody.getExecutionPayloadHeader());
     this.blsToExecutionChanges =
         blockBody.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
     this.blobKZGCommitments =
@@ -102,6 +112,9 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
+    // TODO add execution requests from BeaconBlocBodyElectra
+    // (https://github.com/Consensys/teku/pull/8600)
+    this.executionRequestsRoot = Bytes32.ZERO;
   }
 
   @Override
@@ -143,15 +156,7 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
-
-          // TODO update as part of Electra Beacon API changes
-          // (https://github.com/Consensys/teku/issues/8623)
-          builder.executionRequests(
-              new ExecutionRequestsBuilderElectra(
-                      SchemaDefinitionsElectra.required(spec.getSchemaDefinitions())
-                          .getExecutionRequestsSchema())
-                  .build());
-
+          // TODO add execution requests root (https://github.com/Consensys/teku/pull/8600)
           return SafeFuture.COMPLETE;
         });
   }
