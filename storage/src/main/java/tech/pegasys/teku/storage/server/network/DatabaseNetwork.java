@@ -30,26 +30,26 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DatabaseNetwork {
-  @JsonProperty("fork_version")
+  @JsonProperty(value = "fork_version", required = true)
   @VisibleForTesting
   final String forkVersion;
 
-  @JsonProperty("deposit_contract")
+  @JsonProperty(value = "deposit_contract", required = true)
   @VisibleForTesting
   final String depositContract;
 
-  @JsonInclude(JsonInclude.Include.NON_NULL)
-  @JsonProperty("deposit_chainId")
+  @JsonProperty("deposit_chain_id")
   @VisibleForTesting
   final Long depositChainId;
 
   @JsonCreator
   DatabaseNetwork(
-      @JsonProperty("fork_version") final String forkVersion,
-      @JsonProperty("deposit_contract") final String depositContract,
-      @JsonProperty("deposit_chainId") final Long depositChainId) {
+      @JsonProperty(value = "fork_version") final String forkVersion,
+      @JsonProperty(value = "deposit_contract") final String depositContract,
+      @JsonProperty("deposit_chain_id") final Long depositChainId) {
     this.forkVersion = forkVersion;
     this.depositContract = depositContract;
     this.depositChainId = depositChainId;
