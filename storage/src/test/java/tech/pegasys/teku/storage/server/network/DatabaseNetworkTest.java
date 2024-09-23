@@ -130,9 +130,12 @@ public class DatabaseNetworkTest {
         new DatabaseNetwork(fork.toHexString(), eth1Address.toHexString());
 
     objectMapper.writerFor(DatabaseNetwork.class).writeValue(networkFile, databaseNetwork);
+    String networkContent = Files.readString(networkFile.toPath());
+
     final DatabaseNetwork readDatabaseNetwork =
         objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
 
+    assertFalse(networkContent.contains("deposit_chain_id"));
     assertEquals(fork.toHexString(), readDatabaseNetwork.forkVersion);
     assertEquals(eth1Address.toHexString(), readDatabaseNetwork.depositContract);
     assertNull(readDatabaseNetwork.depositChainId);
