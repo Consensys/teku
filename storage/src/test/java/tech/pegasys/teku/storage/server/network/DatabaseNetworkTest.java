@@ -95,12 +95,12 @@ public class DatabaseNetworkTest {
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     final Long depositId = dataStructureUtil.randomLong();
-    DatabaseNetwork databaseNetwork =
+    final DatabaseNetwork databaseNetwork =
         new DatabaseNetwork(fork.toHexString(), eth1Address.toHexString(), depositId);
 
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     objectMapper.writerFor(DatabaseNetwork.class).writeValue(networkFile, databaseNetwork);
-    DatabaseNetwork readDatabaseNetwork =
+    final DatabaseNetwork readDatabaseNetwork =
         objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
 
     assertEquals(fork.toHexString(), readDatabaseNetwork.forkVersion);
@@ -115,12 +115,12 @@ public class DatabaseNetworkTest {
 
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
-    DatabaseNetwork databaseNetwork =
+    final DatabaseNetwork databaseNetwork =
         new DatabaseNetwork(fork.toHexString(), eth1Address.toHexString(), null);
 
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     objectMapper.writerFor(DatabaseNetwork.class).writeValue(networkFile, databaseNetwork);
-    DatabaseNetwork readDatabaseNetwork =
+    final DatabaseNetwork readDatabaseNetwork =
         objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
 
     assertEquals(fork.toHexString(), readDatabaseNetwork.forkVersion);

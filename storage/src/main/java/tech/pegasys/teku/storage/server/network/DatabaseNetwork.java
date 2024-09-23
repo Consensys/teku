@@ -55,6 +55,7 @@ public class DatabaseNetwork {
     this.depositChainId = depositChainId;
   }
 
+  @VisibleForTesting
   DatabaseNetwork(final String forkVersion, final String depositContract) {
     this(forkVersion, depositContract, null);
   }
