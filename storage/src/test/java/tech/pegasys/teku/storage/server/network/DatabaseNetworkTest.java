@@ -16,10 +16,16 @@ package tech.pegasys.teku.storage.server.network;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Locale;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -83,5 +89,45 @@ public class DatabaseNetworkTest {
     assertDoesNotThrow(() -> DatabaseNetwork.init(networkFile, fork, eth1Address));
   }
 
+  @Test
+  void shouldWriteAndReadDatabaseNetworkWithChainId(@TempDir final File tempDir) throws IOException {
+    final File networkFile = new File(tempDir, "network.yml");
+
+    final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
+    final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
+    final Long depositId = dataStructureUtil.randomLong();
+    DatabaseNetwork databaseNetwork = new DatabaseNetwork(
+            fork.toHexString(),
+            eth1Address.toHexString(),
+            depositId);
+
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    objectMapper.writerFor(DatabaseNetwork.class).writeValue(networkFile, databaseNetwork);
+    DatabaseNetwork readDatabaseNetwork = objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
+
+    assertEquals(fork.toHexString(), readDatabaseNetwork.forkVersion);
+    assertEquals(eth1Address.toHexString(), readDatabaseNetwork.depositContract);
+    assertEquals(depositId, readDatabaseNetwork.depositChainId);
+  }
+
+  @Test
+  void shouldWriteAndReadDatabaseNetworkWithoutChainId(@TempDir final File tempDir) throws IOException {
+    final File networkFile = new File(tempDir, "network.yml");
+
+    final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
+    final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
+    DatabaseNetwork databaseNetwork = new DatabaseNetwork(
+            fork.toHexString(),
+            eth1Address.toHexString(),
+            null);
+
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    objectMapper.writerFor(DatabaseNetwork.class).writeValue(networkFile, databaseNetwork);
+    DatabaseNetwork readDatabaseNetwork = objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
+
+    assertEquals(fork.toHexString(), readDatabaseNetwork.forkVersion);
+    assertEquals(eth1Address.toHexString(), readDatabaseNetwork.depositContract);
+    assertNull(readDatabaseNetwork.depositChainId);
+  }
 
 }
