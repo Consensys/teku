@@ -47,17 +47,15 @@ public class DatabaseNetwork {
 
   @JsonCreator
   DatabaseNetwork(
-          @JsonProperty("fork_version") final String forkVersion,
-          @JsonProperty("deposit_contract") final String depositContract,
-          @JsonProperty("deposit_chainId") final Long depositChainId) {
+      @JsonProperty("fork_version") final String forkVersion,
+      @JsonProperty("deposit_contract") final String depositContract,
+      @JsonProperty("deposit_chainId") final Long depositChainId) {
     this.forkVersion = forkVersion;
     this.depositContract = depositContract;
     this.depositChainId = depositChainId;
   }
 
-  DatabaseNetwork(
-          final String forkVersion,
-          final String depositContract) {
+  DatabaseNetwork(final String forkVersion, final String depositContract) {
     this(forkVersion, depositContract, null);
   }
 
@@ -110,7 +108,7 @@ public class DatabaseNetwork {
     final DatabaseNetwork that = (DatabaseNetwork) o;
     return Objects.equals(forkVersion, that.forkVersion)
         && Objects.equals(depositContract, that.depositContract)
-            && Objects.equals(depositChainId, that.depositChainId);
+        && Objects.equals(depositChainId, that.depositChainId);
   }
 
   @Override
