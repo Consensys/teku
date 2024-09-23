@@ -52,10 +52,10 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     primaryEL.start();
 
     TekuBeaconNode primaryNode =
-            createTekuBeaconNode(
-                    beaconNodeConfigWithForks(genesisTime, primaryEL)
-                            .withStartupTargetPeerCount(0)
-                            .build());
+        createTekuBeaconNode(
+            beaconNodeConfigWithForks(genesisTime, primaryEL)
+                .withStartupTargetPeerCount(0)
+                .build());
 
     primaryNode.start();
     primaryNode.waitForMilestone(SpecMilestone.CAPELLA);

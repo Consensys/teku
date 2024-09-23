@@ -57,10 +57,10 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
     primaryEL.start();
 
     TekuBeaconNode primaryNode =
-            createTekuBeaconNode(
-                    beaconNodeWithTrustedSetup(genesisTime, primaryEL)
-                            .withStartupTargetPeerCount(0)
-                            .build());
+        createTekuBeaconNode(
+            beaconNodeWithTrustedSetup(genesisTime, primaryEL)
+                .withStartupTargetPeerCount(0)
+                .build());
 
     primaryNode.start();
     primaryNode.waitForMilestone(SpecMilestone.DENEB);
