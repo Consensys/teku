@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
 import java.util.BitSet;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitlistSchemaImpl;
@@ -41,4 +42,22 @@ public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
    * @return SszBitlist instance
    */
   SszBitlistT wrapBitSet(int size, BitSet bitSet);
+
+  /**
+   * Creates a SszBitlist from bytes.
+   *
+   * @param bytes The bytes to create the SszBitlist from
+   * @return A new SszBitlist instance
+   */
+  SszBitlistT fromBytes(Bytes bytes);
+
+  /**
+   * Creates a SszBitlist from a hexadecimal string.
+   *
+   * @param hexString The hexadecimal string to create the SszBitlist from
+   * @return A new SszBitlist instance
+   */
+  default SszBitlistT fromHexString(final String hexString) {
+    return fromBytes(Bytes.fromHexString(hexString));
+  }
 }
