@@ -154,4 +154,13 @@ public class SszBitlistSchemaImpl extends SszPrimitiveListSchemaImpl<Boolean, Ss
       }
     }
   }
+
+  @Override
+  public SszBitlist fromBytes(final Bytes bytes) {
+    checkArgument(bytes != null, "Input bytes cannot be null");
+    try (final SszReader reader = SszReader.fromBytes(bytes)) {
+      final TreeNode node = sszDeserializeTree(reader);
+      return createFromBackingNode(node);
+    }
+  }
 }
