@@ -94,27 +94,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   public Database createDatabase() {
     LOG.info("Beacon data directory set to: {}", dataDirectory.getAbsolutePath());
     validateDataPaths();
-    //      try {
-    //        Long depositChainId = spec.getGenesisSpecConfig().getDepositChainId();
-    //        File networkFile = dataDirectory.toPath().resolve(NETWORK_FILENAME).toFile();
-    //        final String depositContractString =
-    // eth1Address.toHexString().toLowerCase(Locale.ROOT);
-    //        String networkContent = Files.readString(networkFile.toPath());
-    //        final ObjectMapper objectMapper = new ObjectMapper(new
-    // YAMLFactory().disable(WRITE_DOC_START_MARKER));
-    //
-    //        final DatabaseNetwork readDatabaseNetwork =
-    //                objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
-    //        if(networkFile.exists() &&
-    // depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)  &&
-    // networkContent.contains("deposit_chain_id")
-    //                && readDatabaseNetwork.depositChainId.equals(depositChainId)) {
-    //          LOG.info("Ready for reset");
-    ////          resetDatabaseDirectories();
-    //        }
-    //      } catch (IOException e) {
-    //        throw new RuntimeException(e);
-    //      }
     resetDatabaseDirectories();
     final DatabaseVersion dbVersion = getDatabaseVersion();
     createDirectories(dbVersion);
@@ -413,6 +392,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     }
   }
 
+  @VisibleForTesting
   private void resetDatabaseDirectories() {
     File networkFile = getNetworkFile();
     try {
