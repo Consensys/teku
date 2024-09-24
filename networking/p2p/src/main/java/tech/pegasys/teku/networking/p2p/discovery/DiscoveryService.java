@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 /**
  * CAUTION: this API is unstable and might be changed in any version in backward incompatible way
@@ -42,5 +42,5 @@ public interface DiscoveryService {
 
   void updateCustomENRField(String fieldName, Bytes value);
 
-  Optional<String> lookupEnr(NodeId nodeId);
+  Optional<String> lookupEnr(UInt256 nodeId);
 }

@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.SECP256K1.SecretKey;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.AddressAccessPolicy;
 import org.ethereum.beacon.discovery.DiscoverySystem;
@@ -48,7 +49,6 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
@@ -305,7 +305,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
-  public Optional<String> lookupEnr(final NodeId nodeId) {
+  public Optional<String> lookupEnr(final UInt256 nodeId) {
     final Optional<NodeRecord> maybeNodeRecord = discoverySystem.lookupNode(nodeId.toBytes());
     return maybeNodeRecord.map(NodeRecord::asEnr);
   }

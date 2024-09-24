@@ -16,6 +16,7 @@ package tech.pegasys.teku.api;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.Peer;
@@ -31,7 +32,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NetworkDataProvider {
-  final Function<NodeId, Optional<String>> enrLookupFunction;
+  final Function<UInt256, Optional<String>> enrLookupFunction;
 
   private final Eth2P2PNetwork network;
 
@@ -96,7 +97,10 @@ public class NetworkDataProvider {
   public List<Eth2PeerWithEnr> getEth2PeersWithEnr() {
     return network
         .streamPeers()
-        .map(eth2Peer -> new Eth2PeerWithEnr(eth2Peer, enrLookupFunction.apply(eth2Peer.getId())))
+        .map(
+            eth2Peer ->
+                new Eth2PeerWithEnr(
+                    eth2Peer, enrLookupFunction.apply(eth2Peer.getDiscoveryNodeId())))
         .toList();
   }
 
@@ -126,7 +130,10 @@ public class NetworkDataProvider {
     final NodeId nodeId = network.parseNodeId(peerId);
     return network
         .getPeer(nodeId)
-        .map(eth2Peer -> new Eth2PeerWithEnr(eth2Peer, enrLookupFunction.apply(nodeId)));
+        .map(
+            eth2Peer ->
+                new Eth2PeerWithEnr(
+                    eth2Peer, enrLookupFunction.apply(eth2Peer.getDiscoveryNodeId())));
   }
 
   private Peer toPeer(final Eth2Peer eth2Peer) {
