@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.schemas.SchemaRegistryBuilder;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class ForkScheduleTest {
   private static final SpecConfig MINIMAL_CONFIG =

@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.schemas.SchemaRegistryBuilder;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 class SpecVersionTest {
   private final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();

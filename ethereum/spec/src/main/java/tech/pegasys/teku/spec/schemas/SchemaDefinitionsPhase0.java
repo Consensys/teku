@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.Attester
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;

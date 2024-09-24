@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   protected SchemaRegistry schemaRegistry;

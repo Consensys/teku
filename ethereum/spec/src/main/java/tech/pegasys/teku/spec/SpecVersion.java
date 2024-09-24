@@ -37,8 +37,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
-import tech.pegasys.teku.spec.schemas.SchemaRegistry;
-import tech.pegasys.teku.spec.schemas.SchemaRegistryBuilder;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class SpecVersion extends DelegatingSpecLogic {
   private final SpecMilestone milestone;
