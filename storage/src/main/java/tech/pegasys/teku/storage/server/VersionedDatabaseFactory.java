@@ -393,7 +393,36 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   }
 
   @VisibleForTesting
-  private void resetDatabaseDirectories() {
+  public boolean shouldResetForEphemery() {
+    File networkFile = getNetworkFile();
+    if (!networkFile.exists()) {
+      return false;
+    }
+    try {
+      Long depositChainId = spec.getGenesisSpecConfig().getDepositChainId();
+      String depositContractString = eth1Address.toHexString().toLowerCase(Locale.ROOT);
+      String networkContent = Files.readString(networkFile.toPath());
+
+      ObjectMapper objectMapper =
+          new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
+      DatabaseNetwork readDatabaseNetwork =
+          objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
+
+      return depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
+          && networkContent.contains("deposit_chain_id")
+          && !readDatabaseNetwork.getDepositChainId().equals(depositChainId);
+
+    } catch (IOException e) {
+      throw new RuntimeException(
+          String.format(
+              "Failed to read network file at %s during reset check",
+              networkFile.getAbsolutePath()),
+          e);
+    }
+  }
+
+  @VisibleForTesting
+  public void resetDatabaseDirectories() {
     File networkFile = getNetworkFile();
     try {
       if (dbDirectory.exists()) {
@@ -403,18 +432,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         deleteDirectoryRecursively(v5ArchiveDirectory.toPath());
       }
       if (networkFile.exists()) {
-        Long depositChainId = spec.getGenesisSpecConfig().getDepositChainId();
-        final String depositContractString = eth1Address.toHexString().toLowerCase(Locale.ROOT);
-        String networkContent = Files.readString(networkFile.toPath());
-
-        final ObjectMapper objectMapper =
-            new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
-        final DatabaseNetwork readDatabaseNetwork =
-            objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
-
-        if (depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
-            && networkContent.contains("deposit_chain_id")
-            && !readDatabaseNetwork.getDepositChainId().equals(depositChainId)) {
+        if (shouldResetForEphemery()) {
           Files.delete(networkFile.toPath());
         }
       }
