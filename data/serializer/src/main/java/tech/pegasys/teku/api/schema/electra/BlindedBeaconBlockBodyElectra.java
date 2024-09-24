@@ -110,8 +110,8 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
-    // TODO add execution requests from BeaconBlocBodyElectra
-    // (https://github.com/Consensys/teku/pull/8600)
+    // TODO Electra Builder API changes
+    // (https://github.com/Consensys/teku/issues/8624)
     this.executionRequestsRoot = Bytes32.ZERO;
   }
 
@@ -154,7 +154,7 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
-          // TODO add execution requests root (https://github.com/Consensys/teku/pull/8600)
+          // TODO Electra Builder API changes (https://github.com/Consensys/teku/pull/8600)
           return SafeFuture.COMPLETE;
         });
   }

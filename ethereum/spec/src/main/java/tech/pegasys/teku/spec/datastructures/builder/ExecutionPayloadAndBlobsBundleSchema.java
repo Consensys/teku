@@ -24,7 +24,7 @@ public class ExecutionPayloadAndBlobsBundleSchema
     implements BuilderPayloadSchema<ExecutionPayloadAndBlobsBundle> {
 
   // TODO Update as part of Builder API Electra updates
-  // (https://github.com/ethereum/builder-specs/pull/101/files)
+  // (https://github.com/Consensys/teku/issues/8624)
 
   public ExecutionPayloadAndBlobsBundleSchema(
       final ExecutionPayloadSchema<? extends ExecutionPayload> executionPayloadSchema,
