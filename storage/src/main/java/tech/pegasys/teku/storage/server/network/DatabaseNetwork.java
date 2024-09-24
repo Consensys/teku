@@ -61,7 +61,10 @@ public class DatabaseNetwork {
   }
 
   public static DatabaseNetwork init(
-      final File source, final Bytes4 forkVersion, final Eth1Address depositContract)
+      final File source,
+      final Bytes4 forkVersion,
+      final Eth1Address depositContract,
+      final Long depositChainId)
       throws IOException {
     final String forkVersionString = forkVersion.toHexString().toLowerCase(Locale.ROOT);
     final String depositContractString = depositContract.toHexString().toLowerCase(Locale.ROOT);
@@ -84,7 +87,7 @@ public class DatabaseNetwork {
       return databaseNetwork;
     } else {
       DatabaseNetwork databaseNetwork =
-          new DatabaseNetwork(forkVersionString, depositContractString);
+          new DatabaseNetwork(forkVersionString, depositContractString, depositChainId);
       objectMapper.writerFor(DatabaseNetwork.class).writeValue(source, databaseNetwork);
       return databaseNetwork;
     }
