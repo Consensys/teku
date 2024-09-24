@@ -16,7 +16,9 @@ package tech.pegasys.teku.spec;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -28,83 +30,64 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 class SpecVersionTest {
   private final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
-  private final SpecConfigAltair minimalConfig =
-      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+  private final SpecConfig minimalConfig =
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
 
-  @Test
-  void shouldCreatePhase0Spec() {
-    final SpecVersion expectedVersion =
-        SpecVersion.createPhase0(minimalConfig, schemaRegistryBuilder);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.PHASE0, minimalConfig, schemaRegistryBuilder);
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  void shouldCreateSpec(final SpecMilestone milestone) {
+    // make intelliJ happy
+    SpecVersion expectedVersion = null;
+    Optional<SpecVersion> actualVersion = Optional.empty();
+
+    switch (milestone) {
+      case PHASE0 -> {
+        expectedVersion = SpecVersion.createPhase0(minimalConfig, schemaRegistryBuilder);
+        actualVersion =
+            SpecVersion.create(SpecMilestone.PHASE0, minimalConfig, schemaRegistryBuilder);
+      }
+
+      case ALTAIR -> {
+        expectedVersion =
+            SpecVersion.createAltair(
+                SpecConfigAltair.required(minimalConfig), schemaRegistryBuilder);
+        actualVersion =
+            SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig, schemaRegistryBuilder);
+      }
+      case BELLATRIX -> {
+        expectedVersion =
+            SpecVersion.createBellatrix(
+                SpecConfigBellatrix.required(minimalConfig), schemaRegistryBuilder);
+        actualVersion =
+            SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig, schemaRegistryBuilder);
+      }
+      case CAPELLA -> {
+        expectedVersion =
+            SpecVersion.createCapella(
+                SpecConfigCapella.required(minimalConfig), schemaRegistryBuilder);
+        actualVersion =
+            SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig, schemaRegistryBuilder);
+      }
+      case DENEB -> {
+        expectedVersion =
+            SpecVersion.createDeneb(SpecConfigDeneb.required(minimalConfig), schemaRegistryBuilder);
+        actualVersion =
+            SpecVersion.create(SpecMilestone.DENEB, minimalConfig, schemaRegistryBuilder);
+      }
+      case ELECTRA -> {
+        expectedVersion =
+            SpecVersion.createElectra(
+                SpecConfigElectra.required(minimalConfig), schemaRegistryBuilder);
+        actualVersion =
+            SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig, schemaRegistryBuilder);
+      }
+    }
+
     assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(milestone);
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
-  }
-
-  @Test
-  void shouldCreateAltairSpec() {
-    final SpecConfigAltair altairSpecConfig = SpecConfigAltair.required(minimalConfig);
-    final SpecVersion expectedVersion =
-        SpecVersion.createAltair(altairSpecConfig, schemaRegistryBuilder);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig, schemaRegistryBuilder);
-    assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ALTAIR);
-    assertThat(actualVersion.get().getSchemaDefinitions())
-        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
-  }
-
-  @Test
-  void shouldCreateBellatrixSpec() {
-    final SpecConfigBellatrix bellatrixSpecConfig = SpecConfigBellatrix.required(minimalConfig);
-    final SpecVersion expectedVersion =
-        SpecVersion.createBellatrix(bellatrixSpecConfig, schemaRegistryBuilder);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig, schemaRegistryBuilder);
-    assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
-    assertThat(actualVersion.get().getSchemaDefinitions())
-        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
-  }
-
-  @Test
-  void shouldCreateCapellaSpec() {
-    final SpecConfigCapella capellaSpecConfig = SpecConfigCapella.required(minimalConfig);
-    final SpecVersion expectedVersion =
-        SpecVersion.createCapella(capellaSpecConfig, schemaRegistryBuilder);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig, schemaRegistryBuilder);
-    assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.CAPELLA);
-    assertThat(actualVersion.get().getSchemaDefinitions())
-        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
-  }
-
-  @Test
-  void shouldCreateDenebSpec() {
-    final SpecConfigDeneb denebSpecConfig = SpecConfigDeneb.required(minimalConfig);
-    final SpecVersion expectedVersion =
-        SpecVersion.createDeneb(denebSpecConfig, schemaRegistryBuilder);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.DENEB, minimalConfig, schemaRegistryBuilder);
-    assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.DENEB);
-    assertThat(actualVersion.get().getSchemaDefinitions())
-        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
-  }
-
-  @Test
-  void shouldCreateElectraSpec() {
-    final SpecConfigElectra electraSpecConfig = SpecConfigElectra.required(minimalConfig);
-    final SpecVersion expectedVersion =
-        SpecVersion.createElectra(electraSpecConfig, schemaRegistryBuilder);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig, schemaRegistryBuilder);
-    assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ELECTRA);
-    assertThat(actualVersion.get().getSchemaDefinitions())
-        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
+    assertThat(actualVersion.get().getSchemaDefinitions().getSchemaRegistry().getMilestone())
+        .isSameAs(milestone);
   }
 }
