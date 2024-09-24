@@ -92,7 +92,7 @@ public class CreateAggregateAttestationRequestElectraTest extends AbstractTypeDe
     final UInt64 committeeIndex =
         specMilestone.isGreaterThanOrEqualTo(ELECTRA)
             ? UInt64.valueOf(
-                attestation.getCommitteeBitsRequired().streamAllSetBits().findFirst().orElseThrow())
+                attestation.getCommitteeBits().streamAllSetBits().findFirst().orElseThrow())
             : attestation.getData().getIndex();
 
     createAggregateAttestationRequest =

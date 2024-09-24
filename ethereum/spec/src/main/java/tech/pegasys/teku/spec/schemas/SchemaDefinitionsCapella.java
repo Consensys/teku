@@ -14,93 +14,40 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BLINDED_BEACON_BLOCK_BODY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 
 public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
-
-  private final BeaconStateSchemaCapella beaconStateSchema;
-
-  private final ExecutionPayloadSchemaCapella executionPayloadSchemaCapella;
-  private final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchemaCapella;
-
-  private final BeaconBlockBodySchemaCapellaImpl beaconBlockBodySchema;
-  private final BlindedBeaconBlockBodySchemaCapellaImpl blindedBeaconBlockBodySchema;
-
-  private final BeaconBlockSchema beaconBlockSchema;
-  private final BeaconBlockSchema blindedBeaconBlockSchema;
-  private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
-
   private final WithdrawalSchema withdrawalSchema;
 
-  private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
-
-  private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema;
   private final BuilderBidSchema<?> builderBidSchemaCapella;
   private final SignedBuilderBidSchema signedBuilderBidSchemaCapella;
 
   private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
 
-  public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
-    super(specConfig);
-    this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
-    this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
-    this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
+  public SchemaDefinitionsCapella(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
     this.withdrawalSchema = Withdrawal.SSZ_SCHEMA;
 
-    this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
-    this.executionPayloadHeaderSchemaCapella =
-        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaCapellaImpl.create(
-            specConfig,
-            signedBlsToExecutionChangeSchema,
-            getMaxValidatorPerAttestation(specConfig),
-            "BeaconBlockBodyCapella");
-    this.blindedBeaconBlockBodySchema =
-        BlindedBeaconBlockBodySchemaCapellaImpl.create(
-            specConfig,
-            signedBlsToExecutionChangeSchema,
-            getMaxValidatorPerAttestation(specConfig),
-            "BlindedBlockBodyCapella");
-    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");
-    this.blindedBeaconBlockSchema =
-        new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockCapella");
-    this.signedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockCapella");
-    this.signedBlindedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockCapella");
     this.builderBidSchemaCapella =
-        new BuilderBidSchemaBellatrix("BuilderBidCapella", executionPayloadHeaderSchemaCapella);
+        new BuilderBidSchemaBellatrix("BuilderBidCapella", getExecutionPayloadHeaderSchema());
     this.signedBuilderBidSchemaCapella =
         new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
     this.historicalSummarySchema = new HistoricalSummary.HistoricalSummarySchema();
@@ -116,54 +63,11 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   }
 
   @Override
-  public BeaconStateSchema<? extends BeaconStateCapella, ? extends MutableBeaconStateCapella>
-      getBeaconStateSchema() {
-    return beaconStateSchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
-    return blindedBeaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockSchema getBeaconBlockSchema() {
-    return beaconBlockSchema;
-  }
-
-  @Override
-  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
-    return blindedBeaconBlockSchema;
-  }
-
-  @Override
-  public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
-    return signedBeaconBlockSchema;
-  }
-
-  @Override
-  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
-    return signedBlindedBeaconBlockSchema;
-  }
-
-  @Override
-  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return getBeaconBlockSchema().castTypeToBlockContainer();
-  }
-
-  @Override
-  public BlockContainerSchema<BlockContainer> getBlindedBlockContainerSchema() {
-    return getBlindedBeaconBlockSchema().castTypeToBlockContainer();
-  }
-
-  @Override
-  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
-    return getSignedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  @SuppressWarnings("unchecked")
+  public BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyCapella>
+      getBlindedBeaconBlockBodySchema() {
+    return (BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyCapella>)
+        schemaRegistry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA);
   }
 
   @Override
@@ -172,18 +76,10 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   }
 
   @Override
-  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return executionPayloadSchemaCapella;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return executionPayloadHeaderSchemaCapella;
-  }
-
-  @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderCapella(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderCapella(
+        getBeaconBlockBodySchema().toVersionCapella().orElseThrow(),
+        getBlindedBeaconBlockBodySchema());
   }
 
   public WithdrawalSchema getWithdrawalSchema() {
@@ -191,11 +87,11 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   }
 
   public BlsToExecutionChangeSchema getBlsToExecutionChangeSchema() {
-    return blsToExecutionChangeSchema;
+    return schemaRegistry.get(BLS_TO_EXECUTION_CHANGE_SCHEMA);
   }
 
   public SignedBlsToExecutionChangeSchema getSignedBlsToExecutionChangeSchema() {
-    return signedBlsToExecutionChangeSchema;
+    return schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA);
   }
 
   public HistoricalSummary.HistoricalSummarySchema getHistoricalSummarySchema() {

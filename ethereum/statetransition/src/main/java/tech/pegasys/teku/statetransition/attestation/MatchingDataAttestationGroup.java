@@ -295,7 +295,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
      */
     private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
       final Optional<SszBitvector> maybeCommitteeBits =
-          candidate.getAttestation().getCommitteeBits();
+          candidate.getAttestation().getCommitteeBitsOptional();
       if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
         return true;
       }

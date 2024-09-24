@@ -13,59 +13,31 @@
 
 package tech.pegasys.teku.spec.datastructures.operations.versions.phase0;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class AttestationPhase0Schema
-    extends ContainerSchema3<AttestationPhase0, SszBitlist, AttestationData, SszSignature>
-    implements AttestationSchema<AttestationPhase0> {
-
-  public AttestationPhase0Schema(final long maxValidatorPerAttestation) {
-    super(
-        "AttestationPhase0",
-        namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorPerAttestation)),
-        namedSchema("data", AttestationData.SSZ_SCHEMA),
-        namedSchema("signature", SszSignatureSchema.INSTANCE));
-  }
+public interface AttestationPhase0Schema extends AttestationSchema<AttestationPhase0> {
 
   @Override
-  public SszBitlistSchema<?> getAggregationBitsSchema() {
-    return (SszBitlistSchema<?>) getFieldSchema0();
-  }
-
-  @Override
-  public Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema() {
-    return Optional.empty();
-  }
-
-  @Override
-  public AttestationPhase0 createFromBackingNode(final TreeNode node) {
-    return new AttestationPhase0(this, node);
-  }
-
-  @Override
-  public Attestation create(
+  default Attestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
       final BLSSignature signature,
       final Supplier<SszBitvector> committeeBits) {
-    return new AttestationPhase0(this, aggregationBits, data, signature);
+    return create(aggregationBits, data, new SszSignature(signature));
   }
 
+  AttestationPhase0 create(
+      final SszBitlist aggregationBits, final AttestationData data, final SszSignature signature);
+
   @Override
-  public boolean requiresCommitteeBits() {
+  default boolean requiresCommitteeBits() {
     return false;
   }
 }

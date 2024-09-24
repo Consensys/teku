@@ -24,14 +24,17 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaRegistryBuilder;
 
 class SpecVersionTest {
+  private final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
   private final SpecConfigAltair minimalConfig =
       SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
 
   @Test
   void shouldCreatePhase0Spec() {
-    final SpecVersion expectedVersion = SpecVersion.createPhase0(minimalConfig);
+    final SpecVersion expectedVersion =
+        SpecVersion.createPhase0(minimalConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
         SpecVersion.create(SpecMilestone.PHASE0, minimalConfig);
     assertThat(actualVersion).isPresent();
@@ -43,7 +46,8 @@ class SpecVersionTest {
   @Test
   void shouldCreateAltairSpec() {
     final SpecConfigAltair altairSpecConfig = SpecConfigAltair.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createAltair(altairSpecConfig);
+    final SpecVersion expectedVersion =
+        SpecVersion.createAltair(altairSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
         SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig);
     assertThat(actualVersion).isPresent();
@@ -55,7 +59,8 @@ class SpecVersionTest {
   @Test
   void shouldCreateBellatrixSpec() {
     final SpecConfigBellatrix bellatrixSpecConfig = SpecConfigBellatrix.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createBellatrix(bellatrixSpecConfig);
+    final SpecVersion expectedVersion =
+        SpecVersion.createBellatrix(bellatrixSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
         SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig);
     assertThat(actualVersion).isPresent();
@@ -67,7 +72,8 @@ class SpecVersionTest {
   @Test
   void shouldCreateCapellaSpec() {
     final SpecConfigCapella capellaSpecConfig = SpecConfigCapella.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createCapella(capellaSpecConfig);
+    final SpecVersion expectedVersion =
+        SpecVersion.createCapella(capellaSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
         SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig);
     assertThat(actualVersion).isPresent();
@@ -79,7 +85,8 @@ class SpecVersionTest {
   @Test
   void shouldCreateDenebSpec() {
     final SpecConfigDeneb denebSpecConfig = SpecConfigDeneb.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createDeneb(denebSpecConfig);
+    final SpecVersion expectedVersion =
+        SpecVersion.createDeneb(denebSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
         SpecVersion.create(SpecMilestone.DENEB, minimalConfig);
     assertThat(actualVersion).isPresent();
@@ -91,7 +98,8 @@ class SpecVersionTest {
   @Test
   void shouldCreateElectraSpec() {
     final SpecConfigElectra electraSpecConfig = SpecConfigElectra.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createElectra(electraSpecConfig);
+    final SpecVersion expectedVersion =
+        SpecVersion.createElectra(electraSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
         SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig);
     assertThat(actualVersion).isPresent();

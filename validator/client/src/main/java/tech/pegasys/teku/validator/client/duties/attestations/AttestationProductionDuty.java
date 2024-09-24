@@ -213,7 +213,7 @@ public class AttestationProductionDuty implements Duty {
 
     final Supplier<SszBitvector> committeeBitsSupplier =
         attestationSchema
-            .getCommitteeBitsSchema()
+            .getCommitteeBitsSchemaOptional()
             .<Supplier<SszBitvector>>map(
                 committeeBitsSchema -> () -> committeeBitsSchema.ofBits(validator.committeeIndex()))
             .orElse(() -> null);

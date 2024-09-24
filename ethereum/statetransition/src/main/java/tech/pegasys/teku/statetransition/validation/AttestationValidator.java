@@ -121,7 +121,7 @@ public class AttestationValidator {
     if (attestation.requiresCommitteeBits()) {
       // [REJECT] len(committee_indices) == 1, where committee_indices =
       // get_committee_indices(attestation)
-      if (attestation.getCommitteeBitsRequired().getBitCount() != 1) {
+      if (attestation.getCommitteeBits().getBitCount() != 1) {
         return SafeFuture.completedFuture(
             InternalValidationResultWithState.reject(
                 "Rejecting attestation because committee bits count is not 1"));

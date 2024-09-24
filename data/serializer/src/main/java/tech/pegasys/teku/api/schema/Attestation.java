@@ -48,7 +48,8 @@ public class Attestation {
       final tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
     this.aggregation_bits = attestation.getAggregationBits().sszSerialize();
     this.data = new AttestationData(attestation.getData());
-    this.committee_bits = attestation.getCommitteeBits().map(SszData::sszSerialize).orElse(null);
+    this.committee_bits =
+        attestation.getCommitteeBitsOptional().map(SszData::sszSerialize).orElse(null);
     this.signature = new BLSSignature(attestation.getAggregateSignature());
   }
 
@@ -78,7 +79,7 @@ public class Attestation {
         data.asInternalAttestationData(),
         signature.asInternalBLSSignature(),
         attestationSchema
-            .getCommitteeBitsSchema()
+            .getCommitteeBitsSchemaOptional()
             .map(
                 committeeBits ->
                     (Supplier<SszBitvector>) () -> committeeBits.sszDeserialize(committee_bits))

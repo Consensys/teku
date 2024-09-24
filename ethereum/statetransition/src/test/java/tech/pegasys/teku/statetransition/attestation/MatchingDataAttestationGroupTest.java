@@ -359,7 +359,7 @@ class MatchingDataAttestationGroupTest {
       committeeBits =
           () ->
               attestationSchema
-                  .getCommitteeBitsSchema()
+                  .getCommitteeBitsSchemaOptional()
                   .orElseThrow()
                   .ofBits(committeeIndex.orElse(0));
     } else {

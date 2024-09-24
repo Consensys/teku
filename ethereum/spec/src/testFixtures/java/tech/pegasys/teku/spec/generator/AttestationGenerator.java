@@ -111,7 +111,7 @@ public class AttestationGenerator {
         targetBitlist,
         srcAttestations.get(0).getData(),
         targetSig,
-        () -> srcAttestations.get(0).getCommitteeBitsRequired());
+        () -> srcAttestations.get(0).getCommitteeBits());
   }
 
   public Attestation validAttestation(final StateAndBlockSummary blockAndState) {
@@ -432,7 +432,7 @@ public class AttestationGenerator {
         final AttestationSchema<?> attestationSchema, final UInt64 committeeIndex) {
       return () ->
           attestationSchema
-              .getCommitteeBitsSchema()
+              .getCommitteeBitsSchemaOptional()
               .orElseThrow()
               .ofBits(committeeIndex.intValue());
     }

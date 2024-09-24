@@ -1,6 +1,8 @@
 dependencies {
   compileOnly 'org.apache.tuweni:tuweni-bytes'
   implementation project(':infrastructure:ssz')
+  implementation 'org.javassist:javassist'
+  implementation 'org.apache.commons:commons-text'
 }
 
 task generateContainers(type: JavaExec) {

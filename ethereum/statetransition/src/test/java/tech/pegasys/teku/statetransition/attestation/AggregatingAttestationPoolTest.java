@@ -659,7 +659,7 @@ class AggregatingAttestationPoolTest {
       committeeBits =
           () ->
               attestationSchema
-                  .getCommitteeBitsSchema()
+                  .getCommitteeBitsSchemaOptional()
                   .orElseThrow()
                   .ofBits(committeeIndex.orElseThrow().intValue());
     } else {

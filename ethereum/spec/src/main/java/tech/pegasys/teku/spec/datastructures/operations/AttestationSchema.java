@@ -42,7 +42,7 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
   }
 
   default Optional<SszBitvector> createEmptyCommitteeBits() {
-    return getCommitteeBitsSchema().map(SszBitvectorSchema::ofBits);
+    return getCommitteeBitsSchemaOptional().map(SszBitvectorSchema::ofBits);
   }
 
   @SuppressWarnings("unchecked")
@@ -56,7 +56,14 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
 
   SszBitlistSchema<?> getAggregationBitsSchema();
 
-  Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema();
+  SszBitvectorSchema<?> getCommitteeBitsSchema();
+
+  default Optional<SszBitvectorSchema<?>> getCommitteeBitsSchemaOptional() {
+    if (requiresCommitteeBits()) {
+      return Optional.of(getCommitteeBitsSchema());
+    }
+    return Optional.empty();
+  }
 
   boolean requiresCommitteeBits();
 }

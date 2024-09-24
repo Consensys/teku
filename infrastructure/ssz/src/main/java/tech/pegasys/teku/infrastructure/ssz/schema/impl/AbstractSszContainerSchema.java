@@ -49,15 +49,28 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   public static class NamedSchema<T extends SszData> {
     private final String name;
     private final SszSchema<T> schema;
+    private final Class<T> typeClass;
 
     public static <T extends SszData> NamedSchema<T> of(
         final String name, final SszSchema<T> schema) {
       return new NamedSchema<>(name, schema);
     }
 
+    public static <T extends SszData> NamedSchema<T> of(
+        final String name, final SszSchema<T> schema, final Class<T> typeClass) {
+      return new NamedSchema<>(name, schema, typeClass);
+    }
+
     private NamedSchema(final String name, final SszSchema<T> schema) {
       this.name = name;
       this.schema = schema;
+      this.typeClass = null;
+    }
+
+    private NamedSchema(final String name, final SszSchema<T> schema, final Class<T> typeClass) {
+      this.name = name;
+      this.schema = schema;
+      this.typeClass = typeClass;
     }
 
     public String getName() {
@@ -66,6 +79,10 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
     public SszSchema<T> getSchema() {
       return schema;
+    }
+
+    public Class<T> getTypeClass() {
+      return typeClass;
     }
   }
 

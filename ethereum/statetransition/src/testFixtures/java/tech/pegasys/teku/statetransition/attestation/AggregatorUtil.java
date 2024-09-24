@@ -39,19 +39,19 @@ public class AggregatorUtil {
     for (Attestation attestation : attestations) {
       aggregateBits = aggregateBits.or(attestation.getAggregationBits());
       signatures.add(attestation.getAggregateSignature());
-      if (firstAttestation.getCommitteeBits().isPresent()) {
-        participationIndices.addAll(attestation.getCommitteeBitsRequired().getAllSetBits());
+      if (firstAttestation.getCommitteeBitsOptional().isPresent()) {
+        participationIndices.addAll(attestation.getCommitteeBits().getAllSetBits());
         checkState(
             participationIndices.size() == 1,
             "this test util doesn't support generating cross-committee aggregations");
       }
     }
 
-    if (firstAttestation.getCommitteeBits().isPresent()) {
+    if (firstAttestation.getCommitteeBitsOptional().isPresent()) {
       committeeBitsSupplier =
           firstAttestation
               .getSchema()
-              .getCommitteeBitsSchema()
+              .getCommitteeBitsSchemaOptional()
               .map(
                   committeeBitsSchema ->
                       (Supplier<SszBitvector>)

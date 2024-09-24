@@ -387,8 +387,7 @@ public class AttestationBitsAggregatorElectraTest {
         000000000000001000000000000000000000000000000000001\
         """);
 
-    assertThat(aggregator.getCommitteeBits())
-        .isEqualTo(result.getAttestation().getCommitteeBitsRequired());
+    assertThat(aggregator.getCommitteeBits()).isEqualTo(result.getAttestation().getCommitteeBits());
     assertThat(aggregator.getAggregationBits())
         .isEqualTo(result.getAttestation().getAggregationBits());
   }
@@ -537,7 +536,11 @@ public class AttestationBitsAggregatorElectraTest {
             .getAggregationBitsSchema()
             .ofBits(committeeSizes.values().intStream().sum(), validators);
     final Supplier<SszBitvector> committeeBits =
-        () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndices);
+        () ->
+            attestationSchema
+                .getCommitteeBitsSchemaOptional()
+                .orElseThrow()
+                .ofBits(committeeIndices);
 
     final ValidatableAttestation attestation = mock(ValidatableAttestation.class);
     when(attestation.getAttestation())
