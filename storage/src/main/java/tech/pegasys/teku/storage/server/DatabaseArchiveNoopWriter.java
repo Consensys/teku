@@ -21,7 +21,7 @@ public class DatabaseArchiveNoopWriter<T> implements DatabaseArchiveWriter<T> {
       new DatabaseArchiveNoopWriter<>();
 
   @Override
-  public boolean archive(T data) {
+  public boolean archive(final T data) {
     return true;
   }
 }

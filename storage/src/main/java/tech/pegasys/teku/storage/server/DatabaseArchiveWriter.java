@@ -22,5 +22,5 @@ package tech.pegasys.teku.storage.server;
  */
 @FunctionalInterface
 public interface DatabaseArchiveWriter<T> {
-  boolean archive(T data);
+  boolean archive(final T data);
 }
