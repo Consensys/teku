@@ -166,7 +166,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId());
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           KvStoreConfiguration.v4Settings(dbDirectory.toPath()),
@@ -190,7 +193,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId());
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -233,7 +239,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId());
       return LevelDbDatabaseFactory.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -284,7 +293,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         V6DatabaseMetadata.init(getMetadataFile(), V6DatabaseMetadata.singleDBDefault());
 
     DatabaseNetwork.init(
-        getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+        getNetworkFile(),
+        spec.getGenesisSpecConfig().getGenesisForkVersion(),
+        eth1Address,
+        spec.getGenesisSpecConfig().getDepositChainId());
 
     return metaData.getSingleDbConfiguration().getConfiguration();
   }
