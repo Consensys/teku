@@ -46,6 +46,14 @@ public enum SpecMilestone {
     return compareTo(other) >= 0;
   }
 
+  public boolean isGreaterThan(final SpecMilestone other) {
+    return compareTo(other) > 0;
+  }
+
+  public boolean isLessThanOrEqualTo(final SpecMilestone other) {
+    return compareTo(other) <= 0;
+  }
+
   /** Returns the milestone prior to this milestone */
   public SpecMilestone getPreviousMilestone() {
     if (equals(PHASE0)) {
