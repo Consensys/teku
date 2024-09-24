@@ -17,6 +17,7 @@ import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -29,22 +30,34 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DatabaseNetwork {
-  @JsonProperty("fork_version")
+  @JsonProperty(value = "fork_version", required = true)
   @VisibleForTesting
   final String forkVersion;
 
-  @JsonProperty("deposit_contract")
+  @JsonProperty(value = "deposit_contract", required = true)
   @VisibleForTesting
   final String depositContract;
 
+  @JsonProperty("deposit_chain_id")
+  @VisibleForTesting
+  final Long depositChainId;
+
   @JsonCreator
   DatabaseNetwork(
-      @JsonProperty("fork_version") final String forkVersion,
-      @JsonProperty("deposit_contract") final String depositContract) {
+      @JsonProperty(value = "fork_version") final String forkVersion,
+      @JsonProperty(value = "deposit_contract") final String depositContract,
+      @JsonProperty("deposit_chain_id") final Long depositChainId) {
     this.forkVersion = forkVersion;
     this.depositContract = depositContract;
+    this.depositChainId = depositChainId;
+  }
+
+  @VisibleForTesting
+  DatabaseNetwork(final String forkVersion, final String depositContract) {
+    this(forkVersion, depositContract, null);
   }
 
   public static DatabaseNetwork init(
@@ -95,7 +108,8 @@ public class DatabaseNetwork {
     }
     final DatabaseNetwork that = (DatabaseNetwork) o;
     return Objects.equals(forkVersion, that.forkVersion)
-        && Objects.equals(depositContract, that.depositContract);
+        && Objects.equals(depositContract, that.depositContract)
+        && Objects.equals(depositChainId, that.depositChainId);
   }
 
   @Override
