@@ -34,7 +34,7 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldUpgradeToDeneb() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
+    final int genesisTime = currentTime.plus(60).intValue(); // magic node startup time
     final int epochDuration = 4 * 2; // 4 slots, 2 seconds each for swift
     final int shanghaiTime = genesisTime + epochDuration;
     final Map<String, String> genesisOverrides =

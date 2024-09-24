@@ -34,7 +34,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldUpgradeToCapella() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
+    final int genesisTime = currentTime.plus(60).intValue(); // magic node startup time
     final int shanghaiTime = genesisTime + 4 * 2; // 4 slots, 2 seconds each
     final Map<String, String> genesisOverrides =
         Map.of("shanghaiTime", String.valueOf(shanghaiTime));
