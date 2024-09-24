@@ -34,7 +34,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldUpgradeToCapella() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
+    final int genesisTime = currentTime.plus(60).intValue(); // magic node startup time
     final int shanghaiTime = genesisTime + 4 * 2; // 4 slots, 2 seconds each
     final Map<String, String> genesisOverrides =
         Map.of("shanghaiTime", String.valueOf(shanghaiTime));
@@ -51,6 +51,15 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     primaryEL.start();
 
+    TekuBeaconNode primaryNode =
+        createTekuBeaconNode(
+            beaconNodeConfigWithForks(genesisTime, primaryEL)
+                .withStartupTargetPeerCount(0)
+                .build());
+
+    primaryNode.start();
+    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
+
     BesuNode secondaryEL =
         createBesuNode(
             BesuDockerVersion.STABLE,
@@ -63,15 +72,6 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
-
-    TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            beaconNodeConfigWithForks(genesisTime, primaryEL)
-                .withStartupTargetPeerCount(0)
-                .build());
-
-    primaryNode.start();
-    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
 
     final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 
