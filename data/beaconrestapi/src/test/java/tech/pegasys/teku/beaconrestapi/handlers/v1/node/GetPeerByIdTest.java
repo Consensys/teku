@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -60,7 +61,8 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnPeerIfFound() throws Exception {
-    when(network.getEth2PeerById(eq(peerId.toBase58()))).thenReturn(Optional.of(peer));
+    when(network.getEth2PeerById(eq(peerId.toBase58())))
+        .thenReturn(Optional.of(new Eth2PeerWithEnr(peer, Optional.empty())));
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);

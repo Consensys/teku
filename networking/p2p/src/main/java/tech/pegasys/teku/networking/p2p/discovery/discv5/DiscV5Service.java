@@ -48,6 +48,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
@@ -300,6 +301,12 @@ public class DiscV5Service extends Service implements DiscoveryService {
   @Override
   public void updateCustomENRField(final String fieldName, final Bytes value) {
     discoverySystem.updateCustomFieldValue(fieldName, value);
+  }
+
+  @Override
+  public Optional<String> lookupEnr(final NodeId nodeId) {
+    final Optional<NodeRecord> maybeNodeRecord = discoverySystem.lookupNode(nodeId.toBytes());
+    return maybeNodeRecord.map(NodeRecord::asEnr);
   }
 
   private Stream<NodeRecord> activeNodes() {

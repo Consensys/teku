@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class NoOpDiscoveryService implements DiscoveryService {
 
@@ -63,4 +64,9 @@ public class NoOpDiscoveryService implements DiscoveryService {
 
   @Override
   public void updateCustomENRField(final String fieldName, final Bytes value) {}
+
+  @Override
+  public Optional<String> lookupEnr(final NodeId nodeId) {
+    return Optional.empty();
+  }
 }
