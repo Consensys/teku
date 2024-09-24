@@ -47,10 +47,10 @@ public class LibP2PParamsFactory {
       final GossipConfig gossipConfig, final GossipParamsBuilder builder) {
     builder
         .fanoutTTL(gossipConfig.getFanoutTTL())
+        .floodPublish(gossipConfig.isFloodPublishEnabled())
         .gossipSize(gossipConfig.getAdvertise())
         .gossipHistoryLength(gossipConfig.getHistory())
         .heartbeatInterval(gossipConfig.getHeartbeatInterval())
-        .floodPublish(true)
         .seenTTL(gossipConfig.getSeenTTL());
   }
 

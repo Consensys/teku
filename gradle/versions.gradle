@@ -113,6 +113,8 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
+    dependency 'net.java.dev.jna:jna:5.14.0'
+
     dependencySet(group: 'org.mockito', version: '5.13.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
@@ -123,7 +125,7 @@ dependencyManagement {
       entry 'jmh-generator-annprocess'
     }
     dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:7.7.3'
+    dependency 'org.rocksdb:rocksdbjni:9.5.2'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.3.1'
