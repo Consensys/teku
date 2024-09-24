@@ -45,6 +45,9 @@ public class DatabaseNetwork {
   @VisibleForTesting
   final Long depositChainId;
 
+  private static final String EPHEMERY_DEPOSIT_CONTRACT_ADDRESS =
+      "0x4242424242424242424242424242424242424242";
+
   @JsonCreator
   DatabaseNetwork(
       @JsonProperty(value = "fork_version") final String forkVersion,
@@ -84,6 +87,15 @@ public class DatabaseNetwork {
             formatMessage(
                 "deposit contract", depositContractString, databaseNetwork.depositContract));
       }
+      if (!depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
+          && databaseNetwork.depositChainId != null
+          && !databaseNetwork.depositChainId.equals(depositChainId)) {
+        throw DatabaseStorageException.unrecoverable(
+            formatMessage(
+                "deposit chain id",
+                String.valueOf(depositChainId),
+                String.valueOf(databaseNetwork.depositChainId)));
+      }
       return databaseNetwork;
     } else {
       DatabaseNetwork databaseNetwork =
@@ -91,6 +103,10 @@ public class DatabaseNetwork {
       objectMapper.writerFor(DatabaseNetwork.class).writeValue(source, databaseNetwork);
       return databaseNetwork;
     }
+  }
+
+  public Long getDepositChainId() {
+    return depositChainId;
   }
 
   private static String formatMessage(
