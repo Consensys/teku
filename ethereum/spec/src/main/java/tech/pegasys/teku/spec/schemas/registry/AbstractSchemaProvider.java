@@ -22,8 +22,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
-  private final Map<SpecMilestone, SpecMilestone> milestoneToEffectiveMilestone =
-      new EnumMap<>(SpecMilestone.class);
+  private final NavigableMap<SpecMilestone, SpecMilestone> milestoneToEffectiveMilestone =
+      new TreeMap<>();
   private final SchemaId<T> schemaId;
 
   protected AbstractSchemaProvider(final SchemaId<T> schemaId) {
@@ -38,25 +38,31 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
         milestone,
         untilMilestone);
 
+    checkOverlappingVersionMappings(milestone, untilMilestone);
+
     SpecMilestone currentMilestone = untilMilestone;
     while (!currentMilestone.equals(milestone)) {
-
-      checkIfAlreadyMapped(currentMilestone);
-
       milestoneToEffectiveMilestone.put(currentMilestone, milestone);
-
       currentMilestone = currentMilestone.getPreviousMilestone();
     }
-
-    checkIfAlreadyMapped(currentMilestone);
   }
 
-  private void checkIfAlreadyMapped(final SpecMilestone milestone) {
-    if (milestoneToEffectiveMilestone.containsKey(milestone)) {
+  private void checkOverlappingVersionMappings(final SpecMilestone milestone, final SpecMilestone untilMilestone) {
+    final Map.Entry<SpecMilestone, SpecMilestone> floorEntry =
+        milestoneToEffectiveMilestone.floorEntry(untilMilestone);
+    if (floorEntry != null && floorEntry.getValue().isGreaterThanOrEqualTo(milestone)) {
       throw new IllegalArgumentException(
           String.format(
               "Milestone %s is already mapped to %s",
-              milestone, milestoneToEffectiveMilestone.get(milestone)));
+              floorEntry.getKey(), getEffectiveMilestone(floorEntry.getValue())));
+    }
+    final Map.Entry<SpecMilestone, SpecMilestone> ceilingEntry =
+        milestoneToEffectiveMilestone.ceilingEntry(milestone);
+    if (ceilingEntry != null && ceilingEntry.getKey().isLessThanOrEqualTo(untilMilestone)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Milestone %s is already mapped to %s",
+              ceilingEntry.getKey(), getEffectiveMilestone(ceilingEntry.getValue())));
     }
   }
 
