@@ -15,8 +15,9 @@ package tech.pegasys.teku.spec.schemas.registry;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.EnumMap;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
@@ -41,13 +42,14 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
     checkOverlappingVersionMappings(milestone, untilMilestone);
 
     SpecMilestone currentMilestone = untilMilestone;
-    while (!currentMilestone.equals(milestone)) {
+    while (currentMilestone.isGreaterThan(milestone)) {
       milestoneToEffectiveMilestone.put(currentMilestone, milestone);
       currentMilestone = currentMilestone.getPreviousMilestone();
     }
   }
 
-  private void checkOverlappingVersionMappings(final SpecMilestone milestone, final SpecMilestone untilMilestone) {
+  private void checkOverlappingVersionMappings(
+      final SpecMilestone milestone, final SpecMilestone untilMilestone) {
     final Map.Entry<SpecMilestone, SpecMilestone> floorEntry =
         milestoneToEffectiveMilestone.floorEntry(untilMilestone);
     if (floorEntry != null && floorEntry.getValue().isGreaterThanOrEqualTo(milestone)) {
