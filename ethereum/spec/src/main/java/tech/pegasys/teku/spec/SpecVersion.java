@@ -57,8 +57,10 @@ public class SpecVersion extends DelegatingSpecLogic {
   }
 
   public static Optional<SpecVersion> create(
-      final SpecMilestone milestone, final SpecConfig specConfig) {
-    final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
+      final SpecMilestone milestone,
+      final SpecConfig specConfig,
+      final SchemaRegistryBuilder schemaRegistryBuilder) {
+
     return switch (milestone) {
       case PHASE0 -> Optional.of(createPhase0(specConfig, schemaRegistryBuilder));
       case ALTAIR ->

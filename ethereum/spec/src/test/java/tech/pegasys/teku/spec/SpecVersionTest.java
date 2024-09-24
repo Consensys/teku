@@ -36,7 +36,7 @@ class SpecVersionTest {
     final SpecVersion expectedVersion =
         SpecVersion.createPhase0(minimalConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.PHASE0, minimalConfig);
+        SpecVersion.create(SpecMilestone.PHASE0, minimalConfig, schemaRegistryBuilder);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.PHASE0);
     assertThat(actualVersion.get().getSchemaDefinitions())
@@ -49,7 +49,7 @@ class SpecVersionTest {
     final SpecVersion expectedVersion =
         SpecVersion.createAltair(altairSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig);
+        SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig, schemaRegistryBuilder);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ALTAIR);
     assertThat(actualVersion.get().getSchemaDefinitions())
@@ -62,7 +62,7 @@ class SpecVersionTest {
     final SpecVersion expectedVersion =
         SpecVersion.createBellatrix(bellatrixSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig);
+        SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig, schemaRegistryBuilder);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
     assertThat(actualVersion.get().getSchemaDefinitions())
@@ -75,7 +75,7 @@ class SpecVersionTest {
     final SpecVersion expectedVersion =
         SpecVersion.createCapella(capellaSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig);
+        SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig, schemaRegistryBuilder);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.CAPELLA);
     assertThat(actualVersion.get().getSchemaDefinitions())
@@ -88,7 +88,7 @@ class SpecVersionTest {
     final SpecVersion expectedVersion =
         SpecVersion.createDeneb(denebSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.DENEB, minimalConfig);
+        SpecVersion.create(SpecMilestone.DENEB, minimalConfig, schemaRegistryBuilder);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.DENEB);
     assertThat(actualVersion.get().getSchemaDefinitions())
@@ -101,7 +101,7 @@ class SpecVersionTest {
     final SpecVersion expectedVersion =
         SpecVersion.createElectra(electraSpecConfig, schemaRegistryBuilder);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig);
+        SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig, schemaRegistryBuilder);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ELECTRA);
     assertThat(actualVersion.get().getSchemaDefinitions())
