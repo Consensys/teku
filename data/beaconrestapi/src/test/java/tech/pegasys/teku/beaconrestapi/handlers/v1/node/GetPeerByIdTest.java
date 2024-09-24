@@ -34,10 +34,13 @@ import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
   private final MockNodeId peerId = new MockNodeId(123456);
+  private final NodeId peerNodeId = mock(NodeId.class);
   private final Eth2Peer peer = mock(Eth2Peer.class);
+  private final Eth2PeerWithEnr peerWithEnr = new Eth2PeerWithEnr(peer, Optional.empty());
 
   @BeforeEach
   void setUp() {
@@ -51,9 +54,10 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnNotFoundIfPeerNotFound() throws Exception {
-    when(network.getEth2PeerById(peerId.toBase58())).thenReturn(Optional.empty());
-
+    when(eth2P2PNetwork.parseNodeId(peerId.toBase58())).thenReturn(peerNodeId);
+    when(eth2P2PNetwork.getPeer(eq(peerNodeId))).thenReturn(Optional.empty());
     handler.handleRequest(request);
+
     assertThat(request.getResponseCode()).isEqualTo(SC_NOT_FOUND);
     assertThat(request.getResponseBody())
         .isEqualTo(new HttpErrorResponse(SC_NOT_FOUND, "Peer not found"));
@@ -61,12 +65,12 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnPeerIfFound() throws Exception {
-    when(network.getEth2PeerById(eq(peerId.toBase58())))
-        .thenReturn(Optional.of(new Eth2PeerWithEnr(peer, Optional.empty())));
+    when(eth2P2PNetwork.parseNodeId(peerId.toBase58())).thenReturn(peerNodeId);
+    when(eth2P2PNetwork.getPeer(eq(peerNodeId))).thenReturn(Optional.of(peer));
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(peer);
+    assertThat(request.getResponseBody()).isEqualTo(peerWithEnr);
   }
 
   @Test
@@ -81,7 +85,7 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   void metadata_shouldHandle200() throws JsonProcessingException {
-    final String data = getResponseStringFromMetadata(handler, SC_OK, peer);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, peerWithEnr);
     assertThat(data)
         .isEqualTo(
             "{\"data\":{\"peer_id\":\"1111111111111111111111111111177em\","
