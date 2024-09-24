@@ -24,8 +24,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import io.libp2p.core.crypto.PubKey;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -146,8 +144,6 @@ public class Eth2P2PNetworkBuilder {
     // Setup eth2 handlers
     final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
-    final SubnetSubscriptionService dataColumnSidecarSubnetService =
-        new SubnetSubscriptionService();
 
     // TODO a bit hacky solution, subject to be refactored
     DiscoveryNodeIdExtractor discoveryNodeIdExtractor =

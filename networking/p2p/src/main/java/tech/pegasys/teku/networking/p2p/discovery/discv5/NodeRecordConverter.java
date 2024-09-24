@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
 
-  public Bytes convertPublicKeyToNodeId(Bytes publicKey) {
+  public Bytes convertPublicKeyToNodeId(final Bytes publicKey) {
     return new NodeRecordBuilder().publicKey(publicKey).build().getNodeId();
   }
 
