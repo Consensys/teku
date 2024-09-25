@@ -28,7 +28,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -38,12 +37,11 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -123,20 +121,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
     safelyProcess(
         () -> {
-          processDepositRequests(
-              state,
-              body.getOptionalExecutionPayload()
-                  .flatMap(ExecutionPayload::toVersionElectra)
-                  .map(ExecutionPayloadElectra::getDepositRequests)
-                  .orElseThrow(
-                      () ->
-                          new BlockProcessingException(
-                              "Deposit requests were not found during block processing.")));
-          this.processConsolidationRequests(
-              state,
-              BeaconBlockBodyElectra.required(body)
-                  .getExecutionPayload()
-                  .getConsolidationRequests());
+          final ExecutionRequests executionRequests =
+              BeaconBlockBodyElectra.required(body).getExecutionRequests();
+          this.processDepositRequests(state, executionRequests.getDeposits());
+          this.processConsolidationRequests(state, executionRequests.getConsolidations());
         });
   }
 
@@ -168,11 +156,13 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   @Override
   protected void processWithdrawalRequests(
       final MutableBeaconState state,
-      final Optional<ExecutionPayload> executionPayload,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
+      final BeaconBlockBody beaconBlockBody,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+
     this.processWithdrawalRequests(
-        state, getWithdrawalRequestsFromBlock(executionPayload), validatorExitContextSupplier);
+        state,
+        BeaconBlockBodyElectra.required(beaconBlockBody).getExecutionRequests().getWithdrawals(),
+        validatorExitContextSupplier);
   }
 
   // process_withdrawals
@@ -193,7 +183,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<WithdrawalRequest> withdrawalRequests,
+      final List<WithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     final UInt64 slot = state.getSlot();
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
@@ -339,24 +329,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         });
   }
 
-  private SszList<WithdrawalRequest> getWithdrawalRequestsFromBlock(
-      final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
-    return maybeExecutionPayload
-        .flatMap(ExecutionPayload::toVersionElectra)
-        .map(ExecutionPayloadElectra::getWithdrawalRequests)
-        .orElseThrow(
-            () ->
-                new BlockProcessingException(
-                    "Withdrawal requests were not found during block processing."));
-  }
-
   /*
    Implements process_deposit_request from consensus-specs (EIP-6110)
   */
   @Override
   public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
     for (DepositRequest depositRequest : depositRequests) {
       // process_deposit_request
@@ -379,12 +357,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   /**
    * Implements process_consolidation_request from consensus-spec (EIP-7251)
    *
-   * @see <a
-   *     href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#new-process_consolidation_request"/>
+   * @see <a href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain
+   *     .md#new-process_consolidation_request"/>
    */
   @Override
   public void processConsolidationRequests(
-      final MutableBeaconState state, final SszList<ConsolidationRequest> consolidationRequests) {
+      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests) {
     LOG.debug(
         "process_consolidation_request: {} consolidation request to process from block at "
             + "slot {}",

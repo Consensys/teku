@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 
 public interface BeaconBlockBodySchemaElectra<T extends BeaconBlockBodyElectra>
     extends BeaconBlockBodySchemaDeneb<T> {
@@ -29,6 +30,8 @@ public interface BeaconBlockBodySchemaElectra<T extends BeaconBlockBodyElectra>
         schema.getClass());
     return (BeaconBlockBodySchemaElectra<?>) schema;
   }
+
+  ExecutionRequestsSchema getExecutionRequestsSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaElectra<?>> toVersionElectra() {
