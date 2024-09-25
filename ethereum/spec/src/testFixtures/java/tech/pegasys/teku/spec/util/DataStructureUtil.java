@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -129,6 +130,8 @@ import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -696,7 +699,7 @@ public final class DataStructureUtil {
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
-                      .depositRequests(this::randomExecutionPayloadDepositRequests)
+                      .depositRequests(this::randomDepositRequests)
                       .withdrawalRequests(this::randomWithdrawalRequests)
                       .consolidationRequests(this::randomConsolidationRequests);
               builderModifier.accept(executionPayloadBuilder);
@@ -723,7 +726,7 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<DepositRequest> randomExecutionPayloadDepositRequests() {
+  public List<DepositRequest> randomDepositRequests() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
         .mapToObj(__ -> randomDepositRequest())
         .collect(toList());
@@ -1329,6 +1332,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1431,6 +1437,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1484,6 +1493,9 @@ public final class DataStructureUtil {
                     randomFullSszList(
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
                         this::randomSszKZGCommitment));
+              }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -2472,6 +2484,15 @@ public final class DataStructureUtil {
 
   public SszList<SszKZGCommitment> emptyBlobKzgCommitments() {
     return getBlobKzgCommitmentsSchema().of();
+  }
+
+  public ExecutionRequests randomExecutionRequests() {
+    return new ExecutionRequestsBuilderElectra(
+            SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig()))
+        .deposits(randomDepositRequests())
+        .withdrawals(randomWithdrawalRequests())
+        .consolidations(randomConsolidationRequests())
+        .build();
   }
 
   public WithdrawalRequest randomWithdrawalRequest() {

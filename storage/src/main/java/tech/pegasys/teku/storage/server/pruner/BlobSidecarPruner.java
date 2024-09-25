@@ -32,7 +32,10 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
+import tech.pegasys.teku.storage.server.DatabaseArchiveWriter;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public class BlobSidecarPruner extends Service {
@@ -55,6 +58,7 @@ public class BlobSidecarPruner extends Service {
   private final AtomicLong blobColumnSize = new AtomicLong(0);
   private final AtomicLong earliestBlobSidecarSlot = new AtomicLong(-1);
   private final boolean storeNonCanonicalBlobSidecars;
+  private final DatabaseArchiveWriter<BlobSidecar> archiveWriter;
 
   public BlobSidecarPruner(
       final Spec spec,
@@ -80,6 +84,9 @@ public class BlobSidecarPruner extends Service {
     this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
     this.storeNonCanonicalBlobSidecars = storeNonCanonicalBlobSidecars;
+
+    // To be updated with other implementations. e.g. filesystem or s3
+    this.archiveWriter = DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE;
 
     if (blobSidecarsStorageCountersEnabled) {
       LabelledGauge labelledGauge =
@@ -148,7 +155,7 @@ public class BlobSidecarPruner extends Service {
     try {
       final long blobsPruningStart = System.currentTimeMillis();
       final boolean blobsPruningLimitReached =
-          database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit);
+          database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit, archiveWriter);
       logPruningResult(
           "Blobs pruning finished in {} ms. Limit reached: {}",
           blobsPruningStart,

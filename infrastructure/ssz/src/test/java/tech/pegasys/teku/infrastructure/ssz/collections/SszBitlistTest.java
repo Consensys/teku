@@ -95,6 +95,14 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     return sszData().filter(SszCollection::isEmpty).map(Arguments::of);
   }
 
+  public Stream<Arguments> fromBytesTestCases() {
+    return sszData().map(bitlist -> Arguments.of(bitlist, bitlist.sszSerialize()));
+  }
+
+  public Stream<Arguments> fromHexStringTestCases() {
+    return sszData().map(bitlist -> Arguments.of(bitlist, bitlist.sszSerialize().toHexString()));
+  }
+
   @ParameterizedTest
   @MethodSource("bitlistArgs")
   void testSszRoundtrip(final SszBitlist bitlist1) {
@@ -393,5 +401,66 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
     SszBitlist emptyList1 = bitlist.getSchema().sszDeserialize(Bytes.of(1));
     assertThat(emptyList1).isEmpty();
+  }
+
+  @ParameterizedTest
+  @MethodSource("fromBytesTestCases")
+  void testFromBytes(final SszBitlist bitlist, final Bytes serialized) {
+    SszBitlist deserialized = bitlist.getSchema().fromBytes(serialized);
+
+    assertThat(deserialized).isEqualTo(bitlist);
+    assertThat(deserialized.size()).isEqualTo(bitlist.size());
+    assertThatIntCollection(deserialized.getAllSetBits()).isEqualTo(bitlist.getAllSetBits());
+    assertThat(deserialized.hashTreeRoot()).isEqualTo(bitlist.hashTreeRoot());
+  }
+
+  @ParameterizedTest
+  @MethodSource("fromHexStringTestCases")
+  void testFromHexString(final SszBitlist bitlist, final String hexString) {
+    SszBitlist deserialized = bitlist.getSchema().fromHexString(hexString);
+
+    assertThat(deserialized).isEqualTo(bitlist);
+    assertThat(deserialized.size()).isEqualTo(bitlist.size());
+    assertThatIntCollection(deserialized.getAllSetBits()).isEqualTo(bitlist.getAllSetBits());
+    assertThat(deserialized.hashTreeRoot()).isEqualTo(bitlist.hashTreeRoot());
+  }
+
+  private static final SszBitlistSchema<SszBitlist> FROM_HEX_STRING_TEST_SCHEMA =
+      SszBitlistSchema.create(100);
+
+  @Test
+  public void fromHexString_shouldHandleMinimalValidHexString() {
+    String minimalHex = "0x01";
+    SszBitlist validResult = FROM_HEX_STRING_TEST_SCHEMA.fromHexString(minimalHex);
+    assertThat(validResult).isNotNull();
+    assertThat(validResult.sszSerialize()).isEqualTo(Bytes.fromHexString(minimalHex));
+    assertThat(validResult.size()).isZero();
+  }
+
+  @Test
+  public void fromHexString_shouldHandleComplexValidHexString() {
+    String complexHex = "0x01020304";
+    SszBitlist complexResult = FROM_HEX_STRING_TEST_SCHEMA.fromHexString(complexHex);
+    assertThat(complexResult).isNotNull();
+    assertThat(complexResult.sszSerialize()).isEqualTo(Bytes.fromHexString(complexHex));
+  }
+
+  @Test
+  public void fromHexString_shouldThrowForEmptyString() {
+    assertThatThrownBy(() -> FROM_HEX_STRING_TEST_SCHEMA.fromHexString(""))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void fromHexString_shouldThrowForOnlyPrefix() {
+    assertThatThrownBy(() -> FROM_HEX_STRING_TEST_SCHEMA.fromHexString("0x"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void fromHexString_shouldThrowForInvalidHexString() {
+    String invalidHex = "i am a string, not a valid hex string";
+    assertThatThrownBy(() -> FROM_HEX_STRING_TEST_SCHEMA.fromHexString(invalidHex))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }

@@ -14,9 +14,11 @@
 package tech.pegasys.teku.api.schema.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -30,6 +32,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange;
+import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadHeaderDeneb;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -41,13 +44,17 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
 
   @JsonProperty("execution_payload_header")
-  public final ExecutionPayloadHeaderElectra executionPayloadHeader;
+  public final ExecutionPayloadHeaderDeneb executionPayloadHeader;
 
   @JsonProperty("bls_to_execution_changes")
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonProperty("blob_kzg_commitments")
   public final List<KZGCommitment> blobKZGCommitments;
+
+  @JsonProperty("execution_requests_root")
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
+  public final Bytes32 executionRequestsRoot;
 
   @JsonCreator
   public BlindedBeaconBlockBodyElectra(
@@ -61,10 +68,11 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
       @JsonProperty("execution_payload_header")
-          final ExecutionPayloadHeaderElectra executionPayloadHeader,
+          final ExecutionPayloadHeaderDeneb executionPayloadHeader,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
-      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments) {
+      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments,
+      @JsonProperty("execution_requests_root") final Bytes32 executionRequestsRoot) {
     super(
         randaoReveal,
         eth1Data,
@@ -83,6 +91,9 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
     this.blsToExecutionChanges = blsToExecutionChanges;
     checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blinded blocks");
     this.blobKZGCommitments = blobKZGCommitments;
+    checkNotNull(
+        executionRequestsRoot, "execution_requests_root is required for Electra blinded blocks");
+    this.executionRequestsRoot = executionRequestsRoot;
   }
 
   public BlindedBeaconBlockBodyElectra(
@@ -91,7 +102,7 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
           blockBody) {
     super(blockBody);
     this.executionPayloadHeader =
-        new ExecutionPayloadHeaderElectra(blockBody.getExecutionPayloadHeader());
+        new ExecutionPayloadHeaderDeneb(blockBody.getExecutionPayloadHeader());
     this.blsToExecutionChanges =
         blockBody.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
     this.blobKZGCommitments =
@@ -99,6 +110,9 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
+    // TODO Electra Builder API changes
+    // (https://github.com/Consensys/teku/issues/8624)
+    this.executionRequestsRoot = Bytes32.ZERO;
   }
 
   @Override
@@ -140,6 +154,7 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
+          // TODO Electra Builder API changes (https://github.com/Consensys/teku/pull/8600)
           return SafeFuture.COMPLETE;
         });
   }
