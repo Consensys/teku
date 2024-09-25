@@ -30,6 +30,8 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -58,8 +60,14 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
     this.recentChainData = recentChainData;
     this.processor = processor;
     this.forkInfo = forkInfo;
+    final SchemaDefinitions schemaDefinitions =
+        spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions();
     attestationSchema =
-        spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions().getAttestationSchema();
+        schemaDefinitions
+            .toVersionElectra()
+            .<AttestationSchema<? extends Attestation>>map(
+                SchemaDefinitionsElectra::getSingleAttestationSchema)
+            .orElse(schemaDefinitions.getAttestationSchema());
     this.debugDataDumper = debugDataDumper;
   }
 

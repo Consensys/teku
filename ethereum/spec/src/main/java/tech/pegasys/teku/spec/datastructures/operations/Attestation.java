@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -34,9 +35,13 @@ public interface Attestation extends SszContainer {
   @Override
   AttestationSchema<? extends Attestation> getSchema();
 
-  UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec);
+  default UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
+    return getData().getEarliestSlotForForkChoice(spec);
+  }
 
-  Collection<Bytes32> getDependentBlockRoots();
+  default Collection<Bytes32> getDependentBlockRoots() {
+    return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
+  }
 
   AttestationData getData();
 
@@ -65,4 +70,12 @@ public interface Attestation extends SszContainer {
   }
 
   boolean requiresCommitteeBits();
+
+  default boolean isSingleAttestation() {
+    return false;
+  }
+
+  default Optional<UInt64> getValidatorIndex() {
+    return Optional.empty();
+  }
 }
