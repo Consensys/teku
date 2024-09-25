@@ -31,6 +31,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -53,12 +55,16 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema;
   private final PendingConsolidationSchema pendingConsolidationSchema;
 
+  private final SingleAttestationSchema singleAttestationSchema;
+
   public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     this.executionRequestsSchema = schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA);
     this.pendingDepositsSchema = schemaRegistry.get(PENDING_DEPOSITS_SCHEMA);
     this.pendingPartialWithdrawalsSchema = schemaRegistry.get(PENDING_PARTIAL_WITHDRAWALS_SCHEMA);
     this.pendingConsolidationsSchema = schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA);
+
+    this.singleAttestationSchema = new SingleAttestationSchema();
 
     this.depositRequestSchema = schemaRegistry.get(DEPOSIT_REQUEST_SCHEMA);
     this.withdrawalRequestSchema = schemaRegistry.get(WITHDRAWAL_REQUEST_SCHEMA);
@@ -124,6 +130,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
     return pendingPartialWithdrawalsSchema;
+  }
+
+  public AttestationSchema<SingleAttestation> getSingleAttestationSchema() {
+    return singleAttestationSchema;
   }
 
   public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
