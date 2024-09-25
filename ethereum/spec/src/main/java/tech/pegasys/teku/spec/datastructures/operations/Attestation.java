@@ -75,6 +75,10 @@ public interface Attestation extends SszContainer {
     return false;
   }
 
+  default boolean isOnchainAttestation() {
+    return false;
+  }
+
   default Optional<UInt64> getValidatorIndex() {
     return Optional.empty();
   }

@@ -30,15 +30,15 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class AttestationElectraSchema
+public class OnchainAttestationSchema
     extends ContainerSchema4<
-        AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
-    implements AttestationSchema<AttestationElectra> {
+        OnchainAttestation, SszBitlist, AttestationData, SszSignature, SszBitvector>
+    implements AttestationSchema<OnchainAttestation> {
 
-  public AttestationElectraSchema(
+  public OnchainAttestationSchema(
       final long maxValidatorsPerAttestation, final long maxCommitteePerSlot) {
     super(
-        "AttestationElectra",
+        "OnchainAttestation",
         namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE),
@@ -56,8 +56,8 @@ public class AttestationElectraSchema
   }
 
   @Override
-  public AttestationElectra createFromBackingNode(final TreeNode node) {
-    return new AttestationElectra(this, node);
+  public OnchainAttestation createFromBackingNode(final TreeNode node) {
+    return new OnchainAttestation(this, node);
   }
 
   @Override
@@ -67,20 +67,20 @@ public class AttestationElectraSchema
       final BLSSignature signature,
       final Supplier<SszBitvector> committeeBits) {
     final SszBitvector suppliedCommitteeBits = committeeBits.get();
-    checkNotNull(suppliedCommitteeBits, "committeeBits must be provided in Electra");
-    return new AttestationElectra(this, aggregationBits, data, signature, suppliedCommitteeBits);
+    checkNotNull(suppliedCommitteeBits, "committeeBits must be provided");
+    return new OnchainAttestation(this, aggregationBits, data, signature, suppliedCommitteeBits);
   }
 
-  public AttestationElectra create(
+  public OnchainAttestation create(
       final SszBitlist aggregationBits,
       final AttestationData data,
       final BLSSignature signature,
       final SszBitvector committeeBits) {
-    return new AttestationElectra(this, aggregationBits, data, signature, committeeBits);
+    return new OnchainAttestation(this, aggregationBits, data, signature, committeeBits);
   }
 
   @Override
-  public Optional<AttestationElectraSchema> toVersionElectra() {
+  public Optional<OnchainAttestationSchema> toVersionElectra() {
     return Optional.of(this);
   }
 

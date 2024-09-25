@@ -103,13 +103,14 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidatableAttestation attestation) {
-    final ValidatableAttestation converted = attestation.convertFromSingleAttestationIfRequired();
+    final ValidatableAttestation converted = attestation.convertToOnchainAttestationIfRequired();
     if (includedValidators.isSuperSetOf(converted.getAttestation())) {
       // All attestation bits have already been included on chain
       return false;
     }
     if (committeeShufflingSeed.isEmpty()) {
-      committeeShufflingSeed = converted.getCommitteeShufflingSeed();
+      // converted do not maintain shuffling, we need to take it from the original
+      committeeShufflingSeed = attestation.getCommitteeShufflingSeed();
     }
     return attestationsByValidatorCount
         .computeIfAbsent(

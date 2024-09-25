@@ -25,16 +25,16 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class AttestationElectra
-    extends Container4<AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
+public class OnchainAttestation
+    extends Container4<OnchainAttestation, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements Attestation {
 
-  public AttestationElectra(final AttestationElectraSchema type, final TreeNode backingNode) {
+  public OnchainAttestation(final OnchainAttestationSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public AttestationElectra(
-      final AttestationElectraSchema schema,
+  public OnchainAttestation(
+      final OnchainAttestationSchema schema,
       final SszBitlist aggregationBits,
       final AttestationData data,
       final BLSSignature signature,
@@ -43,8 +43,8 @@ public class AttestationElectra
   }
 
   @Override
-  public AttestationElectraSchema getSchema() {
-    return (AttestationElectraSchema) super.getSchema();
+  public OnchainAttestationSchema getSchema() {
+    return (OnchainAttestationSchema) super.getSchema();
   }
 
   @Override
@@ -80,6 +80,11 @@ public class AttestationElectra
 
   @Override
   public boolean requiresCommitteeBits() {
+    return true;
+  }
+
+  @Override
+  public boolean isOnchainAttestation() {
     return true;
   }
 }

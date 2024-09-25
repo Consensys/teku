@@ -27,13 +27,15 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.OnchainAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.OnchainAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatableAttestation {
@@ -54,29 +56,41 @@ public class ValidatableAttestation {
 
   private volatile Optional<SszBitlist> singleAttestationAggregationBits = Optional.empty();
 
-  public ValidatableAttestation convertFromSingleAttestationIfRequired() {
-    if (!attestation.isSingleAttestation()) {
+  public ValidatableAttestation convertToOnchainAttestationIfRequired() {
+
+    if (attestation.isOnchainAttestation()) {
       return this;
     }
 
-    final AttestationElectraSchema attestationElectraSchema =
-        spec.atSlot(attestation.getData().getSlot())
-            .getSchemaDefinitions()
-            .getAttestationSchema()
-            .toVersionElectra()
-            .orElseThrow();
+    if (attestation.isSingleAttestation()) {
+      final OnchainAttestationSchema attestationElectraSchema =
+          spec.atSlot(attestation.getData().getSlot())
+              .getSchemaDefinitions()
+              .toVersionElectra()
+              .orElseThrow()
+              .getOnchainAttestationAttestationSchema();
 
-    final AttestationElectra convertedAttestation =
-        attestationElectraSchema.create(
-            singleAttestationAggregationBits.orElseThrow(),
-            attestation.getData(),
-            attestation.getAggregateSignature(),
-            attestationElectraSchema
-                .getCommitteeBitsSchema()
-                .orElseThrow()
-                .ofBits(attestation.getFirstCommitteeIndex().intValue()));
+      final OnchainAttestation convertedAttestation =
+          attestationElectraSchema.create(
+              singleAttestationAggregationBits.orElseThrow(),
+              attestation.getData(),
+              attestation.getAggregateSignature(),
+              attestationElectraSchema
+                  .getCommitteeBitsSchema()
+                  .orElseThrow()
+                  .ofBits(attestation.getFirstCommitteeIndex().intValue()));
 
-    return from(spec, convertedAttestation);
+      return from(spec, convertedAttestation);
+    }
+
+    // if we are going to change Attestation in Electra (ie adding committee_index)
+    // we could directly check the version here instead of looking up in the spec version
+    final SpecVersion specVersion = spec.atSlot(attestation.getData().getSlot());
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      // TODO convert
+    }
+
+    return this;
   }
 
   public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
