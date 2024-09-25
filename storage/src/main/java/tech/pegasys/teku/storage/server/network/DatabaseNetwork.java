@@ -87,8 +87,8 @@ public class DatabaseNetwork {
             formatMessage(
                 "deposit contract", depositContractString, databaseNetwork.depositContract));
       }
-      if (!depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
-          && databaseNetwork.depositChainId != null
+      if (databaseNetwork.depositChainId != null
+          && !depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
           && !databaseNetwork.depositChainId.equals(depositChainId)) {
         throw DatabaseStorageException.unrecoverable(
             formatMessage(
