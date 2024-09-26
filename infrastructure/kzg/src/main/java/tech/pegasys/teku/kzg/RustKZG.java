@@ -32,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes48;
 final class RustKZG implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int NUMBER_OF_THREADS = 1;
 
   private static RustKZG instance;
   private LibEthKZG library;
@@ -50,7 +51,7 @@ final class RustKZG implements KZG {
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     if (!initialized) {
       try {
-        this.library = new LibEthKZG();
+        this.library = new LibEthKZG(true, NUMBER_OF_THREADS);
         this.initialized = true;
         LOG.info("Loaded LibPeerDASKZG library");
       } catch (final Exception ex) {
