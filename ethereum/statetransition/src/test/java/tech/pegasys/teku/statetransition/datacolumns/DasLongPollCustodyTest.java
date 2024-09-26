@@ -156,6 +156,22 @@ public class DasLongPollCustodyTest {
   }
 
   @Test
+  void testEmptyIsNotRetrunedImmediatelyAtBeginningOfCurrentSlot() {
+    custody.onSlot(UInt64.valueOf(9));
+    advanceTimeGradually(currentSlotTimeout.plusMillis(100));
+
+    custody.onSlot(UInt64.valueOf(10));
+    SafeFuture<Optional<DataColumnSidecar>> fRet0 =
+        custody.getCustodyDataColumnSidecar(columnId10_0);
+
+    advanceTimeGradually(ofMillis(100));
+    assertThat(fRet0).isNotDone();
+
+    advanceTimeGradually(currentSlotTimeout);
+    assertThat(fRet0).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
   void testOptionalEmptyIsReturnedOnTimeout() {
     SafeFuture<Optional<DataColumnSidecar>> fRet0 =
         custody.getCustodyDataColumnSidecar(columnId10_0);

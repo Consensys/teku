@@ -127,7 +127,7 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
         final SafeFuture<Optional<DataColumnSidecar>> promise) {
       final boolean cancelImmediately;
       synchronized (this) {
-        if (columnId.slot().isLessThanOrEqualTo(noWaitSlot)) {
+        if (columnId.slot().isLessThan(noWaitSlot)) {
           cancelImmediately = true;
         } else {
           clearCancelledPendingRequests();
