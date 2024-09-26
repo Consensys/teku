@@ -377,7 +377,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   public void processConsolidationRequests(
       final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests) {
     LOG.debug(
-        "process_consolidation_request: {} consolidation request to process from block at "
+        "process_consolidation_request: {} consolidation requests to process from block at "
             + "slot {}",
         consolidationRequests.size(),
         state.getSlot());
@@ -391,6 +391,23 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final MutableBeaconStateElectra state, final ConsolidationRequest consolidationRequest) {
     final UInt64 slot = state.getSlot();
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
+
+    if (isValidSwitchToCompoundingRequest(state, consolidationRequest)) {
+      LOG.debug("process_consolidation_request: valid switching validator to compounding address");
+      validatorsUtil
+          .getValidatorIndex(state, consolidationRequest.getSourcePubkey())
+          .ifPresent(
+              sourceValidatorIndex ->
+                  beaconStateMutatorsElectra.switchToCompoundingValidator(
+                      state, sourceValidatorIndex));
+      return;
+    }
+
+    // Verify that source != target, so a consolidation cannot be used as an exit
+    if (consolidationRequest.getSourcePubkey().equals(consolidationRequest.getTargetPubkey())) {
+      LOG.debug("process_consolidation_request: source_pubkey and target_pubkey must be different");
+      return;
+    }
 
     // If the pending consolidations queue is full, consolidation requests are ignored
     if (state.getPendingConsolidations().size()
@@ -428,14 +445,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       return;
     }
 
-    // Verify that source != target, so a consolidation cannot be used as an exit.
-    if (maybeSourceValidatorIndex.get().equals(maybeTargetValidatorIndex.get())) {
-      LOG.debug("process_consolidation_request: source_pubkey and target_pubkey must be different");
-      return;
-    }
-
-    final Validator sourceValidator = state.getValidators().get(maybeSourceValidatorIndex.get());
-    final Validator targetValidator = state.getValidators().get(maybeTargetValidatorIndex.get());
+    final int sourceValidatorIndex = maybeSourceValidatorIndex.get();
+    final Validator sourceValidator = state.getValidators().get(sourceValidatorIndex);
+    final int targetValidatorIndex = maybeTargetValidatorIndex.get();
+    final Validator targetValidator = state.getValidators().get(targetValidatorIndex);
 
     // Verify source withdrawal credentials
     final boolean sourceHasExecutionWithdrawalCredentials =
@@ -487,22 +500,73 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     state
         .getValidators()
         .update(
-            maybeSourceValidatorIndex.get(),
+            sourceValidatorIndex,
             v -> v.withExitEpoch(exitEpoch).withWithdrawableEpoch(withdrawableEpoch));
     LOG.debug(
         "process_consolidation_request: updated validator {} with exit_epoch = {}, withdrawable_epoch = {}",
-        maybeSourceValidatorIndex.get(),
+        sourceValidatorIndex,
         exitEpoch,
         withdrawableEpoch);
 
     final PendingConsolidation pendingConsolidation =
         new PendingConsolidation(
             schemaDefinitionsElectra.getPendingConsolidationSchema(),
-            SszUInt64.of(UInt64.valueOf(maybeSourceValidatorIndex.get())),
-            SszUInt64.of(UInt64.valueOf(maybeTargetValidatorIndex.get())));
+            SszUInt64.of(UInt64.valueOf(sourceValidatorIndex)),
+            SszUInt64.of(UInt64.valueOf(targetValidatorIndex)));
     state.getPendingConsolidations().append(pendingConsolidation);
 
+    // Churn any target excess active balance of target and raise its max
+    if (predicatesElectra.hasEth1WithdrawalCredential(targetValidator)) {
+      beaconStateMutatorsElectra.switchToCompoundingValidator(state, targetValidatorIndex);
+    }
+
     LOG.debug("process_consolidation_request: created {}", pendingConsolidation);
+  }
+
+  @Override
+  public boolean isValidSwitchToCompoundingRequest(
+      final BeaconState state, final ConsolidationRequest consolidationRequest) {
+
+    // Switch to compounding requires source and target be equal
+    if (!consolidationRequest.getSourcePubkey().equals(consolidationRequest.getTargetPubkey())) {
+      return false;
+    }
+
+    // Verify source_pubkey exists
+    final Optional<Integer> maybeSourceValidatorIndex =
+        validatorsUtil.getValidatorIndex(state, consolidationRequest.getSourcePubkey());
+    if (maybeSourceValidatorIndex.isEmpty()) {
+      return false;
+    }
+
+    final int sourceValidatorIndex = maybeSourceValidatorIndex.get();
+    final Validator sourceValidator = state.getValidators().get(sourceValidatorIndex);
+
+    // Verify request has been authorized
+    final Eth1Address sourceValidatorExecutionAddress =
+        Predicates.getExecutionAddressUnchecked(sourceValidator.getWithdrawalCredentials());
+    if (!sourceValidatorExecutionAddress.equals(
+        Eth1Address.fromBytes(consolidationRequest.getSourceAddress().getWrappedBytes()))) {
+      return false;
+    }
+
+    // Verify source withdrawal credentials
+    if (!predicatesElectra.hasEth1WithdrawalCredential(sourceValidator)) {
+      return false;
+    }
+
+    // Verify the source is active
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
+    if (!predicatesElectra.isActiveValidator(sourceValidator, currentEpoch)) {
+      return false;
+    }
+
+    // Verify exit for source has not been initiated
+    if (!sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
+      return false;
+    }
+
+    return true;
   }
 
   @Override

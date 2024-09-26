@@ -394,8 +394,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         break;
       }
 
-      stateMutatorsElectra.switchToCompoundingValidator(
-          stateElectra, pendingConsolidation.getTargetIndex());
       final UInt64 activeBalance =
           stateAccessorsElectra.getActiveBalance(state, pendingConsolidation.getSourceIndex());
       beaconStateMutators.decreaseBalance(

@@ -930,6 +930,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     // No Consolidations until Electra
   }
 
+  @Override
+  public boolean isValidSwitchToCompoundingRequest(
+      final BeaconState beaconState, final ConsolidationRequest consolidationRequest)
+      throws BlockProcessingException {
+    // No Consolidations until Electra
+    return false;
+  }
+
   // Catch generic errors and wrap them in a BlockProcessingException
   protected void safelyProcess(final BlockProcessingAction action) throws BlockProcessingException {
     try {
