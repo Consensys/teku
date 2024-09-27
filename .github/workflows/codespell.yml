@@ -25,4 +25,4 @@ jobs:
       - name: Spell check
         run: |
           source venv/bin/activate
-          codespell --config=./.codespell/.codespellrc --ignore-path=venv
+          codespell --config=./.codespell/.codespellrc
