@@ -24,4 +24,5 @@ jobs:
 
       - name: Spell check
         run: |
+          source venv/bin/activate
           codespell --config=./.codespell/.codespellrc
