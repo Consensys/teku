@@ -32,18 +32,21 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NetworkDataProvider {
-  final Function<UInt256, Optional<String>> enrLookupFunction;
+  final Function<Optional<UInt256>, Optional<String>> enrLookupFunction;
 
   private final Eth2P2PNetwork network;
 
   public NetworkDataProvider(final Eth2P2PNetwork network) {
     this.network = network;
     this.enrLookupFunction =
-        nodeId -> {
+        maybeNodeId -> {
+          if (maybeNodeId.isEmpty()) {
+            return Optional.empty();
+          }
           final Optional<DiscoveryService> maybeDiscoveryService =
               network.getDiscoveryNetwork().map(DiscoveryNetwork::getDiscoveryService);
           return maybeDiscoveryService.flatMap(
-              discoveryService -> discoveryService.lookupEnr(nodeId));
+              discoveryService -> discoveryService.lookupEnr(maybeNodeId.get()));
         };
   }
 

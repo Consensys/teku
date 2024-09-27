@@ -64,7 +64,7 @@ public class GetPeerById extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    Optional<Eth2PeerWithEnr> peer =
+    final Optional<Eth2PeerWithEnr> peer =
         network.getEth2PeerById(request.getPathParameter(PEER_ID_PARAMETER));
     if (peer.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Peer not found");
