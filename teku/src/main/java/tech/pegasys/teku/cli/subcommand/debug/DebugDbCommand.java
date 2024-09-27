@@ -144,7 +144,7 @@ public class DebugDbCommand implements Runnable {
 
   @Command(
       name = "get-earliest-available-block-slot",
-      description = "Get the finalized state, if available, as SSZ",
+      description = "Get the earliest available block slot in the database",
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
