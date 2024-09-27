@@ -69,7 +69,8 @@ public class SingleAttestation
 
   @Override
   public boolean requiresCommitteeBits() {
-    return false;
+    // we signal that to process this attestation committeeBits handling is required
+    return true;
   }
 
   @Override

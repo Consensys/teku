@@ -123,7 +123,7 @@ public class AttestationValidator {
       return completedFuture(InternalValidationResultWithState.saveForFuture());
     }
 
-    if (attestation.requiresCommitteeBits()) {
+    if (attestation.getCommitteeBits().isPresent()) {
       // [REJECT] len(committee_indices) == 1, where committee_indices =
       // get_committee_indices(attestation)
       if (attestation.getCommitteeBitsRequired().getBitCount() != 1) {
