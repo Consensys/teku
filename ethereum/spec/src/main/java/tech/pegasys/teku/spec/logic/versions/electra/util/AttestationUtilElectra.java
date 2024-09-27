@@ -13,19 +13,28 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.stream.IntStream;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -92,5 +101,62 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
       final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     return super.getGenericAttestationData(slot, state, block, UInt64.ZERO);
+  }
+
+  @Override
+  public IndexedAttestation getIndexedAttestation(
+      final BeaconState state, final Attestation attestation) {
+    if (attestation.isSingleAttestation()) {
+      final IndexedAttestationSchema<?> indexedAttestationSchema =
+          schemaDefinitions.getIndexedAttestationSchema();
+
+      return indexedAttestationSchema.create(
+          indexedAttestationSchema
+              .getAttestingIndicesSchema()
+              .of(attestation.getValidatorIndex().orElseThrow()),
+          attestation.getData(),
+          attestation.getAggregateSignature());
+    }
+    return super.getIndexedAttestation(state, attestation);
+  }
+
+  @Override
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      final Fork fork,
+      final BeaconState state,
+      final ValidatableAttestation attestation,
+      final AsyncBLSSignatureVerifier blsSignatureVerifier) {
+
+    return super.isValidIndexedAttestationAsync(fork, state, attestation, blsSignatureVerifier)
+        .thenPeek(
+            result -> {
+              if (result.isSuccessful()
+                  && attestation.getAttestation().isSingleAttestation()
+                  && attestation.getSingleAttestationAggregationBits().isEmpty()) {
+                attestation.setSingleAttestationAggregationBits(
+                    getSingleAttestationAggregationBits(state, attestation.getAttestation()));
+              }
+            });
+  }
+
+  private SszBitlist getSingleAttestationAggregationBits(
+      final BeaconState state, final Attestation attestation) {
+    checkArgument(attestation.isSingleAttestation(), "Expecting single attestation");
+
+    final IntList committee =
+        beaconStateAccessors.getBeaconCommittee(
+            state, attestation.getData().getSlot(), attestation.getFirstCommitteeIndex());
+
+    int validatorIndex = attestation.getValidatorIndex().orElseThrow().intValue();
+
+    int validatorCommitteeBit = committee.indexOf(validatorIndex);
+
+    checkArgument(
+        validatorCommitteeBit >= 0,
+        "Validator index %s is not part of the committee %s",
+        validatorIndex,
+        attestation.getFirstCommitteeIndex());
+
+    return attestation.getSchema().createAggregationBitsOf(validatorCommitteeBit);
   }
 }

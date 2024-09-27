@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.OnchainAttestationSchema;
 
 public interface AttestationSchema<T extends Attestation> extends SszContainerSchema<T> {
 
@@ -41,6 +41,11 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
     return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()));
   }
 
+  default SszBitlist createAggregationBitsOf(final int... indices) {
+    final SszBitlistSchema<?> bitsSchema = getAggregationBitsSchema();
+    return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()), indices);
+  }
+
   default Optional<SszBitvector> createEmptyCommitteeBits() {
     return getCommitteeBitsSchema().map(SszBitvectorSchema::ofBits);
   }
@@ -50,7 +55,7 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
     return (AttestationSchema<Attestation>) this;
   }
 
-  default Optional<AttestationElectraSchema> toVersionElectra() {
+  default Optional<OnchainAttestationSchema> toVersionElectra() {
     return Optional.empty();
   }
 

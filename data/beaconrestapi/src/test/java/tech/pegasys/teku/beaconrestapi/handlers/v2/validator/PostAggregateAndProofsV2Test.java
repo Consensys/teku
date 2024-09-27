@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.OnchainAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -111,7 +111,7 @@ public class PostAggregateAndProofsV2Test extends AbstractMigratedBeaconHandlerT
               ((SignedAggregateAndProof) ((List<?>) requestBody).get(0))
                   .getMessage()
                   .getAggregate())
-          .isInstanceOf(AttestationElectra.class);
+          .isInstanceOf(OnchainAttestation.class);
     } else {
       assertThat(
               ((SignedAggregateAndProof) ((List<?>) requestBody).get(0))
