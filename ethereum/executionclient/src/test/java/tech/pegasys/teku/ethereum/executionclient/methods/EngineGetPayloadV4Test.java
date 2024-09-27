@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV4Test {
@@ -117,7 +117,7 @@ class EngineGetPayloadV4Test {
     final UInt256 blockValue = UInt256.MAX_VALUE;
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final ExecutionPayload executionPayloadElectra = dataStructureUtil.randomExecutionPayload();
-    assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadElectra.class);
+    assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV4(eq(executionPayloadContext.getPayloadId())))
         .thenReturn(dummySuccessfulResponse(executionPayloadElectra, blockValue, blobsBundle));

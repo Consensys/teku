@@ -14,18 +14,22 @@
 package tech.pegasys.teku.kzg;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G1;
-import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G2;
+import static tech.pegasys.teku.kzg.KZG.BYTES_PER_G1;
+import static tech.pegasys.teku.kzg.KZG.BYTES_PER_G2;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
-record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
-  TrustedSetup(final List<Bytes> g1Points, final List<Bytes> g2Points) {
-    this.g1Points = g1Points;
-    this.g2Points = g2Points;
-    g1Points.forEach(this::validateG1Point);
-    g2Points.forEach(this::validateG2Point);
+record TrustedSetup(List<Bytes> g1Lagrange, List<Bytes> g2Monomial, List<Bytes> g1Monomial) {
+
+  public TrustedSetup(
+      final List<Bytes> g1Lagrange, final List<Bytes> g2Monomial, final List<Bytes> g1Monomial) {
+    g1Lagrange.forEach(this::validateG1Point);
+    this.g1Lagrange = g1Lagrange;
+    g2Monomial.forEach(this::validateG2Point);
+    this.g2Monomial = g2Monomial;
+    g1Monomial.forEach(this::validateG1Point);
+    this.g1Monomial = g1Monomial;
   }
 
   private void validateG1Point(final Bytes g1Point) {

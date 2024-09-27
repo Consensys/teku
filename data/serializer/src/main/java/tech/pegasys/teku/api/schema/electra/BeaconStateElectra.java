@@ -27,11 +27,12 @@ import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.api.schema.capella.HistoricalSummary;
+import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadHeaderDeneb;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -41,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 public class BeaconStateElectra extends BeaconStateAltair {
 
   @JsonProperty("latest_execution_payload_header")
-  public final ExecutionPayloadHeaderElectra latestExecutionPayloadHeader;
+  public final ExecutionPayloadHeaderDeneb latestExecutionPayloadHeader;
 
   @JsonProperty("next_withdrawal_index")
   @Schema(type = "string", example = EXAMPLE_UINT64)
@@ -107,7 +108,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
       @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
       @JsonProperty("latest_execution_payload_header")
-          final ExecutionPayloadHeaderElectra latestExecutionPayloadHeader,
+          final ExecutionPayloadHeaderDeneb latestExecutionPayloadHeader,
       @JsonProperty("next_withdrawal_index") final UInt64 nextWithdrawalIndex,
       @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex,
       @JsonProperty("historical_summaries") final List<HistoricalSummary> historicalSummaries,
@@ -168,8 +169,9 @@ public class BeaconStateElectra extends BeaconStateAltair {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra
             .BeaconStateElectra
         electra = beaconState.toVersionElectra().orElseThrow();
+
     this.latestExecutionPayloadHeader =
-        new ExecutionPayloadHeaderElectra(electra.getLatestExecutionPayloadHeader());
+        new ExecutionPayloadHeaderDeneb(electra.getLatestExecutionPayloadHeader());
     this.nextWithdrawalIndex = electra.getNextWithdrawalIndex();
     this.nextWithdrawalValidatorIndex = electra.getNextWithdrawalValidatorIndex();
     this.historicalSummaries =
@@ -223,7 +225,7 @@ public class BeaconStateElectra extends BeaconStateAltair {
       final SpecVersion specVersion,
       final MutableBeaconStateElectra state,
       final SyncCommitteeSchema syncCommitteeSchema,
-      final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchema,
+      final ExecutionPayloadHeaderSchemaDeneb executionPayloadHeaderSchema,
       final SszListSchema<
               tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
           historicalSummariesSchema,

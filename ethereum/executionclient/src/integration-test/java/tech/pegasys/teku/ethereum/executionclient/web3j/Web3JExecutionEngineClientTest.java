@@ -44,7 +44,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -338,18 +337,12 @@ public class Web3JExecutionEngineClientTest {
 
     final Map<String, Object> executionPayloadV4Parameter =
         (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
-    // 19 fields in ExecutionPayloadV4
-    assertThat(executionPayloadV4Parameter).hasSize(20);
+    // 17 fields in ExecutionPayloadV4
+    assertThat(executionPayloadV4Parameter).hasSize(17);
     // sanity check
     assertThat(executionPayloadV4Parameter.get("parentHash"))
         .isEqualTo(executionPayloadV4.parentHash.toHexString());
 
-    assertThat(executionPayloadV4Parameter.get("depositRequests"))
-        .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.depositRequests);
-    assertThat(executionPayloadV4Parameter.get("withdrawalRequests"))
-        .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.withdrawalRequests);
     assertThat(((List<Object>) requestData.get("params")).get(1))
         .asInstanceOf(LIST)
         .containsExactlyElementsOf(
