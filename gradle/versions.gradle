@@ -32,7 +32,7 @@ dependencyManagement {
       entry 'javalin-rendering'
     }
 
-    dependency 'io.libp2p:jvm-libp2p:1.1.1-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p:1.2.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.12'
     dependency 'tech.pegasys:jc-kzg-4844:1.0.0'
 
