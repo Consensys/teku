@@ -24,5 +24,5 @@ jobs:
 
       - name: Spell check
         run: |
-          source venv/bin/activate
+          cd teku
           codespell --config=./.codespell/.codespellrc
