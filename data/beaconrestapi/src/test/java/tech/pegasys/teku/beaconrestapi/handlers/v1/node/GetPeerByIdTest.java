@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -26,12 +27,15 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -40,7 +44,8 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
   private final MockNodeId peerId = new MockNodeId(123456);
   private final NodeId peerNodeId = mock(NodeId.class);
   private final Eth2Peer peer = mock(Eth2Peer.class);
-  private final Eth2PeerWithEnr peerWithEnr = new Eth2PeerWithEnr(peer, Optional.empty());
+  private static final String ENR_STUB = "enr:test";
+  private final Eth2PeerWithEnr peerWithEnr = new Eth2PeerWithEnr(peer, Optional.of(ENR_STUB));
 
   @BeforeEach
   void setUp() {
@@ -67,6 +72,12 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldReturnPeerIfFound() throws Exception {
     when(eth2P2PNetwork.parseNodeId(peerId.toBase58())).thenReturn(peerNodeId);
     when(eth2P2PNetwork.getPeer(eq(peerNodeId))).thenReturn(Optional.of(peer));
+    when(peer.getDiscoveryNodeId()).thenReturn(Optional.of(UInt256.ONE));
+    final DiscoveryNetwork<?> discoveryNetwork = mock(DiscoveryNetwork.class);
+    when(eth2P2PNetwork.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
+    final DiscoveryService discoveryService = mock(DiscoveryService.class);
+    when(discoveryNetwork.getDiscoveryService()).thenReturn(discoveryService);
+    when(discoveryService.lookupEnr(any())).thenReturn(Optional.of(ENR_STUB));
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
@@ -89,6 +100,7 @@ public class GetPeerByIdTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(data)
         .isEqualTo(
             "{\"data\":{\"peer_id\":\"1111111111111111111111111111177em\","
+                + "\"enr\":\"enr:test\","
                 + "\"last_seen_p2p_address\":\"1111111111111111111111111111177em\",\"state\":\"connected\",\"direction\":\"inbound\"}}");
   }
 }
