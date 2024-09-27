@@ -23,4 +23,6 @@ jobs:
           pip install codespell
 
       - name: Spell check
-        run: venv/bin/codespell --config=./.codespell/.codespellrc
+        run: |
+          source venv/bin/activate
+          codespell --config=./.codespell/.codespellrc
