@@ -102,6 +102,7 @@ import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
   private final Map<SpecMilestone, SpecVersion> specVersions;
@@ -122,9 +123,10 @@ public class Spec {
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
     final Map<SpecMilestone, SpecVersion> specVersions = new EnumMap<>(SpecMilestone.class);
     final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
+    final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
 
     for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
-      SpecVersion.create(milestone, config)
+      SpecVersion.create(milestone, config, schemaRegistryBuilder)
           .ifPresent(
               milestoneSpec -> {
                 forkScheduleBuilder.addNextMilestone(milestoneSpec);

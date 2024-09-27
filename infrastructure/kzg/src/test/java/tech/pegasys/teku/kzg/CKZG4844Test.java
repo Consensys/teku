@@ -252,21 +252,9 @@ public final class CKZG4844Test {
   }
 
   @Test
-  public void monomialTrustedSetupFilesShouldThrow() {
-    final KZGException kzgException =
-        assertThrows(
-            KZGException.class,
-            () ->
-                CKZG.loadTrustedSetup(
-                    TrustedSetupLoader.getTrustedSetupFile("trusted_setup_monomial.txt")));
-    assertThat(kzgException.getMessage()).contains("Failed to load trusted setup");
-    assertThat(kzgException.getCause().getMessage())
-        .contains("There was an error while loading the Trusted Setup. (C_KZG_BADARGS)");
-  }
-
-  @Test
   public void testInvalidLengthG2PointInNewTrustedSetup() {
-    assertThatThrownBy(() -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString(""))))
+    assertThatThrownBy(
+            () -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString("")), List.of()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Expected G2 point to be 96 bytes");
   }
