@@ -213,10 +213,7 @@
         "transactions_root": "0xd3440acd6cea6c2135fc151371cb6830e25203b250ea8181ae251cc6c54f1a81",
         "withdrawals_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969",
         "blob_gas_used": "14779654655076927372",
-        "excess_blob_gas": "14778002167565275948",
-        "deposit_requests_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969",
-        "withdrawal_requests_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969",
-        "consolidation_requests_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969"
+        "excess_blob_gas": "14778002167565275948"
       },
       "bls_to_execution_changes": [
         {
@@ -350,7 +347,39 @@
       ],
       "blob_kzg_commitments": [
         "0xa94170080872584e54a1cf092d845703b13907f2e6b3b1c0ad573b910530499e3bcd48c6378846b80d2bfa58c81cf3d5"
-      ]
+      ],
+      "execution_requests": {
+        "deposits": [
+          {
+            "pubkey": "0x99c16f59ffb2e2138feb9b6f1804752cdbfe3796e20c52a3ae489f8348df4c1a9614cb6ce6860bed51544aaa1d22cc80",
+            "withdrawal_credentials": "0x01000000000000000000000096792942ef2204941676b7f0048626f766aa1798",
+            "amount": "4706333459101651213",
+            "signature": "0x819666da9089ad1a3879b16a3c7dbab04454cb7da5eb5737c18fd5be53b54c3b38dda74617a27683fe5620a3b213e55e083a85f6223d89e16ce7b93ceb55c5c7e227da6e03bd60f1845e66983d339937d5981e541dedb49d47c3f0573a9b6f41",
+            "index": "4709638425535019469"
+          },
+          {
+            "pubkey": "0x9786334738ef86988505249871273257e40b3e3c47995e751a40a52bc46f915fbaab7e2b1802ca3dcbf2db0567e8c9ae",
+            "withdrawal_credentials": "0x010000000000000000000000b8e632412d8ba6e05272a80fbcf8849c6c29ee8b",
+            "amount": "4703028492668282957",
+            "signature": "0xad2792e9c241d24ba5ff5f4ae1f7839009dae5f9de18e56a77510d695c4fcc4ffe40c5fa688e06476ae50dc93a7882d60630e2d4d8deb9ec43469ed6caf8067823e18f8c44de05433aaae7f39f7576c860e331e99681e7eebff012ddf1e3b0b4",
+            "index": "4693113584778243597"
+          }
+        ],
+        "withdrawals": [
+          {
+            "source_address": "0xde2827416d22656a3cf87666640aae36792fecaf",
+            "validator_pubkey": "0xa52467f43393c040dbac590c4fa4fdf260f050357947fa261f2285f35c8381f256c8ab0584c940f30766a40ebc447340",
+            "amount": "4684851168694822957"
+          }
+        ],
+        "consolidations": [
+          {
+            "source_address": "0x2730ae410e57553a34f42f8060bfd5c9e9e90292",
+            "source_pubkey": "0xb8a7fcd7c58854073db5f088cddf200b04864b6980925343c0d0b3238d5ce3880197ba175c59b61aade73eb79a74cb28",
+            "target_pubkey": "0x88f8fa6c349ee56559e614799a5788c17fdcde24ea5922a7c7fe6bed8df5c0140aeebbb46d0cadc7a9107e98344194f1"
+          }
+        ]
+      }
     }
   },
   "signature": "0xa208fa451f0cb280d1bad7212a5b619097885383a9fdf300b91b33e73fd360329161843794ad1c2c7e84a3f0826a4f181165840b29947d2e681005811ee84f4d222510b1287eb1d4de480ce50be7cb2eeb007bdb4ed6c23358fc03b225abc8a8"

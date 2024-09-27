@@ -29,15 +29,28 @@ import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.KZGCommitment;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange;
-import tech.pegasys.teku.api.schema.deneb.BlindedBeaconBlockBodyDeneb;
+import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadHeaderDeneb;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
-public class BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
+public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
+
+  @JsonProperty("execution_payload_header")
+  public final ExecutionPayloadHeaderDeneb executionPayloadHeader;
+
+  @JsonProperty("bls_to_execution_changes")
+  public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
+
+  @JsonProperty("blob_kzg_commitments")
+  public final List<KZGCommitment> blobKZGCommitments;
 
   @JsonProperty("execution_requests_root")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
@@ -55,7 +68,7 @@ public class BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
       @JsonProperty("execution_payload_header")
-          final ExecutionPayloadHeaderElectra executionPayloadHeader,
+          final ExecutionPayloadHeaderDeneb executionPayloadHeader,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
       @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments,
@@ -69,10 +82,15 @@ public class BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
         attestations,
         deposits,
         voluntaryExits,
-        syncAggregate,
-        executionPayloadHeader,
-        blsToExecutionChanges,
-        blobKZGCommitments);
+        syncAggregate);
+    checkNotNull(
+        executionPayloadHeader, "Execution Payload Header is required for Electra blinded blocks");
+    this.executionPayloadHeader = executionPayloadHeader;
+    checkNotNull(
+        blsToExecutionChanges, "blsToExecutionChanges is required for Electra blinded blocks");
+    this.blsToExecutionChanges = blsToExecutionChanges;
+    checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blinded blocks");
+    this.blobKZGCommitments = blobKZGCommitments;
     checkNotNull(
         executionRequestsRoot, "execution_requests_root is required for Electra blinded blocks");
     this.executionRequestsRoot = executionRequestsRoot;
@@ -83,8 +101,17 @@ public class BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
               .BlindedBeaconBlockBodyElectra
           blockBody) {
     super(blockBody);
-    // TODO add execution requests from BeaconBlocBodyElectra
-    // (https://github.com/Consensys/teku/pull/8600)
+    this.executionPayloadHeader =
+        new ExecutionPayloadHeaderDeneb(blockBody.getExecutionPayloadHeader());
+    this.blsToExecutionChanges =
+        blockBody.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
+    this.blobKZGCommitments =
+        blockBody.getBlobKzgCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(KZGCommitment::new)
+            .toList();
+    // TODO Electra Builder API changes
+    // (https://github.com/Consensys/teku/issues/8624)
     this.executionRequestsRoot = Bytes32.ZERO;
   }
 
@@ -101,10 +128,33 @@ public class BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(final SpecVersion spec) {
+
+    final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema =
+        getBeaconBlockBodySchema(spec).getExecutionPayloadHeaderSchema();
+
+    final SszListSchema<
+            tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange, ?>
+        blsToExecutionChangesSchema = getBeaconBlockBodySchema(spec).getBlsToExecutionChanges();
+
+    final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
+        getBeaconBlockBodySchema(spec).getBlobKzgCommitmentsSchema();
+
     return super.asInternalBeaconBlockBody(
         spec,
         builder -> {
-          // TODO add execution requests root (https://github.com/Consensys/teku/pull/8600)
+          builder.executionPayloadHeader(
+              executionPayloadHeader.asInternalExecutionPayloadHeader(
+                  executionPayloadHeaderSchema));
+          builder.blsToExecutionChanges(
+              this.blsToExecutionChanges.stream()
+                  .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
+                  .collect(blsToExecutionChangesSchema.collector()));
+          builder.blobKzgCommitments(
+              this.blobKZGCommitments.stream()
+                  .map(KZGCommitment::asInternalKZGCommitment)
+                  .map(SszKZGCommitment::new)
+                  .collect(blobKZGCommitmentsSchema.collector()));
+          // TODO Electra Builder API changes (https://github.com/Consensys/teku/pull/8600)
           return SafeFuture.COMPLETE;
         });
   }

@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
 
 public class BlobSidecarPrunerTest {
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(5);
@@ -83,7 +84,7 @@ public class BlobSidecarPrunerTest {
     asyncRunner.executeDueActions();
 
     verify(database).getGenesisTime();
-    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
     verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 
@@ -92,7 +93,7 @@ public class BlobSidecarPrunerTest {
     asyncRunner.executeDueActions();
 
     verify(database).getGenesisTime();
-    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
     verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 
@@ -108,7 +109,7 @@ public class BlobSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
     verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 
@@ -126,7 +127,11 @@ public class BlobSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(database).pruneOldestBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+    verify(database)
+        .pruneOldestBlobSidecars(
+            UInt64.valueOf((slotsPerEpoch / 2) - 1),
+            PRUNE_LIMIT,
+            DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
     verify(database)
         .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }
@@ -175,7 +180,7 @@ public class BlobSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(timeForSlotOne.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
 
     // move more to open pruning zone near genesis
     final UInt64 slotDelta =
@@ -186,7 +191,10 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(databaseOverride)
-        .pruneOldestBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+        .pruneOldestBlobSidecars(
+            UInt64.valueOf((slotsPerEpoch / 2) - 1),
+            PRUNE_LIMIT,
+            DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
     verify(databaseOverride)
         .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }
@@ -230,7 +238,7 @@ public class BlobSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
     verify(databaseOverride, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 }

@@ -38,14 +38,10 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
@@ -70,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
+
   private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
   private final AttesterSlashingSchema<AttesterSlashing> attesterSlashingSchema;
   private final AttestationSchema<Attestation> attestationSchema;
@@ -77,9 +74,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final AggregateAndProofSchema aggregateAndProofSchema;
 
   private final BeaconStateSchemaElectra beaconStateSchema;
-
-  private final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra;
-  private final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchemaElectra;
 
   private final BeaconBlockBodySchemaElectraImpl beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaElectraImpl blindedBeaconBlockBodySchema;
@@ -127,17 +121,15 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
-    this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
-
+    this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
-    this.executionPayloadHeaderSchemaElectra =
-        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaElectraImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            getExecutionRequestsSchema(),
             maxValidatorsPerAttestation,
             "BeaconBlockBodyElectra");
     this.blindedBeaconBlockBodySchema =
@@ -146,6 +138,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            getExecutionRequestsSchema(),
             maxValidatorsPerAttestation,
             "BlindedBlockBodyElectra");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
@@ -157,9 +150,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
     this.builderBidSchemaElectra =
         new BuilderBidSchemaDeneb(
-            "BuilderBidElectra",
-            executionPayloadHeaderSchemaElectra,
-            getBlobKzgCommitmentsSchema());
+            "BuilderBidElectra", getExecutionPayloadHeaderSchema(), getBlobKzgCommitmentsSchema());
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidElectra", builderBidSchemaElectra);
 
@@ -173,9 +164,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new BlobsBundleSchema(
             "BlobsBundleElectra", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
 
-    this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
     this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
     this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
     this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
@@ -273,16 +263,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
     return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return executionPayloadSchemaElectra;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return executionPayloadHeaderSchemaElectra;
   }
 
   @Override
