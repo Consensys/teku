@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.kzg;
 
+import static tech.pegasys.teku.kzg.KZG.BYTES_PER_G1;
+import static tech.pegasys.teku.kzg.KZG.BYTES_PER_G2;
+
 import com.google.common.base.Preconditions;
 import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.BufferedReader;
@@ -49,11 +52,11 @@ class CKZG4844Utils {
   }
 
   public static byte[] flattenG1Points(final List<Bytes> g1Points) {
-    return flattenBytes(g1Points, CKZG4844JNI.BYTES_PER_G1 * g1Points.size());
+    return flattenBytes(g1Points, BYTES_PER_G1 * g1Points.size());
   }
 
   public static byte[] flattenG2Points(final List<Bytes> g2Points) {
-    return flattenBytes(g2Points, CKZG4844JNI.BYTES_PER_G2 * g2Points.size());
+    return flattenBytes(g2Points, BYTES_PER_G2 * g2Points.size());
   }
 
   public static TrustedSetup parseTrustedSetupFile(final String trustedSetupFile)
@@ -70,20 +73,26 @@ class CKZG4844Utils {
       final int g1Size = Integer.parseInt(reader.readLine());
       // Number of G2 points
       final int g2Size = Integer.parseInt(reader.readLine());
-      // List of G1 points, one on each new line
-      final List<Bytes> g1Points = new ArrayList<>();
+      // List of G1 Lagrange points, one on each new line
+      final List<Bytes> g1PointsLagrange = new ArrayList<>();
       for (int i = 0; i < g1Size; i++) {
-        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), CKZG4844JNI.BYTES_PER_G1);
-        g1Points.add(g1Point);
+        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), BYTES_PER_G1);
+        g1PointsLagrange.add(g1Point);
       }
-      // List of G2 points, one on each new line
-      final List<Bytes> g2Points = new ArrayList<>();
+      // List of G2 Monomial points, one on each new line
+      final List<Bytes> g2PointsMonomial = new ArrayList<>();
       for (int i = 0; i < g2Size; i++) {
-        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), CKZG4844JNI.BYTES_PER_G2);
-        g2Points.add(g2Point);
+        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), BYTES_PER_G2);
+        g2PointsMonomial.add(g2Point);
+      }
+      // List of G1 Monomial points, one on each new line
+      final List<Bytes> g1PointsMonomial = new ArrayList<>();
+      for (int i = 0; i < g1Size; i++) {
+        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), BYTES_PER_G1);
+        g1PointsMonomial.add(g1Point);
       }
 
-      return new TrustedSetup(g1Points, g2Points);
+      return new TrustedSetup(g1PointsLagrange, g2PointsMonomial, g1PointsMonomial);
     } catch (final Exception ex) {
       throw new IOException(
           String.format("Failed to parse trusted setup file\n: %s", trustedSetupFile));
