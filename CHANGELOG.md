@@ -17,6 +17,7 @@
 - Updated bootnodes for Holesky network
 - Added new `--p2p-flood-publish-enabled` parameter to control whenever flood publishing behaviour is enabled (applies to all subnets). Previous teku versions always had this behaviour enabled. Default is `true`.
 - Add a fix for [CVE-2024-7254](https://avd.aquasec.com/nvd/2024/cve-2024-7254/)
+- Support for `IDONTWANT` libp2p protocol messages
 
 ### Bug Fixes
  - removed a warning from logs about non blinded blocks being requested (#8562)
