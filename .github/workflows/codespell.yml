@@ -13,16 +13,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Create a virtual environment and install prerequisites
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Set up a Python venv and install prerequisites
         run: |
           python3 -m venv venv
           source venv/bin/activate
           pip install codespell
 
-      - name: Checkout the repository
-        uses: actions/checkout@v4
-
       - name: Spell check
         run: |
-          source venv/bin/activate
-          codespell --config=./.codespell/.codespellrc
+          codespell --config=./.codespell/.codespellrc --ignore-path=venv
