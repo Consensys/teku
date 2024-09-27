@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
@@ -336,6 +337,35 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
         .isEqualTo(15_120);
     assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);
+  }
+
+  @Test
+  public void floodPublishEnabled_isSetCorrectly() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled");
+    assertThat(config.network().getGossipConfig().isFloodPublishEnabled())
+        .isEqualTo(DEFAULT_FLOOD_PUBLISH_ENABLED);
+  }
+
+  @Test
+  public void floodPublishEnabled_shouldNotRequireAValue() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled");
+    assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isTrue();
+  }
+
+  @Test
+  public void floodPublishEnabled_true() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled=true");
+    assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isTrue();
+  }
+
+  @Test
+  public void floodPublishEnabled_false() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled=false");
+    assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isFalse();
   }
 
   @Test

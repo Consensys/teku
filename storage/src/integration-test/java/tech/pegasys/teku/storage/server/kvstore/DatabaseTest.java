@@ -84,6 +84,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
 import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -293,7 +294,10 @@ public class DatabaseTest {
             List.of(blobSidecar5_0)));
 
     // let's prune with limit to 1
-    assertThat(database.pruneOldestBlobSidecars(UInt64.MAX_VALUE, 1)).isTrue();
+    assertThat(
+            database.pruneOldestBlobSidecars(
+                UInt64.MAX_VALUE, 1, DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE))
+        .isTrue();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -310,7 +314,10 @@ public class DatabaseTest {
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // let's prune up to slot 1 (nothing will be pruned)
-    assertThat(database.pruneOldestBlobSidecars(ONE, 10)).isFalse();
+    assertThat(
+            database.pruneOldestBlobSidecars(
+                ONE, 10, DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE))
+        .isFalse();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -327,7 +334,10 @@ public class DatabaseTest {
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // let's prune all from slot 4 excluded
-    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(3), 10)).isFalse();
+    assertThat(
+            database.pruneOldestBlobSidecars(
+                UInt64.valueOf(3), 10, DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE))
+        .isFalse();
     assertBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
     assertBlobSidecars(Map.of(blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
@@ -335,7 +345,10 @@ public class DatabaseTest {
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(1L);
 
     // let's prune all
-    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 1)).isTrue();
+    assertThat(
+            database.pruneOldestBlobSidecars(
+                UInt64.valueOf(5), 1, DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE))
+        .isTrue();
     // all empty now
     assertBlobSidecarKeys(ZERO, UInt64.valueOf(10));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(6));

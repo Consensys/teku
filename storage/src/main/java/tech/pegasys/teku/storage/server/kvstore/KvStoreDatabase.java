@@ -72,6 +72,8 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
+import tech.pegasys.teku.storage.server.DatabaseArchiveWriter;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
@@ -877,11 +879,14 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public boolean pruneOldestBlobSidecars(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public boolean pruneOldestBlobSidecars(
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DatabaseArchiveWriter<BlobSidecar> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
             streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
-      return pruneBlobSidecars(pruneLimit, prunableBlobKeys, updater, false);
+      return pruneBlobSidecars(pruneLimit, prunableBlobKeys, updater, archiveWriter, false);
     }
   }
 
@@ -891,7 +896,12 @@ public class KvStoreDatabase implements Database {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
             streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
-      return pruneBlobSidecars(pruneLimit, prunableNoncanonicalBlobKeys, updater, true);
+      return pruneBlobSidecars(
+          pruneLimit,
+          prunableNoncanonicalBlobKeys,
+          updater,
+          DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE,
+          true);
     }
   }
 
@@ -899,6 +909,7 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
       final FinalizedUpdater updater,
+      final DatabaseArchiveWriter<BlobSidecar> archiveWriter,
       final boolean nonCanonicalblobSidecars) {
     int remaining = pruneLimit;
     int pruned = 0;
@@ -910,6 +921,13 @@ public class KvStoreDatabase implements Database {
       final SlotAndBlockRootAndBlobIndex key = it.next();
       // Before we finish we should check that there are no BlobSidecars left in the same slot
       if (finished && key.getBlobIndex().equals(ZERO)) {
+        break;
+      }
+      // Attempt to archive the BlobSidecar if present. If there's no BlobSidecar return true.
+      final boolean blobSidecarArchived =
+          getBlobSidecar(key).map(archiveWriter::archive).orElse(Boolean.TRUE);
+      if (!blobSidecarArchived) {
+        LOG.warn("Failed to archive BlobSidecar for slot:{}. Stopping pruning", key.getSlot());
         break;
       }
       if (nonCanonicalblobSidecars) {

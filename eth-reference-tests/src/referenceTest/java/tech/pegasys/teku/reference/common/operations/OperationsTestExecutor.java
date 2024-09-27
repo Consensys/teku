@@ -24,6 +24,8 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -53,6 +55,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -351,9 +354,15 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final MutableBeaconState state,
       final OperationProcessor processor)
       throws BlockProcessingException {
-    final DepositRequest depositRequest =
-        loadSsz(testDefinition, dataFileName, DepositRequest.SSZ_SCHEMA);
-    processor.processDepositRequest(state, depositRequest);
+    final SszListSchema<DepositRequest, ?> depositRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getDepositRequestsSchema();
+    final SszList<DepositRequest> depositRequests =
+        loadSsz(testDefinition, dataFileName, depositRequestsSchema);
+
+    processor.processDepositRequest(state, depositRequests.asList());
   }
 
   private void processWithdrawalRequest(
@@ -361,9 +370,15 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final MutableBeaconState state,
       final OperationProcessor processor)
       throws BlockProcessingException {
-    final WithdrawalRequest withdrawalRequest =
-        loadSsz(testDefinition, dataFileName, WithdrawalRequest.SSZ_SCHEMA);
-    processor.processWithdrawalRequest(state, withdrawalRequest);
+    final SszListSchema<WithdrawalRequest, ?> withdrawalRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getWithdrawalRequestsSchema();
+    final SszList<WithdrawalRequest> withdrawalRequests =
+        loadSsz(testDefinition, dataFileName, withdrawalRequestsSchema);
+
+    processor.processWithdrawalRequest(state, withdrawalRequests.asList());
   }
 
   private void processConsolidation(
@@ -371,9 +386,15 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final MutableBeaconState state,
       final OperationProcessor processor)
       throws BlockProcessingException {
-    final ConsolidationRequest consolidationRequest =
-        loadSsz(testDefinition, dataFileName, ConsolidationRequest.SSZ_SCHEMA);
-    processor.processConsolidationRequest(state, consolidationRequest);
+    final SszListSchema<ConsolidationRequest, ?> consolidationRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getConsolidationRequestsSchema();
+    final SszList<ConsolidationRequest> consolidationRequests =
+        loadSsz(testDefinition, dataFileName, consolidationRequestsSchema);
+
+    processor.processConsolidationRequest(state, consolidationRequests.asList());
   }
 
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {
