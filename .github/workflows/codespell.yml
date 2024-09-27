@@ -16,8 +16,11 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v4
 
-      - name: Install prerequisites
-        run: pip install codespell
+      - name: Set up Python and create a virtual environment
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install codespell
 
       - name: Spell check
-        run: codespell --config=./.codespell/.codespellrc
+        run: venv/bin/codespell --config=./.codespell/.codespellrc
