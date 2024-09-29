@@ -45,9 +45,7 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
       final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    return blockImportChannel
-        .importBlock(block, broadcastValidationLevel)
-        .thenPeek(__ -> blockPublishingPerformance.blockImportCompleted());
+    return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override

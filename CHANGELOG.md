@@ -20,4 +20,5 @@
 - Updated LUKSO configuration with Deneb fork scheduled for epoch 123075 (November 20, 2024, 16:20:00 UTC)
 
 ### Bug Fixes
- - removed a warning from logs about non blinded blocks being requested (#8562)
+ - Removed a warning from logs about non blinded blocks being requested (#8562)
+ - Fixed `blockImportCompleted` log message timing [#8653](https://github.com/Consensys/teku/pull/8653)
