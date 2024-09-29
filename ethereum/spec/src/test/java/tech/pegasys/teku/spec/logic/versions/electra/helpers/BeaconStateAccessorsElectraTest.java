@@ -35,7 +35,7 @@ class BeaconStateAccessorsElectraTest {
       spy(SpecConfigElectra.required(spec.atSlot(UInt64.ZERO).getConfig()));
   private final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
   private final SchemaDefinitionsElectra schemaDefinitionsElectra =
-      new SchemaDefinitionsElectra(SpecConfigElectra.required(specConfig));
+      spec.getGenesisSchemaDefinitions().toVersionElectra().orElseThrow();
   private final MiscHelpersElectra miscHelpersElectra =
       new MiscHelpersElectra(
           SpecConfigElectra.required(specConfig), predicatesElectra, schemaDefinitionsElectra);
