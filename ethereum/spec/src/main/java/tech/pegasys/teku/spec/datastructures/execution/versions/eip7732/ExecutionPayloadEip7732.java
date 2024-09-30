@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.eip7732;
 import java.util.Optional;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 
-public interface ExecutionPayloadEip7732 extends ExecutionPayload, ExecutionPayloadElectra {
+public interface ExecutionPayloadEip7732 extends ExecutionPayload, ExecutionPayloadDeneb {
 
   static ExecutionPayloadEip7732 required(final ExecutionPayload payload) {
     return payload

@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container20;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema20;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container17;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -31,12 +31,9 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 
 public class ExecutionPayloadEip7732Impl
-    extends Container20<
+    extends Container17<
         ExecutionPayloadEip7732Impl,
         SszBytes32,
         SszByteVector,
@@ -54,14 +51,11 @@ public class ExecutionPayloadEip7732Impl
         SszList<Transaction>,
         SszList<Withdrawal>,
         SszUInt64,
-        SszUInt64,
-        SszList<DepositRequest>,
-        SszList<WithdrawalRequest>,
-        SszList<ConsolidationRequest>>
+        SszUInt64>
     implements ExecutionPayloadEip7732 {
 
   public ExecutionPayloadEip7732Impl(
-      final ContainerSchema20<
+      final ContainerSchema17<
               ExecutionPayloadEip7732Impl,
               SszBytes32,
               SszByteVector,
@@ -79,10 +73,7 @@ public class ExecutionPayloadEip7732Impl
               SszList<Transaction>,
               SszList<Withdrawal>,
               SszUInt64,
-              SszUInt64,
-              SszList<DepositRequest>,
-              SszList<WithdrawalRequest>,
-              SszList<ConsolidationRequest>>
+              SszUInt64>
           schema,
       final TreeNode backingNode) {
     super(schema, backingNode);
@@ -106,10 +97,7 @@ public class ExecutionPayloadEip7732Impl
       final SszList<Transaction> transactions,
       final SszList<Withdrawal> withdrawals,
       final SszUInt64 blobGasUsed,
-      final SszUInt64 excessBlobGas,
-      final SszList<DepositRequest> depositRequests,
-      final SszList<WithdrawalRequest> withdrawalRequests,
-      final SszList<ConsolidationRequest> consolidationRequests) {
+      final SszUInt64 excessBlobGas) {
     super(
         schema,
         parentHash,
@@ -128,10 +116,7 @@ public class ExecutionPayloadEip7732Impl
         transactions,
         withdrawals,
         blobGasUsed,
-        excessBlobGas,
-        depositRequests,
-        withdrawalRequests,
-        consolidationRequests);
+        excessBlobGas);
   }
 
   @Override
@@ -240,27 +225,7 @@ public class ExecutionPayloadEip7732Impl
   }
 
   @Override
-  public SszList<DepositRequest> getDepositRequests() {
-    return getField17();
-  }
-
-  @Override
-  public SszList<WithdrawalRequest> getWithdrawalRequests() {
-    return getField18();
-  }
-
-  @Override
-  public SszList<ConsolidationRequest> getConsolidationRequests() {
-    return getField19();
-  }
-
-  @Override
   public List<TreeNode> getUnblindedTreeNodes() {
-    return List.of(
-        getTransactions().getBackingNode(),
-        getWithdrawals().getBackingNode(),
-        getDepositRequests().getBackingNode(),
-        getWithdrawalRequests().getBackingNode(),
-        getConsolidationRequests().getBackingNode());
+    return List.of(getTransactions().getBackingNode(), getWithdrawals().getBackingNode());
   }
 }

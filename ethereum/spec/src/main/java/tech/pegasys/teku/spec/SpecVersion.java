@@ -156,7 +156,8 @@ public class SpecVersion extends DelegatingSpecLogic {
     return new SpecVersion(SpecMilestone.ELECTRA, specConfig, schemaDefinitions, specLogic);
   }
 
-  static SpecVersion createEip7732(final SpecConfigEip7732 specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+  static SpecVersion createEip7732(
+      final SpecConfigEip7732 specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
     final SchemaRegistry schemaRegistry =
         schemaRegistryBuilder.build(SpecMilestone.EIP7732, specConfig);
     final SchemaDefinitionsEip7732 schemaDefinitions = new SchemaDefinitionsEip7732(schemaRegistry);
