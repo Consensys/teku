@@ -23,6 +23,9 @@ import org.apache.tuweni.bytes.Bytes48;
  */
 public interface KZG {
 
+  int BYTES_PER_G1 = 48;
+  int BYTES_PER_G2 = 96;
+
   static KZG getInstance() {
     return CKZG4844.getInstance();
   }

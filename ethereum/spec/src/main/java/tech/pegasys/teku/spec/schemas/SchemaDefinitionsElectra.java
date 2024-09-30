@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
@@ -101,8 +102,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
       pendingPartialWithdrawalSchema;
   private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
 
-  public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
 
     final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
     this.indexedAttestationSchema =

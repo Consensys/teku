@@ -56,9 +56,7 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final BlockPublishingPerformance blockPublishingPerformance) {
     // provide blobs for the block before importing it
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
-    return blockImportChannel
-        .importBlock(block, broadcastValidationLevel)
-        .thenPeek(__ -> blockPublishingPerformance.blockImportCompleted());
+    return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
