@@ -84,8 +84,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -744,6 +744,12 @@ public final class DataStructureUtil {
   }
 
   public List<DepositRequest> randomExecutionPayloadDepositRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
+        .mapToObj(__ -> randomDepositRequest())
+        .collect(toList());
+  }
+
+  public List<DepositRequest> randomDepositRequests() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
         .mapToObj(__ -> randomDepositRequest())
         .collect(toList());
@@ -1563,7 +1569,7 @@ public final class DataStructureUtil {
 
   public IndexedAttestation randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
-    final IndexedAttestationSchema indexedAttestationSchema =
+    final IndexedAttestationSchema<?> indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
@@ -2534,6 +2540,15 @@ public final class DataStructureUtil {
 
   public SszList<SszKZGCommitment> emptyBlobKzgCommitments() {
     return getBlobKzgCommitmentsSchema().of();
+  }
+
+  public ExecutionRequests randomExecutionRequests() {
+    return new ExecutionRequestsBuilderElectra(
+            SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig()))
+        .deposits(randomDepositRequests())
+        .withdrawals(randomWithdrawalRequests())
+        .consolidations(randomConsolidationRequests())
+        .build();
   }
 
   public WithdrawalRequest randomWithdrawalRequest() {

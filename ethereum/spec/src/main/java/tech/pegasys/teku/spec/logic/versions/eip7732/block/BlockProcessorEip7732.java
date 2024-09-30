@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -33,7 +32,6 @@ import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
@@ -44,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -306,25 +303,5 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
     return null;
   }
 
-  @Override
-  protected void processDepositRequests(
-      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
-      throws BlockProcessingException {
-    // Removed in EIP-7732
-  }
-
-  @Override
-  protected void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final Optional<ExecutionPayload> executionPayload,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    // Removed in EIP-7732
-  }
-
-  @Override
-  protected void processConsolidationRequests(
-      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
-      throws BlockProcessingException {
-    // Removed in EIP-7732
-  }
+  //EIP7732 TODO: remove processStuff
 }

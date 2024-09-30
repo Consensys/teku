@@ -658,6 +658,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
+  public void processExecutionPayloadHeader(final MutableBeaconState state, final BeaconBlock block)
+      throws BlockProcessingException {
+    // No processExecutionPayloadHeader until EIP-7732
+  }
+
+  @Override
   public void processDeposits(final MutableBeaconState state, final SszList<Deposit> deposits)
       throws BlockProcessingException {
     safelyProcess(
