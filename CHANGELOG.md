@@ -15,7 +15,7 @@
 - Implemented [PostAggregateAndProofsV2](https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Validator/publishAggregateAndProofsV2) (adding support for Electra)
 - Added support for [Ephemery Testnet](https://github.com/ephemery.dev) `--network=ephemery`
 - Updated bootnodes for Holesky network
-- Added new `--p2p-flood-publish-enabled` parameter to control whenever flood publishing behaviour is enabled (applies to all subnets). Previous teku versions always had this behaviour enabled. Default is `true`.
+- Disabled flood publish behaviour on all p2p subnets. New `--p2p-flood-publish-enabled` parameter can be used to re-enable it, restoring previous behaviour.
 - Add a fix for [CVE-2024-7254](https://avd.aquasec.com/nvd/2024/cve-2024-7254/)
 - Updated LUKSO configuration with Deneb fork scheduled for epoch 123075 (November 20, 2024, 16:20:00 UTC)
 - Support for `IDONTWANT` libp2p protocol messages

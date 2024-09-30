@@ -340,9 +340,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void floodPublishEnabled_isSetCorrectly() {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled");
+  public void floodPublishEnabled_defaultIsSetCorrectly() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.network().getGossipConfig().isFloodPublishEnabled())
         .isEqualTo(DEFAULT_FLOOD_PUBLISH_ENABLED);
   }
