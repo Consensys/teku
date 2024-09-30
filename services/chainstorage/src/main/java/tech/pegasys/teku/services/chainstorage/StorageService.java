@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.chainstorage;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,7 +85,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                       1,
                       DEFAULT_MAX_QUEUE_SIZE,
                       Thread.NORM_PRIORITY - 1);
-              VersionedDatabaseFactory dbFactory =
+              final VersionedDatabaseFactory dbFactory =
                   new VersionedDatabaseFactory(
                       serviceConfig.getMetricsSystem(),
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
@@ -92,17 +93,10 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               try {
                 database = dbFactory.createDatabase();
-                database.migrate();
               } catch (EphemeryException e) {
-                try {
-                  resetDatabaseDirectories(serviceConfig);
-                  database = dbFactory.createDatabase();
-                  database.migrate();
-                } catch (Exception ex) {
-                  throw new RuntimeException("Failed to reset and recreate the database.", ex);
-                }
+                database = resetDatabaseAndCreate(serviceConfig, dbFactory);
+                ;
               }
-
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
                       serviceConfig.getMetricsSystem(),
@@ -238,12 +232,21 @@ public class StorageService extends Service implements StorageServiceFacade {
   }
 
   /** This method is called only on Ephemery network when reset is due. */
-  void resetDatabaseDirectories(final ServiceConfig serviceConfig) throws IOException {
-    final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
-    final Path slashProtectionDir =
-        serviceConfig.getDataDirLayout().getValidatorDataDirectory().resolve("slashprotection");
-    deleteDirectoryRecursively(beaconDataDir);
-    deleteDirectoryRecursively(slashProtectionDir);
+  @VisibleForTesting
+  private Database resetDatabaseAndCreate(
+      final ServiceConfig serviceConfig, final VersionedDatabaseFactory dbFactory) {
+    try {
+      final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
+      final Path slashProtectionDir =
+          serviceConfig.getDataDirLayout().getValidatorDataDirectory().resolve("slashprotection");
+      deleteDirectoryRecursively(beaconDataDir);
+      deleteDirectoryRecursively(slashProtectionDir);
+
+      return dbFactory.createDatabase();
+    } catch (final Exception ex) {
+      throw new InvalidConfigurationException(
+          "The existing ephemery database was old, and was unable to reset it.", ex);
+    }
   }
 
   private void deleteDirectoryRecursively(final Path path) throws IOException {
