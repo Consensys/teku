@@ -19,6 +19,7 @@
 - Add a fix for [CVE-2024-7254](https://avd.aquasec.com/nvd/2024/cve-2024-7254/)
 - Updated LUKSO configuration with Deneb fork scheduled for epoch 123075 (November 20, 2024, 16:20:00 UTC)
 - Support for `IDONTWANT` libp2p protocol messages
+- `/eth/v1/node/peers` endpoint now populates `enr` field of the peer whenever is possible
 
 ### Bug Fixes
  - Removed a warning from logs about non blinded blocks being requested (#8562)
