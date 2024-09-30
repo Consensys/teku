@@ -332,44 +332,44 @@
       ],
       "signed_execution_payload_header": {
         "message": {
-          "parent_block_hash": "0x70373542af8b450a2cf0e8995d74fd5c59a419747f5f4d8ed5a550526cbd4341",
-          "parent_block_root": "0x36d44642cfa8a73b4c27b317e2d9bff5469b1cbe5c05d35f4b2286f9dd9a1da1",
+          "parent_block_hash": "0xea4f5e424f7a2a28771b166a93b66dc12d8f207683e22f77941d78d874174076",
+          "parent_block_root": "0xfd705842efc5096d6c5e7d95673f828e34921f0839ab5831c29ebba04e78f700",
           "block_hash": "0x9ecb7542cf4bad14a20f79bc45931b8d1483242ea9bf8c8edd186ab70a94624b",
           "gas_limit": "4737730657398518830",
-          "builder_index": "4774085296755504239",
-          "slot": "16336041799",
-          "value": "4764170397455399471",
-          "blob_kzg_commitments_root": "0x83582f424fd7244f213350c530fd112a5fa71806352876480227941a471efbcb"
+          "builder_index": "4772432817833787407",
+          "slot": "23308551639",
+          "value": "4775737784267155663",
+          "blob_kzg_commitments_root": "0x49f540426ff48680416a1a43b562d4c24d9e1b5012cefb1979a3c9c1b8fbd42b"
         },
-        "signature": "0x8d5a3a8aded5a58f952ac7bae812991f1b285e1704e87ef9fd8a743aeca8dd30ed7710a1b6c31a1860768704e6ac709316d5e7002605470c7fcf4b2c691f8a897c900cc60e9618daf83af929b7e8474e7f71bd996427c256691c9b90581b1264"
+        "signature": "0x954da68af7adf486693e9213a63a082fcf1b1ed99c320314b73e64c322470329df27c891348c17b92dc7972dbc7d9b4215c7746c756c1aa2194c7217ab902459290981a0905683fa8563a2a7241f2bc3a3d6e4fca48d9fce1c6c322c4835dc1b"
       },
       "payload_attestations": [
         {
+          "aggregation_bits": "0x00",
+          "data": {
+            "beacon_block_root": "0x96792942ef2204941676b7f0048626f766aa1798ecf09e0230a8d7e2217fb256",
+            "slot": "9550825606",
+            "payload_status": "0x00"
+          },
+          "signature": "0xb710f44c80db8d91f996614df20b5e9293a578f28f55e4cd65f017063fa9e36eead8417ff871fda70f6f8238fa906376066788d928178215cf5b285a0630956453a2b53fd2ecdd614e247a7c89502de682385310134924ee896501d9a1a5265a"
+        },
+        {
           "aggregation_bits": "0x02",
           "data": {
-            "beacon_block_root": "0x32ff5b41cd798bfe9d9dd5dff33af5004014f58dda61327672511244fcbcc44d",
-            "slot": "11159167670",
+            "beacon_block_root": "0xb8e632412d8ba6e05272a80fbcf8849c6c29ee8bd6de4f8db2d9eabdf562c818",
+            "slot": "6334141478",
+            "payload_status": "0x02"
+          },
+          "signature": "0xa9bf2689fe47ca9ac1fb90da3b08259115adab480b4f387669f209ee7747f7451af8f61e4a9c057bc33ffc18f0b08c3407be0a59b8c61c741572f5d28e2a1f6af0fc17db7c3f48901c9267606c3d7831a3d3647b885946fc95fb5689d24f7b8d"
+        },
+        {
+          "aggregation_bits": "0x00",
+          "data": {
+            "beacon_block_root": "0xde2827416d22656a3cf87666640aae36792fecaf4370a1010edc714eaa24372e",
+            "slot": "17955753542",
             "payload_status": "0x01"
           },
-          "signature": "0xaead124a78a24d0bf0a4a7d20c8c4f34e92899d925eb47750d683c474093f4d5a5af0ab36598838b149c0c348bab313e0079198921f7df6009c7e02db76b077b2541c12b71c70cc93b80ee4e150b2ad10ec6ecf6086bb8f70e9b49e4f708946c"
-        },
-        {
-          "aggregation_bits": "0x00",
-          "data": {
-            "beacon_block_root": "0xf14921410d6e44af323bde913793c2037f32eb41f938cabb3c5db5168485eeb8",
-            "slot": "22780779734",
-            "payload_status": "0x03"
-          },
-          "signature": "0xb5f57267f4332f951dd6ddc29fb6ff407e92bc8c68d439d69b7c16be009e4ad7bc565d8dc5c48cbce29809340c2888140981fe9e575a3eb126255ad5dd4ec229eacdc544257ccb5633b06b1ac3cf845bf91030b5eaf67fb915afeccc7f79bcd6"
-        },
-        {
-          "aggregation_bits": "0x00",
-          "data": {
-            "beacon_block_root": "0x188c15414d0503391cc1ace8dfa4eb9d8b38e96566ca1b30975f3ca739475dce",
-            "slot": "21711579254",
-            "payload_status": "0x03"
-          },
-          "signature": "0xad1c182d5c0751fe063f7288a2217dde6a86066bb31d539fad2564c13fb8b4935299b02fda5567b1188554c98d6818511876e25d09ca0278b541e759542a5c0b7cf393f9a3d986a4af2687077a115d312c2bc78a7bf7c95308feddddd0e4a998"
+          "signature": "0xa529495633ab9ab138c0756646074fc7753fafbb44389490ddd46048f29267f6b85e46abbc1fe71c42fc98513ed0f6f800ebc9eaa04b484e29af7d7bb0c38b5e088435aee8583a812545b3057c184a4634957604ec0647d1fa81da2d15a5f198"
         }
       ]
     }

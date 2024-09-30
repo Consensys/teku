@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
@@ -126,6 +125,26 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
                         () ->
                             new BlockProcessingException(
                                 "PayloadAttestations was not found during block processing."))));
+  }
+
+  @Override
+  protected void processDepositRequests(
+      final MutableBeaconState state, final BeaconBlockBody body) {
+    // Removed in EIP-7732
+  }
+
+  @Override
+  protected void processWithdrawalRequests(
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    // Removed in EIP-7732
+  }
+
+  @Override
+  protected void processConsolidationRequests(
+      final MutableBeaconState state, final BeaconBlockBody body) {
+    // Removed in EIP-7732
   }
 
   // process_execution_payload_header
@@ -304,27 +323,5 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
       throws BlockProcessingException {
     // Removed in EIP-7732 (only required for withdrawals validation against the state)
     return null;
-  }
-
-  @Override
-  protected void processDepositRequests(
-      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
-      throws BlockProcessingException {
-    // Removed in EIP-7732
-  }
-
-  @Override
-  protected void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final Optional<ExecutionPayload> executionPayload,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    // Removed in EIP-7732
-  }
-
-  @Override
-  protected void processConsolidationRequests(
-      final MutableBeaconState state, final Optional<ExecutionPayload> executionPayload)
-      throws BlockProcessingException {
-    // Removed in EIP-7732
   }
 }

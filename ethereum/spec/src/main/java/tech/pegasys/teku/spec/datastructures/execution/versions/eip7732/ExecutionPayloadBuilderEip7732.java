@@ -20,9 +20,9 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadBuilderDeneb;
 
-public class ExecutionPayloadBuilderEip7732 extends ExecutionPayloadBuilderElectra {
+public class ExecutionPayloadBuilderEip7732 extends ExecutionPayloadBuilderDeneb {
   private ExecutionPayloadSchemaEip7732 schema;
 
   public ExecutionPayloadBuilderEip7732 schema(final ExecutionPayloadSchemaEip7732 schema) {
@@ -63,9 +63,6 @@ public class ExecutionPayloadBuilderEip7732 extends ExecutionPayloadBuilderElect
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
         SszUInt64.of(blobGasUsed),
-        SszUInt64.of(excessBlobGas),
-        schema.getDepositRequestsSchema().createFromElements(depositRequests),
-        schema.getWithdrawalRequestsSchema().createFromElements(withdrawalRequests),
-        schema.getConsolidationRequestsSchema().createFromElements(consolidationRequests));
+        SszUInt64.of(excessBlobGas));
   }
 }

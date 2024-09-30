@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
@@ -73,6 +74,11 @@ public interface BeaconBlockBodyEip7732 extends BeaconBlockBodyElectra {
   @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
     throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
+  }
+
+  @Override
+  default ExecutionRequests getExecutionRequests() {
+    throw new UnsupportedOperationException("ExecutionRequests removed in Eip7732");
   }
 
   @Override
