@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
 
 import java.time.Duration;
 import java.util.OptionalInt;
@@ -23,7 +24,6 @@ import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
@@ -175,7 +175,7 @@ public class P2PConfig {
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
     private boolean allTopicsFilterEnabled = DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
-    private Boolean isFloodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
+    private boolean isFloodPublishEnabled = DEFAULT_FLOOD_PUBLISH_ENABLED;
 
     private Builder() {}
 
@@ -287,8 +287,7 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder isFloodPublishEnabled(final Boolean floodPublishEnabled) {
-      checkNotNull(floodPublishEnabled);
+    public Builder isFloodPublishEnabled(final boolean floodPublishEnabled) {
       this.isFloodPublishEnabled = floodPublishEnabled;
       return this;
     }

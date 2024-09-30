@@ -228,7 +228,8 @@ public class Eth2P2PNetworkFactory {
                 500,
                 50,
                 spec,
-                KZG.NOOP);
+                KZG.NOOP,
+                (__) -> Optional.empty());
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()

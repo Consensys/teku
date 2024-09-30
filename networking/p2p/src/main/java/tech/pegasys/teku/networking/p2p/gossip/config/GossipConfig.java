@@ -36,7 +36,7 @@ public class GossipConfig {
   // After EIP-7045, attestations are valid for up to 2 full epochs, so TTL is 65
   // slots 1115 * HEARTBEAT = 1115 * 0.7 / 12 = 65.125
   static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(1115);
-  public static final Boolean DEFAULT_FLOOD_PUBLISH_ENABLED = Boolean.TRUE;
+  public static final Boolean DEFAULT_FLOOD_PUBLISH_ENABLED = false;
 
   private final int d;
   private final int dLow;
@@ -47,7 +47,7 @@ public class GossipConfig {
   private final int history;
   private final Duration heartbeatInterval;
   private final Duration seenTTL;
-  private final Boolean floodPublishEnabled;
+  private final boolean floodPublishEnabled;
   private final GossipScoringConfig scoringConfig;
 
   private GossipConfig(
@@ -60,7 +60,7 @@ public class GossipConfig {
       final int history,
       final Duration heartbeatInterval,
       final Duration seenTTL,
-      final Boolean floodPublishEnabled,
+      final boolean floodPublishEnabled,
       final GossipScoringConfig scoringConfig) {
     this.d = d;
     this.dLow = dLow;
@@ -139,7 +139,7 @@ public class GossipConfig {
     private Integer history = DEFAULT_HISTORY;
     private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private Duration seenTTL = DEFAULT_SEEN_TTL;
-    private Boolean floodPublishEnabled = DEFAULT_FLOOD_PUBLISH_ENABLED;
+    private boolean floodPublishEnabled = DEFAULT_FLOOD_PUBLISH_ENABLED;
 
     private Builder() {}
 
@@ -227,7 +227,7 @@ public class GossipConfig {
       return this;
     }
 
-    public Builder floodPublishEnabled(final Boolean floodPublishEnabled) {
+    public Builder floodPublishEnabled(final boolean floodPublishEnabled) {
       this.floodPublishEnabled = floodPublishEnabled;
       return this;
     }
