@@ -32,9 +32,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
@@ -96,7 +97,7 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
 
   public static BlindedBeaconBlockBodySchemaEip7732Impl create(
       final SpecConfigEip7732 specConfig,
-      final AttesterSlashingSchema attesterSlashingSchema,
+      final AttesterSlashingSchema<?> attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final long maxValidatorsPerAttestation,
       final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema,
@@ -114,7 +115,8 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                attesterSlashingSchema, specConfig.getMaxAttesterSlashingsElectra())),
+                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                specConfig.getMaxAttesterSlashingsElectra())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
@@ -228,5 +230,10 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
     return ((SignedExecutionPayloadHeaderSchema)
             getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER)))
         .getMessageSchema();
+  }
+
+  @Override
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    throw new UnsupportedOperationException("ExecutionRequests removed in Eip7732");
   }
 }

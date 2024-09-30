@@ -85,6 +85,13 @@ class SpecVersionTest {
             SpecVersion.create(
                 SpecMilestone.ELECTRA, minimalConfig, SchemaRegistryBuilder.create());
       }
+      case EIP7732 -> {
+        expectedVersion =
+            SpecVersion.createEip7732(
+                SpecConfigEip7732.required(minimalConfig), schemaRegistryBuilder);
+        actualVersion =
+            SpecVersion.create(SpecMilestone.EIP7732, minimalConfig, schemaRegistryBuilder);
+      }
     }
 
     assertThat(actualVersion).isPresent();
@@ -93,17 +100,5 @@ class SpecVersionTest {
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
     assertThat(actualVersion.get().getSchemaDefinitions().getSchemaRegistry().getMilestone())
         .isSameAs(milestone);
-  }
-
-  @Test
-  void shouldCreateEip7732Spec() {
-    final SpecConfigEip7732 eip7732SpecConfig = SpecConfigEip7732.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createEip7732(eip7732SpecConfig);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.EIP7732, minimalConfig);
-    assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.EIP7732);
-    assertThat(actualVersion.get().getSchemaDefinitions())
-        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
 }
