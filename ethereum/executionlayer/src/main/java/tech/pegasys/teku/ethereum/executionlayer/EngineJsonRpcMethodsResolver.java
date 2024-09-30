@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
@@ -22,6 +23,9 @@ import tech.pegasys.teku.spec.SpecMilestone;
 public interface EngineJsonRpcMethodsResolver {
 
   <T> EngineJsonRpcMethod<T> getMethod(
+      EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
+
+  <T> EngineJsonRpcMethod<List<T>> getMethodList(
       EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
 
   /**

@@ -21,6 +21,7 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -108,6 +109,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV3(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV3(executionEngineClient, spec));
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
+    methods.put(ENGINE_GET_BLOBS, new EngineGetBlobsV1(executionEngineClient, spec));
 
     return methods;
   }
@@ -134,6 +136,24 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
         methodsByMilestone.getOrDefault(milestone, Collections.emptyMap());
     final EngineJsonRpcMethod<T> foundMethod =
         (EngineJsonRpcMethod<T>) milestoneMethods.get(method);
+    if (foundMethod == null) {
+      throw new IllegalArgumentException(
+          "Can't find method with name " + method.getName() + " for milestone " + milestone);
+    }
+    return foundMethod;
+  }
+
+  @Override
+  @SuppressWarnings({"unchecked", "unused"})
+  public <T> EngineJsonRpcMethod<List<T>> getMethodList(
+      final EngineApiMethod method,
+      final Supplier<SpecMilestone> milestoneSupplier,
+      final Class<T> resultType) {
+    final SpecMilestone milestone = milestoneSupplier.get();
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> milestoneMethods =
+        methodsByMilestone.getOrDefault(milestone, Collections.emptyMap());
+    final EngineJsonRpcMethod<List<T>> foundMethod =
+        (EngineJsonRpcMethod<List<T>>) milestoneMethods.get(method);
     if (foundMethod == null) {
       throw new IllegalArgumentException(
           "Can't find method with name " + method.getName() + " for milestone " + milestone);

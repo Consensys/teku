@@ -257,7 +257,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(
-      List<VersionedHash> blobVersionedHashes) {
+      final List<VersionedHash> blobVersionedHashes) {
     final Request<?, GetBlobsVersionV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getBlobsVersionV1",
