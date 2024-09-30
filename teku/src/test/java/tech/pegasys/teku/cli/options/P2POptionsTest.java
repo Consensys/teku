@@ -349,21 +349,21 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void floodPublishEnabled_shouldNotRequireAValue() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled");
+        getTekuConfigurationFromArguments("--Xp2p-flood-publish-enabled");
     assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isTrue();
   }
 
   @Test
   public void floodPublishEnabled_true() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled=true");
+        getTekuConfigurationFromArguments("--Xp2p-flood-publish-enabled=true");
     assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isTrue();
   }
 
   @Test
   public void floodPublishEnabled_false() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--p2p-flood-publish-enabled=false");
+        getTekuConfigurationFromArguments("--Xp2p-flood-publish-enabled=false");
     assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isFalse();
   }
 
