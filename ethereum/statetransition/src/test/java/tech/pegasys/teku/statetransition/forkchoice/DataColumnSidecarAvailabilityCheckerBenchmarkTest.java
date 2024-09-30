@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -41,7 +40,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 public class DataColumnSidecarAvailabilityCheckerBenchmarkTest extends KZGAbstractBenchmark {
   private final DataAvailabilitySampler dataAvailabilitySampler =
       mock(DataAvailabilitySampler.class);
-  private final ReadOnlyStore store = mock(ReadOnlyStore.class);
   private static final int ROUNDS = 10;
 
   private final Spec spec = TestSpecFactory.createMinimalEip7594();
@@ -74,7 +72,7 @@ public class DataColumnSidecarAvailabilityCheckerBenchmarkTest extends KZGAbstra
       final long start = System.currentTimeMillis();
       final DataColumnSidecarAvailabilityChecker dataColumnSidecarAvailabilityChecker =
           new DataColumnSidecarAvailabilityChecker(
-              dataAvailabilitySampler, store, getKzg(), spec, signedBeaconBlock);
+              dataAvailabilitySampler, getKzg(), spec, signedBeaconBlock);
       final DataAndValidationResult<DataColumnSidecar> dataColumnSidecarDataAndValidationResult =
           dataColumnSidecarAvailabilityChecker.validateImmediately(dataColumnSidecars);
       assertThat(dataColumnSidecarDataAndValidationResult.isValid()).isTrue();

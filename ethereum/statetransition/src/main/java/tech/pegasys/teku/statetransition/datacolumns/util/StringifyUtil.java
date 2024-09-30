@@ -64,6 +64,15 @@ public class StringifyUtil {
     }
   }
 
+  public static String toIntRangeString(Collection<Integer> ints) {
+    List<IntRange> ranges = reduceToIntRanges(ints);
+    return "(size: "
+        + ints.size()
+        + ") ["
+        + ranges.stream().map(Objects::toString).collect(Collectors.joining(","))
+        + "]";
+  }
+
   private record IntRange(int first, int last) {
 
     static IntRange of(int i) {

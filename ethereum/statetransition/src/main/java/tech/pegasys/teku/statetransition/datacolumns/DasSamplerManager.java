@@ -18,7 +18,6 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.statetransition.forkchoice.DataColumnSidecarAvailabilityChecker;
@@ -29,23 +28,20 @@ public class DasSamplerManager implements AvailabilityCheckerFactory<DataColumnS
   private final Supplier<DataAvailabilitySampler> dataAvailabilitySamplerSupplier;
   final KZG kzg;
   final Spec spec;
-  final ReadOnlyStore store;
 
   public DasSamplerManager(
       final Supplier<DataAvailabilitySampler> dataAvailabilitySamplerSupplier,
       final KZG kzg,
-      final Spec spec,
-      final ReadOnlyStore store) {
+      final Spec spec) {
     this.dataAvailabilitySamplerSupplier = dataAvailabilitySamplerSupplier;
     this.kzg = kzg;
     this.spec = spec;
-    this.store = store;
   }
 
   @Override
-  public AvailabilityChecker<DataColumnSidecar> createAvailabilityChecker(
+  public DataColumnSidecarAvailabilityChecker createAvailabilityChecker(
       final SignedBeaconBlock block) {
     return new DataColumnSidecarAvailabilityChecker(
-        dataAvailabilitySamplerSupplier.get(), store, kzg, spec, block);
+        dataAvailabilitySamplerSupplier.get(), kzg, spec, block);
   }
 }

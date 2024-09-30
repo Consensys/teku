@@ -25,6 +25,7 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchChain;
@@ -51,6 +52,7 @@ public class BatchSync implements Sync {
   private final BatchDataRequester batchDataRequester;
   private final MultipeerCommonAncestorFinder commonAncestorFinder;
   private final TimeProvider timeProvider;
+  private final SyncPreImportBlockChannel syncPreImportBlockChannel;
 
   private final BatchChain activeBatches;
 
@@ -79,7 +81,8 @@ public class BatchSync implements Sync {
       final BatchImporter batchImporter,
       final BatchDataRequester batchDataRequester,
       final MultipeerCommonAncestorFinder commonAncestorFinder,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final SyncPreImportBlockChannel syncPreImportBlockChannel) {
     this.eventThread = eventThread;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
@@ -89,6 +92,7 @@ public class BatchSync implements Sync {
     this.commonAncestorFinder = commonAncestorFinder;
     this.timeProvider = timeProvider;
     this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
+    this.syncPreImportBlockChannel = syncPreImportBlockChannel;
   }
 
   public static BatchSync create(
@@ -100,7 +104,8 @@ public class BatchSync implements Sync {
       final int batchSize,
       final int maxPendingBatches,
       final MultipeerCommonAncestorFinder commonAncestorFinder,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final SyncPreImportBlockChannel syncPreImportBlockChannel) {
     final BatchChain activeBatches = new BatchChain();
     final BatchDataRequester batchDataRequester =
         new BatchDataRequester(
@@ -113,7 +118,8 @@ public class BatchSync implements Sync {
         batchImporter,
         batchDataRequester,
         commonAncestorFinder,
-        timeProvider);
+        timeProvider,
+        syncPreImportBlockChannel);
   }
 
   /**
@@ -178,6 +184,8 @@ public class BatchSync implements Sync {
       progressSync();
       return;
     }
+
+    syncPreImportBlockChannel.onNewPreImportBlocks(batch.getBlocks());
 
     activeBatches
         .previousNonEmptyBatch(batch)

@@ -19,13 +19,10 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 
 public class DataColumnSidecarAvailabilityChecker
@@ -37,18 +34,15 @@ public class DataColumnSidecarAvailabilityChecker
       new SafeFuture<>();
   final KZG kzg;
   final Spec spec;
-  final ReadOnlyStore store;
 
   private final SignedBeaconBlock block;
 
   public DataColumnSidecarAvailabilityChecker(
       final DataAvailabilitySampler dataAvailabilitySampler,
-      final ReadOnlyStore store,
       final KZG kzg,
       final Spec spec,
       final SignedBeaconBlock block) {
     this.dataAvailabilitySampler = dataAvailabilitySampler;
-    this.store = store;
     this.kzg = kzg;
     this.spec = spec;
     this.block = block;
@@ -57,43 +51,29 @@ public class DataColumnSidecarAvailabilityChecker
   @Override
   public boolean initiateDataAvailabilityCheck() {
     LOG.info("Starting data availability check for slot {}", block.getSlot());
-    if (!spec.atSlot(block.getSlot())
-        .getMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.EIP7594)) {
-      validationResult.complete(DataAndValidationResult.notRequired());
-      LOG.info("Availability check for slot {} NOT_REQUIRED, EIP7594 not started", block.getSlot());
-      return true;
+    switch (dataAvailabilitySampler.checkSamplingEligibility(block.getMessage())) {
+      case NOT_REQUIRED_BEFORE_EIP7594 -> {
+        validationResult.complete(DataAndValidationResult.notRequired());
+        LOG.info(
+            "Availability check for slot {} NOT_REQUIRED, EIP7594 not started", block.getSlot());
+      }
+      case NOT_REQUIRED_OLD_EPOCH -> {
+        validationResult.complete(DataAndValidationResult.notRequired());
+        LOG.info("Availability check for slot {} NOT_REQUIRED, epoch too old ", block.getSlot());
+      }
+      case NOT_REQUIRED_NO_BLOBS -> {
+        validationResult.complete(DataAndValidationResult.notRequired());
+        LOG.info(
+            "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
+      }
+      default -> dataAvailabilitySampler
+          .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
+          .finish(
+              dataColumnSidecars ->
+                  validationResult.complete(validateImmediately(dataColumnSidecars)),
+              throwable ->
+                  validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
     }
-
-    if (block
-        .getBeaconBlock()
-        .orElseThrow()
-        .getBody()
-        .getOptionalBlobKzgCommitments()
-        .orElseThrow()
-        .isEmpty()) {
-      validationResult.complete(DataAndValidationResult.notRequired());
-      LOG.info(
-          "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
-      return true;
-    }
-
-    final MiscHelpersEip7594 miscHelpersEip7594 =
-        MiscHelpersEip7594.required(spec.atSlot(block.getSlot()).miscHelpers());
-    if (!miscHelpersEip7594.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
-        spec.getCurrentSlot(store), spec.computeEpochAtSlot(block.getSlot()))) {
-      validationResult.complete(DataAndValidationResult.notRequired());
-      LOG.info("Availability check for slot {} NOT_REQUIRED, epoch too old ", block.getSlot());
-      return true;
-    }
-
-    dataAvailabilitySampler
-        .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
-        .finish(
-            dataColumnSidecars ->
-                validationResult.complete(validateImmediately(dataColumnSidecars)),
-            throwable ->
-                validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
     return true;
   }
 
