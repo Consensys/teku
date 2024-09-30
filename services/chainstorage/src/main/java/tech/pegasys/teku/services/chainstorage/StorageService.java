@@ -232,7 +232,7 @@ public class StorageService extends Service implements StorageServiceFacade {
 
   /** This method is called only on Ephemery network when reset is due. */
   @VisibleForTesting
-   Database resetDatabaseAndCreate(
+  Database resetDatabaseAndCreate(
       final ServiceConfig serviceConfig, final VersionedDatabaseFactory dbFactory) {
     try {
       final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
