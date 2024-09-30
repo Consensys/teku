@@ -143,6 +143,29 @@ public class DebugDbCommand implements Runnable {
   }
 
   @Command(
+      name = "get-earliest-available-block-slot",
+      description = "Get the earliest available block slot in the database",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getEarliestAvailableBlockSlot(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      Optional<UInt64> earliestAvailableBlockSlot = database.getEarliestAvailableBlockSlot();
+      earliestAvailableBlockSlot.ifPresent(System.out::println);
+    }
+    return 0;
+  }
+
+  @Command(
       name = "get-finalized-state-indices",
       description = "Display the slots of finalized states that are stored.",
       mixinStandardHelpOptions = true,

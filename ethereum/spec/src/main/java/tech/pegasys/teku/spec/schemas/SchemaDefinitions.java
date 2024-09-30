@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public interface SchemaDefinitions {
 
@@ -88,6 +89,9 @@ public interface SchemaDefinitions {
 
   @NonSchema
   BeaconBlockBodyBuilder createBeaconBlockBodyBuilder();
+
+  @NonSchema
+  SchemaRegistry getSchemaRegistry();
 
   @NonSchema
   default Optional<SchemaDefinitionsAltair> toVersionAltair() {

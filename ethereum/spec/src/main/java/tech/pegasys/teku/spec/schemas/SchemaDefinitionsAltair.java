@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
@@ -72,8 +73,9 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final LightClientUpdateSchema lightClientUpdateSchema;
   private final LightClientUpdateResponseSchema lightClientUpdateResponseSchema;
 
-  public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsAltair(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfigAltair specConfig = SpecConfigAltair.required(schemaRegistry.getSpecConfig());
     this.indexedAttestationSchema =
         new IndexedAttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig))
             .castTypeToIndexedAttestationSchema();

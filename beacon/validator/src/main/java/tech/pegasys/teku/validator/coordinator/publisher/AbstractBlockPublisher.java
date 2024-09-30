@@ -70,7 +70,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
               return gossipAndImportUnblindedSignedBlockAndBlobSidecars(
                   signedBlock, blobSidecars, broadcastValidationLevel, blockPublishingPerformance);
             })
-        .thenCompose(result -> calculateResult(blockContainer, result));
+        .thenCompose(result -> calculateResult(blockContainer, result, blockPublishingPerformance));
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults>
@@ -133,7 +133,8 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
 
   private SafeFuture<SendSignedBlockResult> calculateResult(
       final SignedBlockContainer maybeBlindedBlockContainer,
-      final BlockImportAndBroadcastValidationResults blockImportAndBroadcastValidationResults) {
+      final BlockImportAndBroadcastValidationResults blockImportAndBroadcastValidationResults,
+      final BlockPublishingPerformance blockPublishingPerformance) {
 
     // broadcast validation can fail earlier than block import.
     // The assumption is that in that block import will fail but not as fast
@@ -155,6 +156,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                   .blockImportResult()
                   .thenApply(
                       importResult -> {
+                        blockPublishingPerformance.blockImportCompleted();
                         if (importResult.isSuccessful()) {
                           LOG.trace(
                               "Successfully imported proposed block: {}",
