@@ -20,9 +20,9 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDeneb;
 
-public interface ExecutionPayloadHeaderEip7732 extends ExecutionPayloadHeaderElectra {
+public interface ExecutionPayloadHeaderEip7732 extends ExecutionPayloadHeaderDeneb {
 
   static ExecutionPayloadHeaderEip7732 required(final ExecutionPayloadHeader payload) {
     return payload
@@ -124,21 +124,6 @@ public interface ExecutionPayloadHeaderEip7732 extends ExecutionPayloadHeaderEle
 
   @Override
   default UInt64 getExcessBlobGas() {
-    throw new UnsupportedOperationException("Not supported in Eip7732");
-  }
-
-  @Override
-  default Bytes32 getDepositRequestsRoot() {
-    throw new UnsupportedOperationException("Not supported in Eip7732");
-  }
-
-  @Override
-  default Bytes32 getWithdrawalRequestsRoot() {
-    throw new UnsupportedOperationException("Not supported in Eip7732");
-  }
-
-  @Override
-  default Bytes32 getConsolidationRequestsRoot() {
     throw new UnsupportedOperationException("Not supported in Eip7732");
   }
 
