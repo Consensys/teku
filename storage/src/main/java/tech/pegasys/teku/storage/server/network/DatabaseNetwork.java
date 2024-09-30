@@ -96,6 +96,11 @@ public class DatabaseNetwork {
                 String.valueOf(depositChainId),
                 String.valueOf(databaseNetwork.depositChainId)));
       }
+      if (databaseNetwork.depositChainId != null
+          && depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
+          && !databaseNetwork.depositChainId.equals(depositChainId)) {
+        throw new EphemeryException();
+      }
       return databaseNetwork;
     } else {
       DatabaseNetwork databaseNetwork =

@@ -16,6 +16,9 @@ package tech.pegasys.teku.services.chainstorage;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,6 +45,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.network.EphemeryException;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 import tech.pegasys.teku.storage.server.pruner.StatePruner;
@@ -80,14 +84,24 @@ public class StorageService extends Service implements StorageServiceFacade {
                       1,
                       DEFAULT_MAX_QUEUE_SIZE,
                       Thread.NORM_PRIORITY - 1);
-              final VersionedDatabaseFactory dbFactory =
+              VersionedDatabaseFactory dbFactory =
                   new VersionedDatabaseFactory(
                       serviceConfig.getMetricsSystem(),
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                       config);
-              database = dbFactory.createDatabase();
 
-              database.migrate();
+              try {
+                database = dbFactory.createDatabase();
+                database.migrate();
+              } catch (EphemeryException e) {
+                try {
+                  resetDatabaseDirectories(serviceConfig);
+                  database = dbFactory.createDatabase();
+                  database.migrate();
+                } catch (Exception ex) {
+                  throw new RuntimeException("Failed to reset and recreate the database.", ex);
+                }
+              }
 
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
@@ -221,5 +235,31 @@ public class StorageService extends Service implements StorageServiceFacade {
   @Override
   public ChainStorage getChainStorage() {
     return chainStorage;
+  }
+
+  /** This method is called only on Ephemery network when reset is due. */
+  void resetDatabaseDirectories(final ServiceConfig serviceConfig) throws IOException {
+    final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
+    final Path slashProtectionDir =
+        serviceConfig.getDataDirLayout().getValidatorDataDirectory().resolve("slashprotection");
+    deleteDirectoryRecursively(beaconDataDir);
+    deleteDirectoryRecursively(slashProtectionDir);
+  }
+
+  private void deleteDirectoryRecursively(final Path path) throws IOException {
+    if (Files.isDirectory(path)) {
+      try (var stream = Files.walk(path)) {
+        stream
+            .sorted((o1, o2) -> o2.compareTo(o1))
+            .forEach(
+                p -> {
+                  try {
+                    Files.delete(p);
+                  } catch (IOException e) {
+                    throw new RuntimeException("Failed to delete file: " + p, e);
+                  }
+                });
+      }
+    }
   }
 }

@@ -15,11 +15,6 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.io.File;
@@ -142,48 +137,6 @@ public class VersionedDatabaseFactoryTest {
                 .dataStorageCreateDbVersion(version)
                 .build());
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
-  }
-
-  @Test
-  void shouldOnlyResetWhenOnEphemeryAndDueForReset() throws Exception {
-    VersionedDatabaseFactory dbFactorySpy =
-        spy(
-            new VersionedDatabaseFactory(
-                new StubMetricsSystem(),
-                dataDir,
-                StorageConfiguration.builder()
-                    .specProvider(spec)
-                    .eth1DepositContract(eth1Address)
-                    .build()));
-
-    doReturn(true).when(dbFactorySpy).shouldResetForEphemery();
-    dbFactorySpy.resetDatabaseDirectories();
-    verify(dbFactorySpy, times(1)).resetDatabaseDirectories();
-
-    try (final Database db = dbFactorySpy.createDatabase()) {
-      assertThat(db).isNotNull();
-      verify(dbFactorySpy, times(1)).createDatabase();
-    }
-  }
-
-  @Test
-  void shouldNotResetWhenOnEphemeryButNotDueForRestAndWhenNotOnEphemery() throws Exception {
-    VersionedDatabaseFactory dbFactorySpy =
-        spy(
-            new VersionedDatabaseFactory(
-                new StubMetricsSystem(),
-                dataDir,
-                StorageConfiguration.builder()
-                    .specProvider(spec)
-                    .eth1DepositContract(eth1Address)
-                    .build()));
-
-    doReturn(false).when(dbFactorySpy).shouldResetForEphemery();
-    verifyNoInteractions(dbFactorySpy);
-    try (final Database db = dbFactorySpy.createDatabase()) {
-      assertThat(db).isNotNull();
-      verify(dbFactorySpy, times(1)).createDatabase();
-    }
   }
 
   private void createDbDirectory(final Path dataPath) {

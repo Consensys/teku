@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.storage.server;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Locale;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -51,8 +46,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
   @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
   @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
-  private static final String EPHEMERY_DEPOSIT_CONTRACT_ADDRESS =
-      "0x4242424242424242424242424242424242424242";
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
@@ -94,7 +87,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   public Database createDatabase() {
     LOG.info("Beacon data directory set to: {}", dataDirectory.getAbsolutePath());
     validateDataPaths();
-    resetDatabaseDirectories();
     final DatabaseVersion dbVersion = getDatabaseVersion();
     createDirectories(dbVersion);
     saveDatabaseVersion(dbVersion);
@@ -389,76 +381,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       throw DatabaseStorageException.unrecoverable(
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),
           e);
-    }
-  }
-
-  @VisibleForTesting
-  public boolean shouldResetForEphemery() {
-    File networkFile = getNetworkFile();
-    if (!networkFile.exists()) {
-      return false;
-    }
-    try {
-      Long depositChainId = spec.getGenesisSpecConfig().getDepositChainId();
-      String depositContractString = eth1Address.toHexString().toLowerCase(Locale.ROOT);
-      String networkContent = Files.readString(networkFile.toPath());
-
-      ObjectMapper objectMapper =
-          new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
-      DatabaseNetwork readDatabaseNetwork =
-          objectMapper.readerFor(DatabaseNetwork.class).readValue(networkFile);
-
-      return depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
-          && networkContent.contains("deposit_chain_id")
-          && !readDatabaseNetwork.getDepositChainId().equals(depositChainId);
-
-    } catch (IOException e) {
-      throw new RuntimeException(
-          String.format(
-              "Failed to read network file at %s during reset check",
-              networkFile.getAbsolutePath()),
-          e);
-    }
-  }
-
-  @VisibleForTesting
-  public void resetDatabaseDirectories() {
-    File networkFile = getNetworkFile();
-    try {
-      if (dbDirectory.exists()) {
-        deleteDirectoryRecursively(dbDirectory.toPath());
-      }
-      if (v5ArchiveDirectory.exists()) {
-        deleteDirectoryRecursively(v5ArchiveDirectory.toPath());
-      }
-      if (networkFile.exists()) {
-        if (shouldResetForEphemery()) {
-          Files.delete(networkFile.toPath());
-        }
-      }
-    } catch (IOException e) {
-      throw DatabaseStorageException.unrecoverable(
-          String.format(
-              "Failed to reset database directories or network file at %s",
-              networkFile.getAbsolutePath()),
-          e);
-    }
-  }
-
-  private void deleteDirectoryRecursively(final Path path) throws IOException {
-    if (Files.isDirectory(path)) {
-      try (var stream = Files.walk(path)) {
-        stream
-            .sorted((o1, o2) -> o2.compareTo(o1))
-            .forEach(
-                p -> {
-                  try {
-                    Files.delete(p);
-                  } catch (IOException e) {
-                    throw new RuntimeException("Failed to delete file: " + p, e);
-                  }
-                });
-      }
     }
   }
 }
