@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
@@ -149,5 +150,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   public SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(
       final ClientVersionV1 clientVersion) {
     return taskQueue.queueTask(() -> delegate.getClientVersionV1(clientVersion));
+  }
+
+  @Override
+  public SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(
+      final List<VersionedHash> blobVersionedHashes) {
+    return taskQueue.queueTask(() -> delegate.getBlobsV1(blobVersionedHashes));
   }
 }
