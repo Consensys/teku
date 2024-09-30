@@ -25,7 +25,7 @@ public interface EngineJsonRpcMethodsResolver {
   <T> EngineJsonRpcMethod<T> getMethod(
       EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
 
-  <T> EngineJsonRpcMethod<List<T>> getMethodList(
+  <T> EngineJsonRpcMethod<List<T>> getListMethod(
       EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
 
   /**

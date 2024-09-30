@@ -145,7 +145,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
 
   @Override
   @SuppressWarnings({"unchecked", "unused"})
-  public <T> EngineJsonRpcMethod<List<T>> getMethodList(
+  public <T> EngineJsonRpcMethod<List<T>> getListMethod(
       final EngineApiMethod method,
       final Supplier<SpecMilestone> milestoneSupplier,
       final Class<T> resultType) {

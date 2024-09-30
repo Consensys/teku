@@ -132,7 +132,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(blobVersionedHashes).add(slot).build();
     return engineMethodsResolver
-        .getMethodList(
+        .getListMethod(
             EngineApiMethod.ENGINE_GET_BLOBS,
             () -> spec.atSlot(slot).getMilestone(),
             BlobAndProof.class)
