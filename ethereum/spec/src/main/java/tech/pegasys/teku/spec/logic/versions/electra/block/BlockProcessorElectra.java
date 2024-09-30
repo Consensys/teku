@@ -156,11 +156,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final IndexedAttestationCache indexedAttestationCache,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    super.processOperationsNoValidation(
-        state, body, indexedAttestationCache, validatorExitContextSupplier);
+    super.processOperationsNoValidation(state, body, indexedAttestationCache);
 
     safelyProcess(
         () -> {
+          processDepositRequests(state, body);
+          processConsolidationRequests(state, body);
           final ExecutionRequests executionRequests =
               BeaconBlockBodyElectra.required(body).getExecutionRequests();
 
@@ -199,12 +200,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   @Override
   protected void processWithdrawalRequests(
       final MutableBeaconState state,
-      final BeaconBlockBody beaconBlockBody,
+      final BeaconBlockBody body,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-
-    this.processWithdrawalRequests(
+    processWithdrawalRequests(
         state,
-        BeaconBlockBodyElectra.required(beaconBlockBody).getExecutionRequests().getWithdrawals(),
+        BeaconBlockBodyElectra.required(body).getExecutionRequests().getWithdrawals(),
         validatorExitContextSupplier);
   }
 
@@ -372,6 +372,14 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         });
   }
 
+  @Override
+  protected void processDepositRequests(
+      final MutableBeaconState state, final BeaconBlockBody body) {
+    final ExecutionRequests executionRequests =
+        BeaconBlockBodyElectra.required(body).getExecutionRequests();
+    processDepositRequests(state, executionRequests.getDeposits());
+  }
+
   /*
    Implements process_deposit_request from consensus-specs (EIP-6110)
   */
@@ -400,6 +408,14 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                   SszUInt64.of(state.getSlot()));
       pendingDeposits.append(deposit);
     }
+  }
+
+  @Override
+  protected void processConsolidationRequests(
+      final MutableBeaconState state, final BeaconBlockBody body) {
+    final ExecutionRequests executionRequests =
+        BeaconBlockBodyElectra.required(body).getExecutionRequests();
+    processConsolidationRequests(state, executionRequests.getConsolidations());
   }
 
   /**

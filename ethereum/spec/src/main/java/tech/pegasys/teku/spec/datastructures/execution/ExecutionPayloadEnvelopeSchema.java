@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema7;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -24,12 +24,15 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class ExecutionPayloadEnvelopeSchema
-    extends ContainerSchema6<
+    extends ContainerSchema7<
         ExecutionPayloadEnvelope,
         ExecutionPayload,
+        ExecutionRequests,
         SszUInt64,
         SszBytes32,
         SszList<SszKZGCommitment>,
@@ -38,10 +41,12 @@ public class ExecutionPayloadEnvelopeSchema
 
   public ExecutionPayloadEnvelopeSchema(
       final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final ExecutionRequestsSchema executionRequestsSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
     super(
         "ExecutionPayloadEnvelope",
         namedSchema("payload", SszSchema.as(ExecutionPayload.class, executionPayloadSchema)),
+        namedSchema("execution_requests", executionRequestsSchema),
         namedSchema("builder_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("blob_kzg_commitments", blobKzgCommitmentsSchema),
@@ -51,6 +56,7 @@ public class ExecutionPayloadEnvelopeSchema
 
   public ExecutionPayloadEnvelope create(
       final ExecutionPayload payload,
+      final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
       final SszList<SszKZGCommitment> blobKzgCommitments,
@@ -59,6 +65,7 @@ public class ExecutionPayloadEnvelopeSchema
     return new ExecutionPayloadEnvelope(
         this,
         payload,
+        executionRequests,
         builderIndex,
         beaconBlockRoot,
         blobKzgCommitments,
