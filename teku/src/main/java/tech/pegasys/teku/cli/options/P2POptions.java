@@ -370,11 +370,12 @@ public class P2POptions {
   // More about flood publishing
   // https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/gossipsub-v1.1.md#flood-publishing
   @Option(
-      names = {"--p2p-flood-publish-enabled"},
+      names = {"--Xp2p-flood-publish-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Enables gossip 'floodPublish' feature",
       arity = "0..1",
+      hidden = true,
       fallbackValue = "true")
   private boolean floodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
 
