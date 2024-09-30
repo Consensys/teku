@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -84,8 +85,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -1710,7 +1711,7 @@ public final class DataStructureUtil {
   }
 
   public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
-    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(toList());
+    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(Collectors.toList());
   }
 
   public SszList<Deposit> randomSszDeposits(final int num) {
@@ -2652,6 +2653,7 @@ public final class DataStructureUtil {
         .getExecutionPayloadEnvelopeSchema()
         .create(
             randomExecutionPayload(),
+            randomExecutionRequests(),
             randomUInt64(),
             randomBytes32(),
             randomBlobKzgCommitments(),

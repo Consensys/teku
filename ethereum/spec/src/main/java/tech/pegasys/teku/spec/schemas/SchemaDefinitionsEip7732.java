@@ -48,20 +48,30 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
-  private final AttestationSchema<?> attestationSchema;
+  private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
+  private final AttesterSlashingSchema<AttesterSlashing> attesterSlashingSchema;
+  private final AttestationSchema<Attestation> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
 
@@ -96,14 +106,22 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
       executionPayloadEnvelopesByRootRequestMessageSchema;
   private final PayloadAttestationMessageSchema payloadAttestationMessageSchema;
 
-  public SchemaDefinitionsEip7732(final SpecConfigEip7732 specConfig) {
-    super(specConfig);
+  public SchemaDefinitionsEip7732(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfigEip7732 specConfig = SpecConfigEip7732.required(schemaRegistry.getSpecConfig());
 
     final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
+    this.indexedAttestationSchema =
+        new IndexedAttestationElectraSchema(maxValidatorsPerAttestation)
+            .castTypeToIndexedAttestationSchema();
+    this.attesterSlashingSchema =
+        new AttesterSlashingElectraSchema(indexedAttestationSchema)
+            .castTypeToAttesterSlashingSchema();
 
     this.attestationSchema =
         new AttestationElectraSchema(
-            maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot());
+                maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot())
+            .castTypeToAttestationSchema();
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
@@ -117,7 +135,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaEip7732Impl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             maxValidatorsPerAttestation,
             executionPayloadHeaderSchemaEip7732,
@@ -126,7 +144,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaEip7732Impl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             maxValidatorsPerAttestation,
             executionPayloadHeaderSchemaEip7732,
@@ -170,7 +188,9 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
         new SignedExecutionPayloadHeaderSchema(executionPayloadHeaderSchemaEip7732);
     this.executionPayloadEnvelopeSchema =
         new ExecutionPayloadEnvelopeSchema(
-            executionPayloadSchemaEip7732, getBlobKzgCommitmentsSchema());
+            executionPayloadSchemaEip7732,
+            getExecutionRequestsSchema(),
+            getBlobKzgCommitmentsSchema());
     this.signedExecutionPayloadEnvelopeSchema =
         new SignedExecutionPayloadEnvelopeSchema(executionPayloadEnvelopeSchema);
     this.executionPayloadEnvelopesByRootRequestMessageSchema =
@@ -202,8 +222,18 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   }
 
   @Override
-  public AttestationSchema<?> getAttestationSchema() {
+  public AttestationSchema<Attestation> getAttestationSchema() {
     return attestationSchema;
+  }
+
+  @Override
+  public IndexedAttestationSchema<IndexedAttestation> getIndexedAttestationSchema() {
+    return indexedAttestationSchema;
+  }
+
+  @Override
+  public AttesterSlashingSchema<AttesterSlashing> getAttesterSlashingSchema() {
+    return attesterSlashingSchema;
   }
 
   @Override

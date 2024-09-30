@@ -38,6 +38,8 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -74,6 +76,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final AggregateAndProofSchema aggregateAndProofSchema;
 
   private final BeaconStateSchemaElectra beaconStateSchema;
+
+  private final ExecutionPayloadSchemaDeneb executionPayloadSchemaDeneb;
+  private final ExecutionPayloadHeaderSchemaDeneb executionPayloadHeaderSchemaDeneb;
 
   private final BeaconBlockBodySchemaElectraImpl beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaElectraImpl blindedBeaconBlockBodySchema;
@@ -119,11 +124,15 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
     this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
+    this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
+
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
+    this.executionPayloadHeaderSchemaDeneb =
+        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaElectraImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
             getExecutionRequestsSchema(),
@@ -132,7 +141,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
             getExecutionRequestsSchema(),
@@ -147,7 +156,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
     this.builderBidSchemaElectra =
         new BuilderBidSchemaDeneb(
-            "BuilderBidElectra", getExecutionPayloadHeaderSchema(), getBlobKzgCommitmentsSchema());
+            "BuilderBidElectra", executionPayloadHeaderSchemaDeneb, getBlobKzgCommitmentsSchema());
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidElectra", builderBidSchemaElectra);
 
@@ -161,7 +170,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new BlobsBundleSchema(
             "BlobsBundleElectra", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
 
     this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
     this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
