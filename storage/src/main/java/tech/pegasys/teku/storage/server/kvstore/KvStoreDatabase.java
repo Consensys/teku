@@ -370,9 +370,6 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void migrate() {}
-
-  @Override
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {
     try (final HotUpdater updater = hotUpdater()) {
       blockRootsToDelete.forEach(updater::deleteHotBlock);

@@ -87,8 +87,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                       config);
               database = dbFactory.createDatabase();
 
-              database.migrate();
-
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
                       serviceConfig.getMetricsSystem(),

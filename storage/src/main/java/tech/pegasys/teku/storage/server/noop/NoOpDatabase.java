@@ -266,9 +266,6 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void migrate() {}
-
-  @Override
   public Optional<Checkpoint> getAnchor() {
     return Optional.empty();
   }
