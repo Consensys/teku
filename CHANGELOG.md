@@ -16,8 +16,9 @@
 - Added support for [Ephemery Testnet](https://github.com/ephemery.dev) `--network=ephemery`
 - Updated bootnodes for Holesky network
 - Added new `--p2p-flood-publish-enabled` parameter to control whenever flood publishing behaviour is enabled (applies to all subnets). Previous teku versions always had this behaviour enabled. Default is `true`.
-- Added a fix for [CVE-2024-7254](https://avd.aquasec.com/nvd/2024/cve-2024-7254/)
+- Add a fix for [CVE-2024-7254](https://avd.aquasec.com/nvd/2024/cve-2024-7254/)
 - Updated LUKSO configuration with Deneb fork scheduled for epoch 123075 (November 20, 2024, 16:20:00 UTC)
+- Support for `IDONTWANT` libp2p protocol messages
 
 ### Bug Fixes
  - Removed a warning from logs about non blinded blocks being requested (#8562)
