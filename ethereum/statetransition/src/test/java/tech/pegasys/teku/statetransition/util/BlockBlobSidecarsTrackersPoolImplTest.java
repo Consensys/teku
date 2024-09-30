@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -31,8 +32,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.ObservableMetricsSystem;
@@ -41,6 +44,7 @@ import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -50,8 +54,12 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
@@ -68,6 +76,11 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
+
+  @SuppressWarnings("unchecked")
+  private final Consumer<BlobSidecar> blobSidecarPublisher = mock(Consumer.class);
+
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final int maxItems = 15;
   private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
@@ -78,6 +91,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               timeProvider,
               asyncRunner,
               recentChainData,
+              executionLayer,
+              blobSidecarPublisher,
               historicalTolerance,
               futureTolerance,
               maxItems,
@@ -529,6 +544,103 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
+  void shouldFetchMissingBlobSidecarsFromLocalELFirst() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(currentSlot, 3);
+    final MiscHelpersDeneb miscHelpersDeneb =
+        spec.getGenesisSpec().miscHelpers().toVersionDeneb().orElseThrow();
+
+    // TODO: make the missing blobs to be partial so we can test misalignment between blobIdentifier
+    // index and versionedHashes passed to engine api
+
+    // lets prepare 3 missing blobs
+
+    final List<BlobSidecar> missingBlobSidecars =
+        UInt64.range(UInt64.ZERO, UInt64.valueOf(3))
+            .map(
+                index ->
+                    dataStructureUtil
+                        .createRandomBlobSidecarBuilder()
+                        .signedBeaconBlockHeader(block.asHeader())
+                        .index(index)
+                        .kzgCommitment(
+                            block
+                                .getMessage()
+                                .getBody()
+                                .getOptionalBlobKzgCommitments()
+                                .orElseThrow()
+                                .get(index.intValue())
+                                .getKZGCommitment()
+                                .getBytesCompressed())
+                        .build())
+            .toList();
+
+    final Set<BlobIdentifier> missingBlobIdentifiers =
+        UInt64.range(UInt64.ZERO, UInt64.valueOf(3))
+            .map(index -> new BlobIdentifier(block.getRoot(), index))
+            .collect(Collectors.toSet());
+
+    final List<VersionedHash> versionedHashes =
+        IntStream.range(0, 3)
+            .mapToObj(
+                index ->
+                    miscHelpersDeneb.kzgCommitmentToVersionedHash(
+                        missingBlobSidecars.get(index).getKZGCommitment()))
+            .toList();
+
+    final BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
+
+    mockedTrackersFactory =
+        Optional.of(
+            (slotAndRoot) -> {
+              when(tracker.add(any())).thenReturn(true);
+              when(tracker.getMissingBlobSidecars())
+                  .thenAnswer(__ -> missingBlobIdentifiers.stream());
+              when(tracker.getBlock()).thenReturn(Optional.of(block));
+              return tracker;
+            });
+
+    final SafeFuture<List<BlobAndProof>> engineGetBlobsResponse = new SafeFuture<>();
+
+    when(executionLayer.engineGetBlobs(versionedHashes, currentSlot))
+        .thenReturn(engineGetBlobsResponse);
+
+    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+
+    asyncRunner.executeQueuedActions();
+
+    // no RPC requests, local el query is in flight
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+
+    // prepare partial response
+    final List<BlobAndProof> blobAndProofsFromEL =
+        IntStream.range(0, 3)
+            .mapToObj(
+                index -> {
+                  if (index == 1) {
+                    // missing index 1 from EL
+                    return null;
+                  }
+                  return new BlobAndProof(
+                      missingBlobSidecars.get(index).getBlob(),
+                      missingBlobSidecars.get(index).getKZGProof());
+                })
+            .toList();
+
+    engineGetBlobsResponse.complete(blobAndProofsFromEL);
+
+    verify(tracker, times(2)).add(any());
+    //    verify(tracker).add(missingBlobSidecars.getFirst());
+    //    verify(tracker).add(missingBlobSidecars.getLast());
+
+  }
+
+  @Test
   void shouldFetchMissingBlobSidecars() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
@@ -541,10 +653,17 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
+              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
+
+    // prepare empty result from EL
+    final ArrayList<BlobAndProof> emptyResult = new ArrayList<>();
+    emptyResult.add(null);
+    emptyResult.add(null);
+    when(executionLayer.engineGetBlobs(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(emptyResult));
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
@@ -610,7 +729,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .index(UInt64.valueOf(2))
             .build();
 
-    final Set<BlobIdentifier> blobsNotUserInBlock =
+    final Set<BlobIdentifier> blobsNotPresentInBlock =
         Set.of(
             new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(2)),
             new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(3)));
@@ -624,7 +743,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.setBlock(block)).thenReturn(true);
               when(tracker.isFetchTriggered()).thenReturn(true);
               when(tracker.getUnusedBlobSidecarsForBlock())
-                  .thenReturn(blobsNotUserInBlock.stream());
+                  .thenReturn(blobsNotPresentInBlock.stream());
               return tracker;
             });
 
@@ -632,7 +751,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
-    assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(blobsNotUserInBlock);
+    assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(blobsNotPresentInBlock);
   }
 
   @Test
