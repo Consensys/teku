@@ -95,7 +95,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {
                 database = resetDatabaseAndCreate(serviceConfig, dbFactory);
-                ;
               }
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
@@ -233,7 +232,7 @@ public class StorageService extends Service implements StorageServiceFacade {
 
   /** This method is called only on Ephemery network when reset is due. */
   @VisibleForTesting
-  private Database resetDatabaseAndCreate(
+   Database resetDatabaseAndCreate(
       final ServiceConfig serviceConfig, final VersionedDatabaseFactory dbFactory) {
     try {
       final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
