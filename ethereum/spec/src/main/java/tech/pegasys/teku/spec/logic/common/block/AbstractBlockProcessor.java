@@ -658,6 +658,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   @Override
+  public void processExecutionPayloadHeader(final MutableBeaconState state, final BeaconBlock block)
+      throws BlockProcessingException {
+    // No processExecutionPayloadHeader until EIP-7732
+  }
+
+  @Override
   public void processDeposits(final MutableBeaconState state, final SszList<Deposit> deposits)
       throws BlockProcessingException {
     safelyProcess(
@@ -901,17 +907,22 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  protected void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final BeaconBlockBody beaconBlockBody,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    // No WithdrawalRequests until Electra
+  protected void processDepositRequests(
+      final MutableBeaconState state, final BeaconBlockBody body) {
+    // No DepositRequests until Electra
   }
 
   @Override
   public void processDepositRequests(
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     // No DepositRequests until Electra
+  }
+
+  protected void processWithdrawalRequests(
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    // No WithdrawalRequests until Electra
   }
 
   @Override
@@ -921,6 +932,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     // No WithdrawalRequests until Electra
+  }
+
+  protected void processConsolidationRequests(
+      final MutableBeaconState state, final BeaconBlockBody body) {
+    // No Consolidations until Electra
   }
 
   @Override

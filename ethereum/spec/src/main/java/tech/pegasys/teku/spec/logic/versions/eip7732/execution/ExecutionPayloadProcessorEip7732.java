@@ -22,12 +22,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -179,7 +179,7 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
           "Execution payload was not optimistically accepted");
     }
 
-    processOperationsNoValidation(state, payload);
+    processOperationsNoValidation(state, envelope);
 
     // Cache the execution payload header and proposer
     MutableBeaconStateEip7732.required(state).setLatestBlockHash(payload.getBlockHash());
@@ -199,23 +199,22 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
     return new NewPayloadRequest(envelope.getPayload(), versionedHashes, parentBeaconBlockRoot);
   }
 
+  @SuppressWarnings("unused")
   protected void processOperationsNoValidation(
-      final MutableBeaconState state, final ExecutionPayload executionPayload)
+      final MutableBeaconState state, final ExecutionPayloadEnvelope envelope)
       throws ExecutionPayloadProcessingException {
     safelyProcess(
         () -> {
           final Supplier<ValidatorExitContext> validatorExitContextSupplier =
               beaconStateMutators.createValidatorExitContextSupplier(state);
 
-          final ExecutionPayloadEip7732 executionPayloadEip7732 =
-              ExecutionPayloadEip7732.required(executionPayload);
-          // EIP7732 TODO: dirty way to leverage Electra operations
-          blockProcessorElectra.processDepositRequests(
-              state, executionPayloadEip7732.getDepositRequests());
+          final ExecutionRequests executionRequests = envelope.getExecutionRequests();
+
+          blockProcessorElectra.processDepositRequests(state, executionRequests.getDeposits());
           blockProcessorElectra.processWithdrawalRequests(
-              state, executionPayloadEip7732.getWithdrawalRequests(), validatorExitContextSupplier);
+              state, executionRequests.getWithdrawals(), validatorExitContextSupplier);
           blockProcessorElectra.processConsolidationRequests(
-              state, executionPayloadEip7732.getConsolidationRequests());
+              state, executionRequests.getConsolidations());
         });
   }
 }

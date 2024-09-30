@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -81,11 +82,15 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
         schemaDefinitions
             .getBlobKzgCommitmentsSchema()
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
+    final ExecutionRequestsSchema executionRequestsSchema =
+        schemaDefinitions.getExecutionRequestsSchema();
     final ExecutionPayloadEnvelope executionPayload =
         schemaDefinitions
             .getExecutionPayloadEnvelopeSchema()
             .create(
                 getPayloadResponse.getExecutionPayload(),
+                // EIP7732 TODO: engine-API still in discussion
+                executionRequestsSchema.create(List.of(), List.of(), List.of()),
                 committedHeader.getBuilderIndex(),
                 block.getRoot(),
                 blobKzgCommitments,

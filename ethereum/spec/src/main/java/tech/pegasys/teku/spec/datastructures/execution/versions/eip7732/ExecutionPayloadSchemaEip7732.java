@@ -17,8 +17,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.CONSOLIDATION_REQUESTS;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DEPOSIT_REQUESTS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
@@ -32,7 +30,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TIMESTAMP;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.TRANSACTIONS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWALS;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.WITHDRAWAL_REQUESTS;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
@@ -40,7 +37,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema20;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -57,15 +54,9 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 
 public class ExecutionPayloadSchemaEip7732
-    extends ContainerSchema20<
+    extends ContainerSchema17<
         ExecutionPayloadEip7732Impl,
         SszBytes32,
         SszByteVector,
@@ -83,10 +74,7 @@ public class ExecutionPayloadSchemaEip7732
         SszList<Transaction>,
         SszList<Withdrawal>,
         SszUInt64,
-        SszUInt64,
-        SszList<DepositRequest>,
-        SszList<WithdrawalRequest>,
-        SszList<ConsolidationRequest>>
+        SszUInt64>
     implements ExecutionPayloadSchema<ExecutionPayloadEip7732Impl> {
 
   private final ExecutionPayloadEip7732Impl defaultExecutionPayload;
@@ -115,20 +103,7 @@ public class ExecutionPayloadSchemaEip7732
             WITHDRAWALS,
             SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(
-            DEPOSIT_REQUESTS,
-            SszListSchema.create(
-                DepositRequest.SSZ_SCHEMA, specConfig.getMaxDepositRequestsPerPayload())),
-        namedSchema(
-            WITHDRAWAL_REQUESTS,
-            SszListSchema.create(
-                WithdrawalRequest.SSZ_SCHEMA, specConfig.getMaxWithdrawalRequestsPerPayload())),
-        namedSchema(
-            CONSOLIDATION_REQUESTS,
-            SszListSchema.create(
-                ConsolidationRequest.SSZ_SCHEMA,
-                specConfig.getMaxConsolidationRequestsPerPayload())));
+        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -152,63 +127,15 @@ public class ExecutionPayloadSchemaEip7732
     return getWithdrawalSchema();
   }
 
-  @Override
-  public SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
-      getDepositRequestsSchemaRequired() {
-    return getDepositRequestsSchema();
-  }
-
-  @Override
-  public DepositRequestSchema getDepositRequestSchemaRequired() {
-    return getDepositRequestSchema();
-  }
-
-  @Override
-  public SszListSchema<WithdrawalRequest, ? extends SszList<WithdrawalRequest>>
-      getWithdrawalRequestsSchemaRequired() {
-    return getWithdrawalRequestsSchema();
-  }
-
-  @Override
-  public WithdrawalRequestSchema getWithdrawalRequestSchemaRequired() {
-    return getWithdrawalRequestSchema();
-  }
-
-  @Override
-  public ConsolidationRequestSchema getConsolidationRequestSchemaRequired() {
-    return getConsolidationRequestSchema();
-  }
-
-  @Override
-  public SszListSchema<ConsolidationRequest, ? extends SszList<ConsolidationRequest>>
-      getConsolidationRequestsSchemaRequired() {
-    return getConsolidationRequestsSchema();
-  }
-
   public WithdrawalSchema getWithdrawalSchema() {
     return (WithdrawalSchema) getWithdrawalsSchema().getElementSchema();
-  }
-
-  public DepositRequestSchema getDepositRequestSchema() {
-    return (DepositRequestSchema) getDepositRequestsSchema().getElementSchema();
-  }
-
-  public WithdrawalRequestSchema getWithdrawalRequestSchema() {
-    return (WithdrawalRequestSchema) getWithdrawalRequestsSchema().getElementSchema();
-  }
-
-  public ConsolidationRequestSchema getConsolidationRequestSchema() {
-    return (ConsolidationRequestSchema) getConsolidationRequestsSchema().getElementSchema();
   }
 
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
-        getChildGeneralizedIndex(getFieldIndex(DEPOSIT_REQUESTS)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWAL_REQUESTS)),
-        getChildGeneralizedIndex(getFieldIndex(CONSOLIDATION_REQUESTS)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)));
   }
 
   @Override
@@ -237,21 +164,5 @@ public class ExecutionPayloadSchemaEip7732
   @SuppressWarnings("unchecked")
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getChildSchema(getFieldIndex(WITHDRAWALS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<DepositRequest, ?> getDepositRequestsSchema() {
-    return (SszListSchema<DepositRequest, ?>) getChildSchema(getFieldIndex(DEPOSIT_REQUESTS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<WithdrawalRequest, ?> getWithdrawalRequestsSchema() {
-    return (SszListSchema<WithdrawalRequest, ?>) getChildSchema(getFieldIndex(WITHDRAWAL_REQUESTS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<ConsolidationRequest, ?> getConsolidationRequestsSchema() {
-    return (SszListSchema<ConsolidationRequest, ?>)
-        getChildSchema(getFieldIndex(CONSOLIDATION_REQUESTS));
   }
 }

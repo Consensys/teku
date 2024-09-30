@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -84,8 +85,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -716,7 +717,7 @@ public final class DataStructureUtil {
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64)
-                      .depositRequests(this::randomExecutionPayloadDepositRequests)
+                      .depositRequests(this::randomDepositRequests)
                       .withdrawalRequests(this::randomWithdrawalRequests)
                       .consolidationRequests(this::randomConsolidationRequests);
               builderModifier.accept(executionPayloadBuilder);
@@ -743,7 +744,7 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<DepositRequest> randomExecutionPayloadDepositRequests() {
+  public List<DepositRequest> randomDepositRequests() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
         .mapToObj(__ -> randomDepositRequest())
         .collect(toList());
@@ -1358,6 +1359,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               if (builder.supportsSignedExecutionPayloadHeader()) {
                 builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
               }
@@ -1468,6 +1472,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               if (builder.supportsSignedExecutionPayloadHeader()) {
                 builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
               }
@@ -1530,6 +1537,9 @@ public final class DataStructureUtil {
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
                         this::randomSszKZGCommitment));
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               if (builder.supportsSignedExecutionPayloadHeader()) {
                 builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
               }
@@ -1572,7 +1582,7 @@ public final class DataStructureUtil {
 
   public IndexedAttestation randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
-    final IndexedAttestationSchema indexedAttestationSchema =
+    final IndexedAttestationSchema<?> indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
@@ -1699,7 +1709,7 @@ public final class DataStructureUtil {
   }
 
   public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
-    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(toList());
+    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(Collectors.toList());
   }
 
   public SszList<Deposit> randomSszDeposits(final int num) {
@@ -2545,6 +2555,15 @@ public final class DataStructureUtil {
     return getBlobKzgCommitmentsSchema().of();
   }
 
+  public ExecutionRequests randomExecutionRequests() {
+    return new ExecutionRequestsBuilderElectra(
+            SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig()))
+        .deposits(randomDepositRequests())
+        .withdrawals(randomWithdrawalRequests())
+        .consolidations(randomConsolidationRequests())
+        .build();
+  }
+
   public WithdrawalRequest randomWithdrawalRequest() {
     return getElectraSchemaDefinitions(randomSlot())
         .getWithdrawalRequestSchema()
@@ -2623,6 +2642,7 @@ public final class DataStructureUtil {
         .getExecutionPayloadEnvelopeSchema()
         .create(
             randomExecutionPayload(),
+            randomExecutionRequests(),
             randomUInt64(),
             randomBytes32(),
             randomBlobKzgCommitments(),
