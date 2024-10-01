@@ -35,6 +35,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
+import tech.pegasys.teku.api.datacolumnselector.DataColumnSidecarSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -84,6 +86,7 @@ public class ChainDataProvider {
   private final BlockSelectorFactory blockSelectorFactory;
   private final StateSelectorFactory stateSelectorFactory;
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory;
+  private final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory;
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SchemaObjectProvider schemaObjectProvider;
@@ -104,6 +107,7 @@ public class ChainDataProvider {
         new StateSelectorFactory(spec, combinedChainDataClient),
         new BlobSidecarSelectorFactory(
             spec, combinedChainDataClient, blobSidecarReconstructionProvider),
+        new DataColumnSidecarSelectorFactory(combinedChainDataClient),
         rewardCalculator);
   }
 
@@ -115,6 +119,7 @@ public class ChainDataProvider {
       final BlockSelectorFactory blockSelectorFactory,
       final StateSelectorFactory stateSelectorFactory,
       final BlobSidecarSelectorFactory blobSidecarSelectorFactory,
+      final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory,
       final RewardCalculator rewardCalculator) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -123,6 +128,7 @@ public class ChainDataProvider {
     this.blockSelectorFactory = blockSelectorFactory;
     this.stateSelectorFactory = stateSelectorFactory;
     this.blobSidecarSelectorFactory = blobSidecarSelectorFactory;
+    this.dataColumnSidecarSelectorFactory = dataColumnSidecarSelectorFactory;
     this.rewardCalculator = rewardCalculator;
   }
 
@@ -192,6 +198,13 @@ public class ChainDataProvider {
   public SafeFuture<Optional<List<BlobSidecar>>> getAllBlobSidecarsAtSlot(
       final UInt64 slot, final List<UInt64> indices) {
     return blobSidecarSelectorFactory.slotSelectorForAll(slot).getBlobSidecars(indices);
+  }
+
+  public SafeFuture<Optional<List<DataColumnSidecar>>> getDataColumnSidecars(
+      final String blockIdParam, final List<UInt64> indices) {
+    return dataColumnSidecarSelectorFactory
+        .createSelectorForBlockId(blockIdParam)
+        .getDataColumnSidecars(indices);
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {

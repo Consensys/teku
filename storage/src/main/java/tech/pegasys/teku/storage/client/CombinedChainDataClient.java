@@ -227,6 +227,34 @@ public class CombinedChainDataClient {
         .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
   }
 
+  public SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return historicalChainData
+        .getDataColumnIdentifiers(slot)
+        .thenApply(identifiers -> filterDataColumnSidecarKeys(identifiers, indices))
+        .thenCompose(this::getDataColumnSidecars);
+  }
+
+  private Stream<DataColumnSlotAndIdentifier> filterDataColumnSidecarKeys(
+      final List<DataColumnSlotAndIdentifier> identifiers, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return identifiers.stream();
+    }
+    return identifiers.stream().filter(identifier -> indices.contains(identifier.columnIndex()));
+  }
+
+  private SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
+      final Stream<DataColumnSlotAndIdentifier> identifier) {
+    return SafeFuture.collectAll(identifier.map(this::getDataColumnSidecarByIdentifier))
+        .thenApply(
+            dataColumnSidecars -> dataColumnSidecars.stream().flatMap(Optional::stream).toList());
+  }
+
+  private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecarByIdentifier(
+      final DataColumnSlotAndIdentifier identifier) {
+    return historicalChainData.getSidecar(identifier);
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
     final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentBlockRoot.isPresent()) {
