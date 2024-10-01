@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -85,7 +84,6 @@ public class EngineGetBlobsV1 extends AbstractEngineJsonRpcMethod<List<Optional<
                     "Response {}(blobVersionedHashes={}) -> {}",
                     getVersionedName(),
                     blobVersionedHashes,
-                    blobsAndProofs))
-        .exceptionally(throwable -> Collections.emptyList());
+                    blobsAndProofs));
   }
 }
