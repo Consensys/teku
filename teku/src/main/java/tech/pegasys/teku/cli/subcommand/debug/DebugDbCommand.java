@@ -156,13 +156,31 @@ public class DebugDbCommand implements Runnable {
       footer = "Teku is licensed under the Apache License 2.0")
   public int getEarliestAvailableBlockSlot(
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
-      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              required = true,
+              names = {"--timed", "-t"},
+              description = "Prints the time taken to retrieve the earliest available block slot")
+          final boolean verbose)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
-      Optional<UInt64> earliestAvailableBlockSlot = database.getEarliestAvailableBlockSlot();
-      earliestAvailableBlockSlot.ifPresent(System.out::println);
+      if (verbose) {
+        final long startTime = System.currentTimeMillis();
+        final Optional<UInt64> earliestAvailableBlockSlot =
+            database.getEarliestAvailableBlockSlot();
+        final long endTime = System.currentTimeMillis();
+        earliestAvailableBlockSlot.ifPresent(System.out::println);
+        System.out.println(
+            "Time taken to retrieve the earliest available block slot: "
+                + (endTime - startTime)
+                + "ms");
+      } else {
+        final Optional<UInt64> earliestAvailableBlockSlot =
+            database.getEarliestAvailableBlockSlot();
+        earliestAvailableBlockSlot.ifPresent(System.out::println);
+      }
+      return 0;
     }
-    return 0;
   }
 
   @Command(
