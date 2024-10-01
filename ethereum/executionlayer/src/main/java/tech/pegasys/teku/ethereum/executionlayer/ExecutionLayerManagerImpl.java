@@ -221,10 +221,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<List<BlobAndProof>> engineGetBlobs(
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     LOG.trace("calling engineGetBlobs(blobVersionedHashes={}, slot={})", blobVersionedHashes, slot);
-    return executionClientHandler.engineGetBlobs(blobVersionedHashes, slot);
+    return executionClientHandler
+        .engineGetBlobs(blobVersionedHashes, slot)
+        .thenApply(blobsAndProofs -> blobsAndProofs.stream().map(Optional::ofNullable).toList());
   }
 
   @Override

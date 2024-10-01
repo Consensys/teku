@@ -79,9 +79,10 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<List<BlobAndProof>> engineGetBlobs(
+        public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
             final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
-          return SafeFuture.completedFuture(List.of());
+          return SafeFuture.completedFuture(
+              blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
         }
 
         @Override
@@ -123,7 +124,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 
-  SafeFuture<List<BlobAndProof>> engineGetBlobs(
+  SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   /**

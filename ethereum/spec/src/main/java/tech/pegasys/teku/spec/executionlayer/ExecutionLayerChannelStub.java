@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -352,19 +351,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<List<BlobAndProof>> engineGetBlobs(
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
-    final List<Blob> blobs =
-        blobsUtil.generateBlobs(
-            slot,
-            blobsToGenerate.orElseGet(
-                () -> random.nextInt(spec.getMaxBlobsPerBlock().orElseThrow() + 1)));
-    final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(blobs);
-    final List<KZGProof> proofs = blobsUtil.computeKzgProofs(blobs, commitments);
     return SafeFuture.completedFuture(
-        IntStream.range(0, blobs.size())
-            .mapToObj(index -> new BlobAndProof(blobs.get(index), proofs.get(index)))
-            .toList());
+        blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
   }
 
   @Override
