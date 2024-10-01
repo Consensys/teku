@@ -394,7 +394,7 @@ public class Web3JExecutionEngineClientTest {
         .matches(response -> response.getPayload().equals(blobsAndProofsV1));
 
     final Map<String, Object> requestData = takeRequest();
-    verifyJsonRpcMethodCall(requestData, "engine_getBlobsVersionV1");
+    verifyJsonRpcMethodCall(requestData, "engine_getBlobsV1");
     assertThat(requestData.get("params"))
         .asInstanceOf(LIST)
         .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());

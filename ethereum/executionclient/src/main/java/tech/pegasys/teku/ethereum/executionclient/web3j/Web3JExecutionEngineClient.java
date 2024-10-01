@@ -262,7 +262,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
     final Request<?, GetBlobsVersionV1Web3jResponse> web3jRequest =
         new Request<>(
-            "engine_getBlobsVersionV1",
+            "engine_getBlobsV1",
             list(expectedBlobVersionedHashes),
             web3JClient.getWeb3jService(),
             GetBlobsVersionV1Web3jResponse.class);
