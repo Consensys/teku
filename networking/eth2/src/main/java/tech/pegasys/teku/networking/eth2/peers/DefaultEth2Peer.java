@@ -82,7 +82,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final UInt256 discoveryNodeId;
+  private final Optional<UInt256> discoveryNodeId;
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -114,7 +114,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   DefaultEth2Peer(
       final Spec spec,
       final Peer peer,
-      final UInt256 discoveryNodeId,
+      final Optional<UInt256> discoveryNodeId,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
@@ -171,7 +171,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public UInt256 getDiscoveryNodeId() {
+  public Optional<UInt256> getDiscoveryNodeId() {
     return discoveryNodeId;
   }
 

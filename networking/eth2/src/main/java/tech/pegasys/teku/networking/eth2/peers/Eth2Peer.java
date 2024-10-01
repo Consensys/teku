@@ -44,7 +44,7 @@ public interface Eth2Peer extends Peer, SyncSource {
   static Eth2Peer create(
       final Spec spec,
       final Peer peer,
-      final UInt256 discoveryNodeId,
+      final Optional<UInt256> discoveryNodeId,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
@@ -142,7 +142,7 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   int getUnansweredPingCount();
 
-  UInt256 getDiscoveryNodeId();
+  Optional<UInt256> getDiscoveryNodeId();
 
   interface PeerStatusSubscriber {
     void onPeerStatus(final PeerStatus initialStatus);

@@ -39,14 +39,14 @@ public class DataColumnPeerManagerImpl
   }
 
   private void peerConnected(Eth2Peer peer) {
-    UInt256 nodeId = peer.getDiscoveryNodeId();
+    UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
     listeners.forEach(l -> l.peerConnected(nodeId));
     connectedPeers.put(nodeId, peer);
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
   }
 
   private void peerDisconnected(Eth2Peer peer) {
-    UInt256 nodeId = peer.getDiscoveryNodeId();
+    UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
     listeners.forEach(l -> l.peerDisconnected(nodeId));
     connectedPeers.remove(nodeId);
   }

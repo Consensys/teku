@@ -67,13 +67,13 @@ public class GossipTopicDasPeerCustodyTracker
   @Override
   public void onConnected(Eth2Peer peer) {
     connectedPeerSubnets.put(
-        peer.getDiscoveryNodeId(), new Entry(peer.getId(), NO_SUBNET_COUNT_INFO));
+        peer.getDiscoveryNodeId().orElseThrow(), new Entry(peer.getId(), NO_SUBNET_COUNT_INFO));
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
     refreshExistingSubscriptions();
   }
 
   private void peerDisconnected(Eth2Peer peer) {
-    connectedPeerSubnets.remove(peer.getDiscoveryNodeId());
+    connectedPeerSubnets.remove(peer.getDiscoveryNodeId().orElseThrow());
   }
 
   private Set<String> getCurrentDasTopics() {

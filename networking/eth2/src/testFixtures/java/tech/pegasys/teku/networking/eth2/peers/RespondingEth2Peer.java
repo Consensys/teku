@@ -397,8 +397,8 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public UInt256 getDiscoveryNodeId() {
-    return UInt256.ZERO;
+  public Optional<UInt256> getDiscoveryNodeId() {
+    return Optional.empty();
   }
 
   @Override

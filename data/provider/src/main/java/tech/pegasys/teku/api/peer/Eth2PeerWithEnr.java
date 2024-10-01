@@ -11,12 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.peers;
+package tech.pegasys.teku.api.peer;
 
 import java.util.Optional;
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
-public interface DiscoveryNodeIdExtractor {
-  Optional<UInt256> calculateDiscoveryNodeId(Peer peer);
-}
+public record Eth2PeerWithEnr(Eth2Peer peer, Optional<String> enr) {}

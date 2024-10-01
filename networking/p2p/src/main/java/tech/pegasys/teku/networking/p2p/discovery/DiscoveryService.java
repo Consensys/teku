@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /**
@@ -39,4 +40,6 @@ public interface DiscoveryService {
   Optional<String> getDiscoveryAddress();
 
   void updateCustomENRField(String fieldName, Bytes value);
+
+  Optional<String> lookupEnr(UInt256 nodeId);
 }

@@ -32,7 +32,7 @@ public class MetadataDasPeerCustodyTracker
   }
 
   private void peerDisconnected(Eth2Peer peer) {
-    connectedPeerSubnetCount.remove(peer.getDiscoveryNodeId());
+    connectedPeerSubnetCount.remove(peer.getDiscoveryNodeId().orElseThrow());
   }
 
   private void onPeerMetadataUpdate(Eth2Peer peer, MetadataMessage metadata) {
@@ -40,7 +40,8 @@ public class MetadataDasPeerCustodyTracker
         .getOptionalCustodySubnetCount()
         .ifPresent(
             subnetCount ->
-                connectedPeerSubnetCount.put(peer.getDiscoveryNodeId(), subnetCount.intValue()));
+                connectedPeerSubnetCount.put(
+                    peer.getDiscoveryNodeId().orElseThrow(), subnetCount.intValue()));
   }
 
   @Override
