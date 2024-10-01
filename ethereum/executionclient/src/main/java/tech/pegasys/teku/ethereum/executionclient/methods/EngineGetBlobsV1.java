@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
 import java.util.List;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -28,7 +27,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
-public class EngineGetBlobsV1 extends AbstractEngineJsonRpcMethod<List<Optional<BlobAndProof>>> {
+public class EngineGetBlobsV1 extends AbstractEngineJsonRpcMethod<List<BlobAndProof>> {
 
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
@@ -49,7 +48,7 @@ public class EngineGetBlobsV1 extends AbstractEngineJsonRpcMethod<List<Optional<
   }
 
   @Override
-  public SafeFuture<List<Optional<BlobAndProof>>> execute(final JsonRpcRequestParams params) {
+  public SafeFuture<List<BlobAndProof>> execute(final JsonRpcRequestParams params) {
 
     final List<VersionedHash> blobVersionedHashes =
         params.getRequiredListParameter(0, VersionedHash.class);
@@ -74,8 +73,8 @@ public class EngineGetBlobsV1 extends AbstractEngineJsonRpcMethod<List<Optional<
                   .map(
                       blobAndProofV1 ->
                           blobAndProofV1 == null
-                              ? Optional.<BlobAndProof>empty()
-                              : Optional.of(blobAndProofV1.asInternalBlobsAndProofs(blobSchema)))
+                              ? null
+                              : blobAndProofV1.asInternalBlobsAndProofs(blobSchema))
                   .toList();
             })
         .thenPeek(

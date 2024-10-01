@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,11 +118,9 @@ public class EngineGetBlobsV1Test {
 
     jsonRpcMethod = new EngineGetBlobsV1(executionEngineClient, spec);
 
-    final List<Optional<BlobAndProof>> expectedResponse =
+    final List<BlobAndProof> expectedResponse =
         blobSidecars.stream()
-            .map(
-                blobSidecar ->
-                    Optional.of(new BlobAndProof(blobSidecar.getBlob(), blobSidecar.getKZGProof())))
+            .map(blobSidecar -> new BlobAndProof(blobSidecar.getBlob(), blobSidecar.getKZGProof()))
             .toList();
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedResponse);
 
