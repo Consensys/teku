@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -353,6 +354,11 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public int getUnansweredPingCount() {
     return 0;
+  }
+
+  @Override
+  public Optional<UInt256> getDiscoveryNodeId() {
+    return Optional.empty();
   }
 
   @Override
