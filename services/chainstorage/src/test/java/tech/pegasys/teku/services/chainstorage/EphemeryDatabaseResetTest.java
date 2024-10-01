@@ -44,7 +44,6 @@ class EphemeryDatabaseResetTest {
 
   @Mock private DataDirLayout dataDirLayout;
   private Path beaconDataDir;
-  private Path validatorDataDir;
   private Path resolvedSlashProtectionDir;
 
   @Mock private Database database;
@@ -54,9 +53,10 @@ class EphemeryDatabaseResetTest {
   @BeforeEach
   void setUp() throws IOException {
     MockitoAnnotations.openMocks(this);
+
     ephemeryDatabaseReset = spy(new EphemeryDatabaseReset());
     beaconDataDir = createTempDirectory("beaconDataDir");
-    validatorDataDir = createTempDirectory("validatorDataDir");
+    final Path validatorDataDir = createTempDirectory("validatorDataDir");
     resolvedSlashProtectionDir = validatorDataDir.resolve("slashprotection");
     when(serviceConfig.getDataDirLayout()).thenReturn(dataDirLayout);
     when(dataDirLayout.getBeaconDataDirectory()).thenReturn(beaconDataDir);
@@ -73,7 +73,7 @@ class EphemeryDatabaseResetTest {
     when(dataDirLayout.getValidatorDataDirectory().resolve("slashprotection"))
         .thenReturn(resolvedSlashProtectionDir);
 
-    Database result = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
+    final Database result = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
     verify(ephemeryDatabaseReset).deleteDirectoryRecursively(beaconDataDir);
     verify(ephemeryDatabaseReset).deleteDirectoryRecursively(resolvedSlashProtectionDir);
     verify(dbFactory).createDatabase();
