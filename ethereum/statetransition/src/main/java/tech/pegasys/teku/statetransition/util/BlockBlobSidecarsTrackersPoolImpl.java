@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +47,9 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -464,7 +465,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
               countBlock(remoteOrigin);
 
-              if (existingTracker.isFetchTriggered()) {
+              if (existingTracker.isRpcFetchTriggered()) {
                 // block has been set for the first time and we previously triggered fetching of
                 // missing blobSidecars. So we may have requested to fetch more sidecars
                 // than the block actually requires. Let's drop them.
@@ -475,6 +476,17 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                             requiredBlobSidecarDroppedSubscribers.deliver(
                                 RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
                                 blobIdentifier));
+
+                // if we attempted to fetch via RPC, we missed the opportunity to complete the
+                // tracker via local EL (local El fetch requires the block to be known)
+                // Let's try now
+                if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isCompleted()) {
+                  fetchMissingContentFromLocalEL(slotAndBlockRoot)
+                      .finish(
+                          error ->
+                              LOG.error(
+                                  "An occurred while attempting to fetch blobs via local EL"));
+                }
               }
             });
 
@@ -599,20 +611,26 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       return SafeFuture.COMPLETE;
     }
 
+    blockBlobSidecarsTracker.setLocalElFetchTriggered();
+
     final SpecVersion specVersion = spec.atSlot(slotAndBlockRoot.getSlot());
     final BlobSidecarSchema blobSidecarSchema =
         specVersion.getSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
     final MiscHelpersDeneb miscHelpersDeneb =
         specVersion.miscHelpers().toVersionDeneb().orElseThrow();
-
-    final SszList<SszKZGCommitment> sszKZGCommitments =
+    final SignedBeaconBlockHeader signedBeaconBlockHeader =
+        blockBlobSidecarsTracker.getBlock().get().asHeader();
+    final BeaconBlockBodyDeneb beaconBlockBodyDeneb =
         blockBlobSidecarsTracker
             .getBlock()
-            .orElseThrow()
+            .get()
             .getMessage()
             .getBody()
-            .getOptionalBlobKzgCommitments()
+            .toVersionDeneb()
             .orElseThrow();
+
+    final SszList<SszKZGCommitment> sszKZGCommitments =
+        beaconBlockBodyDeneb.getBlobKzgCommitments();
 
     final List<BlobIdentifier> missingBlobsIdentifiers =
         blockBlobSidecarsTracker.getMissingBlobSidecars().toList();
@@ -628,46 +646,59 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             .toList();
 
     poolStatsCounters
-        .labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_EL_FETCH_SUBTYPE)
+        .labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_FETCH_SUBTYPE)
         .inc(versionedHashes.size());
 
     return executionLayer
         .engineGetBlobs(versionedHashes, slotAndBlockRoot.getSlot())
         .thenAccept(
             blobAndProofs -> {
-              checkArgument(blobAndProofs.size() == versionedHashes.size(), "");
-              IntStream.range(0, blobAndProofs.size())
-                  .forEach(
-                      index -> {
-                        final BlobAndProof blobAndProof = blobAndProofs.get(index);
-                        if (blobAndProof == null) {
-                          LOG.trace(
-                              "Blob not found on local EL: {}", missingBlobsIdentifiers.get(index));
-                          return;
-                        }
+              checkArgument(
+                  blobAndProofs.size() == versionedHashes.size(),
+                  "Queried %s versionedHashed but got %s blobAndProofs",
+                  versionedHashes.size(),
+                  blobAndProofs.size());
 
-                        final BlobIdentifier blobIdentifier = missingBlobsIdentifiers.get(index);
-                        final SszKZGCommitment sszKZGCommitment =
-                            sszKZGCommitments.get(blobIdentifier.getIndex().intValue());
+              for (int index = 0; index < blobAndProofs.size(); index++) {
+                final Optional<BlobAndProof> blobAndProof = blobAndProofs.get(index);
+                if (blobAndProof.isEmpty()) {
+                  LOG.trace("Blob not found on local EL: {}", missingBlobsIdentifiers.get(index));
+                  continue;
+                }
 
-                        final BlobSidecar blobSidecar =
-                            blobSidecarSchema.create(
-                                blobIdentifier.getIndex(),
-                                blobAndProof.blob(),
-                                sszKZGCommitment,
-                                new SszKZGProof(blobAndProof.proof()),
-                                blockBlobSidecarsTracker.getBlock().get().asHeader(),
-                                miscHelpersDeneb.computeKzgCommitmentInclusionProof(
-                                    blobIdentifier.getIndex(),
-                                    blockBlobSidecarsTracker
-                                        .getBlock()
-                                        .get()
-                                        .getMessage()
-                                        .getBody()));
+                final BlobSidecar blobSidecar =
+                    createBlobSidecarFromBlobAndProof(
+                        blobSidecarSchema,
+                        miscHelpersDeneb,
+                        missingBlobsIdentifiers.get(index),
+                        blobAndProof.get(),
+                        beaconBlockBodyDeneb,
+                        signedBeaconBlockHeader);
 
-                        onNewBlobSidecar(blobSidecar, LOCAL_EL);
-                      });
+                onNewBlobSidecar(blobSidecar, LOCAL_EL);
+              }
             });
+  }
+
+  private BlobSidecar createBlobSidecarFromBlobAndProof(
+      final BlobSidecarSchema blobSidecarSchema,
+      final MiscHelpersDeneb miscHelpersDeneb,
+      final BlobIdentifier blobIdentifier,
+      final BlobAndProof blobAndProof,
+      final BeaconBlockBodyDeneb beaconBlockBodyDeneb,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader) {
+
+    final SszKZGCommitment sszKZGCommitment =
+        beaconBlockBodyDeneb.getBlobKzgCommitments().get(blobIdentifier.getIndex().intValue());
+
+    return blobSidecarSchema.create(
+        blobIdentifier.getIndex(),
+        blobAndProof.blob(),
+        sszKZGCommitment,
+        new SszKZGProof(blobAndProof.proof()),
+        signedBeaconBlockHeader,
+        miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+            blobIdentifier.getIndex(), beaconBlockBodyDeneb));
   }
 
   private synchronized void fetchMissingContentFromRemotePeers(
@@ -683,7 +714,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       return;
     }
 
-    blockBlobSidecarsTracker.setFetchTriggered();
+    blockBlobSidecarsTracker.setRpcFetchTriggered();
 
     if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
       poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
@@ -704,7 +735,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   private void dropMissingContent(final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
 
-    if (!blockBlobSidecarsTracker.isFetchTriggered()) {
+    if (!blockBlobSidecarsTracker.isRpcFetchTriggered()) {
       return;
     }
 
