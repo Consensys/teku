@@ -32,12 +32,12 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 
 public class BlobAndProofV1 {
 
-  @JsonSerialize(contentUsing = BytesSerializer.class)
-  @JsonDeserialize(contentUsing = BytesDeserializer.class)
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = BytesDeserializer.class)
   private final Bytes blob;
 
-  @JsonSerialize(contentUsing = BytesSerializer.class)
-  @JsonDeserialize(contentUsing = Bytes48Deserializer.class)
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = Bytes48Deserializer.class)
   private final Bytes48 proof;
 
   public BlobAndProofV1(

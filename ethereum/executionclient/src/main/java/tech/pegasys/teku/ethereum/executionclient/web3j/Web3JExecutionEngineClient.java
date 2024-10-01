@@ -258,10 +258,12 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(
       final List<VersionedHash> blobVersionedHashes) {
+    final List<String> expectedBlobVersionedHashes =
+        blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
     final Request<?, GetBlobsVersionV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getBlobsVersionV1",
-            Collections.singletonList(blobVersionedHashes),
+            list(expectedBlobVersionedHashes),
             web3JClient.getWeb3jService(),
             GetBlobsVersionV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, GET_BLOBS_TIMEOUT);
