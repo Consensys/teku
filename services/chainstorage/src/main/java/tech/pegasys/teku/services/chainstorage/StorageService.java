@@ -16,10 +16,6 @@ package tech.pegasys.teku.services.chainstorage;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
-import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,6 +59,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private static final Logger LOG = LogManager.getLogger();
+  private final EphemeryDatabaseReset ephemeryDatabaseReset;
 
   public StorageService(
       final ServiceConfig serviceConfig,
@@ -73,6 +70,7 @@ public class StorageService extends Service implements StorageServiceFacade {
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
+    this.ephemeryDatabaseReset = new EphemeryDatabaseReset();
   }
 
   @Override
@@ -94,7 +92,7 @@ public class StorageService extends Service implements StorageServiceFacade {
               try {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {
-                database = resetDatabaseAndCreate(serviceConfig, dbFactory);
+                database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
               }
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
@@ -228,40 +226,5 @@ public class StorageService extends Service implements StorageServiceFacade {
   @Override
   public ChainStorage getChainStorage() {
     return chainStorage;
-  }
-
-  /** This method is called only on Ephemery network when reset is due. */
-  @VisibleForTesting
-  Database resetDatabaseAndCreate(
-      final ServiceConfig serviceConfig, final VersionedDatabaseFactory dbFactory) {
-    try {
-      final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
-      final Path slashProtectionDir =
-          serviceConfig.getDataDirLayout().getValidatorDataDirectory().resolve("slashprotection");
-      deleteDirectoryRecursively(beaconDataDir);
-      deleteDirectoryRecursively(slashProtectionDir);
-
-      return dbFactory.createDatabase();
-    } catch (final Exception ex) {
-      throw new InvalidConfigurationException(
-          "The existing ephemery database was old, and was unable to reset it.", ex);
-    }
-  }
-
-  private void deleteDirectoryRecursively(final Path path) throws IOException {
-    if (Files.isDirectory(path)) {
-      try (var stream = Files.walk(path)) {
-        stream
-            .sorted((o1, o2) -> o2.compareTo(o1))
-            .forEach(
-                p -> {
-                  try {
-                    Files.delete(p);
-                  } catch (IOException e) {
-                    throw new RuntimeException("Failed to delete file: " + p, e);
-                  }
-                });
-      }
-    }
   }
 }
