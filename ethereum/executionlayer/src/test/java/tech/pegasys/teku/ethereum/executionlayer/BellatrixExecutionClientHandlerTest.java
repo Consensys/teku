@@ -78,7 +78,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
     when(executionEngineClient.newPayloadV1(payloadV1)).thenReturn(dummyResponse);
-    handler.engineNewPayload(newPayloadRequest);
+    handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
     verify(executionEngineClient).newPayloadV1(payloadV1);
   }
 

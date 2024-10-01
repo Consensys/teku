@@ -89,7 +89,8 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
     when(executionEngineClient.newPayloadV2(payloadV2)).thenReturn(dummyResponse);
-    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
+    final SafeFuture<PayloadStatus> future =
+        handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
     verify(executionEngineClient).newPayloadV2(payloadV2);
     assertThat(future).isCompleted();
   }

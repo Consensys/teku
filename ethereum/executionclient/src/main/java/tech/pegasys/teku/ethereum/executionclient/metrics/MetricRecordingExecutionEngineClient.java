@@ -23,7 +23,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
@@ -139,11 +138,14 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV4(
-      final ExecutionPayloadV4 executionPayload,
+      final ExecutionPayloadV3 executionPayload,
       final List<VersionedHash> blobVersionedHashes,
-      final Bytes32 parentBeaconBlockRoot) {
+      final Bytes32 parentBeaconBlockRoot,
+      final Bytes32 executionRequestHash) {
     return countRequest(
-        () -> delegate.newPayloadV4(executionPayload, blobVersionedHashes, parentBeaconBlockRoot),
+        () ->
+            delegate.newPayloadV4(
+                executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequestHash),
         NEW_PAYLOAD_V4_METHOD);
   }
 
