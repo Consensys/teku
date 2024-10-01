@@ -319,9 +319,9 @@ public class BlockBlobSidecarsTracker {
       timingsReport
           .append("Local EL fetch delay ")
           .append(debugTimings.get(LOCAL_EL_FETCH_TIMING_IDX) - creationTime)
-          .append("ms");
+          .append("ms - ");
     } else {
-      timingsReport.append("Local EL fetch wasn't required");
+      timingsReport.append("Local EL fetch wasn't required - ");
     }
 
     if (debugTimings.containsKey(RPC_FETCH_TIMING_IDX)) {
