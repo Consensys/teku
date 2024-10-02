@@ -43,7 +43,7 @@ public interface ExecutionClientHandler {
   SafeFuture<GetPayloadResponse> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
-  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
+  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest, UInt64 slot);
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 

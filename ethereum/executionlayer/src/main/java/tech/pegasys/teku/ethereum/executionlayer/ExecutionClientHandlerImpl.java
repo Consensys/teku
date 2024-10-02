@@ -102,17 +102,21 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     final ExecutionPayload executionPayload = newPayloadRequest.getExecutionPayload();
     final JsonRpcRequestParams.Builder paramsBuilder =
         new JsonRpcRequestParams.Builder()
             .add(executionPayload)
             .addOptional(newPayloadRequest.getVersionedHashes())
-            .addOptional(newPayloadRequest.getParentBeaconBlockRoot());
+            .addOptional(newPayloadRequest.getParentBeaconBlockRoot())
+            .addOptional(newPayloadRequest.getExecutionRequestsHash());
 
     return engineMethodsResolver
         .getMethod(
-            EngineApiMethod.ENGINE_NEW_PAYLOAD, executionPayload::getMilestone, PayloadStatus.class)
+            EngineApiMethod.ENGINE_NEW_PAYLOAD,
+            () -> spec.atSlot(slot).getMilestone(),
+            PayloadStatus.class)
         .execute(paramsBuilder.build());
   }
 

@@ -209,9 +209,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     LOG.trace("calling engineNewPayload(newPayloadRequest={})", newPayloadRequest);
-    return executionClientHandler.engineNewPayload(newPayloadRequest);
+    return executionClientHandler.engineNewPayload(newPayloadRequest, slot);
   }
 
   @Override
