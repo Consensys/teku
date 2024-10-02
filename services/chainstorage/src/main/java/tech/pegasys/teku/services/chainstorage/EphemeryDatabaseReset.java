@@ -31,8 +31,6 @@ public class EphemeryDatabaseReset {
           serviceConfig.getDataDirLayout().getBeaconDataDirectory().getParent();
       final Path dbDataDir = beaconDataDir.resolve("db");
       final Path networkFile = beaconDataDir.resolve("network.yml");
-      System.out.println("dbDataDir" + dbDataDir);
-      System.out.println("networkFile" + networkFile);
       final Path validatorDataDir = serviceConfig.getDataDirLayout().getValidatorDataDirectory();
       final Path slashProtectionDir;
       if (validatorDataDir.endsWith("slashprotection")) {

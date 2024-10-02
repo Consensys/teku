@@ -76,9 +76,9 @@ class EphemeryDatabaseResetTest {
 
   @Test
   void shouldResetSpecificDirectoriesAndCreateDatabase() throws IOException {
-    Path kvStoreDir = beaconDataDir.resolve("kvstore");
+    final Path kvStoreDir = beaconDataDir.resolve("kvstore");
     Files.createDirectory(kvStoreDir);
-    Path dbVersion = beaconDataDir.resolve("db.version");
+    final Path dbVersion = beaconDataDir.resolve("db.version");
     Files.createFile(dbVersion);
 
     when(dbFactory.createDatabase()).thenReturn(database);
