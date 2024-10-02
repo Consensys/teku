@@ -20,6 +20,7 @@
 - Updated LUKSO configuration with Deneb fork scheduled for epoch 123075 (November 20, 2024, 16:20:00 UTC)
 - Support for `IDONTWANT` libp2p protocol messages
 - `/eth/v1/node/peers` endpoint now populates `enr` field of the peer whenever is possible
+- Support for `engine_getBlobsV1` to retrieve blobs using local execution layer. This will improve block import time when blobs are published late.
 
 ### Bug Fixes
  - Removed a warning from logs about non blinded blocks being requested (#8562)
