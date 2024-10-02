@@ -165,6 +165,17 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   public Set<String> getCapabilities() {
     return methodsByMilestone.values().stream()
         .flatMap(methods -> methods.values().stream())
+        .filter(method -> !method.isOptional())
+        .filter(method -> !method.isDeprecated())
+        .map(EngineJsonRpcMethod::getVersionedName)
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public Set<String> getOptionalCapabilities() {
+    return methodsByMilestone.values().stream()
+        .flatMap(methods -> methods.values().stream())
+        .filter(EngineJsonRpcMethod::isOptional)
         .filter(method -> !method.isDeprecated())
         .map(EngineJsonRpcMethod::getVersionedName)
         .collect(Collectors.toSet());

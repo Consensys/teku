@@ -34,4 +34,10 @@ public interface EngineJsonRpcMethodsResolver {
    * request
    */
   Set<String> getCapabilities();
+
+  /**
+   * TODO this optionality notion should be removed once all ELs implement the engine_getBlobsV1 RPC
+   * method. It has been added to ensure a softer and better logging when the method is missing only
+   */
+  Set<String> getOptionalCapabilities();
 }

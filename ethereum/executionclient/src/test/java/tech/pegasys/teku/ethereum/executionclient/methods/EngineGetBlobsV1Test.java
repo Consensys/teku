@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.response.InvalidRemoteResponseException;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -99,9 +98,10 @@ public class EngineGetBlobsV1Test {
     assertThat(jsonRpcMethod.execute(params))
         .failsWithin(1, TimeUnit.SECONDS)
         .withThrowableOfType(ExecutionException.class)
-        .withRootCauseInstanceOf(InvalidRemoteResponseException.class)
+        .withRootCauseInstanceOf(UnsupportedOperationException.class)
         .withMessageContaining(
-            "Invalid remote response from the execution client: %s", errorResponseFromClient);
+            "Call to engineGetBlobsV1 failed. Invalid remote response from the execution client: %s",
+            errorResponseFromClient);
   }
 
   @Test
