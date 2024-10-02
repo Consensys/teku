@@ -66,6 +66,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                 peer, DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
           }
 
+          verifyInclusionProof(dataColumnSidecar);
           verifyKzgProof(dataColumnSidecar);
 
           return dataColumnSidecarResponseListener.onResponse(dataColumnSidecar);

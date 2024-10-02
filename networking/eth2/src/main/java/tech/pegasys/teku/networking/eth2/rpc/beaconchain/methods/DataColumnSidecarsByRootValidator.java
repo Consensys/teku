@@ -45,6 +45,7 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
     }
 
+    verifyInclusionProof(dataColumnSidecar);
     verifyKzgProof(dataColumnSidecar);
   }
 }

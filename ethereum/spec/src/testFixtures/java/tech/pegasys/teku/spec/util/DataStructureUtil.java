@@ -186,6 +186,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -2483,6 +2484,31 @@ public final class DataStructureUtil {
   public DataColumnSidecar randomDataColumnSidecar(
       final SignedBeaconBlockHeader header, final UInt64 index) {
     return new RandomSidecarBuilder().signedBeaconBlockHeader(header).index(index).build();
+  }
+
+  public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(
+      final SignedBeaconBlock signedBeaconBlock, final UInt64 index) {
+    final MiscHelpersEip7594 miscHelpersEip7594 =
+        MiscHelpersEip7594.required(spec.getGenesisSpec().miscHelpers());
+    final List<KZGCommitment> kzgCommitments =
+        signedBeaconBlock
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow()
+            .asList()
+            .stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList();
+    final List<Bytes32> inclusionProof =
+        miscHelpersEip7594.computeDataColumnKzgCommitmentsInclusionProof(
+            signedBeaconBlock.getBeaconBlock().orElseThrow().getBody());
+    return new RandomSidecarBuilder()
+        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
+        .kzgCommitments(kzgCommitments)
+        .kzgCommitmentsInclusionProof(inclusionProof)
+        .index(index)
+        .build();
   }
 
   public List<Bytes32> randomKzgCommitmentInclusionProof() {

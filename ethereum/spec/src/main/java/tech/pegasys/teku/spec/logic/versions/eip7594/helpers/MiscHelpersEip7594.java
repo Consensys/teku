@@ -176,6 +176,9 @@ public class MiscHelpersEip7594 extends MiscHelpersDeneb {
 
   @Override
   public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
+      return false;
+    }
     return predicates.isValidMerkleBranch(
         dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
         dataColumnSidecar.getKzgCommitmentsInclusionProof(),

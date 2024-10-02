@@ -55,4 +55,25 @@ public abstract class AbstractDataColumnSidecarValidator {
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED, ex);
     }
   }
+
+  void verifyInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+    if (!verifyDataColumnSidecarInclusionProof(dataColumnSidecar)) {
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+    }
+  }
+
+  private boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+    try {
+      return spec.atSlot(dataColumnSidecar.getSlot())
+          .miscHelpers()
+          .verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
+    } catch (final Exception ex) {
+      LOG.debug(
+          "Inclusion proof verification failed for DataColumnSidecar {}",
+          dataColumnSidecar.toLogString());
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED, ex);
+    }
+  }
 }
